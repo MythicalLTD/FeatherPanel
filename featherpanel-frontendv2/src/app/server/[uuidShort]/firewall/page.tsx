@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
 import { useTranslation } from "@/contexts/TranslationContext"
 import { useSettings } from "@/contexts/SettingsContext"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
@@ -32,6 +32,7 @@ import type {
 
 export default function ServerFirewallPage() {
   const params = useParams()
+  const pathname = usePathname()
   const uuidShort = params.uuidShort as string
   const { t } = useTranslation()
   const { settings, loading: settingsLoading } = useSettings()
@@ -321,7 +322,7 @@ export default function ServerFirewallPage() {
 
   return (
 
-    <div className="space-y-8 pb-12 animate-in fade-in duration-700">
+    <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2">

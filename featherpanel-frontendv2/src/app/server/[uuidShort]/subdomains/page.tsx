@@ -1,17 +1,17 @@
 "use client"
 
 import * as React from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, usePathname } from "next/navigation"
 import axios, { AxiosError } from "axios"
 import { useTranslation } from "@/contexts/TranslationContext"
 import {
-    Network,
+    Globe,
     Plus,
     Trash2,
     RefreshCw,
     AlertTriangle,
-    Globe,
-    Lock
+    Lock,
+    Loader2
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -25,12 +25,14 @@ import type { SubdomainOverview, SubdomainEntry } from "@/types/server"
 export default function ServerSubdomainsPage() {
     const { uuidShort } = useParams() as { uuidShort: string }
     const router = useRouter()
+    const pathname = usePathname()
     const { t } = useTranslation()
     const { loading: settingsLoading } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
     
     // Using generic manage permission or control.start as fallback
     const canManage = hasPermission("subdomains.manage") || hasPermission("control.start")
+    const canDelete = hasPermission("subdomains.delete") || canManage
 
     // State
     const [overview, setOverview] = React.useState<SubdomainOverview | null>(null)
@@ -87,7 +89,16 @@ export default function ServerSubdomainsPage() {
         }
     }
 
-    if (permissionsLoading || settingsLoading || loading) return null
+    if (permissionsLoading || settingsLoading) return null
+
+    if (loading && subdomains.length === 0) {
+        return (
+            <div key={pathname} className="flex flex-col items-center justify-center py-24 animate-in fade-in duration-700">
+                <Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" />
+                <p className="mt-4 text-muted-foreground font-medium animate-pulse">{t("common.loading")}</p>
+            </div>
+        )
+    }
 
     if (!canManage) {
         return (
@@ -107,131 +118,133 @@ export default function ServerSubdomainsPage() {
     const limitReached = (overview?.current_total ?? 0) >= (overview?.max_allowed ?? 0)
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xl shadow-primary/5">
-                            <Network className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tight uppercase italic leading-none">{t("serverSubdomains.title")}</h1>
-                            <p className="text-sm text-muted-foreground font-medium opacity-60 mt-1">
-                                {t("serverSubdomains.description")}
-                            </p>
-                        </div>
+                    <h1 className="text-4xl font-black tracking-tight uppercase">{t("serverSubdomains.title")}</h1>
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                        <p className="text-lg opacity-80">{t("serverSubdomains.description")}</p>
                     </div>
                 </div>
-
+                
                 <div className="flex items-center gap-3">
                     <Button 
-                        variant="ghost" 
-                        size="icon" 
+                        variant="outline" 
+                        size="lg" 
                         onClick={fetchData} 
-                        className="h-12 w-12 rounded-xl bg-white/5 hover:bg-white/10"
+                        disabled={loading} 
+                        className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
                     >
-                        <RefreshCw className={cn("h-5 w-5", loading && "animate-spin")} />
+                        <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                        {t("common.refresh")}
                     </Button>
+                    
                     <Button 
                         size="lg" 
                         onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
                         disabled={limitReached || loading}
-                        className="h-12 px-8 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-xl hover:scale-[1.02] active:scale-95 transition-all text-xs"
+                        className="shadow-lg shadow-primary/20"
                     >
-                        <Plus className="h-4 w-4 mr-2" />
+                        <Plus className="h-5 w-5 mr-2" />
                         {t("serverSubdomains.createButton")}
                     </Button>
                 </div>
             </div>
 
+
             {/* Limit Warning */}
             {limitReached && (
-                <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4 flex items-start gap-4 animate-in slide-in-from-top-2">
-                    <div className="h-10 w-10 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0 border border-yellow-500/30">
-                        <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                    </div>
-                    <div className="space-y-1 py-1">
-                        <h4 className="text-sm font-bold text-yellow-500 uppercase tracking-wide">{t("serverSubdomains.limitReached")}</h4>
-                        <p className="text-xs text-yellow-500/70 leading-relaxed font-medium">
-                            {t("serverSubdomains.limitReachedDescription", { limit: String(overview?.max_allowed) })}
-                        </p>
+                <div className="relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500 shadow-sm">
+                    <div className="relative z-10 flex items-start gap-5">
+                        <div className="h-12 w-12 rounded-2xl bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30 shrink-0">
+                            <AlertTriangle className="h-6 w-6 text-yellow-500" />
+                        </div>
+                        <div className="space-y-1">
+                            <h3 className="text-lg font-bold text-yellow-500 leading-none uppercase tracking-tight">{t("serverSubdomains.limitReached")}</h3>
+                            <p className="text-sm text-yellow-500/80 leading-relaxed font-medium">
+                                {t("serverSubdomains.limitReachedDescription", { limit: String(overview?.max_allowed) })}
+                            </p>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* List */}
             {subdomains.length === 0 ? (
-                 <div className="flex flex-col items-center justify-center py-24 text-center space-y-6 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5">
+                 <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
                     <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150" />
-                        <div className="relative h-24 w-24 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 -rotate-3">
-                            <Network className="h-12 w-12 text-primary" />
+                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
+                        <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
+                            <Globe className="h-16 w-16 text-primary" />
                         </div>
                     </div>
-                    <div className="max-w-md space-y-2">
-                        <h2 className="text-2xl font-black uppercase tracking-tight">{t("serverSubdomains.noSubdomains")}</h2>
-                        <p className="text-muted-foreground font-medium leading-relaxed">
+                    <div className="max-w-md space-y-3 px-4">
+                        <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverSubdomains.noSubdomains")}</h2>
+                        <p className="text-muted-foreground text-lg leading-relaxed font-medium">
                             {t("serverSubdomains.noSubdomainsDescription")}
                         </p>
                     </div>
                     <Button 
                         size="lg" 
-                        variant="outline"
                         onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
                         disabled={limitReached}
-                        className="rounded-2xl h-12 px-8 font-bold"
+                        className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
                     >
+                        <Plus className="h-6 w-6 mr-2" />
                         {t("serverSubdomains.createButton")}
                     </Button>
                 </div>
             ) : (
-                <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 gap-4">
                     {subdomains.map((sub) => (
                         <div 
                             key={sub.uuid}
-                            className="group relative flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/5 rounded-3xl p-6 transition-all hover:bg-white/5 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5"
+                            className={cn(
+                                "group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-md border border-border/40 transition-all duration-300 shadow-sm",
+                                "hover:border-primary/40 hover:bg-card/50 hover:shadow-lg hover:shadow-primary/5"
+                            )}
                         >
-                            <div className="flex items-center gap-5">
-                                <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:bg-primary/20 transition-colors shrink-0">
-                                    <Globe className="h-7 w-7 text-primary" />
+                            <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
+                                <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner">
+                                    <Globe className="h-8 w-8 text-primary" />
                                 </div>
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-3">
-                                        <h3 className="font-black text-xl tracking-tight select-all">
+                                <div className="flex-1 min-w-0 space-y-3">
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <h3 className="text-xl font-black tracking-tight select-all group-hover:text-primary transition-colors duration-300">
                                             {sub.subdomain}.{sub.domain}
                                         </h3>
-                                        <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
+                                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40 shadow-sm opacity-80">
                                             {sub.record_type}
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+                                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                                         {sub.port && (
-                                            <span className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-lg">
-                                                <Network className="h-3 w-3" />
-                                                Port: <span className="text-white/70">{sub.port}</span>
-                                            </span>
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60 bg-black/10 px-2 py-0.5 rounded-md border border-white/5">Port {sub.port}</span>
+                                            </div>
                                         )}
-                                        <span className="flex items-center gap-1.5 px-2 py-1">
-                                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                            {t("serverSubdomains.activeSubdomains")}: {new Date(sub.created_at).toLocaleDateString()}
-                                        </span>
+                                        <div className="flex items-center gap-2 text-muted-foreground ml-auto sm:ml-0 opacity-60">
+                                            <span className="text-[10px] font-black uppercase tracking-widest italic">{new Date(sub.created_at).toLocaleString()}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-3 pl-4 md:pl-0 border-l md:border-l-0 border-white/5">
-                                <Button
-                                    variant="ghost" 
-                                    size="icon"
-                                    onClick={() => {
-                                        setSelectedSubdomain(sub)
-                                        setIsDeleteOpen(true)
-                                    }}
-                                    className="h-10 w-10 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
-                                >
-                                    <Trash2 className="h-5 w-5" />
-                                </Button>
+
+                                {canDelete && (
+                                    <div className="flex items-center gap-3 sm:self-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedSubdomain(sub)
+                                                setIsDeleteOpen(true)
+                                            }}
+                                            className="group/btn relative px-5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 font-black uppercase tracking-widest text-[10px] transition-all hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-xl hover:shadow-red-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <Trash2 className="h-4 w-4 inline-block mr-1.5" />
+                                            {t("common.delete")}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

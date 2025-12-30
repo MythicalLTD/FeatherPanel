@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, use, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import axios from 'axios'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useServerPermissions } from '@/hooks/useServerPermissions'
@@ -109,6 +109,7 @@ type ActivityItem = {
 export default function ServerActivityPage({ params }: { params: Promise<{ uuidShort: string }> }) {
     const { uuidShort } = use(params)
     const router = useRouter()
+    const pathname = usePathname()
     const { t } = useTranslation()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
 
@@ -341,7 +342,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
     }
 
     return (
-        <div className="space-y-8 pb-12 animate-in fade-in duration-700">
+        <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">

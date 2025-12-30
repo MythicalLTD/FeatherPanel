@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, usePathname } from 'next/navigation'
 import axios from 'axios'
 import { 
     Plus, 
@@ -54,6 +54,7 @@ export default function ServerDatabasesPage() {
     const { t } = useTranslation()
     const params = useParams()
     const router = useRouter()
+    const pathname = usePathname()
     const uuidShort = params.uuidShort as string
 
     // Permissions
@@ -260,7 +261,7 @@ export default function ServerDatabasesPage() {
     const limitReached = server && databases.length >= server.database_limit
 
     return (
-        <div className="space-y-8 pb-12 animate-in fade-in duration-700">
+        <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">

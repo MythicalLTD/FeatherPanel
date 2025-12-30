@@ -298,16 +298,16 @@ export default function ServerTasksPage() {
 
             {/* Task List */}
             {tasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-24 text-center space-y-6 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5">
+                <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
                     <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150" />
-                        <div className="relative h-24 w-24 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 -rotate-3">
-                            <ListCheck className="h-12 w-12 text-primary" />
+                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
+                        <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
+                            <ListCheck className="h-16 w-16 text-primary" />
                         </div>
                     </div>
-                    <div className="max-w-md space-y-2">
-                        <h2 className="text-2xl font-black uppercase tracking-tight">{t("serverTasks.noTasks")}</h2>
-                        <p className="text-muted-foreground font-medium leading-relaxed">
+                    <div className="max-w-md space-y-3 px-4">
+                        <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverTasks.noTasks")}</h2>
+                        <p className="text-muted-foreground text-lg leading-relaxed font-medium">
                             {t("serverTasks.noTasksDescription")}
                         </p>
                     </div>
@@ -318,9 +318,9 @@ export default function ServerTasksPage() {
                                 setCreateForm({ action: "", payload: "", time_offset: 0, continue_on_failure: 0 })
                                 setIsCreateOpen(true)
                             }}
-                            className="rounded-2xl h-12 px-8 font-bold"
+                            className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
                         >
-                            <Plus className="h-5 w-5 mr-2" />
+                            <Plus className="h-6 w-6 mr-2" />
                             {t("serverTasks.createTask")}
                         </Button>
                     )}

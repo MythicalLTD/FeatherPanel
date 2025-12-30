@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, usePathname } from "next/navigation"
 import axios, { AxiosError } from "axios"
 import { useTranslation } from "@/contexts/TranslationContext"
 import {
@@ -16,7 +16,8 @@ import {
     CalendarClock,
     ChevronLeft,
     ChevronRight,
-    Lock
+    Lock,
+    Loader2
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,7 @@ import type { Schedule, SchedulePagination } from "@/types/server"
 export default function ServerSchedulesPage() {
     const { uuidShort } = useParams() as { uuidShort: string }
     const router = useRouter()
+    const pathname = usePathname()
     const { t } = useTranslation()
     const { loading: settingsLoading } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
@@ -142,7 +144,16 @@ export default function ServerSchedulesPage() {
         return t("serverSchedules.statusInactive")
     }
 
-    if (permissionsLoading || settingsLoading || loading) return null
+    if (permissionsLoading || settingsLoading) return null
+
+    if (loading && schedules.length === 0) {
+        return (
+            <div key={pathname} className="flex flex-col items-center justify-center py-24 animate-in fade-in duration-700">
+                <Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" />
+                <p className="mt-4 text-muted-foreground font-medium animate-pulse">{t("common.loading")}</p>
+            </div>
+        )
+    }
 
     if (!canRead) {
         return (
@@ -160,40 +171,35 @@ export default function ServerSchedulesPage() {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
+             {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xl shadow-primary/5">
-                            <Calendar className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tight uppercase italic leading-none">{t("serverSchedules.title")}</h1>
-                            <p className="text-sm text-muted-foreground font-medium opacity-60 mt-1">
-                                {t("serverSchedules.description")}
-                            </p>
-                        </div>
+                    <h1 className="text-4xl font-black tracking-tight uppercase">{t("serverSchedules.title")}</h1>
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                        <p className="text-lg opacity-80">{t("serverSchedules.description")}</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                     <Button 
-                        variant="ghost" 
-                        size="icon" 
+                        variant="outline" 
+                        size="lg" 
                         onClick={() => fetchData(pagination.current_page)} 
-                        className="h-12 w-12 rounded-xl bg-white/5 hover:bg-white/10"
+                        disabled={loading}
+                        className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
                     >
-                        <RefreshCw className={cn("h-5 w-5", loading && "animate-spin")} />
+                        <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                        {t("common.refresh")}
                     </Button>
                     {canCreate && (
                         <Button 
                             size="lg" 
                             onClick={() => router.push(`/server/${uuidShort}/schedules/new`)}
                             disabled={loading}
-                            className="h-12 px-8 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-xl hover:scale-[1.02] active:scale-95 transition-all text-xs"
+                            className="shadow-lg shadow-primary/20"
                         >
-                            <Plus className="h-4 w-4 mr-2" />
+                            <Plus className="h-5 w-5 mr-2" />
                             {t("serverSchedules.createSchedule")}
                         </Button>
                     )}
@@ -202,26 +208,26 @@ export default function ServerSchedulesPage() {
 
             {/* List */}
             {schedules.length === 0 ? (
-                 <div className="flex flex-col items-center justify-center py-24 text-center space-y-6 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5">
+                 <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
                     <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150" />
-                        <div className="relative h-24 w-24 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 -rotate-3">
-                            <Calendar className="h-12 w-12 text-primary" />
+                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
+                        <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
+                            <Calendar className="h-16 w-16 text-primary" />
                         </div>
                     </div>
-                    <div className="max-w-md space-y-2">
-                        <h2 className="text-2xl font-black uppercase tracking-tight">{t("serverSchedules.noSchedules")}</h2>
-                        <p className="text-muted-foreground font-medium leading-relaxed">
+                    <div className="max-w-md space-y-3 px-4">
+                        <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverSchedules.noSchedules")}</h2>
+                        <p className="text-muted-foreground text-lg leading-relaxed font-medium">
                             {t("serverSchedules.noSchedulesDescription")}
                         </p>
                     </div>
                     {canCreate && (
                         <Button 
                             size="lg" 
-                            variant="outline"
                             onClick={() => router.push(`/server/${uuidShort}/schedules/new`)}
-                            className="rounded-2xl h-12 px-8 font-bold"
+                            className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
                         >
+                            <Plus className="h-6 w-6 mr-2" />
                             {t("serverSchedules.createSchedule")}
                         </Button>
                     )}

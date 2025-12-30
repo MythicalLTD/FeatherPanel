@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, usePathname } from 'next/navigation'
 import axios from 'axios'
 import { 
     Plus, 
@@ -34,6 +34,7 @@ import type { ImportItem, ImportsResponse } from '@/types/server'
 export default function ServerImportPage() {
     const { uuidShort } = useParams() as { uuidShort: string }
     const router = useRouter()
+    const pathname = usePathname()
     const { t } = useTranslation()
     const { settings, loading: settingsLoading } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
@@ -149,7 +150,7 @@ export default function ServerImportPage() {
     }
 
     return (
-        <div className="space-y-8 pb-12 animate-in fade-in duration-700">
+        <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">

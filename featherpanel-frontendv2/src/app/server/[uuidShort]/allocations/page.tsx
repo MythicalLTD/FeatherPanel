@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
 import axios from "axios"
 import { toast } from "sonner"
 import { 
@@ -49,6 +49,7 @@ export default function ServerAllocationsPage() {
   const { t } = useTranslation()
   const { settings, loading: settingsLoading } = useSettings()
   const params = useParams()
+  const pathname = usePathname()
   const uuidShort = params.uuidShort as string
 
   // Permissions
@@ -285,7 +286,7 @@ export default function ServerAllocationsPage() {
   const limitReached = server && server.allocation_limit !== 0 && (server.current_allocations || 0) >= server.allocation_limit
 
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in duration-700">
+    <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
       {/* Header Section Matches Backups/Databases */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
