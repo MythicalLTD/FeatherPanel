@@ -21,7 +21,7 @@ export function DropdownMenuContent({ children, align = 'end', className }: { ch
       <MenuItems
         anchor={align === 'end' ? 'bottom end' : 'bottom start'}
         className={cn(
-          'z-50 min-w-[8rem] overflow-hidden rounded-xl border border-border/40 bg-card/90 backdrop-blur-xl p-1 shadow-2xl focus:outline-none',
+          'z-50 min-w-32 overflow-hidden rounded-xl border border-border/40 bg-card/90 backdrop-blur-xl p-1 shadow-2xl focus:outline-none',
           className
         )}
       >

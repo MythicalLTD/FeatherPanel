@@ -86,7 +86,7 @@ export default function AuthLayout({
         {/* Auth form with card styling */}
         <div className="relative group">
           {/* Glow effect */}
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-primary/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000" />
+          <div className="absolute -inset-0.5 bg-linear-to-r from-primary/50 to-primary/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000" />
           
           <div className="relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 shadow-2xl shadow-black/20 transition-all duration-300">
             <div className="relative z-10">

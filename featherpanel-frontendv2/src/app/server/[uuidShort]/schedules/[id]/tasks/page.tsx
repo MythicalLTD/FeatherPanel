@@ -25,7 +25,6 @@ import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
-import { cn } from "@/lib/utils"
 import type { Task, TaskCreateRequest, TaskUpdateRequest, Schedule, SchedulePagination } from "@/types/server"
 
 export default function ServerTasksPage() {
