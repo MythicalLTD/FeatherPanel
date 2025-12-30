@@ -476,3 +476,27 @@ export interface SchedulePagination {
   from: number;
   to: number;
 }
+
+export interface Task {
+  id: number;
+  schedule_id: number;
+  sequence_id: number;
+  action: string;
+  payload: string;
+  time_offset: number;
+  is_queued: number;
+  continue_on_failure: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskCreateRequest {
+  action: string;
+  payload: string;
+  time_offset: number;
+  continue_on_failure: number;
+}
+
+export interface TaskUpdateRequest extends TaskCreateRequest {
+  sequence_id?: number;
+}
