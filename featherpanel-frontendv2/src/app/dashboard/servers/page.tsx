@@ -37,7 +37,9 @@ import {
 	FolderPlus,
 	TriangleAlert,
 	Server as ServerIcon,
-	Folder
+	Folder,
+	ChevronLeft,
+	ChevronRight
 } from 'lucide-react'
 
 // Import new components
@@ -94,17 +96,30 @@ export default function ServersPage() {
 	const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false)
 	const [editingFolder, setEditingFolder] = useState<ServerFolder | null>(null)
 	const [folderFormData, setFolderFormData] = useState({ name: '', description: '' })
+	const [pagination, setPagination] = useState({
+		current_page: 1,
+		per_page: 10,
+		total_records: 0,
+		total_pages: 1,
+		has_next: false,
+		has_prev: false,
+		from: 0,
+		to: 0,
+	})
 
 	// Fetch servers and folders
-	const fetchData = async () => {
+	const fetchData = async (page = 1) => {
 		try {
 			setLoading(true)
 			setError(null)
-			const serversData = await serversApi.getServers()
+			const response = await serversApi.getServers(false, page, pagination.per_page)
 
 			// Ensure serversData is an array
-			const serversArray = Array.isArray(serversData) ? serversData : []
+			const serversArray = Array.isArray(response.servers) ? response.servers : []
 			setServers(serversArray)
+
+			// Update pagination
+			setPagination(response.pagination)
 
 			// Connect to WebSockets for all servers
 			if (serversArray.length > 0) {
@@ -183,6 +198,12 @@ export default function ServersPage() {
 		e.stopPropagation()
 		if (!confirm(t('servers.confirmDeleteFolder'))) return
 		deleteFolder(folderId)
+	}
+
+	const changePage = (newPage: number) => {
+		if (newPage >= 1 && newPage <= pagination.total_pages) {
+			fetchData(newPage)
+		}
 	}
 
 
@@ -325,7 +346,7 @@ export default function ServersPage() {
 
 						{/* Refresh Button */}
 						<button
-							onClick={fetchData}
+								onClick={() => fetchData()}
 							disabled={loading}
 							className="p-2.5 bg-background border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-50"
 							title={t('servers.refresh')}
@@ -354,7 +375,7 @@ export default function ServersPage() {
 						<h3 className="text-xl font-semibold mb-2">{t('servers.errorTitle')}</h3>
 						<p className="text-muted-foreground mb-6">{error}</p>
 						<button
-							onClick={fetchData}
+								onClick={() => fetchData()}
 							className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors"
 						>
 							{t('servers.retry')}
@@ -377,7 +398,7 @@ export default function ServersPage() {
 								)
 							}
 						>
-							{t('servers.allServers')} ({filteredServers.length})
+								{t('servers.allServers')} ({pagination.total_records})
 						</Tab>
 						<Tab
 							className={({ selected }) =>
@@ -420,6 +441,41 @@ export default function ServersPage() {
 									))}
 								</div>
 							)}
+
+				{/* Pagination Controls */}
+				{pagination.total_pages > 1 && (
+					<div className="flex items-center justify-between py-6 px-4 mt-6 border-t border-border">
+					<p className="text-sm text-muted-foreground">
+						{t('servers.pagination.showing', { 
+							from: String(pagination.from), 
+							to: String(pagination.to), 
+							total: String(pagination.total_records) 
+						})}
+					</p>
+						<div className="flex items-center gap-2">
+							<button
+								onClick={() => changePage(pagination.current_page - 1)}
+								disabled={!pagination.has_prev || loading}
+								className="p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								<ChevronLeft className="h-5 w-5" />
+							</button>
+						<span className="px-4 py-2 text-sm font-medium">
+							{t('servers.pagination.page', { 
+								current: String(pagination.current_page), 
+								total: String(pagination.total_pages) 
+							})}
+						</span>
+							<button
+								onClick={() => changePage(pagination.current_page + 1)}
+								disabled={!pagination.has_next || loading}
+								className="p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								<ChevronRight className="h-5 w-5" />
+							</button>
+						</div>
+					</div>
+				)}
 						</TabPanel>
 
 						{/* By Folder Tab */}

@@ -138,7 +138,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             setLoading(true)
             const queryParams: Record<string, string | number> = {
                 page,
-                per_page: pagination.per_page,
+                per_page: 10,
             }
             if (searchQuery.trim()) {
                 queryParams.search = searchQuery.trim()
@@ -199,17 +199,16 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         } finally {
             setLoading(false)
         }
-    }, [uuidShort, pagination.per_page, searchQuery, selectedEventFilter, t])
+    }, [uuidShort, searchQuery, selectedEventFilter, t])
 
     // Debounce Search
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (!loading) {
-                fetchActivities(1)
-            }
+            fetchActivities(1)
         }, 500)
         return () => clearTimeout(timer)
-    }, [searchQuery, loading, fetchActivities])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery, selectedEventFilter])
 
     // Initial Load
     useEffect(() => {
@@ -221,7 +220,8 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             }
             fetchActivities(1)
         }
-    }, [uuidShort, permissionsLoading, hasPermission, fetchActivities, router, t])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [permissionsLoading])
 
     function normalizeMetadata(m: unknown): ActivityMetadata | undefined {
         if (m == null) return undefined

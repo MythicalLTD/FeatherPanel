@@ -567,6 +567,10 @@
       "grid": "Grid",
       "list": "List"
     },
+    "pagination": {
+      "showing": "Showing {{from}} to {{to}} of {{total}} servers",
+      "page": "Page {{current}} of {{total}}"
+    },
     "console": {
       "loading": "Loading server...",
       "connection": {
