@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogHeader, DialogTitleCustom, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -161,13 +162,12 @@ export default function ForgotPasswordForm() {
         {/* Footer */}
         <div className="text-center text-sm text-muted-foreground">
           {t('auth.forgot_password.remember')}{' '}
-          <button
-            type="button"
+          <Link
+            href="/auth/login"
             className="font-semibold text-primary hover:text-primary/80 transition-colors"
-            onClick={() => router.push('/auth/login')}
           >
             {t('auth.forgot_password.sign_in')}
-          </button>
+          </Link>
         </div>
       </div>
 

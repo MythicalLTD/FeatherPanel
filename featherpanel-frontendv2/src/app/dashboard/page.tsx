@@ -163,7 +163,7 @@ export default function DashboardPage() {
 										key={server.id}
 										server={server}
 										layout="list"
-										onClick={() => isServerAccessible(server) && window.open(`/server/${server.uuidShort}`, '_self')}
+										 serverUrl={`/server/${server.uuidShort}`}
 										liveStats={getServerLiveStats(server)}
 										isConnected={isServerConnected(server.uuidShort)}
 										t={t}

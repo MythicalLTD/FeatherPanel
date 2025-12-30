@@ -11,6 +11,7 @@ import {
 	FolderMinus,
 	FolderInput
 } from 'lucide-react'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import {
 	displayStatus,
@@ -32,25 +33,25 @@ import { ResourceBar } from './ResourceBar'
 interface ServerCardProps {
 	server: Server
 	layout: string
-	onClick: () => void
 	liveStats: { memory: number; disk: number; cpu: number; status: string } | null
 	isConnected: boolean
 	t: (key: string) => string
 	folders: ServerFolder[]
 	onAssignFolder: (folderId: number) => void
 	onUnassignFolder: () => void
+	serverUrl: string
 }
 
 export function ServerCard({
 	server,
 	layout,
-	onClick,
 	liveStats,
 	isConnected,
 	t,
 	folders,
 	onAssignFolder,
-	onUnassignFolder
+	onUnassignFolder,
+	serverUrl
 }: ServerCardProps) {
 	const accessible = isServerAccessible(server)
 	const status = liveStats?.status || displayStatus(server)
@@ -70,20 +71,22 @@ export function ServerCard({
 			>
 				{/* Banner Thumbnail */}
 				{server.spell?.banner && (
-					<div
-						onClick={accessible ? onClick : undefined}
-						className={cn("w-full sm:w-24 h-32 sm:h-16 rounded-lg overflow-hidden shrink-0", accessible && "cursor-pointer")}
+					<Link
+						href={accessible ? serverUrl : '#'}
+						className={cn("w-full sm:w-24 h-32 sm:h-16 rounded-lg overflow-hidden shrink-0 block", accessible && "cursor-pointer")}
+						onClick={(e) => !accessible && e.preventDefault()}
 					>
 						<div
 							className="w-full h-full bg-cover bg-center"
 							style={{ backgroundImage: `url(${server.spell.banner})` }}
 						/>
-					</div>
+					</Link>
 				)}
 
-				<div
-					className={cn("flex-1 min-w-0 w-full", accessible && "cursor-pointer")}
-					onClick={accessible ? onClick : undefined}
+				<Link
+					href={accessible ? serverUrl : '#'}
+					className={cn("flex-1 min-w-0 w-full block", accessible && "cursor-pointer")}
+					onClick={(e) => !accessible && e.preventDefault()}
 				>
 					<div className="flex items-center gap-3 mb-2">
 						<h3 className="text-lg font-semibold truncate">{server.name}</h3>
@@ -93,12 +96,13 @@ export function ServerCard({
 						)}
 					</div>
 					<p className="text-sm text-muted-foreground truncate">{server.description}</p>
-				</div>
+				</Link>
 
 				<div className="flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0">
-					<div
+					<Link
+						href={accessible ? serverUrl : '#'}
 						className={cn("flex items-center gap-4 sm:gap-6", accessible && "cursor-pointer")}
-						onClick={accessible ? onClick : undefined}
+						onClick={(e) => !accessible && e.preventDefault()}
 					>
 						<div className="text-sm">
 							<div className="text-muted-foreground text-xs sm:text-sm">{t('servers.node')}</div>
@@ -108,7 +112,7 @@ export function ServerCard({
 							<div className="text-muted-foreground text-xs sm:text-sm">{t('servers.spell')}</div>
 							<div className="font-medium text-sm sm:text-base">{server.spell?.name}</div>
 						</div>
-					</div>
+					</Link>
 
 					{/* Manage Menu */}
 					<Menu as="div" className="relative">
@@ -190,9 +194,10 @@ export function ServerCard({
 			)}
 		>
 			{/* Banner Image */}
-			<div
-				onClick={accessible ? onClick : undefined}
-				className={cn("relative", accessible && "cursor-pointer")}
+			<Link
+				href={accessible ? serverUrl : '#'}
+				className={cn("relative block", accessible && "cursor-pointer")}
+				onClick={(e) => !accessible && e.preventDefault()}
 			>
 				{server.spell?.banner && (
 					<div className="relative h-40 overflow-hidden">
@@ -211,17 +216,18 @@ export function ServerCard({
 						</span>
 					</div>
 				)}
-			</div>
+			</Link>
 
 			<div className="p-4 sm:p-6 space-y-4">
 				<div className="flex items-start justify-between gap-4">
-					<div
-						className={cn("flex-1 min-w-0", accessible && "cursor-pointer")}
-						onClick={accessible ? onClick : undefined}
+					<Link
+						href={accessible ? serverUrl : '#'}
+						className={cn("flex-1 min-w-0 block", accessible && "cursor-pointer")}
+						onClick={(e) => !accessible && e.preventDefault()}
 					>
 						<h3 className="text-xl font-bold truncate mb-1">{server.name}</h3>
 						<p className="text-sm text-muted-foreground line-clamp-2">{server.description || t('servers.noDescription')}</p>
-					</div>
+					</Link>
 
 					{/* Manage Menu */}
 					<Menu as="div" className="relative shrink-0">
@@ -292,9 +298,10 @@ export function ServerCard({
 					</Menu>
 				</div>
 
-				<div
+				<Link
+					href={accessible ? serverUrl : '#'}
 					className={cn("flex items-center gap-2", accessible && "cursor-pointer")}
-					onClick={accessible ? onClick : undefined}
+					onClick={(e) => !accessible && e.preventDefault()}
 				>
 					<StatusBadge status={status} t={t} />
 					{server.is_subuser && (
@@ -302,11 +309,12 @@ export function ServerCard({
 							{t('servers.subuser')}
 						</span>
 					)}
-				</div>
+				</Link>
 
-				<div
+				<Link
+					href={accessible ? serverUrl : '#'}
 					className={cn("grid grid-cols-2 gap-3 pt-2", accessible && "cursor-pointer")}
-					onClick={accessible ? onClick : undefined}
+					onClick={(e) => !accessible && e.preventDefault()}
 				>
 					<div className="text-sm">
 						<div className="text-muted-foreground mb-1">{t('servers.node')}</div>
@@ -316,11 +324,12 @@ export function ServerCard({
 						<div className="text-muted-foreground mb-1">{t('servers.spell')}</div>
 						<div className="font-medium truncate">{server.spell?.name || 'N/A'}</div>
 					</div>
-				</div>
+				</Link>
 
-				<div
-					className={cn("space-y-2 pt-2", accessible && "cursor-pointer")}
-					onClick={accessible ? onClick : undefined}
+				<Link
+					href={accessible ? serverUrl : '#'}
+					className={cn("space-y-2 pt-2 block", accessible && "cursor-pointer")}
+					onClick={(e) => !accessible && e.preventDefault()}
 				>
 					<ResourceBar
 						label={t('servers.memoryShort')}
@@ -340,7 +349,7 @@ export function ServerCard({
 						limit={getServerDiskLimit(server)}
 						formatter={formatDisk}
 					/>
-				</div>
+				</Link>
 			</div>
 		</div>
 	)

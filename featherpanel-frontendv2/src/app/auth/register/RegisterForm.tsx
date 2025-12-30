@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Mail, Lock, User, ArrowRight } from 'lucide-react'
@@ -155,13 +156,12 @@ export default function RegisterForm() {
 
         <div className="text-center text-sm text-muted-foreground">
           {t('auth.register.have_account')}{' '}
-          <button
-            type="button"
+          <Link
+            href="/auth/login"
             className="font-semibold text-primary hover:text-primary/80 transition-colors"
-            onClick={() => router.push('/auth/login')}
           >
             {t('auth.register.sign_in')}
-          </button>
+          </Link>
         </div>
       </div>
     )
@@ -282,13 +282,12 @@ export default function RegisterForm() {
       {/* Footer */}
       <div className="text-center text-sm text-muted-foreground">
         {t('auth.register.have_account')}{' '}
-        <button
-          type="button"
+        <Link
+          href="/auth/login"
           className="font-semibold text-primary hover:text-primary/80 transition-colors"
-          onClick={() => router.push('/auth/login')}
         >
           {t('auth.register.sign_in')}
-        </button>
+        </Link>
       </div>
     </div>
   )

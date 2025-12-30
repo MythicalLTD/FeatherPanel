@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useTranslation } from '@/contexts/TranslationContext'
@@ -159,13 +160,12 @@ export default function LoginForm() {
         />
 
         <div className="flex items-center justify-end">
-          <button
-            type="button"
+          <Link
+            href="/auth/forgot-password"
             className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-            onClick={() => router.push('/auth/forgot-password')}
           >
             {t('auth.login.forgot_password')}
-          </button>
+          </Link>
         </div>
 
         {/* Turnstile Widget */}
@@ -245,13 +245,12 @@ export default function LoginForm() {
       {/* Footer */}
       <div className="text-center text-sm text-muted-foreground">
         {t('auth.login.no_account')}{' '}
-        <button
-          type="button"
+        <Link
+          href="/auth/register"
           className="font-semibold text-primary hover:text-primary/80 transition-colors"
-          onClick={() => router.push('/auth/register')}
         >
           {t('auth.login.create_account')}
-        </button>
+        </Link>
       </div>
     </div>
   )
