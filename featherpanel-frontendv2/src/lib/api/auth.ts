@@ -2,9 +2,11 @@ import api from "../api";
 
 export const authApi = {
   login: async (data: {
-    username_or_email: string;
-    password: string;
+    username_or_email?: string;
+    password?: string;
     turnstile_token?: string;
+    sso_token?: string;
+    discord_token?: string;
   }) => {
     const response = await api.put("/user/auth/login", data);
     return response.data;

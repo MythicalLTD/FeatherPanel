@@ -113,6 +113,55 @@ export default function LoginForm() {
     }
   }
 
+  // SSO Login Logic
+  const [isSsoLogin, setIsSsoLogin] = useState(false)
+  const [ssoStatus, setSsoStatus] = useState('')
+
+  useState(() => {
+    const ssoToken = searchParams.get('sso_token')
+    if (ssoToken) {
+      handleSsoLogin(ssoToken)
+    }
+  })
+
+  async function handleSsoLogin(token: string) {
+    // Avoid double calling if already running (strict mode duplicate calls)
+    if (isSsoLogin) return;
+    
+    setIsSsoLogin(true)
+    setSsoStatus(t('auth.ssoLoggingIn') || 'Logging in via SSO...')
+    setLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await authApi.login({
+        sso_token: token
+      })
+
+      if (response.success) {
+        setSuccess(response.message || t('auth.loginSuccess'))
+        await fetchSession(true)
+        
+        const redirect = searchParams.get('redirect')
+        if (redirect && redirect.startsWith('/')) {
+            router.replace(redirect)
+        } else {
+            router.replace('/dashboard')
+        }
+      } else {
+        setIsSsoLogin(false)
+        setError(response.message || t('common.error'))
+      }
+    } catch (err: unknown) {
+      setIsSsoLogin(false)
+        const error = err as { response?: { data?: { message?: string } } }
+        setError(error.response?.data?.message || t('common.error'))
+    } finally {
+        setLoading(false)
+    }
+  }
+
   const handleDiscordLogin = () => {
     window.location.href = '/api/user/auth/discord/login'
   }
@@ -129,13 +178,34 @@ export default function LoginForm() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">{t('auth.login.title')}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t('auth.login.subtitle')}
-        </p>
-      </div>
+      {!isSsoLogin && (
+        <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold tracking-tight">{t('auth.login.title')}</h2>
+            <p className="text-sm text-muted-foreground">
+            {t('auth.login.subtitle')}
+            </p>
+        </div>
+      )}
 
+      {isSsoLogin ? (
+        <div className="flex flex-col items-center gap-4 py-6">
+            <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                <span className="text-muted-foreground">
+                    {ssoStatus}
+                </span>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+                 {t('auth.ssoPleaseWait') || "Please wait while we verify your credentials..."}
+            </p>
+             {error && (
+                <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in w-full text-center">
+                    {error}
+                </div>
+            )}
+        </div>
+      ) : (
+      <>
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           label={t('auth.login.username')}
@@ -252,6 +322,8 @@ export default function LoginForm() {
           {t('auth.login.create_account')}
         </Link>
       </div>
+      </>
+      )}
     </div>
   )
 }
