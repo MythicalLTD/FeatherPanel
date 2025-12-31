@@ -1979,7 +1979,7 @@
     }
   },
   "serverStartup": {
-	"softwareEnvironment": "Transfer to another software environment",
+	"softwareEnvironment": "Transfer to another software",
 	"transferDescription": "Transfer your server to another software environment.",
 	"startTransfer": "Start Transfer",
 	"spellChanged": "Spell has changed",

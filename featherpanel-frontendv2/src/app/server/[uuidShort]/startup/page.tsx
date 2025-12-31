@@ -313,7 +313,7 @@ export default function ServerStartupPage() {
 
     if (!canRead) {
         return (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 animate-in fade-in duration-700">
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5">
                 <div className="relative">
                     <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150" />
                     <div className="relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3">
@@ -343,7 +343,7 @@ export default function ServerStartupPage() {
     }
 
     return (
-        <div key={pathname} className="max-w-6xl mx-auto space-y-8 pb-16 animate-in fade-in duration-700 font-sans">
+        <div key={pathname} className="max-w-6xl mx-auto space-y-8 pb-16 font-sans">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
                 <div className="space-y-2">
@@ -581,7 +581,7 @@ export default function ServerStartupPage() {
                             </p>
 
                             <Button 
-                                onClick={() => router.push(`/server/${uuidShort}/transfer/spell`)}
+                                onClick={() => router.push(`/server/${uuidShort}/startup/transfer/spell`)}
                                 className="w-full h-14 rounded-2xl bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary font-black uppercase tracking-widest text-xs relative z-10 transition-all active:scale-95 group/btn"
                             >
                                 {t('serverStartup.startTransfer')}
