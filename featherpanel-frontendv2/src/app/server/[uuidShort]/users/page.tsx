@@ -378,7 +378,7 @@ export default function ServerSubusersPage() {
                     </div>
 
                     {subusers.length === 0 ? (
-                        <div className="text-center py-12 bg-card/10 rounded-[2rem] border border-dashed border-border/60">
+                        <div className="text-center py-12 bg-card/10 rounded-4xl border border-dashed border-border/60">
                             <h3 className="text-xl font-bold">{t("serverSubusers.noResults")}</h3>
                             <p className="text-muted-foreground mt-1">{t("serverSubusers.noResultsDescription")}</p>
                             <Button 
