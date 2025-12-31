@@ -333,7 +333,13 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                   <Send className="h-4 w-4" />
                 </button>
               </div>
-              {!canSend && (
+              {!canSendCommands && (
+                 <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1.5">
+                   <span>🚫</span>
+                   <span>{t('servers.console.noConsolePermissionSend')}</span>
+                 </p>
+              )}
+              {canSendCommands && !canSend && (
                 <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2 flex items-center gap-1.5">
                   <span>⚠️</span>
                   <span>{t('servers.console.terminal.server_running_required')}</span>

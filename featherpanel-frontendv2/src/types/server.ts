@@ -108,6 +108,7 @@ export interface Server {
     | "stopped"
     | "offline";
   user_id: number;
+  owner_id: number;
   node_id: number;
   realm_id: number;
   spell_id: number;

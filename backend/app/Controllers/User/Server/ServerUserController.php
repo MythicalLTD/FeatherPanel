@@ -521,6 +521,18 @@ class ServerUserController
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
         }
 
+        // Check if user is subuser
+        $subuser = Subuser::getSubuserByUserAndServer((int) $user['id'], (int) $server['id']);
+        if ($subuser) {
+            $server['is_subuser'] = true;
+            $server['subuser_permissions'] = json_decode($subuser['permissions'], true) ?: [];
+            $server['subuser_id'] = (int) $subuser['id'];
+        } else {
+            $server['is_subuser'] = false;
+            $server['subuser_permissions'] = [];
+            $server['subuser_id'] = null;
+        }
+
         $server['node'] = Node::getNodeById($server['node_id']);
 
         // Get location information from node

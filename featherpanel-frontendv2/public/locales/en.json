@@ -574,6 +574,7 @@
     },
     "console": {
       "loading": "Loading server...",
+	  "noConsolePermissionSend": "You do not have permission to send commands.",
       "connection": {
         "connecting": "Connecting to Wings...",
         "connected": "Connected to Wings",
@@ -618,6 +619,8 @@
     "title": "Server Console",
     "description": "Server management console",
     "noConsolePermission": "You do not have permission to access the server console.",
+    "noConsolePermissionSend": "You do not have permission to send commands.",
+    "subuserNoAccess": "Woah you are a subuser but it looks like you have acess to nothing :( contact your friend :))",
     "address": "Address",
     "uptime": "Uptime",
     "serverId": "Server ID",
@@ -1288,7 +1291,7 @@
   },
   "serverImport": {
     "title": "Server Import",
-	"noImports": "No imports found",
+    "noImports": "No imports found",
     "description": "Import server files from remote SFTP or FTP servers. The server must be offline for imports to work.",
     "featureDisabled": "Server Import Disabled",
     "featureDisabledDescription": "Server import has been disabled by the administrator. Please contact support if you need to import files from remote servers.",

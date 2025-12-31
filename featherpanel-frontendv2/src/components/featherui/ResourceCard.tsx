@@ -16,6 +16,7 @@ interface ResourceCardProps {
     description?: ReactNode
     actions?: ReactNode
     className?: string
+    style?: React.CSSProperties
     iconWrapperClassName?: string
     iconClassName?: string
     onClick?: () => void
@@ -28,6 +29,7 @@ export function ResourceCard({
     description,
     actions,
     className,
+    style,
     iconWrapperClassName,
     iconClassName,
     onClick
@@ -56,6 +58,7 @@ export function ResourceCard({
     return (
         <div 
             onClick={onClick}
+            style={style}
             className={cn(
                 "group relative overflow-hidden rounded-3xl bg-card border border-border/50 hover:border-primary/40 hover:bg-accent/50 transition-all duration-300 shadow-sm",
                 onClick && "cursor-pointer",

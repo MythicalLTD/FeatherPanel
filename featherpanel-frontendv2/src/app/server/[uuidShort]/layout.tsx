@@ -68,10 +68,21 @@ export async function generateMetadata(
   }
 }
 
-export default function ServerLayout({
+import { ServerProvider } from '@/contexts/ServerContext'
+
+export default async function ServerLayout({
   children,
+  params,
 }: {
   children: React.ReactNode
+  params: Promise<{ uuidShort: string }>
 }) {
-  return <DashboardShell>{children}</DashboardShell>
+  const { uuidShort } = await params
+  const server = await getServer(uuidShort)
+  
+  return (
+    <ServerProvider uuidShort={uuidShort} initialServer={server}>
+      <DashboardShell>{children}</DashboardShell>
+    </ServerProvider>
+  )
 }

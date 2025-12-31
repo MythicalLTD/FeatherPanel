@@ -50,6 +50,7 @@ interface WingsWebSocketOptions {
   onBackupComplete?: () => void;
   onTransferLogs?: (log: string) => void;
   onTransferStatus?: (status: string) => void;
+  connect?: boolean;
 }
 
 interface WingsWebSocketReturn {
@@ -77,6 +78,7 @@ export function useWingsWebSocket({
   onBackupComplete,
   onTransferLogs,
   onTransferStatus,
+  connect = true,
 }: WingsWebSocketOptions): WingsWebSocketReturn {
   const wsRef = useRef<WebSocket | null>(null);
   const jwtTokenRef = useRef<string>("");
@@ -416,7 +418,9 @@ export function useWingsWebSocket({
       }
     };
 
-    connect();
+    if (connect) {
+      connect();
+    }
 
     return () => {
       console.log("[Wings WS] Cleaning up connection");
@@ -429,7 +433,7 @@ export function useWingsWebSocket({
         wsRef.current = null;
       }
     };
-  }, [serverUuid, refreshToken]); // Only depend on serverUuid and refreshToken
+  }, [serverUuid, refreshToken, connect]); // Only depend on serverUuid, refreshToken and connect
 
   const reconnect = useCallback(() => {
     if (wsRef.current) {

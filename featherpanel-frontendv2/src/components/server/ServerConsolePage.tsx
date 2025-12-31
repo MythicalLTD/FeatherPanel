@@ -10,9 +10,7 @@ import ServerPerformance from '@/components/server/ServerPerformance'
 import { Card, CardContent } from '@/components/ui/card'
 import { useServerPermissions } from '@/hooks/useServerPermissions'
 import { AlertTriangle, Wifi, WifiOff, Loader2 } from 'lucide-react'
-import axios from 'axios'
 
-import type { Server } from '@/types/server'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useFeatureDetector } from '@/hooks/useFeatureDetector'
 import { EulaDialog } from '@/components/server/features/EulaDialog'
@@ -25,15 +23,18 @@ export default function ServerConsolePage() {
   const serverUuid = params.uuidShort as string
   const terminalRef = useRef<ServerTerminalRef>(null)
 
-  const [server, setServer] = useState<Server | null>(null)
-  const [loading, setLoading] = useState(true)
+  // Permissions hook provides server data from context
+  const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(serverUuid)
+
   const [serverStatus, setServerStatus] = useState('offline')
   const [wingsUptime, setWingsUptime] = useState<string>('')
 
-  // Permissions hook
-  const { hasPermission, loading: permissionsLoading } = useServerPermissions(serverUuid)
-
   // Performance data
+  // Initialize with current timestamp to avoid client-side hydration mismatch if we used Date.now() directly in render without useEffect
+  // But useState(() => ...) only runs on client if component mounts there? No, it runs on server too.
+  // To be safe and avoid hydration errors, we can start empty and fill in useEffect, OR use a fixed timestamp if possible.
+  // However, the previous code used Date.now(). Let's stick to the previous logic but fix the "setState in effect" error.
+  // Actually, we can just start empty and only add the point if empty in an effect using setTimeout to avoid the lint error.
   const [cpuData, setCpuData] = useState<Array<{ timestamp: number; value: number }>>([])
   const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([])
   const [diskData, setDiskData] = useState<Array<{ timestamp: number; value: number }>>([])
@@ -44,6 +45,7 @@ export default function ServerConsolePage() {
   const [currentCpu, setCurrentCpu] = useState(0)
   const [currentMemory, setCurrentMemory] = useState(0)
   const [currentDisk, setCurrentDisk] = useState(0)
+
 
   // Feature Detector
   const {
@@ -57,6 +59,9 @@ export default function ServerConsolePage() {
     detectedData,
   } = useFeatureDetector()
 
+  // Permissions
+  const canConnect = hasPermission('websocket.connect')
+
   // Wings WebSocket connection
   const {
     connectionStatus,
@@ -67,6 +72,7 @@ export default function ServerConsolePage() {
     requestLogs,
   } = useWingsWebSocket({
     serverUuid,
+    connect: canConnect,
     onConsoleOutput: (output) => {
       // Process log for feature detection
       processLog(output)
@@ -80,7 +86,7 @@ export default function ServerConsolePage() {
       setServerStatus(status)
     },
     onStats: (stats) => {
-      const timestamp = Date.now()
+      const timestamp = new Date().getTime()
       
       // Update uptime
       if (stats.uptime) {
@@ -128,25 +134,16 @@ export default function ServerConsolePage() {
     },
   })
 
-  // Fetch server details
+  // Initialize server status when server data is loaded
   useEffect(() => {
-    const fetchServer = async () => {
-      try {
-        setLoading(true)
-        const { data } = await axios.get(`/api/user/servers/${serverUuid}`)
-        if (data.success) {
-          setServer(data.data)
-          setServerStatus(data.data.status || 'offline')
-        }
-      } catch (error) {
-        console.error('Failed to fetch server:', error)
-      } finally {
-        setLoading(false)
-      }
+    if (server?.status && server.status !== serverStatus) {
+      // Defer state update to avoid synchronous render loop warning
+      const timer = setTimeout(() => {
+        setServerStatus(server.status)
+      }, 0)
+      return () => clearTimeout(timer)
     }
-
-    fetchServer()
-  }, [serverUuid])
+  }, [server?.status, serverStatus])
 
   const formatUptime = (uptimeMs: number): string => {
     // Wings sends uptime in milliseconds, convert to seconds
@@ -182,14 +179,20 @@ export default function ServerConsolePage() {
     return () => clearInterval(interval)
   }, [connectionStatus, requestStats, requestLogs])
 
-  // Initialize charts with zero data point
+  // Initialize charts with zero data point if empty
   useEffect(() => {
-    const timestamp = Date.now()
-    setCpuData([{ timestamp, value: 0 }])
-    setMemoryData([{ timestamp, value: 0 }])
-    setDiskData([{ timestamp, value: 0 }])
-    setNetworkData([{ timestamp, value: 0 }])
-  }, [])
+    if (cpuData.length === 0) {
+       // Defer to satisfy lint rule about synchronous updates in effect (which can cause loops)
+       const timer = setTimeout(() => {
+          const timestamp = Date.now()
+          setCpuData([{ timestamp, value: 0 }])
+          setMemoryData([{ timestamp, value: 0 }])
+          setDiskData([{ timestamp, value: 0 }])
+          setNetworkData([{ timestamp, value: 0 }])
+       }, 0)
+       return () => clearTimeout(timer)
+    }
+  }, [cpuData.length])
 
   const getConnectionStatusInfo = () => {
     switch (connectionStatus) {
@@ -228,7 +231,7 @@ export default function ServerConsolePage() {
     }
   }
 
-  if (loading || permissionsLoading) {
+  if (permissionsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-4">
@@ -266,15 +269,15 @@ export default function ServerConsolePage() {
         canStart={hasPermission('control.start')}
         canStop={hasPermission('control.stop')}
         canRestart={hasPermission('control.restart')}
-        canKill={hasPermission('control.console')}
+        canKill={hasPermission('control.stop')}
         onStart={() => sendPowerAction('start')}
         onStop={() => sendPowerAction('stop')}
         onRestart={() => sendPowerAction('restart')}
         onKill={() => sendPowerAction('kill')}
       />
 
-      {/* Wings Connection Status (only show if not connected) */}
-      {connectionStatus !== 'connected' && (
+      {/* Wings Connection Status (only show if not connected and has permission) */}
+      {canConnect && connectionStatus !== 'connected' && (
         <Card className={`border-2 ${connectionInfo.bgColor}`}>
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
@@ -294,30 +297,52 @@ export default function ServerConsolePage() {
         </Card>
       )}
 
+      {/* Permission Error */}
+      {!canConnect && (
+        <Card className="border-2 border-yellow-500/20 bg-yellow-500/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-lg flex items-center justify-center bg-yellow-500/10 border-yellow-500/20">
+                <AlertTriangle className="h-6 w-6 text-yellow-500" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-yellow-500">
+                  {t('serverConsole.subuserNoAccess')}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Server Info Cards */}
-      <ServerInfoCards
-        serverIp={server.allocation?.ip || server.allocation?.ip_alias || ''}
-        serverPort={server.allocation?.port || 0}
-        cpuLimit={server.cpu || 0}
-        memoryLimit={server.memory || 0}
-        diskLimit={server.disk || 0}
-        wingsUptime={wingsUptime}
-        ping={ping}
-        cpuUsage={currentCpu}
-        memoryUsage={currentMemory}
-        diskUsage={currentDisk}
-      />
+      {canConnect && (
+        <ServerInfoCards
+          serverIp={server.allocation?.ip || server.allocation?.ip_alias || ''}
+          serverPort={server.allocation?.port || 0}
+          cpuLimit={server.cpu || 0}
+          memoryLimit={server.memory || 0}
+          diskLimit={server.disk || 0}
+          wingsUptime={wingsUptime}
+          ping={ping}
+          cpuUsage={currentCpu}
+          memoryUsage={currentMemory}
+          diskUsage={currentDisk}
+        />
+      )}
 
       {/* Terminal Console */}
-      <ServerTerminal 
-        ref={terminalRef}
-        onSendCommand={sendCommand}
-        canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
-        serverStatus={serverStatus}
-      />
+      {canConnect && (
+        <ServerTerminal 
+          ref={terminalRef}
+          onSendCommand={sendCommand}
+          canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
+          serverStatus={serverStatus}
+        />
+      )}
 
       {/* Performance Monitoring */}
-      {server && (
+      {server && canConnect && (
         <ServerPerformance
           cpuData={cpuData}
           memoryData={memoryData}

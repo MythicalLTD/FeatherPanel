@@ -10,6 +10,7 @@ import {
   getMainNavigationItems,
 } from "@/config/navigation";
 import { usePluginRoutes } from "@/hooks/usePluginRoutes";
+import { useServerPermissions } from "@/hooks/useServerPermissions";
 
 export function useNavigation() {
   const pathname = usePathname();
@@ -27,117 +28,117 @@ export function useNavigation() {
       category: "main" | "admin" | "server",
       serverUuid?: string
     ): NavigationItem[] => {
-      return Object.entries(pluginItems)
-        .map(([url, item]) => {
-          // Build full URL based on category
-          let prefix = "";
-          if (category === "admin") prefix = "/admin";
-          if (category === "main") prefix = "/dashboard";
+      return Object.entries(pluginItems).map(([url, item]) => {
+        // Build full URL based on category
+        let prefix = "";
+        if (category === "admin") prefix = "/admin";
+        if (category === "main") prefix = "/dashboard";
 
-          let processedUrl = url;
+        let processedUrl = url;
 
-          // Handle server specific prefix and url cleaning
-          if (category === "server") {
-            if (serverUuid) {
-              prefix = `/server/${serverUuid}`;
-            }
-            // Remove leading /server to avoid duplication when appending to prefix
-            if (processedUrl.startsWith("/server")) {
-              processedUrl = processedUrl.replace("/server", "");
-            }
+        // Handle server specific prefix and url cleaning
+        if (category === "server") {
+          if (serverUuid) {
+            prefix = `/server/${serverUuid}`;
           }
-
-          const cleanUrl = processedUrl.startsWith("/")
-            ? processedUrl
-            : `/${processedUrl}`;
-          const fullUrl = `${prefix}${cleanUrl}`;
-
-          // Allow plugins to override redirect
-          let redirectUrl = item.redirect;
-          if (
-            category === "server" &&
-            redirectUrl &&
-            redirectUrl.startsWith("/server")
-          ) {
-            redirectUrl = redirectUrl.replace("/server", "");
+          // Remove leading /server to avoid duplication when appending to prefix
+          if (processedUrl.startsWith("/server")) {
+            processedUrl = processedUrl.replace("/server", "");
           }
+        }
 
-          const cleanRedirect = redirectUrl
-            ? redirectUrl.startsWith("/")
-              ? redirectUrl
-              : `/${redirectUrl}`
-            : null;
+        const cleanUrl = processedUrl.startsWith("/")
+          ? processedUrl
+          : `/${processedUrl}`;
+        const fullUrl = `${prefix}${cleanUrl}`;
 
-          const fullRedirect = cleanRedirect
-            ? `${prefix}${cleanRedirect}`
-            : fullUrl;
+        // Allow plugins to override redirect
+        let redirectUrl = item.redirect;
+        if (
+          category === "server" &&
+          redirectUrl &&
+          redirectUrl.startsWith("/server")
+        ) {
+          redirectUrl = redirectUrl.replace("/server", "");
+        }
 
-          // Legacy-style group normalization
-          const builtInGroups: Record<string, string[]> = {
-            server: [
-              "management",
-              "files",
-              "networking",
-              "automation",
-              "configuration",
-            ],
-            admin: [
-              "overview",
-              "feathercloud",
-              "users",
-              "tickets",
-              "networking",
-              "infrastructure",
-              "content",
-              "system",
-            ],
-            main: ["overview", "support"],
-          };
+        const cleanRedirect = redirectUrl
+          ? redirectUrl.startsWith("/")
+            ? redirectUrl
+            : `/${redirectUrl}`
+          : null;
 
-          let normalizedGroup = item.group || "plugins";
-          if (item.group) {
-            const lowerGroup = item.group.toLowerCase();
-            const matchingBuiltIn = builtInGroups[category]?.find(
-              (bg) => bg.toLowerCase() === lowerGroup
-            );
-            if (matchingBuiltIn) {
-              normalizedGroup = matchingBuiltIn;
-            }
+        const fullRedirect = cleanRedirect
+          ? `${prefix}${cleanRedirect}`
+          : fullUrl;
+
+        // Legacy-style group normalization
+        const builtInGroups: Record<string, string[]> = {
+          server: [
+            "management",
+            "files",
+            "networking",
+            "automation",
+            "configuration",
+          ],
+          admin: [
+            "overview",
+            "feathercloud",
+            "users",
+            "tickets",
+            "networking",
+            "infrastructure",
+            "content",
+            "system",
+          ],
+          main: ["overview", "support"],
+        };
+
+        let normalizedGroup = item.group || "plugins";
+        if (item.group) {
+          const lowerGroup = item.group.toLowerCase();
+          const matchingBuiltIn = builtInGroups[category]?.find(
+            (bg) => bg.toLowerCase() === lowerGroup
+          );
+          if (matchingBuiltIn) {
+            normalizedGroup = matchingBuiltIn;
           }
+        }
 
-          return {
-            id: `plugin-${item.plugin}-${url}`,
-            name: item.name,
-            title: item.name,
-            url: fullUrl,
-            icon: item.icon,
-            isActive:
-              pathname === fullUrl || pathname.startsWith(fullUrl + "/"),
-            category,
-            isPlugin: true,
-            pluginJs: item.js,
-            pluginRedirect: fullRedirect,
-            pluginName: item.pluginName,
-            showBadge: item.showBadge,
-            description: item.description,
-            permission: item.permission,
-            group: normalizedGroup,
-          };
-        })
-        .filter((item) => {
-          if (item.permission) {
-            return hasPermission(item.permission);
-          }
-          return true;
-        });
+        return {
+          id: `plugin-${item.plugin}-${url}`,
+          name: item.name,
+          title: item.name,
+          url: fullUrl,
+          icon: item.icon,
+          isActive: pathname === fullUrl || pathname.startsWith(fullUrl + "/"),
+          category,
+          isPlugin: true,
+          pluginJs: item.js,
+          pluginRedirect: fullRedirect,
+          pluginName: item.pluginName,
+          showBadge: item.showBadge,
+          description: item.description,
+          permission: item.permission,
+          group: normalizedGroup,
+        };
+      });
     },
-    [pathname, hasPermission]
+    [pathname]
+  );
+
+  const isServer = pathname.startsWith("/server/");
+  const serverUuid = isServer ? pathname.split("/")[2] : null;
+
+  // Call hook at top level - valid usage
+  const { hasPermission: hasServerPermission } = useServerPermissions(
+    serverUuid || ""
   );
 
   const navigationItems = useMemo(() => {
     const isAdmin = pathname.startsWith("/admin");
-    const isServer = pathname.startsWith("/server/");
-    const serverUuid = isServer ? pathname.split("/")[2] : null;
+    // const isServer = pathname.startsWith("/server/"); // Already defined above but we might need to redefine or capture from closure
+    // actually we can just reuse the outer variables or let the logic flow.
 
     const checkActive = (url: string, exact = false) => {
       if (exact) return pathname === url;
@@ -192,7 +193,7 @@ export function useNavigation() {
       }
 
       return items.filter(
-        (item) => !item.permission || hasPermission(item.permission)
+        (item) => !item.permission || hasServerPermission(item.permission)
       );
     }
 
@@ -210,8 +211,20 @@ export function useNavigation() {
       items.push(...pluginItems);
     }
 
-    return items;
-  }, [pathname, hasPermission, pluginRoutes, convertPluginItems, settings, t]);
+    return items.filter(
+      (item) => !item.permission || hasPermission(item.permission)
+    );
+  }, [
+    pathname,
+    hasPermission,
+    pluginRoutes,
+    convertPluginItems,
+    settings,
+    t,
+    hasServerPermission,
+    isServer,
+    serverUuid,
+  ]);
 
   return { navigationItems };
 }
