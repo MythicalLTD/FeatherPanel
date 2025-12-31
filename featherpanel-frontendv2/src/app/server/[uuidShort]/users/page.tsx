@@ -4,6 +4,8 @@ import * as React from "react"
 import { useParams, useRouter, usePathname } from "next/navigation"
 import axios, { AxiosError } from "axios"
 import { useTranslation } from "@/contexts/TranslationContext"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { EmptyState } from "@/components/featherui/EmptyState"
 import {
     Users,
     Plus,
@@ -19,7 +21,7 @@ import {
     CheckCircle2
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/featherui/Button"
 import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
@@ -292,65 +294,54 @@ export default function ServerSubusersPage() {
     return (
         <div key={pathname} className="space-y-8 pb-12">
              {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tight uppercase">{t("serverSubusers.title")}</h1>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                        <p className="text-lg opacity-80">{t("serverSubusers.description")}</p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <Button 
-                        variant="outline" 
-                        size="lg" 
-                        onClick={() => fetchSubusers(pagination.current_page)} 
-                        disabled={loading}
-                        className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
-                    >
-                        <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
-                        {t("common.refresh")}
-                    </Button>
-                    {canCreate && (
-                        <Button 
-                            size="lg" 
-                            onClick={() => setIsAddOpen(true)}
-                            disabled={loading}
-                            className="shadow-lg shadow-primary/20"
-                        >
-                            <Plus className="h-5 w-5 mr-2" />
-                            {t("serverSubusers.addSubuser")}
-                        </Button>
-                    )}
-                </div>
-            </div>
+             <PageHeader
+                title={t("serverSubusers.title")}
+                description={t("serverSubusers.description")}
+                actions={
+                    <>
+                            <Button 
+                                variant="glass" 
+                                size="lg" 
+                                onClick={() => fetchSubusers(pagination.current_page)} 
+                                disabled={loading}
+                            >
+                                <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                                {t("common.refresh")}
+                            </Button>
+                            {canCreate && (
+                                <Button 
+                                    size="lg" 
+                                    variant="default"
+                                    onClick={() => setIsAddOpen(true)}
+                                    disabled={loading}
+                                >
+                                    <Plus className="h-5 w-5 mr-2" />
+                                    {t("serverSubusers.addSubuser")}
+                                </Button>
+                            )}
+                    </>
+                }
+             />
 
             {/* List */}
             {subusers.length === 0 && !searchQuery ? (
-                 <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                        <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                            <Users className="h-16 w-16 text-primary" />
-                        </div>
-                    </div>
-                    <div className="max-w-md space-y-3 px-4">
-                        <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverSubusers.noSubusers")}</h2>
-                        <p className="text-muted-foreground text-lg leading-relaxed font-medium">
-                            {t("serverSubusers.noSubusersDescription")}
-                        </p>
-                    </div>
-                    {canCreate && (
-                        <Button 
-                            size="lg" 
-                            onClick={() => setIsAddOpen(true)}
-                            className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
-                        >
-                            <Plus className="h-6 w-6 mr-2" />
-                            {t("serverSubusers.addSubuser")}
-                        </Button>
-                    )}
-                </div>
+                 <EmptyState
+                    title={t("serverSubusers.noSubusers")}
+                    description={t("serverSubusers.noSubusersDescription")}
+                    icon={Users}
+                    action={
+                        canCreate && (
+                            <Button 
+                                size="lg" 
+                                onClick={() => setIsAddOpen(true)}
+                                className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
+                            >
+                                <Plus className="h-6 w-6 mr-2" />
+                                {t("serverSubusers.addSubuser")}
+                            </Button>
+                        )
+                    }
+                />
             ) : (
                 <div className="flex flex-col gap-6">
                     {/* Search Bar */}

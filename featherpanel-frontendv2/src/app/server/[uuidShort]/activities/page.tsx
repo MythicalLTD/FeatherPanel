@@ -5,15 +5,13 @@ import { useRouter, usePathname } from 'next/navigation'
 import axios from 'axios'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useServerPermissions } from '@/hooks/useServerPermissions'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { HeadlessSelect } from '@/components/ui/headless-select'
 import { 
     Dialog, 
-    DialogDescription, 
     DialogFooter, 
     DialogHeader, 
-    DialogTitle 
+    DialogTitle,
+    DialogDescription
 } from '@/components/ui/dialog'
 import { 
     Activity, 
@@ -46,6 +44,12 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+
+// UI Components
+import { Button } from '@/components/featherui/Button'
+import { Input } from '@/components/featherui/Input'
+import { PageHeader } from '@/components/featherui/PageHeader'
+import { EmptyState } from '@/components/featherui/EmptyState'
 
 // Types
 type ActivityMetadata = {
@@ -342,32 +346,32 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
     }
 
     return (
-        <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
+        <div key={pathname} className="space-y-8 pb-12 ">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tight uppercase">{t('serverActivities.title')}</h1>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                        <p className="text-lg opacity-80">{t('serverActivities.description')}</p>
+            <PageHeader
+                title={t('serverActivities.title')}
+                description={
+                    <div className="flex items-center gap-3">
+                        <span>{t('serverActivities.description')}</span>
                         <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20">
                             {pagination.total_records} {t('serverActivities.events')}
                         </span>
                     </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <Button 
-                        variant="outline" 
-                        size="lg" 
-                        onClick={() => fetchActivities()}
-                        disabled={loading}
-                        className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
-                    >
-                        <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
-                        {t('common.refresh')}
-                    </Button>
-                </div>
-            </div>
+                }
+                actions={
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            variant="glass" 
+                            size="lg" 
+                            onClick={() => fetchActivities()}
+                            disabled={loading}
+                        >
+                            <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                            {t('common.refresh')}
+                        </Button>
+                    </div>
+                }
+            />
 
             {/* Filter Bar */}
             <div className="flex flex-col md:flex-row gap-4">
@@ -375,7 +379,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <Input 
                         placeholder={t('serverActivities.searchPlaceholder')}
-                        className="bg-background/40 backdrop-blur-md border-border/40 pl-12 h-14 text-lg rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all"
+                        className="pl-12 h-14 text-lg"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -389,13 +393,13 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                         }}
                         options={filterOptions}
                         placeholder={t('serverActivities.events')}
-                        buttonClassName="h-14 bg-background/40 backdrop-blur-md border-border/40 rounded-2xl text-lg px-6"
+                        buttonClassName="h-14 bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-lg px-6 hover:bg-[#0A0A0A]/40 transition-colors"
                     />
                     {(searchQuery || selectedEventFilter !== 'all') && (
                         <Button 
-                            variant="outline" 
+                            variant="glass" 
                             size="icon" 
-                            className="h-14 w-14 rounded-2xl border-border/40 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50"
+                            className="h-14 w-14 rounded-xl hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50"
                             onClick={() => {
                                 setSearchQuery('')
                                 setSelectedEventFilter('all')
@@ -410,36 +414,27 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
 
             {/* Activities List */}
             {activities.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                        <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                            <Activity className="h-16 w-16 text-primary" />
-                        </div>
-                    </div>
-                    <div className="max-w-md space-y-3">
-                        <h2 className="text-3xl font-black">{t('serverActivities.noActivitiesFound')}</h2>
-                        <p className="text-muted-foreground text-lg px-4">
-                            {searchQuery || selectedEventFilter !== 'all' 
-                                ? t('serverActivities.noActivitiesSearchDescription') 
-                                : t('serverActivities.noActivitiesDescription')}
-                        </p>
-                    </div>
-                    {(searchQuery || selectedEventFilter !== 'all') && (
+                <EmptyState
+                    title={t('serverActivities.noActivitiesFound')}
+                    description={searchQuery || selectedEventFilter !== 'all' 
+                        ? t('serverActivities.noActivitiesSearchDescription') 
+                        : t('serverActivities.noActivitiesDescription')}
+                    icon={Activity}
+                    action={(searchQuery || selectedEventFilter !== 'all') ? (
                         <Button 
-                            variant="outline" 
+                            variant="glass" 
                             size="lg"
                             onClick={() => {
                                 setSearchQuery('')
                                 setSelectedEventFilter('all')
                                 setTimeout(() => fetchActivities(1), 0)
                             }}
-                            className="h-14 px-10 text-lg rounded-2xl"
+                            className="h-14 px-10 text-lg rounded-xl"
                         >
                             {t('common.clear')}
                         </Button>
-                    )}
-                </div>
+                    ) : undefined}
+                />
             ) : (
                 <div className="space-y-4">
                     {activities.map((activity, index) => {
@@ -451,7 +446,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                                     setSelectedItem(activity)
                                     setDetailsOpen(true)
                                 }}
-                                className="group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-md border border-border/40 hover:border-primary/40 hover:bg-card/50 transition-all duration-300 shadow-sm cursor-pointer"
+                                className="group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-md border border-white/5 hover:border-primary/40 hover:bg-white/5 transition-all duration-300 shadow-sm cursor-pointer"
                                 style={{ animationDelay: `${index * 50}ms` }}
                             >
                                 <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
@@ -520,7 +515,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                     </p>
                     <div className="flex items-center gap-3">
                         <Button 
-                            variant="outline" 
+                            variant="glass" 
                             size="sm" 
                             disabled={!pagination.has_prev || loading}
                             onClick={() => changePage(pagination.current_page - 1)}
@@ -532,7 +527,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                             {pagination.current_page} / {pagination.total_pages}
                         </span>
                         <Button 
-                            variant="outline" 
+                            variant="glass" 
                             size="sm" 
                             disabled={!pagination.has_next || loading}
                             onClick={() => changePage(pagination.current_page + 1)}
@@ -547,14 +542,15 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             {/* DETAILS DIALOG */}
             <Dialog 
                 open={detailsOpen} 
-                onOpenChange={setDetailsOpen}
+                onClose={() => setDetailsOpen(false)}
+                className="max-w-[1200px]"
             >
                 {selectedItem && (
-                    <div className="space-y-8 p-6 max-w-[1200px] w-full">
+                    <div className="space-y-8 p-2 w-full">
                         <DialogHeader>
                             <div className="flex items-center gap-6">
                                 <div className={cn(
-                                    "h-20 w-20 rounded-4xl flex items-center justify-center border-4 shadow-2xl transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0",
+                                    "h-20 w-20 rounded-[2rem] flex items-center justify-center border-4 shadow-2xl transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0",
                                     getEventIconClass(selectedItem.event)
                                 )}>
                                     {React.createElement(getEventIcon(selectedItem.event), { className: "h-10 w-10" })}
@@ -620,9 +616,9 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                                         {t('serverActivities.details.diagnosticOutput')}
                                     </h3>
                                     <Button 
-                                        variant="ghost" 
+                                        variant="glass" 
                                         size="sm" 
-                                        className="h-8 px-4 font-black uppercase tracking-wider bg-white/5 border border-white/5 opacity-40 hover:opacity-100 hover:bg-primary/20"
+                                        className="h-8 px-4 font-black uppercase tracking-wider opacity-40 hover:opacity-100 border-white/5"
                                         onClick={() => {
                                             navigator.clipboard.writeText(rawJson)
                                             toast.success(t('serverActivities.details.payloadCopied'))

@@ -20,7 +20,9 @@ import {
     Loader2
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { EmptyState } from "@/components/featherui/EmptyState"
+import { Button } from "@/components/featherui/Button"
 import { Badge } from "@/components/ui/badge"
 import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
@@ -149,7 +151,7 @@ export default function ServerSchedulesPage() {
 
     if (!isEnabled(settings?.server_allow_schedules)) {
         return (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 animate-in fade-in duration-700">
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 ">
                 <div className="relative">
                     <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150" />
                     <div className="relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3">
@@ -196,65 +198,54 @@ export default function ServerSchedulesPage() {
     return (
         <div key={pathname} className="space-y-8 pb-12">
              {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tight uppercase">{t("serverSchedules.title")}</h1>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                        <p className="text-lg opacity-80">{t("serverSchedules.description")}</p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <Button 
-                        variant="outline" 
-                        size="lg" 
-                        onClick={() => fetchData(pagination.current_page)} 
-                        disabled={loading}
-                        className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
-                    >
-                        <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
-                        {t("common.refresh")}
-                    </Button>
-                    {canCreate && (
+            <PageHeader
+                title={t("serverSchedules.title")}
+                description={t("serverSchedules.description")}
+                actions={
+                    <div className="flex items-center gap-3">
                         <Button 
+                            variant="glass" 
                             size="lg" 
-                            onClick={() => router.push(`/server/${uuidShort}/schedules/new`)}
+                            onClick={() => fetchData(pagination.current_page)} 
                             disabled={loading}
-                            className="shadow-lg shadow-primary/20"
                         >
-                            <Plus className="h-5 w-5 mr-2" />
-                            {t("serverSchedules.createSchedule")}
+                            <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                            {t("common.refresh")}
                         </Button>
-                    )}
-                </div>
-            </div>
+                        {canCreate && (
+                            <Button 
+                                size="lg" 
+                                variant="default"
+                                onClick={() => router.push(`/server/${uuidShort}/schedules/new`)}
+                                disabled={loading}
+                            >
+                                <Plus className="h-5 w-5 mr-2" />
+                                {t("serverSchedules.createSchedule")}
+                            </Button>
+                        )}
+                    </div>
+                }
+            />
 
             {/* List */}
             {schedules.length === 0 ? (
-                 <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                        <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                            <Calendar className="h-16 w-16 text-primary" />
-                        </div>
-                    </div>
-                    <div className="max-w-md space-y-3 px-4">
-                        <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverSchedules.noSchedules")}</h2>
-                        <p className="text-muted-foreground text-lg leading-relaxed font-medium">
-                            {t("serverSchedules.noSchedulesDescription")}
-                        </p>
-                    </div>
-                    {canCreate && (
-                        <Button 
-                            size="lg" 
-                            onClick={() => router.push(`/server/${uuidShort}/schedules/new`)}
-                            className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
-                        >
-                            <Plus className="h-6 w-6 mr-2" />
-                            {t("serverSchedules.createSchedule")}
-                        </Button>
-                    )}
-                </div>
+                 <EmptyState
+                    title={t("serverSchedules.noSchedules")}
+                    description={t("serverSchedules.noSchedulesDescription")}
+                    icon={Calendar}
+                    action={
+                        canCreate ? (
+                            <Button 
+                                size="lg" 
+                                variant="default"
+                                onClick={() => router.push(`/server/${uuidShort}/schedules/new`)}
+                            >
+                                <Plus className="h-6 w-6 mr-2" />
+                                {t("serverSchedules.createSchedule")}
+                            </Button>
+                        ) : undefined
+                    }
+                />
             ) : (
                 <div className="flex flex-col gap-4">
                     {schedules.map((schedule) => (
@@ -303,30 +294,27 @@ export default function ServerSchedulesPage() {
                             <div className="flex flex-wrap items-center gap-2 pl-4 md:pl-0 border-l md:border-l-0 border-white/5">
                                 {canUpdate && (
                                     <Button
-                                        variant="outline"
+                                        variant="glass"
                                         size="sm"
                                         onClick={() => router.push(`/server/${uuidShort}/schedules/${schedule.id}/edit`)}
-                                        className="h-9 px-3 text-xs"
                                     >
                                         <Pencil className="h-3.5 w-3.5 mr-1.5" />
                                         <span className="hidden sm:inline">{t("common.edit")}</span>
                                     </Button>
                                 )}
                                 <Button
-                                    variant="outline"
+                                    variant="glass"
                                     size="sm"
                                     onClick={() => router.push(`/server/${uuidShort}/schedules/${schedule.id}/tasks`)}
-                                    className="h-9 px-3 text-xs"
                                 >
                                     <ListTodo className="h-3.5 w-3.5 mr-1.5" />
                                     <span className="hidden sm:inline">{t("serverSchedules.tasks")}</span>
                                 </Button>
                                 {canUpdate && (
                                     <Button
-                                        variant={schedule.is_active ? "outline" : "default"}
+                                        variant={schedule.is_active ? "warning" : "default"}
                                         size="sm"
                                         onClick={() => handleToggle(schedule)}
-                                        className="h-9 px-3 text-xs"
                                     >
                                         <Power className="h-3.5 w-3.5 mr-1.5" />
                                         <span className="hidden sm:inline">
@@ -336,13 +324,12 @@ export default function ServerSchedulesPage() {
                                 )}
                                 {canDelete && (
                                     <Button
-                                        variant="ghost"
+                                        variant="destructive"
                                         size="sm"
                                         onClick={() => {
                                             setSelectedSchedule(schedule)
                                             setIsDeleteOpen(true)
                                         }}
-                                        className="h-9 px-3 text-xs bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white"
                                     >
                                         <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                                         <span className="hidden sm:inline">{t("common.delete")}</span>

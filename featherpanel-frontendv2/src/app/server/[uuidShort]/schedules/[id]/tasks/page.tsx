@@ -11,14 +11,14 @@ import {
     Trash2,
     ChevronUp,
     ChevronDown,
-    ChevronLeft as ArrowLeft,
-    Loader2,
     Lock
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { EmptyState } from "@/components/featherui/EmptyState"
+import { Button } from "@/components/featherui/Button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import { Input } from "@/components/featherui/Input"
 import { Label } from "@/components/ui/label"
 import { HeadlessSelect } from "@/components/ui/headless-select"
 import { HeadlessModal } from "@/components/ui/headless-modal"
@@ -274,57 +274,58 @@ export default function ServerTasksPage() {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <Button variant="outline" size="sm" onClick={() => router.back()}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    {t("common.back")}
-                </Button>
-                <div className="flex-1">
-                    <h1 className="text-2xl font-black uppercase tracking-tight">{t("serverTasks.title")}</h1>
-                    <p className="text-sm text-muted-foreground">
-                        {t("serverTasks.description", { scheduleName: schedule?.name || "" })}
-                    </p>
-                </div>
-                {canUpdate && (
-                    <Button onClick={() => {
-                        setCreateForm({ action: "", payload: "", time_offset: 0, continue_on_failure: 0 })
-                        setIsCreateOpen(true)
-                    }}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        {t("serverTasks.createTask")}
-                    </Button>
-                )}
-            </div>
+            <PageHeader
+                title={t("serverTasks.title")}
+                description={t("serverTasks.description", { scheduleName: schedule?.name || "" })}
+                actions={
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            variant="glass" 
+                            size="lg" 
+                            onClick={() => router.back()}
+                            disabled={loading}
+                        >
+                            {t("common.back")}
+                        </Button>
+                        {canUpdate && (
+                            <Button 
+                                size="lg" 
+                                variant="default"
+                                onClick={() => {
+                                    setCreateForm({ action: "", payload: "", time_offset: 0, continue_on_failure: 0 })
+                                    setIsCreateOpen(true)
+                                }}
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                {t("serverTasks.createTask")}
+                            </Button>
+                        )}
+                    </div>
+                }
+            />
 
             {/* Task List */}
             {tasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                        <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                            <ListCheck className="h-16 w-16 text-primary" />
-                        </div>
-                    </div>
-                    <div className="max-w-md space-y-3 px-4">
-                        <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverTasks.noTasks")}</h2>
-                        <p className="text-muted-foreground text-lg leading-relaxed font-medium">
-                            {t("serverTasks.noTasksDescription")}
-                        </p>
-                    </div>
-                    {canUpdate && (
-                        <Button 
-                            size="lg" 
-                            onClick={() => {
-                                setCreateForm({ action: "", payload: "", time_offset: 0, continue_on_failure: 0 })
-                                setIsCreateOpen(true)
-                            }}
-                            className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
-                        >
-                            <Plus className="h-6 w-6 mr-2" />
-                            {t("serverTasks.createTask")}
-                        </Button>
-                    )}
-                </div>
+                <EmptyState
+                    title={t("serverTasks.noTasks")}
+                    description={t("serverTasks.noTasksDescription")}
+                    icon={ListCheck}
+                    action={
+                        canUpdate ? (
+                            <Button 
+                                size="lg" 
+                                variant="default"
+                                onClick={() => {
+                                    setCreateForm({ action: "", payload: "", time_offset: 0, continue_on_failure: 0 })
+                                    setIsCreateOpen(true)
+                                }}
+                            >
+                                <Plus className="h-6 w-6 mr-2" />
+                                {t("serverTasks.createTask")}
+                            </Button>
+                        ) : undefined
+                    }
+                />
             ) : (
                 <div className="space-y-3">
                     {sortedTasks.map((task) => (
@@ -354,7 +355,7 @@ export default function ServerTasksPage() {
                                         <>
                                             <Button
                                                 size="sm"
-                                                variant="outline"
+                                                variant="glass"
                                                 disabled={task.sequence_id <= 1}
                                                 onClick={() => handleMoveUp(task)}
                                             >
@@ -362,7 +363,7 @@ export default function ServerTasksPage() {
                                             </Button>
                                             <Button
                                                 size="sm"
-                                                variant="outline"
+                                                variant="glass"
                                                 disabled={task.sequence_id >= sortedTasks.length}
                                                 onClick={() => handleMoveDown(task)}
                                             >
@@ -370,7 +371,7 @@ export default function ServerTasksPage() {
                                             </Button>
                                             <Button
                                                 size="sm"
-                                                variant="outline"
+                                                variant="glass"
                                                 onClick={() => {
                                                     setSelectedTask(task)
                                                     setEditForm({
@@ -489,11 +490,11 @@ export default function ServerTasksPage() {
                     </div>
 
                     <div className="flex justify-end gap-2 pt-4">
-                        <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)} disabled={saving}>
+                        <Button type="button" variant="glass" onClick={() => setIsCreateOpen(false)} disabled={saving}>
                             {t("common.cancel")}
                         </Button>
-                        <Button type="submit" disabled={saving}>
-                            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                        <Button type="submit" disabled={saving} variant="default" loading={saving}>
+                            {!saving && <Plus className="mr-2 h-4 w-4" />}
                             {t("serverTasks.create")}
                         </Button>
                     </div>
@@ -579,11 +580,10 @@ export default function ServerTasksPage() {
                     </div>
 
                     <div className="flex justify-end gap-2 pt-4">
-                        <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)} disabled={saving}>
+                        <Button type="button" variant="glass" onClick={() => setIsEditOpen(false)} disabled={saving}>
                             {t("common.cancel")}
                         </Button>
-                        <Button type="submit" disabled={saving}>
-                            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" disabled={saving} variant="default" loading={saving}>
                             {t("serverTasks.update")}
                         </Button>
                     </div>
@@ -601,15 +601,16 @@ export default function ServerTasksPage() {
                 })}
             >
                 <div className="flex justify-end gap-2 pt-4">
-                    <Button variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={deleting}>
+                    <Button variant="glass" onClick={() => setIsDeleteOpen(false)} disabled={deleting}>
                         {t("common.cancel")}
                     </Button>
                     <Button 
                         variant="destructive" 
                         onClick={handleDelete} 
                         disabled={deleting}
+                        loading={deleting}
                     >
-                        {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                        {!deleting && <Trash2 className="mr-2 h-4 w-4" />}
                         {t("serverTasks.confirmDelete")}
                     </Button>
                 </div>

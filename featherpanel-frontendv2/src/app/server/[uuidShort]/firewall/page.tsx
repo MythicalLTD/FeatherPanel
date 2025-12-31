@@ -5,7 +5,9 @@ import { useParams, usePathname } from "next/navigation"
 import { useTranslation } from "@/contexts/TranslationContext"
 import { useSettings } from "@/contexts/SettingsContext"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/featherui/Button"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { EmptyState } from "@/components/featherui/EmptyState"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { HeadlessSelect } from "@/components/ui/headless-select"
@@ -284,23 +286,16 @@ export default function ServerFirewallPage() {
 
     if (!firewallEnabled) {
         return (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 animate-in fade-in duration-700">
-                <div className="relative">
-                    <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150" />
-                    <div className="relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3">
-                        <Shield className="h-16 w-16 text-red-500" />
-                    </div>
-                </div>
-                <div className="max-w-md space-y-3 px-4">
-                    <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverFirewall.featureDisabled")}</h2>
-                    <p className="text-muted-foreground text-lg leading-relaxed font-medium">
-                        {t("serverFirewall.featureDisabledDescription")}
-                    </p>
-                </div>
-                <Button variant="outline" size="lg" className="mt-8 rounded-2xl h-14 px-10" onClick={() => window.history.back()}>
-                    {t("common.goBack")}
-                </Button>
-            </div>
+            <EmptyState
+                icon={Shield}
+                title={t("serverFirewall.featureDisabled")}
+                description={t("serverFirewall.featureDisabledDescription")}
+                action={
+                    <Button variant="outline" size="lg" onClick={() => window.history.back()}>
+                        {t("common.goBack")}
+                    </Button>
+                }
+            />
         )
     }
 
@@ -322,46 +317,40 @@ export default function ServerFirewallPage() {
 
   return (
 
-    <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="space-y-2">
-                <h1 className="text-4xl font-black tracking-tight uppercase">{t("serverFirewall.title")}</h1>
-                <div className="flex items-center gap-3 text-muted-foreground">
-                    <p className="text-lg opacity-80">{t("serverFirewall.description")}</p>
-                </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-                <Button 
-                    variant="outline" 
-                    size="lg" 
-                    onClick={fetchRules} 
-                    disabled={loading} 
-                    className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
-                >
-                    <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
-                    {t("serverFirewall.refresh")}
-                </Button>
-                
-                {canManage && firewallEnabled && (
+    <div key={pathname} className="space-y-8 pb-12 ">
+        <PageHeader
+            title={t("serverFirewall.title")}
+            description={t("serverFirewall.description")}
+            actions={
+                <div className="flex items-center gap-3">
                     <Button 
+                        variant="glass" 
                         size="lg" 
-                        onClick={openCreateModal} 
-                        disabled={loading || allocations.length === 0}
-                        className="shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all h-14"
+                        onClick={fetchRules} 
+                        disabled={loading} 
                     >
-                        <Plus className="h-5 w-5 mr-2" />
-                        {t("serverFirewall.createRule")}
+                        <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                        {t("serverFirewall.refresh")}
                     </Button>
-                )}
-            </div>
-        </div>
+                    
+                    {canManage && firewallEnabled && (
+                        <Button 
+                            size="lg" 
+                            onClick={openCreateModal} 
+                            disabled={loading || allocations.length === 0}
+                        >
+                            <Plus className="h-5 w-5 mr-2" />
+                            {t("serverFirewall.createRule")}
+                        </Button>
+                    )}
+                </div>
+            }
+        />
 
         {/* Info Alert */}
-        <div className="relative overflow-hidden p-6 rounded-3xl bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500 shadow-sm">
+        <div className="relative overflow-hidden p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10 backdrop-blur-xl animate-in slide-in-from-top duration-500 shadow-sm">
             <div className="relative z-10 flex items-start gap-5">
-                <div className="h-12 w-12 rounded-2xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shrink-0">
+                <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shrink-0">
                     <Info className="h-6 w-6 text-blue-500" />
                 </div>
                 <div className="space-y-1">
@@ -374,38 +363,28 @@ export default function ServerFirewallPage() {
         </div>
 
         {rules.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
-                <div className="relative">
-                    <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                    <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                        <Shield className="h-16 w-16 text-primary" />
-                    </div>
-                </div>
-                <div className="max-w-md space-y-3 px-4">
-                    <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverFirewall.noRulesTitle")}</h2>
-                    <p className="text-muted-foreground text-lg leading-relaxed font-medium">
-                        {t("serverFirewall.noRulesDescription")}
-                    </p>
-                </div>
-                {canManage && (
+            <EmptyState
+                icon={Shield}
+                title={t("serverFirewall.noRulesTitle")}
+                description={t("serverFirewall.noRulesDescription")}
+                action={canManage ? (
                     <Button 
                         size="lg" 
                         onClick={openCreateModal} 
-                        className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
                     >
                         <Plus className="h-6 w-6 mr-2" />
                         {t("serverFirewall.createRule")}
                     </Button>
-                )}
-            </div>
+                ) : undefined}
+            />
         ) : (
             <div className="grid grid-cols-1 gap-4">
                 {sortedRules.map(rule => (
                     <div 
                         key={rule.id}
                         className={cn(
-                            "group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-md border border-border/40 transition-all duration-300 shadow-sm",
-                            "hover:border-primary/40 hover:bg-card/50 hover:shadow-lg hover:shadow-primary/5"
+                            "group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/5 transition-all duration-300 shadow-sm",
+                            "hover:border-primary/20 hover:bg-white/5 hover:shadow-2xl hover:shadow-primary/5"
                         )}
                     >
                         <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">

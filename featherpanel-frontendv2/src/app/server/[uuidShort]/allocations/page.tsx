@@ -19,9 +19,11 @@ import {
   Globe
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { isEnabled } from "@/lib/utils"
+// UI Components
+import { Button } from "@/components/featherui/Button"
+import { Input } from "@/components/featherui/Input"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { EmptyState } from "@/components/featherui/EmptyState"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,7 +45,7 @@ import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useTranslation } from "@/contexts/TranslationContext"
 import { useSettings } from "@/contexts/SettingsContext"
 import { Server, AllocationItem, AllocationsResponse, AvailableAllocationsResponse } from "@/types/server"
-import { copyToClipboard, cn } from "@/lib/utils"
+import { copyToClipboard, cn, isEnabled } from "@/lib/utils"
 
 export default function ServerAllocationsPage() {
   const { t } = useTranslation()
@@ -286,28 +288,27 @@ export default function ServerAllocationsPage() {
   const limitReached = server && server.allocation_limit !== 0 && (server.current_allocations || 0) >= server.allocation_limit
 
   return (
-    <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
-      {/* Header Section Matches Backups/Databases */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-black tracking-tight uppercase">{t("serverAllocations.title")}</h1>
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <p className="text-lg opacity-80">{t("serverAllocations.description")}</p>
-            {server && (
-              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20">
-                {server.current_allocations || allocations.length} / {server.allocation_limit === 0 ? "∞" : server.allocation_limit}
-              </span>
-            )}
+    <div key={pathname} className="space-y-8 pb-12 ">
+      {/* Header Section */}
+      <PageHeader
+        title={t("serverAllocations.title")}
+        description={
+          <div className="flex items-center gap-3">
+             <span>{t("serverAllocations.description")}</span>
+             {server && (
+               <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20">
+                 {server.current_allocations || allocations.length} / {server.allocation_limit === 0 ? "∞" : server.allocation_limit}
+               </span>
+             )}
           </div>
-        </div>
-        
-        <div className="flex items-center gap-3">
+        }
+        actions={
+          <div className="flex items-center gap-3">
             <Button 
-                variant="outline" 
+                variant="glass" 
                 size="lg" 
                 onClick={() => fetchAllocations()}
                 disabled={loading}
-                className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
             >
                 <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
                 {t('serverAllocations.refresh')}
@@ -317,11 +318,10 @@ export default function ServerAllocationsPage() {
                 <>
                    {isEnabled(settings?.server_allow_allocation_select) && (
                      <Button 
-                       variant="outline"
+                       variant="glass"
                        size="lg"
                        onClick={handleOpenAssign}
                        disabled={limitReached || isAutoAllocating || loading || settingsLoading}
-                       className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
                      >
                        <Plus className="mr-2 h-5 w-5" />
                        {t("serverAllocations.assignAllocation")}
@@ -342,8 +342,9 @@ export default function ServerAllocationsPage() {
                    </Button>
                 </>
             )}
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {/* Limit Reached Warning */}
       {limitReached && (
@@ -374,7 +375,7 @@ export default function ServerAllocationsPage() {
                     placeholder={t("serverAllocations.searchAllocations")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-background/40 backdrop-blur-md border-border/40 pl-12 h-14 text-lg rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all"
+                    className="pl-12 h-14 text-lg"
                 />
             </div>
         </div>
@@ -386,37 +387,28 @@ export default function ServerAllocationsPage() {
                ))}
             </div>
         ) : allocations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
-                <div className="relative">
-                    <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                    <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                        <Network className="h-16 w-16 text-primary" />
-                    </div>
-                </div>
-                <div className="max-w-md space-y-3">
-                    <h2 className="text-3xl font-black">{t("serverAllocations.noAllocationsFound")}</h2>
-                    <p className="text-muted-foreground text-lg px-4">
-                        {t("serverAllocations.noAllocationsDescription")}
-                    </p>
-                </div>
-                {canCreate && !limitReached && (
-                    <Button 
+            <EmptyState
+                title={t("serverAllocations.noAllocationsFound")}
+                description={t("serverAllocations.noAllocationsDescription")}
+                icon={Network}
+                action={canCreate && !limitReached ? (
+                     <Button 
                          size="lg"
                          onClick={handleAutoAllocate}
                          className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
                     >
                          {t("serverAllocations.createFirstAllocation")}
                     </Button>
-                )}
-            </div>
+                ) : undefined}
+            />
         ) : (
              <div className="grid grid-cols-1 gap-4">
                 {filteredAllocations.map((allocation) => (
                   <div 
                     key={allocation.id} 
                     className={cn(
-                        "group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-md border border-border/40 transition-all duration-300 shadow-sm",
-                        "hover:border-primary/40 hover:bg-card/50 hover:shadow-lg hover:shadow-primary/5",
+                        "group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-md border border-white/5 transition-all duration-300 shadow-sm",
+                        "hover:border-primary/40 hover:bg-white/5 hover:shadow-lg hover:shadow-primary/5",
                         allocation.is_primary && "bg-primary/5 border-primary/20"
                     )}
                   >
@@ -435,7 +427,7 @@ export default function ServerAllocationsPage() {
                         {/* Content */}
                         <div className="flex-1 min-w-0 space-y-2">
                              <div className="flex flex-wrap items-center gap-3">
-                                 <h3 className="text-xl font-bold tracking-tight font-mono break-all">
+                                 <h3 className="text-xl font-bold tracking-tight font-mono break-all group-hover:text-primary transition-colors">
                                     {allocation.ip_alias || allocation.ip}:{allocation.port}
                                  </h3>
                                  {allocation.is_primary && (
@@ -446,11 +438,11 @@ export default function ServerAllocationsPage() {
                              </div>
 
                              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                                <div className="flex items-center gap-2 text-muted-foreground p-1 px-2 rounded-lg bg-black/10 border border-white/5">
+                                <div className="flex items-center gap-2 text-muted-foreground p-1 px-2 rounded-lg bg-black/40 border border-white/5">
                                      <span className="text-xs font-bold uppercase opacity-60">IP</span>
                                      <span className="text-sm font-mono font-bold text-foreground/80">{allocation.ip}</span>
                                  </div>
-                                 <div className="flex items-center gap-2 text-muted-foreground p-1 px-2 rounded-lg bg-black/10 border border-white/5">
+                                 <div className="flex items-center gap-2 text-muted-foreground p-1 px-2 rounded-lg bg-black/40 border border-white/5">
                                      <span className="text-xs font-bold uppercase opacity-60">Port</span>
                                       <span className="text-sm font-mono font-bold text-foreground/80">{allocation.port}</span>
                                  </div>
@@ -467,9 +459,9 @@ export default function ServerAllocationsPage() {
                         <div className="flex items-center gap-3 sm:self-center">
                             <Button
                                 size="lg"
-                                variant="outline"
+                                variant="glass"
                                 onClick={() => handleCopy(`${allocation.ip}:${allocation.port}`)}
-                                className="h-12 px-6 rounded-xl font-bold shadow-lg shadow-black/5 bg-black/20 hover:bg-black/40 border border-white/5 hover:border-white/10"
+                                className="px-6 font-bold"
                             >
                                 <Copy className="mr-2 h-4 w-4" />
                                 {t("common.copy")}
@@ -478,7 +470,7 @@ export default function ServerAllocationsPage() {
                             {!allocation.is_primary && (canUpdate || canDelete) && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger className="h-12 w-12 flex items-center justify-center rounded-xl bg-card/40 border border-white/5 hover:bg-white/10 transition-all outline-none group-hover:bg-card/60">
-                                    <MoreVertical className="h-6 w-6 text-muted-foreground" />
+                                    <MoreVertical className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl">
                                     {canUpdate && (

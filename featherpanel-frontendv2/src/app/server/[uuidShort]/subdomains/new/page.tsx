@@ -5,18 +5,16 @@ import { useParams, useRouter } from "next/navigation"
 import axios, { AxiosError } from "axios"
 import { useTranslation } from "@/contexts/TranslationContext"
 import {
-    ChevronLeft,
     Globe,
-    Network,
     Lock,
     Settings2,
     Info,
-    Loader2,
     Plus
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { Button } from "@/components/featherui/Button"
+import { Input } from "@/components/featherui/Input"
 import { HeadlessSelect } from "@/components/ui/headless-select"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
@@ -125,7 +123,7 @@ export default function CreateSubdomainPage() {
 
     if (availableDomains.length === 0 && !loading) {
          return (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 animate-in fade-in duration-700">
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 ">
                 <div className="relative">
                     <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150" />
                     <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
@@ -144,62 +142,36 @@ export default function CreateSubdomainPage() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Navigation Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
-                <div className="space-y-3">
-                    <button 
-                        onClick={() => router.back()}
-                        className="group flex items-center gap-2 text-muted-foreground hover:text-primary transition-all duration-300"
-                    >
-                        <div className="h-6 w-6 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                            <ChevronLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest">{t("common.back")}</span>
-                    </button>
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xl shadow-primary/5">
-                                <Network className="h-6 w-6 text-primary" />
-                            </div>
-                            <h1 className="text-3xl font-black tracking-tight uppercase italic leading-none">{t("serverSubdomains.createButton")}</h1>
-                        </div>
-                        <p className="text-sm text-muted-foreground font-medium opacity-60 ml-15 max-w-xl">
-                            {t("serverSubdomains.newSubdomainDescription")}
-                        </p>
+            <PageHeader
+                title={t("serverSubdomains.createButton")}
+                description={t("serverSubdomains.newSubdomainDescription")}
+                actions={
+                    <div className="flex items-center gap-3">
+                         <Button 
+                            variant="ghost" 
+                            size="lg" 
+                            onClick={() => router.back()}
+                            disabled={saving}
+                        >
+                            {t("common.cancel")}
+                        </Button>
+                        <Button 
+                            size="lg" 
+                            variant="default"
+                            onClick={handleCreate}
+                            disabled={saving || limitReached}
+                            loading={saving}
+                        >
+                            {saving ? t("common.saving") : (
+                                <>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    {t("serverSubdomains.createButton")}
+                                </>
+                            )}
+                        </Button>
                     </div>
-                </div>
-                
-                <div className="hidden md:flex items-center gap-3">
-                    <Button 
-                        variant="ghost" 
-                        size="lg" 
-                        onClick={() => router.back()}
-                        disabled={saving}
-                        className="h-12 px-8 font-black uppercase tracking-widest text-[10px] hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-white/10"
-                    >
-                        {t("common.cancel")}
-                    </Button>
-                    <Button 
-                        size="lg" 
-                        onClick={handleCreate}
-                        disabled={saving || limitReached}
-                        className="h-12 px-10 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all text-[10px] group overflow-hidden"
-                    >
-                        <div className="absolute inset-0 bg-linear-to-r from-primary/0 via-white/20 to-primary/0 -translate-x-full group-hover:animate-shimmer" />
-                        {saving ? (
-                            <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                {t("common.saving")}
-                            </>
-                        ) : (
-                            <>
-                                <Plus className="h-4 w-4 mr-2" />
-                                {t("serverSubdomains.createButton")}
-                            </>
-                        )}
-                    </Button>
-                </div>
-            </div>
+                }
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Side: Forms */}
@@ -261,7 +233,6 @@ export default function CreateSubdomainPage() {
                                     value={formData.subdomain}
                                     onChange={(e) => setFormData({...formData, subdomain: e.target.value})}
                                     placeholder={t("serverSubdomains.subdomainPlaceholder")}
-                                    className="h-12 bg-white/5 border-white/5 focus:border-primary/50 font-extrabold px-5 rounded-xl text-base transition-all"
                                     disabled={saving}
                                 />
                                 <p className="text-xs text-muted-foreground ml-1">{t("serverSubdomains.subdomainHint")}</p>
@@ -311,16 +282,13 @@ export default function CreateSubdomainPage() {
                     <div className="md:hidden pt-2">
                         <Button 
                             size="lg" 
+                            variant="default"
                             onClick={handleCreate}
                             disabled={saving || limitReached}
-                            className="w-full h-12 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl text-[10px]"
+                            loading={saving}
+                            className="w-full h-12 text-[10px]"
                         >
-                            {saving ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    {t("common.saving")}
-                                </>
-                            ) : (
+                            {saving ? t("common.saving") : (
                                 <>
                                     <Plus className="h-4 w-4 mr-2" />
                                     {t("serverSubdomains.createButton")}

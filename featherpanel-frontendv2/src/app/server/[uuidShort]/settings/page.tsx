@@ -4,6 +4,8 @@ import * as React from "react"
 import { useParams, useRouter, usePathname } from "next/navigation"
 import axios from "axios"
 import { useTranslation } from "@/contexts/TranslationContext"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { PageCard } from "@/components/featherui/PageCard"
 import {
     Save,
     Server as ServerIcon,
@@ -22,8 +24,8 @@ import {
     Link as LinkIcon,
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/featherui/Button"
+import { Input } from "@/components/featherui/Input"
 import { Label } from "@/components/ui/label"
 import {
     Dialog,
@@ -233,36 +235,22 @@ export default function ServerSettingsPage() {
 
     return (
         <div key={pathname} className="max-w-6xl mx-auto space-y-8 pb-16 font-sans">
-             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tight uppercase">{t('serverSettings.title')}</h1>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                        <p className="text-lg opacity-80 font-medium">{t('serverSettings.description')}</p>
-                    </div>
-                </div>
-            </div>
+             <PageHeader 
+                title={t('serverSettings.title')} 
+                description={t('serverSettings.description')} 
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Side: Settings & SFTP */}
                 <div className="lg:col-span-8 space-y-8">
                     
                     {/* Server Information */}
-                    <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl pointer-events-none group-hover:bg-primary/10 transition-all duration-700" />
-                         <div className="flex items-center justify-between border-b border-white/5 pb-6 relative z-10">
-                            <div className="flex items-center gap-4">
-                                <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20">
-                                    <ServerIcon className="h-5 w-5 text-primary" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <h2 className="text-xl font-black uppercase tracking-tight">{t('serverSettings.serverInformation')}</h2>
-                                    <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50">{t('serverSettings.serverInformationDescription')}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 relative z-10">
+                    <PageCard
+                        title={t('serverSettings.serverInformation')}
+                        description={t('serverSettings.serverInformationDescription')}
+                        icon={ServerIcon}
+                    >
+                        <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t('serverSettings.serverName')}</Label>
                                 <Input 
@@ -287,7 +275,8 @@ export default function ServerSettingsPage() {
                                     <Button 
                                         onClick={handleSave}
                                         disabled={saving || !hasChanges}
-                                        className="h-10 px-6 font-bold uppercase tracking-wide rounded-xl shadow-lg shadow-primary/20"
+                                        variant="default" 
+                                        size="sm"
                                     >
                                         {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                                         {t('serverSettings.saveChanges')}
@@ -307,22 +296,15 @@ export default function ServerSettingsPage() {
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </PageCard>
 
                     {/* SFTP Details */}
-                    <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden group">
-                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-2xl pointer-events-none group-hover:bg-blue-500/10 transition-all duration-700" />
-                         <div className="flex items-center gap-4 border-b border-white/5 pb-6 relative z-10">
-                            <div className="h-10 w-10 rounded-xl bg-blue-500/5 flex items-center justify-center border border-blue-500/20">
-                                <FolderOpen className="h-5 w-5 text-blue-500" />
-                            </div>
-                            <div className="space-y-0.5">
-                                <h2 className="text-xl font-black uppercase tracking-tight">{t('serverSettings.sftpDetails')}</h2>
-                                <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50">{t('serverSettings.sftpDetailsDescription')}</p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                    <PageCard
+                        title={t('serverSettings.sftpDetails')}
+                        description={t('serverSettings.sftpDetailsDescription')}
+                        icon={FolderOpen}
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              {/* Host */}
                              <div className="space-y-2">
                                 <Label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
@@ -398,7 +380,7 @@ export default function ServerSettingsPage() {
                         </div>
                         
                          {/* Full SFTP URL */}
-                         <div className="space-y-2 relative z-10">
+                         <div className="space-y-2 pt-6">
                             <Label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
                                 <LinkIcon className="h-3 w-3" />
                                 {t('serverSettings.sftpUrl')}
@@ -431,7 +413,7 @@ export default function ServerSettingsPage() {
                         </div>
                         
                          {/* Info Box */}
-                         <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl relative z-10">
+                         <div className="mt-6 p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
                             <div className="flex items-start gap-3">
                                 <Info className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
                                 <div className="space-y-2">
@@ -440,57 +422,45 @@ export default function ServerSettingsPage() {
                                 </div>
                             </div>
                          </div>
-                    </div>
+                    </PageCard>
                 </div>
 
                 {/* Right Side: Danger Zone */}
                 <div className="lg:col-span-4 space-y-8">
                      {/* Reinstall */}
                      {canReinstall && (
-                        <div className="bg-orange-500/5 backdrop-blur-3xl border border-orange-500/10 rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden group hover:border-orange-500/30 transition-all">
-                             <div className="absolute inset-0 bg-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                             <div className="flex items-center gap-4 relative z-10">
-                                <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
-                                    <Settings className="h-5 w-5 text-orange-500" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <h2 className="text-lg font-black uppercase tracking-tight text-orange-500">{t('serverSettings.reinstallServer')}</h2>
-                                </div>
-                             </div>
-                             
-                             <p className="text-xs text-orange-200/60 font-medium leading-relaxed relative z-10">
+                        <PageCard
+                            title={t('serverSettings.reinstallServer')}
+                            icon={Settings}
+                            variant="warning"
+                        >
+                             <p className="text-xs text-orange-200/60 font-medium leading-relaxed">
                                 {t('serverSettings.reinstallWarning')}
                              </p>
 
                              <Button 
                                 variant="destructive" 
-                                className="w-full bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/20 hover:border-orange-500/50 font-black uppercase tracking-widest relative z-10 text-xs h-12 rounded-xl"
+                                className="w-full bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/20 hover:border-orange-500/50 font-black uppercase tracking-widest mt-4 text-xs h-12 rounded-xl"
                                 onClick={() => setShowReinstallDialog(true)}
                             >
                                 {t('serverSettings.reinstallServer')}
                              </Button>
-                        </div>
+                        </PageCard>
                      )}
 
                      {/* Delete */}
-                     <div className="bg-red-500/5 backdrop-blur-3xl border border-red-500/10 rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden group hover:border-red-500/30 transition-all">
-                         <div className="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                         <div className="flex items-center gap-4 relative z-10">
-                            <div className="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
-                                <AlertTriangle className="h-5 w-5 text-red-500" />
-                            </div>
-                            <div className="space-y-0.5">
-                                <h2 className="text-lg font-black uppercase tracking-tight text-red-500">{t('serverSettings.deleteServer')}</h2>
-                            </div>
-                         </div>
-                         
-                         <p className="text-xs text-red-200/60 font-medium leading-relaxed relative z-10">
+                     <PageCard
+                        title={t('serverSettings.deleteServer')}
+                        icon={AlertTriangle}
+                        variant="danger"
+                     >
+                         <p className="text-xs text-red-200/60 font-medium leading-relaxed">
                             {t('serverSettings.deleteServerDescription')}
                          </p>
 
                          <Button 
                             variant="destructive" 
-                            className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 hover:border-red-500/50 font-black uppercase tracking-widest relative z-10 text-xs h-12 rounded-xl"
+                            className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 hover:border-red-500/50 font-black uppercase tracking-widest mt-4 text-xs h-12 rounded-xl"
                             onClick={() => {
                                 setShowDeleteDialog(true)
                                 setDeleteStep(1)
@@ -502,7 +472,7 @@ export default function ServerSettingsPage() {
                         >
                             {t('serverSettings.deleteServer')}
                          </Button>
-                    </div>
+                    </PageCard>
                 </div>
             </div>
 

@@ -14,7 +14,9 @@ import {
     Loader2
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { EmptyState } from "@/components/featherui/EmptyState"
+import { Button } from "@/components/featherui/Button"
 import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
@@ -93,7 +95,7 @@ export default function ServerSubdomainsPage() {
 
     if (loading && subdomains.length === 0) {
         return (
-            <div key={pathname} className="flex flex-col items-center justify-center py-24 animate-in fade-in duration-700">
+            <div key={pathname} className="flex flex-col items-center justify-center py-24 ">
                 <Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" />
                 <p className="mt-4 text-muted-foreground font-medium animate-pulse">{t("common.loading")}</p>
             </div>
@@ -118,39 +120,35 @@ export default function ServerSubdomainsPage() {
     const limitReached = (overview?.current_total ?? 0) >= (overview?.max_allowed ?? 0)
 
     return (
-        <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
+        <div key={pathname} className="space-y-8 pb-12 ">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tight uppercase">{t("serverSubdomains.title")}</h1>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                        <p className="text-lg opacity-80">{t("serverSubdomains.description")}</p>
+            <PageHeader
+                title={t("serverSubdomains.title")}
+                description={t("serverSubdomains.description")}
+                actions={
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            variant="glass" 
+                            size="lg" 
+                            onClick={fetchData} 
+                            disabled={loading} 
+                        >
+                            <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                            {t("common.refresh")}
+                        </Button>
+                        
+                        <Button 
+                            size="lg" 
+                            variant="default"
+                            onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
+                            disabled={limitReached || loading}
+                        >
+                            <Plus className="h-5 w-5 mr-2" />
+                            {t("serverSubdomains.createButton")}
+                        </Button>
                     </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                    <Button 
-                        variant="outline" 
-                        size="lg" 
-                        onClick={fetchData} 
-                        disabled={loading} 
-                        className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
-                    >
-                        <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
-                        {t("common.refresh")}
-                    </Button>
-                    
-                    <Button 
-                        size="lg" 
-                        onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
-                        disabled={limitReached || loading}
-                        className="shadow-lg shadow-primary/20"
-                    >
-                        <Plus className="h-5 w-5 mr-2" />
-                        {t("serverSubdomains.createButton")}
-                    </Button>
-                </div>
-            </div>
+                }
+            />
 
 
             {/* Limit Warning */}
@@ -172,29 +170,22 @@ export default function ServerSubdomainsPage() {
 
             {/* List */}
             {subdomains.length === 0 ? (
-                 <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                        <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                            <Globe className="h-16 w-16 text-primary" />
-                        </div>
-                    </div>
-                    <div className="max-w-md space-y-3 px-4">
-                        <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverSubdomains.noSubdomains")}</h2>
-                        <p className="text-muted-foreground text-lg leading-relaxed font-medium">
-                            {t("serverSubdomains.noSubdomainsDescription")}
-                        </p>
-                    </div>
-                    <Button 
-                        size="lg" 
-                        onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
-                        disabled={limitReached}
-                        className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
-                    >
-                        <Plus className="h-6 w-6 mr-2" />
-                        {t("serverSubdomains.createButton")}
-                    </Button>
-                </div>
+                 <EmptyState
+                    title={t("serverSubdomains.noSubdomains")}
+                    description={t("serverSubdomains.noSubdomainsDescription")}
+                    icon={Globe}
+                    action={
+                        <Button 
+                            size="lg" 
+                            variant="default"
+                            onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
+                            disabled={limitReached}
+                        >
+                            <Plus className="h-6 w-6 mr-2" />
+                            {t("serverSubdomains.createButton")}
+                        </Button>
+                    }
+                />
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {subdomains.map((sub) => (

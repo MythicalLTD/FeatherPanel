@@ -4,6 +4,8 @@ import * as React from "react"
 import { useParams, useRouter, usePathname } from "next/navigation"
 import axios, { AxiosError } from "axios"
 import { useTranslation } from "@/contexts/TranslationContext"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { PageCard } from "@/components/featherui/PageCard"
 import {
     Zap,
     ChevronRight,
@@ -17,9 +19,9 @@ import {
     Lock,
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/featherui/Button"
+import { Input } from "@/components/featherui/Input"
+import { Textarea } from "@/components/featherui/Textarea"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
@@ -345,109 +347,87 @@ export default function ServerStartupPage() {
     return (
         <div key={pathname} className="max-w-6xl mx-auto space-y-8 pb-16 font-sans">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tight uppercase">{t('serverStartup.title')}</h1>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                        <p className="text-lg opacity-80 font-medium">{t('serverStartup.description')}</p>
+            <PageHeader
+                title={t('serverStartup.title')}
+                description={t('serverStartup.description')}
+                actions={
+                    <div className="hidden md:flex items-center gap-3">
+                        <Button 
+                            variant="plain" 
+                            size="lg" 
+                            onClick={() => fetchData()}
+                            disabled={loading || saving}
+                            className="bg-transparent hover:bg-white/5 border border-transparent hover:border-white/10 text-[10px]"
+                        >
+                            <RefreshCw className={cn("h-3 w-3 mr-2", loading && "animate-spin")} />
+                            {t('common.refresh')}
+                        </Button>
+                        <Button 
+                            variant="default"
+                            size="lg" 
+                            onClick={handleSave}
+                            disabled={saving || !hasChanges() || Object.keys(variableErrors).length > 0}
+                            loading={saving}
+                        >
+                            {saving ? t('common.saving') : (
+                                <>
+                                    <Save className="h-4 w-4 mr-2" />
+                                    {t('common.saveChanges')}
+                                </>
+                            )}
+                        </Button>
                     </div>
-                </div>
-
-                <div className="hidden md:flex items-center gap-3">
-                    <Button 
-                        variant="ghost" 
-                        size="lg" 
-                        onClick={() => fetchData()}
-                        disabled={loading || saving}
-                        className="h-12 px-8 font-black uppercase tracking-widest text-[10px] hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-white/10"
-                    >
-                        <RefreshCw className={cn("h-3 w-3 mr-2", loading && "animate-spin")} />
-                        {t('common.refresh')}
-                    </Button>
-                    <Button 
-                        size="lg" 
-                        onClick={handleSave}
-                        disabled={saving || !hasChanges() || Object.keys(variableErrors).length > 0}
-                        className="h-14 px-10 font-bold uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all text-lg group overflow-hidden"
-                    >
-                        {saving ? (
-                            <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                {t('common.saving')}
-                            </>
-                        ) : (
-                            <>
-                                <Save className="h-4 w-4 mr-2" />
-                                {t('common.saveChanges')}
-                            </>
-                        )}
-                    </Button>
-                </div>
-            </div>
+                }
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Side: Main Content */}
                 <div className="lg:col-span-8 space-y-8">
                     {/* Startup Command */}
-                    <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl pointer-events-none group-hover:bg-primary/10 transition-all duration-700" />
-                        <div className="flex items-center justify-between border-b border-white/5 pb-6 relative z-10">
-                            <div className="flex items-center gap-4">
-                                <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20">
-                                    <Terminal className="h-5 w-5 text-primary" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <h2 className="text-xl font-black uppercase tracking-tight">{t('serverStartup.startupCommand')}</h2>
-                                    <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50">{t('serverStartup.startupHelp')}</p>
-                                </div>
-                            </div>
-                            {canUpdateStartup && (
+                    <PageCard
+                        title={t('serverStartup.startupCommand')}
+                        description={t('serverStartup.startupHelp')}
+                        icon={Terminal}
+                        action={
+                            canUpdateStartup && (
                                 <Button 
                                     variant="outline" 
                                     size="sm" 
                                     onClick={handleRestoreDefault}
-                                    className="h-8 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest bg-white/5 border-white/10 hover:bg-white/10 transition-all"
                                 >
                                     {t('serverStartup.restoreDefault')}
                                 </Button>
-                            )}
-                        </div>
-
-                        <div className="space-y-4 relative z-10">
+                            )
+                        }
+                    >
+                        <div className="space-y-4">
                             <Textarea
                                 value={form.startup}
                                 onChange={(e) => setForm(prev => ({ ...prev, startup: e.target.value }))}
                                 disabled={!canUpdateStartup || saving}
-                                className="min-h-[140px] bg-black/40 border-white/5 rounded-2xl p-6 font-mono text-sm leading-relaxed focus:border-primary/50 transition-all scrollbar-hide"
+                                className="min-h-[140px]"
                             />
                         </div>
-                    </div>
+                    </PageCard>
 
                     {/* Variables */}
-                    <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-8 shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/5 blur-[80px] pointer-events-none" />
-                        <div className="flex items-center justify-between border-b border-white/5 pb-8 relative z-10">
-                            <div className="flex items-center gap-5">
-                                <div className="h-12 w-12 rounded-2xl bg-purple-500/5 flex items-center justify-center border border-purple-500/20">
-                                    <Settings className="h-6 w-6 text-purple-500" />
-                                </div>
-                                <div className="space-y-1">
-                                    <h2 className="text-2xl font-black uppercase tracking-tight leading-none">{t('serverStartup.variables')}</h2>
-                                    <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50">{t('serverStartup.variablesHelp')}</p>
-                                </div>
-                            </div>
+                    <PageCard
+                        title={t('serverStartup.variables')}
+                        description={t('serverStartup.variablesHelp')}
+                        icon={Settings}
+                        action={
                             <div className="px-5 py-2 rounded-2xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
                                 {viewableVariables.length} {viewableVariables.length === 1 ? t('serverStartup.variableSingular') : t('serverStartup.variablePlural')}
                             </div>
-                        </div>
-
-                        {viewableVariables.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 text-center space-y-4 relative z-10">
+                        }
+                    >
+                          {viewableVariables.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
                                 <Settings className="h-16 w-16 text-muted-foreground/10" />
                                 <p className="text-muted-foreground font-black uppercase leading-none">{t('serverStartup.noVariablesConfigured')}</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {viewableVariables.map((v) => (
                                     <div key={v.variable_id} className="space-y-3 group/var">
                                         <div className="flex items-center justify-between ml-1">
@@ -481,9 +461,8 @@ export default function ServerStartupPage() {
                                                     validateOneVariable(v, val)
                                                 }}
                                                 disabled={(v.user_editable === 0 && !canUpdateStartup) || saving}
+                                                error={!!variableErrors[v.variable_id]}
                                                 className={cn(
-                                                    "h-12 bg-white/5 border-white/5 focus:border-purple-500/50 font-extrabold px-5 rounded-xl text-base transition-all",
-                                                    variableErrors[v.variable_id] && "border-red-500/50 bg-red-500/5",
                                                     v.user_editable === 0 && !canUpdateStartup && "opacity-50 grayscale"
                                                 )}
                                                 placeholder={v.default_value || t('serverStartup.enterValue')}
@@ -502,25 +481,18 @@ export default function ServerStartupPage() {
                                 ))}
                             </div>
                         )}
-                    </div>
+                    </PageCard>
                 </div>
 
                 {/* Right Side: Configuration & Actions */}
                 <div className="lg:col-span-4 space-y-8">
                     {/* Docker Image Panel */}
-                    <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-2xl pointer-events-none group-hover:bg-blue-500/10 transition-all duration-700" />
-                        <div className="flex items-center gap-4 border-b border-white/5 pb-6 relative z-10">
-                            <div className="h-10 w-10 rounded-xl bg-blue-500/5 flex items-center justify-center border border-blue-500/20">
-                                <Container className="h-5 w-5 text-blue-500" />
-                            </div>
-                            <div className="space-y-0.5">
-                                <h2 className="text-xl font-black uppercase tracking-tight">{t('serverStartup.dockerImage')}</h2>
-                                <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50">Containerization</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-6 relative z-10">
+                    <PageCard
+                        title={t('serverStartup.dockerImage')}
+                        description="Containerization"
+                        icon={Container}
+                    >
+                        <div className="space-y-6">
                             <div className="space-y-2.5">
                                 <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
                                     {t('serverStartup.dockerImage')}
@@ -530,7 +502,7 @@ export default function ServerStartupPage() {
                                     onChange={(e) => setForm(prev => ({ ...prev, image: e.target.value }))}
                                     disabled={!canUpdateDockerImage || saving}
                                     placeholder="ghcr.io/..."
-                                    className="h-12 bg-white/5 border-white/5 focus:border-blue-500/50 font-extrabold px-5 rounded-xl text-xs transition-all font-mono"
+                                    className="text-xs font-mono"
                                 />
                             </div>
 
@@ -560,7 +532,7 @@ export default function ServerStartupPage() {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </PageCard>
 
                     {/* Software Transfer Section */}
                     {canChangeSpell && (
@@ -582,7 +554,9 @@ export default function ServerStartupPage() {
 
                             <Button 
                                 onClick={() => router.push(`/server/${uuidShort}/startup/transfer/spell`)}
-                                className="w-full h-14 rounded-2xl bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary font-black uppercase tracking-widest text-xs relative z-10 transition-all active:scale-95 group/btn"
+                                className="w-full bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary"
+                                size="lg"
+                                variant="outline"
                             >
                                 {t('serverStartup.startTransfer')}
                                 <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />

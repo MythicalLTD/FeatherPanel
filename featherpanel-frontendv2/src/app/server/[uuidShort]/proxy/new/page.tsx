@@ -6,21 +6,19 @@ import axios, { AxiosError } from "axios"
 import { useTranslation } from "@/contexts/TranslationContext"
 import {
     ArrowRightLeft,
-    ChevronLeft,
-    Globe,
-    ShieldCheck,
-    Lock,
-    Settings2,
-    Info,
-    Loader2,
     CheckCircle,
     XCircle,
     Server,
-    Mail
+    Mail,
+    Globe,
+    ShieldCheck,
+    Info,
+    Settings2,
+    Loader2
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/featherui/Button"
+import { Input } from "@/components/featherui/Input"
 import { Textarea } from "@/components/ui/textarea"
 import { HeadlessSelect } from "@/components/ui/headless-select"
 import { toast } from "sonner"
@@ -28,6 +26,8 @@ import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
 import { cn, isEnabled } from "@/lib/utils"
 import type { AllocationItem, AllocationsResponse, ProxyCreateRequest, DnsVerifyResponse } from "@/types/server"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { EmptyState } from "@/components/featherui/EmptyState"
 
 export default function CreateProxyPage() {
     const { uuidShort } = useParams() as { uuidShort: string }
@@ -35,7 +35,7 @@ export default function CreateProxyPage() {
     const { t } = useTranslation()
     const { settings, loading: settingsLoading } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
-    
+
     const canManage = hasPermission("proxy.manage")
     const proxyEnabled = isEnabled(settings?.server_allow_user_made_proxy)
 
@@ -79,7 +79,7 @@ export default function CreateProxyPage() {
             setLoading(false)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [uuidShort, proxyEnabled, t]) // formData.port excluded to prevent loop
+    }, [uuidShort, proxyEnabled, t])
 
     React.useEffect(() => {
         if (proxyEnabled && canManage) {
@@ -103,7 +103,7 @@ export default function CreateProxyPage() {
             if (data.success && data.data) {
                 setDnsVerified(data.data.verified)
                 setTargetIp(data.data.expected_ip || null)
-                
+
                 if (data.data.verified) {
                     toast.success(data.data.message || t("serverProxy.dnsVerifiedSuccess"))
                 } else {
@@ -152,103 +152,76 @@ export default function CreateProxyPage() {
     if (!canManage) {
         return (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center mb-6">
-                    <Lock className="h-10 w-10 text-red-500" />
-                </div>
-                <h1 className="text-2xl font-black uppercase tracking-tight">{t("common.accessDenied")}</h1>
-                <p className="text-muted-foreground mt-2">{t("common.noPermission")}</p>
-                <Button variant="outline" className="mt-8" onClick={() => router.back()}>
-                    {t("common.goBack")}
-                </Button>
+                 <EmptyState
+                    title={t("common.accessDenied")}
+                    description={t("common.noPermission")}
+                    icon={ArrowRightLeft}
+                    action={
+                        <Button variant="secondary" onClick={() => router.back()}>
+                            {t("common.goBack")}
+                        </Button>
+                    }
+                />
             </div>
         )
     }
 
     if (!proxyEnabled) {
         return (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 animate-in fade-in duration-700">
-                <div className="relative">
-                    <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150" />
-                    <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                        <ArrowRightLeft className="h-16 w-16 text-primary" />
-                    </div>
-                </div>
-                <div className="max-w-md space-y-3 px-4">
-                    <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverProxy.featureDisabled")}</h2>
-                    <p className="text-muted-foreground text-lg leading-relaxed font-medium">
-                        {t("serverProxy.featureDisabledDescription")}
-                    </p>
-                </div>
-                <Button variant="outline" size="lg" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.back()}>
-                    {t("common.goBack")}
-                </Button>
-            </div>
+             <EmptyState
+                title={t("serverProxy.featureDisabled")}
+                description={t("serverProxy.featureDisabledDescription")}
+                icon={ArrowRightLeft}
+                action={
+                    <Button variant="secondary" onClick={() => router.back()}>
+                        {t("common.goBack")}
+                    </Button>
+                }
+            />
         )
     }
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Navigation Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
-                <div className="space-y-3">
-                    <button 
-                        onClick={() => router.back()}
-                        className="group flex items-center gap-2 text-muted-foreground hover:text-primary transition-all duration-300"
-                    >
-                        <div className="h-6 w-6 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                            <ChevronLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest">{t("common.back")}</span>
-                    </button>
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xl shadow-primary/5">
-                                <ArrowRightLeft className="h-6 w-6 text-primary" />
-                            </div>
-                            <h1 className="text-3xl font-black tracking-tight uppercase italic leading-none">{t("serverProxy.createProxy")}</h1>
-                        </div>
-                        <p className="text-sm text-muted-foreground font-medium opacity-60 ml-15 max-w-xl">
-                            {t("serverProxy.createModalDescription")}
-                        </p>
+            <PageHeader
+                title={t("serverProxy.createProxy")}
+                description={t("serverProxy.createModalDescription")}
+                actions={
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="glass"
+                            size="lg"
+                            onClick={() => router.back()}
+                            disabled={saving}
+                        >
+                            {t("common.cancel")}
+                        </Button>
+                        <Button
+                            size="lg"
+                            onClick={handleCreate}
+                            disabled={saving || !dnsVerified}
+                        >
+                            {saving ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    {t("common.saving")}
+                                </>
+                            ) : (
+                                <>
+                                    <ArrowRightLeft className="h-4 w-4 mr-2" />
+                                    {t("serverProxy.createProxy")}
+                                </>
+                            )}
+                        </Button>
                     </div>
-                </div>
-                
-                <div className="hidden md:flex items-center gap-3">
-                    <Button 
-                        variant="ghost" 
-                        size="lg" 
-                        onClick={() => router.back()}
-                        disabled={saving}
-                        className="h-12 px-8 font-black uppercase tracking-widest text-[10px] hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-white/10"
-                    >
-                        {t("common.cancel")}
-                    </Button>
-                    <Button 
-                        size="lg" 
-                        onClick={handleCreate}
-                        disabled={saving || !dnsVerified}
-                        className="h-12 px-10 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all text-[10px] group overflow-hidden"
-                    >
-                        <div className="absolute inset-0 bg-linear-to-r from-primary/0 via-white/20 to-primary/0 -translate-x-full group-hover:animate-shimmer" />
-                        {saving ? (
-                            <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                {t("common.saving")}
-                            </>
-                        ) : (
-                            <>
-                                <ArrowRightLeft className="h-4 w-4 mr-2" />
-                                {t("serverProxy.createProxy")}
-                            </>
-                        )}
-                    </Button>
-                </div>
-            </div>
+                }
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Side: Forms */}
                 <div className="lg:col-span-8 space-y-8">
-                    
+
                     {/* Domain & Port Configuration */}
                     <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
                         <div className="flex items-center gap-4 border-b border-white/5 pb-6">
@@ -266,14 +239,14 @@ export default function CreateProxyPage() {
                                 <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
                                     {t("serverProxy.domain")} <span className="text-primary">*</span>
                                 </label>
-                                <Input 
+                                <Input
+                                    required
                                     value={formData.domain}
                                     onChange={(e) => {
                                         setFormData({...formData, domain: e.target.value})
                                         setDnsVerified(false)
                                     }}
                                     placeholder="play.example.com"
-                                    className="h-12 bg-white/5 border-white/5 focus:border-primary/50 font-extrabold px-5 rounded-xl text-base transition-all"
                                     disabled={saving}
                                 />
                                 <p className="text-xs text-muted-foreground ml-1">{t("serverProxy.domainDescription")}</p>
@@ -322,14 +295,14 @@ export default function CreateProxyPage() {
                                 )}
 
                                 <div className="flex flex-col gap-2">
-                                    <Button 
+                                    <Button
                                         onClick={handleVerifyDns}
                                         disabled={!formData.domain || !formData.port || verifyingDns || dnsVerified || saving}
                                         size="sm"
                                         className={cn(
                                             "w-full h-10 font-bold tracking-wide uppercase text-[10px] rounded-xl shadow-lg transition-all",
-                                            dnsVerified 
-                                                ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/20 text-white" 
+                                            dnsVerified
+                                                ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/20 text-white"
                                                 : "bg-primary hover:bg-primary/90 shadow-primary/20"
                                         )}
                                     >
@@ -367,12 +340,13 @@ export default function CreateProxyPage() {
                             </div>
                             <div className="space-y-0.5">
                                 <h2 className="text-xl font-black uppercase tracking-tight italic">{t("serverProxy.enableSsl")}</h2>
-                                <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50">{t("serverProxy.secureWithHttps")}</p>
+                                <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50">{t("serverProxy.secureWithHttps")}
+                                </p>
                             </div>
                              <div className="ml-auto">
                                 <Button
                                     size="sm"
-                                    variant={formData.ssl ? "default" : "outline"}
+                                    variant={formData.ssl ? "default" : "secondary"}
                                     onClick={() => setFormData({...formData, ssl: !formData.ssl})}
                                     className={cn("rounded-lg font-bold", formData.ssl && "bg-emerald-600 hover:bg-emerald-700 text-white")}
                                     disabled={saving}
@@ -392,7 +366,7 @@ export default function CreateProxyPage() {
                                     </div>
                                     <Button
                                         size="sm"
-                                        variant={formData.use_lets_encrypt ? "default" : "outline"}
+                                        variant={formData.use_lets_encrypt ? "default" : "secondary"}
                                         onClick={() => setFormData({...formData, use_lets_encrypt: !formData.use_lets_encrypt})}
                                         disabled={saving}
                                         className={cn("rounded-lg font-bold", formData.use_lets_encrypt && "bg-blue-600 hover:bg-blue-700 text-white")}
@@ -407,16 +381,17 @@ export default function CreateProxyPage() {
                                             {t("serverProxy.email")} <span className="text-primary">*</span>
                                         </label>
                                         <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors z-10">
                                                 <Mail className="h-4 w-4" />
                                             </div>
-                                            <Input 
-                                                type="email" 
-                                                value={formData.client_email || ""} 
+                                            <Input
+                                                type="email"
+                                                value={formData.client_email || ""}
                                                 onChange={e => setFormData({...formData, client_email: e.target.value})}
                                                 placeholder="admin@example.com"
-                                                className="h-12 bg-white/5 border-white/5 focus:border-primary/50 font-extrabold pl-11 rounded-xl text-base transition-all"
+                                                className="pl-11"
                                                 disabled={saving}
+                                                required
                                             />
                                         </div>
                                     </div>
@@ -426,7 +401,7 @@ export default function CreateProxyPage() {
                                             <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
                                                 {t("serverProxy.certificate")}
                                             </label>
-                                            <Textarea 
+                                            <Textarea
                                                 value={formData.ssl_cert || ""}
                                                 onChange={e => setFormData({...formData, ssl_cert: e.target.value})}
                                                 disabled={saving}
@@ -438,7 +413,7 @@ export default function CreateProxyPage() {
                                             <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
                                                 {t("serverProxy.privateKey")}
                                             </label>
-                                            <Textarea 
+                                            <Textarea
                                                 value={formData.ssl_key || ""}
                                                 onChange={e => setFormData({...formData, ssl_key: e.target.value})}
                                                 disabled={saving}
@@ -496,11 +471,10 @@ export default function CreateProxyPage() {
 
                     {/* Mobile Only: Action Button */}
                     <div className="md:hidden pt-2">
-                        <Button 
-                            size="lg" 
+                        <Button
+                            size="lg"
                             onClick={handleCreate}
                             disabled={saving || !dnsVerified}
-                            className="w-full h-12 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl text-[10px]"
                         >
                             {saving ? (
                                 <>

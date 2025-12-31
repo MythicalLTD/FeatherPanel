@@ -14,8 +14,9 @@ import {
     Lock,
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { Button } from "@/components/featherui/Button"
+import { Input } from "@/components/featherui/Input"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
@@ -397,7 +398,7 @@ export default function ServerTransferSpellPage() {
 
     if (!canChangeSpell) {
         return (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 animate-in fade-in duration-700">
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 ">
                 <div className="relative">
                     <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150" />
                     <div className="relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3">
@@ -418,46 +419,39 @@ export default function ServerTransferSpellPage() {
     }
 
     return (
-        <div key={pathname} className="max-w-6xl mx-auto space-y-8 pb-16 animate-in fade-in duration-700 font-sans">
+        <div key={pathname} className="max-w-6xl mx-auto space-y-8 pb-16  font-sans">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tight uppercase">{t('navigation.items.transferSpell')}</h1>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                        <p className="text-lg opacity-80 font-medium">{t('serverStartup.spellSelectionHelp')}</p>
+            <PageHeader
+                title={t('navigation.items.transferSpell')}
+                description={t('serverStartup.spellSelectionHelp')}
+                actions={
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            variant="plain" 
+                            size="lg" 
+                            onClick={() => handleBackToStep(1)}
+                            disabled={currentStep === 1 || saving}
+                            className="bg-transparent hover:bg-white/5 border border-transparent hover:border-white/10 text-[10px]"
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button 
+                            size="lg" 
+                            variant="default"
+                            onClick={handleSave}
+                            disabled={currentStep !== 3 || saving || Object.keys(variableErrors).length > 0}
+                            loading={saving}
+                        >
+                            {saving ? t('common.saving') : (
+                                <>
+                                    <Zap className="h-5 w-5 mr-3" />
+                                    {t('serverStartup.applySpellChange')}
+                                </>
+                            )}
+                        </Button>
                     </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <Button 
-                        variant="ghost" 
-                        size="lg" 
-                        onClick={() => handleBackToStep(1)}
-                        disabled={currentStep === 1 || saving}
-                        className="h-12 px-6 font-black uppercase tracking-widest text-[10px] hover:bg-white/5 rounded-xl transition-all border border-transparent hover:border-white/10"
-                    >
-                        {t('common.cancel')}
-                    </Button>
-                    <Button 
-                        size="lg" 
-                        onClick={handleSave}
-                        disabled={currentStep !== 3 || saving || Object.keys(variableErrors).length > 0}
-                        className="h-14 px-10 font-bold uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all text-lg group overflow-hidden"
-                    >
-                        {saving ? (
-                            <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                {t('common.saving')}
-                            </>
-                        ) : (
-                            <>
-                                <Zap className="h-5 w-5 mr-3" />
-                                {t('serverStartup.applySpellChange')}
-                            </>
-                        )}
-                    </Button>
-                </div>
-            </div>
+                }
+            />
 
             {/* Step Indicator */}
             <div className="grid grid-cols-3 gap-4">
@@ -650,10 +644,7 @@ export default function ServerTransferSpellPage() {
                                                     validateOneVariable(v, val)
                                                 }}
                                                 disabled={saving}
-                                                className={cn(
-                                                    "h-12 bg-white/5 border-white/5 focus:border-primary/50 font-extrabold px-5 rounded-xl text-base transition-all",
-                                                    variableErrors[v.variable_id] && "border-red-500/50 bg-red-500/5 group-hover/var:border-red-500"
-                                                )}
+                                                error={!!variableErrors[v.variable_id]}
                                                 placeholder={v.default_value || t('serverStartup.enterValue')}
                                             />
                                         </div>
@@ -672,16 +663,13 @@ export default function ServerTransferSpellPage() {
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-6">{t('serverStartup.doubleCheckConfiguration')}</p>
                             <Button 
                                 size="lg" 
+                                variant="default"
                                 onClick={handleSave}
                                 disabled={saving}
-                                className="h-14 px-16 font-black uppercase tracking-widest shadow-2xl shadow-primary/20 rounded-2xl hover:scale-[1.05] active:scale-95 transition-all text-lg"
+                                className="h-14 px-16 text-lg" // Keeping large custom size but using component
+                                loading={saving}
                             >
-                                {saving ? (
-                                    <>
-                                        <Loader2 className="h-6 w-6 mr-3 animate-spin" />
-                                        {t('common.processing')}
-                                    </>
-                                ) : (
+                                {saving ? t('common.processing') : (
                                     <>
                                         <Zap className="h-6 w-6 mr-3 fill-primary-foreground" />
                                         {t('serverStartup.applyNewSoftware')}

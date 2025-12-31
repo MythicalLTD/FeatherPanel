@@ -81,3 +81,11 @@ export function formatCpu(percent: number): string {
   if (percent === 0) return "Unlimited"; // Caller should handle translation if needed, or pass unlimited string
   return `${Math.round(percent)}%`;
 }
+
+/**
+ * Format date string to local locale string
+ */
+export function formatDate(date: string | null | undefined): string {
+  if (!date) return "N/A";
+  return new Date(date).toLocaleString();
+}

@@ -1288,6 +1288,7 @@
   },
   "serverImport": {
     "title": "Server Import",
+	"noImports": "No imports found",
     "description": "Import server files from remote SFTP or FTP servers. The server must be offline for imports to work.",
     "featureDisabled": "Server Import Disabled",
     "featureDisabledDescription": "Server import has been disabled by the administrator. Please contact support if you need to import files from remote servers.",
@@ -1983,6 +1984,7 @@
     "transferDescription": "Transfer your server to another software environment.",
     "startTransfer": "Start Transfer",
     "spellChanged": "Spell has changed",
+    "defaultRestored": "Default restored",
     "title": "Server Startup",
     "description": "Control your server's startup command, Docker image, and environment variables.",
     "startupCommand": "Startup Command",

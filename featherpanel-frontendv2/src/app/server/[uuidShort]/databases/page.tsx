@@ -27,9 +27,11 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { useServerPermissions } from '@/hooks/useServerPermissions'
 import { cn, copyToClipboard as copyUtil } from '@/lib/utils'
 
-// UI Components (Headless UI based)
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+// UI Components
+import { Button } from '@/components/featherui/Button'
+import { Input } from '@/components/featherui/Input'
+import { PageHeader } from '@/components/featherui/PageHeader'
+import { EmptyState } from '@/components/featherui/EmptyState'
 import { Checkbox } from '@/components/ui/checkbox'
 import { HeadlessSelect } from '@/components/ui/headless-select'
 import { 
@@ -261,45 +263,45 @@ export default function ServerDatabasesPage() {
     const limitReached = server && databases.length >= server.database_limit
 
     return (
-        <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
+        <div key={pathname} className="space-y-8 pb-12">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tight uppercase">{t('serverDatabases.title')}</h1>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                        <p className="text-lg opacity-80">{t('serverDatabases.description')}</p>
+            <PageHeader
+                title={t('serverDatabases.title')}
+                description={
+                    <div className="flex items-center gap-3">
+                        <span>{t('serverDatabases.description')}</span>
                         {server && (
                             <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20">
                                 {databases.length} / {server.database_limit}
                             </span>
                         )}
                     </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <Button 
-                        variant="outline" 
-                        size="lg" 
-                        onClick={() => fetchDatabases()}
-                        disabled={loading}
-                        className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
-                    >
-                        <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
-                        {t('serverDatabases.refresh')}
-                    </Button>
-                    {canCreate && (
+                }
+                actions={
+                    <div className="flex items-center gap-3">
                         <Button 
+                            variant="glass" 
                             size="lg" 
-                            disabled={limitReached || loading}
-                            onClick={() => setCreateDialogOpen(true)}
-                            className="shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all"
+                            onClick={() => fetchDatabases()}
+                            disabled={loading}
                         >
-                            <Plus className="h-5 w-5 mr-2" />
-                            {t('serverDatabases.createDatabase')}
+                            <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                            {t('serverDatabases.refresh')}
                         </Button>
-                    )}
-                </div>
-            </div>
+                        {canCreate && (
+                            <Button 
+                                size="lg" 
+                                disabled={limitReached || loading}
+                                onClick={() => setCreateDialogOpen(true)}
+                                className="shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all"
+                            >
+                                <Plus className="h-5 w-5 mr-2" />
+                                {t('serverDatabases.createDatabase')}
+                            </Button>
+                        )}
+                    </div>
+                }
+            />
 
             {limitReached && (
                 <div className="relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500">
@@ -324,7 +326,7 @@ export default function ServerDatabasesPage() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input 
                             placeholder={t('serverDatabases.searchPlaceholder')}
-                            className="bg-background/40 backdrop-blur-md border-border/40 pl-12 h-14 text-lg rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all"
+                            className="pl-12 h-14 text-lg"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -332,22 +334,13 @@ export default function ServerDatabasesPage() {
                 </div>
 
                 {databases.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                            <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                                <DatabaseIcon className="h-16 w-16 text-primary" />
-                            </div>
-                        </div>
-                        <div className="max-w-md space-y-3">
-                            <h2 className="text-3xl font-black">{t('serverDatabases.noDatabases')}</h2>
-                            <p className="text-muted-foreground text-lg px-4">
-                                {server?.database_limit === 0 
-                                    ? t('serverDatabases.noDatabasesNoLimit') 
-                                    : t('serverDatabases.noDatabasesDescription')}
-                            </p>
-                        </div>
-                        {canCreate && server && server.database_limit > 0 && (
+                    <EmptyState
+                        title={t('serverDatabases.noDatabases')}
+                        description={server?.database_limit === 0 
+                            ? t('serverDatabases.noDatabasesNoLimit') 
+                            : t('serverDatabases.noDatabasesDescription')}
+                        icon={DatabaseIcon}
+                        action={canCreate && server && server.database_limit > 0 ? (
                             <Button 
                                 size="lg" 
                                 onClick={() => setCreateDialogOpen(true)}
@@ -356,23 +349,25 @@ export default function ServerDatabasesPage() {
                                 <Plus className="h-6 w-6 mr-2" />
                                 {t('serverDatabases.createDatabase')}
                             </Button>
-                        )}
-                    </div>
+                        ) : undefined}
+                    />
                 ) : (
                     <div className="grid grid-cols-1 gap-4">
                         {databases.map((db) => (
                             <div 
                                 key={db.id}
-                                className="group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-md border border-border/40 hover:border-primary/40 hover:bg-card/50 transition-all duration-300 shadow-sm"
+                                className="group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-md border border-white/5 hover:border-primary/40 hover:bg-white/5 transition-all duration-300 shadow-sm"
                             >
-                                <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                                
+                                <div className="p-6 flex flex-col md:flex-row md:items-center gap-6 relative z-10">
                                     <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner">
                                         <DatabaseIcon className="h-8 w-8 text-primary" />
                                     </div>
 
                                     <div className="flex-1 min-w-0 space-y-2">
                                         <div className="flex flex-wrap items-center gap-3">
-                                            <h3 className="text-xl font-bold truncate tracking-tight">{db.database}</h3>
+                                            <h3 className="text-xl font-bold truncate tracking-tight text-foreground group-hover:text-primary transition-colors">{db.database}</h3>
                                             <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-primary/10 text-primary border border-primary/20 shadow-sm">
                                                 {db.database_type}
                                             </span>
@@ -382,7 +377,7 @@ export default function ServerDatabasesPage() {
                                                     All Hosts
                                                 </span>
                                             ) : (
-                                                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40 shadow-sm font-mono">
+                                                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-white/5 border border-white/10 shadow-sm font-mono text-muted-foreground">
                                                     {db.remote}
                                                 </span>
                                             )}
@@ -403,8 +398,8 @@ export default function ServerDatabasesPage() {
                                     <div className="flex items-center gap-2 md:self-center">
                                         {(canViewPassword || canDelete) && (
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger className="h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center">
-                                                    <MoreVertical className="h-6 w-6" />
+                                                <DropdownMenuTrigger className="h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center outline-none">
+                                                    <MoreVertical className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl">
                                                     {canViewPassword && (
@@ -464,7 +459,7 @@ export default function ServerDatabasesPage() {
                         </p>
                         <div className="flex items-center gap-3">
                             <Button 
-                                variant="outline" 
+                                variant="glass" 
                                 size="sm" 
                                 disabled={pagination.current_page === 1 || loading}
                                 onClick={() => {
@@ -479,7 +474,7 @@ export default function ServerDatabasesPage() {
                                 {pagination.current_page} / {pagination.last_page}
                             </span>
                             <Button 
-                                variant="outline" 
+                                variant="glass" 
                                 size="sm" 
                                 disabled={pagination.current_page === pagination.last_page || loading}
                                 onClick={() => {
@@ -665,9 +660,9 @@ export default function ServerDatabasesPage() {
                                                     {item.value || 'N/A'}
                                                 </code>
                                                 <Button 
-                                                    variant="ghost" 
+                                                    variant="glass" 
                                                     size="sm" 
-                                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white/10"
                                                     onClick={() => copyToClipboard(item.value || '')}
                                                 >
                                                     <Copy className="h-3.5 w-3.5" />
@@ -692,9 +687,9 @@ export default function ServerDatabasesPage() {
                                                 {viewingDatabase.username}
                                             </code>
                                             <Button 
-                                                variant="ghost" 
+                                                variant="glass" 
                                                 size="sm" 
-                                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white/10"
                                                 onClick={() => copyToClipboard(viewingDatabase.username)}
                                             >
                                                 <Copy className="h-3.5 w-3.5" />
@@ -716,9 +711,9 @@ export default function ServerDatabasesPage() {
                                                 {showPassword ? viewingDatabase.password : '••••••••••••••••'}
                                             </code>
                                             <Button 
-                                                variant="ghost" 
+                                                variant="glass" 
                                                 size="sm" 
-                                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white/10"
                                                 onClick={() => copyToClipboard(viewingDatabase.password || '')}
                                             >
                                                 <Copy className="h-3.5 w-3.5" />

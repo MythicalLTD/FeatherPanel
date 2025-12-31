@@ -11,19 +11,20 @@ import {
     Trash2,
     RefreshCw,
     Network,
-    Shield,
     Globe,
     Info,
     Loader2
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/featherui/Button"
 import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
 import { cn, isEnabled } from "@/lib/utils"
 import type { Proxy, ProxiesResponse } from "@/types/server"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { EmptyState } from "@/components/featherui/EmptyState"
 
 export default function ServerProxyPage() {
     const { uuidShort } = useParams()
@@ -103,43 +104,38 @@ export default function ServerProxyPage() {
     if (!canRead) {
         return (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center mb-6">
-                    <Shield className="h-10 w-10 text-red-500" />
-                </div>
-                <h1 className="text-2xl font-black uppercase tracking-tight">{t("common.accessDenied")}</h1>
-                <p className="text-muted-foreground mt-2">{t("common.noPermission")}</p>
-                <Button variant="outline" className="mt-8" onClick={() => window.history.back()}>
-                    {t("common.goBack")}
-                </Button>
+                 <EmptyState
+                    title={t("common.accessDenied")}
+                    description={t("common.noPermission")}
+                    icon={Globe}
+                    action={
+                         <Button variant="secondary" onClick={() => window.history.back()}>
+                            {t("common.goBack")}
+                        </Button>
+                    }
+                />
             </div>
         )
     }
 
     if (!proxyEnabled) {
         return (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 animate-in fade-in duration-700">
-                <div className="relative">
-                    <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150" />
-                    <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                        <ArrowRightLeft className="h-16 w-16 text-primary" />
-                    </div>
-                </div>
-                <div className="max-w-md space-y-3 px-4">
-                    <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverProxy.featureDisabled")}</h2>
-                    <p className="text-muted-foreground text-lg leading-relaxed font-medium">
-                        {t("serverProxy.featureDisabledDescription")}
-                    </p>
-                </div>
-                <Button variant="outline" size="lg" className="mt-8 rounded-2xl h-14 px-10" onClick={() => window.history.back()}>
-                    {t("common.goBack")}
-                </Button>
-            </div>
+             <EmptyState
+                title={t("serverProxy.featureDisabled")}
+                description={t("serverProxy.featureDisabledDescription")}
+                icon={ArrowRightLeft}
+                action={
+                    <Button variant="secondary" onClick={() => window.history.back()}>
+                        {t("common.goBack")}
+                    </Button>
+                }
+            />
         )
     }
 
     if (loading && proxies.length === 0) {
         return (
-            <div key={pathname} className="flex flex-col items-center justify-center py-24 animate-in fade-in duration-700">
+            <div key={pathname} className="flex flex-col items-center justify-center py-24 ">
                 <Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" />
                 <p className="mt-4 text-muted-foreground font-medium animate-pulse">{t("common.loading")}</p>
             </div>
@@ -147,45 +143,42 @@ export default function ServerProxyPage() {
     }
 
     return (
-        <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
+        <div key={pathname} className="space-y-8 pb-12 ">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tight uppercase">{t("serverProxy.title")}</h1>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                        <p className="text-lg opacity-80">
-                            {t("serverProxy.description")}
-                            <span className="ml-2 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-sm font-bold">
-                                {proxies.length} / {maxProxies > 0 ? maxProxies : '∞'}
-                            </span>
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <Button 
-                        variant="outline" 
-                        size="lg"
-                        onClick={fetchData} 
-                        disabled={loading}
-                        className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
-                    >
-                        <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
-                        {t("serverProxy.refresh")}
-                    </Button>
-                    {canManage && (
-                        <Button 
-                            size="lg" 
-                            onClick={() => router.push(`/server/${uuidShort}/proxy/new`)}
-                            disabled={isMaxReached || loading}
-                            className="shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all h-14"
+            <PageHeader
+                title={t("serverProxy.title")}
+                description={
+                    <>
+                         {t("serverProxy.description")}
+                         <span className="ml-2 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-sm font-bold">
+                            {proxies.length} / {maxProxies > 0 ? maxProxies : '∞'}
+                        </span>
+                    </>
+                }
+                actions={
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="glass"
+                            size="lg"
+                            onClick={fetchData}
+                            disabled={loading}
                         >
-                            <Plus className="h-5 w-5 mr-2" />
-                            {t("serverProxy.createProxy")}
+                            <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                            {t("serverProxy.refresh")}
                         </Button>
-                    )}
-                </div>
-            </div>
+                        {canManage && (
+                            <Button
+                                size="lg"
+                                onClick={() => router.push(`/server/${uuidShort}/proxy/new`)}
+                                disabled={isMaxReached || loading}
+                            >
+                                <Plus className="h-5 w-5 mr-2" />
+                                {t("serverProxy.createProxy")}
+                            </Button>
+                        )}
+                    </div>
+                }
+            />
 
             {/* Info Banner */}
             <div className="relative overflow-hidden p-6 rounded-3xl bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500 shadow-sm">
@@ -204,51 +197,43 @@ export default function ServerProxyPage() {
 
             {/* Content */}
             {proxies.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                        <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                            <ArrowRightLeft className="h-16 w-16 text-primary" />
-                        </div>
-                    </div>
-                    <div className="max-w-md space-y-3 px-4">
-                        <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverProxy.noProxiesTitle")}</h2>
-                        <p className="text-muted-foreground text-lg leading-relaxed font-medium">
-                            {t("serverProxy.noProxiesDescription")}
-                        </p>
-                    </div>
-                    {canManage && (
-                        <Button 
-                            size="lg" 
+                 <EmptyState
+                    title={t("serverProxy.noProxiesTitle")}
+                    description={t("serverProxy.noProxiesDescription")}
+                    icon={ArrowRightLeft}
+                    action={canManage ? (
+                         <Button
+                            size="lg"
                             onClick={() => router.push(`/server/${uuidShort}/proxy/new`)}
                             disabled={isMaxReached}
-                            className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
                         >
                             <Plus className="h-6 w-6 mr-2" />
                             {t("serverProxy.createProxy")}
                         </Button>
-                    )}
-                </div>
+                    ) : undefined}
+                />
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {proxies.map(proxy => (
-                        <div 
+                        <div
                             key={proxy.id}
                             className={cn(
-                                "group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-md border border-border/40 transition-all duration-300 shadow-sm",
-                                "hover:border-primary/40 hover:bg-card/50 hover:shadow-lg hover:shadow-primary/5"
+                                "group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/5 transition-all duration-300 shadow-sm",
+                                "hover:border-primary/20 hover:bg-white/5 hover:shadow-2xl hover:shadow-primary/5"
                             )}
                         >
-                            <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
+                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+                            <div className="p-6 flex flex-col md:flex-row md:items-center gap-6 relative z-10">
                                 {/* Icon Status */}
                                 <div className={cn(
-                                    "h-16 w-16 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner",
-                                    proxy.ssl ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-zinc-500/10 border-zinc-500/20 text-muted-foreground"
+                                    "h-14 w-14 rounded-2xl flex items-center justify-center border shrink-0 transition-colors",
+                                    proxy.ssl ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/10"
                                 )}>
                                     {proxy.ssl ? (
-                                        <CheckCircle className="h-8 w-8" />
+                                        <CheckCircle className="h-7 w-7 text-emerald-500" />
                                     ) : (
-                                        <ArrowRightLeft className="h-8 w-8" />
+                                        <ArrowRightLeft className="h-7 w-7 text-muted-foreground" />
                                     )}
                                 </div>
 
@@ -283,13 +268,13 @@ export default function ServerProxyPage() {
                                 {/* Actions */}
                                 {canManage && (
                                     <div className="flex items-center gap-3 sm:self-center">
-                                        <button
-                                            type="button"
+                                        <Button
+                                            variant="destructive"
                                             onClick={() => promptDelete(proxy)}
-                                            className="h-12 w-12 flex items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 hover:scale-105 active:scale-95 transition-all shadow-lg"
+                                            className="h-10 w-10 p-0 rounded-xl"
                                         >
                                             <Trash2 className="h-5 w-5 stroke-2" />
-                                        </button>
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -297,8 +282,6 @@ export default function ServerProxyPage() {
                     ))}
                 </div>
             )}
-
-
 
             {/* Delete Modal */}
             <HeadlessModal
@@ -308,11 +291,11 @@ export default function ServerProxyPage() {
                 description={t("serverProxy.deleteModalDescription", { domain: selectedProxy?.domain || "" })}
             >
                 <div className="flex justify-end gap-2 mt-6">
-                    <Button variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={saving}>
+                    <Button variant="ghost" onClick={() => setIsDeleteOpen(false)} disabled={saving}>
                         {t("common.cancel")}
                     </Button>
-                    <Button 
-                        onClick={handleDelete} 
+                    <Button
+                        onClick={handleDelete}
                         variant="destructive"
                         disabled={saving}
                     >

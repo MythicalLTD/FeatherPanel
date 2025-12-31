@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import axios from 'axios'
 import { 
@@ -29,9 +29,11 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { useServerPermissions } from '@/hooks/useServerPermissions'
 import { cn, formatMib } from '@/lib/utils'
 
-// UI Components (Headless UI based)
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+// UI Components
+import { Button } from '@/components/featherui/Button'
+import { Input } from '@/components/featherui/Input'
+import { PageHeader } from '@/components/featherui/PageHeader'
+import { EmptyState } from '@/components/featherui/EmptyState'
 import { Checkbox } from '@/components/ui/checkbox'
 import { 
     Dialog, 
@@ -57,7 +59,7 @@ export default function ServerBackupsPage() {
     const router = useRouter()
     const uuidShort = params.uuidShort as string
 
-    // Permissions (Fixed: passing uuidShort)
+    // Permissions
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
     const canRead = hasPermission('backup.read')
     const canCreate = hasPermission('backup.create')
@@ -79,7 +81,7 @@ export default function ServerBackupsPage() {
         per_page: 20
     })
 
-    // Modal States (Headless UI)
+    // Modal States
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [restoreDialogOpen, setRestoreDialogOpen] = useState(false)
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
@@ -304,49 +306,49 @@ export default function ServerBackupsPage() {
     const limitReached = server && backups.length >= server.backup_limit
 
     return (
-        <div className="space-y-8 pb-12">
+        <div className="space-y-8 pb-12 ">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tight uppercase">{t('serverBackups.title')}</h1>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                        <p className="text-lg opacity-80">{t('serverBackups.description')}</p>
+            <PageHeader
+                title={t('serverBackups.title')}
+                description={
+                    <div className="flex items-center gap-3">
+                        <span>{t('serverBackups.description')}</span>
                         {server && (
                             <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20">
                                 {backups.length} / {server.backup_limit}
                             </span>
                         )}
                     </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <Button 
-                        variant="outline" 
-                        size="lg" 
-                        onClick={() => fetchBackups()}
-                        disabled={loading}
-                        className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
-                    >
-                        <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
-                        {t('serverBackups.refresh')}
-                    </Button>
-                    {canCreate && (
+                }
+                actions={
+                    <div className="flex items-center gap-3">
                         <Button 
+                            variant="glass" 
                             size="lg" 
-                            disabled={limitReached || loading}
-                            onClick={() => {
-                                setNewBackupName(generateBackupName())
-                                setIgnoredFiles([])
-                                setCreateDialogOpen(true)
-                            }}
-                            className="shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all"
+                            onClick={() => fetchBackups()}
+                            disabled={loading}
                         >
-                            <Plus className="h-5 w-5 mr-2" />
-                            {t('serverBackups.createBackup')}
+                            <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                            {t('serverBackups.refresh')}
                         </Button>
-                    )}
-                </div>
-            </div>
+                        {canCreate && (
+                            <Button 
+                                size="lg" 
+                                disabled={limitReached || loading}
+                                onClick={() => {
+                                    setNewBackupName(generateBackupName())
+                                    setIgnoredFiles([])
+                                    setCreateDialogOpen(true)
+                                }}
+                                className="shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all"
+                            >
+                                <Plus className="h-5 w-5 mr-2" />
+                                {t('serverBackups.createBackup')}
+                            </Button>
+                        )}
+                    </div>
+                }
+            />
 
             {limitReached && (
                 <div className="relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500">
@@ -371,7 +373,7 @@ export default function ServerBackupsPage() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input 
                             placeholder={t('serverBackups.searchPlaceholder')}
-                            className="bg-background/40 backdrop-blur-md border-border/40 pl-12 h-14 text-lg rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all"
+                            className="pl-12 h-14 text-lg"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -379,23 +381,14 @@ export default function ServerBackupsPage() {
                 </div>
 
                 {backups.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                            <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
-                                <Archive className="h-16 w-16 text-primary" />
-                            </div>
-                        </div>
-                        <div className="max-w-md space-y-3">
-                            <h2 className="text-3xl font-black">{t('serverBackups.noBackups')}</h2>
-                            <p className="text-muted-foreground text-lg px-4">
-                                {server?.backup_limit === 0 
-                                    ? t('serverBackups.noBackupsNoLimit') 
-                                    : t('serverBackups.noBackupsDescription')}
-                            </p>
-                        </div>
-                        {canCreate && server && server.backup_limit > 0 && (
-                            <Button 
+                    <EmptyState
+                        title={t('serverBackups.noBackups')}
+                        description={server?.backup_limit === 0 
+                            ? t('serverBackups.noBackupsNoLimit') 
+                            : t('serverBackups.noBackupsDescription')}
+                        icon={Archive}
+                        action={canCreate && server && server.backup_limit > 0 ? (
+                             <Button 
                                 size="lg" 
                                 onClick={() => {
                                     setNewBackupName(generateBackupName())
@@ -407,18 +400,18 @@ export default function ServerBackupsPage() {
                                 <Plus className="h-6 w-6 mr-2" />
                                 {t('serverBackups.createBackup')}
                             </Button>
-                        )}
-                    </div>
+                        ) : undefined}
+                    />
                 ) : (
                     <div className="grid grid-cols-1 gap-4">
                         {backups.map((backup) => (
                             <div 
                                 key={backup.id}
-                                className="group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-md border border-border/40 hover:border-primary/40 hover:bg-card/50 transition-all duration-300 shadow-sm"
+                                className="group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-md border border-white/5 hover:border-primary/40 hover:bg-white/5 transition-all duration-300 shadow-sm"
                             >
                                 <div className="p-6 flex flex-col sm:flex-row sm:items-center gap-6">
                                     <div className={cn(
-                                        "h-16 w-16 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2",
+                                        "h-16 w-16 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner",
                                         !backup.completed_at && !backup.is_successful 
                                             ? "bg-blue-500/10 border-blue-500/20" 
                                             : backup.is_successful 
@@ -437,9 +430,9 @@ export default function ServerBackupsPage() {
 
                                     <div className="flex-1 min-w-0 space-y-2">
                                         <div className="flex flex-wrap items-center gap-3">
-                                            <h3 className="text-xl font-bold truncate tracking-tight">{backup.name}</h3>
+                                            <h3 className="text-xl font-bold truncate tracking-tight text-foreground group-hover:text-primary transition-colors">{backup.name}</h3>
                                             <span className={cn(
-                                                "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none",
+                                                "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none shadow-sm",
                                                 !backup.completed_at && !backup.is_successful 
                                                     ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20 animate-pulse" 
                                                     : backup.is_successful 
@@ -479,8 +472,8 @@ export default function ServerBackupsPage() {
                                     <div className="flex items-center gap-2 sm:self-center">
                                         {(canRestore || canDownload || canDelete) && (
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger className="h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center">
-                                                    <MoreVertical className="h-6 w-6" />
+                                                <DropdownMenuTrigger className="h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center outline-none">
+                                                    <MoreVertical className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl">
                                                     {canRestore && backup.is_successful === 1 && (
@@ -554,7 +547,7 @@ export default function ServerBackupsPage() {
                         </p>
                         <div className="flex items-center gap-3">
                             <Button 
-                                variant="outline" 
+                                variant="glass" 
                                 size="sm" 
                                 disabled={pagination.current_page === 1 || loading}
                                 onClick={() => {
@@ -569,7 +562,7 @@ export default function ServerBackupsPage() {
                                 {pagination.current_page} / {pagination.last_page}
                             </span>
                             <Button 
-                                variant="outline" 
+                                variant="glass" 
                                 size="sm" 
                                 disabled={pagination.current_page === pagination.last_page || loading}
                                 onClick={() => {
@@ -625,7 +618,7 @@ export default function ServerBackupsPage() {
                                         className="h-12 bg-black/20 border-white/5 focus:border-primary/50 transition-all rounded-xl"
                                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addIgnorePattern())}
                                     />
-                                    <Button type="button" variant="outline" className="h-12 px-5 rounded-xl bg-background/50 hover:bg-background border-border/40" onClick={addIgnorePattern}>
+                                    <Button type="button" variant="glass" className="h-12 px-5 rounded-xl bg-background/50 hover:bg-background border-border/40" onClick={addIgnorePattern}>
                                         <Plus className="h-5 w-5" />
                                     </Button>
                                 </div>

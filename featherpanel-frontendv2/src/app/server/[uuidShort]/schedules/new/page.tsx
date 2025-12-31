@@ -6,15 +6,14 @@ import axios, { AxiosError } from "axios"
 import { useTranslation } from "@/contexts/TranslationContext"
 import {
     Calendar,
-    ChevronLeft,
-    Loader2,
     Plus,
     ExternalLink,
     Lock
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { PageHeader } from "@/components/featherui/PageHeader"
+import { Button } from "@/components/featherui/Button"
+import { Input } from "@/components/featherui/Input"
 import { Label } from "@/components/ui/label"
 import { HeadlessSelect } from "@/components/ui/headless-select"
 import { toast } from "sonner"
@@ -93,62 +92,35 @@ export default function CreateSchedulePage() {
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Navigation Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
-                <div className="space-y-3">
-                    <button 
-                        onClick={() => router.back()}
-                        className="group flex items-center gap-2 text-muted-foreground hover:text-primary transition-all duration-300"
-                    >
-                        <div className="h-6 w-6 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                            <ChevronLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest">{t("common.back")}</span>
-                    </button>
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xl shadow-primary/5">
-                                <Calendar className="h-6 w-6 text-primary" />
-                            </div>
-                            <h1 className="text-3xl font-black tracking-tight uppercase italic leading-none">{t("serverSchedules.createSchedule")}</h1>
-                        </div>
-                        <p className="text-sm text-muted-foreground font-medium opacity-60 ml-15 max-w-xl">
-                            {t("serverSchedules.createScheduleDescription")}
-                        </p>
+            <PageHeader
+                title={t("serverSchedules.createSchedule")}
+                description={t("serverSchedules.createScheduleDescription")}
+                actions={
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            variant="glass" 
+                            size="lg" 
+                            onClick={() => router.back()}
+                            disabled={saving}
+                        >
+                            {t("common.cancel")}
+                        </Button>
+                        <Button 
+                            size="lg" 
+                            variant="default"
+                            onClick={handleCreate}
+                            disabled={saving}
+                            loading={saving}
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            {t("serverSchedules.create")}
+                        </Button>
                     </div>
-                </div>
-                
-                <div className="hidden md:flex items-center gap-3">
-                    <Button 
-                        variant="ghost" 
-                        size="lg" 
-                        onClick={() => router.back()}
-                        disabled={saving}
-                        className="h-12 px-8 font-black uppercase tracking-widest text-[10px] hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-white/10"
-                    >
-                        {t("common.cancel")}
-                    </Button>
-                    <Button 
-                        size="lg" 
-                        onClick={handleCreate}
-                        disabled={saving}
-                        className="h-12 px-10 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all text-[10px] group overflow-hidden"
-                    >
-                        {saving ? (
-                            <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                {t("common.saving")}
-                            </>
-                        ) : (
-                            <>
-                                <Plus className="h-4 w-4 mr-2" />
-                                {t("serverSchedules.create")}
-                            </>
-                        )}
-                    </Button>
-                </div>
-            </div>
+                }
+            />
 
             <form onSubmit={handleCreate} className="space-y-8">
+                {/* Schedule Name */}
                 {/* Schedule Name */}
                 <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
                     <div className="flex items-center gap-4 border-b border-white/5 pb-6">
@@ -170,7 +142,6 @@ export default function CreateSchedulePage() {
                             value={formData.name}
                             onChange={(e) => setFormData({...formData, name: e.target.value})}
                             placeholder={t("serverSchedules.namePlaceholder")}
-                            className="h-12 bg-white/5 border-white/5 focus:border-primary/50 font-extrabold px-5 rounded-xl text-base transition-all"
                             disabled={saving}
                             required
                         />
@@ -211,7 +182,7 @@ export default function CreateSchedulePage() {
                                 value={formData.cron_minute}
                                 onChange={(e) => setFormData({...formData, cron_minute: e.target.value})}
                                 placeholder="*/5"
-                                className="font-mono text-sm h-10"
+                                className="font-mono"
                                 disabled={saving}
                             />
                         </div>
@@ -225,7 +196,7 @@ export default function CreateSchedulePage() {
                                 value={formData.cron_hour}
                                 onChange={(e) => setFormData({...formData, cron_hour: e.target.value})}
                                 placeholder="*"
-                                className="font-mono text-sm h-10"
+                                className="font-mono"
                                 disabled={saving}
                             />
                         </div>
@@ -239,7 +210,7 @@ export default function CreateSchedulePage() {
                                 value={formData.cron_day_of_month}
                                 onChange={(e) => setFormData({...formData, cron_day_of_month: e.target.value})}
                                 placeholder="*"
-                                className="font-mono text-sm h-10"
+                                className="font-mono"
                                 disabled={saving}
                             />
                         </div>
@@ -253,7 +224,7 @@ export default function CreateSchedulePage() {
                                 value={formData.cron_month}
                                 onChange={(e) => setFormData({...formData, cron_month: e.target.value})}
                                 placeholder="*"
-                                className="font-mono text-sm h-10"
+                                className="font-mono"
                                 disabled={saving}
                             />
                         </div>
@@ -267,7 +238,7 @@ export default function CreateSchedulePage() {
                                 value={formData.cron_day_of_week}
                                 onChange={(e) => setFormData({...formData, cron_day_of_week: e.target.value})}
                                 placeholder="*"
-                                className="font-mono text-sm h-10"
+                                className="font-mono"
                                 disabled={saving}
                             />
                         </div>
@@ -330,28 +301,21 @@ export default function CreateSchedulePage() {
                     <Button 
                         type="submit"
                         size="lg" 
+                        variant="default"
                         disabled={saving}
-                        className="w-full h-12 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl text-[10px]"
+                        loading={saving}
+                        className="w-full text-[10px]"
                     >
-                        {saving ? (
-                            <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                {t("common.saving")}
-                            </>
-                        ) : (
-                            <>
-                                <Plus className="h-4 w-4 mr-2" />
-                                {t("serverSchedules.create")}
-                            </>
-                        )}
+                        <Plus className="h-4 w-4 mr-2" />
+                        {t("serverSchedules.create")}
                     </Button>
                     <Button 
                         type="button"
-                        variant="ghost" 
+                        variant="glass" 
                         size="lg" 
                         onClick={() => router.back()}
                         disabled={saving}
-                        className="w-full h-12 font-black uppercase tracking-widest text-[10px]"
+                        className="w-full text-[10px]"
                     >
                         {t("common.cancel")}
                     </Button>
