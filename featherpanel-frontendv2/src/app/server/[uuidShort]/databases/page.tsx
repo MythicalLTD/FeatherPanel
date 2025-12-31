@@ -32,6 +32,7 @@ import { Button } from '@/components/featherui/Button'
 import { Input } from '@/components/featherui/Input'
 import { PageHeader } from '@/components/featherui/PageHeader'
 import { EmptyState } from '@/components/featherui/EmptyState'
+import { ResourceCard } from '@/components/featherui/ResourceCard'
 import { Checkbox } from '@/components/ui/checkbox'
 import { HeadlessSelect } from '@/components/ui/headless-select'
 import { 
@@ -326,7 +327,7 @@ export default function ServerDatabasesPage() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input 
                             placeholder={t('serverDatabases.searchPlaceholder')}
-                            className="pl-12 h-14 text-lg"
+                            className="pl-12 h-14 text-lg bg-card border-border/50 focus:border-primary/50 placeholder:text-muted-foreground/50"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -354,95 +355,86 @@ export default function ServerDatabasesPage() {
                 ) : (
                     <div className="grid grid-cols-1 gap-4">
                         {databases.map((db) => (
-                            <div 
+                            <ResourceCard
                                 key={db.id}
-                                className="group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-md border border-white/5 hover:border-primary/40 hover:bg-white/5 transition-all duration-300 shadow-sm"
-                            >
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                                
-                                <div className="p-6 flex flex-col md:flex-row md:items-center gap-6 relative z-10">
-                                    <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner">
-                                        <DatabaseIcon className="h-8 w-8 text-primary" />
-                                    </div>
-
-                                    <div className="flex-1 min-w-0 space-y-2">
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <h3 className="text-xl font-bold truncate tracking-tight text-foreground group-hover:text-primary transition-colors">{db.database}</h3>
-                                            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-primary/10 text-primary border border-primary/20 shadow-sm">
-                                                {db.database_type}
+                                icon={DatabaseIcon}
+                                title={db.database}
+                                badges={
+                                    <>
+                                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-primary/10 text-primary border border-primary/20 shadow-sm">
+                                            {db.database_type}
+                                        </span>
+                                        {db.remote === '%' ? (
+                                            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1.5">
+                                                <Globe className="h-3 w-3" />
+                                                All Hosts
                                             </span>
-                                            {db.remote === '%' ? (
-                                                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1.5">
-                                                    <Globe className="h-3 w-3" />
-                                                    All Hosts
-                                                </span>
-                                            ) : (
-                                                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-white/5 border border-white/10 shadow-sm font-mono text-muted-foreground">
-                                                    {db.remote}
-                                                </span>
-                                            )}
+                                        ) : (
+                                            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-muted border border-border/50 shadow-sm font-mono text-muted-foreground">
+                                                {db.remote}
+                                            </span>
+                                        )}
+                                    </>
+                                }
+                                description={
+                                    <>
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <User className="h-4 w-4 opacity-50" />
+                                            <span className="text-sm font-semibold">{db.username}</span>
                                         </div>
-
-                                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <User className="h-4 w-4 opacity-50" />
-                                                <span className="text-sm font-semibold">{db.username}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <ServerIcon className="h-4 w-4 opacity-50" />
-                                                <span className="text-sm font-semibold font-mono">{db.database_host}:{db.database_port}</span>
-                                            </div>
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <ServerIcon className="h-4 w-4 opacity-50" />
+                                            <span className="text-sm font-semibold font-mono">{db.database_host}:{db.database_port}</span>
                                         </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 md:self-center">
-                                        {(canViewPassword || canDelete) && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger className="h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center outline-none">
-                                                    <MoreVertical className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl">
-                                                    {canViewPassword && (
-                                                        <>
+                                    </>
+                                }
+                                actions={
+                                    (canViewPassword || canDelete) && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger className="h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center outline-none">
+                                                <MoreVertical className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl">
+                                                {canViewPassword && (
+                                                    <>
+                                                        <DropdownMenuItem 
+                                                            onClick={() => openViewDatabase(db)}
+                                                            className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
+                                                        >
+                                                            <Eye className="h-4 w-4 text-primary" />
+                                                            <span className="font-bold">{t('serverDatabases.view')}</span>
+                                                        </DropdownMenuItem>
+                                                        {phpMyAdminInstalled && (
                                                             <DropdownMenuItem 
-                                                                onClick={() => openViewDatabase(db)}
+                                                                onClick={() => handlePhpMyAdmin(db)}
                                                                 className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
                                                             >
-                                                                <Eye className="h-4 w-4 text-primary" />
-                                                                <span className="font-bold">{t('serverDatabases.view')}</span>
+                                                                <ExternalLink className="h-4 w-4 text-blue-500" />
+                                                                <span className="font-bold">phpMyAdmin</span>
                                                             </DropdownMenuItem>
-                                                            {phpMyAdminInstalled && (
-                                                                <DropdownMenuItem 
-                                                                    onClick={() => handlePhpMyAdmin(db)}
-                                                                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
-                                                                >
-                                                                    <ExternalLink className="h-4 w-4 text-blue-500" />
-                                                                    <span className="font-bold">phpMyAdmin</span>
-                                                                </DropdownMenuItem>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                    {canDelete && (
-                                                        <>
-                                                            <DropdownMenuSeparator className="bg-border/40 my-1" />
-                                                            <DropdownMenuItem 
-                                                                onClick={() => {
-                                                                    setDatabaseToDelete(db)
-                                                                    setConfirmDeleteDialogOpen(true)
-                                                                }}
-                                                                className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                                <span className="font-bold">{t('serverDatabases.confirmDelete')}</span>
-                                                            </DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                                {canDelete && (
+                                                    <>
+                                                        <DropdownMenuSeparator className="bg-border/40 my-1" />
+                                                        <DropdownMenuItem 
+                                                            onClick={() => {
+                                                                setDatabaseToDelete(db)
+                                                                setConfirmDeleteDialogOpen(true)
+                                                            }}
+                                                            className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                            <span className="font-bold">{t('serverDatabases.confirmDelete')}</span>
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )
+                                }
+                            />
                         ))}
                     </div>
                 )}
@@ -536,7 +528,7 @@ export default function ServerDatabasesPage() {
                                     onChange={(e) => setCreateForm({ ...createForm, database_name: e.target.value })}
                                     placeholder={t('serverDatabases.databaseNamePlaceholder')}
                                     required
-                                    className="h-12 bg-black/20 border-white/5 focus:border-primary/50 transition-all rounded-xl"
+                                    className="h-12 bg-card border-border/50 focus:border-primary/50 transition-all rounded-xl"
                                 />
                                 <p className="text-[10px] text-muted-foreground italic px-1">{t('serverDatabases.databaseNameHelp')}</p>
                             </div>
@@ -548,7 +540,7 @@ export default function ServerDatabasesPage() {
                                         value={createForm.remote}
                                         onChange={(e) => setCreateForm({ ...createForm, remote: e.target.value })}
                                         placeholder="%"
-                                        className="h-12 bg-black/20 border-white/5 focus:border-primary/50 transition-all rounded-xl"
+                                        className="h-12 bg-card border-border/50 focus:border-primary/50 transition-all rounded-xl"
                                     />
                                     <p className="text-[10px] text-muted-foreground italic px-1">{t('serverDatabases.remoteAccessHelp')}</p>
                                 </div>
@@ -559,7 +551,7 @@ export default function ServerDatabasesPage() {
                                         min={0}
                                         value={createForm.max_connections}
                                         onChange={(e) => setCreateForm({ ...createForm, max_connections: parseInt(e.target.value) || 0 })}
-                                        className="h-12 bg-black/20 border-white/5 focus:border-primary/50 transition-all rounded-xl"
+                                        className="h-12 bg-card border-border/50 focus:border-primary/50 transition-all rounded-xl"
                                     />
                                     <p className="text-[10px] text-muted-foreground italic px-1">{t('serverDatabases.maxConnectionsHelp')}</p>
                                 </div>
@@ -594,7 +586,7 @@ export default function ServerDatabasesPage() {
                     </DialogHeader>
 
                     <div 
-                        className="flex items-center gap-4 p-5 bg-black/20 rounded-3xl border border-white/5 cursor-pointer group hover:bg-black/30 transition-all mx-1"
+                        className="flex items-center gap-4 p-5 bg-card rounded-3xl border border-border/50 cursor-pointer group hover:bg-accent/50 transition-all mx-1"
                         onClick={() => setRememberSensitiveChoice(!rememberSensitiveChoice)}
                     >
                         <Checkbox 
@@ -656,7 +648,7 @@ export default function ServerDatabasesPage() {
                                         <div key={i} className="space-y-2">
                                             <label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">{item.label}</label>
                                             <div className="relative group">
-                                                <code className="block w-full px-4 py-2 bg-black/40 rounded-xl text-xs font-mono border border-white/5 truncate pr-10">
+                                                <code className="block w-full px-4 py-2 bg-card rounded-xl text-xs font-mono border border-border/50 truncate pr-10">
                                                     {item.value || 'N/A'}
                                                 </code>
                                                 <Button 
@@ -683,7 +675,7 @@ export default function ServerDatabasesPage() {
                                     <div className="space-y-2">
                                         <label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">{t('serverDatabases.username')}</label>
                                         <div className="relative group">
-                                            <code className="block w-full px-4 py-2 bg-black/40 rounded-xl text-xs font-mono border border-white/5 truncate pr-10">
+                                            <code className="block w-full px-4 py-2 bg-card rounded-xl text-xs font-mono border border-border/50 truncate pr-10">
                                                 {viewingDatabase.username}
                                             </code>
                                             <Button 
@@ -707,7 +699,7 @@ export default function ServerDatabasesPage() {
                                             </button>
                                         </div>
                                         <div className="relative group">
-                                            <code className="block w-full px-4 py-2 bg-black/40 rounded-xl text-xs font-mono border border-white/5 truncate pr-10">
+                                            <code className="block w-full px-4 py-2 bg-card rounded-xl text-xs font-mono border border-border/50 truncate pr-10">
                                                 {showPassword ? viewingDatabase.password : '••••••••••••••••'}
                                             </code>
                                             <Button 

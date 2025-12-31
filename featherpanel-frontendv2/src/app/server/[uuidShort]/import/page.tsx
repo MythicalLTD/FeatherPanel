@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/featherui/Button"
 import { PageHeader } from "@/components/featherui/PageHeader"
 import { EmptyState } from "@/components/featherui/EmptyState"
+import { ResourceCard } from "@/components/featherui/ResourceCard"
 import { useTranslation } from "@/contexts/TranslationContext"
 import { useSettings } from "@/contexts/SettingsContext"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
@@ -62,7 +63,8 @@ export default function ServerImportPage() {
                     color: "text-emerald-500",
                     bg: "bg-emerald-500/10",
                     border: "border-emerald-500/20",
-                    label: t("common.completed")
+                    label: t("common.completed"),
+                    wrapperClass: "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
                 }
             case "failed":
                 return {
@@ -70,7 +72,8 @@ export default function ServerImportPage() {
                     color: "text-red-500",
                     bg: "bg-red-500/10",
                     border: "border-red-500/20",
-                    label: t("common.failed")
+                    label: t("common.failed"),
+                    wrapperClass: "bg-red-500/10 border-red-500/20 text-red-500"
                 }
             case "importing":
                 return {
@@ -79,7 +82,8 @@ export default function ServerImportPage() {
                     bg: "bg-blue-500/10",
                     border: "border-blue-500/20",
                     label: t("common.importing"),
-                    spin: true
+                    spin: true,
+                    wrapperClass: "bg-blue-500/10 border-blue-500/20 text-blue-500"
                 }
             default:
                 return {
@@ -87,7 +91,8 @@ export default function ServerImportPage() {
                     color: "text-yellow-500",
                     bg: "bg-yellow-500/10",
                     border: "border-yellow-500/20",
-                    label: t("common.pending")
+                    label: t("common.pending"),
+                    wrapperClass: "bg-yellow-500/10 border-yellow-500/20 text-yellow-500"
                 }
         }
     }
@@ -160,65 +165,53 @@ export default function ServerImportPage() {
                     }
                 />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-4">
                     {imports.map((item) => {
                         const statusConfig = getStatusConfig(item.status)
-                        const StatusIcon = statusConfig.icon
-
+                        
                         return (
-                            <div
+                            <ResourceCard
                                 key={item.id}
-                                className="group relative bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/5 rounded-3xl p-6 transition-all hover:bg-white/5 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5 overflow-hidden"
-                            >
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-                                <div className="flex items-start justify-between mb-6 relative z-10">
-                                    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center border transition-colors shrink-0", statusConfig.bg, statusConfig.border)}>
-                                        <StatusIcon className={cn("h-7 w-7", statusConfig.color, statusConfig.spin && "animate-spin")} />
-                                    </div>
-                                    <div className={cn("px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest", statusConfig.bg, statusConfig.border, statusConfig.color)}>
-                                        {statusConfig.label}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4 relative z-10">
-                                    <div>
-                                        <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                                            {item.host}
-                                        </h3>
-                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider opacity-60">
+                                icon={statusConfig.icon}
+                                iconWrapperClassName={statusConfig.wrapperClass}
+                                iconClassName={statusConfig.spin ? "animate-spin" : ""}
+                                title={item.host}
+                                description={
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider opacity-60">
                                             {item.user} @ {item.type.toUpperCase()} ({item.port})
-                                        </p>
+                                        </span>
+                                        {item.error && (
+                                            <span className="text-xs text-red-500/80 font-medium">
+                                                {item.error}
+                                            </span>
+                                        )}
                                     </div>
-
-                                    <div className="space-y-2 pt-4 border-t border-border/50">
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="text-muted-foreground font-medium">{t("serverImport.source")}</span>
-                                            <span className="font-mono text-foreground/80 truncate max-w-[120px]" title={item.source_location}>
-                                                {item.source_location}
-                                            </span>
+                                }
+                                badges={[
+                                    {
+                                        label: statusConfig.label,
+                                        className: cn(statusConfig.bg, statusConfig.border, statusConfig.color)
+                                    },
+                                    {
+                                        label: formatDate(item.created_at),
+                                        className: "bg-background/50 border border-border/40 text-muted-foreground"
+                                    }
+                                ]}
+                                actions={
+                                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                        <div className="flex flex-col items-end">
+                                            <span className="font-medium text-foreground/80">{item.source_location}</span>
+                                            <span className="opacity-50 text-[10px] uppercase tracking-wider">{t("serverImport.source")}</span>
                                         </div>
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="text-muted-foreground font-medium">{t("serverImport.destination")}</span>
-                                            <span className="font-mono text-foreground/80 truncate max-w-[120px]" title={item.destination_location}>
-                                                {item.destination_location}
-                                            </span>
-                                        </div>
-                                         <div className="flex items-center justify-between text-xs">
-                                            <span className="text-muted-foreground font-medium">{t("common.date")}</span>
-                                            <span className="font-mono text-foreground/80">
-                                                {formatDate(item.created_at)}
-                                            </span>
+                                        <span className="text-muted-foreground/30">→</span>
+                                        <div className="flex flex-col items-start">
+                                            <span className="font-medium text-foreground/80">{item.destination_location}</span>
+                                            <span className="opacity-50 text-[10px] uppercase tracking-wider">{t("serverImport.destination")}</span>
                                         </div>
                                     </div>
-
-                                    {item.error && (
-                                         <div className="mt-4 p-3 rounded-xl bg-red-500/5 border border-red-500/10 text-xs text-red-500/80 font-medium">
-                                            {item.error}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                                }
+                            />
                         )
                     })}
                 </div>

@@ -123,7 +123,7 @@ export default function CreateSubdomainPage() {
 
     if (availableDomains.length === 0 && !loading) {
          return (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 ">
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/40 backdrop-blur-3xl rounded-[3rem] border border-border/5 ">
                 <div className="relative">
                     <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150" />
                     <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
@@ -192,9 +192,9 @@ export default function CreateSubdomainPage() {
                     )}
 
                     {/* Subdomain Configuration */}
-                    <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
-                        <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-                            <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20">
+                    <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm">
+                        <div className="flex items-center gap-4 border-b border-border/10 pb-6">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                                 <Globe className="h-5 w-5 text-primary" />
                             </div>
                             <div className="space-y-0.5">
@@ -220,7 +220,7 @@ export default function CreateSubdomainPage() {
                                     }))}
                                     placeholder={t("serverSubdomains.domainPlaceholder")}
                                     disabled={saving}
-                                    buttonClassName="h-12 bg-white/5 border-white/5 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all"
+                                    buttonClassName="h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all"
                                 />
                             </div>
 
@@ -243,7 +243,7 @@ export default function CreateSubdomainPage() {
 
                 {/* Right Side: Info Panel */}
                 <div className="lg:col-span-4 space-y-8">
-                     <div className="bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-2xl relative overflow-hidden group">
+                     <div className="bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-sm relative overflow-hidden group">
                         <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000" />
                         <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10">
                             <Info className="h-5 w-5 text-blue-500" />
@@ -256,10 +256,10 @@ export default function CreateSubdomainPage() {
                         </div>
                     </div>
 
-                    <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden">
-                         <div className="flex items-center gap-4 border-b border-white/5 pb-6 relative z-10">
-                            <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
-                                <Settings2 className="h-5 w-5 text-white/70" />
+                    <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm relative overflow-hidden">
+                         <div className="flex items-center gap-4 border-b border-border/10 pb-6 relative z-10">
+                            <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center border border-border/10">
+                                <Settings2 className="h-5 w-5 text-muted-foreground" />
                             </div>
                             <div className="space-y-0.5">
                                 <h2 className="text-xl font-black uppercase tracking-tight italic">{t("serverSubdomains.guide")}</h2>

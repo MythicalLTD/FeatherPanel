@@ -585,3 +585,34 @@ export interface SpellDetailsResponse {
   };
   message?: string;
 }
+
+export interface FileObject {
+  name: string;
+  mode: string;
+  mode_bits: string;
+  size: number;
+  isFile: boolean;
+  symlink: boolean;
+  mimetype: string;
+  created_at: string;
+  modified_at: string;
+  // API Response raw fields
+  created?: string;
+  modified?: string;
+  directory?: boolean;
+  file?: boolean;
+  mime?: string;
+}
+
+export interface FilesResponse {
+  contents: FileObject[];
+}
+
+export interface FileUploadStatus {
+  id: string;
+  name: string;
+  size: number;
+  status: "pending" | "processing" | "uploading" | "completed" | "error";
+  progress: number;
+  error?: string;
+}

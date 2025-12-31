@@ -17,7 +17,7 @@ import {
 import { PageHeader } from "@/components/featherui/PageHeader"
 import { EmptyState } from "@/components/featherui/EmptyState"
 import { Button } from "@/components/featherui/Button"
-import { Badge } from "@/components/ui/badge"
+import { ResourceCard } from "@/components/featherui/ResourceCard"
 import { Input } from "@/components/featherui/Input"
 import { Label } from "@/components/ui/label"
 import { HeadlessSelect } from "@/components/ui/headless-select"
@@ -227,14 +227,6 @@ export default function ServerTasksPage() {
         }
     }
 
-    const getActionVariant = (action: string): "default" | "outline" | "secondary" => {
-        switch (action) {
-            case "power": return "default"
-            case "backup": return "secondary"
-            case "command": return "outline"
-            default: return "outline"
-        }
-    }
 
     const getPayloadPlaceholder = (action: string): string => {
         switch (action) {
@@ -304,6 +296,7 @@ export default function ServerTasksPage() {
                 }
             />
 
+
             {/* Task List */}
             {tasks.length === 0 ? (
                 <EmptyState
@@ -327,51 +320,66 @@ export default function ServerTasksPage() {
                     }
                 />
             ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-4">
                     {sortedTasks.map((task) => (
-                        <div 
+                        <ResourceCard
                             key={task.id}
-                            className="border border-white/5 rounded-2xl p-4 bg-[#0A0A0A]/40 backdrop-blur-xl hover:bg-white/5 transition-all"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3 flex-1">
-                                    <Badge variant="outline" className="text-xs">
-                                        {task.sequence_id}
-                                    </Badge>
-                                    <Badge variant={getActionVariant(task.action)} className="capitalize">
-                                        {task.action}
-                                    </Badge>
-                                    {task.is_queued === 1 && (
-                                        <Badge variant="secondary">
-                                            {t("serverTasks.queued")}
-                                        </Badge>
-                                    )}
-                                    <div className="text-sm text-muted-foreground">
+                            icon={ListCheck} // Or dynamic based on action
+                            iconWrapperClassName={
+                                task.action === 'power' ? "bg-red-500/10 border-red-500/20 text-red-500" :
+                                task.action === 'backup' ? "bg-blue-500/10 border-blue-500/20 text-blue-500" :
+                                "bg-white/5 border-white/10 text-muted-foreground"
+                            }
+                            title={task.action}
+                            description={
+                                <div className="flex flex-col gap-1">
+                                    <span className="font-mono text-xs text-muted-foreground bg-black/20 px-2 py-1 rounded-md border border-white/5 w-fit">
                                         {task.payload || t("serverTasks.noPayload")}
-                                    </div>
+                                    </span>
+                                    {(task.time_offset > 0 || task.continue_on_failure === 1) && (
+                                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground/60 font-medium uppercase tracking-wider mt-1">
+                                            {task.time_offset > 0 && (
+                                                <span>{t("serverTasks.timeOffset")}: {task.time_offset}s</span>
+                                            )}
+                                            {task.continue_on_failure === 1 && (
+                                                <span>{t("serverTasks.continueOnFailure")}</span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
+                            }
+                            badges={[
+                                { label: `#${task.sequence_id}`, className: "bg-white/5 border-white/10 text-muted-foreground" },
+                                ...(task.is_queued === 1 ? [{ label: t("serverTasks.queued"), className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" }] : [])
+                            ]}
+                            actions={
                                 <div className="flex items-center gap-2">
                                     {canUpdate && (
                                         <>
+                                            <div className="flex flex-col gap-1 mr-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-6 w-6 p-0 hover:bg-white/10"
+                                                    disabled={task.sequence_id <= 1}
+                                                    onClick={() => handleMoveUp(task)}
+                                                >
+                                                    <ChevronUp className="h-3 w-3" />
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost" 
+                                                    className="h-6 w-6 p-0 hover:bg-white/10"
+                                                    disabled={task.sequence_id >= sortedTasks.length}
+                                                    onClick={() => handleMoveDown(task)}
+                                                >
+                                                    <ChevronDown className="h-3 w-3" />
+                                                </Button>
+                                            </div>
                                             <Button
                                                 size="sm"
                                                 variant="glass"
-                                                disabled={task.sequence_id <= 1}
-                                                onClick={() => handleMoveUp(task)}
-                                            >
-                                                <ChevronUp className="h-3 w-3" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="glass"
-                                                disabled={task.sequence_id >= sortedTasks.length}
-                                                onClick={() => handleMoveDown(task)}
-                                            >
-                                                <ChevronDown className="h-3 w-3" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="glass"
+                                                className="h-8 w-8 p-0"
                                                 onClick={() => {
                                                     setSelectedTask(task)
                                                     setEditForm({
@@ -384,7 +392,7 @@ export default function ServerTasksPage() {
                                                     setIsEditOpen(true)
                                                 }}
                                             >
-                                                <Pencil className="h-4 w-4" />
+                                                <Pencil className="h-3.5 w-3.5" />
                                             </Button>
                                         </>
                                     )}
@@ -392,27 +400,18 @@ export default function ServerTasksPage() {
                                         <Button
                                             size="sm"
                                             variant="destructive"
+                                            className="h-8 w-8 p-0"
                                             onClick={() => {
                                                 setSelectedTask(task)
                                                 setIsDeleteOpen(true)
                                             }}
                                         >
-                                            <Trash2 className="h-4 w-4" />
+                                            <Trash2 className="h-3.5 w-3.5" />
                                         </Button>
                                     )}
                                 </div>
-                            </div>
-                            {(task.time_offset > 0 || task.continue_on_failure === 1) && (
-                                <div className="mt-3 text-xs text-muted-foreground flex items-center gap-4">
-                                    {task.time_offset > 0 && (
-                                        <span>{t("serverTasks.timeOffset")}: {task.time_offset}s</span>
-                                    )}
-                                    {task.continue_on_failure === 1 && (
-                                        <span>{t("serverTasks.continueOnFailure")}</span>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                            }
+                        />
                     ))}
                 </div>
             )}

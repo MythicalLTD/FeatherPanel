@@ -15,8 +15,8 @@ interface PageCardProps {
 
 const variantStyles = {
     default: {
-        bg: "bg-[#0A0A0A]/40",
-        border: "border-white/5",
+        bg: "bg-card/50",
+        border: "border-border/50",
         iconBg: "bg-primary/5",
         iconBorder: "border-primary/20",
         iconColor: "text-primary",
@@ -75,7 +75,7 @@ export function PageCard({
                 )}
             />
             
-            <div className="flex items-center justify-between border-b border-white/5 pb-6 relative z-10">
+            <div className="flex items-center justify-between border-b border-border/10 pb-6 relative z-10">
                 <div className="flex items-center gap-4">
                     {Icon && (
                         <div
@@ -102,7 +102,7 @@ export function PageCard({
 
             <div className="relative z-10">{children}</div>
 
-            {footer && <div className="pt-4 border-t border-white/5 relative z-10">{footer}</div>}
+            {footer && <div className="pt-4 border-t border-border/10 relative z-10">{footer}</div>}
         </div>
     )
 }

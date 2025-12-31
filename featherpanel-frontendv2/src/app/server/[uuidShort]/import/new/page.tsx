@@ -183,9 +183,9 @@ export default function CreateServerImportPage() {
                 <div className="lg:col-span-8 space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Connection Section */}
-                        <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
-                            <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-                                <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20">
+                        <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm">
+                            <div className="flex items-center gap-4 border-b border-border/10 pb-6">
+                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                                     <Globe className="h-5 w-5 text-primary" />
                                 </div>
                                 <div className="space-y-0.5">
@@ -213,7 +213,7 @@ export default function CreateServerImportPage() {
                                             { id: "ftp", name: "FTP (Standard)" }
                                         ]}
                                         disabled={saving}
-                                        buttonClassName="h-12 bg-white/5 border-white/5 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all w-full"
+                                        buttonClassName="h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all w-full"
                                     />
                                 </div>
 
@@ -240,7 +240,7 @@ export default function CreateServerImportPage() {
                                         value={form.port}
                                         onChange={(e) => setForm(prev => ({ ...prev, port: e.target.value }))}
                                         disabled={saving}
-                                         className={cn(errors.port && "border-red-500/50 bg-red-500/5")}
+                                        className={cn(errors.port && "border-red-500/50 bg-red-500/5")}
                                     />
                                     {errors.port && <p className="text-[9px] font-black text-red-500 ml-1 uppercase tracking-widest">{errors.port}</p>}
                                 </div>
@@ -248,8 +248,8 @@ export default function CreateServerImportPage() {
                         </div>
 
                         {/* Authentication Section */}
-                        <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
-                            <div className="flex items-center gap-4 border-b border-white/5 pb-6">
+                        <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm">
+                            <div className="flex items-center gap-4 border-b border-border/10 pb-6">
                                 <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
                                     <User className="h-5 w-5 text-blue-500" />
                                 </div>
@@ -293,9 +293,9 @@ export default function CreateServerImportPage() {
                     </div>
 
                     {/* Paths Section */}
-                    <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-8 shadow-2xl relative overflow-hidden">
+                    <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-8 shadow-sm relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-[80px] pointer-events-none" />
-                        <div className="flex items-center gap-5 border-b border-white/5 pb-8">
+                        <div className="flex items-center gap-5 border-b border-border/10 pb-8">
                             <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
                                 <FolderUp className="h-6 w-6 text-emerald-500" />
                             </div>
@@ -362,10 +362,10 @@ export default function CreateServerImportPage() {
                 {/* Right Side: Options & Actions */}
                 <div className="lg:col-span-4 space-y-8">
                     {/* Options Panel */}
-                    <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden group">
+                    <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl pointer-events-none group-hover:bg-primary/10 transition-all duration-700" />
-                        <div className="flex items-center gap-4 border-b border-white/5 pb-6 relative z-10">
-                            <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
+                        <div className="flex items-center gap-4 border-b border-border/10 pb-6 relative z-10">
+                            <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center border border-border/10">
                                 <Settings2 className="h-5 w-5 text-muted-foreground" />
                             </div>
                             <div className="space-y-0.5">
@@ -380,7 +380,7 @@ export default function CreateServerImportPage() {
                                 onClick={() => !saving && setForm(prev => ({ ...prev, wipe: !prev.wipe }))}
                                 className={cn(
                                     "p-5 rounded-2xl border transition-all duration-500 cursor-pointer group/opt relative overflow-hidden",
-                                    form.wipe ? "bg-primary/10 border-primary/40" : "bg-[#0A0A0A]/20 border-white/5 hover:border-white/10"
+                                    form.wipe ? "bg-primary/10 border-primary/40" : "bg-secondary/30 border-border/20 hover:border-border/40"
                                 )}
                             >
                                 <div className="flex items-center justify-between gap-4">
@@ -393,7 +393,7 @@ export default function CreateServerImportPage() {
                                     </div>
                                     <div className={cn(
                                         "w-10 h-5 rounded-full transition-all duration-500 relative shrink-0",
-                                        form.wipe ? "bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" : "bg-white/10"
+                                        form.wipe ? "bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" : "bg-muted"
                                     )}>
                                         <div className={cn(
                                             "absolute top-1 w-3 h-3 rounded-full bg-background transition-all duration-500 shadow-md",
@@ -408,7 +408,7 @@ export default function CreateServerImportPage() {
                                 onClick={() => !saving && setForm(prev => ({ ...prev, wipeAllFiles: !prev.wipeAllFiles }))}
                                 className={cn(
                                     "p-5 rounded-2xl border transition-all duration-500 cursor-pointer group/opt relative overflow-hidden",
-                                    form.wipeAllFiles ? "bg-red-500/10 border-red-500/40" : "bg-[#0A0A0A]/20 border-white/5 hover:border-red-500/20"
+                                    form.wipeAllFiles ? "bg-red-500/10 border-red-500/40" : "bg-secondary/30 border-border/20 hover:border-red-500/20"
                                 )}
                             >
                                 <div className="flex items-center justify-between gap-4">
@@ -421,7 +421,7 @@ export default function CreateServerImportPage() {
                                     </div>
                                     <div className={cn(
                                         "w-10 h-5 rounded-full transition-all duration-500 relative shrink-0",
-                                        form.wipeAllFiles ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-white/10"
+                                        form.wipeAllFiles ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-muted"
                                     )}>
                                         <div className={cn(
                                             "absolute top-1 w-3 h-3 rounded-full bg-background transition-all duration-500 shadow-md",

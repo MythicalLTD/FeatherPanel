@@ -68,10 +68,10 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
 				const data = await response.json()
 				setTranslations(data)
 				localStorage.setItem(cacheKey, JSON.stringify(data))
-				setInitialLoading(false)
 			}
-		} catch {
-			// API not available, use what we have
+		} catch (error) {
+			console.error("Failed to load translations from API:", error)
+		} finally {
 			setInitialLoading(false)
 		}
 	}, [])

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
+import { Slot } from "@radix-ui/react-slot"
 
 // Manual variant mapping instead of cva
 const variants = {
@@ -12,9 +13,9 @@ const variants = {
     secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
     ghost: "hover:bg-accent hover:text-accent-foreground",
     link: "text-primary underline-offset-4 hover:underline",
-    warning: "bg-orange-500/10 text-orange-500 border border-orange-500/20 hover:bg-orange-500/20 shadow-lg shadow-orange-500/10 hover:scale-[1.02] active:scale-95",
+    warning: "bg-orange-500/10 text-orange-500 border border-orange-500/20 hover:bg-orange-500/20 shadow-lg shadow-red-500/10 hover:scale-[1.02] active:scale-95",
     glass: "bg-background/50 backdrop-blur-md border border-border/40 hover:bg-background/80",
-    plain: "bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground", // Added 'plain' as seen in startup page usage
+    plain: "bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground",
 }
 
 const sizes = {
@@ -28,15 +29,17 @@ export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: keyof typeof variants
     size?: keyof typeof sizes
+    asChild?: boolean
     loading?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, variant = "default", size = "default", loading, children, disabled, ...props }, ref) => {
+    ({ className, variant = "default", size = "default", asChild = false, loading, children, disabled, ...props }, ref) => {
+        const Comp = asChild ? Slot : "button"
         const baseStyles = "inline-flex items-center justify-center whitespace-nowrap rounded-2xl text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 overflow-hidden relative"
         
         return (
-            <button
+            <Comp
                 className={cn(
                     baseStyles,
                     variants[variant],
@@ -49,7 +52,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {children}
-            </button>
+            </Comp>
         )
     }
 )

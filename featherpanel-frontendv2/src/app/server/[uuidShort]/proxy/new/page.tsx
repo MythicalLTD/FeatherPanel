@@ -223,9 +223,9 @@ export default function CreateProxyPage() {
                 <div className="lg:col-span-8 space-y-8">
 
                     {/* Domain & Port Configuration */}
-                    <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
-                        <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-                            <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20">
+                    <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm">
+                        <div className="flex items-center gap-4 border-b border-border/10 pb-6">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                                 <Globe className="h-5 w-5 text-primary" />
                             </div>
                             <div className="space-y-0.5">
@@ -268,7 +268,7 @@ export default function CreateProxyPage() {
                                     }))}
                                     placeholder={t("serverProxy.selectPort")}
                                     disabled={saving}
-                                    buttonClassName="h-12 bg-white/5 border-white/5 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all"
+                                    buttonClassName="h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all"
                                 />
                             </div>
 
@@ -290,7 +290,7 @@ export default function CreateProxyPage() {
                                      <div className="flex items-center gap-2 text-xs p-3 bg-background/50 rounded-xl border border-dashed border-primary/30 mx-1">
                                          <Server className="h-3 w-3 text-primary opacity-50" />
                                          <span className="font-bold text-primary/80">{t("serverProxy.aRecord")}</span>
-                                         <span className="font-mono text-foreground font-bold bg-white/5 px-2 py-0.5 rounded">{targetIp}</span>
+                                         <span className="font-mono text-foreground font-bold bg-secondary/50 px-2 py-0.5 rounded">{targetIp}</span>
                                      </div>
                                 )}
 
@@ -333,9 +333,9 @@ export default function CreateProxyPage() {
                     </div>
 
                     {/* SSL Configuration */}
-                     <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
-                        <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-                            <div className="h-10 w-10 rounded-xl bg-emerald-500/5 flex items-center justify-center border border-emerald-500/20">
+                     <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm">
+                        <div className="flex items-center gap-4 border-b border-border/10 pb-6">
+                            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
                                 <ShieldCheck className="h-5 w-5 text-emerald-500" />
                             </div>
                             <div className="space-y-0.5">
@@ -359,7 +359,7 @@ export default function CreateProxyPage() {
                         {formData.ssl && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
                                 {/* Let's Encrypt Toggle */}
-                                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
+                                <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/30 border border-border/20">
                                     <div className="space-y-0.5">
                                         <h4 className="font-bold text-sm text-foreground">{t("serverProxy.letsEncrypt")}</h4>
                                         <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">{t("serverProxy.autoGenerate")}</p>
@@ -405,7 +405,7 @@ export default function CreateProxyPage() {
                                                 value={formData.ssl_cert || ""}
                                                 onChange={e => setFormData({...formData, ssl_cert: e.target.value})}
                                                 disabled={saving}
-                                                className="font-mono text-xs min-h-[150px] bg-white/5 border-white/5 focus:border-primary/50 rounded-xl leading-relaxed"
+                                                className="font-mono text-xs min-h-[150px] bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl leading-relaxed"
                                                 placeholder="-----BEGIN CERTIFICATE-----..."
                                             />
                                         </div>
@@ -417,7 +417,7 @@ export default function CreateProxyPage() {
                                                 value={formData.ssl_key || ""}
                                                 onChange={e => setFormData({...formData, ssl_key: e.target.value})}
                                                 disabled={saving}
-                                                className="font-mono text-xs min-h-[150px] bg-white/5 border-white/5 focus:border-primary/50 rounded-xl leading-relaxed"
+                                                className="font-mono text-xs min-h-[150px] bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl leading-relaxed"
                                                 placeholder="-----BEGIN PRIVATE KEY-----..."
                                             />
                                         </div>
@@ -430,7 +430,7 @@ export default function CreateProxyPage() {
 
                 {/* Right Side: Info Panel */}
                 <div className="lg:col-span-4 space-y-8">
-                     <div className="bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-2xl relative overflow-hidden group">
+                     <div className="bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-sm relative overflow-hidden group">
                         <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000" />
                         <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10">
                             <Info className="h-5 w-5 text-blue-500" />
@@ -443,10 +443,10 @@ export default function CreateProxyPage() {
                         </div>
                     </div>
 
-                    <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden">
-                         <div className="flex items-center gap-4 border-b border-white/5 pb-6 relative z-10">
-                            <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
-                                <Settings2 className="h-5 w-5 text-white/70" />
+                    <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm relative overflow-hidden">
+                         <div className="flex items-center gap-4 border-b border-border/10 pb-6 relative z-10">
+                            <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center border border-border/10">
+                                <Settings2 className="h-5 w-5 text-muted-foreground" />
                             </div>
                             <div className="space-y-0.5">
                                 <h2 className="text-xl font-black uppercase tracking-tight italic">{t("serverProxy.helpfulTips")}</h2>

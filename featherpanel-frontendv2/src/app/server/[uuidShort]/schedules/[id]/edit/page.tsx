@@ -164,9 +164,9 @@ export default function EditSchedulePage() {
 
             <form onSubmit={handleUpdate} className="space-y-8">
                 {/* Schedule Name */}
-                <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
-                    <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-                        <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20">
+                <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm">
+                    <div className="flex items-center gap-4 border-b border-border/10 pb-6">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                             <Calendar className="h-5 w-5 text-primary" />
                         </div>
                         <div className="space-y-0.5">
@@ -192,10 +192,10 @@ export default function EditSchedulePage() {
                 </div>
 
                 {/* Cron Expression */}
-                <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-border/10 pb-6">
                         <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                                 <Calendar className="h-5 w-5 text-primary" />
                             </div>
                             <div className="space-y-0.5">
@@ -224,7 +224,7 @@ export default function EditSchedulePage() {
                                 value={formData.cron_minute}
                                 onChange={(e) => setFormData({...formData, cron_minute: e.target.value})}
                                 placeholder="*/5"
-                                className="font-mono"
+                                className="font-mono bg-secondary/50 border-border/10"
                                 disabled={saving}
                             />
                         </div>
@@ -238,7 +238,7 @@ export default function EditSchedulePage() {
                                 value={formData.cron_hour}
                                 onChange={(e) => setFormData({...formData, cron_hour: e.target.value})}
                                 placeholder="*"
-                                className="font-mono"
+                                className="font-mono bg-secondary/50 border-border/10"
                                 disabled={saving}
                             />
                         </div>
@@ -252,7 +252,7 @@ export default function EditSchedulePage() {
                                 value={formData.cron_day_of_month}
                                 onChange={(e) => setFormData({...formData, cron_day_of_month: e.target.value})}
                                 placeholder="*"
-                                className="font-mono"
+                                className="font-mono bg-secondary/50 border-border/10"
                                 disabled={saving}
                             />
                         </div>
@@ -266,7 +266,7 @@ export default function EditSchedulePage() {
                                 value={formData.cron_month}
                                 onChange={(e) => setFormData({...formData, cron_month: e.target.value})}
                                 placeholder="*"
-                                className="font-mono"
+                                className="font-mono bg-secondary/50 border-border/10"
                                 disabled={saving}
                             />
                         </div>
@@ -280,7 +280,7 @@ export default function EditSchedulePage() {
                                 value={formData.cron_day_of_week}
                                 onChange={(e) => setFormData({...formData, cron_day_of_week: e.target.value})}
                                 placeholder="*"
-                                className="font-mono"
+                                className="font-mono bg-secondary/50 border-border/10"
                                 disabled={saving}
                             />
                         </div>
@@ -290,9 +290,9 @@ export default function EditSchedulePage() {
                 </div>
 
                 {/* Options */}
-                <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
-                    <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-                        <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20">
+                <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm">
+                    <div className="flex items-center gap-4 border-b border-border/10 pb-6">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                             <Calendar className="h-5 w-5 text-primary" />
                         </div>
                         <div className="space-y-0.5">
@@ -314,7 +314,7 @@ export default function EditSchedulePage() {
                                     { id: "1", name: "Yes - Only run when server is online" }
                                 ]}
                                 disabled={saving}
-                                buttonClassName="h-12 bg-white/5 border-white/5 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all"
+                                buttonClassName="h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all"
                             />
                             <p className="text-xs text-muted-foreground ml-1">{t("serverSchedules.onlyWhenOnlineHelp")}</p>
                         </div>
@@ -331,7 +331,7 @@ export default function EditSchedulePage() {
                                     { id: "0", name: "Disabled - Schedule will not run" }
                                 ]}
                                 disabled={saving}
-                                buttonClassName="h-12 bg-white/5 border-white/5 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all"
+                                buttonClassName="h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all"
                             />
                             <p className="text-xs text-muted-foreground ml-1">{t("serverSchedules.scheduleEnabledHelp")}</p>
                         </div>

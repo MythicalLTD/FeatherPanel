@@ -21,6 +21,8 @@ import {
     CheckCircle2
 } from "lucide-react"
 
+import { ResourceCard } from "@/components/featherui/ResourceCard"
+
 import { Button } from "@/components/featherui/Button"
 import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
@@ -247,7 +249,7 @@ export default function ServerSubusersPage() {
 
     if (!isEnabled(settings?.server_allow_subusers)) {
         return (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5">
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/40 backdrop-blur-3xl rounded-[3rem] border border-border/5">
                 <div className="relative">
                     <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150" />
                     <div className="relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3">
@@ -354,7 +356,7 @@ export default function ServerSubusersPage() {
                                 onKeyDown={(e) => e.key === "Enter" && fetchSubusers(1)}
                                 type="text"
                                 placeholder={t("serverSubusers.searchPlaceholder")}
-                                className="w-full pl-12 pr-4 h-14 bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                                className="w-full pl-12 pr-4 h-14 bg-card/40 backdrop-blur-xl border border-border/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                             />
                         </div>
                         <Button 
@@ -367,6 +369,7 @@ export default function ServerSubusersPage() {
                             {t("common.search")}
                         </Button>
                     </div>
+
 
                     {subusers.length === 0 ? (
                         <div className="text-center py-12 bg-card/10 rounded-4xl border border-dashed border-border/60">
@@ -381,62 +384,55 @@ export default function ServerSubusersPage() {
                             </Button>
                         </div>
                     ) : (
-                        <div className="grid gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             {subusers.map((sub) => (
-                                <div 
+                                <ResourceCard
                                     key={sub.id}
-                                    className="group relative flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/5 rounded-3xl p-6 transition-all hover:bg-white/5 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5"
-                                >
-                                    <div className="flex items-center gap-5">
-                                        <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
-                                            <Users className="h-7 w-7 text-primary" />
+                                    icon={Users}
+                                    iconWrapperClassName="bg-primary/10 border-primary/20 text-primary"
+                                    title={sub.username || sub.email}
+                                    description={
+                                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                            <Mail className="h-3 w-3" />
+                                            <span>{sub.email}</span>
                                         </div>
-                                        <div className="space-y-1">
-                                            <h3 className="font-black text-xl tracking-tight">
-                                                {sub.username || sub.email}
-                                            </h3>
-                                            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                                                <Mail className="h-3.5 w-3.5" />
-                                                <span>{sub.email}</span>
-                                            </div>
+                                    }
+                                    actions={
+                                        <div className="flex items-center gap-3">
+                                            {canUpdate && (
+                                                 <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => openPermissionsDialog(sub)}
+                                                    className="h-8 px-3 text-xs rounded-lg hover:bg-white/10"
+                                                >
+                                                    <Shield className="h-3.5 w-3.5 mr-1.5" />
+                                                    {t("serverSubusers.permissions")}
+                                                </Button>
+                                            )}
+                                            {canDelete && (
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setSelectedSubuser(sub)
+                                                        setIsDeleteOpen(true)
+                                                    }}
+                                                    className="h-8 w-8 p-0"
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            )}
                                         </div>
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-2">
-                                        {canUpdate && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => openPermissionsDialog(sub)}
-                                                className="h-10 px-4 text-xs rounded-xl"
-                                            >
-                                                <Shield className="h-4 w-4 mr-2" />
-                                                {t("serverSubusers.permissions")}
-                                            </Button>
-                                        )}
-                                        {canDelete && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => {
-                                                    setSelectedSubuser(sub)
-                                                    setIsDeleteOpen(true)
-                                                }}
-                                                className="h-10 px-4 text-xs rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white"
-                                            >
-                                                <Trash2 className="h-4 w-4 mr-2" />
-                                                {t("common.delete")}
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
+                                    }
+                                />
                             ))}
                         </div>
                     )}
 
                     {/* Pagination */}
                     {pagination.total > pagination.per_page && (
-                        <div className="flex items-center justify-between gap-3 pt-6 border-t border-white/5">
+                        <div className="flex items-center justify-between gap-3 pt-6 border-t border-border/5">
                             <div className="text-sm font-medium text-muted-foreground">
                                 {t("serverSubusers.showing")} {pagination.from}-{pagination.to} {t("serverSubusers.of")} {pagination.total}
                             </div>
@@ -450,7 +446,7 @@ export default function ServerSubusersPage() {
                                 >
                                     <ChevronLeft className="h-5 w-5" />
                                 </Button>
-                                <div className="text-sm font-black px-4 bg-white/5 h-10 flex items-center rounded-xl">
+                                <div className="text-sm font-black px-4 bg-secondary/50 h-10 flex items-center rounded-xl border border-border/5">
                                     {pagination.current_page} / {pagination.last_page}
                                 </div>
                                 <Button
@@ -486,12 +482,12 @@ export default function ServerSubusersPage() {
                                 onKeyDown={(e) => e.key === "Enter" && handleAddSubuser()}
                                 type="email"
                                 placeholder={t("serverSubusers.emailPlaceholder")}
-                                className="w-full pl-12 pr-4 h-14 bg-[#0A0A0A]/40 border border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                                className="w-full pl-12 pr-4 h-14 bg-card/40 border border-border/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                             />
                         </div>
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+                <div className="flex justify-end gap-3 pt-4 border-t border-border/5">
                     <Button variant="outline" size="default" onClick={() => setIsAddOpen(false)} disabled={addLoading} className="rounded-2xl">
                         {t("common.cancel")}
                     </Button>
@@ -514,7 +510,7 @@ export default function ServerSubusersPage() {
                 title={t("serverSubusers.confirmDeleteTitle")}
                 description={t("serverSubusers.confirmDeleteDescription", { email: selectedSubuser?.email || "" })}
             >
-                <div className="flex justify-end gap-3 pt-6 border-t border-white/5">
+                <div className="flex justify-end gap-3 pt-6 border-t border-border/5">
                     <Button variant="outline" size="default" onClick={() => setIsDeleteOpen(false)} disabled={deleting} className="rounded-2xl">
                         {t("common.cancel")}
                     </Button>
@@ -540,7 +536,7 @@ export default function ServerSubusersPage() {
                 className="max-w-3xl"
             >
                 <div className="space-y-6 pt-4">
-                    <div className="flex items-center justify-between p-5 bg-white/5 rounded-3xl border border-white/5 backdrop-blur-md">
+                    <div className="flex items-center justify-between p-5 bg-card/50 rounded-3xl border border-border/5 backdrop-blur-md">
                         <div className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                                 <Mail className="h-5 w-5 text-primary" />
@@ -550,7 +546,7 @@ export default function ServerSubusersPage() {
                                 <span className="font-bold text-sm tracking-tight">{selectedSubuser?.email}</span>
                             </div>
                         </div>
-                        <Button variant="outline" size="sm" onClick={selectAllPermissions} className="rounded-xl h-10 px-4 font-bold text-xs uppercase tracking-wider border-white/10 hover:bg-white/5">
+                        <Button variant="outline" size="sm" onClick={selectAllPermissions} className="rounded-xl h-10 px-4 font-bold text-xs uppercase tracking-wider border-border/10 hover:bg-secondary/20">
                             {availablePermissions.every(p => selectedPermissions.includes(p)) 
                                 ? t("serverSubusers.deselectAll") 
                                 : t("serverSubusers.selectAll")}
@@ -563,10 +559,10 @@ export default function ServerSubusersPage() {
                             <p className="mt-4 text-muted-foreground font-medium">{t("common.loading")}</p>
                         </div>
                     ) : (
-                        <div className="max-h-[50vh] overflow-y-auto space-y-6 pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                        <div className="max-h-[50vh] overflow-y-auto space-y-6 pr-2 scrollbar-thin scrollbar-thumb-muted-foreground/10">
                             {Object.entries(groupedPermissions).map(([category, data]) => (
                                 <div key={category} className="space-y-4">
-                                    <div className="sticky top-0 bg-card/80 backdrop-blur-xl z-10 py-3 border-b border-white/5 -mx-2 px-2">
+                                    <div className="sticky top-0 bg-background/80 backdrop-blur-xl z-10 py-3 border-b border-border/5 -mx-2 px-2">
                                         <h4 className="text-lg font-black uppercase tracking-tight text-primary">
                                             {t(`serverSubusers.permissionCategories.${category}.name`)}
                                         </h4>
@@ -582,7 +578,7 @@ export default function ServerSubusersPage() {
                                                     "flex items-start gap-4 p-4 rounded-2xl border transition-all cursor-pointer group",
                                                     selectedPermissions.includes(perm)
                                                         ? "bg-primary/5 border-primary/20"
-                                                        : "bg-white/5 border-white/5 hover:border-white/10"
+                                                        : "bg-card/30 border-border/5 hover:border-border/20"
                                                 )}
                                             >
                                                 <div className="relative mt-1 shrink-0">
@@ -596,7 +592,7 @@ export default function ServerSubusersPage() {
                                                         "h-6 w-6 rounded-lg border-2 transition-all flex items-center justify-center",
                                                         selectedPermissions.includes(perm)
                                                             ? "bg-primary border-primary shadow-lg shadow-primary/20"
-                                                            : "border-white/10 group-hover:border-primary/40"
+                                                            : "border-border/10 group-hover:border-primary/40"
                                                     )}>
                                                         {selectedPermissions.includes(perm) && <CheckCircle2 className="h-4 w-4 text-white" />}
                                                     </div>
@@ -622,7 +618,7 @@ export default function ServerSubusersPage() {
                         {selectedPermissions.length} {t("serverSubusers.permissionsSelected")}
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-6 border-t border-white/5">
+                    <div className="flex justify-end gap-3 pt-6 border-t border-border/5">
                         <Button variant="outline" size="default" onClick={() => setIsPermissionsOpen(false)} disabled={savingPermissions} className="rounded-2xl">
                             {t("common.cancel")}
                         </Button>

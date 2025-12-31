@@ -25,6 +25,7 @@ import { cn, isEnabled } from "@/lib/utils"
 import type { Proxy, ProxiesResponse } from "@/types/server"
 import { PageHeader } from "@/components/featherui/PageHeader"
 import { EmptyState } from "@/components/featherui/EmptyState"
+import { ResourceCard } from "@/components/featherui/ResourceCard"
 
 export default function ServerProxyPage() {
     const { uuidShort } = useParams()
@@ -215,59 +216,36 @@ export default function ServerProxyPage() {
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {proxies.map(proxy => (
-                        <div
+                        <ResourceCard
                             key={proxy.id}
-                            className={cn(
-                                "group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/5 transition-all duration-300 shadow-sm",
-                                "hover:border-primary/20 hover:bg-white/5 hover:shadow-2xl hover:shadow-primary/5"
-                            )}
-                        >
-                             <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-                            <div className="p-6 flex flex-col md:flex-row md:items-center gap-6 relative z-10">
-                                {/* Icon Status */}
-                                <div className={cn(
-                                    "h-14 w-14 rounded-2xl flex items-center justify-center border shrink-0 transition-colors",
-                                    proxy.ssl ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/10"
-                                )}>
-                                    {proxy.ssl ? (
-                                        <CheckCircle className="h-7 w-7 text-emerald-500" />
-                                    ) : (
-                                        <ArrowRightLeft className="h-7 w-7 text-muted-foreground" />
-                                    )}
-                                </div>
-
-                                {/* Details */}
-                                <div className="flex-1 min-w-0 space-y-3">
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <h3 className="text-xl font-black tracking-tight group-hover:text-primary transition-colors duration-300">
-                                            {proxy.domain}
-                                        </h3>
-                                        {proxy.ssl && (
-                                            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none shadow-sm bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-emerald-500/5">
-                                                {t("serverProxy.sslEnabled")}
-                                            </span>
-                                        )}
-                                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40 shadow-sm flex items-center gap-1.5 opacity-80">
-                                            :{proxy.port}
-                                        </span>
+                            icon={proxy.ssl ? CheckCircle : ArrowRightLeft}
+                            iconWrapperClassName={proxy.ssl ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-white/5 border-white/10 text-muted-foreground"}
+                            title={proxy.domain}
+                            description={
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Network className="h-3 w-3 opacity-50" />
+                                        <span className="text-xs font-bold text-foreground/70">{proxy.ip}</span>
                                     </div>
-
-                                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                                        <div className="flex items-center gap-2 text-muted-foreground">
-                                            <Network className="h-4 w-4 opacity-50" />
-                                            <span className="text-sm font-bold text-foreground/70">{proxy.ip}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-muted-foreground">
-                                            <Globe className="h-4 w-4 opacity-50" />
-                                            <span className="text-sm font-medium">{proxy.use_lets_encrypt ? t("serverProxy.letsEncrypt") : t("serverProxy.customCert")}</span>
-                                        </div>
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Globe className="h-3 w-3 opacity-50" />
+                                        <span className="text-xs font-medium">{proxy.use_lets_encrypt ? t("serverProxy.letsEncrypt") : t("serverProxy.customCert")}</span>
                                     </div>
                                 </div>
-
-                                {/* Actions */}
-                                {canManage && (
-                                    <div className="flex items-center gap-3 sm:self-center">
+                            }
+                            badges={[
+                                {
+                                    label: `:${proxy.port}`,
+                                    className: "bg-background/50 border border-border/40 shadow-sm opacity-80"
+                                },
+                                ...(proxy.ssl ? [{
+                                    label: t("serverProxy.sslEnabled"),
+                                    className: "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-emerald-500/5"
+                                }] : [])
+                            ]}
+                            actions={
+                                canManage && (
+                                    <div className="flex items-center gap-3">
                                         <Button
                                             variant="destructive"
                                             onClick={() => promptDelete(proxy)}
@@ -276,9 +254,9 @@ export default function ServerProxyPage() {
                                             <Trash2 className="h-5 w-5 stroke-2" />
                                         </Button>
                                     </div>
-                                )}
-                            </div>
-                        </div>
+                                )
+                            }
+                        />
                     ))}
                 </div>
             )}

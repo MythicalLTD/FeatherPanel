@@ -24,6 +24,7 @@ import { Button } from "@/components/featherui/Button"
 import { Input } from "@/components/featherui/Input"
 import { PageHeader } from "@/components/featherui/PageHeader"
 import { EmptyState } from "@/components/featherui/EmptyState"
+import { ResourceCard } from "@/components/featherui/ResourceCard"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -404,109 +405,97 @@ export default function ServerAllocationsPage() {
         ) : (
              <div className="grid grid-cols-1 gap-4">
                 {filteredAllocations.map((allocation) => (
-                  <div 
-                    key={allocation.id} 
-                    className={cn(
-                        "group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-md border border-white/5 transition-all duration-300 shadow-sm",
-                        "hover:border-primary/40 hover:bg-white/5 hover:shadow-lg hover:shadow-primary/5",
-                        allocation.is_primary && "bg-primary/5 border-primary/20"
-                    )}
-                  >
-                    <div className="p-6 flex flex-col sm:flex-row sm:items-center gap-6">
-                        {/* Icon */}
-                        <div className={cn(
-                            "h-16 w-16 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2",
+                    <ResourceCard
+                        key={allocation.id}
+                        className={cn(
+                            allocation.is_primary && "bg-primary/5 border-primary/20 hover:border-primary/40",
+                            "hover:shadow-lg hover:shadow-primary/5"
+                        )}
+                        icon={Globe}
+                        iconWrapperClassName={cn(
                             allocation.is_primary ? "bg-primary/20 border-primary/30" : "bg-card/40 border-border/60"
-                        )}>
-                            <Globe className={cn(
-                                "h-8 w-8",
-                                allocation.is_primary ? "text-primary" : "text-muted-foreground"
-                            )} />
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0 space-y-2">
-                             <div className="flex flex-wrap items-center gap-3">
-                                 <h3 className="text-xl font-bold tracking-tight font-mono break-all group-hover:text-primary transition-colors">
-                                    {allocation.ip_alias || allocation.ip}:{allocation.port}
-                                 </h3>
-                                 {allocation.is_primary && (
-                                     <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/20 text-[10px] uppercase font-bold tracking-widest leading-none px-3 py-1">
-                                         {t("serverAllocations.primary")}
-                                     </Badge>
-                                 )}
-                             </div>
-
-                             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                        )}
+                        iconClassName={cn(
+                            allocation.is_primary ? "text-primary" : "text-muted-foreground"
+                        )}
+                        title={`${allocation.ip_alias || allocation.ip}:${allocation.port}`}
+                        badges={
+                            allocation.is_primary && (
+                                <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/20 text-[10px] uppercase font-bold tracking-widest leading-none px-3 py-1">
+                                    {t("serverAllocations.primary")}
+                                </Badge>
+                            )
+                        }
+                        description={
+                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                                 <div className="flex items-center gap-2 text-muted-foreground p-1 px-2 rounded-lg bg-black/40 border border-white/5">
-                                     <span className="text-xs font-bold uppercase opacity-60">IP</span>
-                                     <span className="text-sm font-mono font-bold text-foreground/80">{allocation.ip}</span>
-                                 </div>
-                                 <div className="flex items-center gap-2 text-muted-foreground p-1 px-2 rounded-lg bg-black/40 border border-white/5">
-                                     <span className="text-xs font-bold uppercase opacity-60">Port</span>
-                                      <span className="text-sm font-mono font-bold text-foreground/80">{allocation.port}</span>
-                                 </div>
-                                 {allocation.notes && (
+                                    <span className="text-xs font-bold uppercase opacity-60">IP</span>
+                                    <span className="text-sm font-mono font-bold text-foreground/80">{allocation.ip}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground p-1 px-2 rounded-lg bg-black/40 border border-white/5">
+                                    <span className="text-xs font-bold uppercase opacity-60">Port</span>
+                                    <span className="text-sm font-mono font-bold text-foreground/80">{allocation.port}</span>
+                                </div>
+                                {allocation.notes && (
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                         <div className="w-1 h-1 rounded-full bg-white/20" />
                                         <span className="text-sm italic opacity-70">&quot;{allocation.notes}&quot;</span>
                                     </div>
-                                 )}
-                             </div>
-                        </div>
+                                )}
+                            </div>
+                        }
+                        actions={
+                            <div className="flex items-center gap-3 sm:self-center">
+                                <Button
+                                    size="default"
+                                    variant="glass"
+                                    onClick={() => handleCopy(`${allocation.ip}:${allocation.port}`)}
+                                    className="px-6 font-bold"
+                                >
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    {t("common.copy")}
+                                </Button>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-3 sm:self-center">
-                            <Button
-                                size="default"
-                                variant="glass"
-                                onClick={() => handleCopy(`${allocation.ip}:${allocation.port}`)}
-                                className="px-6 font-bold"
-                            >
-                                <Copy className="mr-2 h-4 w-4" />
-                                {t("common.copy")}
-                            </Button>
-
-                            {!allocation.is_primary && (canUpdate || canDelete) && (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger className="h-12 w-12 flex items-center justify-center rounded-xl bg-card/40 border border-white/5 hover:bg-white/10 transition-all outline-none group-hover:bg-card/60">
-                                    <MoreVertical className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl">
-                                    {canUpdate && (
-                                        <DropdownMenuItem 
-                                            onClick={() => {
-                                              setSelectedAllocation(allocation)
-                                              setPrimaryDialogOpen(true)
-                                            }}
-                                            className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
-                                        >
-                                            <Star className="h-4 w-4 text-yellow-400" />
-                                            <span className="font-bold">{t("serverAllocations.setPrimary")}</span>
-                                        </DropdownMenuItem>
-                                    )}
-                                    
-                                    {canDelete && (
-                                         <>
-                                           {canUpdate && <DropdownMenuSeparator className="bg-border/40 my-1" />}
-                                           <DropdownMenuItem 
-                                             onClick={() => {
-                                               setSelectedAllocation(allocation)
-                                               setDeleteDialogOpen(true)
-                                             }}
-                                             className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10"
-                                           >
-                                             <Trash2 className="h-4 w-4" />
-                                             <span className="font-bold">{t("common.delete")}</span>
-                                           </DropdownMenuItem>
-                                         </>
-                                    )}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            )}
-                        </div>
-                    </div>
-                  </div>
+                                {!allocation.is_primary && (canUpdate || canDelete) && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger className="h-12 w-12 flex items-center justify-center rounded-xl bg-card/40 border border-white/5 hover:bg-white/10 transition-all outline-none group-hover:bg-card/60">
+                                            <MoreVertical className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl">
+                                            {canUpdate && (
+                                                <DropdownMenuItem 
+                                                    onClick={() => {
+                                                        setSelectedAllocation(allocation)
+                                                        setPrimaryDialogOpen(true)
+                                                    }}
+                                                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
+                                                >
+                                                    <Star className="h-4 w-4 text-yellow-400" />
+                                                    <span className="font-bold">{t("serverAllocations.setPrimary")}</span>
+                                                </DropdownMenuItem>
+                                            )}
+                                            
+                                            {canDelete && (
+                                                    <>
+                                                    {canUpdate && <DropdownMenuSeparator className="bg-border/40 my-1" />}
+                                                    <DropdownMenuItem 
+                                                        onClick={() => {
+                                                        setSelectedAllocation(allocation)
+                                                        setDeleteDialogOpen(true)
+                                                        }}
+                                                        className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                        <span className="font-bold">{t("common.delete")}</span>
+                                                    </DropdownMenuItem>
+                                                    </>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
+                            </div>
+                        }
+                    />
                 ))}
             </div>
         )}

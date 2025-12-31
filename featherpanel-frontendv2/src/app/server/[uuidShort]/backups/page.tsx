@@ -35,6 +35,7 @@ import { Input } from '@/components/featherui/Input'
 import { PageHeader } from '@/components/featherui/PageHeader'
 import { EmptyState } from '@/components/featherui/EmptyState'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ResourceCard } from '@/components/featherui/ResourceCard'
 import { 
     Dialog, 
     DialogTitle, 
@@ -405,132 +406,129 @@ export default function ServerBackupsPage() {
                 ) : (
                     <div className="grid grid-cols-1 gap-4">
                         {backups.map((backup) => (
-                            <div 
+                            <ResourceCard
                                 key={backup.id}
-                                className="group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-md border border-white/5 hover:border-primary/40 hover:bg-white/5 transition-all duration-300 shadow-sm"
-                            >
-                                <div className="p-6 flex flex-col sm:flex-row sm:items-center gap-6">
-                                    <div className={cn(
-                                        "h-16 w-16 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner",
-                                        !backup.completed_at && !backup.is_successful 
-                                            ? "bg-blue-500/10 border-blue-500/20" 
-                                            : backup.is_successful 
-                                                ? "bg-emerald-500/10 border-emerald-500/20" 
-                                                : "bg-red-500/10 border-red-500/20"
-                                    )}>
-                                        <Archive className={cn(
-                                            "h-8 w-8",
+                                className={cn(
+                                    !backup.completed_at && !backup.is_successful && "animate-pulse border-blue-500/20",
+                                    "hover:shadow-lg transition-all duration-300"
+                                )}
+                                icon={Archive}
+                                iconWrapperClassName={cn(
+                                    !backup.completed_at && !backup.is_successful 
+                                        ? "bg-blue-500/10 border-blue-500/20" 
+                                        : backup.is_successful 
+                                            ? "bg-emerald-500/10 border-emerald-500/20" 
+                                            : "bg-red-500/10 border-red-500/20"
+                                )}
+                                iconClassName={cn(
+                                    !backup.completed_at && !backup.is_successful 
+                                        ? "text-blue-500" 
+                                        : backup.is_successful 
+                                            ? "text-emerald-500" 
+                                            : "text-red-500"
+                                )}
+                                title={backup.name}
+                                badges={
+                                    <>
+                                        <span className={cn(
+                                            "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none shadow-sm",
                                             !backup.completed_at && !backup.is_successful 
-                                                ? "text-blue-500 animate-pulse" 
+                                                ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20 animate-pulse" 
                                                 : backup.is_successful 
-                                                    ? "text-emerald-500" 
-                                                    : "text-red-500"
-                                        )} />
-                                    </div>
-
-                                    <div className="flex-1 min-w-0 space-y-2">
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <h3 className="text-xl font-bold truncate tracking-tight text-foreground group-hover:text-primary transition-colors">{backup.name}</h3>
-                                            <span className={cn(
-                                                "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none shadow-sm",
-                                                !backup.completed_at && !backup.is_successful 
-                                                    ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20 animate-pulse" 
-                                                    : backup.is_successful 
-                                                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
-                                                        : "bg-red-500 text-white shadow-lg shadow-red-500/20"
-                                            )}>
-                                                {!backup.completed_at && !backup.is_successful 
-                                                    ? t('serverBackups.statusCreating') 
-                                                    : backup.is_successful 
-                                                        ? t('serverBackups.statusSuccessful') 
-                                                        : t('serverBackups.statusFailed')}
+                                                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
+                                                    : "bg-red-500 text-white shadow-lg shadow-red-500/20"
+                                        )}>
+                                            {!backup.completed_at && !backup.is_successful 
+                                                ? t('serverBackups.statusCreating') 
+                                                : backup.is_successful 
+                                                    ? t('serverBackups.statusSuccessful') 
+                                                    : t('serverBackups.statusFailed')}
+                                        </span>
+                                        {backup.is_locked === 1 && (
+                                            <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 leading-none">
+                                                <Lock className="h-3 w-3" />
+                                                {t('serverBackups.statusLocked')}
                                             </span>
-                                            {backup.is_locked === 1 && (
-                                                <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 leading-none">
-                                                    <Lock className="h-3 w-3" />
-                                                    {t('serverBackups.statusLocked')}
-                                                </span>
-                                            )}
+                                        )}
+                                    </>
+                                }
+                                description={
+                                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <HardDrive className="h-4 w-4 opacity-50" />
+                                            <span className="text-sm font-semibold">{formatMib(backup.bytes / 1024 / 1024)}</span>
                                         </div>
-
-                                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <HardDrive className="h-4 w-4 opacity-50" />
-                                                <span className="text-sm font-semibold">{formatMib(backup.bytes / 1024 / 1024)}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <Database className="h-4 w-4 opacity-50" />
-                                                <span className="text-sm font-semibold uppercase tracking-tight">{backup.disk}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <Calendar className="h-4 w-4 opacity-50" />
-                                                <span className="text-sm font-semibold">{new Date(backup.created_at).toLocaleString()}</span>
-                                            </div>
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Database className="h-4 w-4 opacity-50" />
+                                            <span className="text-sm font-semibold uppercase tracking-tight">{backup.disk}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Calendar className="h-4 w-4 opacity-50" />
+                                            <span className="text-sm font-semibold">{new Date(backup.created_at).toLocaleString()}</span>
                                         </div>
                                     </div>
-
-                                    <div className="flex items-center gap-2 sm:self-center">
-                                        {(canRestore || canDownload || canDelete) && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger className="h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center outline-none">
-                                                    <MoreVertical className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl">
-                                                    {canRestore && backup.is_successful === 1 && (
-                                                        <DropdownMenuItem 
-                                                            disabled={backup.is_locked === 1}
-                                                            onClick={() => {
-                                                                setBackupToRestore(backup)
-                                                                setRestoreDialogOpen(true)
-                                                            }}
-                                                            className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
-                                                        >
-                                                            <RotateCcw className="h-4 w-4 text-emerald-500" />
-                                                            <span className="font-bold">{t('serverBackups.restore')}</span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {canDownload && backup.is_successful === 1 && (
-                                                        <DropdownMenuItem 
-                                                            onClick={() => handleDownloadBackup(backup)}
-                                                            className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
-                                                        >
-                                                            <Download className="h-4 w-4 text-blue-500" />
-                                                            <span className="font-bold">{t('serverBackups.download')}</span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {canDelete && (
-                                                        <DropdownMenuItem 
-                                                            disabled={backup.is_locked === 1}
-                                                            onClick={() => handleDeleteBackup(backup)}
-                                                            className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                            <span className="font-bold">{t('serverBackups.delete')}</span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    <DropdownMenuSeparator className="bg-border/40 my-1" />
+                                }
+                                actions={
+                                    (canRestore || canDownload || canDelete) && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger className="h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center outline-none">
+                                                <MoreVertical className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl">
+                                                {canRestore && backup.is_successful === 1 && (
                                                     <DropdownMenuItem 
-                                                        onClick={() => handleLockBackup(backup, backup.is_locked === 0)}
+                                                        disabled={backup.is_locked === 1}
+                                                        onClick={() => {
+                                                            setBackupToRestore(backup)
+                                                            setRestoreDialogOpen(true)
+                                                        }}
                                                         className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
                                                     >
-                                                        {backup.is_locked === 1 ? (
-                                                            <>
-                                                                <Unlock className="h-4 w-4 text-yellow-500" />
-                                                                <span className="font-bold">{t('serverBackups.unlock')}</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <Lock className="h-4 w-4 text-yellow-500" />
-                                                                <span className="font-bold">{t('serverBackups.lock')}</span>
-                                                            </>
-                                                        )}
+                                                        <RotateCcw className="h-4 w-4 text-emerald-500" />
+                                                        <span className="font-bold">{t('serverBackups.restore')}</span>
                                                     </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+                                                )}
+                                                {canDownload && backup.is_successful === 1 && (
+                                                    <DropdownMenuItem 
+                                                        onClick={() => handleDownloadBackup(backup)}
+                                                        className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
+                                                    >
+                                                        <Download className="h-4 w-4 text-blue-500" />
+                                                        <span className="font-bold">{t('serverBackups.download')}</span>
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {canDelete && (
+                                                    <DropdownMenuItem 
+                                                        disabled={backup.is_locked === 1}
+                                                        onClick={() => handleDeleteBackup(backup)}
+                                                        className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                        <span className="font-bold">{t('serverBackups.delete')}</span>
+                                                    </DropdownMenuItem>
+                                                )}
+                                                <DropdownMenuSeparator className="bg-border/40 my-1" />
+                                                <DropdownMenuItem 
+                                                    onClick={() => handleLockBackup(backup, backup.is_locked === 0)}
+                                                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
+                                                >
+                                                    {backup.is_locked === 1 ? (
+                                                        <>
+                                                            <Unlock className="h-4 w-4 text-yellow-500" />
+                                                            <span className="font-bold">{t('serverBackups.unlock')}</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Lock className="h-4 w-4 text-yellow-500" />
+                                                            <span className="font-bold">{t('serverBackups.lock')}</span>
+                                                        </>
+                                                    )}
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )
+                                }
+                            />
                         ))}
                     </div>
                 )}

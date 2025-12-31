@@ -216,7 +216,7 @@ export default function ServerSettingsPage() {
     // Permission Gate
     if (!canRename && !canReinstall && !canViewSftp) {
          return (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5">
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/40 backdrop-blur-3xl rounded-[3rem] border border-border/5">
                 <div className="relative">
                     <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150" />
                     <div className="relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3">
@@ -257,7 +257,7 @@ export default function ServerSettingsPage() {
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     disabled={!canRename || saving}
-                                    className="h-12 bg-white/5 border-white/5 focus:border-primary/50 font-medium text-base rounded-xl"
+                                    className="h-12 bg-secondary/50 border-border/10 focus:border-primary/50 font-medium text-base rounded-xl"
                                 />
                             </div>
                              <div className="space-y-2">
@@ -266,7 +266,7 @@ export default function ServerSettingsPage() {
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     disabled={!canRename || saving}
-                                    className="h-12 bg-white/5 border-white/5 focus:border-primary/50 font-medium text-base rounded-xl"
+                                    className="h-12 bg-secondary/50 border-border/10 focus:border-primary/50 font-medium text-base rounded-xl"
                                 />
                             </div>
 
@@ -311,7 +311,7 @@ export default function ServerSettingsPage() {
                                     <ServerIcon className="h-3 w-3" />
                                     {t('serverSettings.sftpHost')}
                                 </Label>
-                                <div className="flex items-center gap-2 p-1 pl-4 pr-1 bg-white/5 border border-white/5 rounded-xl hover:border-blue-500/30 transition-colors group/input">
+                                <div className="flex items-center gap-2 p-1 pl-4 pr-1 bg-secondary/50 border border-border/10 rounded-xl hover:border-blue-500/30 transition-colors group/input">
                                     <code className="text-xs font-mono flex-1 truncate text-foreground/80">
                                         {server?.sftp?.host ? `sftp://${server.sftp.host}` : t('common.nA')}
                                     </code>
@@ -331,7 +331,7 @@ export default function ServerSettingsPage() {
                                     <Hash className="h-3 w-3" />
                                     {t('serverSettings.sftpPort')}
                                 </Label>
-                                <div className="flex items-center gap-2 p-1 pl-4 pr-1 bg-white/5 border border-white/5 rounded-xl hover:border-blue-500/30 transition-colors group/input">
+                                <div className="flex items-center gap-2 p-1 pl-4 pr-1 bg-secondary/50 border border-border/10 rounded-xl hover:border-blue-500/30 transition-colors group/input">
                                     <code className="text-xs font-mono flex-1 truncate text-foreground/80">
                                         {server?.sftp?.port || t('common.nA')}
                                     </code>
@@ -351,7 +351,7 @@ export default function ServerSettingsPage() {
                                     <User className="h-3 w-3" />
                                     {t('serverSettings.sftpUsername')}
                                 </Label>
-                                <div className="flex items-center gap-2 p-1 pl-4 pr-1 bg-white/5 border border-white/5 rounded-xl hover:border-blue-500/30 transition-colors group/input">
+                                <div className="flex items-center gap-2 p-1 pl-4 pr-1 bg-secondary/50 border border-border/10 rounded-xl hover:border-blue-500/30 transition-colors group/input">
                                     <code className="text-xs font-mono flex-1 truncate text-foreground/80">
                                         {server?.sftp?.username || t('common.nA')}
                                     </code>
@@ -371,7 +371,7 @@ export default function ServerSettingsPage() {
                                     <KeyRound className="h-3 w-3" />
                                     {t('serverSettings.sftpPassword')}
                                 </Label>
-                                <div className="flex items-center gap-2 px-4 h-[42px] bg-white/5 border border-white/5 border-dashed rounded-xl">
+                                <div className="flex items-center gap-2 px-4 h-[42px] bg-secondary/50 border border-border/10 border-dashed rounded-xl">
                                     <span className="text-xs text-muted-foreground/60 italic">
                                         {t('serverSettings.sftpPasswordPlaceholder')}
                                     </span>
@@ -413,7 +413,7 @@ export default function ServerSettingsPage() {
                         </div>
                         
                          {/* Info Box */}
-                         <div className="mt-6 p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
+                         <div className="mt-6 p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl shadow-sm">
                             <div className="flex items-start gap-3">
                                 <Info className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
                                 <div className="space-y-2">

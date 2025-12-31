@@ -21,6 +21,7 @@ import {
     Trash2, 
     Loader2
 } from "lucide-react"
+import { ResourceCard } from "@/components/featherui/ResourceCard"
 import { cn, isEnabled } from "@/lib/utils"
 import axios from "axios"
 import { toast } from "sonner"
@@ -380,76 +381,60 @@ export default function ServerFirewallPage() {
         ) : (
             <div className="grid grid-cols-1 gap-4">
                 {sortedRules.map(rule => (
-                    <div 
+                    <ResourceCard
                         key={rule.id}
-                        className={cn(
-                            "group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/5 transition-all duration-300 shadow-sm",
-                            "hover:border-primary/20 hover:bg-white/5 hover:shadow-2xl hover:shadow-primary/5"
-                        )}
-                    >
-                        <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
-                            {/* Icon */}
-                            <div className={cn(
-                                "h-16 w-16 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner",
-                                rule.type === "allow" 
-                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" 
-                                    : "bg-red-500/10 border-red-500/20 text-red-500"
-                            )}>
-                                {rule.type === "allow" ? <Shield className="h-8 w-8" /> : <Shield className="h-8 w-8" />}
-                            </div>
-
-                            {/* Content */}
-                            <div className="flex-1 min-w-0 space-y-3">
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <h3 className="text-xl font-black tracking-tight group-hover:text-primary transition-colors duration-300">
-                                        {rule.remote_ip} 
-                                        <span className="mx-2 text-muted-foreground/40 font-medium">→</span>
-                                        {rule.server_port}
-                                    </h3>
-                                    <span className={cn(
-                                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none shadow-sm",
-                                        rule.type === "allow" 
-                                            ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-lg shadow-emerald-500/5" 
-                                            : "bg-red-500/10 text-red-500 border border-red-500/20 shadow-lg shadow-red-500/5"
-                                    )}>
-                                        {rule.type === "allow" ? t("serverFirewall.allow") : t("serverFirewall.block")}
-                                    </span>
-                                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40 shadow-sm flex items-center gap-1.5 opacity-80">
-                                        {rule.protocol.toUpperCase()}
-                                    </span>
+                        icon={Shield}
+                        iconWrapperClassName={
+                            rule.type === "allow" 
+                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" 
+                                : "bg-red-500/10 border-red-500/20 text-red-500"
+                        }
+                        title={`${rule.remote_ip} → ${rule.server_port}`}
+                        badges={[
+                            {
+                                label: rule.type === "allow" ? t("serverFirewall.allow") : t("serverFirewall.block"),
+                                className: rule.type === "allow" 
+                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+                                    : "bg-red-500/10 text-red-500 border-red-500/20"
+                            },
+                            {
+                                label: rule.protocol.toUpperCase(),
+                                className: "bg-secondary text-secondary-foreground border-border"
+                            }
+                        ]}
+                        description={
+                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60 bg-secondary px-2 py-0.5 rounded-md border border-border/50">{t("serverFirewall.priority")} {rule.priority}</span>
                                 </div>
-
-                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-60 bg-black/10 px-2 py-0.5 rounded-md border border-white/5">{t("serverFirewall.priority")} {rule.priority}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-muted-foreground ml-auto sm:ml-0 opacity-60">
-                                        <span className="text-[10px] font-black uppercase tracking-widest italic">{new Date(rule.created_at).toLocaleString()}</span>
-                                    </div>
+                                <div className="flex items-center gap-2 text-muted-foreground ml-auto sm:ml-0 opacity-60">
+                                    <span className="text-[10px] font-black uppercase tracking-widest italic">{new Date(rule.created_at).toLocaleString()}</span>
                                 </div>
                             </div>
-
-                            {/* Actions */}
-                            {canManage && (
-                                <div className="flex items-center gap-3 sm:self-center">
-                                    <button
-                                        type="button"
+                        }
+                        actions={
+                            canManage && (
+                                <div className="flex items-center gap-2 sm:self-center">
+                                    <Button
+                                        variant="glass"
+                                        size="sm"
                                         onClick={() => openEditModal(rule)}
-                                        className="h-12 w-12 flex items-center justify-center rounded-2xl bg-zinc-900 border border-white/10 text-white hover:scale-105 active:scale-95 transition-all shadow-lg"
                                     >
-                                        <Pencil className="h-5 w-5 fill-none stroke-current stroke-2" />
-                                    </button>
-                                    <button
-                                        type="button"
+                                        <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                                        <span className="hidden sm:inline">{t("common.edit")}</span>
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
                                         onClick={() => promptDelete(rule)}
-                                        className="h-12 w-12 flex items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 hover:scale-105 active:scale-95 transition-all shadow-lg"
                                     >
-                                        <Trash2 className="h-5 w-5 stroke-2" />
-                                    </button>
+                                        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                                        <span className="hidden sm:inline">{t("common.delete")}</span>
+                                    </Button>
                                 </div>
-                            )}
-                        </div>
-                    </div>
+                            )
+                        }
+                    />
                 ))}
             </div>
         )}

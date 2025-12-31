@@ -50,6 +50,7 @@ import { Button } from '@/components/featherui/Button'
 import { Input } from '@/components/featherui/Input'
 import { PageHeader } from '@/components/featherui/PageHeader'
 import { EmptyState } from '@/components/featherui/EmptyState'
+import { ResourceCard } from '@/components/featherui/ResourceCard' // Import ResourceCard
 
 // Types
 type ActivityMetadata = {
@@ -438,38 +439,29 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             ) : (
                 <div className="space-y-4">
                     {activities.map((activity, index) => {
-                        const Icon = getEventIcon(activity.event)
                         return (
-                            <div 
+                            <ResourceCard
                                 key={activity.id}
                                 onClick={() => {
                                     setSelectedItem(activity)
                                     setDetailsOpen(true)
                                 }}
-                                className="group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-md border border-white/5 hover:border-primary/40 hover:bg-white/5 transition-all duration-300 shadow-sm cursor-pointer"
                                 style={{ animationDelay: `${index * 50}ms` }}
-                            >
-                                <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
-                                    <div className={cn(
-                                        "h-16 w-16 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner",
-                                        getEventIconClass(activity.event)
-                                    )}>
-                                        <Icon className="h-8 w-8" />
-                                    </div>
-
-                                    <div className="flex-1 min-w-0 space-y-2">
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <h3 className="text-xl font-bold truncate tracking-tight group-hover:text-primary transition-colors">{formatEvent(activity.event)}</h3>
-                                            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40 shadow-sm">
-                                                {activity.id}
-                                            </span>
-                                        </div>
-
-                                        <p className="text-muted-foreground font-medium line-clamp-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                                className="cursor-pointer animate-in slide-in-from-bottom-2 duration-500 fill-mode-both"
+                                icon={getEventIcon(activity.event)}
+                                iconWrapperClassName={getEventIconClass(activity.event)}
+                                title={formatEvent(activity.event)}
+                                badges={
+                                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40 shadow-sm">
+                                        {activity.id}
+                                    </span>
+                                }
+                                description={
+                                    <>
+                                        <p className="w-full text-muted-foreground font-medium line-clamp-1 opacity-80 group-hover:opacity-100 transition-opacity mb-2">
                                             {displayMessage(activity)}
                                         </p>
-
-                                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 border-t border-border/10">
+                                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 border-t border-border/10 w-full">
                                             <div className="flex items-center gap-2 text-muted-foreground">
                                                 <User className="h-4 w-4 opacity-50" />
                                                 <span className="text-sm font-bold uppercase tracking-tight">
@@ -489,15 +481,14 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                                                 </div>
                                             )}
                                         </div>
+                                    </>
+                                }
+                                actions={
+                                    <div className="h-12 w-12 rounded-xl group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary transition-all flex items-center justify-center">
+                                        <Eye className="h-6 w-6" />
                                     </div>
-
-                                    <div className="flex items-center gap-2 md:self-center">
-                                        <div className="h-12 w-12 rounded-xl group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary transition-all flex items-center justify-center">
-                                            <Eye className="h-6 w-6" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                }
+                            />
                         )
                     })}
                 </div>

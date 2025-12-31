@@ -87,5 +87,26 @@ export function formatCpu(percent: number): string {
  */
 export function formatDate(date: string | null | undefined): string {
   if (!date) return "N/A";
-  return new Date(date).toLocaleString();
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "Invalid Date";
+
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+/**
+ * Format bytes to human-readable string
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }

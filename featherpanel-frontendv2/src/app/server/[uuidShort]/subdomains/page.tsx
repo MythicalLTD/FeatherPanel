@@ -4,6 +4,7 @@ import * as React from "react"
 import { useParams, useRouter, usePathname } from "next/navigation"
 import axios, { AxiosError } from "axios"
 import { useTranslation } from "@/contexts/TranslationContext"
+import { ResourceCard } from "@/components/featherui/ResourceCard"
 import {
     Globe,
     Plus,
@@ -21,7 +22,7 @@ import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
-import { cn } from "@/lib/utils"
+import { cn, formatDate } from "@/lib/utils"
 import type { SubdomainOverview, SubdomainEntry } from "@/types/server"
 
 export default function ServerSubdomainsPage() {
@@ -189,55 +190,46 @@ export default function ServerSubdomainsPage() {
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {subdomains.map((sub) => (
-                        <div 
+                        <ResourceCard
                             key={sub.uuid}
-                            className={cn(
-                                "group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-md border border-border/40 transition-all duration-300 shadow-sm",
-                                "hover:border-primary/40 hover:bg-card/50 hover:shadow-lg hover:shadow-primary/5"
-                            )}
-                        >
-                            <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
-                                <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner">
-                                    <Globe className="h-8 w-8 text-primary" />
+                            icon={Globe}
+                            iconWrapperClassName="bg-blue-500/10 border-blue-500/20 text-blue-500"
+                            title={sub.subdomain + '.' + sub.domain}
+                            description={
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-xs font-medium text-muted-foreground">
+                                        {sub.record_type}
+                                    </span>
                                 </div>
-                                <div className="flex-1 min-w-0 space-y-3">
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <h3 className="text-xl font-black tracking-tight select-all group-hover:text-primary transition-colors duration-300">
-                                            {sub.subdomain}.{sub.domain}
-                                        </h3>
-                                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40 shadow-sm opacity-80">
-                                            {sub.record_type}
-                                        </span>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                                        {sub.port && (
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60 bg-black/10 px-2 py-0.5 rounded-md border border-white/5">Port {sub.port}</span>
-                                            </div>
-                                        )}
-                                        <div className="flex items-center gap-2 text-muted-foreground ml-auto sm:ml-0 opacity-60">
-                                            <span className="text-[10px] font-black uppercase tracking-widest italic">{new Date(sub.created_at).toLocaleString()}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {canDelete && (
-                                    <div className="flex items-center gap-3 sm:self-center">
-                                        <button
-                                            type="button"
+                            }
+                            badges={[
+                                ...(sub.port ? [{
+                                    label: `Port ${sub.port}`,
+                                    className: "bg-background/50 border border-border/40 text-muted-foreground"
+                                }] : []),
+                                {
+                                    label: formatDate(sub.created_at),
+                                    className: "bg-background/50 border border-border/40 text-muted-foreground"
+                                }
+                            ]}
+                            actions={
+                                canDelete && (
+                                    <div className="flex items-center gap-3">
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            className="h-8 w-8 p-0"
                                             onClick={() => {
                                                 setSelectedSubdomain(sub)
                                                 setIsDeleteOpen(true)
                                             }}
-                                            className="group/btn relative px-5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 font-black uppercase tracking-widest text-[10px] transition-all hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-xl hover:shadow-red-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            <Trash2 className="h-4 w-4 inline-block mr-1.5" />
-                                            {t("common.delete")}
-                                        </button>
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
                                     </div>
-                                )}
-                            </div>
-                        </div>
+                                )
+                            }
+                        />
                     ))}
                 </div>
             )}

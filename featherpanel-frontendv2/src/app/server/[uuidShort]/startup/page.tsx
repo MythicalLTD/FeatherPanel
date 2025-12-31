@@ -22,7 +22,6 @@ import {
 import { Button } from "@/components/featherui/Button"
 import { Input } from "@/components/featherui/Input"
 import { Textarea } from "@/components/featherui/Textarea"
-import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
@@ -253,7 +252,7 @@ export default function ServerStartupPage() {
         let hasErrors = false
         const errors: Record<number, string> = {}
         variables.forEach(v => {
-            if (v.user_viewable === 1) {
+            if (isEnabled(v.user_viewable)) {
                 const val = variableValues[v.variable_id] || ""
                 const err = validateVariableAgainstRules(val, v.rules || "")
                 if (err) {
@@ -275,7 +274,7 @@ export default function ServerStartupPage() {
                 startup: form.startup,
                 image: form.image,
                 variables: variables
-                    .filter(v => v.user_editable === 1 || canUpdateStartup)
+                    .filter(v => isEnabled(v.user_editable))
                     .map(v => ({
                         variable_id: v.variable_id,
                         variable_value: variableValues[v.variable_id] || ""
@@ -300,13 +299,13 @@ export default function ServerStartupPage() {
     }
 
     // View Computations
-    const viewableVariables = variables.filter(v => v.user_viewable === 1)
+    const viewableVariables = variables.filter(v => isEnabled(v.user_viewable) || canUpdateStartup)
     const hasChanges = () => {
         if (!server) return false
         const startupChanged = form.startup !== (server.startup || "")
         const imageChanged = form.image !== (server.image || server.docker_image || "")
         const variablesChanged = variables
-            .filter(v => v.user_editable === 1 || canUpdateStartup)
+            .filter(v => isEnabled(v.user_editable))
             .some(v => variableValues[v.variable_id] !== (v.variable_value ?? ""))
         return startupChanged || imageChanged || variablesChanged
     }
@@ -315,7 +314,7 @@ export default function ServerStartupPage() {
 
     if (!canRead) {
         return (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5">
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/40 backdrop-blur-3xl rounded-[3rem] border border-border/5">
                 <div className="relative">
                     <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150" />
                     <div className="relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3">
@@ -416,7 +415,7 @@ export default function ServerStartupPage() {
                         description={t('serverStartup.variablesHelp')}
                         icon={Settings}
                         action={
-                            <div className="px-5 py-2 rounded-2xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                            <div className="px-5 py-2 rounded-2xl bg-secondary/50 border border-border/10 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
                                 {viewableVariables.length} {viewableVariables.length === 1 ? t('serverStartup.variableSingular') : t('serverStartup.variablePlural')}
                             </div>
                         }
@@ -440,15 +439,10 @@ export default function ServerStartupPage() {
                                                     {v.name}
                                                 </label>
                                             </div>
-                                            {v.user_editable === 0 && !canUpdateStartup && (
-                                                <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/40 bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
+                                            {!isEnabled(v.user_editable) && (
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/40 bg-secondary/50 px-2 py-0.5 rounded-md border border-border/10">
                                                     {t('serverStartup.readOnly')}
                                                 </span>
-                                            )}
-                                            {v.user_editable === 0 && canUpdateStartup && (
-                                                <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-blue-500/20 bg-blue-500/5 text-blue-500">
-                                                    Admin Access
-                                                </Badge>
                                             )}
                                         </div>
                                         
@@ -460,10 +454,10 @@ export default function ServerStartupPage() {
                                                     setVariableValues(prev => ({ ...prev, [v.variable_id]: val }))
                                                     validateOneVariable(v, val)
                                                 }}
-                                                disabled={(v.user_editable === 0 && !canUpdateStartup) || saving}
+                                                disabled={!isEnabled(v.user_editable) || saving}
                                                 error={!!variableErrors[v.variable_id]}
                                                 className={cn(
-                                                    v.user_editable === 0 && !canUpdateStartup && "opacity-50 grayscale"
+                                                    !isEnabled(v.user_editable) && "opacity-50 grayscale"
                                                 )}
                                                 placeholder={v.default_value || t('serverStartup.enterValue')}
                                             />
@@ -517,13 +511,13 @@ export default function ServerStartupPage() {
                                             onClick={() => canUpdateDockerImage && !saving && setForm(prev => ({ ...prev, image }))}
                                             className={cn(
                                                 "p-3 rounded-xl border transition-all duration-300 cursor-pointer group/img relative overflow-hidden",
-                                                form.image === image ? "bg-blue-500/10 border-blue-500/40" : "bg-white/5 border-white/5 hover:border-white/20"
+                                                form.image === image ? "bg-blue-500/10 border-blue-500/40" : "bg-card/50 border-border/5 hover:border-border/20"
                                             )}
                                         >
                                             <div className="flex items-center justify-between gap-3 relative z-10">
                                                 <p className={cn(
                                                     "text-[10px] font-mono font-bold truncate transition-colors",
-                                                    form.image === image ? "text-blue-500" : "text-white/60 group-hover/img:text-white/80"
+                                                    form.image === image ? "text-blue-500" : "text-muted-foreground group-hover/img:text-foreground"
                                                 )}>{image}</p>
                                                 {form.image === image && <div className="h-1.5 w-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />}
                                             </div>
@@ -565,7 +559,7 @@ export default function ServerStartupPage() {
                     )}
 
                     {/* Information Summary */}
-                    <div className="bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-2xl relative overflow-hidden group">
+                    <div className="bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-sm relative overflow-hidden group">
                         <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000" />
                         <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10">
                             <Info className="h-5 w-5 text-blue-500" />
