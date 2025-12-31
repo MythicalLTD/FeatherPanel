@@ -23,7 +23,7 @@ import { useSettings } from '@/contexts/SettingsContext'
 // API
 import { serversApi } from '@/lib/servers-api'
 import { useServersWebSocket } from '@/hooks/useServersWebSocket'
-import { isServerAccessible } from '@/lib/server-utils'
+
 import { isEnabled } from '@/lib/utils'
 
 export default function DashboardPage() {

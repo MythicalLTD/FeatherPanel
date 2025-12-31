@@ -55,7 +55,7 @@ export default function ActivityTab() {
 
 	useEffect(() => {
 		fetchActivities()
-	}, [])
+	}, [fetchActivities])
 
 	useEffect(() => {
 		const timeout = setTimeout(() => {
@@ -64,7 +64,7 @@ export default function ActivityTab() {
 			}
 		}, 500)
 		return () => clearTimeout(timeout)
-	}, [searchQuery])
+	}, [searchQuery, fetchActivities])
 
 	const formatDate = (dateString: string): string => {
 		if (!dateString) return '-'

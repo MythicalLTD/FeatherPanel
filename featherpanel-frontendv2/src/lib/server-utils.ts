@@ -1,6 +1,6 @@
 // Server utility functions for formatting and calculations
 
-import { Server, ServerStats } from "@/types/server";
+import { Server } from "@/types/server";
 import { formatMib, formatCpu as formatCpuGlobal } from "@/lib/utils";
 
 /**

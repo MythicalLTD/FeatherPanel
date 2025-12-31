@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import PermissionsClass from '@/lib/permissions'
@@ -50,7 +50,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 	const [isSessionChecked, setIsSessionChecked] = useState(false)
 	const router = useRouter()
 
-	const fetchSession = async (force = false): Promise<boolean> => {
+	const fetchSession = useCallback(async (force = false): Promise<boolean> => {
 		// Prevent multiple simultaneous fetches (unless forced)
 		if (!force && isSessionChecked && user) {
 			return true
@@ -74,7 +74,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 			setIsLoading(false)
 			return false
 		}
-	}
+	}, [isSessionChecked, user])
 
 	const refreshSession = async (): Promise<boolean> => {
 		setIsSessionChecked(false)
@@ -107,7 +107,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 	useEffect(() => {
 
 		fetchSession()
-	}, [])
+	}, [fetchSession])
 
 	return (
 		<SessionContext.Provider

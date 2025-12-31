@@ -251,10 +251,7 @@ export default function CreateTicketPage() {
         { id: '', name: t('tickets.selectPriority') },
         ...priorities.map(p => ({ id: p.id, name: p.name }))
     ]
-    const serverOptions = [
-        { id: '', name: t('tickets.selectServer') },
-        ...servers.map(s => ({ id: s.id, name: s.name }))
-    ]
+
 
     return (
         <div className="max-w-4xl mx-auto pb-12">

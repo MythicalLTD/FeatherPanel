@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
 import {
     Ticket as TicketIcon,
     Plus,
@@ -19,8 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { HeadlessSelect } from '@/components/ui/headless-select'
 import { HeadlessModal } from '@/components/ui/headless-modal'
 import {
-    Card,
-    CardContent
+
 } from '@/components/ui/card'
 
 // Types
@@ -286,7 +285,7 @@ export default function TicketsPage() {
                         {tickets.map(ticket => (
                             <div 
                                 key={ticket.uuid}
-                                className="p-5 hover:bg-white/[0.02] transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer border-l-2 border-l-transparent hover:border-l-primary"
+                                className="p-5 hover:bg-white/2 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer border-l-2 border-l-transparent hover:border-l-primary"
                                 onClick={() => router.push(`/dashboard/tickets/${ticket.uuid}`)}
                             >
                                 <div className="flex-1">

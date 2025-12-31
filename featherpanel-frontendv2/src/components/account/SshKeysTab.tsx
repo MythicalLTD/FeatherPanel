@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { Dialog, DialogPanel, DialogTitle, Description as DialogDescription, Field, Label, Input as HeadlessInput } from '@headlessui/react'
 import { Button } from '@/components/ui/button'
@@ -33,7 +33,7 @@ export default function SshKeysTab() {
 	const [newKeyPublic, setNewKeyPublic] = useState('')
 	const [searchQuery, setSearchQuery] = useState('')
 
-	const fetchKeys = async () => {
+	const fetchKeys = useCallback(async () => {
 		setLoading(true)
 		try {
 			const { data } = await axios.get('/api/user/ssh-keys')
@@ -47,11 +47,11 @@ export default function SshKeysTab() {
 		} finally {
 			setLoading(false)
 		}
-	}
+	}, [t])
 
 	useEffect(() => {
 		fetchKeys()
-	}, [])
+	}, [fetchKeys])
 
 	const filteredKeys = keys.filter(key =>
 		key.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

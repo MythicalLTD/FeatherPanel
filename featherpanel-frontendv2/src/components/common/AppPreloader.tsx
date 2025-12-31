@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useSettings } from '@/contexts/SettingsContext'
 
 export default function AppPreloader() {
 	const { settings } = useSettings()
-	const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+	const [theme] = useState<'light' | 'dark'>(() => {
 		if (typeof window === 'undefined') return 'dark'
 		const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
 		const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -41,10 +42,13 @@ export default function AppPreloader() {
 				{/* Logo */}
 				<div className="relative animate-fade-in" style={{ animationDelay: '0.1s' }}>
 					<div className="h-20 w-20 flex items-center justify-center animate-bounce" style={{ animationDuration: '2s' }}>
-						<img
+						<Image
 							src={logoUrl}
 							alt={appName}
-							className="w-full h-full object-contain"
+							fill
+							className="object-contain"
+							sizes="80px"
+							priority
 						/>
 					</div>
 

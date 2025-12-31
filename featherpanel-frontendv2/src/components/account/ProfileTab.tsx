@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useSession } from '@/contexts/SessionContext'
 import { useSettings } from '@/contexts/SettingsContext'
@@ -307,10 +308,13 @@ export default function ProfileTab() {
 								/>
 								{formData.avatar && (
 									<div className="mt-3">
-										<img
+										<Image
 											src={formData.avatar}
 											alt="Avatar preview"
+											width={80}
+											height={80}
 											className="h-20 w-20 rounded-full object-cover border-2 border-primary/20"
+											unoptimized // Since it's a data URL
 										/>
 									</div>
 								)}

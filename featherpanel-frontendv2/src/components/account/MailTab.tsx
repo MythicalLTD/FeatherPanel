@@ -66,7 +66,7 @@ export default function MailTab() {
 
 	useEffect(() => {
 		fetchMails()
-	}, [])
+	}, [fetchMails])
 
 	useEffect(() => {
 		const timeout = setTimeout(() => {
@@ -75,7 +75,7 @@ export default function MailTab() {
 			}
 		}, 500)
 		return () => clearTimeout(timeout)
-	}, [searchQuery])
+	}, [searchQuery, fetchMails])
 
 	const openMailModal = (mail: MailItem) => {
 		setSelectedMail(mail)

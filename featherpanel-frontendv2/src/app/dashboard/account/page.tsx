@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import NextImage from 'next/image'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useSession } from '@/contexts/SessionContext'
 import { Tab } from '@headlessui/react'
@@ -33,7 +34,7 @@ export default function AccountPage() {
 
 	const handleTabChange = (index: number) => {
 		setSelectedIndex(index)
-		router.replace(`/account?tab=${tabs[index].id}`)
+		router.replace(`/dashboard/account?tab=${tabs[index].id}`)
 	}
 
 	const formatDate = (dateString?: string) => {
@@ -60,9 +61,11 @@ export default function AccountPage() {
 			<div className="rounded-xl border border-border bg-card p-6 shadow-sm">
 				<div className="flex flex-col items-center text-center gap-4">
 					{user?.avatar ? (
-						<img
+						<NextImage
 							src={user.avatar}
-							alt={user.username}
+							alt={user.username || 'User avatar'}
+							width={96}
+							height={96}
 							className="h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-primary/20 object-cover"
 						/>
 					) : (

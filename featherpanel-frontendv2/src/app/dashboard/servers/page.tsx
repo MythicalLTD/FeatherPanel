@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, Fragment } from 'react'
-import { useRouter } from 'next/navigation'
+
 import { Server, ServerFolder } from '@/types/server'
-import { isServerAccessible } from '@/lib/server-utils'
+
 import { cn } from '@/lib/utils'
 import { serversApi } from '@/lib/servers-api'
 import { useServersWebSocket } from '@/hooks/useServersWebSocket'
@@ -50,7 +50,6 @@ import { FolderDialog } from '@/components/servers/FolderDialog'
 
 
 export default function ServersPage() {
-	const router = useRouter()
 	const { t } = useTranslation()
 
 	const sortOptions = [
@@ -164,10 +163,7 @@ export default function ServersPage() {
 
 	const unassignedServers = filteredServers.filter(s => !s.folder_id)
 
-	const openServerDetails = (server: Server) => {
-		if (!isServerAccessible(server)) return
-		router.push(`/dashboard/server/${server.uuidShort}`)
-	}
+
 
 	const openCreateFolder = () => {
 		setEditingFolder(null)
