@@ -1,4 +1,72 @@
 import DashboardShell from '@/components/layout/DashboardShell'
+import { Metadata } from 'next'
+
+
+type Props = {
+  params: Promise<{ uuidShort: string }>
+}
+
+import { getBaseUrl } from '@/lib/settings-api'
+
+import { cookies } from 'next/headers'
+import { Server } from '@/types/server'
+
+async function getServer(uuidShort: string): Promise<Server | null> {
+  try {
+    const cookieStore = await cookies()
+    // Forward all cookies to ensure authentication (including remember_token) works correctly
+    const allCookies = cookieStore.getAll()
+    const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
+
+    const baseUrl = getBaseUrl()
+    const url = `${baseUrl}/api/user/servers/${uuidShort}`;
+
+    console.log(`[SEO] Fetching server details for uuidShort: '${uuidShort}' using URL: ${url}`)
+
+    const res = await fetch(url, {
+      headers: {
+        'Cookie': cookieHeader,
+        'Accept': 'application/json',
+      },
+      next: { revalidate: 0 } 
+    })
+
+    if (!res.ok) {
+      console.error(`[SEO] Failed to fetch server ${uuidShort} from ${url}: ${res.status} ${res.statusText}`)
+      return null
+    }
+
+    const data = await res.json()
+    console.log(`[SEO] Server fetch response for ${uuidShort}:`, JSON.stringify(data).substring(0, 200))
+    return data.success ? data.data : null
+  } catch (error) {
+    console.error('[SEO] Error fetching server for metadata:', error)
+    return null
+  }
+}
+
+export async function generateMetadata(
+  { params }: Props
+): Promise<Metadata> {
+  // read route params
+  const { uuidShort } = await params
+
+  const server = await getServer(uuidShort)
+  
+  // Use server name if available, otherwise fallback pattern
+  const serverName = server?.name || `Server ${uuidShort}`
+
+  
+  // Root layout handles the "| AppName" suffix via title.template
+  const title = serverName
+
+  return {
+    title: title,
+    openGraph: {
+      title: title,
+    }
+  }
+}
 
 export default function ServerLayout({
   children,

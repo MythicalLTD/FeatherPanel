@@ -83,6 +83,22 @@ interface ConfigInterface
      * Telemetry.
      */
     public const TELEMETRY = 'telemetry';
+ 
+    /**
+     * SEO Settings.
+     */
+    public const APP_SEO_TITLE = 'app_seo_title';
+    public const APP_SEO_DESCRIPTION = 'app_seo_description';
+    public const APP_SEO_KEYWORDS = 'app_seo_keywords';
+ 
+    /**
+     * PWA Settings.
+     */
+    public const APP_PWA_ENABLED = 'app_pwa_enabled';
+    public const APP_PWA_SHORT_NAME = 'app_pwa_short_name';
+    public const APP_PWA_DESCRIPTION = 'app_pwa_description';
+    public const APP_PWA_THEME_COLOR = 'app_pwa_theme_color';
+    public const APP_PWA_BG_COLOR = 'app_pwa_bg_color';
 
     /**
      * Discord OAuth.

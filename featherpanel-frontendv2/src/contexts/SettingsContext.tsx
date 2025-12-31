@@ -1,7 +1,8 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
-import type { AppSettings, CoreInfo, SettingsResponse } from '@/types/settings'
+import type { AppSettings, CoreInfo } from '@/types/settings'
+import { settingsApi } from '@/lib/settings-api'
 
 interface SettingsContextType {
   settings: AppSettings | null
@@ -36,26 +37,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       }
 
       // Fetch fresh data
-      const response = await fetch('/api/system/settings')
-      if (!response.ok) {
-        throw new Error('Failed to fetch settings')
-      }
-
-      const result: SettingsResponse = await response.json()
+      const data = await settingsApi.getPublicSettings()
       
-      if (result.success && result.data) {
-        setSettings(result.data.settings)
-        setCore(result.data.core)
+      if (data) {
+        setSettings(data.settings)
+        setCore(data.core)
         setError(null)
         
         // Cache the data
         localStorage.setItem(CACHE_KEY, JSON.stringify({
-          data: result.data,
+          data,
           version: CACHE_VERSION,
           timestamp: Date.now()
         }))
       } else {
-        throw new Error(result.error_message || 'Failed to load settings')
+        throw new Error('Failed to load settings')
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load settings'

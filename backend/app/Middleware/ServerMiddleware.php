@@ -63,6 +63,13 @@ class ServerMiddleware implements MiddlewareInterface
         }
 
         if (!$serverUuid) {
+            $context = [
+                'attributes' => $request->attributes->all(),
+                'query' => $request->query->all(),
+                'serverParamName' => $serverParamName,
+                'path' => $request->getPathInfo(),
+            ];
+            App::getInstance(true)->getLogger()->error('SERVER_UUID_MISSING: Attributes dump: ' . json_encode($context));
             return ApiResponse::error('Server UUID not provided', 'SERVER_UUID_MISSING', 400, []);
         }
 

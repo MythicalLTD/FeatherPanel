@@ -7,6 +7,58 @@ import { NotificationProvider } from '@/contexts/NotificationContext'
 import AppContent from '@/components/common/AppContent'
 import { Toaster } from 'sonner'
 
+import type { Metadata } from 'next'
+import { settingsApi } from '@/lib/settings-api'
+
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await settingsApi.getPublicSettings()
+  const settings = data?.settings
+
+  const title = settings?.app_seo_title || settings?.app_name || 'FeatherPanel'
+  const description = settings?.app_seo_description || 'A powerful game server management panel.'
+  const keywords = settings?.app_seo_keywords || 'game, server, management, panel, hosting'
+  const logo = settings?.app_logo_dark || '/assets/logo.png'
+
+  return {
+    title: {
+      default: title,
+      template: `%s | ${title}`,
+    },
+    description: description,
+    keywords: keywords.split(',').map(k => k.trim()),
+    icons: {
+      icon: logo,
+      shortcut: logo,
+      apple: logo,
+      other: {
+        rel: 'apple-touch-icon-precomposed',
+        url: logo,
+      },
+    },
+    openGraph: {
+      title: title,
+      description: description,
+      siteName: settings?.app_name || 'FeatherPanel',
+      images: [
+        {
+          url: logo,
+          width: 800,
+          height: 600,
+          alt: title,
+        },
+      ],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: title,
+      description: description,
+      images: [logo],
+    },
+    applicationName: settings?.app_name || 'FeatherPanel',
+  }
+}
+
 export default function RootLayout({
 	children,
 }: {

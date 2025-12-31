@@ -426,7 +426,7 @@ export default function ServersPage() {
 											key={server.id}
 											server={server}
 											layout={selectedLayout}
-											serverUrl={`/dashboard/server/${server.uuidShort}`}
+											serverUrl={`/server/${server.uuidShort}`}
 											liveStats={getServerLiveStats(server)}
 											isConnected={isServerConnected(server.uuidShort)}
 											t={t}
@@ -527,7 +527,7 @@ export default function ServersPage() {
 														key={server.id}
 														server={server}
 														layout={selectedLayout}
-														serverUrl={`/dashboard/server/${server.uuidShort}`}
+														serverUrl={`/server/${server.uuidShort}`}
 														liveStats={getServerLiveStats(server)}
 														isConnected={isServerConnected(server.uuidShort)}
 														t={t}
@@ -560,7 +560,7 @@ export default function ServersPage() {
 													key={server.id}
 													server={server}
 													layout={selectedLayout}
-													serverUrl={`/dashboard/server/${server.uuidShort}`}
+													serverUrl={`/server/${server.uuidShort}`}
 													liveStats={getServerLiveStats(server)}
 													isConnected={isServerConnected(server.uuidShort)}
 													t={t}

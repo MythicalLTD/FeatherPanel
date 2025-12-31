@@ -66,7 +66,20 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_TIMEZONE => 'UTC',
             ConfigInterface::APP_LOGO_WHITE => 'https://cdn.mythical.systems/featherpanel/logo.png',
             ConfigInterface::APP_LOGO_DARK => 'https://cdn.mythical.systems/featherpanel/logo.png',
+
             ConfigInterface::APP_SUPPORT_URL => 'https://discord.mythical.systems',
+            
+            // SEO Settings
+            ConfigInterface::APP_SEO_TITLE => 'FeatherPanel',
+            ConfigInterface::APP_SEO_DESCRIPTION => 'A powerful game server management panel.',
+            ConfigInterface::APP_SEO_KEYWORDS => 'game, server, management, panel, hosting',
+
+            // PWA Settings
+            ConfigInterface::APP_PWA_ENABLED => 'false',
+            ConfigInterface::APP_PWA_SHORT_NAME => 'FeatherPanel',
+            ConfigInterface::APP_PWA_DESCRIPTION => 'Manage your game servers on the go.',
+            ConfigInterface::APP_PWA_THEME_COLOR => '#000000',
+            ConfigInterface::APP_PWA_BG_COLOR => '#ffffff',
 
             // Social Media Links
             ConfigInterface::LINKEDIN_URL => '',
