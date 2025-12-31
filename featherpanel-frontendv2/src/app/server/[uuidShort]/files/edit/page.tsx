@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Editor, OnMount } from "@monaco-editor/react";
 import { filesApi } from "@/lib/files-api";
 import { toast } from "sonner";
-import { Save, Loader2, FileCode } from "lucide-react";
+import { Save, Loader2, FileCode, Lock } from "lucide-react";
 import { useServerPermissions } from "@/hooks/useServerPermissions";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/featherui/Button";
 import { PageHeader } from "@/components/featherui/PageHeader";
 
@@ -20,6 +21,7 @@ export default function FileEditorPage({
     const { uuidShort } = use(params);
     const { file: fileName = "file.txt", directory = "/" } = use(searchParams);
     const router = useRouter();
+    const { theme } = useTheme();
     const fullPath = directory.endsWith("/") ? `${directory}${fileName}` : `${directory}/${fileName}`;
 
     const [content, setContent] = useState("");
@@ -35,12 +37,6 @@ export default function FileEditorPage({
     const fetchContent = useCallback(async () => {
         setLoading(true);
         try {
-            // The original instruction snippet seems to be for a different context (e.g., image download)
-            // and is syntactically incomplete for direct insertion here.
-            // Assuming the intent is to fix path generation for file content retrieval,
-            // and the existing filesApi.getFileContent already handles the path correctly.
-            // If a different API endpoint or method is intended, it needs to be fully specified.
-            // For now, keeping the existing functional call as it correctly fetches text content.
             const data = await filesApi.getFileContent(uuidShort, fullPath);
             setContent(data);
             setOriginalContent(data);
@@ -137,14 +133,14 @@ export default function FileEditorPage({
     }
 
     return (
-        <div className="flex flex-col gap-6 relative min-h-screen pb-20">
+        <div className="flex flex-col gap-6 relative h-[calc(100vh-6rem)] pb-4">
             <PageHeader
                 title={`Editing: ${fileName}`}
                 description={`Editing file at ${fullPath}`}
             />
 
-            <div className="flex-1 rounded-4xl border border-border/50 bg-card/50 shadow-2xl backdrop-blur-3xl overflow-hidden p-1 flex flex-col group transition-all hover:border-border/80">
-                <div className="flex items-center justify-between p-3 border-b border-border/10 bg-muted/30">
+            <div className="flex-1 rounded-4xl border border-border/50 bg-card/50 shadow-2xl backdrop-blur-3xl overflow-hidden p-1 flex flex-col group transition-all hover:border-border/80 relative min-h-0">
+                <div className="flex items-center justify-between p-3 border-b border-border/10 bg-muted/30 shrink-0">
                     <div className="flex items-center gap-3">
                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5">
                             <FileCode className="h-5 w-5" />
@@ -157,6 +153,12 @@ export default function FileEditorPage({
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
+                         {!canEdit && (
+                            <div className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-lg border border-yellow-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                                <Lock className="h-3 w-3" />
+                                Read Only
+                            </div>
+                        )}
                         <Button 
                             variant="ghost" 
                             size="sm" 
@@ -185,29 +187,31 @@ export default function FileEditorPage({
                         </Button>
                     </div>
                 </div>
-                <div className="flex-1 relative min-h-[600px]">
-                    <Editor
-                        height="100%"
-                        defaultLanguage={getLanguage(fileName)}
-                        value={content}
-                        theme="vs-dark"
-                        onMount={handleEditorMount}
-                        onChange={(value) => setContent(value || "")}
-                        options={{
-                            minimap: { enabled: true },
-                            fontSize: 14,
-                            lineNumbers: "on",
-                            readOnly: !canEdit,
-                            scrollBeyondLastLine: false,
-                            automaticLayout: true,
-                            padding: { top: 20 },
-                            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                            fontLigatures: true,
-                            cursorSmoothCaretAnimation: "on",
-                            cursorBlinking: "expand",
-                            smoothScrolling: true,
-                        }}
-                    />
+                <div className="flex-1 relative w-full h-full min-h-0">
+                    <div className="absolute inset-0">
+                        <Editor
+                            height="100%"
+                            defaultLanguage={getLanguage(fileName)}
+                            value={content}
+                            theme={theme === 'dark' ? "vs-dark" : "light"}
+                            onMount={handleEditorMount}
+                            onChange={(value) => setContent(value || "")}
+                            options={{
+                                minimap: { enabled: true },
+                                fontSize: 14,
+                                lineNumbers: "on",
+                                readOnly: !canEdit,
+                                scrollBeyondLastLine: false,
+                                automaticLayout: true,
+                                padding: { top: 20 },
+                                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                fontLigatures: true,
+                                cursorSmoothCaretAnimation: "on",
+                                cursorBlinking: "expand",
+                                smoothScrolling: true,
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
