@@ -324,7 +324,7 @@ export default function ServerBackupsPage() {
                     <div className="flex items-center gap-3">
                         <Button 
                             variant="glass" 
-                            size="lg" 
+                            size="default" 
                             onClick={() => fetchBackups()}
                             disabled={loading}
                         >
@@ -333,7 +333,7 @@ export default function ServerBackupsPage() {
                         </Button>
                         {canCreate && (
                             <Button 
-                                size="lg" 
+                                size="default" 
                                 disabled={limitReached || loading}
                                 onClick={() => {
                                     setNewBackupName(generateBackupName())
@@ -389,7 +389,7 @@ export default function ServerBackupsPage() {
                         icon={Archive}
                         action={canCreate && server && server.backup_limit > 0 ? (
                              <Button 
-                                size="lg" 
+                                size="default" 
                                 onClick={() => {
                                     setNewBackupName(generateBackupName())
                                     setIgnoredFiles([])

@@ -281,7 +281,7 @@ export default function ServerTasksPage() {
                     <div className="flex items-center gap-3">
                         <Button 
                             variant="glass" 
-                            size="lg" 
+                            size="default" 
                             onClick={() => router.back()}
                             disabled={loading}
                         >
@@ -289,7 +289,7 @@ export default function ServerTasksPage() {
                         </Button>
                         {canUpdate && (
                             <Button 
-                                size="lg" 
+                                size="default" 
                                 variant="default"
                                 onClick={() => {
                                     setCreateForm({ action: "", payload: "", time_offset: 0, continue_on_failure: 0 })
@@ -313,7 +313,7 @@ export default function ServerTasksPage() {
                     action={
                         canUpdate ? (
                             <Button 
-                                size="lg" 
+                                size="default" 
                                 variant="default"
                                 onClick={() => {
                                     setCreateForm({ action: "", payload: "", time_offset: 0, continue_on_failure: 0 })

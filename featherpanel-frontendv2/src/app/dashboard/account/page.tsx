@@ -66,7 +66,7 @@ export default function AccountPage() {
 							className="h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-primary/20 object-cover"
 						/>
 					) : (
-						<div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/20 flex items-center justify-center">
+						<div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-linear-to-br from-primary/20 to-primary/10 border-2 border-primary/20 flex items-center justify-center">
 							<span className="text-2xl font-semibold text-primary">{getUserInitials()}</span>
 						</div>
 					)}

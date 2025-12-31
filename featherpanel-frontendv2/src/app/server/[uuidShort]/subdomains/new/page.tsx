@@ -133,7 +133,7 @@ export default function CreateSubdomainPage() {
                 <div className="max-w-md space-y-3 px-4">
                     <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverSubdomains.noDomainsAvailable")}</h2>
                 </div>
-                <Button variant="outline" size="lg" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.back()}>
+                <Button variant="outline" size="default" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.back()}>
                     {t("common.goBack")}
                 </Button>
             </div>
@@ -149,14 +149,14 @@ export default function CreateSubdomainPage() {
                     <div className="flex items-center gap-3">
                          <Button 
                             variant="ghost" 
-                            size="lg" 
+                            size="default" 
                             onClick={() => router.back()}
                             disabled={saving}
                         >
                             {t("common.cancel")}
                         </Button>
                         <Button 
-                            size="lg" 
+                            size="default" 
                             variant="default"
                             onClick={handleCreate}
                             disabled={saving || limitReached}
@@ -281,7 +281,7 @@ export default function CreateSubdomainPage() {
                     {/* Mobile Only: Action Button */}
                     <div className="md:hidden pt-2">
                         <Button 
-                            size="lg" 
+                            size="default" 
                             variant="default"
                             onClick={handleCreate}
                             disabled={saving || limitReached}

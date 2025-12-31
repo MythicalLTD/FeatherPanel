@@ -129,7 +129,7 @@ export default function ServerSubdomainsPage() {
                     <div className="flex items-center gap-3">
                         <Button 
                             variant="glass" 
-                            size="lg" 
+                            size="default" 
                             onClick={fetchData} 
                             disabled={loading} 
                         >
@@ -138,7 +138,7 @@ export default function ServerSubdomainsPage() {
                         </Button>
                         
                         <Button 
-                            size="lg" 
+                            size="default" 
                             variant="default"
                             onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
                             disabled={limitReached || loading}
@@ -176,7 +176,7 @@ export default function ServerSubdomainsPage() {
                     icon={Globe}
                     action={
                         <Button 
-                            size="lg" 
+                            size="default" 
                             variant="default"
                             onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
                             disabled={limitReached}

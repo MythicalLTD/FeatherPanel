@@ -306,7 +306,7 @@ export default function ServerAllocationsPage() {
           <div className="flex items-center gap-3">
             <Button 
                 variant="glass" 
-                size="lg" 
+                size="default" 
                 onClick={() => fetchAllocations()}
                 disabled={loading}
             >
@@ -319,7 +319,7 @@ export default function ServerAllocationsPage() {
                    {isEnabled(settings?.server_allow_allocation_select) && (
                      <Button 
                        variant="glass"
-                       size="lg"
+                       size="default"
                        onClick={handleOpenAssign}
                        disabled={limitReached || isAutoAllocating || loading || settingsLoading}
                      >
@@ -328,7 +328,7 @@ export default function ServerAllocationsPage() {
                      </Button>
                    )}
                    <Button 
-                     size="lg"
+                     size="default"
                      onClick={handleAutoAllocate}
                      disabled={limitReached || isAutoAllocating || loading}
                      className="shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all"
@@ -393,7 +393,7 @@ export default function ServerAllocationsPage() {
                 icon={Network}
                 action={canCreate && !limitReached ? (
                      <Button 
-                         size="lg"
+                         size="default"
                          onClick={handleAutoAllocate}
                          className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
                     >
@@ -458,7 +458,7 @@ export default function ServerAllocationsPage() {
                         {/* Actions */}
                         <div className="flex items-center gap-3 sm:self-center">
                             <Button
-                                size="lg"
+                                size="default"
                                 variant="glass"
                                 onClick={() => handleCopy(`${allocation.ip}:${allocation.port}`)}
                                 className="px-6 font-bold"

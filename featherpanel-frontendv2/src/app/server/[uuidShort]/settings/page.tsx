@@ -226,7 +226,7 @@ export default function ServerSettingsPage() {
                 <div className="max-w-md space-y-3 px-4">
                     <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverSettings.accessDenied")}</h2>
                 </div>
-                 <Button variant="outline" size="lg" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
+                 <Button variant="outline" size="default" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
                     {t("common.goBack")}
                 </Button>
             </div>

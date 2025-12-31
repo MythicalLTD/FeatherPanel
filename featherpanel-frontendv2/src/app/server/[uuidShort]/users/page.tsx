@@ -260,7 +260,7 @@ export default function ServerSubusersPage() {
                         {t("serverSubusers.featureDisabledDescription")}
                     </p>
                 </div>
-                <Button variant="outline" size="lg" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
+                <Button variant="outline" size="default" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
                     {t("common.goBack")}
                 </Button>
             </div>
@@ -301,7 +301,7 @@ export default function ServerSubusersPage() {
                     <>
                             <Button 
                                 variant="glass" 
-                                size="lg" 
+                                size="default" 
                                 onClick={() => fetchSubusers(pagination.current_page)} 
                                 disabled={loading}
                             >
@@ -310,7 +310,7 @@ export default function ServerSubusersPage() {
                             </Button>
                             {canCreate && (
                                 <Button 
-                                    size="lg" 
+                                    size="default" 
                                     variant="default"
                                     onClick={() => setIsAddOpen(true)}
                                     disabled={loading}
@@ -332,7 +332,7 @@ export default function ServerSubusersPage() {
                     action={
                         canCreate && (
                             <Button 
-                                size="lg" 
+                                size="default" 
                                 onClick={() => setIsAddOpen(true)}
                                 className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
                             >
@@ -358,7 +358,7 @@ export default function ServerSubusersPage() {
                             />
                         </div>
                         <Button 
-                            size="lg" 
+                            size="default" 
                             onClick={() => fetchSubusers(1)} 
                             disabled={loading}
                             className="h-14 px-8 rounded-2xl"
@@ -492,11 +492,11 @@ export default function ServerSubusersPage() {
                     </div>
                 </div>
                 <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-                    <Button variant="outline" size="lg" onClick={() => setIsAddOpen(false)} disabled={addLoading} className="rounded-2xl">
+                    <Button variant="outline" size="default" onClick={() => setIsAddOpen(false)} disabled={addLoading} className="rounded-2xl">
                         {t("common.cancel")}
                     </Button>
                     <Button 
-                        size="lg" 
+                        size="default" 
                         onClick={handleAddSubuser} 
                         disabled={addLoading || !addEmail}
                         className="rounded-2xl shadow-lg shadow-primary/20"
@@ -515,12 +515,12 @@ export default function ServerSubusersPage() {
                 description={t("serverSubusers.confirmDeleteDescription", { email: selectedSubuser?.email || "" })}
             >
                 <div className="flex justify-end gap-3 pt-6 border-t border-white/5">
-                    <Button variant="outline" size="lg" onClick={() => setIsDeleteOpen(false)} disabled={deleting} className="rounded-2xl">
+                    <Button variant="outline" size="default" onClick={() => setIsDeleteOpen(false)} disabled={deleting} className="rounded-2xl">
                         {t("common.cancel")}
                     </Button>
                     <Button 
                         variant="destructive" 
-                        size="lg"
+                        size="default"
                         onClick={handleDelete} 
                         disabled={deleting}
                         className="rounded-2xl shadow-lg shadow-red-500/20"
@@ -623,11 +623,11 @@ export default function ServerSubusersPage() {
                     </div>
 
                     <div className="flex justify-end gap-3 pt-6 border-t border-white/5">
-                        <Button variant="outline" size="lg" onClick={() => setIsPermissionsOpen(false)} disabled={savingPermissions} className="rounded-2xl">
+                        <Button variant="outline" size="default" onClick={() => setIsPermissionsOpen(false)} disabled={savingPermissions} className="rounded-2xl">
                             {t("common.cancel")}
                         </Button>
                         <Button 
-                            size="lg" 
+                            size="default" 
                             onClick={handleSavePermissions} 
                             disabled={savingPermissions}
                             className="rounded-2xl shadow-lg shadow-primary/20"

@@ -159,7 +159,7 @@ export default function ServerProxyPage() {
                     <div className="flex items-center gap-3">
                         <Button
                             variant="glass"
-                            size="lg"
+                            size="default"
                             onClick={fetchData}
                             disabled={loading}
                         >
@@ -168,7 +168,7 @@ export default function ServerProxyPage() {
                         </Button>
                         {canManage && (
                             <Button
-                                size="lg"
+                                size="default"
                                 onClick={() => router.push(`/server/${uuidShort}/proxy/new`)}
                                 disabled={isMaxReached || loading}
                             >
@@ -203,7 +203,7 @@ export default function ServerProxyPage() {
                     icon={ArrowRightLeft}
                     action={canManage ? (
                          <Button
-                            size="lg"
+                            size="default"
                             onClick={() => router.push(`/server/${uuidShort}/proxy/new`)}
                             disabled={isMaxReached}
                         >
@@ -222,7 +222,7 @@ export default function ServerProxyPage() {
                                 "hover:border-primary/20 hover:bg-white/5 hover:shadow-2xl hover:shadow-primary/5"
                             )}
                         >
-                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                             <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
                             <div className="p-6 flex flex-col md:flex-row md:items-center gap-6 relative z-10">
                                 {/* Icon Status */}

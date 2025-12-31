@@ -281,7 +281,7 @@ export default function ServerDatabasesPage() {
                     <div className="flex items-center gap-3">
                         <Button 
                             variant="glass" 
-                            size="lg" 
+                            size="default" 
                             onClick={() => fetchDatabases()}
                             disabled={loading}
                         >
@@ -290,7 +290,7 @@ export default function ServerDatabasesPage() {
                         </Button>
                         {canCreate && (
                             <Button 
-                                size="lg" 
+                                size="default" 
                                 disabled={limitReached || loading}
                                 onClick={() => setCreateDialogOpen(true)}
                                 className="shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all"
@@ -342,7 +342,7 @@ export default function ServerDatabasesPage() {
                         icon={DatabaseIcon}
                         action={canCreate && server && server.database_limit > 0 ? (
                             <Button 
-                                size="lg" 
+                                size="default" 
                                 onClick={() => setCreateDialogOpen(true)}
                                 className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
                             >
@@ -358,7 +358,7 @@ export default function ServerDatabasesPage() {
                                 key={db.id}
                                 className="group relative overflow-hidden rounded-3xl bg-[#0A0A0A]/40 backdrop-blur-md border border-white/5 hover:border-primary/40 hover:bg-white/5 transition-all duration-300 shadow-sm"
                             >
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                                 
                                 <div className="p-6 flex flex-col md:flex-row md:items-center gap-6 relative z-10">
                                     <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner">
@@ -735,7 +735,7 @@ export default function ServerDatabasesPage() {
                             >
                                 {t('serverDatabases.resetWarning')}
                             </Button>
-                            <Button size="lg" className="px-10 rounded-xl font-bold shadow-xl shadow-primary/20" onClick={() => setViewDialogOpen(false)}>
+                            <Button size="default" className="px-10 rounded-xl font-bold shadow-xl shadow-primary/20" onClick={() => setViewDialogOpen(false)}>
                                 {t('common.close')}
                             </Button>
                         </DialogFooter>

@@ -362,7 +362,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                     <div className="flex items-center gap-3">
                         <Button 
                             variant="glass" 
-                            size="lg" 
+                            size="default" 
                             onClick={() => fetchActivities()}
                             disabled={loading}
                         >
@@ -423,7 +423,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                     action={(searchQuery || selectedEventFilter !== 'all') ? (
                         <Button 
                             variant="glass" 
-                            size="lg"
+                            size="default"
                             onClick={() => {
                                 setSearchQuery('')
                                 setSelectedEventFilter('all')
@@ -550,7 +550,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                         <DialogHeader>
                             <div className="flex items-center gap-6">
                                 <div className={cn(
-                                    "h-20 w-20 rounded-[2rem] flex items-center justify-center border-4 shadow-2xl transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0",
+                                    "h-20 w-20 rounded-4xl flex items-center justify-center border-4 shadow-2xl transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0",
                                     getEventIconClass(selectedItem.event)
                                 )}>
                                     {React.createElement(getEventIcon(selectedItem.event), { className: "h-10 w-10" })}
@@ -638,7 +638,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
 
                         <DialogFooter className="border-t border-white/5 pt-8 mt-4 flex items-center justify-end">
                             <Button 
-                                size="lg" 
+                                size="default" 
                                 className="px-12 h-14 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/20"
                                 onClick={() => setDetailsOpen(false)}
                             >

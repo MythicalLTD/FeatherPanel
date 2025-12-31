@@ -411,7 +411,7 @@ export default function ServerTransferSpellPage() {
                         {t("serverStartup.noStartupPermission")}
                     </p>
                 </div>
-                <Button variant="outline" size="lg" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
+                <Button variant="outline" size="default" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
                     {t("common.goBack")}
                 </Button>
             </div>
@@ -428,7 +428,7 @@ export default function ServerTransferSpellPage() {
                     <div className="flex items-center gap-3">
                         <Button 
                             variant="plain" 
-                            size="lg" 
+                            size="default" 
                             onClick={() => handleBackToStep(1)}
                             disabled={currentStep === 1 || saving}
                             className="bg-transparent hover:bg-white/5 border border-transparent hover:border-white/10 text-[10px]"
@@ -436,7 +436,7 @@ export default function ServerTransferSpellPage() {
                             {t('common.cancel')}
                         </Button>
                         <Button 
-                            size="lg" 
+                            size="default" 
                             variant="default"
                             onClick={handleSave}
                             disabled={currentStep !== 3 || saving || Object.keys(variableErrors).length > 0}
@@ -662,7 +662,7 @@ export default function ServerTransferSpellPage() {
                         <div className="pt-8 border-t border-white/5 flex flex-col items-center">
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-6">{t('serverStartup.doubleCheckConfiguration')}</p>
                             <Button 
-                                size="lg" 
+                                size="default" 
                                 variant="default"
                                 onClick={handleSave}
                                 disabled={saving}

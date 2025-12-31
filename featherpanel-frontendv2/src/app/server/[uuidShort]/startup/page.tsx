@@ -328,7 +328,7 @@ export default function ServerStartupPage() {
                         {t("serverStartup.noStartupPermission")}
                     </p>
                 </div>
-                <Button variant="outline" size="lg" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
+                <Button variant="outline" size="default" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
                     {t("common.goBack")}
                 </Button>
             </div>
@@ -354,7 +354,7 @@ export default function ServerStartupPage() {
                     <div className="hidden md:flex items-center gap-3">
                         <Button 
                             variant="plain" 
-                            size="lg" 
+                            size="default" 
                             onClick={() => fetchData()}
                             disabled={loading || saving}
                             className="bg-transparent hover:bg-white/5 border border-transparent hover:border-white/10 text-[10px]"
@@ -364,7 +364,7 @@ export default function ServerStartupPage() {
                         </Button>
                         <Button 
                             variant="default"
-                            size="lg" 
+                            size="default" 
                             onClick={handleSave}
                             disabled={saving || !hasChanges() || Object.keys(variableErrors).length > 0}
                             loading={saving}
@@ -555,7 +555,7 @@ export default function ServerStartupPage() {
                             <Button 
                                 onClick={() => router.push(`/server/${uuidShort}/startup/transfer/spell`)}
                                 className="w-full bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary"
-                                size="lg"
+                                size="default"
                                 variant="outline"
                             >
                                 {t('serverStartup.startTransfer')}

@@ -291,7 +291,7 @@ export default function ServerFirewallPage() {
                 title={t("serverFirewall.featureDisabled")}
                 description={t("serverFirewall.featureDisabledDescription")}
                 action={
-                    <Button variant="outline" size="lg" onClick={() => window.history.back()}>
+                    <Button variant="outline" size="default" onClick={() => window.history.back()}>
                         {t("common.goBack")}
                     </Button>
                 }
@@ -325,7 +325,7 @@ export default function ServerFirewallPage() {
                 <div className="flex items-center gap-3">
                     <Button 
                         variant="glass" 
-                        size="lg" 
+                        size="default" 
                         onClick={fetchRules} 
                         disabled={loading} 
                     >
@@ -335,7 +335,7 @@ export default function ServerFirewallPage() {
                     
                     {canManage && firewallEnabled && (
                         <Button 
-                            size="lg" 
+                            size="default" 
                             onClick={openCreateModal} 
                             disabled={loading || allocations.length === 0}
                         >
@@ -369,7 +369,7 @@ export default function ServerFirewallPage() {
                 description={t("serverFirewall.noRulesDescription")}
                 action={canManage ? (
                     <Button 
-                        size="lg" 
+                        size="default" 
                         onClick={openCreateModal} 
                     >
                         <Plus className="h-6 w-6 mr-2" />

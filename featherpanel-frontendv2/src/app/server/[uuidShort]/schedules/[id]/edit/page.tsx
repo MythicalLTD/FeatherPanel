@@ -142,14 +142,14 @@ export default function EditSchedulePage() {
                     <div className="flex items-center gap-3">
                         <Button 
                             variant="glass" 
-                            size="lg" 
+                            size="default" 
                             onClick={() => router.back()}
                             disabled={saving}
                         >
                             {t("common.cancel")}
                         </Button>
                         <Button 
-                            size="lg" 
+                            size="default" 
                             variant="default"
                             onClick={handleUpdate}
                             disabled={saving}
@@ -342,7 +342,7 @@ export default function EditSchedulePage() {
                 <div className="md:hidden flex flex-col gap-3">
                     <Button 
                         type="submit"
-                        size="lg" 
+                        size="default" 
                         variant="default"
                         disabled={saving}
                         loading={saving}
@@ -354,7 +354,7 @@ export default function EditSchedulePage() {
                     <Button 
                         type="button"
                         variant="glass" 
-                        size="lg" 
+                        size="default" 
                         onClick={() => router.back()}
                         disabled={saving}
                         className="w-full text-[10px]"

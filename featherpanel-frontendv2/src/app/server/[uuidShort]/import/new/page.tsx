@@ -465,7 +465,7 @@ export default function CreateServerImportPage() {
             </div>
 
             {/* Background Effect */}
-            <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5 pointer-events-none -z-10" />
+            <div className="fixed inset-0 bg-linear-to-br from-primary/5 via-transparent to-blue-500/5 pointer-events-none -z-10" />
         </div>
     )
 }

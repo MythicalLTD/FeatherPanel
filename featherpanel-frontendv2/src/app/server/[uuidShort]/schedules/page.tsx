@@ -164,7 +164,7 @@ export default function ServerSchedulesPage() {
                         {t("serverSchedules.featureDisabledDescription")}
                     </p>
                 </div>
-                <Button variant="outline" size="lg" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
+                <Button variant="outline" size="default" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
                     {t("common.goBack")}
                 </Button>
             </div>
@@ -205,7 +205,7 @@ export default function ServerSchedulesPage() {
                     <div className="flex items-center gap-3">
                         <Button 
                             variant="glass" 
-                            size="lg" 
+                            size="default" 
                             onClick={() => fetchData(pagination.current_page)} 
                             disabled={loading}
                         >
@@ -214,7 +214,7 @@ export default function ServerSchedulesPage() {
                         </Button>
                         {canCreate && (
                             <Button 
-                                size="lg" 
+                                size="default" 
                                 variant="default"
                                 onClick={() => router.push(`/server/${uuidShort}/schedules/new`)}
                                 disabled={loading}
@@ -236,7 +236,7 @@ export default function ServerSchedulesPage() {
                     action={
                         canCreate ? (
                             <Button 
-                                size="lg" 
+                                size="default" 
                                 variant="default"
                                 onClick={() => router.push(`/server/${uuidShort}/schedules/new`)}
                             >

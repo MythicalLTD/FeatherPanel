@@ -111,7 +111,7 @@ export default function ServerImportPage() {
                     <div className="flex items-center gap-3">
                         <Button
                             variant="glass"
-                            size="lg"
+                            size="default"
                             onClick={fetchImports}
                             disabled={loading}
                         >
@@ -120,7 +120,7 @@ export default function ServerImportPage() {
                         </Button>
                         {isImportEnabled && canManage && (
                             <Button
-                                size="lg"
+                                size="default"
                                 variant="default"
                                 onClick={() => router.push(`/server/${uuidShort}/import/new`)}
                             >
@@ -149,7 +149,7 @@ export default function ServerImportPage() {
                     action={
                         isImportEnabled && canManage && (
                             <Button
-                                size="lg"
+                                size="default"
                                 variant="default"
                                 onClick={() => router.push(`/server/${uuidShort}/import/new`)}
                             >
@@ -170,7 +170,7 @@ export default function ServerImportPage() {
                                 key={item.id}
                                 className="group relative bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/5 rounded-3xl p-6 transition-all hover:bg-white/5 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5 overflow-hidden"
                             >
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
                                 <div className="flex items-start justify-between mb-6 relative z-10">
                                     <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center border transition-colors shrink-0", statusConfig.bg, statusConfig.border)}>

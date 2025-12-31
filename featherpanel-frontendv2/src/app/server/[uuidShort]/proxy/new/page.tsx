@@ -191,14 +191,14 @@ export default function CreateProxyPage() {
                     <div className="flex items-center gap-3">
                         <Button
                             variant="glass"
-                            size="lg"
+                            size="default"
                             onClick={() => router.back()}
                             disabled={saving}
                         >
                             {t("common.cancel")}
                         </Button>
                         <Button
-                            size="lg"
+                            size="default"
                             onClick={handleCreate}
                             disabled={saving || !dnsVerified}
                         >
@@ -472,7 +472,7 @@ export default function CreateProxyPage() {
                     {/* Mobile Only: Action Button */}
                     <div className="md:hidden pt-2">
                         <Button
-                            size="lg"
+                            size="default"
                             onClick={handleCreate}
                             disabled={saving || !dnsVerified}
                         >

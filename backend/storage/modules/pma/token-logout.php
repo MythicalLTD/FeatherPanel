@@ -85,12 +85,12 @@ session_destroy();
     <div class="w-full max-w-md">
         <div class="glass-effect rounded-3xl shadow-2xl p-10 md:p-12 space-y-10 relative overflow-hidden">
             <!-- Animated background gradient -->
-            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 animate-pulse"></div>
+            <div class="absolute inset-0 bg-linear-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 animate-pulse"></div>
             <div class="absolute inset-0 shimmer opacity-10"></div>
             
             <!-- Logo and App Name -->
             <div class="flex flex-col items-center space-y-5 relative z-10">
-                <div id="app-logo-container" class="w-28 h-28 rounded-3xl bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 flex items-center justify-center overflow-hidden border-2 border-white/10 shadow-2xl animate-float backdrop-blur-sm">
+                <div id="app-logo-container" class="w-28 h-28 rounded-3xl bg-linear-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 flex items-center justify-center overflow-hidden border-2 border-white/10 shadow-2xl animate-float backdrop-blur-sm">
                     <img id="app-logo" src="" alt="Logo" class="w-full h-full object-contain p-3">
                 </div>
                 <div class="text-center space-y-1.5">
