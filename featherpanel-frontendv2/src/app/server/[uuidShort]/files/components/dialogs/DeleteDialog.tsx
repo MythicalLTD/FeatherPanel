@@ -35,6 +35,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { filesApi } from "@/lib/files-api";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface DeleteDialogProps {
     open: boolean;
@@ -46,6 +47,7 @@ interface DeleteDialogProps {
 }
 
 export function DeleteDialog({ open, onOpenChange, uuid, root, files, onSuccess }: DeleteDialogProps) {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
 
     const handleDelete = async () => {
@@ -65,9 +67,9 @@ export function DeleteDialog({ open, onOpenChange, uuid, root, files, onSuccess 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Delete Files</DialogTitle>
+                    <DialogTitle>{t("files.dialogs.delete.title")}</DialogTitle>
                     <DialogDescription className="text-destructive">
-                        Are you sure you want to delete {files.length} item(s)? This action cannot be undone.
+                        {t("files.dialogs.delete.description", { count: String(files.length) })}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="max-h-32 overflow-y-auto rounded bg-muted/50 p-2 text-sm text-muted-foreground">
@@ -77,10 +79,10 @@ export function DeleteDialog({ open, onOpenChange, uuid, root, files, onSuccess 
                 </div>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
-                        Cancel
+                        {t("files.dialogs.delete.cancel")}
                     </Button>
                     <Button variant="destructive" onClick={handleDelete} disabled={loading}>
-                        {loading ? "Deleting..." : "Delete"}
+                        {loading ? t("files.dialogs.delete.deleting") : t("files.dialogs.delete.delete")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -42,6 +42,7 @@ import { HeadlessSelect } from "@/components/ui/headless-select";
 import { Archive } from "lucide-react";
 import { toast } from "sonner";
 import { filesApi } from "@/lib/files-api";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface CompressDialogProps {
   open: boolean;
@@ -60,6 +61,7 @@ export function CompressDialog({
   files,
   onSuccess,
 }: CompressDialogProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [extension, setExtension] = useState("tar.gz");
   const [compressing, setCompressing] = useState(false);
@@ -76,7 +78,7 @@ export function CompressDialog({
 
   const handleCompress = async () => {
     setCompressing(true);
-    const toastId = toast.loading("Compressing files...");
+    const toastId = toast.loading(t("files.dialogs.compress.compressing"));
     try {
       await filesApi.compressFiles(
         serverUuid,
@@ -85,13 +87,13 @@ export function CompressDialog({
         name || undefined,
         extension
       );
-      toast.success("Files compressed successfully", { id: toastId });
+      toast.success(t("files.dialogs.compress.success"), { id: toastId });
       onSuccess();
       onOpenChange(false);
       setName("");
     } catch (error: unknown) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to compress files";
+      const errorMessage = error instanceof Error ? error.message : t("files.dialogs.compress.error");
       toast.error(errorMessage, { id: toastId });
     } finally {
       setCompressing(false);
@@ -104,17 +106,17 @@ export function CompressDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Archive className="h-5 w-5 text-primary" />
-            Compress Files
+            {t("files.dialogs.compress.title")}
           </DialogTitle>
           <DialogDescription>
-            Choose a format and name for your archive.
+            {t("files.dialogs.compress.description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="archive-type" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Archive Type
+              {t("files.dialogs.compress.type_label")}
             </Label>
             <HeadlessSelect
               value={extension}
@@ -127,24 +129,24 @@ export function CompressDialog({
 
           <div className="space-y-2">
             <Label htmlFor="archive-name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Archive Name (Optional)
+              {t("files.dialogs.compress.name_label")}
             </Label>
             <Input
               id="archive-name"
-              placeholder="archive"
+              placeholder={t("files.dialogs.compress.name_placeholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={compressing}
               className="h-11 bg-white/5 border-white/10 focus:border-primary/50 rounded-xl"
             />
             <p className="text-[10px] text-muted-foreground">
-              Defaults to current timestamp if left empty.
+              {t("files.dialogs.compress.name_help")}
             </p>
           </div>
 
           <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
             <p className="text-xs text-primary/80 font-medium">
-              Compressing {files.length} selected items from {directory}
+              {t("files.dialogs.compress.info", { count: String(files.length), directory: directory })}
             </p>
           </div>
         </div>
@@ -155,7 +157,7 @@ export function CompressDialog({
             onClick={() => onOpenChange(false)}
             disabled={compressing}
           >
-            Cancel
+            {t("files.dialogs.compress.cancel")}
           </Button>
           <Button
             onClick={handleCompress}
@@ -163,7 +165,7 @@ export function CompressDialog({
             loading={compressing}
           >
             <Archive className="h-4 w-4 mr-2" />
-            Compress
+            {t("files.dialogs.compress.compress")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -40,6 +40,7 @@ import { Input } from "@/components/featherui/Input";
 import { toast } from "sonner";
 import { filesApi } from "@/lib/files-api";
 import { ShieldCheck, Info } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface PermissionsDialogProps {
     open: boolean;
@@ -58,6 +59,7 @@ export function PermissionsDialog({
     files,
     onSuccess 
 }: PermissionsDialogProps) {
+    const { t } = useTranslation();
     const [mode, setMode] = useState("644");
     const [loading, setLoading] = useState(false);
 
@@ -69,19 +71,15 @@ export function PermissionsDialog({
 
     const handleUpdate = async () => {
         setLoading(true);
-        const toastId = toast.loading("Updating permissions...");
+        const toastId = toast.loading(t("files.dialogs.permissions.updating"));
         try {
             const updates = files.map(f => ({ file: f, mode }));
             await filesApi.changePermissions(uuid, root, updates);
-            // The original instruction provided a success message for "move" or "copy".
-            // Since this is a PermissionsDialog, the original success message is more appropriate.
-            // Assuming the instruction meant to restore a generic success message for permissions.
-            toast.success("Permissions updated successfully", { id: toastId });
+            toast.success(t("files.dialogs.permissions.success"), { id: toastId });
             onSuccess();
             onOpenChange(false);
         } catch {
-            // Similarly, adjusting the error message to be specific to permissions.
-            toast.error("Failed to update permissions", { id: toastId });
+            toast.error(t("files.dialogs.permissions.error"), { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -96,9 +94,9 @@ export function PermissionsDialog({
                             <ShieldCheck className="h-5 w-5" />
                         </div>
                         <div>
-                            <DialogTitle>Update Permissions</DialogTitle>
+                            <DialogTitle>{t("files.dialogs.permissions.title")}</DialogTitle>
                             <DialogDescription>
-                                Set file mode (chmod) for {files.length} item(s).
+                                {t("files.dialogs.permissions.description", { count: String(files.length) })}
                             </DialogDescription>
                         </div>
                     </div>
@@ -108,16 +106,16 @@ export function PermissionsDialog({
                     <div className="flex items-start gap-3 bg-amber-500/5 p-4 rounded-xl border border-amber-500/10">
                         <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                         <p className="text-xs text-amber-100/70 leading-relaxed">
-                            Be careful when changing permissions. Incorrect settings can make files inaccessible or insecure.
+                            {t("files.dialogs.permissions.info")}
                         </p>
                     </div>
 
                     <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                            Mode (Octal)
+                            {t("files.dialogs.permissions.mode_label")}
                         </label>
                         <Input 
-                            placeholder="644" 
+                            placeholder={t("files.dialogs.permissions.mode_placeholder")}
                             value={mode}
                             onChange={(e) => setMode(e.target.value)}
                             className="bg-white/5 border-white/10 text-center text-lg font-mono tracking-widest"
@@ -128,7 +126,7 @@ export function PermissionsDialog({
 
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => onOpenChange(false)}>
-                        Cancel
+                        {t("files.dialogs.permissions.cancel")}
                     </Button>
                     <Button 
                         variant="default" 
@@ -136,7 +134,7 @@ export function PermissionsDialog({
                         disabled={loading || !mode}
                         className="shadow-lg shadow-primary/20 h-10 px-6"
                     >
-                        Update
+                        {t("files.dialogs.permissions.update")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

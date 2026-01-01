@@ -39,6 +39,7 @@ import { Button } from "@/components/featherui/Button";
 import { toast } from "sonner";
 import { filesApi } from "@/lib/files-api";
 import { AlertTriangle, Trash2 } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface WipeAllDialogProps {
     open: boolean;
@@ -53,18 +54,19 @@ export function WipeAllDialog({
     uuid, 
     onSuccess 
 }: WipeAllDialogProps) {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
 
     const handleWipe = async () => {
         setLoading(true);
-        const toastId = toast.loading("Wiping all files...");
+        const toastId = toast.loading(t("files.dialogs.wipe.wiping"));
         try {
             await filesApi.wipeAllFiles(uuid);
-            toast.success("All files successfully wiped", { id: toastId });
+            toast.success(t("files.dialogs.wipe.success"), { id: toastId });
             onSuccess();
             onOpenChange(false);
         } catch {
-            toast.error("Failed to wipe server", { id: toastId });
+            toast.error(t("files.dialogs.wipe.error"), { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -79,9 +81,9 @@ export function WipeAllDialog({
                             <AlertTriangle className="h-6 w-6" />
                         </div>
                         <div>
-                            <DialogTitle className="text-red-500 text-xl font-bold">Wipe All Files</DialogTitle>
+                            <DialogTitle className="text-red-500 text-xl font-bold">{t("files.dialogs.wipe.title")}</DialogTitle>
                             <DialogDescription className="text-red-400/80">
-                                This action is irreversible and extremely dangerous.
+                                {t("files.dialogs.wipe.description")}
                             </DialogDescription>
                         </div>
                     </div>
@@ -89,14 +91,13 @@ export function WipeAllDialog({
 
                 <div className="py-6">
                     <p className="text-sm font-medium text-white/90 leading-relaxed bg-red-500/5 p-4 rounded-xl border border-red-500/10">
-                        Are you absolutely sure you want to delete <span className="font-bold underline">every single file and folder</span> on this server? 
-                        This cannot be undone and will likely break any running processes.
+                        {t("files.dialogs.wipe.confirmation")}
                     </p>
                 </div>
 
                 <DialogFooter className="gap-2 sm:gap-0">
                     <Button variant="ghost" onClick={() => onOpenChange(false)} className="hover:bg-white/5">
-                        Cancel
+                        {t("files.dialogs.wipe.cancel")}
                     </Button>
                     <Button 
                         variant="destructive" 
@@ -105,7 +106,7 @@ export function WipeAllDialog({
                         className="shadow-lg shadow-red-500/20 h-10 px-6"
                     >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Yes, Wipe Everything
+                        {t("files.dialogs.wipe.confirm")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

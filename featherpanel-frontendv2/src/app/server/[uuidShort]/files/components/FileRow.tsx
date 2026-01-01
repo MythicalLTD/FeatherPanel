@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface FileRowProps {
     file: FileObject;
@@ -77,6 +78,7 @@ export function FileRow({
     serverUuid,
     currentDirectory,
 }: FileRowProps) {
+    const { t } = useTranslation();
     const isArchive = (name: string) => 
         /\.(zip|tar|tar\.gz|tgz|rar)$/i.test(name);
     
@@ -172,7 +174,7 @@ export function FileRow({
                                 <span 
                                     className="truncate text-sm font-semibold text-primary cursor-default block opacity-90"
                                     onClick={(e) => e.stopPropagation()}
-                                    title="File cannot be previewed or edited"
+                                    title={t("files.row.cant_preview")}
                                 >
                                     {file.name}
                                 </span>
@@ -180,7 +182,7 @@ export function FileRow({
                         }
                     })()}
                     <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground sm:hidden font-medium">
-                        <span>{file.isFile ? formatFileSize(file.size) : "Folder"}</span>
+                        <span>{file.isFile ? formatFileSize(file.size) : t("files.row.folder_label")}</span>
                         <span className="opacity-30">•</span>
                         <span>{formatDate(file.modified_at)}</span>
                     </div>
@@ -213,55 +215,55 @@ export function FileRow({
                          {file.isFile && isImage(file.name) && (
                             <DropdownMenuItem onClick={() => onAction('preview', file)}>
                                 <Eye className="mr-2 h-4 w-4" />
-                                Preview
+                                {t("files.row.preview")}
                             </DropdownMenuItem>
                         )}
                          {file.isFile && isEditable(file.size, file.name) && canEdit && (
                             <DropdownMenuItem onClick={() => onAction('edit', file)}>
                                 <Code className="mr-2 h-4 w-4" />
-                                Edit
+                                {t("files.row.edit")}
                             </DropdownMenuItem>
                         )}
                         {canEdit && (
                             <DropdownMenuItem onClick={() => onAction('rename', file)}>
                                 <FileEdit className="mr-2 h-4 w-4" />
-                                Rename
+                                {t("files.row.rename")}
                             </DropdownMenuItem>
                         )}
                         {file.isFile && canDownload && (
                             <DropdownMenuItem onClick={() => onAction('download', file)}>
                                 <Download className="mr-2 h-4 w-4" />
-                                Download
+                                {t("files.row.download")}
                             </DropdownMenuItem>
                         )}
                         {canEdit && (
                             <>
                                 <DropdownMenuItem onClick={() => onAction('copy', file)}>
                                     <Copy className="mr-2 h-4 w-4" />
-                                    Copy
+                                    {t("files.row.copy")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => onAction('move', file)}>
                                     <FileIcon className="mr-2 h-4 w-4" />
-                                    Move
+                                    {t("files.row.move")}
                                 </DropdownMenuItem>
                             </>
                         )}
                          {file.isFile && isArchive(file.name) && canEdit && (
                              <DropdownMenuItem onClick={() => onAction('decompress', file)}>
                                 <Archive className="mr-2 h-4 w-4" />
-                                Extract
+                                {t("files.row.extract")}
                             </DropdownMenuItem>
                         )}
                          {canEdit && (
                              <DropdownMenuItem onClick={() => onAction('compress', file)}>
                                 <Archive className="mr-2 h-4 w-4" />
-                                Compress
+                                {t("files.row.compress")}
                             </DropdownMenuItem>
                         )}
                          {canEdit && (
                             <DropdownMenuItem onClick={() => onAction('permissions', file)}>
                                 <Settings className="mr-2 h-4 w-4" />
-                                Permissions
+                                {t("files.row.permissions")}
                             </DropdownMenuItem>
                          )}
                         
@@ -273,7 +275,7 @@ export function FileRow({
                                     onClick={() => onAction('delete', file)}
                                 >
                                     <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
+                                    {t("files.row.delete")}
                                 </DropdownMenuItem>
                             </>
                         )}

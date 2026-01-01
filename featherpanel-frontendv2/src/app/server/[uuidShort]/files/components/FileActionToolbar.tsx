@@ -46,6 +46,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface FileActionToolbarProps {
     loading: boolean;
@@ -90,6 +91,7 @@ export function FileActionToolbar({
     canDelete,
     currentDirectory,
 }: FileActionToolbarProps) {
+    const { t } = useTranslation();
     const hasSelection = selectedCount > 0;
 
     return (
@@ -102,7 +104,7 @@ export function FileActionToolbar({
                             <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary animate-in zoom-in-50 duration-300">
                                 <span className="text-xs font-bold">{selectedCount}</span>
                             </div>
-                            <span className="text-sm font-medium text-muted-foreground hidden xs:inline">Selected</span>
+                            <span className="text-sm font-medium text-muted-foreground hidden xs:inline">{t("files.toolbar.selected")}</span>
                             <div className="h-4 w-px bg-border mx-1 hidden xs:block" />
                             <Button 
                                 variant="ghost" 
@@ -110,7 +112,7 @@ export function FileActionToolbar({
                                 onClick={onClearSelection}
                                 className="h-8 px-3 text-xs uppercase tracking-wider font-bold text-muted-foreground hover:text-foreground"
                             >
-                                Cancel
+                                {t("files.toolbar.cancel")}
                             </Button>
                         </div>
                         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pl-2">
@@ -121,7 +123,7 @@ export function FileActionToolbar({
                                 className="h-9 px-4 shadow-sm"
                             >
                                 <Download className="mr-2 h-4 w-4" />
-                                Download
+                                {t("files.toolbar.download")}
                             </Button>
                             <Button 
                                 variant="secondary" 
@@ -130,7 +132,7 @@ export function FileActionToolbar({
                                 className="h-9 px-4 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20"
                             >
                                 <Archive className="mr-2 h-4 w-4" />
-                                <span className="hidden sm:inline">Compress</span>
+                                <span className="hidden sm:inline">{t("files.toolbar.compress")}</span>
                             </Button>
                             <Button 
                                 variant="secondary" 
@@ -147,13 +149,13 @@ export function FileActionToolbar({
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={onMoveSelected}>
-                                        <Move className="mr-2 h-4 w-4" /> Move
+                                        <Move className="mr-2 h-4 w-4" /> {t("files.toolbar.move")}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={onCopySelected}>
-                                        <Copy className="mr-2 h-4 w-4" /> Copy
+                                        <Copy className="mr-2 h-4 w-4" /> {t("files.toolbar.copy")}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={onPermissionsSelected}>
-                                        <ShieldCheck className="mr-2 h-4 w-4" /> Permissions
+                                        <ShieldCheck className="mr-2 h-4 w-4" /> {t("files.toolbar.permissions")}
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -162,7 +164,7 @@ export function FileActionToolbar({
                 ) : (
                     // Default Mode
                     <>
-                         <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                             <Button 
                                 variant="ghost" 
                                 size="sm" 
@@ -171,7 +173,7 @@ export function FileActionToolbar({
                                 className="h-9 px-3 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                             >
                                 <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
-                                <span className="hidden xs:inline">Refresh</span>
+                                <span className="hidden xs:inline">{t("files.toolbar.refresh")}</span>
                             </Button>
                             {canCreate && (
                                 <>
@@ -183,7 +185,7 @@ export function FileActionToolbar({
                                         className="h-9 px-3 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                                     >
                                         <FilePlus className="mr-2 h-4 w-4" />
-                                        <span className="hidden lg:inline">New File</span>
+                                        <span className="hidden lg:inline">{t("files.toolbar.new_file")}</span>
                                     </Button>
                                     <Button 
                                         variant="ghost" 
@@ -192,7 +194,7 @@ export function FileActionToolbar({
                                         className="h-9 px-3 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                                     >
                                         <FolderPlus className="mr-2 h-4 w-4" />
-                                        <span className="hidden lg:inline">New Folder</span>
+                                        <span className="hidden lg:inline">{t("files.toolbar.new_folder")}</span>
                                     </Button>
                                 </>
                             )}
@@ -206,7 +208,7 @@ export function FileActionToolbar({
                                 className="h-9 px-3 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                             >
                                 <Download className="mr-2 h-4 w-4" />
-                                <span className="hidden xs:inline">Pull</span>
+                                <span className="hidden xs:inline">{t("files.toolbar.pull")}</span>
                             </Button>
                             
                              {canCreate && (
@@ -217,7 +219,7 @@ export function FileActionToolbar({
                                     className="h-9 px-6 shadow-sm font-semibold"
                                 >
                                     <Upload className="mr-2 h-4 w-4" />
-                                    Upload
+                                    {t("files.toolbar.upload")}
                                 </Button>
                             )}
                             
@@ -227,12 +229,12 @@ export function FileActionToolbar({
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={onIgnoredContent}>
-										<ShieldCheck className="mr-2 h-4 w-4" />
-                                        Ignored Content
+                                        <ShieldCheck className="mr-2 h-4 w-4" />
+                                        {t("files.toolbar.ignored_content")}
                                     </DropdownMenuItem>
                                     {canDelete && currentDirectory === "/" && (
                                         <DropdownMenuItem onClick={onWipeAll} className="text-red-500 focus:text-red-500 focus:bg-red-500/10">
-                                            <Trash2 className="mr-2 h-4 w-4" /> Wipe All
+                                            <Trash2 className="mr-2 h-4 w-4" /> {t("files.toolbar.wipe_all")}
                                         </DropdownMenuItem>
                                     )}
                                 </DropdownMenuContent>

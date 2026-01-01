@@ -2106,5 +2106,202 @@
     "serverDeleted": "Server deleted successfully",
     "deleteError": "Failed to delete server",
     "accessDenied": "Access Denied"
+  },
+  "files": {
+    "title": "File Manager",
+    "manage_description": "Manage files in {directory}",
+    "breadcrumbs": {
+      "home": "Home",
+      "search_placeholder": "Search files..."
+    },
+    "toolbar": {
+      "selected": "Selected",
+      "cancel": "Cancel",
+      "download": "Download",
+      "compress": "Compress",
+      "move": "Move",
+      "copy": "Copy",
+      "permissions": "Permissions",
+      "refresh": "Refresh",
+      "new_file": "New File",
+      "new_folder": "New Folder",
+      "pull": "Pull",
+      "upload": "Upload",
+      "ignored_content": "Ignored Content",
+      "wipe_all": "Wipe All"
+    },
+    "list": {
+      "header_name": "Name",
+      "header_size": "Size",
+      "header_modified": "Last Modified",
+      "empty": {
+        "title": "Empower Your Server",
+        "description": "This directory is currently awaiting your data. Drop files here or use the toolbar above to begin."
+      }
+    },
+    "messages": {
+      "active_pull": "Active Pull",
+      "task_id": "Task ID: {id}",
+      "failed_download": "Failed to initiate download",
+      "extracting": "Extracting archive...",
+      "extracted": "Archive extracted",
+      "extract_failed": "Failed to extract archive",
+      "uploading": "Uploading {file}...",
+      "upload_complete": "Upload complete",
+      "upload_failed": "Upload failed",
+      "drop_to_upload": "Drop to Upload",
+      "drop_description": "Release your files to start uploading to",
+      "load_failed": "Failed to load files",
+      "pull_cancelled": "Download cancelled",
+      "pull_cancel_failed": "Failed to cancel download"
+    },
+    "editor": {
+      "title": "Editing: {file}",
+      "description": "Editing file at {path}",
+      "decrypting": "Decrypting Source Code",
+      "initializing": "Initializing Premium Editor Environment",
+      "monaco_version": "Monaco Editor Engine v0.34.1",
+      "read_only": "Read Only",
+      "cancel": "Cancel",
+      "encrypting": "Encrypting...",
+      "save_changes": "Save Changes",
+      "loading_error": "Failed to load file content",
+      "saving": "Saving file...",
+      "save_success": "File saved successfully",
+      "save_error": "Failed to save file"
+    },
+    "row": {
+      "folder": "Folder",
+      "preview": "Preview",
+      "edit": "Edit",
+      "rename": "Rename",
+      "download": "Download",
+      "copy": "Copy",
+      "move": "Move",
+      "extract": "Extract",
+      "compress": "Compress",
+      "permissions": "Permissions",
+      "delete": "Delete",
+      "no_preview": "File cannot be previewed or edited"
+    },
+    "dialogs": {
+      "create_file": {
+        "title": "Create New File",
+        "description": "Create a new file in {root}",
+        "name_label": "File Name",
+        "name_placeholder": "filename.txt",
+        "content_label": "Content (Optional)",
+        "content_placeholder": "File content...",
+        "cancel": "Cancel",
+        "create": "Create",
+        "creating": "Creating..."
+      },
+      "create_folder": {
+        "title": "Create New Folder",
+        "description": "Enter a name for the new folder. It will be created in {root}",
+        "name_placeholder": "Folder Name",
+        "cancel": "Cancel",
+        "create": "Create",
+        "creating": "Creating...",
+        "success": "Folder created successfully.",
+        "error": "Failed to create folder."
+      },
+      "delete": {
+        "title": "Delete Files",
+        "description": "Are you sure you want to delete {count} item(s)? This action cannot be undone.",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "deleting": "Deleting..."
+      },
+      "rename": {
+        "title": "Rename File",
+        "cancel": "Cancel",
+        "rename": "Rename",
+        "renaming": "Renaming..."
+      },
+      "move_copy": {
+        "move_title": "Move Items",
+        "copy_title": "Copy Items",
+        "move_description": "Move {count} item(s) to a new location.",
+        "copy_description": "Copy {count} item(s) to a new location.",
+        "destination_label": "Destination Path",
+        "cancel": "Cancel",
+        "move": "Move",
+        "copy": "Copy",
+        "moving": "Moving files...",
+        "copying": "Copying files...",
+        "move_success": "Move completed",
+        "copy_success": "Copy completed",
+        "move_error": "Failed to move files",
+        "copy_error": "Failed to copy files"
+      },
+      "compress": {
+        "title": "Compress Files",
+        "description": "Choose a format and name for your archive.",
+        "type_label": "Archive Type",
+        "name_label": "Archive Name (Optional)",
+        "name_help": "Defaults to current timestamp if left empty.",
+        "name_placeholder": "archive",
+        "info": "Compressing {count} selected items from {directory}",
+        "cancel": "Cancel",
+        "compress": "Compress",
+        "compressing": "Compressing files...",
+        "success": "Files compressed successfully",
+        "error": "Failed to compress files"
+      },
+      "pull": {
+        "title": "Pull File",
+        "description": "Download a file directly to your server from a URL.",
+        "url_label": "File URL",
+        "url_placeholder": "https://example.com/file.zip",
+        "name_label": "Save As (Optional)",
+        "name_placeholder": "Leave empty for original name",
+        "pull_button": "Pull File",
+        "cancel": "Cancel",
+        "starting": "Starting file pull...",
+        "success": "File pull initiated successfully",
+        "error": "Failed to pull file",
+        "url_required": "Please enter a URL"
+      },
+      "wipe": {
+        "title": "Wipe All Files",
+        "description": "This action is irreversible and extremely dangerous.",
+        "confirmation": "Are you absolutely sure you want to delete every single file and folder on this server? This cannot be undone and will likely break any running processes.",
+        "cancel": "Cancel",
+        "confirm": "Yes, Wipe Everything",
+        "wiping": "Wiping all files...",
+        "success": "All files successfully wiped",
+        "error": "Failed to wipe server"
+      },
+      "ignored": {
+        "title": "Ignored Content",
+        "description": "Hide specific files or folders from the view.",
+        "info": "Patterns are case-sensitive. These filters only affect your local view and do not delete any files on the server.",
+        "pattern_placeholder": "e.g. .git or logs",
+        "empty": "No patterns added yet.",
+        "cancel": "Cancel",
+        "save": "Save Visibility",
+        "success": "Ignored patterns saved",
+        "exists": "Pattern already exists"
+      },
+      "permissions": {
+        "title": "Update Permissions",
+        "description": "Set file mode (chmod) for {count} item(s).",
+        "info": "Be careful when changing permissions. Incorrect settings can make files inaccessible or insecure.",
+        "mode_label": "Mode (Octal)",
+        "mode_placeholder": "644",
+        "cancel": "Cancel",
+        "update": "Update",
+        "updating": "Updating permissions...",
+        "success": "Permissions updated successfully",
+        "error": "Failed to update permissions"
+      },
+      "preview": {
+        "download_label": "Download",
+        "close_label": "Close",
+        "loading": "Loading preview...",
+        "error": "Failed to load image preview. Please try downloading it instead."
+      }
+    }
   }
 }

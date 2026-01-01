@@ -40,6 +40,7 @@ import { Input } from "@/components/featherui/Input";
 import { toast } from "sonner";
 import { filesApi } from "@/lib/files-api";
 import { Download } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface PullFileDialogProps {
     open: boolean;
@@ -56,27 +57,28 @@ export function PullFileDialog({
     root,
     onSuccess 
 }: PullFileDialogProps) {
+    const { t } = useTranslation();
     const [url, setUrl] = useState("");
     const [filename, setFilename] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handlePull = async () => {
         if (!url) {
-            toast.error("Please enter a URL");
+            toast.error(t("files.dialogs.pull.url_required"));
             return;
         }
 
         setLoading(true);
-        const toastId = toast.loading("Starting file pull...");
+        const toastId = toast.loading(t("files.dialogs.pull.starting"));
         try {
             await filesApi.pullFile(uuid, root, url, filename || undefined);
-            toast.success("File pull initiated successfully", { id: toastId });
+            toast.success(t("files.dialogs.pull.success"), { id: toastId });
             onSuccess();
             onOpenChange(false);
             setUrl("");
             setFilename("");
         } catch {
-            toast.error("Failed to pull file", { id: toastId });
+            toast.error(t("files.dialogs.pull.error"), { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -91,9 +93,9 @@ export function PullFileDialog({
                             <Download className="h-5 w-5" />
                         </div>
                         <div>
-                            <DialogTitle>Pull File</DialogTitle>
+                            <DialogTitle>{t("files.dialogs.pull.title")}</DialogTitle>
                             <DialogDescription>
-                                Download a file directly to your server from a URL.
+                                {t("files.dialogs.pull.description")}
                             </DialogDescription>
                         </div>
                     </div>
@@ -102,10 +104,10 @@ export function PullFileDialog({
                 <div className="flex flex-col gap-4 py-4">
                     <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                            File URL
+                            {t("files.dialogs.pull.url_label")}
                         </label>
                         <Input 
-                            placeholder="https://example.com/file.zip" 
+                            placeholder={t("files.dialogs.pull.url_placeholder")} 
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
                             className="bg-white/5 border-white/10 focus:border-primary/50"
@@ -113,10 +115,10 @@ export function PullFileDialog({
                     </div>
                     <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                            Save As (Optional)
+                            {t("files.dialogs.pull.name_label")}
                         </label>
                         <Input 
-                            placeholder="Leave empty for original name" 
+                            placeholder={t("files.dialogs.pull.name_placeholder")} 
                             value={filename}
                             onChange={(e) => setFilename(e.target.value)}
                             className="bg-white/5 border-white/10 focus:border-primary/50"
@@ -126,7 +128,7 @@ export function PullFileDialog({
 
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => onOpenChange(false)}>
-                        Cancel
+                        {t("files.dialogs.pull.cancel")}
                     </Button>
                     <Button 
                         variant="default" 
@@ -134,7 +136,7 @@ export function PullFileDialog({
                         disabled={loading || !url}
                         className="shadow-lg shadow-primary/20"
                     >
-                        Pull File
+                        {t("files.dialogs.pull.pull_button")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

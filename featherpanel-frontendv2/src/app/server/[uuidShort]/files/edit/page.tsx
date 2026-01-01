@@ -36,6 +36,7 @@ import { useServerPermissions } from "@/hooks/useServerPermissions";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/featherui/Button";
 import { PageHeader } from "@/components/featherui/PageHeader";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 export default function FileEditorPage({ 
     params, 
@@ -44,6 +45,7 @@ export default function FileEditorPage({
     params: Promise<{ uuidShort: string }>, 
     searchParams: Promise<{ file?: string, directory?: string }> 
 }) {
+    const { t } = useTranslation();
     const { uuidShort } = use(params);
     const { file: fileName = "file.txt", directory = "/" } = use(searchParams);
     const router = useRouter();
@@ -68,11 +70,11 @@ export default function FileEditorPage({
             setOriginalContent(data);
         } catch (error) {
             console.error(error);
-            toast.error("Failed to load file content");
+            toast.error(t("files.editor.load_error"));
         } finally {
             setLoading(false);
         }
-    }, [uuidShort, fullPath]);
+    }, [uuidShort, fullPath, t]);
 
     useEffect(() => {
         if (uuidShort && fileName && directory) {
@@ -84,14 +86,14 @@ export default function FileEditorPage({
         if (!canEdit) return;
 
         setSaving(true);
-        const toastId = toast.loading("Saving file...");
+        const toastId = toast.loading(t("files.editor.saving"));
         try {
             await filesApi.saveFileContent(uuidShort, fullPath, content);
             setOriginalContent(content);
-            toast.success("File saved successfully", { id: toastId });
+            toast.success(t("files.editor.save_success"), { id: toastId });
         } catch (error) {
             console.error(error);
-            toast.error("Failed to save file", { id: toastId });
+            toast.error(t("files.editor.save_error"), { id: toastId });
         } finally {
             setSaving(false);
         }
@@ -149,8 +151,8 @@ export default function FileEditorPage({
                             <div className="absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-primary/5 blur-xl animate-pulse delay-700" />
                         </div>
                         <div className="text-center space-y-2">
-                            <h3 className="text-lg font-bold tracking-tight text-foreground">Decrypting Source Code</h3>
-                            <p className="text-xs text-muted-foreground uppercase tracking-[0.3em] font-medium animate-pulse">Initializing Premium Editor Environment</p>
+                            <h3 className="text-lg font-bold tracking-tight text-foreground">{t("files.editor.loading_title")}</h3>
+                            <p className="text-xs text-muted-foreground uppercase tracking-[0.3em] font-medium animate-pulse">{t("files.editor.loading_description")}</p>
                         </div>
                     </div>
                 </div>
@@ -161,8 +163,8 @@ export default function FileEditorPage({
     return (
         <div className="flex flex-col gap-6 relative h-[calc(100vh-6rem)] pb-4">
             <PageHeader
-                title={`Editing: ${fileName}`}
-                description={`Editing file at ${fullPath}`}
+                title={t("files.editor.title", { file: fileName })}
+                description={t("files.editor.description", { path: fullPath })}
             />
 
             <div className="flex-1 rounded-4xl border border-border/50 bg-card/50 shadow-2xl backdrop-blur-3xl overflow-hidden p-1 flex flex-col group transition-all hover:border-border/80 relative min-h-0">
@@ -182,7 +184,7 @@ export default function FileEditorPage({
                          {!canEdit && (
                             <div className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-lg border border-yellow-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
                                 <Lock className="h-3 w-3" />
-                                Read Only
+                                {t("files.editor.read_only")}
                             </div>
                         )}
                         <Button 
@@ -191,7 +193,7 @@ export default function FileEditorPage({
                             onClick={() => router.back()}
                             className="text-muted-foreground hover:text-foreground"
                         >
-                            Cancel
+                            {t("files.editor.cancel")}
                         </Button>
                         <Button 
                             className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 active:scale-95 transition-all" 
@@ -202,12 +204,12 @@ export default function FileEditorPage({
                             {saving ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Encrypting...
+                                    {t("files.editor.encrypting")}
                                 </>
                             ) : (
                                 <>
                                     <Save className="mr-2 h-4 w-4" />
-                                    Save Changes
+                                    {t("files.editor.save_changes")}
                                 </>
                             )}
                         </Button>

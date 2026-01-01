@@ -27,6 +27,7 @@ SOFTWARE.
 import { Button } from "@/components/featherui/Button";
 import { ChevronRight, Home, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface FileBreadcrumbsProps {
     currentDirectory: string;
@@ -41,6 +42,7 @@ export function FileBreadcrumbs({
     searchQuery,
     onSearchChange
 }: FileBreadcrumbsProps) {
+    const { t } = useTranslation();
     const segments = currentDirectory.split("/").filter(Boolean); // Remove empty strings
 
     const getPath = (index: number) => {
@@ -55,6 +57,7 @@ export function FileBreadcrumbs({
                     size="sm"
                     className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground shrink-0"
                     onClick={() => onNavigate("/")}
+                    title={t("files.breadcrumbs.home")}
                 >
                     <Home className="h-4 w-4" />
                 </Button>
@@ -86,7 +89,7 @@ export function FileBreadcrumbs({
                     id="file-search-input"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    placeholder="Search files..."
+                    placeholder={t("files.breadcrumbs.search_placeholder")}
                     className="h-10 pl-10 pr-10 bg-black/5 dark:bg-black/20 border-black/10 dark:border-white/5 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all rounded-2xl text-sm font-medium"
                 />
                 {searchQuery && (

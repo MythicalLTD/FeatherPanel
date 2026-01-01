@@ -40,6 +40,7 @@ import { Input } from "@/components/featherui/Input";
 import { toast } from "sonner";
 import { filesApi } from "@/lib/files-api";
 import { Move, Copy } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface MoveCopyDialogProps {
     open: boolean;
@@ -60,12 +61,13 @@ export function MoveCopyDialog({
     action,
     onSuccess 
 }: MoveCopyDialogProps) {
+    const { t } = useTranslation();
     const [destination, setDestination] = useState(root);
     const [loading, setLoading] = useState(false);
 
     const handleAction = async () => {
         setLoading(true);
-        const toastId = toast.loading(`${action === "move" ? "Moving" : "Copying"} files...`);
+        const toastId = toast.loading(action === "move" ? t("files.dialogs.move_copy.moving") : t("files.dialogs.move_copy.copying"));
         try {
             if (action === "copy") {
                 for (const file of files) {
@@ -75,11 +77,11 @@ export function MoveCopyDialog({
                 const updates = files.map(f => ({ from: f, to: `${destination}/${f}`.replace(/\/\//g, "/") }));
                 await filesApi.moveFile(uuid, root, updates);
             }
-            toast.success(`${action === "move" ? "Move" : "Copy"} completed`, { id: toastId });
+            toast.success(action === "move" ? t("files.dialogs.move_copy.move_success") : t("files.dialogs.move_copy.copy_success"), { id: toastId });
             onSuccess();
             onOpenChange(false);
         } catch {
-            toast.error(`Failed to ${action} files`, { id: toastId });
+            toast.error(action === "move" ? t("files.dialogs.move_copy.move_error") : t("files.dialogs.move_copy.copy_error"), { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -94,9 +96,13 @@ export function MoveCopyDialog({
                             {action === "move" ? <Move className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
                         </div>
                         <div>
-                            <DialogTitle className="capitalize">{action} Items</DialogTitle>
+                            <DialogTitle className="capitalize">
+                                {action === "move" ? t("files.dialogs.move_copy.move_title") : t("files.dialogs.move_copy.copy_title")}
+                            </DialogTitle>
                             <DialogDescription>
-                                {action === "move" ? "Move" : "Copy"} {files.length} item(s) to a new location.
+                                {action === "move" 
+                                    ? t("files.dialogs.move_copy.move_description", { count: String(files.length) }) 
+                                    : t("files.dialogs.move_copy.copy_description", { count: String(files.length) })}
                             </DialogDescription>
                         </div>
                     </div>
@@ -105,7 +111,7 @@ export function MoveCopyDialog({
                 <div className="flex flex-col gap-4 py-4">
                     <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                            Destination Path
+                            {t("files.dialogs.move_copy.destination_label")}
                         </label>
                         <Input 
                             placeholder="/" 
@@ -118,7 +124,7 @@ export function MoveCopyDialog({
 
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => onOpenChange(false)}>
-                        Cancel
+                        {t("files.dialogs.move_copy.cancel")}
                     </Button>
                     <Button 
                         variant="default" 
@@ -126,7 +132,7 @@ export function MoveCopyDialog({
                         disabled={loading || !destination}
                         className="shadow-lg shadow-primary/20 h-10 px-6 capitalize"
                     >
-                        {action}
+                        {action === "move" ? t("files.dialogs.move_copy.move") : t("files.dialogs.move_copy.copy")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -47,6 +47,7 @@ import {
     IgnoredContentDialog,
     CompressDialog
 } from "./components/dialogs";
+import { useTranslation } from "@/contexts/TranslationContext";
 import { toast } from "sonner";
 import { filesApi } from "@/lib/files-api";
 import { FileObject } from "@/types/server";
@@ -57,6 +58,7 @@ import { Button } from "@/components/featherui/Button";
 export default function ServerFilesPage({ params }: { params: Promise<{ uuidShort: string }> }) {
     const router = useRouter();
     const { uuidShort } = use(params);
+    const { t } = useTranslation();
     
     // Hooks
     const { 
@@ -154,7 +156,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             const url = `/api/user/servers/${uuidShort}/download-file?path=${encodeURIComponent(path)}`;
             window.open(url, "_blank");
         } catch {
-            toast.error("Failed to initiate download");
+            toast.error(t("files.messages.failed_download"));
         }
     };
 
@@ -164,14 +166,14 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     };
 
     const handleDecompress = async (filename: string) => {
-         const toastId = toast.loading("Extracting archive...");
+         const toastId = toast.loading(t("files.messages.extracting"));
         try {
             await filesApi.decompressFile(uuidShort, currentDirectory, filename);
-            toast.success("Archive extracted", { id: toastId });
+            toast.success(t("files.messages.extracted"), { id: toastId });
             refresh();
         } catch (error) {
             const err = error as { response?: { data?: { error?: string } } };
-            const errorMessage = err.response?.data?.error || "Failed to extract archive";
+            const errorMessage = err.response?.data?.error || t("files.messages.extract_failed");
             toast.error(errorMessage, { id: toastId });
         }
     };
@@ -198,20 +200,20 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
     const uploadFile = React.useCallback(async (file: File) => {
         setUploading(true);
-        const toastId = toast.loading(`Uploading ${file.name}...`);
+        const toastId = toast.loading(t("files.messages.uploading", { file: file.name }));
         
         try {
             await filesApi.uploadFile(uuidShort, currentDirectory, file);
-            toast.success("Upload complete", { id: toastId });
+            toast.success(t("files.messages.upload_complete"), { id: toastId });
             refresh();
         } catch (error) {
             console.error(error);
-            toast.error("Upload failed", { id: toastId });
+            toast.error(t("files.messages.upload_failed"), { id: toastId });
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
         }
-    }, [uuidShort, currentDirectory, refresh]);
+    }, [uuidShort, currentDirectory, refresh, t]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return;
@@ -257,8 +259,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     return (
         <div className="flex flex-col gap-6 relative min-h-screen pb-20">
             <PageHeader
-                title="File Manager"
-                description={`Manage files in ${currentDirectory}`}
+                title={t("files.title")}
+                description={t("files.manage_description", { directory: currentDirectory })}
             />
             
             <div className="flex flex-col gap-4">
@@ -304,7 +306,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
                                                 <Download className="h-4 w-4 animate-bounce" />
                                             </div>
-                                            <span className="text-xs font-bold uppercase tracking-widest text-primary/80">Active Pull</span>
+                                            <span className="text-xs font-bold uppercase tracking-widest text-primary/80">{t("files.messages.active_pull")}</span>
                                         </div>
                                         <Button 
                                             variant="ghost" 
@@ -320,7 +322,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                     </div>
                                     <div className="space-y-1.5">
                                         <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter text-white/40">
-                                            <span>Task ID: {pull.Identifier.slice(0, 8)}...</span>
+                                            <span>{t("files.messages.task_id", { id: pull.Identifier.slice(0, 8) })}...</span>
                                             <span className="text-primary">{pull.Progress}%</span>
                                         </div>
                                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5">
@@ -368,8 +370,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             <Upload className="h-12 w-12" />
                         </div>
                         <div className="text-center">
-                            <h2 className="text-3xl font-bold mb-2">Drop to Upload</h2>
-                            <p className="text-muted-foreground">Release your files to start uploading to <span className="text-primary font-mono">{currentDirectory}</span></p>
+                            <h2 className="text-3xl font-bold mb-2">{t("files.messages.drop_to_upload")}</h2>
+                            <p className="text-muted-foreground">{t("files.messages.drop_description")} <span className="text-primary font-mono">{currentDirectory}</span></p>
                         </div>
                     </div>
                 </div>

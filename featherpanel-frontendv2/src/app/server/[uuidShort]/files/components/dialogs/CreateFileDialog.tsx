@@ -36,6 +36,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { filesApi } from "@/lib/files-api";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface CreateFileDialogProps {
     open: boolean;
@@ -46,6 +47,7 @@ interface CreateFileDialogProps {
 }
 
 export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: CreateFileDialogProps) {
+    const { t } = useTranslation();
     const [name, setName] = useState("");
     const [content, setContent] = useState("");
     const [loading, setLoading] = useState(false);
@@ -74,27 +76,27 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
-                    <DialogTitle>Create New File</DialogTitle>
+                    <DialogTitle>{t("files.dialogs.create_file.title")}</DialogTitle>
                     <DialogDescription>
-                        Create a new file in <code className="bg-muted px-1 rounded">{root}</code>
+                        {t("files.dialogs.create_file.description", { root: root })}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">File Name</label>
+                        <label className="text-sm font-medium">{t("files.dialogs.create_file.name_label")}</label>
                          <Input
-                            placeholder="filename.txt"
+                            placeholder={t("files.dialogs.create_file.name_placeholder")}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             autoFocus
                         />
                     </div>
                     <div className="space-y-2">
-                         <label className="text-sm font-medium">Content (Optional)</label>
+                         <label className="text-sm font-medium">{t("files.dialogs.create_file.content_label")}</label>
                          {/* Fallback to textarea usually implies standard HTML textarea styled with Tailwind */}
                          <textarea
                             className="flex min-h-[150px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            placeholder="File content..."
+                            placeholder={t("files.dialogs.create_file.content_placeholder")}
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                          />
@@ -102,10 +104,10 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
                    
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                            Cancel
+                            {t("files.dialogs.create_file.cancel")}
                         </Button>
                         <Button type="submit" disabled={!name || loading}>
-                            {loading ? "Creating..." : "Create"}
+                            {loading ? t("files.dialogs.create_file.creating") : t("files.dialogs.create_file.create")}
                         </Button>
                     </DialogFooter>
                 </form>

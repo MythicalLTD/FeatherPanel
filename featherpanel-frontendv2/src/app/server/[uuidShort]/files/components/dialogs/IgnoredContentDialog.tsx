@@ -39,6 +39,7 @@ import { Button } from "@/components/featherui/Button";
 import { Input } from "@/components/featherui/Input";
 import { Settings, Info, Plus, X } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface IgnoredContentDialogProps {
     open: boolean;
@@ -53,6 +54,7 @@ export function IgnoredContentDialog({
     uuid, 
     onSuccess 
 }: IgnoredContentDialogProps) {
+    const { t } = useTranslation();
     const [patterns, setPatterns] = useState<string[]>([]);
     const [newPattern, setNewPattern] = useState("");
 
@@ -76,7 +78,7 @@ export function IgnoredContentDialog({
 
     const handleSave = () => {
         localStorage.setItem(`feather_ignored_${uuid}`, JSON.stringify(patterns));
-        toast.success("Ignored patterns saved");
+        toast.success(t("files.dialogs.ignored.success"));
         onSuccess();
         onOpenChange(false);
     };
@@ -84,7 +86,7 @@ export function IgnoredContentDialog({
     const addPattern = () => {
         if (!newPattern.trim()) return;
         if (patterns.includes(newPattern.trim())) {
-            toast.error("Pattern already exists");
+            toast.error(t("files.dialogs.ignored.exists"));
             return;
         }
         setPatterns([...patterns, newPattern.trim()]);
@@ -104,9 +106,9 @@ export function IgnoredContentDialog({
                             <Settings className="h-5 w-5" />
                         </div>
                         <div>
-                            <DialogTitle>Ignored Content</DialogTitle>
+                            <DialogTitle>{t("files.dialogs.ignored.title")}</DialogTitle>
                             <DialogDescription>
-                                Hide specific files or folders from the view.
+                                {t("files.dialogs.ignored.description")}
                             </DialogDescription>
                         </div>
                     </div>
@@ -116,13 +118,13 @@ export function IgnoredContentDialog({
                     <div className="flex items-start gap-3 bg-blue-500/5 p-4 rounded-xl border border-blue-500/10 mb-2">
                         <Info className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
                         <p className="text-xs text-blue-100/70 leading-relaxed">
-                            Patterns are case-sensitive. These filters only affect your local view and do not delete any files on the server.
+                            {t("files.dialogs.ignored.info")}
                         </p>
                     </div>
 
                     <div className="flex gap-2">
                         <Input 
-                            placeholder="e.g. .git or logs" 
+                            placeholder={t("files.dialogs.ignored.pattern_placeholder")} 
                             value={newPattern}
                             onChange={(e) => setNewPattern(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && addPattern()}
@@ -136,13 +138,13 @@ export function IgnoredContentDialog({
                     <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
                         {patterns.length === 0 ? (
                             <p className="text-xs text-center w-full py-8 text-muted-foreground italic bg-white/5 rounded-xl border border-dashed border-white/10">
-                                No patterns added yet.
+                                {t("files.dialogs.ignored.empty")}
                             </p>
                         ) : (
                             patterns.map(pattern => (
                                 <div 
                                     key={pattern} 
-                                    className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/5 group border-primary/20"
+                                    className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/5 group"
                                 >
                                     <span className="text-xs font-medium text-white/80">{pattern}</span>
                                     <button 
@@ -159,14 +161,14 @@ export function IgnoredContentDialog({
 
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => onOpenChange(false)}>
-                        Cancel
+                        {t("files.dialogs.ignored.cancel")}
                     </Button>
                     <Button 
                         variant="default" 
                         onClick={handleSave} 
                         className="shadow-lg shadow-primary/20 h-10 px-6"
                     >
-                        Save Visibility
+                        {t("files.dialogs.ignored.save")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -35,6 +35,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { filesApi } from "@/lib/files-api";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface RenameDialogProps {
     open: boolean;
@@ -46,6 +47,7 @@ interface RenameDialogProps {
 }
 
 export function RenameDialog({ open, onOpenChange, uuid, root, fileName, onSuccess }: RenameDialogProps) {
+    const { t } = useTranslation();
     const [newName, setNewName] = useState(fileName);
     const [loading, setLoading] = useState(false);
 
@@ -75,7 +77,7 @@ export function RenameDialog({ open, onOpenChange, uuid, root, fileName, onSucce
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Rename File</DialogTitle>
+                    <DialogTitle>{t("files.dialogs.rename.title")}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <Input
@@ -85,10 +87,10 @@ export function RenameDialog({ open, onOpenChange, uuid, root, fileName, onSucce
                     />
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                            Cancel
+                            {t("files.dialogs.rename.cancel")}
                         </Button>
                         <Button type="submit" disabled={!newName || newName === fileName || loading}>
-                            {loading ? "Renaming..." : "Rename"}
+                            {loading ? t("files.dialogs.rename.renaming") : t("files.dialogs.rename.rename")}
                         </Button>
                     </DialogFooter>
                 </form>

@@ -33,14 +33,14 @@ export default function MaintenancePage() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4 text-center selection:bg-primary/20">
       {/* Background Effects */}
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
       <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/20 blur-[100px]" />
       <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-primary/10 blur-[100px]" />
 
       <div className="relative z-10 mx-auto w-full max-w-lg space-y-8 p-6">
         {/* Icon */}
         <div className="relative mx-auto flex h-32 w-32 items-center justify-center rounded-3xl bg-primary/5 shadow-2xl shadow-primary/20 ring-1 ring-white/10 backdrop-blur-3xl">
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-white/10 to-transparent" />
+          <div className="absolute inset-0 rounded-3xl bg-linear-to-tr from-white/10 to-transparent" />
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -57,7 +57,7 @@ export default function MaintenancePage() {
         
         {/* Text Content */}
         <div className="space-y-4">
-          <h1 className="bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-4xl font-bold tracking-tighter text-transparent sm:text-5xl md:text-6xl">
+          <h1 className="bg-linear-to-br from-foreground to-foreground/60 bg-clip-text text-4xl font-bold tracking-tighter text-transparent sm:text-5xl md:text-6xl">
             System Maintenance
           </h1>
           <p className="mx-auto max-w-[400px] text-lg text-muted-foreground/80 leading-relaxed font-medium">
@@ -82,7 +82,7 @@ export default function MaintenancePage() {
                 onClick={() => window.location.href = '/'}
                 className="group relative overflow-hidden transition-all hover:scale-105 hover:border-primary/50 hover:bg-primary/5 hover:text-primary hover:shadow-lg hover:shadow-primary/10"
              >
-                <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/10 to-transparent" />
                 <span className="relative flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:rotate-180">
                         <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>

@@ -28,6 +28,7 @@ import { FileObject } from "@/types/server";
 import { FileRow } from "./FileRow";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, FolderOpen, Sparkles } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface FileListProps {
     files: FileObject[];
@@ -58,6 +59,8 @@ export function FileList({
     serverUuid,
     currentDirectory,
 }: FileListProps) {
+    const { t } = useTranslation();
+
     if (loading && files.length === 0) {
          return (
             <div className="flex h-64 items-center justify-center rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm">
@@ -83,10 +86,10 @@ export function FileList({
 
                 <div className="text-center relative z-10 space-y-2">
                     <h3 className="text-xl font-bold bg-linear-to-br from-white to-white/40 bg-clip-text text-transparent">
-                        Empower Your Server
+                        {t("files.list.empty_title")}
                     </h3>
                     <p className="text-sm text-white/40 max-w-[280px] leading-relaxed mx-auto">
-                        This directory is currently awaiting your data. Drop files here or use the toolbar above to begin.
+                        {t("files.list.empty_description")}
                     </p>
                 </div>
             </div>
@@ -105,10 +108,10 @@ export function FileList({
                         onCheckedChange={onSelectAll}
                         className="border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-colors"
                     />
-                    <span>Name</span>
+                    <span>{t("files.list.header_name")}</span>
                 </div>
-                <div className="hidden sm:block w-32 text-right">Size</div>
-                <div className="hidden sm:block w-40 text-right">Last Modified</div>
+                <div className="hidden sm:block w-32 text-right">{t("files.list.header_size")}</div>
+                <div className="hidden sm:block w-40 text-right">{t("files.list.header_modified")}</div>
                 <div className="w-10"></div>
              </div>
 

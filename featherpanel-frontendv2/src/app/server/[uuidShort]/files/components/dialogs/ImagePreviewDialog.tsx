@@ -36,6 +36,7 @@ import { Download, X, Loader2, AlertCircle } from "lucide-react";
 import { FileObject } from "@/types/server";
 import { formatFileSize } from "@/lib/utils";
 import api from "@/lib/api";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface ImagePreviewDialogProps {
     open: boolean;
@@ -54,6 +55,7 @@ export function ImagePreviewDialog({
     currentDirectory,
     onDownload
 }: ImagePreviewDialogProps) {
+    const { t } = useTranslation();
     const [blobUrl, setBlobUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -80,7 +82,7 @@ export function ImagePreviewDialog({
                 setBlobUrl(url);
             } catch (err) {
                 console.error("Failed to fetch image:", err);
-                setError("Failed to load image preview. Please try downloading it instead.");
+                setError(t("files.dialogs.preview.error"));
             } finally {
                 setLoading(false);
             }
@@ -100,7 +102,7 @@ export function ImagePreviewDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-border bg-background shadow-2xl gap-0">
+            <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-border gap-0">
                 <DialogHeader className="p-4 flex flex-row items-center justify-between space-y-0 text-left">
                     <div className="flex flex-col gap-1">
                         <DialogTitle className="text-base font-semibold leading-none tracking-tight text-primary">
@@ -116,10 +118,10 @@ export function ImagePreviewDialog({
                             size="icon" 
                             onClick={() => onDownload(file.name)}
                             className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            title="Download"
+                            title={t("files.dialogs.preview.download")}
                         >
                             <Download className="h-4 w-4" />
-                            <span className="sr-only">Download</span>
+                            <span className="sr-only">{t("files.dialogs.preview.download")}</span>
                         </Button>
                         <Button 
                             variant="ghost" 
@@ -128,7 +130,7 @@ export function ImagePreviewDialog({
                             className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         >
                             <X className="h-4 w-4" />
-                            <span className="sr-only">Close</span>
+                            <span className="sr-only">{t("files.dialogs.preview.close")}</span>
                         </Button>
                     </div>
                 </DialogHeader>
@@ -137,7 +139,7 @@ export function ImagePreviewDialog({
                     {loading && (
                         <div className="flex flex-col items-center gap-3">
                             <Loader2 className="h-8 w-8 animate-spin text-primary opacity-50" />
-                            <p className="text-xs text-muted-foreground font-medium">Loading preview...</p>
+                            <p className="text-xs text-muted-foreground font-medium">{t("files.dialogs.preview.loading")}</p>
                         </div>
                     )}
 
