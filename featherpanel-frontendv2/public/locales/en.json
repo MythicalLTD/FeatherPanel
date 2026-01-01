@@ -2625,6 +2625,30 @@
 				"system_desc": "Mail queue monitoring, email delivery statistics, and queue performance metrics",
 				"view_details": "View Details"
 			}
+		},
+		"nodes": {
+			"title": "Node Status Dashboard",
+			"subtitle": "Real-time monitoring of all infrastructure nodes",
+			"refresh": "Refresh",
+			"loading": "Loading node status...",
+			"total": "Total Nodes",
+			"healthy": "Healthy Nodes",
+			"unhealthy": "Unhealthy Nodes",
+			"avg_cpu": "Avg CPU Usage",
+			"memory_usage": "Global Memory Usage",
+			"disk_usage": "Global Disk Usage",
+			"cpu_usage": "CPU Usage",
+			"used_total": "Used / Total",
+			"used_percent": "{percent}% used",
+			"individual_nodes": "Individual Nodes",
+			"online": "Online",
+			"offline": "Offline",
+			"load": "Load",
+			"memory": "Memory",
+			"disk": "Disk",
+			"swap": "Swap",
+			"error": "Failed to load node status",
+			"retry": "Try Again"
 		}
 	}
 }
