@@ -255,8 +255,7 @@ export function WidgetRenderer({ widgets, height = "400px" }: WidgetRendererProp
                                             }}
                                             onLoad={() => handleIframeLoad(widget.id)}
                                             onError={() => handleIframeError(widget.id)}
-                                            // @ts-expect-error - allowTransparency is a legacy property but still useful for some browsers
-                                            allowTransparency="true"
+                                            {...{ allowtransparency: "true" }}
                                         />
                                     )}
                             </div>
