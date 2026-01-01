@@ -362,10 +362,10 @@ export default function ServerDatabasesPage() {
             <div className="space-y-6">
                 <div className="flex items-center gap-4">
                     <div className="relative flex-1 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors" />
                         <Input 
                             placeholder={t('serverDatabases.searchPlaceholder')}
-                            className="pl-12 h-14 text-lg bg-card border-border/50 focus:border-primary/50 placeholder:text-muted-foreground/50"
+                            className="pl-12 h-14 text-base"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />

@@ -77,8 +77,8 @@ export function HeadlessSelect({
                 )}
                 <Listbox.Button 
                     className={clsx(
-                        "relative w-full cursor-pointer rounded-xl border transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary py-3 pl-4 pr-10 text-left sm:text-sm shadow-sm",
-                        buttonClassName || "bg-background border-border/50 hover:border-border",
+                        "relative w-full cursor-pointer rounded-xl border transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary py-3 pl-4 pr-10 text-left shadow-sm",
+                        buttonClassName || "bg-background border-border/50 hover:border-border text-sm",
                         !disabled && "hover:shadow-md group",
                         disabled && "opacity-50 cursor-not-allowed bg-muted/30"
                     )}

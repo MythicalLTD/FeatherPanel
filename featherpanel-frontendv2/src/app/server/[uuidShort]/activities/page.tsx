@@ -413,10 +413,10 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             {/* Filter Bar */}
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1 group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors" />
                     <Input 
                         placeholder={t('serverActivities.searchPlaceholder')}
-                        className="pl-12 h-14 text-lg"
+                        className="pl-12 h-14 text-base"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -430,7 +430,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                         }}
                         options={filterOptions}
                         placeholder={t('serverActivities.events')}
-                        buttonClassName="h-14 bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-lg px-6 hover:bg-[#0A0A0A]/40 transition-colors"
+                        buttonClassName="h-14 bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-base px-6 hover:bg-[#0A0A0A]/40 transition-colors font-medium"
                     />
                     {(searchQuery || selectedEventFilter !== 'all') && (
                         <Button 
