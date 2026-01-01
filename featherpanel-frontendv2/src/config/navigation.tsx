@@ -85,7 +85,7 @@ export const getAdminNavigationItems = (t: TFunction, settings: AppSettings | nu
       id: "admin-kpi-analytics",
       name: t("navigation.items.analytics"),
       title: t("navigation.items.analytics"),
-      url: "/admin/kpi/analytics",
+      url: "/admin/analytics",
       icon: BarChart3,
       isActive: false,
       category: "admin",
