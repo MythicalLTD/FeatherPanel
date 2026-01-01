@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <ruleset name="FeatherPanel">
+
 	<description>PHP CodeSniffer configuration for FeatherPanel</description>
 
 	<!-- Include PSR12 standard -->
@@ -16,4 +17,5 @@
 	<rule ref="PSR1.Methods.CamelCapsMethodName">
 		<exclude-pattern>*</exclude-pattern>
 	</rule>
+
 </ruleset>

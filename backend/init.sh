@@ -80,6 +80,7 @@ fi
 echo "Migrations finished."
 
 # Set everything to be owned by www-data with 777 permissions
+# TODO: This takes a while
 echo "Setting ownership and permissions..."
 chown -R www-data:www-data /var/www/html
 chmod -R 777 /var/www/html

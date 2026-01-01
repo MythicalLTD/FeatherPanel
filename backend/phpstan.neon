@@ -1,5 +1,5 @@
 parameters:
-	level: 5
+	level: 4
 	paths:
 		- app
 	bootstrapFiles:
@@ -9,6 +9,7 @@ parameters:
 		- storage
 		- storage/packages
 		- storage/addons
+		- storage/caches
 		- storage/cron
 	reportUnmatchedIgnoredErrors: false
 

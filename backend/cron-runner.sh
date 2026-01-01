@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Cron runner script that executes tasks every minute
-# This is more reliable than cron in Docker containers
-
 echo "$(date): Starting cron runner for www-data user..."
 
 # Ensure we have sudo access

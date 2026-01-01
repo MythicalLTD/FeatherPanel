@@ -13,6 +13,8 @@ cat > /var/spool/cron/crontabs/www-data << EOF
 * * * * * cd /var/www/html && bash storage/cron/runner.bash >> /var/log/cron.log 2>&1
 EOF
 
+# TODO: Find a way to optimize permissions
+
 # Set proper permissions
 chmod 600 /var/spool/cron/crontabs/www-data
 chown www-data:crontab /var/spool/cron/crontabs/www-data

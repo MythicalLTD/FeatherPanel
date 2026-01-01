@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Headless script to install and launch VS Code for backend development in production
-# This enables remote development access via VS Code Tunnel
+# This script is to enable vscode via remote!
 
 set -e
 

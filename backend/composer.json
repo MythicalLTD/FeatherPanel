@@ -43,7 +43,7 @@
     "ext-redis": "*",
     "ext-sodium": "*",
     "cron/cron": "^1.9",
-    "cloudflare/sdk": "dev-master#541fb4e2c9942a3b660bb6a0db676f7c851c144c",
+    "cloudflare/sdk": "dev-master#541fb4e2c9942a3b660bb6a0db676f7c851c144c", 
     "ifsnop/mysqldump-php": "^2.12"
   },
   "require-dev": {
@@ -56,8 +56,8 @@
   "support": {
     "wiki": "https://www.mythical.systems",
     "chat": "https://discord.mythical.systems",
-    "issues": "https://github.com/mythicalltd/mythicalldash/issues",
-    "docs": "https://www.mythical.systems",
+    "issues": "https://github.com/mythicalltd/featherpanel/issues",
+    "docs": "https://docs.mythical.systems",
     "forum": "https://discord.mythical.systems"
   },
   "funding": [

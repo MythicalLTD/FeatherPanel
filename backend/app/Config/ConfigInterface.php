@@ -5,8 +5,8 @@
  *
  * MIT License
  *
- * Copyright (c) 2025 MythicalSystems
- * Copyright (c) 2025 Cassian Gherman (NaysKutzu)
+ * Copyright (c) 2024-2026 MythicalSystems
+ * Copyright (c) 2024-2026 Cassian Gherman (NaysKutzu)
  * Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -83,14 +83,14 @@ interface ConfigInterface
      * Telemetry.
      */
     public const TELEMETRY = 'telemetry';
- 
+
     /**
      * SEO Settings.
      */
     public const APP_SEO_TITLE = 'app_seo_title';
     public const APP_SEO_DESCRIPTION = 'app_seo_description';
     public const APP_SEO_KEYWORDS = 'app_seo_keywords';
- 
+
     /**
      * PWA Settings.
      */

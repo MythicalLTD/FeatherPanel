@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.1.3 STABLE
+
+### Added
+
+- Introduced a completely redesigned and modernized frontend architecture. by @nayskutzu
+
+### Updated
+
+- Upgraded the primary database engine to MariaDB 12. by @nayskutzu
+- Updated the caching layer to Redis 8 for improved efficiency. by @nayskutzu
+
 ## v1.1.2 STABLE
 
 ### Added

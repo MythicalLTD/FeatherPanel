@@ -5,8 +5,8 @@
  *
  * MIT License
  *
- * Copyright (c) 2025 MythicalSystems
- * Copyright (c) 2025 Cassian Gherman (NaysKutzu)
+ * Copyright (c) 2024-2026 MythicalSystems
+ * Copyright (c) 2024-2026 Cassian Gherman (NaysKutzu)
  * Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -46,7 +46,7 @@ class ServerMiddleware implements MiddlewareInterface
     {
         $user = $request->attributes->get('user');
 
-		unset($user['password'], $user['remember_token']);
+        unset($user['password'], $user['remember_token']);
 
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401, []);
@@ -70,6 +70,7 @@ class ServerMiddleware implements MiddlewareInterface
                 'path' => $request->getPathInfo(),
             ];
             App::getInstance(true)->getLogger()->error('SERVER_UUID_MISSING: Attributes dump: ' . json_encode($context));
+
             return ApiResponse::error('Server UUID not provided', 'SERVER_UUID_MISSING', 400, []);
         }
 

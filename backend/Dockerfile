@@ -109,7 +109,8 @@ RUN mkdir -p /var/log/supervisor \
     && mkdir -p /var/www/html/storage/logs \
     && mkdir -p /var/www/html/storage/cache \
     && mkdir -p /var/www/html/storage/uploads \
-    && mkdir -p /var/www/html/storage/temp
+    && mkdir -p /var/www/html/storage/temp \
+    && mkdir -p /var/log/cron
 
 # Copy and make init script executable
 COPY init.sh /usr/local/bin/init.sh

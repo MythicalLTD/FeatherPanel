@@ -3,6 +3,7 @@
 
 # Directory configurations
 FRONTEND_DIR = frontend
+FRONTENDV2_DIR = featherpanel-frontendv2
 BACKEND_DIR = backend
 
 # Commands

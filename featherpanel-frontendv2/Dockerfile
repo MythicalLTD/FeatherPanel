@@ -1,7 +1,7 @@
 # Multi-stage build for Next.js frontend
 FROM node:22-alpine AS builder
 
-# Set working directory
+# Set working directory for the builder stage
 WORKDIR /app
 
 # Install pnpm

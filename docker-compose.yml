@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mariadb:11.4
+    image: mariadb:12.1
     container_name: featherpanel_mysql
     restart: unless-stopped
     environment:
@@ -30,7 +30,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:7-alpine
+    image: redis:8.4-alpine
     container_name: featherpanel_redis
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-featherpanel_redis}

@@ -1,5 +1,6 @@
 # FeatherPanel Permission Nodes
 # This file defines all permission nodes used throughout the application and client ui!
+# You will need the devutils plugin to generate the permission files!
 # Format: KEY=value | category | description
 
 # ROOT PERMISSIONS 

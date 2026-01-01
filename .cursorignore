@@ -4,3 +4,4 @@
 /backend/storage/caches/*
 /backend/storage/backups/*
 /backend/storage/packages/*
+/backend/storage/logs/*

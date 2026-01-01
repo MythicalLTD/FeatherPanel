@@ -14,14 +14,15 @@ const numberFormatter = new Intl.NumberFormat("en-US");
 const VALID_EXTENSIONS = [
   ".vue",
   ".ts",
+  ".tsx",
   ".js",
+  ".jsx",
   ".php",
   ".css",
   ".yml",
   ".yaml",
   ".sql",
   ".cs",
-  ".css",
 ];
 // Directories to exclude
 const EXCLUDED_DIRS = [
@@ -34,7 +35,10 @@ const EXCLUDED_DIRS = [
   "assets",
   ".vite",
   ".vite-cache",
-  "addons"
+  "addons",
+  ".next",
+  "out",
+  "build",
 ];
 // Process arguments
 const targetDir = process.argv[2] || process.cwd();
@@ -42,7 +46,9 @@ const targetDir = process.argv[2] || process.cwd();
 // Regular expressions for detecting comments
 const COMMENT_PATTERNS = {
   ".js": [/\/\/.*$/m, /\/\*[\s\S]*?\*\//g],
+  ".jsx": [/\/\/.*$/m, /\/\*[\s\S]*?\*\//g],
   ".ts": [/\/\/.*$/m, /\/\*[\s\S]*?\*\//g],
+  ".tsx": [/\/\/.*$/m, /\/\*[\s\S]*?\*\//g],
   ".vue": [/<!--[\s\S]*?-->/g, /\/\/.*$/m, /\/\*[\s\S]*?\*\//g],
   ".php": [/\/\/.*$/m, /\/\*[\s\S]*?\*\//g, /#.*$/m],
   ".css": [/\/\*[\s\S]*?\*\//g],

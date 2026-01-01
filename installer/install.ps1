@@ -89,6 +89,7 @@ function Initialize-Logging {
     Add-Content -Path $Script:LogFile -Value "========================================"
     Add-Content -Path $Script:LogFile -Value "[START] $timestamp"
     Add-Content -Path $Script:LogFile -Value "Script: FeatherPanel Windows Installer"
+	Add-Content -Path $Script:LogFile -Value "Script Version: 2.0.0"
     Add-Content -Path $Script:LogFile -Value "========================================"
 }
 
