@@ -42,6 +42,8 @@ import { useFeatureDetector } from '@/hooks/useFeatureDetector'
 import { EulaDialog } from '@/components/server/features/EulaDialog'
 import { JavaVersionDialog } from '@/components/server/features/JavaVersionDialog'
 import { PidLimitDialog } from '@/components/server/features/PidLimitDialog'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 
 interface WingsStats {
   uptime?: number;
@@ -88,16 +90,22 @@ export default function ServerConsolePage() {
 
   // Permissions hook provides server data from context
   const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(serverUuid)
-
   const [serverStatus, setServerStatus] = useState('offline')
   const [wingsUptime, setWingsUptime] = useState<string>('')
 
+  // Initialize server status when server data is loaded
+  useEffect(() => {
+    if (server?.status && !hasInitializedStatus.current) {
+       // Defer state update to avoid synchronous render loop warning/linter error
+       const timer = setTimeout(() => {
+          setServerStatus(server.status)
+          hasInitializedStatus.current = true
+       }, 0)
+       return () => clearTimeout(timer)
+    }
+  }, [server?.status])
+
   // Performance data
-  // Initialize with current timestamp to avoid client-side hydration mismatch if we used Date.now() directly in render without useEffect
-  // But useState(() => ...) only runs on client if component mounts there? No, it runs on server too.
-  // To be safe and avoid hydration errors, we can start empty and fill in useEffect, OR use a fixed timestamp if possible.
-  // However, the previous code used Date.now(). Let's stick to the previous logic but fix the "setState in effect" error.
-  // Actually, we can just start empty and only add the point if empty in an effect using setTimeout to avoid the lint error.
   const [cpuData, setCpuData] = useState<Array<{ timestamp: number; value: number }>>([])
   const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([])
   const [diskData, setDiskData] = useState<Array<{ timestamp: number; value: number }>>([])
@@ -125,6 +133,14 @@ export default function ServerConsolePage() {
 
   // Permissions
   const canConnect = hasPermission('websocket.connect')
+
+  // Plugin Widgets
+  const { fetchWidgets, getWidgets } = usePluginWidgets('server-console');
+
+  // Fetch widgets on mount
+  useEffect(() => {
+      fetchWidgets();
+  }, [fetchWidgets]);
 
   // Handler for console output
   const handleConsoleOutput = useCallback((output: string) => {
@@ -227,20 +243,6 @@ export default function ServerConsolePage() {
     onStatus: handleStatusUpdate,
     onStats: handleStatsUpdate,
   })
-
-  // Initialize server status when server data is loaded
-  // Only override if we haven't set it yet to avoid overwriting live WS/State updates with stale API data
-  useEffect(() => {
-    if (server?.status && !hasInitializedStatus.current) {
-       // Defer state update to avoid synchronous render loop warning/linter error
-       const timer = setTimeout(() => {
-          setServerStatus(server.status)
-          hasInitializedStatus.current = true
-       }, 0)
-       return () => clearTimeout(timer)
-    }
-  }, [server?.status])
-
   // Request stats periodically for ping measurement
   useEffect(() => {
     if (connectionStatus !== 'connected' || !requestStats) return
@@ -337,6 +339,9 @@ export default function ServerConsolePage() {
 
   return (
     <div className="space-y-6 pb-8">
+      {/* Plugin Widgets: Top Of Page */}
+      <WidgetRenderer widgets={getWidgets("server-console", "top-of-page")} />
+
       {/* Server Header */}
       <ServerHeader
         serverName={server.name}
@@ -354,6 +359,9 @@ export default function ServerConsolePage() {
         onRestart={() => sendPowerAction('restart')}
         onKill={() => sendPowerAction('kill')}
       />
+
+      {/* Plugin Widgets: After Header */}
+      <WidgetRenderer widgets={getWidgets("server-console", "after-header")} />
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* Main Column: Terminal & Status Messages */}
@@ -379,6 +387,9 @@ export default function ServerConsolePage() {
                 </Card>
             )}
 
+            {/* Plugin Widgets: After Wings Status */}
+            <WidgetRenderer widgets={getWidgets("server-console", "after-wings-status")} />
+
             {/* Permission Error */}
             {!canConnect && (
                 <Card className="border-2 border-yellow-500/20 bg-yellow-500/10">
@@ -397,6 +408,9 @@ export default function ServerConsolePage() {
                 </Card>
             )}
 
+            {/* Plugin Widgets: Before Terminal */}
+            <WidgetRenderer widgets={getWidgets("server-console", "before-terminal")} />
+
             {/* Terminal Console */}
             {canConnect && (
                 <ServerTerminal 
@@ -406,12 +420,16 @@ export default function ServerConsolePage() {
                 serverStatus={serverStatus}
                 />
             )}
+
+            {/* Plugin Widgets: After Terminal */}
+            <WidgetRenderer widgets={getWidgets("server-console", "after-terminal")} />
+
         </div>
 
         {/* Sidebar Column: Info Cards */}
-        <div className="xl:col-span-3">
+        <div className="xl:col-span-3 space-y-6">
              {/* Server Info Cards */}
-            {canConnect && (
+             {canConnect && (
                 <ServerInfoCards
                     serverIp={server.allocation?.ip || server.allocation?.ip_alias || ''}
                     serverPort={server.allocation?.port || 0}
@@ -428,8 +446,15 @@ export default function ServerConsolePage() {
                     className="xl:grid-cols-1"
                 />
             )}
+
+            {/* Plugin Widgets: Under Server Info Cards */}
+            <WidgetRenderer widgets={getWidgets("server-console", "under-server-info-cards")} />
+
         </div>
       </div>
+
+      {/* Plugin Widgets: Before Performance */}
+      <WidgetRenderer widgets={getWidgets("server-console", "before-performance")} />
 
       {/* Performance Monitoring */}
       {server && canConnect && (
@@ -443,6 +468,13 @@ export default function ServerConsolePage() {
           diskLimit={server.disk || 0}
         />
       )}
+
+      {/* Plugin Widgets: After Performance */}
+      <WidgetRenderer widgets={getWidgets("server-console", "after-performance")} />
+
+      {/* Plugin Widgets: Bottom Of Page */}
+      <WidgetRenderer widgets={getWidgets("server-console", "bottom-of-page")} />
+
 
       {/* Feature Detection Dialogs */}
       {server && (
