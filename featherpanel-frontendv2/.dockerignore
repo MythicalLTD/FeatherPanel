@@ -31,7 +31,6 @@ README.md
 *.md
 
 # Development tools
-eslint.config.mjs
 tsconfig.tsbuildinfo
 
 # Build artifacts
