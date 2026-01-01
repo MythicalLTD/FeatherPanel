@@ -1283,7 +1283,7 @@ class ServerDatabaseController
 
             return [
                 'success' => true,
-                'message' => 'Connection successful',
+                'message' => 'Successful',
                 'response_time' => $responseTime,
             ];
         } catch (\PDOException $e) {

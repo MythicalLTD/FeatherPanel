@@ -182,6 +182,45 @@ class DashboardController
     }
 
     /**
+     * Clear the system cache.
+     *
+     * @param Request $request The HTTP request
+     *
+     * @return Response The HTTP response
+     */
+    #[OA\Post(
+        path: '/api/admin/dashboard/cache/clear',
+        summary: 'Clear system cache',
+        description: 'Clears all cached data in the system, including redis and file-based cache.',
+        tags: ['Admin - Dashboard'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Cache cleared successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'System cache has been cleared successfully.'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to clear cache'),
+        ]
+    )]
+    public function clearCache(Request $request): Response
+    {
+        try {
+            Cache::clear();
+
+            return ApiResponse::success([], 'System cache has been cleared successfully.', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to clear system cache: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Fetch version information from the API.
      *
      * @param string $upstream The upstream type (stable/beta/canary)
@@ -217,7 +256,19 @@ class DashboardController
                 $logger->debug('Current version API response received: ' . substr($currentVersionResponse, 0, 200) . '...');
                 $currentVersionData = json_decode($currentVersionResponse, true);
                 if (isset($currentVersionData['success']) && $currentVersionData['success'] && isset($currentVersionData['data']['version'])) {
-                    $versionInfo['current'] = $currentVersionData['data']['version'];
+                    $versionData = $currentVersionData['data']['version'];
+                    $versionInfo['current'] = [
+                        'version' => $versionData['version'] ?? $currentVersion,
+                        'type' => $versionData['type'] ?? 'Stable',
+                        'release_name' => $versionData['release_name'] ?? 'Unknown Release',
+                        'release_description' => $versionData['release_description'] ?? '',
+                        'php_version' => $versionData['php_version'] ?? '8.2',
+                        'changelog_added' => $versionData['changelog_added'] ?? [],
+                        'changelog_fixed' => $versionData['changelog_fixed'] ?? [],
+                        'changelog_improved' => $versionData['changelog_improved'] ?? [],
+                        'changelog_updated' => $versionData['changelog_updated'] ?? [],
+                        'changelog_removed' => $versionData['changelog_removed'] ?? [],
+                    ];
                     $logger->debug('Successfully fetched current version details: ' . $currentVersion);
                 } else {
                     $logger->warning('Failed to parse current version response. Success: ' . ($currentVersionData['success'] ?? 'not set') . ', Response: ' . $currentVersionResponse);
@@ -236,20 +287,24 @@ class DashboardController
                 $logger->debug('Latest version API response received: ' . substr($latestVersionResponse, 0, 200) . '...');
                 $latestVersionData = json_decode($latestVersionResponse, true);
                 if (isset($latestVersionData['success']) && $latestVersionData['success'] && isset($latestVersionData['data']['version'])) {
-                    $versionInfo['latest'] = $latestVersionData['data']['version'];
+                    $latestData = $latestVersionData['data']['version'];
+                    $versionInfo['latest'] = [
+                        'version' => $latestData['version'] ?? 'Unknown',
+                        'type' => $latestData['type'] ?? $upstream,
+                        'release_description' => $latestData['release_description'] ?? '',
+                        'changelog_added' => $latestData['changelog_added'] ?? [],
+                        'changelog_fixed' => $latestData['changelog_fixed'] ?? [],
+                        'changelog_improved' => $latestData['changelog_improved'] ?? [],
+                        'changelog_updated' => $latestData['changelog_updated'] ?? [],
+                        'changelog_removed' => $latestData['changelog_removed'] ?? [],
+                    ];
 
-                    // Compare versions to determine if update is available
-                    $currentVersionData = $versionInfo['current'];
-                    $latestVersionData = $versionInfo['latest'];
-
-                    if (
-                        is_array($currentVersionData) && isset($currentVersionData['version'])
-                        && is_array($latestVersionData) && isset($latestVersionData['version'])
-                    ) {
-                        $versionInfo['update_available'] = version_compare($currentVersionData['version'], $latestVersionData['version'], '<');
+                    // Compare versions
+                    if (isset($versionInfo['current']['version']) && isset($versionInfo['latest']['version'])) {
+                        $versionInfo['update_available'] = version_compare($versionInfo['current']['version'], $versionInfo['latest']['version'], '<');
                     }
 
-                    $latestVersion = is_array($latestVersionData) && isset($latestVersionData['version']) ? $latestVersionData['version'] : 'unknown';
+                    $latestVersion = $versionInfo['latest']['version'];
                     $logger->debug('Successfully fetched latest version details: ' . $latestVersion);
                 } else {
                     $logger->warning('Failed to parse latest version response. Success: ' . ($latestVersionData['success'] ?? 'not set') . ', Response: ' . $latestVersionResponse);
@@ -259,8 +314,6 @@ class DashboardController
                 $logger->warning('Failed to fetch latest version from API. Error: ' . ($error['message'] ?? 'Unknown error'));
             }
         } catch (\Exception $e) {
-            // If version check fails, we'll just return the current version info
-            // This ensures the dashboard still works even if the version API is down
             $logger->error('Failed to fetch version information: ' . $e->getMessage());
         }
 

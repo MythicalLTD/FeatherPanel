@@ -78,9 +78,9 @@ class SelfTest
         try {
             $redis = new \App\FastChat\Redis();
             if ($redis->testConnection()) {
-                $checks['redis'] = ['status' => true, 'message' => 'Connection successful'];
+                $checks['redis'] = ['status' => true, 'message' => 'Successful'];
             } else {
-                $checks['redis'] = ['status' => false, 'message' => 'Connection failed'];
+                $checks['redis'] = ['status' => false, 'message' => 'Failed'];
                 $hasErrors = true;
             }
         } catch (\Exception $e) {
@@ -91,9 +91,9 @@ class SelfTest
         // MySQL Check
         try {
             \App\Chat\Database::getPdoConnection();
-            $checks['mysql'] = ['status' => true, 'message' => 'Connection successful'];
+            $checks['mysql'] = ['status' => true, 'message' => 'Successful'];
         } catch (\Exception $e) {
-            $checks['mysql'] = ['status' => false, 'message' => $e->getMessage()];
+            $checks['mysql'] = ['status' => false, 'message' => 'Failed'];
             $hasErrors = true;
         }
 

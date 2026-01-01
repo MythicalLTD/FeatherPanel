@@ -2303,5 +2303,109 @@
         "error": "Failed to load image preview. Please try downloading it instead."
       }
     }
+  },
+  "admin": {
+    "system_health": {
+      "title": "System Health",
+      "description": "Real-time Infrastructure Monitoring",
+      "nodes": "Nodes",
+      "memory": "Memory",
+      "cpu_load": "CPU Load",
+      "startup": "Startup",
+      "database": "Database",
+      "cache": "Cache",
+      "status": {
+        "healthy": "Healthy",
+        "degraded": "Degraded",
+        "unknown": "Unknown",
+        "usage": "Usage",
+        "average": "Average",
+        "latency": "Latency",
+        "error": "Error",
+        "online": "{{healthy}}/{{total}} Online",
+        "loading": "Loading...",
+        "fetching": "Fetching...",
+        "successful": "Successful",
+        "failed": "Failed",
+        "connecting": "Connecting..."
+      },
+      "banner": {
+        "analyzing": "Analyzing System Status...",
+        "operational": "All core systems are operational",
+        "attention_required": "System attention required"
+      }
+    },
+    "dashboard": {
+      "title": "Admin Terminal",
+      "subtitle": "System Core & Infrastructure",
+      "customize": "Customize",
+      "stop_customizing": "Stop Customizing",
+      "clear_cache": "Clear Cache",
+      "global_settings": "Global Settings",
+      "clearing_cache": "Clearing system cache...",
+      "cache_cleared": "System cache has been cleared successfully.",
+      "cache_failed": "Failed to clear cache.",
+      "app_url_warning": {
+        "title": "APP_URL Mismatch Detected",
+        "message": "Your panel is currently using the default featherpanel.mythical.systems URL. This will cause security issues and breaks authentication.",
+        "remind_me": "Remind Me Later",
+        "update_settings": "Update Settings"
+      }
+    },
+    "welcome": {
+      "running_version": "Running FeatherPanel {{version}}",
+      "welcome_back": "Welcome back, ",
+      "subtitle": "Management interface active • All systems operational",
+      "create_server": "Create Server",
+      "add_user": "Add User",
+      "manage_nodes": "Manage Nodes"
+    },
+    "stats": {
+      "total_servers": "Total Servers",
+      "total_users": "Total Users",
+      "total_nodes": "Total Nodes",
+      "total_spells": "Total Spells"
+    },
+    "cron": {
+      "title": "Cron Status",
+      "description": "Background Task Monitoring",
+      "last_run": "Last run: {{date}}",
+      "never": "Never",
+      "healthy": "Healthy",
+      "late": "Late",
+      "failed": "Failed",
+      "no_tasks": "No cron tasks found."
+    },
+    "version": {
+      "title": "System Version",
+      "description": "Software Lifecycle & Updates",
+      "current_build": "Current Build",
+      "release_type": "Release Type",
+      "up_to_date": "Your system is up to date and secured.",
+      "update_available": "Update {{version}} Available",
+      "update_description": "Security patches and performance optimizations",
+      "update_now": "Update System Now",
+      "recommended_php": "Recommended PHP Version: ",
+      "view_changelog": "View Detailed Changelog",
+      "verify_integrity": "Verify Integrity",
+      "official_site": "Official Site",
+      "last_checked": "Last checked: {{date}}",
+      "changelog": {
+        "added": "Added",
+        "fixed": "Fixed",
+        "improved": "Improved",
+        "updated": "Updated",
+        "removed": "Removed"
+      },
+      "integrity_coming_soon": "This feature is coming soon in a future update."
+    },
+    "quick_links": {
+      "title": "Quick Actions",
+      "description": "Shortcuts & Maintenance",
+      "system_settings": "System Settings",
+      "documentation": "Documentation",
+      "support_discord": "Support Discord",
+      "clear_system_cache": "Clear System Cache"
+    }
   }
 }
