@@ -27,7 +27,7 @@ SOFTWARE.
 "use client";
 
 import { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 interface SelfTestResponse {
     success: boolean;
@@ -38,7 +38,6 @@ interface SelfTestResponse {
 }
 
 export default function SystemHealthCheck() {
-    const router = useRouter();
     const pathname = usePathname();
     // const [checked, setChecked] = useState(false); // Unused
 
@@ -68,11 +67,13 @@ export default function SystemHealthCheck() {
 
                 if (!data.success || data.data?.status !== 'ready') {
                     console.error('System health check failed:', data);
-                    router.push('/maintenance');
+                    // Use window.location.href to force a full page reload and escape potential React state loops
+                    window.location.href = '/maintenance';
                 }
             } catch (error) {
                 console.error('System health check error:', error);
-                router.push('/maintenance');
+                // Use window.location.href to force a full page reload and escape potential React state loops
+                window.location.href = '/maintenance';
             } finally {
                 // Check complete
             }
@@ -85,7 +86,7 @@ export default function SystemHealthCheck() {
         // Actually layout doesn't unmount on page change, so this runs once per hard load.
         // That is acceptable for a "Startup" kind of check.
 
-    }, [router, pathname]);
+    }, [pathname]);
 
     return null; // This component renders nothing
 }

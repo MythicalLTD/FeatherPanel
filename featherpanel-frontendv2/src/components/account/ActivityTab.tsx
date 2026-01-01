@@ -100,12 +100,12 @@ export default function ActivityTab() {
 			const diffInHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60)
 
 			if (diffInHours < 1) {
-				return 'Just now'
+				return t('common.time.just_now')
 			} else if (diffInHours < 24) {
 				const hours = Math.floor(diffInHours)
-				return `${hours} hour${hours > 1 ? 's' : ''} ago`
+				return t('common.time.hours_ago', { count: hours.toString(), s: hours > 1 ? 's' : '' })
 			} else if (diffInHours < 48) {
-				return 'Yesterday'
+				return t('common.time.yesterday')
 			} else {
 				return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 			}

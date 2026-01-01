@@ -135,7 +135,7 @@ export default function DashboardPage() {
 			} else if (diffInHours < 24) {
 				const hours = Math.floor(diffInHours)
 				// Simplified pluralization handling for now, can be improved with i18next pluralization if fully configured
-				return t('common.time.hours_ago').replace('{{count}}', hours.toString()).replace('{{s}}', hours > 1 ? 's' : '')
+				return t('common.time.hours_ago', { count: hours.toString(), s: hours > 1 ? 's' : '' })
 			} else if (diffInHours < 48) {
 				return t('common.time.yesterday')
 			} else {
