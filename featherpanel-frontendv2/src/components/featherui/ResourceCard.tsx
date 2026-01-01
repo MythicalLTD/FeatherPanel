@@ -28,7 +28,7 @@ SOFTWARE.
 
 import { cn } from '@/lib/utils'
 import { LucideIcon } from 'lucide-react'
-import { ReactNode } from 'react'
+import { ReactNode, ComponentType } from 'react'
 
 export interface ResourceBadge {
     label: string
@@ -36,8 +36,9 @@ export interface ResourceBadge {
 }
 
 interface ResourceCardProps {
-    icon: LucideIcon
+    icon: LucideIcon | ComponentType<{ className?: string }>
     title: string
+    subtitle?: ReactNode
     badges?: ReactNode | ResourceBadge[]
     description?: ReactNode
     actions?: ReactNode
@@ -51,6 +52,7 @@ interface ResourceCardProps {
 export function ResourceCard({
     icon: Icon,
     title,
+    subtitle,
     badges,
     description,
     actions,
@@ -86,16 +88,15 @@ export function ResourceCard({
             onClick={onClick}
             style={style}
             className={cn(
-                "group relative overflow-hidden rounded-3xl bg-card border border-border/50 hover:border-primary/40 hover:bg-accent/50 transition-all duration-300 shadow-sm",
+                "group relative overflow-hidden rounded-3xl bg-card border border-border/50 hover:border-primary/40 hover:bg-accent/50 transition-all duration-300",
                 onClick && "cursor-pointer",
                 className
             )}
         >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
             
             <div className="p-6 flex flex-col md:flex-row md:items-center gap-6 relative z-10">
                 <div className={cn(
-                    "h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner",
+                    "h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2",
                     iconWrapperClassName
                 )}>
                     <Icon className={cn("h-8 w-8 text-primary", iconClassName)} />
@@ -108,6 +109,11 @@ export function ResourceCard({
                         </h3>
                         {renderBadges()}
                     </div>
+                    {subtitle && (
+                        <div className="text-sm text-muted-foreground/60 font-medium -mt-1 group-hover:text-muted-foreground/80 transition-colors">
+                            {subtitle}
+                        </div>
+                    )}
 
                     {description && (
                         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">

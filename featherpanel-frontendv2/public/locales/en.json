@@ -2649,6 +2649,134 @@
 			"swap": "Swap",
 			"error": "Failed to load node status",
 			"retry": "Try Again"
+		},
+		"unknown": "Unknown",
+		"marketplace": {
+			"title": "FeatherCloud Marketplace",
+			"subtitle": "Browse and install extensions, spells, and translations to enhance your FeatherPanel experience",
+			"index": {
+				"plugins": {
+					"title": "Plugins",
+					"description": "Addons that extend FeatherPanel with new features and functionality",
+					"available": "Available",
+					"explore": "Explore"
+				},
+				"spells": {
+					"title": "Spells",
+					"description": "Server templates to run specific games and applications on FeatherPanel",
+					"available": "Available",
+					"explore": "Explore"
+				},
+				"translations": {
+					"title": "Translations",
+					"description": "Translations for the panel provided by the community and official contributors",
+					"coming_soon": "Coming Soon",
+					"locked": "Locked"
+				},
+				"about": {
+					"title": "About the Marketplace",
+					"description": "The FeatherCloud Marketplace provides access to community-created and official extensions for FeatherPanel. Browse verified plugins, install spells for your servers, and discover new ways to customize your panel experience."
+				}
+			},
+			"plugins": {
+				"title": "Plugins",
+				"installed": "Installed",
+				"subtitle": "Browse and install plugins from the online repository",
+				"back": "Back to Marketplace",
+				"loading_error": "Failed to load online addons",
+				"install_error": "Failed to install plugin",
+				"cloud_missing": {
+					"title": "Cloud Account Missing",
+					"description": "FeatherCloud credentials are not configured. You cannot download premium plugins until you configure your cloud account credentials in Cloud Management.",
+					"action": "Configure Cloud Account"
+				},
+				"cloud_connected": {
+					"title": "Cloud Account Connected",
+					"credits": "Credits",
+					"team": "Team"
+				},
+				"popular": "Popular Plugins",
+				"search_placeholder": "Search online addons...",
+				"verified_only": "Verified Only",
+				"loading": "Loading online addons...",
+				"try_again": "Try Again",
+				"details": {
+					"title": "Package Details",
+					"close": "Close",
+					"install": "Install Now",
+					"loading": "Loading package details...",
+					"error": "Failed to load package details",
+					"no_description": "No description available",
+					"changelog": "Changelog"
+				},
+				"install": "Install",
+				"installing": "Installing...",
+				"requires_cloud": "Requires Cloud Account",
+				"purchase": "Purchase",
+				"purchased": "Purchased",
+				"verified": "Verified",
+				"unverified": "Unverified",
+				"unverified_warning": "Unverified plugin - review source before installing",
+				"premium": "Premium",
+				"website": "Website",
+				"downloads": "downloads",
+				"author": "Author",
+				"tags": "Tags",
+				"tag_label": "Tag:",
+				"search_button": "Search",
+				"sort": {
+					"placeholder": "Sort by",
+					"downloads": "Downloads",
+					"newest": "Newest",
+					"recently_updated": "Recently Updated"
+				}
+			},
+			"spells": {
+				"title": "Spells Marketplace",
+				"subtitle": "Browse and install spells from the online repository",
+				"loading_error": "Failed to load online spells",
+				"install_error": "Failed to install spell",
+				"select_realm_error": "Please select a realm before installing",
+				"online_banner": {
+					"title": "Have some spells to share?",
+					"description": "Publish your creations to the community. Download your spell and head over to our cloud platform. Our team aims to review and publish within 48 hours.",
+					"tip": "Tip: Include description, tags, and a banner for better visibility.",
+					"action": "Publish New Spell",
+					"learn_more": "Learn more"
+				},
+				"search_placeholder": "Search online spells...",
+				"search_button": "Search",
+				"loading": "Loading online spells...",
+				"grid": {
+					"verified": "Verified",
+					"unverified": "Unverified",
+					"unverified_warning": "Unverified spell - review source before installing",
+					"install": "Install",
+					"installing": "Installing...",
+					"installed": "Installed",
+					"downloads": "downloads",
+					"no_description": "No description available"
+				},
+				"dialog": {
+					"title": "Install Spell",
+					"realm": "Select Realm *",
+					"choose_realm": "Choose a realm...",
+					"realm_help": "Select the realm where this spell will be installed.",
+					"cancel": "Cancel",
+					"install": "Install",
+					"installing": "Installing...",
+					"unverified_warning": "Unverified Spell",
+					"unverified_desc": "This spell is not verified. Installing unverified spells can be unsafe. Please review the source code before installing."
+				},
+				"help": {
+					"repo_title": "Online Repository",
+					"repo_desc": "Browse community-created spells from our online repository. Install directly from this page with a single click.",
+					"install_title": "Install Spells",
+					"install_desc": "Select a realm and install spells with one click. Verified spells are marked with a checkmark for your safety.",
+					"security_title": "Security & Liability",
+					"security_desc": "Installing third-party spells can be risky. FeatherPanel and its team are not liable for what you install."
+				}
+			}
 		}
 	}
 }

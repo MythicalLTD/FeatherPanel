@@ -87,7 +87,7 @@ export function PageCard({
     return (
         <div
             className={cn(
-                "backdrop-blur-3xl border rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden group transition-all",
+                "backdrop-blur-3xl border rounded-3xl p-8 space-y-6 relative overflow-hidden group transition-all",
                 styles.bg,
                 styles.border,
                 className
@@ -95,9 +95,8 @@ export function PageCard({
         >
             <div
                 className={cn(
-                    "absolute top-0 right-0 w-32 h-32 blur-2xl pointer-events-none transition-all duration-700",
-                    styles.glow,
-                    variant === "default" ? "group-hover:bg-primary/10" : "opacity-0 group-hover:opacity-100"
+                    "absolute top-0 right-0 w-32 h-32 blur-2xl pointer-events-none transition-all duration-700 opacity-0 group-hover:opacity-100",
+                    styles.glow
                 )}
             />
             
