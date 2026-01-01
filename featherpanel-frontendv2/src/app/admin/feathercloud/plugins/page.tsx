@@ -27,6 +27,7 @@ SOFTWARE.
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useFeatherCloud, type CreditsData, type TeamData } from '@/hooks/useFeatherCloud'
@@ -356,7 +357,9 @@ export default function PluginsPage() {
                     <div className="grid grid-cols-1 gap-6">
                         {popularAddons.slice(0, 3).map((addon) => {
                             const IconComponent = ({ className }: { className?: string }) => addon.icon ? (
-                                <img src={addon.icon} alt={addon.name} className={cn(className, "object-cover rounded-lg")} />
+                                <div className={cn("relative", className)}>
+                                    <Image src={addon.icon} alt={addon.name} fill className="object-cover rounded-lg" unoptimized />
+                                </div>
                             ) : (
                                 <Puzzle className={className} />
                             )
@@ -462,7 +465,9 @@ export default function PluginsPage() {
                 <div className="grid grid-cols-1 gap-6">
                     {onlineAddons.map((addon) => {
                         const IconComponent = ({ className }: { className?: string }) => addon.icon ? (
-                            <img src={addon.icon} alt={addon.name} className={cn(className, "object-cover rounded-lg")} />
+                            <div className={cn("relative", className)}>
+                                <Image src={addon.icon} alt={addon.name} fill className="object-cover rounded-lg" unoptimized />
+                            </div>
                         ) : (
                             <Puzzle className={className} />
                         )
@@ -607,9 +612,9 @@ export default function PluginsPage() {
                         ) : selectedPackage && (
                             <div className="space-y-8 pb-4">
                                 <div className="flex items-start gap-6">
-                                    <div className="h-24 w-24 rounded-3xl bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center border-2 border-primary/20 overflow-hidden">
+                                    <div className="relative h-24 w-24 rounded-3xl bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center border-2 border-primary/20 overflow-hidden">
                                         {selectedPackage.icon ? (
-                                            <img src={selectedPackage.icon} alt={selectedPackage.name} className="h-full w-full object-cover" />
+                                            <Image src={selectedPackage.icon} alt={selectedPackage.name} fill className="object-cover" unoptimized />
                                         ) : (
                                             <Puzzle className="h-12 w-12 text-primary/60" />
                                         )}

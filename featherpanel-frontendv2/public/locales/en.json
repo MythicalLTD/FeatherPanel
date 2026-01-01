@@ -80,7 +80,10 @@
 			"redirect_message": "If you are not redirected automatically,",
 			"click_here": "click here"
 		},
-		"accentColor": "Accent Color"
+		"accentColor": "Accent Color",
+		"loginSuccess": "Login successful",
+		"ssoLoggingIn": "Logging in via SSO...",
+		"ssoPleaseWait": "Please wait while we log you in..."
 	},
 	"errors": {
 		"404": {
@@ -147,7 +150,19 @@
 			"hours_ago": "{count} hour{s} ago",
 			"yesterday": "Yesterday"
 		},
-		"saveChanges": "Save Changes"
+		"saveChanges": "Save Changes",
+		"accessDenied": "Access Denied",
+		"completed": "Completed",
+		"contactAdmin": "Please contact an administrator.",
+		"copied": "Copied to clipboard",
+		"failed": "Failed",
+		"importing": "Importing...",
+		"nA": "N/A",
+		"noPermission": "You do not have permission to perform this action.",
+		"pending": "Pending",
+		"pleaseFixErrors": "Please fix the errors below.",
+		"processing": "Processing...",
+		"unknown": "Unknown"
 	},
 	"branding": {
 		"running_on": "Running on {name} {version}",
@@ -263,7 +278,9 @@
 			"page": "Page",
 			"of": "of",
 			"back": "Back",
-			"downloads": "Downloads"
+			"downloads": "Downloads",
+			"attachments": "Attachments",
+			"no_articles_desc": "No articles found in this category."
 		}
 	},
 	"account": {
@@ -422,7 +439,8 @@
 			},
 			"statuses": {
 				"active": "Active"
-			}
+			},
+			"deleteFailed": "Failed to delete API key"
 		},
 		"activity": {
 			"title": "Activity Log",
@@ -1300,7 +1318,8 @@
 		"confirmRestoreTitle": "Restore Backup",
 		"confirmDeleteTitle": "Delete Backup",
 		"confirmLockTitle": "Lock Backup",
-		"confirmUnlockTitle": "Unlock Backup"
+		"confirmUnlockTitle": "Unlock Backup",
+		"failedToPerformAction": "Failed to perform action"
 	},
 	"serverImport": {
 		"title": "Server Import",
@@ -1374,7 +1393,10 @@
 			"destinationLocationInvalid": "Destination location must be a relative path (not starting with /)",
 			"typeRequired": "Connection type is required",
 			"typeInvalid": "Connection type must be either SFTP or FTP"
-		}
+		},
+		"destination": "Destination",
+		"fetchFailed": "Failed to fetch imports",
+		"source": "Source"
 	},
 	"serverFirewall": {
 		"title": "Firewall",
@@ -1557,7 +1579,8 @@
 		"failedToFetch": "Failed to load schedules.",
 		"noSchedulePermission": "You do not have permission to view schedules.",
 		"featureDisabled": "Schedules Disabled",
-		"featureDisabledDescription": "The schedules feature has been disabled by the administrator. Please contact support if you need to automate server tasks."
+		"featureDisabledDescription": "The schedules feature has been disabled by the administrator. Please contact support if you need to automate server tasks.",
+		"disabled": "Schedule is disabled"
 	},
 	"serverTasks": {
 		"title": "Schedule Tasks",
@@ -2064,7 +2087,12 @@
 		"requiresSettings": "requires some additional settings.",
 		"wipeFilesRecommendation": "Recommended to avoid version conflicts",
 		"doubleCheckConfiguration": "Double check your configuration before applying",
-		"applyNewSoftware": "Apply New Software"
+		"applyNewSoftware": "Apply New Software",
+		"failedToFetchRealms": "Failed to fetch realms",
+		"failedToFetchServer": "Failed to fetch server",
+		"failedToFetchSpell": "Failed to fetch spell",
+		"failedToFetchSpells": "Failed to fetch spells",
+		"pleaseFixErrors": "Please fix the errors below"
 	},
 	"serverSettings": {
 		"title": "Server Settings",
@@ -2114,7 +2142,8 @@
 		"deleteServerConfirm": "Confirm Delete",
 		"serverDeleted": "Server deleted successfully",
 		"deleteError": "Failed to delete server",
-		"accessDenied": "Access Denied"
+		"accessDenied": "Access Denied",
+		"errorTitle": "Error"
 	},
 	"files": {
 		"title": "File Manager",
@@ -2146,7 +2175,9 @@
 			"empty": {
 				"title": "Empower Your Server",
 				"description": "This directory is currently awaiting your data. Drop files here or use the toolbar above to begin."
-			}
+			},
+			"empty_description": "This directory is empty.",
+			"empty_title": "No Files Found"
 		},
 		"messages": {
 			"active_pull": "Active Pull",
@@ -2177,11 +2208,16 @@
 			"loading_error": "Failed to load file content",
 			"saving": "Saving file...",
 			"save_success": "File saved successfully",
-			"save_error": "Failed to save file"
+			"save_error": "Failed to save file",
+			"load_error": "Failed to load file content",
+			"loading_description": "Please wait while the file content is loaded",
+			"loading_title": "Loading File..."
 		},
 		"row": {
 			"folder": "Folder",
 			"preview": "Preview",
+			"cant_preview": "Cannot preview this file",
+			"folder_label": "Folder",
 			"edit": "Edit",
 			"rename": "Rename",
 			"download": "Download",
@@ -2309,7 +2345,9 @@
 				"download_label": "Download",
 				"close_label": "Close",
 				"loading": "Loading preview...",
-				"error": "Failed to load image preview. Please try downloading it instead."
+				"error": "Failed to load image preview. Please try downloading it instead.",
+				"close": "Close",
+				"download": "Download"
 			}
 		}
 	},
@@ -2323,6 +2361,7 @@
 			"startup": "Startup",
 			"database": "Database",
 			"cache": "Cache",
+			"avg": "Avg",
 			"status": {
 				"healthy": "Healthy",
 				"degraded": "Degraded",
@@ -2331,6 +2370,7 @@
 				"average": "Average",
 				"latency": "Latency",
 				"error": "Error",
+				"unavailable": "Unavailable",
 				"online": "{healthy}/{total} Online",
 				"loading": "Loading...",
 				"fetching": "Fetching...",
@@ -2596,6 +2636,10 @@
 				"top_users_desc": "Users with the most servers",
 				"recent_activity": "Recent Activity (24h)",
 				"recent_activity_desc": "User activity in the last 24 hours",
+				"activity": {
+					"current": "Current Period",
+					"previous": "Previous Period"
+				},
 				"growth_metrics": "Growth Metrics",
 				"growth_metrics_desc": "User growth comparison",
 				"security_stats": {
@@ -2729,7 +2773,10 @@
 					"downloads": "Downloads",
 					"newest": "Newest",
 					"recently_updated": "Recently Updated"
-				}
+				},
+				"available": "Available Plugins",
+				"clear_search": "Clear Search",
+				"no_results": "No results found"
 			},
 			"spells": {
 				"title": "Spells Marketplace",
@@ -2883,6 +2930,241 @@
 				"return": "Return to Cloud Management",
 				"redirecting": "Redirecting automatically in 3 seconds..."
 			}
+		},
+		"users": {
+			"title": "Users",
+			"subtitle": "Manage all users in your system",
+			"loading": "Loading users...",
+			"search_placeholder": "Search by username, email, or role...",
+			"create_user": "Create User",
+			"last_seen": "Last seen",
+			"table": {
+				"avatar": "Avatar",
+				"username": "Username",
+				"email": "Email",
+				"role": "Role",
+				"last_seen": "Last Seen",
+				"actions": "Actions"
+			},
+			"actions": {
+				"view": "View user details",
+				"edit": "Edit user",
+				"delete": "Delete user",
+				"confirm_delete": "Confirm Delete",
+				"cancel": "Cancel"
+			},
+			"create": {
+				"title": "Create User",
+				"description": "Fill in the details to create a new user",
+				"username": "Username",
+				"first_name": "First Name",
+				"last_name": "Last Name",
+				"email": "Email",
+				"password": "Password",
+				"submit": "Create",
+				"cancel": "Cancel",
+				"validation": "Please fill in all required fields",
+				"creating": "Creating user...",
+				"form": {
+					"title": "User Details",
+					"username": "Username",
+					"username_placeholder": "Enter username",
+					"first_name": "First Name",
+					"first_name_placeholder": "Enter first name",
+					"last_name": "Last Name",
+					"last_name_placeholder": "Enter last name",
+					"email": "Email",
+					"email_placeholder": "Enter email address",
+					"password": "Password",
+					"password_placeholder": "Enter password",
+					"role": "Role",
+					"select_role": "Select a role"
+				},
+				"help": {
+					"tips_title": "Quick Tips",
+					"tips": {
+						"username": "Choose a unique username that's easy to remember",
+						"role": "Assign the appropriate role based on user responsibilities",
+						"email": "User will receive login credentials via email"
+					},
+					"security_title": "Security",
+					"security_desc": "Ensure strong passwords and assign minimal required permissions. Users can enable 2FA after first login."
+				}
+			},
+			"created": "Created",
+			"no_results": "No users found",
+			"clear_filters": "Clear Filters",
+			"back_to_list": "Back to Users",
+			"filters": {
+				"all_roles": "All Roles",
+				"banned_only": "Banned Only"
+			},
+			"badges": {
+				"active": "Active",
+				"inactive": "Inactive",
+				"banned": "Banned",
+				"2fa": "2FA",
+				"no_2fa": "No 2FA"
+			},
+			"help": {
+				"managing": {
+					"title": "Managing Users",
+					"description": "View, create, and edit accounts. Use the search to quickly find users by username, email, or role. Pagination and column visibility are customizable."
+				},
+				"roles": {
+					"title": "Roles & Permissions",
+					"description": "Assign roles to control access and capabilities. Role badges reflect the assigned role, and colors help you spot important roles at a glance."
+				},
+				"security": {
+					"title": "Security Actions",
+					"item1": "Ban or unban accounts when needed",
+					"item2": "Remove 2FA for locked-out users",
+					"item3": "Audit activities, servers, and mails per user"
+				},
+				"tips": {
+					"title": "Tips",
+					"item1": "Use filters and search to quickly target accounts.",
+					"item2": "Keep roles minimal (least privilege) and review periodically.",
+					"item3": "Encourage users to enable 2FA; remove 2FA only for support scenarios."
+				}
+			},
+			"edit": {
+				"title": "Edit User",
+				"back": "Back to Users",
+				"description": "Edit user details and permissions.",
+				"ban_user": "Ban User",
+				"unban_user": "Unban User",
+				"disable_2fa": "Disable 2FA",
+				"unlink_discord": "Unlink Discord",
+				"loading": "Loading user...",
+				"error": "Failed to load user",
+				"badges": {
+					"banned": "Banned",
+					"active": "Active",
+					"locked": "Locked",
+					"unlocked": "Unlocked",
+					"2fa_enabled": "2FA Enabled",
+					"2fa_disabled": "2FA Disabled",
+					"no_2fa": "No 2FA"
+				},
+				"tabs": {
+					"edit": "Edit User",
+					"account": "Account Info",
+					"servers": "Servers",
+					"activities": "Activities",
+					"mails": "Mails"
+				},
+				"form": {
+					"title": "User Details",
+					"username": "Username",
+					"first_name": "First Name",
+					"last_name": "Last Name",
+					"email": "Email",
+					"role": "Role",
+					"select_role": "Select Role",
+					"external_id": "External ID (NULL to clear)",
+					"external_id_help": "External ID for integration. Leave empty or set to 0 to clear.",
+					"password": "Password",
+					"password_placeholder": "Leave blank to keep current password",
+					"password_help": "Leave completely blank to keep the current password.",
+					"save": "Save Changes",
+					"cancel": "Cancel"
+				},
+				"account_info": {
+					"title": "Account Information",
+					"user_id": "User ID",
+					"uuid": "UUID",
+					"external_id": "External ID",
+					"role": "Role",
+					"full_name": "Full Name",
+					"first_seen": "First Seen",
+					"last_seen": "Last Seen",
+					"created": "Account Created",
+					"security_title": "Security & Status",
+					"account_status": "Account Status",
+					"2fa": "Two-Factor Authentication",
+					"2fa_enabled": "Enabled",
+					"2fa_disabled": "Disabled",
+					"2fa_blocked": "Blocked",
+					"first_ip": "First IP",
+					"last_ip": "Last IP",
+					"sso_title": "SSO Login Link",
+					"generate_sso": "Generate SSO Link",
+					"copy_sso": "Copy Link",
+					"sso_help": "This link will auto-login the user via SSO and redirect to the dashboard.",
+					"discord_title": "Discord Integration",
+					"discord_id": "Discord ID",
+					"discord_username": "Discord Username",
+					"discord_name": "Discord Name",
+					"discord_status": "Status",
+					"discord_linked": "Linked",
+					"discord_not_linked": "Not Linked",
+					"deleted": "Deleted"
+				},
+				"servers": {
+					"title": "Servers",
+					"name": "Name",
+					"status": "Status",
+					"created": "Created",
+					"actions": "Actions",
+					"view_client": "View Server (Client)",
+					"edit_admin": "Edit Server (Admin)",
+					"online": "Online",
+					"offline": "Offline"
+				},
+				"activities": {
+					"title": "Activities",
+					"name": "Name",
+					"context": "Context",
+					"ip": "IP Address",
+					"created": "Created At"
+				},
+				"mails": {
+					"title": "Mails",
+					"subject": "Subject",
+					"status": "Status",
+					"created": "Created At",
+					"preview": "Preview",
+					"preview_title": "Mail Preview",
+					"no_content": "No content",
+					"sent": "sent",
+					"actions": "Actions"
+				}
+			},
+			"messages": {
+				"created": "User created successfully",
+				"updated": "User updated successfully",
+				"deleted": "User deleted successfully",
+				"banned": "User banned successfully",
+				"unbanned": "User unbanned successfully",
+				"2fa_disabled": "Two-factor authentication disabled successfully",
+				"discord_unlinked": "Discord unlinked successfully",
+				"sso_generated": "SSO login link generated",
+				"sso_copied": "SSO link copied to clipboard",
+				"create_failed": "Failed to create user",
+				"update_failed": "Failed to update user",
+				"delete_failed": "Failed to delete user",
+				"ban_failed": "Failed to update ban status",
+				"2fa_failed": "Failed to disable 2FA",
+				"discord_failed": "Failed to unlink Discord",
+				"sso_failed": "Failed to generate SSO token",
+				"sso_copy_failed": "Failed to copy SSO link",
+				"discord_confirm": "Are you sure you want to unlink Discord from this user?",
+				"ban_confirm": "Are you sure you want to ban/unban this user?",
+				"fetch_failed": "Failed to fetch users",
+				"delete_confirm": "Are you sure you want to delete user {username}?",
+				"updating": "Updating user..."
+			}
 		}
+	},
+	"landing": {
+		"hero": {
+			"title": "FeatherPanel"
+		}
+	},
+	"plugins": {
+		"failedToLoadContent": "Failed to load content.",
+		"loadingContent": "Loading content...",
+		"retry": "Retry"
 	}
 }

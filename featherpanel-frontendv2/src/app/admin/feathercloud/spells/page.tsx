@@ -27,6 +27,7 @@ SOFTWARE.
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/contexts/TranslationContext'
 import axios from 'axios'
@@ -311,7 +312,9 @@ export default function SpellsPage() {
                 <div className="grid grid-cols-1 gap-6">
                     {onlineSpells.map((spell) => {
                         const IconComponent = ({ className }: { className?: string }) => spell.icon ? (
-                            <img src={spell.icon} alt={spell.name} className={cn(className, "object-cover rounded-lg")} />
+                            <div className={cn("relative", className)}>
+                                <Image src={spell.icon} alt={spell.name} fill className="object-cover rounded-lg" unoptimized />
+                            </div>
                         ) : (
                             <Settings className={className} />
                         )

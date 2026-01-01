@@ -88,7 +88,7 @@ export function ResourceCard({
             onClick={onClick}
             style={style}
             className={cn(
-                "group relative overflow-hidden rounded-3xl bg-card border border-border/50 hover:border-primary/40 hover:bg-accent/50 transition-all duration-300",
+                "group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-sm border border-border/50 hover:border-primary/40 hover:bg-accent/50 transition-all duration-300",
                 onClick && "cursor-pointer",
                 className
             )}
