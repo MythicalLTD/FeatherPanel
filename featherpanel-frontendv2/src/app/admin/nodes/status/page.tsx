@@ -29,11 +29,13 @@ SOFTWARE.
 import React, { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import api from '@/lib/api'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { RefreshCw, Server, Check, AlertTriangle, Cpu, MemoryStick, HardDrive } from 'lucide-react'
+import { PageHeader } from '@/components/featherui/PageHeader'
+import { PageCard } from '@/components/featherui/PageCard'
+import { ResourceCard } from '@/components/featherui/ResourceCard'
 import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 import { usePluginWidgets } from '@/hooks/usePluginWidgets'
 import { formatBytes } from '@/lib/format'
@@ -158,16 +160,17 @@ export default function NodeStatusPage() {
             <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'top-of-page')} />
 
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">{t('admin.nodes.title')}</h1>
-                    <p className="text-muted-foreground">{t('admin.nodes.subtitle')}</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => fetchData(false)} disabled={loading}>
-                    <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                    {t('admin.nodes.refresh')}
-                </Button>
-            </div>
+            <PageHeader
+                title={t('admin.nodes.title')}
+                description={t('admin.nodes.subtitle')}
+                icon={Server}
+                actions={
+                    <Button variant="outline" size="sm" onClick={() => fetchData(false)} disabled={loading}>
+                        <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        {t('admin.nodes.refresh')}
+                    </Button>
+                }
+            />
 
             <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'after-header')} />
 
@@ -176,69 +179,47 @@ export default function NodeStatusPage() {
                 <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'before-global-stats')} />
                 
                 {/* Global Stats Cards */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                             <CardTitle className="text-sm font-medium text-muted-foreground">
-                                {t('admin.nodes.total')}
-                             </CardTitle>
-                             <Server className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                             <div className="text-2xl font-bold">{globalStats.total_nodes}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                             <CardTitle className="text-sm font-medium text-muted-foreground">
-                                {t('admin.nodes.healthy')}
-                             </CardTitle>
-                             <div className="h-4 w-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                                <Check className="h-3 w-3 text-green-500" />
-                             </div>
-                        </CardHeader>
-                        <CardContent>
-                             <div className="text-2xl font-bold text-green-500">{globalStats.healthy_nodes}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                             <CardTitle className="text-sm font-medium text-muted-foreground">
-                                {t('admin.nodes.unhealthy')}
-                             </CardTitle>
-                             <div className="h-4 w-4 rounded-full bg-red-500/20 flex items-center justify-center">
-                                <AlertTriangle className="h-3 w-3 text-red-500" />
-                             </div>
-                        </CardHeader>
-                        <CardContent>
-                             <div className="text-2xl font-bold text-red-500">{globalStats.unhealthy_nodes}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                             <CardTitle className="text-sm font-medium text-muted-foreground">
-                                {t('admin.nodes.avg_cpu')}
-                             </CardTitle>
-                             <Cpu className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                             <div className="text-2xl font-bold">{globalStats.avg_cpu_percent.toFixed(1)}%</div>
-                        </CardContent>
-                    </Card>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <ResourceCard
+                        title={globalStats.total_nodes.toString()}
+                        subtitle={t('admin.nodes.total')}
+                        icon={Server}
+                        className="shadow-none! bg-card/50 backdrop-blur-sm"
+                    />
+                    <ResourceCard
+                        title={globalStats.healthy_nodes.toString()}
+                        subtitle={t('admin.nodes.healthy')}
+                        icon={Check}
+                        className="shadow-none! bg-card/50 backdrop-blur-sm"
+                        iconClassName="text-green-500"
+                        iconWrapperClassName="bg-green-500/10 border-green-500/20"
+                    />
+                    <ResourceCard
+                        title={globalStats.unhealthy_nodes.toString()}
+                        subtitle={t('admin.nodes.unhealthy')}
+                        icon={AlertTriangle}
+                        className="shadow-none! bg-card/50 backdrop-blur-sm"
+                        iconClassName="text-red-500"
+                        iconWrapperClassName="bg-red-500/10 border-red-500/20"
+                    />
+                    <ResourceCard
+                        title={`${globalStats.avg_cpu_percent.toFixed(1)}%`}
+                        subtitle={t('admin.nodes.avg_cpu')}
+                        icon={Cpu}
+                        className="shadow-none! bg-card/50 backdrop-blur-sm"
+                    />
                 </div>
 
                 <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'after-global-stats')} />
 
                 {/* Global Resource Usage */}
                 <div className="grid gap-6 lg:grid-cols-2">
-                    <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <MemoryStick className="h-5 w-5 text-primary" />
-                                {t('admin.nodes.memory_usage')}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
+                    <PageCard
+                        title={t('admin.nodes.memory_usage')}
+                        icon={MemoryStick}
+                        className="shadow-none! bg-card/50 backdrop-blur-sm"
+                    >
+                        <div className="space-y-4">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">{t('admin.nodes.used_total')}</span>
                                 <span className="font-medium">
@@ -257,16 +238,14 @@ export default function NodeStatusPage() {
                             <p className="text-xs text-center text-muted-foreground">
                                 {t('admin.nodes.used_percent', { percent: getMemoryUsagePercent().toFixed(1) })}
                             </p>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <HardDrive className="h-5 w-5 text-primary" />
-                                {t('admin.nodes.disk_usage')}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
+                        </div>
+                    </PageCard>
+                    <PageCard
+                        title={t('admin.nodes.disk_usage')}
+                        icon={HardDrive}
+                        className="shadow-none! bg-card/50 backdrop-blur-sm"
+                    >
+                        <div className="space-y-4">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">{t('admin.nodes.used_total')}</span>
                                 <span className="font-medium">
@@ -285,8 +264,8 @@ export default function NodeStatusPage() {
                             <p className="text-xs text-center text-muted-foreground">
                                 {t('admin.nodes.used_percent', { percent: getDiskUsagePercent().toFixed(1) })}
                             </p>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </PageCard>
                 </div>
 
                 <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'after-resource-usage')} />
@@ -296,24 +275,20 @@ export default function NodeStatusPage() {
                     <h2 className="text-2xl font-bold tracking-tight">{t('admin.nodes.individual_nodes')}</h2>
                     <div className="grid gap-6 xl:grid-cols-2">
                         {nodes.map((node) => (
-                            <Card key={node.id} className="overflow-hidden border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-                                <CardHeader className={`border-l-4 ${node.status === 'healthy' ? 'border-l-green-500' : 'border-l-red-500'} bg-secondary/10`}>
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                             <CardTitle className="flex items-center gap-2">
-                                                <div className={`h-2.5 w-2.5 rounded-full animate-pulse ${node.status === 'healthy' ? 'bg-green-500' : 'bg-red-500'}`} />
-                                                {node.name}
-                                             </CardTitle>
-                                             <CardDescription className="font-mono text-xs mt-1">
-                                                {node.fqdn}
-                                             </CardDescription>
-                                        </div>
-                                        <Badge variant={node.status === 'healthy' ? 'default' : 'destructive'}>
-                                            {node.status === 'healthy' ? t('admin.nodes.online') : t('admin.nodes.offline')}
-                                        </Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="pt-6">
+                            <PageCard 
+                                key={node.id}
+                                title={node.name}
+                                description={node.fqdn}
+                                icon={Server}
+                                className="shadow-none! bg-card/50 backdrop-blur-sm"
+                                variant={node.status === 'healthy' ? 'default' : 'danger'}
+                                action={
+                                    <Badge variant={node.status === 'healthy' ? 'default' : 'destructive'}>
+                                        {node.status === 'healthy' ? t('admin.nodes.online') : t('admin.nodes.offline')}
+                                    </Badge>
+                                }
+                            >
+                                <div className="pt-2">
                                     {node.status === 'healthy' && node.utilization ? (
                                         <div className="space-y-6">
                                             {/* CPU */}
@@ -396,8 +371,8 @@ export default function NodeStatusPage() {
                                             </div>
                                         </Alert>
                                     )}
-                                </CardContent>
-                            </Card>
+                                </div>
+                            </PageCard>
                         ))}
                     </div>
                 </div>

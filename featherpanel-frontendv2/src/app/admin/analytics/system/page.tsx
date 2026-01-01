@@ -30,6 +30,8 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import api from '@/lib/api'
 import { SimplePieChart } from '@/components/admin/analytics/SystemCharts'
+import { ResourceCard } from '@/components/featherui/ResourceCard'
+import { PageHeader } from '@/components/featherui/PageHeader'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Mail, CheckCircle, XCircle, Activity } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -98,71 +100,44 @@ export default function SystemAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('admin.analytics.system.title')}</h1>
-        <p className="text-muted-foreground">{t('admin.analytics.system.subtitle')}</p>
-      </div>
+      <PageHeader
+        title={t('admin.analytics.system.title')}
+        description={t('admin.analytics.system.subtitle')}
+        icon={Activity}
+      />
 
       {stats && (
         <>
             {/* Overview Stats */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                    {t('admin.analytics.system.queued')}
-                </CardTitle>
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">{stats.total_queued}</div>
-                <p className="text-xs text-muted-foreground">
-                    {t('admin.analytics.system.pending_emails')}
-                </p>
-                </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                    {t('admin.analytics.system.sent')}
-                </CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">{stats.total_sent}</div>
-                <p className="text-xs text-muted-foreground">
-                    {t('admin.analytics.system.delivered')}
-                </p>
-                </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                    {t('admin.analytics.system.failed')}
-                </CardTitle>
-                <XCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">{stats.total_failed}</div>
-                <p className="text-xs text-muted-foreground">
-                    {t('admin.analytics.system.errors')}
-                </p>
-                </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                    {t('admin.analytics.system.success_rate')}
-                </CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">{stats.success_rate}%</div>
-                <p className="text-xs text-muted-foreground">
-                    {t('admin.analytics.system.delivery_rate')}
-                </p>
-                </CardContent>
-            </Card>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <ResourceCard
+                title={stats.total_queued.toString()}
+                subtitle={t('admin.analytics.system.queued')}
+                description={t('admin.analytics.system.pending_emails')}
+                icon={Mail}
+                className="shadow-none! bg-card/50 backdrop-blur-sm"
+            />
+            <ResourceCard
+                title={stats.total_sent.toString()}
+                subtitle={t('admin.analytics.system.sent')}
+                description={t('admin.analytics.system.delivered')}
+                icon={CheckCircle}
+                className="shadow-none! bg-card/50 backdrop-blur-sm"
+            />
+            <ResourceCard
+                title={stats.total_failed.toString()}
+                subtitle={t('admin.analytics.system.failed')}
+                description={t('admin.analytics.system.errors')}
+                icon={XCircle}
+                className="shadow-none! bg-card/50 backdrop-blur-sm"
+            />
+            <ResourceCard
+                title={`${stats.success_rate}%`}
+                subtitle={t('admin.analytics.system.success_rate')}
+                description={t('admin.analytics.system.delivery_rate')}
+                icon={Activity}
+                className="shadow-none! bg-card/50 backdrop-blur-sm"
+            />
             </div>
 
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3">

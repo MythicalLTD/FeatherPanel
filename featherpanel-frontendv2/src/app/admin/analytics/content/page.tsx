@@ -30,7 +30,8 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import api from '@/lib/api'
 import { SimplePieChart, SimpleBarChart } from '@/components/admin/analytics/ContentCharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ResourceCard } from '@/components/featherui/ResourceCard'
+import { PageHeader } from '@/components/featherui/PageHeader'
 import { Box, Layers, Image as ImageIcon, ExternalLink } from 'lucide-react'
 
 interface ContentOverview {
@@ -138,70 +139,43 @@ export default function ContentAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('admin.analytics.content.title')}</h1>
-        <p className="text-muted-foreground">{t('admin.analytics.content.subtitle')}</p>
-      </div>
+      <PageHeader
+        title={t('admin.analytics.content.title')}
+        description={t('admin.analytics.content.subtitle')}
+        icon={Box}
+      />
 
       {/* Overview Stats */}
       {overview && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.content.realms')}
-              </CardTitle>
-              <Box className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.realms.total}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.content.with_spells', { count: String(overview.realms.with_spells) })}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.content.spells')}
-              </CardTitle>
-              <Layers className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.spells.total}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.content.in_use', { percentage: String(overview.spells.percentage_in_use) })}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.content.images')}
-              </CardTitle>
-              <ImageIcon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.images.total}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.content.library')}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.content.redirects')}
-              </CardTitle>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.redirects.total}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.content.active_links')}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <ResourceCard
+            title={overview.realms.total.toString()}
+            subtitle={t('admin.analytics.content.realms')}
+            description={t('admin.analytics.content.with_spells', { count: String(overview.realms.with_spells) })}
+            icon={Box}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={overview.spells.total.toString()}
+            subtitle={t('admin.analytics.content.spells')}
+            description={t('admin.analytics.content.in_use', { percentage: String(overview.spells.percentage_in_use) })}
+            icon={Layers}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={overview.images.total.toString()}
+            subtitle={t('admin.analytics.content.images')}
+            description={t('admin.analytics.content.library')}
+            icon={ImageIcon}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={overview.redirects.total.toString()}
+            subtitle={t('admin.analytics.content.redirects')}
+            description={t('admin.analytics.content.active_links')}
+            icon={ExternalLink}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
         </div>
       )}
 

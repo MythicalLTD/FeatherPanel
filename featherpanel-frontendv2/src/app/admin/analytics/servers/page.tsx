@@ -30,7 +30,8 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import api from '@/lib/api'
 import { SimplePieChart, SimpleBarChart, TrendChart, ResourceTrendChart } from '@/components/admin/analytics/ServerCharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ResourceCard } from '@/components/featherui/ResourceCard'
+import { PageHeader } from '@/components/featherui/PageHeader'
 import { Server, HardDrive, Cpu, Archive } from 'lucide-react'
 
 interface ServerOverview {
@@ -164,70 +165,43 @@ export default function ServerAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('admin.analytics.servers.title')}</h1>
-        <p className="text-muted-foreground">{t('admin.analytics.servers.subtitle')}</p>
-      </div>
+      <PageHeader
+        title={t('admin.analytics.servers.title')}
+        description={t('admin.analytics.servers.subtitle')}
+        icon={Server}
+      />
 
       {/* Overview Stats */}
       {overview && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.servers.total')}
-              </CardTitle>
-              <Server className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.total_servers}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.servers.active_servers')}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.servers.running')}
-              </CardTitle>
-              <Cpu className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.running}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.servers.running_pct', { percentage: String(overview.percentage_running) })}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.servers.suspended')}
-              </CardTitle>
-              <Archive className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.suspended}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.servers.suspended_pct', { percentage: String(overview.percentage_suspended) })}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.servers.installing')}
-              </CardTitle>
-              <HardDrive className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.installing}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.servers.being_installed')}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <ResourceCard
+            title={overview.total_servers.toString()}
+            subtitle={t('admin.analytics.servers.total')}
+            description={t('admin.analytics.servers.active_servers')}
+            icon={Server}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={overview.running.toString()}
+            subtitle={t('admin.analytics.servers.running')}
+            description={t('admin.analytics.servers.running_pct', { percentage: String(overview.percentage_running) })}
+            icon={Cpu}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={overview.suspended.toString()}
+            subtitle={t('admin.analytics.servers.suspended')}
+            description={t('admin.analytics.servers.suspended_pct', { percentage: String(overview.percentage_suspended) })}
+            icon={Archive}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={overview.installing.toString()}
+            subtitle={t('admin.analytics.servers.installing')}
+            description={t('admin.analytics.servers.being_installed')}
+            icon={HardDrive}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
         </div>
       )}
 

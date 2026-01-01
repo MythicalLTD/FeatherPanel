@@ -30,6 +30,8 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import api from '@/lib/api'
 import { SimplePieChart, TrendChart } from '@/components/admin/analytics/UserCharts'
+import { ResourceCard } from '@/components/featherui/ResourceCard'
+import { PageHeader } from '@/components/featherui/PageHeader'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Users, UserX, UserCheck, ShieldCheck, ArrowUpRight } from 'lucide-react'
 
@@ -170,70 +172,43 @@ export default function UserAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('admin.analytics.users.title')}</h1>
-        <p className="text-muted-foreground">{t('admin.analytics.users.subtitle')}</p>
-      </div>
+      <PageHeader
+        title={t('admin.analytics.users.title')}
+        description={t('admin.analytics.users.subtitle')}
+        icon={Users}
+      />
 
       {/* Overview Stats */}
       {overview && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.users.total')}
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.total}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.users.active_users', { count: String(overview.active) })}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.users.banned')}
-              </CardTitle>
-              <UserX className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.banned}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.users.banned_pct', { percentage: String(overview.percentage_banned) })}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.users.verified')}
-              </CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.verified}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.users.verified_pct', { percentage: String(overview.percentage_verified) })}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.users.two_fa')}
-              </CardTitle>
-              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.two_fa_enabled}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.users.two_fa_pct', { percentage: String(overview.percentage_two_fa) })}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <ResourceCard
+            title={overview.total.toString()}
+            subtitle={t('admin.analytics.users.total')}
+            description={t('admin.analytics.users.active_users', { count: String(overview.active) })}
+            icon={Users}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={overview.banned.toString()}
+            subtitle={t('admin.analytics.users.banned')}
+            description={t('admin.analytics.users.banned_pct', { percentage: String(overview.percentage_banned) })}
+            icon={UserX}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={overview.verified.toString()}
+            subtitle={t('admin.analytics.users.verified')}
+            description={t('admin.analytics.users.verified_pct', { percentage: String(overview.percentage_verified) })}
+            icon={UserCheck}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={overview.two_fa_enabled.toString()}
+            subtitle={t('admin.analytics.users.two_fa')}
+            description={t('admin.analytics.users.two_fa_pct', { percentage: String(overview.percentage_two_fa) })}
+            icon={ShieldCheck}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
         </div>
       )}
 

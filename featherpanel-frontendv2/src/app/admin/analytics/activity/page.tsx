@@ -30,7 +30,8 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import api from '@/lib/api'
 import { ActivityTrendChart, ActivityBreakdownChart } from '@/components/admin/analytics/ActivityCharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ResourceCard } from '@/components/featherui/ResourceCard'
+import { PageHeader } from '@/components/featherui/PageHeader'
 import { Activity, Clock, Calendar } from 'lucide-react'
 
 interface ActivityStats {
@@ -114,70 +115,43 @@ export default function ActivityAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('admin.analytics.activity.title')}</h1>
-        <p className="text-muted-foreground">{t('admin.analytics.activity.subtitle')}</p>
-      </div>
+      <PageHeader
+        title={t('admin.analytics.activity.title')}
+        description={t('admin.analytics.activity.subtitle')}
+        icon={Activity}
+      />
 
       {/* Overview Stats */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.activity.today')}
-              </CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.today}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.activity.active_users', { count: String(stats.active_users_today) })}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.activity.this_week')}
-              </CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.this_week}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.activity.last_7_days')}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.activity.this_month')}
-              </CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.this_month}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.activity.last_30_days')}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.activity.peak_hour')}
-              </CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.peak_hour}:00</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.activity.most_active_time')}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <ResourceCard
+            title={stats.today.toString()}
+            subtitle={t('admin.analytics.activity.today')}
+            description={t('admin.analytics.activity.active_users', { count: String(stats.active_users_today) })}
+            icon={Activity}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={stats.this_week.toString()}
+            subtitle={t('admin.analytics.activity.this_week')}
+            description={t('admin.analytics.activity.last_7_days')}
+            icon={Calendar}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={stats.this_month.toString()}
+            subtitle={t('admin.analytics.activity.this_month')}
+            description={t('admin.analytics.activity.last_30_days')}
+            icon={Calendar}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={`${stats.peak_hour}:00`}
+            subtitle={t('admin.analytics.activity.peak_hour')}
+            description={t('admin.analytics.activity.most_active_time')}
+            icon={Clock}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
         </div>
       )}
 

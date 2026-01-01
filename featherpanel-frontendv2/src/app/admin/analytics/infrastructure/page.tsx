@@ -30,7 +30,8 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import api from '@/lib/api'
 import { SimplePieChart, SimpleBarChart, NodeResourceChart } from '@/components/admin/analytics/InfrastructureCharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ResourceCard } from '@/components/featherui/ResourceCard'
+import { PageHeader } from '@/components/featherui/PageHeader'
 import { MapPin, Server, Network, Database } from 'lucide-react'
 
 interface InfrastructureOverview {
@@ -135,70 +136,43 @@ export default function InfrastructureAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('admin.analytics.infrastructure.title')}</h1>
-        <p className="text-muted-foreground">{t('admin.analytics.infrastructure.subtitle')}</p>
-      </div>
+      <PageHeader
+        title={t('admin.analytics.infrastructure.title')}
+        description={t('admin.analytics.infrastructure.subtitle')}
+        icon={Server}
+      />
 
       {/* Overview Stats */}
       {overview && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.infrastructure.locations')}
-              </CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.locations.total}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.infrastructure.with_nodes', { count: String(overview.locations.with_nodes) })}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.infrastructure.nodes')}
-              </CardTitle>
-              <Server className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.nodes.total}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.infrastructure.public', { percentage: String(overview.nodes.percentage_public ?? 0) })}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.infrastructure.allocations')}
-              </CardTitle>
-              <Network className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.allocations.total}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.infrastructure.in_use', { percentage: String(overview.allocations.percentage_in_use ?? 0) })}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.analytics.infrastructure.db_hosts')}
-              </CardTitle>
-              <Database className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.databases.hosts}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.analytics.infrastructure.across_nodes')}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <ResourceCard
+            title={(overview.locations?.total ?? 0).toString()}
+            subtitle={t('admin.analytics.infrastructure.locations')}
+            description={t('admin.analytics.infrastructure.with_nodes', { count: String(overview.locations?.with_nodes ?? 0) })}
+            icon={MapPin}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={(overview.nodes?.total ?? 0).toString()}
+            subtitle={t('admin.analytics.infrastructure.nodes')}
+            description={t('admin.analytics.infrastructure.public', { percentage: String(overview.nodes?.percentage_public ?? 0) })}
+            icon={Server}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={(overview.allocations?.total ?? 0).toString()}
+            subtitle={t('admin.analytics.infrastructure.allocations')}
+            description={t('admin.analytics.infrastructure.in_use', { percentage: String(overview.allocations?.percentage_in_use ?? 0) })}
+            icon={Network}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
+          <ResourceCard
+            title={(overview.databases?.hosts ?? 0).toString()}
+            subtitle={t('admin.analytics.infrastructure.db_hosts')}
+            description={t('admin.analytics.infrastructure.across_nodes')}
+            icon={Database}
+            className="shadow-none! bg-card/50 backdrop-blur-sm"
+          />
         </div>
       )}
 

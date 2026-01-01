@@ -46,6 +46,7 @@ import { CronStatusWidget } from '@/components/admin/CronStatusWidget'
 import { SystemHealthWidget } from '@/components/admin/SystemHealthWidget'
 import { VersionInfoWidget } from '@/components/admin/VersionInfoWidget'
 import { QuickLinksWidget } from '@/components/admin/QuickLinksWidget'
+import { PageHeader } from '@/components/featherui/PageHeader'
 
 export default function AdminDashboardPage() {
     const { t } = useTranslation()
@@ -140,48 +141,42 @@ export default function AdminDashboardPage() {
             {/* Plugin Widgets: Top of Page */}
             <WidgetRenderer widgets={getWidgets('admin-home', 'top-of-page')} />
 
-            {/* Header section with actions */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                    <div className="h-14 w-14 rounded-3xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-lg shadow-primary/5 shrink-0">
-                        <LayoutDashboard className="h-7 w-7" />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-black uppercase tracking-tight">{t('admin.dashboard.title')}</h1>
-                        <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{t('admin.dashboard.subtitle')}</p>
-                    </div>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-3">
-                    <button 
-                        onClick={() => setIsCustomizing(!isCustomizing)}
-                        className={cn(
-                            "flex items-center gap-2 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border",
-                            isCustomizing 
-                                ? "bg-amber-500/10 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-500/10" 
-                                : "bg-secondary/50 hover:bg-secondary border-border/50"
-                        )}
-                    >
-                        <Settings className={cn("h-4 w-4", isCustomizing && "animate-spin-slow")} />
-                        {isCustomizing ? t('admin.dashboard.stop_customizing') : t('admin.dashboard.customize')}
-                    </button>
-                    <button 
-                        onClick={clearCache}
-                        disabled={isClearingCache}
-                        className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-secondary hover:bg-secondary/80 border border-border/50 text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
-                    >
-                        <Trash2 className={cn("h-4 w-4", isClearingCache && "animate-pulse")} />
-                        {t('admin.dashboard.clear_cache')}
-                    </button>
-                    <Link 
-                        href="/admin/settings"
-                        className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-primary/20"
-                    >
-                        <Settings className="h-4 w-4" />
-                        {t('admin.dashboard.global_settings')}
-                    </Link>
-                </div>
-            </div>
+            <PageHeader
+                title={t('admin.dashboard.title')}
+                description={t('admin.dashboard.subtitle')}
+                icon={LayoutDashboard}
+                actions={
+                    <>
+                        <button 
+                            onClick={() => setIsCustomizing(!isCustomizing)}
+                            className={cn(
+                                "flex items-center gap-2 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border",
+                                isCustomizing 
+                                    ? "bg-amber-500/10 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-500/10" 
+                                    : "bg-secondary/50 hover:bg-secondary border-border/50"
+                            )}
+                        >
+                            <Settings className={cn("h-4 w-4", isCustomizing && "animate-spin-slow")} />
+                            {isCustomizing ? t('admin.dashboard.stop_customizing') : t('admin.dashboard.customize')}
+                        </button>
+                        <button 
+                            onClick={clearCache}
+                            disabled={isClearingCache}
+                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-secondary hover:bg-secondary/80 border border-border/50 text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
+                        >
+                            <Trash2 className={cn("h-4 w-4", isClearingCache && "animate-pulse")} />
+                            {t('admin.dashboard.clear_cache')}
+                        </button>
+                        <Link 
+                            href="/admin/settings"
+                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-primary/20"
+                        >
+                            <Settings className="h-4 w-4" />
+                            {t('admin.dashboard.global_settings')}
+                        </Link>
+                    </>
+                }
+            />
 
             {/* Plugin Widgets: After Header */}
             <WidgetRenderer widgets={getWidgets('admin-home', 'after-header')} />
