@@ -54,6 +54,8 @@ import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import { cn, isEnabled } from "@/lib/utils"
 import type { Schedule, SchedulePagination } from "@/types/server"
 
@@ -75,6 +77,8 @@ export default function ServerSchedulesPage() {
     // State
     const [schedules, setSchedules] = React.useState<Schedule[]>([])
     const [loading, setLoading] = React.useState(true)
+    // Widgets
+    const { getWidgets, fetchWidgets } = usePluginWidgets("server-schedules")
     const [pagination, setPagination] = React.useState<SchedulePagination>({
         current_page: 1,
         per_page: 20,
@@ -110,15 +114,17 @@ export default function ServerSchedulesPage() {
     }, [uuidShort, settings?.server_allow_schedules, t])
 
     React.useEffect(() => {
-        if (canRead) {
-            fetchData()
+        const schedulesEnabled = isEnabled(settings?.server_allow_schedules);
+        if (canRead && schedulesEnabled) {
+            fetchData();
+            fetchWidgets();
         } else if (!permissionsLoading && !canRead) {
-            toast.error(t("serverSchedules.noSchedulePermission"))
-            router.push(`/server/${uuidShort}`)
+            toast.error(t("serverSchedules.noSchedulePermission"));
+            router.push(`/server/${uuidShort}`);
         } else {
-            setLoading(false)
+            setLoading(false);
         }
-    }, [canRead, permissionsLoading, fetchData, router, uuidShort, t])
+    }, [canRead, permissionsLoading, fetchData, fetchWidgets, router, uuidShort, t, settings?.server_allow_schedules]);
 
     const handleDelete = async () => {
         if (!selectedSchedule) return
@@ -218,6 +224,7 @@ export default function ServerSchedulesPage() {
 
     return (
         <div key={pathname} className="space-y-8 pb-12">
+             <WidgetRenderer widgets={getWidgets("server-schedules", "top-of-page")} />
              {/* Header Section */}
             <PageHeader
                 title={t("serverSchedules.title")}
@@ -247,6 +254,7 @@ export default function ServerSchedulesPage() {
                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-schedules", "after-header")} />
 
             {/* List */}
             {schedules.length === 0 ? (
@@ -382,6 +390,8 @@ export default function ServerSchedulesPage() {
                 </div>
             )}
 
+            <WidgetRenderer widgets={getWidgets("server-schedules", "after-schedules-list")} />
+            <WidgetRenderer widgets={getWidgets("server-schedules", "bottom-of-page")} />
             {/* Delete Modal */}
             <HeadlessModal
                 isOpen={isDeleteOpen}

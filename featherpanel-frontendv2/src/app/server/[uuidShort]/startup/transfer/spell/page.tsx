@@ -47,6 +47,8 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import { cn, isEnabled } from "@/lib/utils"
 import type { 
     Variable, 
@@ -73,6 +75,7 @@ export default function ServerTransferSpellPage() {
     const { t } = useTranslation()
     const { settings, loading: settingsLoading } = useSettings()
     const { loading: permissionsLoading, hasPermission } = useServerPermissions(uuidShort)
+    const { getWidgets } = usePluginWidgets("server-startup-transfer-spell")
 
     // Permission checks
     const canChangeSpell = isEnabled(settings?.server_allow_egg_change)
@@ -446,6 +449,7 @@ export default function ServerTransferSpellPage() {
 
     return (
         <div key={pathname} className="max-w-6xl mx-auto space-y-8 pb-16  font-sans">
+            <WidgetRenderer widgets={getWidgets("server-startup-transfer-spell", "top-of-page")} />
             {/* Header Section */}
             <PageHeader
                 title={t('navigation.items.transferSpell')}
@@ -475,9 +479,10 @@ export default function ServerTransferSpellPage() {
                                 </>
                             )}
                         </Button>
-                    </div>
+                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-startup-transfer-spell", "after-header")} />
 
             {/* Step Indicator */}
             <div className="grid grid-cols-3 gap-4">
@@ -706,6 +711,7 @@ export default function ServerTransferSpellPage() {
                     </div>
                 )}
             </div>
+            <WidgetRenderer widgets={getWidgets("server-startup-transfer-spell", "bottom-of-page")} />
         </div>
     )
 }

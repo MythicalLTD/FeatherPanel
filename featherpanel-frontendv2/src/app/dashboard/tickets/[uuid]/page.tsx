@@ -56,8 +56,8 @@ import {
 } from '@/components/ui/card'
 import { toast } from 'sonner'
 import clsx from 'clsx'
-
-// ... (skipping types for brevity in this replacement chunk, but I need to make sure I don't delete them if I can't match accurately. I will use a larger context or multiple chunks)
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 
 // Types
 interface ApiTicket {
@@ -244,6 +244,12 @@ export default function TicketViewPage() {
         }
     }
 
+    const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-tickets-view')
+
+    useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets])
+
     const deleteMessage = async (messageId: number) => {
         if (!confirm(t('tickets.deleteMessageConfirm'))) return 
         
@@ -292,6 +298,7 @@ export default function TicketViewPage() {
 
     return (
         <div className="max-w-[1600px] mx-auto h-[calc(100vh-6rem)] flex flex-col pt-2 pb-6">
+            <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'top-of-page')} />
             {/* Header */}
             <div className="flex items-center justify-between mb-4 shrink-0 px-1">
                 <div className="flex items-center gap-3">
@@ -313,6 +320,7 @@ export default function TicketViewPage() {
                     {/* Actions if needed, e.g. Close Ticket Button */}
                 </div>
             </div>
+            <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'after-header')} />
 
             <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Chat Area (Left) */}
@@ -556,10 +564,12 @@ export default function TicketViewPage() {
                             </form>
                         )}
                     </div>
+                    <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'after-messages')} />
                 </div>
 
                 {/* Sidebar (Right) */}
                 <div className="lg:col-span-4 space-y-4 h-full overflow-y-auto custom-scrollbar pb-6">
+                    <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'sidebar-top')} />
                     {/* Status Card */}
                     <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
                         <CardHeader className="pb-2">
@@ -627,8 +637,10 @@ export default function TicketViewPage() {
                             </CardContent>
                         </Card>
                     )}
+                    <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'sidebar-bottom')} />
                 </div>
             </div>
+            <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'bottom-of-page')} />
         </div>
     )
 }

@@ -113,6 +113,7 @@ export interface PluginWidget {
   behavior?: PluginWidgetBehaviorConfig | null;
   iframe?: PluginWidgetIframeConfig | null;
   classes?: PluginWidgetClassConfig | null;
+  useRawRendering: boolean;
 }
 
 export interface WidgetsByLocation {

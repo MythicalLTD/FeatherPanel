@@ -34,6 +34,8 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import ReactMarkdown from 'react-markdown'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 
 interface Category {
 	id: number
@@ -68,6 +70,12 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
 	const { t } = useTranslation()
 	const [article, setArticle] = useState<Article | null>(null)
 	const [loading, setLoading] = useState(true)
+
+	const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-knowledgebase-article')
+
+	useEffect(() => {
+		fetchWidgets()
+	}, [fetchWidgets])
 
 	useEffect(() => {
 		const fetchArticle = async () => {
@@ -107,6 +115,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
 
 	return (
 		<div className="max-w-4xl mx-auto space-y-6 flex flex-col pt-2 pb-12">
+			<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'top-of-page')} />
 			{/* Header */}
 			<div className="flex items-center gap-4 px-1">
 				<Link href={`/dashboard/knowledgebase/category/${article.category_id}`}>
@@ -122,9 +131,11 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
 						<span>{new Date(article.updated_at).toLocaleDateString()}</span>
 					</div>
 				</div>
+				<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'after-header')} />
 			</div>
 
 			{/* Article Content */}
+			<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'before-article-content')} />
 			<div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
 				<div className="p-8">
 					<div className="prose prose-blue dark:prose-invert max-w-none">
@@ -179,9 +190,12 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
 					)}
 				</div>
 			</div>
+			<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'after-article-content')} />
 
 			{/* Attachments */}
 			{article.attachments && article.attachments.length > 0 && (
+				<>
+				<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'before-attachments')} />
 				<div className="space-y-4">
 					<h3 className="text-lg font-semibold px-1">{t('dashboard.knowledgebase.attachments')}</h3>
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -208,7 +222,10 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
 						))}
 					</div>
 				</div>
+				<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'after-attachments')} />
+				</>
 			)}
+			<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'bottom-of-page')} />
 		</div>
 	)
 }

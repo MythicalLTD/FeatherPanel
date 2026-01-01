@@ -45,8 +45,10 @@ import { Badge } from '@/components/ui/badge'
 import { HeadlessSelect } from '@/components/ui/headless-select'
 import { HeadlessModal } from '@/components/ui/headless-modal'
 import {
-
 } from '@/components/ui/card'
+
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 
 // Types
 interface Category {
@@ -139,6 +141,13 @@ export default function TicketsPage() {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [ticketToDelete, setTicketToDelete] = useState<ApiTicket | null>(null)
     const [deleting, setDeleting] = useState(false)
+    
+    	const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-tickets-list')
+
+    // Initial Fetch
+    useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets])
 
     // Initial Fetch
     useEffect(() => {
@@ -236,6 +245,7 @@ export default function TicketsPage() {
 
     return (
         <div className="space-y-6">
+            <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'top-of-page')} />
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{t('tickets.title')}</h1>
@@ -248,6 +258,7 @@ export default function TicketsPage() {
                     </Button>
                 </Link>
             </div>
+            <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'after-header')} />
 
             {/* Filters */}
             <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border/50 p-1">
@@ -283,8 +294,10 @@ export default function TicketsPage() {
                     </form>
                 </div>
             </div>
+            <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'after-filters')} />
 
             {/* List */}
+            <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'before-tickets-list')} />
             {loading ? (
                 <div className="space-y-4">
                     {[1, 2, 3].map(i => (
@@ -406,6 +419,7 @@ export default function TicketsPage() {
                     )}
                 </div>
             )}
+            <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'after-tickets-list')} />
 
             {/* Headless UI Modal for Delete */}
             <HeadlessModal
@@ -428,6 +442,7 @@ export default function TicketsPage() {
                      </div>
                 </div>
             </HeadlessModal>
+            <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'bottom-of-page')} />
         </div>
     )
 }

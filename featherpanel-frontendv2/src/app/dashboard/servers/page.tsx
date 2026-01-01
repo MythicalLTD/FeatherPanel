@@ -26,7 +26,7 @@ SOFTWARE.
 
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useCallback } from 'react'
 
 import { Server, ServerFolder } from '@/types/server'
 
@@ -51,24 +51,24 @@ import {
 	RadioGroupOption,
 	Transition
 } from '@headlessui/react'
-import {
-	LayoutGrid,
-	List,
-	Filter,
-	Check,
-	ChevronsUpDown,
-	RefreshCw,
-	Trash2,
-	Pencil,
-	FolderPlus,
-	TriangleAlert,
-	Server as ServerIcon,
-	Folder,
-	ChevronLeft,
-	ChevronRight
-} from 'lucide-react'
-
-// Import new components
+import { 
+    Filter, 
+    Check, 
+    ChevronsUpDown, 
+    RefreshCw, 
+    Trash2, 
+    Pencil, 
+    FolderPlus, 
+    TriangleAlert, 
+    Server as ServerIcon, 
+    Folder, 
+    ChevronLeft,
+    ChevronRight,
+    LayoutGrid,
+    List
+} from "lucide-react";
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 import { ServerCard } from '@/components/servers/ServerCard'
 import { EmptyState } from '@/components/servers/EmptyState'
 import { FolderDialog } from '@/components/servers/FolderDialog'
@@ -132,8 +132,14 @@ export default function ServersPage() {
 		to: 0,
 	})
 
+	const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-servers')
+
+	useEffect(() => {
+		fetchWidgets()
+	}, [fetchWidgets])
+
 	// Fetch servers and folders
-	const fetchData = async (page = 1) => {
+	const fetchServers = useCallback(async (page = 1) => {
 		try {
 			setLoading(true)
 			setError(null)
@@ -157,16 +163,16 @@ export default function ServersPage() {
 		} finally {
 			setLoading(false)
 		}
-	}
+	}, [pagination.per_page, t, connectServers])
 
 	// Initial fetch
 	useEffect(() => {
-		fetchData()
+		fetchServers()
 		return () => {
 			disconnectAll()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [])
+	}, [fetchServers])
 
 	// Apply usage of client-side folder assignments
 	const serversWithFolders = servers.map(server => ({
@@ -224,7 +230,7 @@ export default function ServersPage() {
 
 	const changePage = (newPage: number) => {
 		if (newPage >= 1 && newPage <= pagination.total_pages) {
-			fetchData(newPage)
+			fetchServers(newPage)
 		}
 	}
 
@@ -247,8 +253,9 @@ export default function ServersPage() {
 	const selectedLayoutOption = layoutOptions.find(o => o.id === selectedLayout) || layoutOptions[0]
 
 	return (
-		<div className="min-h-screen p-4 sm:p-8 space-y-6 sm:space-y-8">
-			{/* Header */}
+		<div className="space-y-10 pb-12">
+			<WidgetRenderer widgets={getWidgets('dashboard-servers', 'top-of-page')} />
+			{/* Page Header */}
 			<div className="flex items-start justify-between">
 				<div>
 					<h1 className="text-2xl sm:text-4xl font-bold tracking-tight">{t('servers.title')}</h1>
@@ -256,6 +263,7 @@ export default function ServersPage() {
 						{t('servers.description')}
 					</p>
 				</div>
+				<WidgetRenderer widgets={getWidgets('dashboard-servers', 'after-header')} />
 			</div>
 
 			{/* Toolbar */}
@@ -270,6 +278,8 @@ export default function ServersPage() {
 						className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all"
 					/>
 				</div>
+
+				<WidgetRenderer widgets={getWidgets('dashboard-servers', 'before-server-list')} />
 
 				{/* Controls Grid */}
 				<div className="flex flex-col sm:flex-row gap-4">
@@ -368,7 +378,7 @@ export default function ServersPage() {
 
 						{/* Refresh Button */}
 						<button
-								onClick={() => fetchData()}
+							onClick={() => fetchServers()}
 							disabled={loading}
 							className="p-2.5 bg-background border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-50"
 							title={t('servers.refresh')}
@@ -377,7 +387,9 @@ export default function ServersPage() {
 						</button>
 					</div>
 				</div>
+				<WidgetRenderer widgets={getWidgets('dashboard-servers', 'after-server-list')} />
 			</div>
+			<WidgetRenderer widgets={getWidgets('dashboard-servers', 'bottom-of-page')} />
 
 			{/* Loading State */}
 			{loading && (
@@ -397,7 +409,7 @@ export default function ServersPage() {
 						<h3 className="text-xl font-semibold mb-2">{t('servers.errorTitle')}</h3>
 						<p className="text-muted-foreground mb-6">{error}</p>
 						<button
-								onClick={() => fetchData()}
+							onClick={() => fetchServers()}
 							className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors"
 						>
 							{t('servers.retry')}
@@ -420,7 +432,7 @@ export default function ServersPage() {
 								)
 							}
 						>
-								{t('servers.allServers')} ({pagination.total_records})
+							{t('servers.allServers')} ({pagination.total_records})
 						</Tab>
 						<Tab
 							className={({ selected }) =>
@@ -464,45 +476,45 @@ export default function ServersPage() {
 								</div>
 							)}
 
-				{/* Pagination Controls */}
-				{pagination.total_pages > 1 && (
-					<div className="flex items-center justify-between py-6 px-4 mt-6 border-t border-border">
-					<p className="text-sm text-muted-foreground">
-						{t('servers.pagination.showing', { 
-							from: String(pagination.from), 
-							to: String(pagination.to), 
-							total: String(pagination.total_records) 
-						})}
-					</p>
-						<div className="flex items-center gap-2">
-							<button
-								onClick={() => changePage(pagination.current_page - 1)}
-								disabled={!pagination.has_prev || loading}
-								className="p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-							>
-								<ChevronLeft className="h-5 w-5" />
-							</button>
-						<span className="px-4 py-2 text-sm font-medium">
-							{t('servers.pagination.page', { 
-								current: String(pagination.current_page), 
-								total: String(pagination.total_pages) 
-							})}
-						</span>
-							<button
-								onClick={() => changePage(pagination.current_page + 1)}
-								disabled={!pagination.has_next || loading}
-								className="p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-							>
-								<ChevronRight className="h-5 w-5" />
-							</button>
-						</div>
-					</div>
-				)}
+							{/* Pagination Controls */}
+							{pagination.total_pages > 1 && (
+								<div className="flex items-center justify-between py-6 px-4 mt-6 border-t border-border">
+									<p className="text-sm text-muted-foreground">
+										{t('servers.pagination.showing', {
+											from: String(pagination.from),
+											to: String(pagination.to),
+											total: String(pagination.total_records)
+										})}
+									</p>
+									<div className="flex items-center gap-2">
+										<button
+											onClick={() => changePage(pagination.current_page - 1)}
+											disabled={!pagination.has_prev || loading}
+											className="p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											<ChevronLeft className="h-5 w-5" />
+										</button>
+										<span className="px-4 py-2 text-sm font-medium">
+											{t('servers.pagination.page', {
+												current: String(pagination.current_page),
+												total: String(pagination.total_pages)
+											})}
+										</span>
+										<button
+											onClick={() => changePage(pagination.current_page + 1)}
+											disabled={!pagination.has_next || loading}
+											className="p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											<ChevronRight className="h-5 w-5" />
+										</button>
+									</div>
+								</div>
+							)}
 						</TabPanel>
 
 						{/* By Folder Tab */}
 						<TabPanel>
-							<div className="space-y-8">
+							<div className="space-y-4">
 								{/* Create Folder Button */}
 								<button
 									onClick={openCreateFolder}

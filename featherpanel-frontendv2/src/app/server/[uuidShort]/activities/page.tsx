@@ -77,6 +77,8 @@ import { Input } from '@/components/featherui/Input'
 import { PageHeader } from '@/components/featherui/PageHeader'
 import { EmptyState } from '@/components/featherui/EmptyState'
 import { ResourceCard } from '@/components/featherui/ResourceCard' // Import ResourceCard
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
 
 // Types
 type ActivityMetadata = {
@@ -159,6 +161,12 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         from: 0,
         to: 0,
     })
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('server-activities')
+
+    useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets])
 
     // Details Dialog State
     const [detailsOpen, setDetailsOpen] = useState(false)
@@ -400,6 +408,8 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                 }
             />
 
+            <WidgetRenderer widgets={getWidgets('server-activities', 'activity-top')} />
+
             {/* Filter Bar */}
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1 group">
@@ -555,6 +565,8 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                     </div>
                 </div>
             )}
+
+            <WidgetRenderer widgets={getWidgets('server-activities', 'activity-bottom')} />
 
             {/* DETAILS DIALOG */}
             <Dialog 

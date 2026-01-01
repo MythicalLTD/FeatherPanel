@@ -37,7 +37,8 @@ import {
     Trash2,
     ChevronUp,
     ChevronDown,
-    Lock
+    Lock,
+    AlertTriangle
 } from "lucide-react"
 
 import { PageHeader } from "@/components/featherui/PageHeader"
@@ -49,6 +50,9 @@ import { Label } from "@/components/ui/label"
 import { HeadlessSelect } from "@/components/ui/headless-select"
 import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
+import { isEnabled } from "@/lib/utils"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
 import type { Task, TaskCreateRequest, TaskUpdateRequest, Schedule, SchedulePagination } from "@/types/server"
@@ -57,7 +61,7 @@ export default function ServerTasksPage() {
     const { uuidShort, id: scheduleId } = useParams() as { uuidShort: string, id: string }
     const router = useRouter()
     const { t } = useTranslation()
-    const { loading: settingsLoading } = useSettings()
+    const { loading: settingsLoading, settings } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
     
     // Permission checks (tasks use schedule permissions)
@@ -78,6 +82,12 @@ export default function ServerTasksPage() {
         to: 0
     })
     
+    // Widgets
+    const { getWidgets, fetchWidgets } = usePluginWidgets("server-tasks")
+
+    // Feature flags
+    const schedulesEnabled = isEnabled(settings?.server_allow_schedules)
+
     // Modal States
     const [isCreateOpen, setIsCreateOpen] = React.useState(false)
     const [isEditOpen, setIsEditOpen] = React.useState(false)
@@ -140,16 +150,17 @@ export default function ServerTasksPage() {
     }, [uuidShort, scheduleId, t])
 
     React.useEffect(() => {
-        fetchSchedule()
-        if (canRead) {
+        if (canRead && schedulesEnabled) {
+            fetchSchedule()
             fetchTasks()
+            fetchWidgets()
         } else if (!permissionsLoading && !canRead) {
             toast.error(t("serverTasks.noSchedulePermission"))
             router.push(`/server/${uuidShort}/schedules`)
         } else {
             setLoading(false)
         }
-    }, [canRead, permissionsLoading, fetchTasks, fetchSchedule, router, uuidShort, t])
+    }, [canRead, permissionsLoading, fetchTasks, fetchSchedule, router, uuidShort, t, schedulesEnabled, fetchWidgets])
 
     // Create task
     const handleCreate = async (e: React.FormEvent) => {
@@ -291,6 +302,7 @@ export default function ServerTasksPage() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
+            <WidgetRenderer widgets={getWidgets("server-tasks", "top-of-page")} />
             {/* Header */}
             <PageHeader
                 title={t("serverTasks.title")}
@@ -321,7 +333,17 @@ export default function ServerTasksPage() {
                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-tasks", "after-header")} />
 
+            {/* Warning if disabled */}
+            {!schedulesEnabled && (
+                <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-3">
+                    <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                    <p className="text-sm text-yellow-500 font-medium">{t("serverSchedules.disabled")}</p>
+                </div>
+            )}
+
+            <WidgetRenderer widgets={getWidgets("server-tasks", "before-tasks-list")} />
 
             {/* Task List */}
             {tasks.length === 0 ? (
@@ -441,6 +463,9 @@ export default function ServerTasksPage() {
                     ))}
                 </div>
             )}
+
+            <WidgetRenderer widgets={getWidgets("server-tasks", "after-tasks-list")} />
+            <WidgetRenderer widgets={getWidgets("server-tasks", "bottom-of-page")} />
 
             {/* Create Modal */}
             <HeadlessModal

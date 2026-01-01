@@ -48,6 +48,8 @@ import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import { cn, formatDate } from "@/lib/utils"
 import type { SubdomainOverview, SubdomainEntry } from "@/types/server"
 
@@ -58,6 +60,7 @@ export default function ServerSubdomainsPage() {
     const { t } = useTranslation()
     const { loading: settingsLoading } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
+    const { getWidgets } = usePluginWidgets("server-subdomains")
     
     // Using generic manage permission or control.start as fallback
     const canManage = hasPermission("subdomains.manage") || hasPermission("control.start")
@@ -148,6 +151,7 @@ export default function ServerSubdomainsPage() {
 
     return (
         <div key={pathname} className="space-y-8 pb-12 ">
+            <WidgetRenderer widgets={getWidgets("server-subdomains", "top-of-page")} />
             {/* Header Section */}
             <PageHeader
                 title={t("serverSubdomains.title")}
@@ -176,6 +180,7 @@ export default function ServerSubdomainsPage() {
                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-subdomains", "after-header")} />
 
 
             {/* Limit Warning */}
@@ -194,6 +199,8 @@ export default function ServerSubdomainsPage() {
                     </div>
                 </div>
             )}
+
+            <WidgetRenderer widgets={getWidgets("server-subdomains", "before-subdomains-list")} />
 
             {/* List */}
             {subdomains.length === 0 ? (
@@ -259,6 +266,7 @@ export default function ServerSubdomainsPage() {
                     ))}
                 </div>
             )}
+            <WidgetRenderer widgets={getWidgets("server-subdomains", "after-subdomains-list")} />
 
             {/* Delete Modal */}
             <HeadlessModal
@@ -281,6 +289,7 @@ export default function ServerSubdomainsPage() {
                     </Button>
                 </div>
             </HeadlessModal>
+            <WidgetRenderer widgets={getWidgets("server-subdomains", "bottom-of-page")} />
         </div>
     )
 }

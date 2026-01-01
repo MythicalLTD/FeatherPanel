@@ -53,6 +53,8 @@ import {
 import { toast } from 'sonner'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useServerPermissions } from '@/hooks/useServerPermissions'
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
 import { cn, formatMib } from '@/lib/utils'
 
 // UI Components
@@ -107,6 +109,12 @@ export default function ServerBackupsPage() {
         last_page: 1,
         per_page: 20
     })
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('server-backups')
+
+    useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets])
 
     // Modal States
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -377,6 +385,8 @@ export default function ServerBackupsPage() {
                 }
             />
 
+            <WidgetRenderer widgets={getWidgets('server-backups', 'backup-header')} />
+
             {limitReached && (
                 <div className="relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500">
                     <div className="relative z-10 flex items-start gap-5">
@@ -601,6 +611,8 @@ export default function ServerBackupsPage() {
                     </div>
                 )}
             </div>
+
+            <WidgetRenderer widgets={getWidgets('server-backups', 'backup-bottom')} />
 
             {/* CREATE DIALOG */}
             <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} className="max-w-xl">

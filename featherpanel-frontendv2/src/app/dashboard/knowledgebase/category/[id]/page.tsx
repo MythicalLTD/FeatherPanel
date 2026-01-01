@@ -34,6 +34,8 @@ import Image from 'next/image'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 
 interface Category {
 	id: number
@@ -71,6 +73,12 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 	const [loading, setLoading] = useState(true)
 	const [currentPage, setCurrentPage] = useState(1)
 	const [pagination, setPagination] = useState<Pagination | null>(null)
+
+	const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-knowledgebase-category')
+
+	useEffect(() => {
+		fetchWidgets()
+	}, [fetchWidgets])
 
 	useEffect(() => {
 		const fetchArticles = async () => {
@@ -112,6 +120,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 
 	return (
 		<div className="space-y-6">
+			<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'top-of-page')} />
 		
 			{/* Header */}
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -128,9 +137,11 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 						)}
 					</div>
 				</div>
+				<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'after-header')} />
 			</div>
 
 			{/* Article List Container */}
+			<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'before-articles-list')} />
 			<div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
 				{articles.length === 0 ? (
 					<div className="py-24 text-center">
@@ -227,6 +238,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 					</div>
 				)}
 			</div>
+			<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'after-articles-list')} />
+			<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'bottom-of-page')} />
 		</div>
 	)
 }

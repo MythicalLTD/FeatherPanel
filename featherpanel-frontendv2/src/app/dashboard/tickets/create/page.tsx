@@ -48,6 +48,9 @@ import { HeadlessSelect } from '@/components/ui/headless-select'
 import { ServerSelectionModal } from '@/components/dashboard/ServerSelectionModal'
 import { toast } from 'sonner'
 
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
+
 // Types
 interface Category {
     id: number
@@ -111,6 +114,12 @@ export default function CreateTicketPage() {
     const [isDragging, setIsDragging] = useState(false)
     const [serverModalOpen, setServerModalOpen] = useState(false)
 
+    const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-tickets-create')
+
+    useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets])
+
     // Initial Fetch
     const [serversLoading, setServersLoading] = useState(false)
 
@@ -120,11 +129,7 @@ export default function CreateTicketPage() {
         try {
             const params = query ? { search: query } : {}
             const res = await axios.get<ServerResponse>('/api/user/tickets/servers', { params })
-            
-            // Handle potentially different response structures depending on API version
-            // API response: { success: true, data: { servers: [] } }
             const data = res.data
-            // Prioritize data.servers, then data.items (legacy?), then root items (legacy?)
             const items = data.data?.servers || (data.data as unknown as { items: Server[] })?.items || (data as { items: Server[] })?.items || []
             setServers(items)
         } catch (error) {
@@ -281,6 +286,7 @@ export default function CreateTicketPage() {
 
     return (
         <div className="max-w-4xl mx-auto pb-12">
+             <WidgetRenderer widgets={getWidgets('dashboard-tickets-create', 'top-of-page')} />
              <div className="flex items-start gap-4 mb-8">
                  <Link href="/dashboard/tickets">
                      <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 border border-border/50 hover:bg-card hover:text-foreground">
@@ -292,6 +298,7 @@ export default function CreateTicketPage() {
                     <p className="text-muted-foreground text-lg">{t('tickets.createTicketDescription')}</p>
                  </div>
              </div>
+             <WidgetRenderer widgets={getWidgets('dashboard-tickets-create', 'after-header')} />
 
              <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
                  <form onSubmit={handleSubmit} className="p-8 space-y-8">
@@ -475,6 +482,7 @@ export default function CreateTicketPage() {
                 loading={serversLoading}
                 onSearch={fetchServers}
              />
+             <WidgetRenderer widgets={getWidgets('dashboard-tickets-create', 'bottom-of-page')} />
         </div>
     )
 }

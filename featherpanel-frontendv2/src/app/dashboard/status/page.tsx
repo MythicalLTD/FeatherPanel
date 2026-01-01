@@ -38,9 +38,12 @@ import {
     HardDrive,
     Search,
     ChevronRight,
-    LayoutGrid
+    LayoutGrid,
 } from 'lucide-react'
 import { toast } from 'sonner'
+
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { formatMemory, formatDisk } from '@/lib/server-utils'
 import { cn } from '@/lib/utils'
@@ -90,7 +93,13 @@ export default function StatusPage() {
     const [statusData, setStatusData] = useState<StatusData | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
 
-    const fetchStatus = useCallback(async (isAuto = false) => {
+    const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-status')
+
+    useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets])
+
+    const fetchNodes = useCallback(async (isAuto = false) => {
         if (!isAuto) setLoading(true)
         else setRefreshing(true)
         
@@ -120,20 +129,20 @@ export default function StatusPage() {
     }, [t])
 
     const manualRefresh = async () => {
-        await fetchStatus()
+        await fetchNodes()
         toast.success(t('dashboard.status.statusRefreshed'))
     }
 
     useEffect(() => {
-        fetchStatus()
+        fetchNodes()
 
         // Auto-refresh every 30 seconds
         const interval = setInterval(() => {
-            fetchStatus(true)
+            fetchNodes(true)
         }, 30000)
 
         return () => clearInterval(interval)
-    }, [fetchStatus])
+    }, [fetchNodes])
 
     const filteredNodes = statusData?.data?.nodes?.filter(node => 
         node.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -173,7 +182,7 @@ export default function StatusPage() {
                     <AlertTitle>{t('dashboard.status.failedToLoadStatus')}</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
-                <Button onClick={() => fetchStatus()}>
+                <Button onClick={() => fetchNodes()}>
                     {t('dashboard.status.tryAgain')}
                 </Button>
             </div>
@@ -182,6 +191,7 @@ export default function StatusPage() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
+            <WidgetRenderer widgets={getWidgets('dashboard-status', 'top-of-page')} />
             {/* Standard Header Layout */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -197,6 +207,7 @@ export default function StatusPage() {
                     {refreshing ? t('dashboard.status.refreshing') : t('dashboard.status.refresh')}
                 </Button>
             </div>
+            <WidgetRenderer widgets={getWidgets('dashboard-status', 'after-header')} />
 
             {/* Global Stats bar - Standardized with List Container Background */}
             {statusData?.data?.global && (
@@ -239,6 +250,7 @@ export default function StatusPage() {
                     </div>
                 </div>
             )}
+            <WidgetRenderer widgets={getWidgets('dashboard-status', 'after-global-stats')} />
 
             {/* Content Section */}
             <div className="space-y-4">
@@ -262,6 +274,8 @@ export default function StatusPage() {
                         </div>
                     </div>
                 </div>
+
+                <WidgetRenderer widgets={getWidgets('dashboard-status', 'before-node-list')} />
 
                 {/* Unified Nodes List - Standardized bg-card (Solid) */}
                 <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
@@ -361,6 +375,7 @@ export default function StatusPage() {
                         )}
                     </div>
                 </div>
+                <WidgetRenderer widgets={getWidgets('dashboard-status', 'after-node-list')} />
             </div>
 
             {/* Global Resource Integrated Bar Section (Matching bg-card solid) */}
@@ -376,7 +391,7 @@ export default function StatusPage() {
                          <div className="h-2 w-full bg-muted/50 rounded-full overflow-hidden border border-white/5">
                             <div 
                                 className="h-full bg-blue-500 transition-all duration-1000 ease-out" 
-                                style={{ width: `${(statusData.data.global.used_memory! / statusData.data.global.total_memory!) * 100}%` }} 
+                                style={{ width: `${statusData.data.global.total_memory ? (statusData.data.global.used_memory! / statusData.data.global.total_memory!) * 100 : 0}%` }} 
                             />
                          </div>
                     </div>
@@ -390,12 +405,13 @@ export default function StatusPage() {
                          <div className="h-2 w-full bg-muted/50 rounded-full overflow-hidden border border-white/5">
                             <div 
                                 className="h-full bg-green-500 transition-all duration-1000 ease-out" 
-                                style={{ width: `${(statusData.data.global.used_disk! / statusData.data.global.total_disk!) * 100}%` }} 
+                                style={{ width: `${statusData.data.global.total_disk ? (statusData.data.global.used_disk! / statusData.data.global.total_disk!) * 100 : 0}%` }} 
                             />
                          </div>
                     </div>
                 </div>
             )}
+            <WidgetRenderer widgets={getWidgets('dashboard-status', 'bottom-of-page')} />
         </div>
     )
 }

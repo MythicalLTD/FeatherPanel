@@ -51,6 +51,8 @@ import { Textarea } from "@/components/featherui/Textarea"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import { cn, isEnabled } from "@/lib/utils"
 import type { 
     Variable, 
@@ -72,6 +74,7 @@ export default function ServerStartupPage() {
     const { t } = useTranslation()
     const { settings, loading: settingsLoading } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
+    const { getWidgets } = usePluginWidgets("server-startup")
 
     // Permission checks
     const canRead = hasPermission("startup.read")
@@ -371,6 +374,7 @@ export default function ServerStartupPage() {
 
     return (
         <div key={pathname} className="max-w-6xl mx-auto space-y-8 pb-16 font-sans">
+            <WidgetRenderer widgets={getWidgets("server-startup", "top-of-page")} />
             {/* Header Section */}
             <PageHeader
                 title={t('serverStartup.title')}
@@ -404,6 +408,7 @@ export default function ServerStartupPage() {
                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-startup", "after-header")} />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Side: Main Content */}
@@ -434,6 +439,7 @@ export default function ServerStartupPage() {
                             />
                         </div>
                     </PageCard>
+                    <WidgetRenderer widgets={getWidgets("server-startup", "after-startup-command")} />
 
                     {/* Variables */}
                     <PageCard
@@ -499,9 +505,10 @@ export default function ServerStartupPage() {
                                         )}
                                     </div>
                                 ))}
-                            </div>
+                             </div>
                         )}
                     </PageCard>
+                    <WidgetRenderer widgets={getWidgets("server-startup", "after-variables")} />
                 </div>
 
                 {/* Right Side: Configuration & Actions */}
@@ -550,9 +557,10 @@ export default function ServerStartupPage() {
                                         </div>
                                     ))}
                                 </div>
-                            </div>
+                             </div>
                         </div>
                     </PageCard>
+                    <WidgetRenderer widgets={getWidgets("server-startup", "after-docker-image")} />
 
                     {/* Software Transfer Section */}
                     {canChangeSpell && (
@@ -580,9 +588,10 @@ export default function ServerStartupPage() {
                             >
                                 {t('serverStartup.startTransfer')}
                                 <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                            </Button>
+                             </Button>
                         </div>
                     )}
+                    <WidgetRenderer widgets={getWidgets("server-startup", "after-spell-selection")} />
 
                     {/* Information Summary */}
                     <div className="bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-sm relative overflow-hidden group">
@@ -596,9 +605,10 @@ export default function ServerStartupPage() {
                                 {t('serverStartup.description')}
                             </p>
                         </div>
-                    </div>
+                     </div>
                 </div>
             </div>
+            <WidgetRenderer widgets={getWidgets("server-startup", "bottom-of-page")} />
         </div>
     )
 }

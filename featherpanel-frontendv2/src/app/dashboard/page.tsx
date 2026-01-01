@@ -45,6 +45,8 @@ import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner'
 import { TicketList } from '@/components/dashboard/TicketList'
 import { KnowledgeBaseList } from '@/components/dashboard/KnowledgeBaseList'
 import { useSettings } from '@/contexts/SettingsContext'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 
 // API
 import { serversApi } from '@/lib/servers-api'
@@ -60,6 +62,7 @@ export default function DashboardPage() {
 	const [loadingServers, setLoadingServers] = useState(true)
 	const [loadingActivity, setLoadingActivity] = useState(true)
 	const { settings } = useSettings()
+	const { fetchWidgets, getWidgets } = usePluginWidgets('dashboard')
 
 	// WebSocket for live stats (dashboard only needs a few connection, but hooks are convenient)
 	const {
@@ -70,6 +73,8 @@ export default function DashboardPage() {
 	} = useServersWebSocket()
 
 	useEffect(() => {
+		fetchWidgets()
+
 		const fetchData = async () => {
 			// Fetch Servers
 			try {
@@ -148,6 +153,9 @@ export default function DashboardPage() {
 
 	return (
 		<div className="space-y-8">
+			{/* Plugin Widgets: Top of Page */}
+			<WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} />
+
 			{/* Welcome Section */}
 			<div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 sm:p-6 md:p-8">
 				<div className="relative z-10">
@@ -168,6 +176,9 @@ export default function DashboardPage() {
 				<div className="lg:col-span-2 space-y-6 md:space-y-8">
 					{/* Announcements */}
 					<AnnouncementBanner />
+
+					{/* Plugin Widgets: Before Server List */}
+					<WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} />
 
 					{/* Servers List */}
 					<div className="space-y-6">
@@ -208,6 +219,9 @@ export default function DashboardPage() {
 								</p>
 							</div>
 						)}
+
+						{/* Plugin Widgets: After Server List */}
+						<WidgetRenderer widgets={getWidgets('dashboard', 'after-server-list')} />
 					</div>
 
 					{/* Support Tickets */}
@@ -295,6 +309,9 @@ export default function DashboardPage() {
 					</div>
 				</div>
 			</div>
+
+			{/* Plugin Widgets: Bottom of Page */}
+			<WidgetRenderer widgets={getWidgets('dashboard', 'bottom-of-page')} />
 		</div>
 	)
 }

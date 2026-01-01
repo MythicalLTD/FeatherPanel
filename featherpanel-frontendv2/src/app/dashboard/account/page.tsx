@@ -26,7 +26,7 @@ SOFTWARE.
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import NextImage from 'next/image'
 import { useTranslation } from '@/contexts/TranslationContext'
@@ -39,12 +39,20 @@ import SshKeysTab from '@/components/account/SshKeysTab'
 import ApiKeysTab from '@/components/account/ApiKeysTab'
 import ActivityTab from '@/components/account/ActivityTab'
 import MailTab from '@/components/account/MailTab'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 
 export default function AccountPage() {
 	const { t } = useTranslation()
 	const { user } = useSession()
 	const searchParams = useSearchParams()
 	const router = useRouter()
+
+	const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-account')
+
+	useEffect(() => {
+		fetchWidgets()
+	}, [fetchWidgets])
 
 	const tabs = [
 		{ id: 'profile', name: t('account.profile'), component: ProfileTab },
@@ -83,6 +91,7 @@ export default function AccountPage() {
 
 	return (
 		<div className="space-y-6">
+			<WidgetRenderer widgets={getWidgets('dashboard-account', 'top-of-page')} />
 			{/* Profile Card */}
 			<div className="rounded-xl border border-border bg-card p-6 shadow-sm">
 				<div className="flex flex-col items-center text-center gap-4">
@@ -108,6 +117,7 @@ export default function AccountPage() {
 					</div>
 				</div>
 			</div>
+			<WidgetRenderer widgets={getWidgets('dashboard-account', 'after-profile-card')} />
 
 			{/* Tabs */}
 			<div className="rounded-xl border border-border bg-card shadow-sm">
@@ -158,6 +168,8 @@ export default function AccountPage() {
 					</Tab.Panels>
 				</Tab.Group>
 			</div>
+			<WidgetRenderer widgets={getWidgets('dashboard-account', 'after-tabs')} />
+			<WidgetRenderer widgets={getWidgets('dashboard-account', 'bottom-of-page')} />
 		</div>
 	)
 }

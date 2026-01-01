@@ -30,10 +30,12 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useFileManager } from "@/hooks/useFileManager";
 import { useServerPermissions } from "@/hooks/useServerPermissions";
+import { usePluginWidgets } from "@/hooks/usePluginWidgets";
 import { PageHeader } from "@/components/featherui/PageHeader";
 import { FileActionToolbar } from "./components/FileActionToolbar";
 import { FileBreadcrumbs } from "./components/FileBreadcrumbs";
 import { FileList } from "./components/FileList";
+import { WidgetRenderer } from "@/components/server/WidgetRenderer";
 import { 
     CreateFolderDialog,
     CreateFileDialog,
@@ -79,6 +81,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     } = useFileManager(uuidShort);
 
     const { hasPermission } = useServerPermissions(uuidShort);
+    
+    // Plugin Widgets
+    const { fetchWidgets, getWidgets } = usePluginWidgets('server-files')
 
     // Permissions
     const canRead = hasPermission("file.read");
@@ -194,6 +199,10 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
+    useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets]);
+
     const handleUploadClick = () => {
         fileInputRef.current?.click();
     };
@@ -258,10 +267,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
     return (
         <div className="flex flex-col gap-6 relative min-h-screen pb-20">
+            <WidgetRenderer widgets={getWidgets('server-files', 'top-of-page')} />
             <PageHeader
                 title={t("files.title")}
                 description={t("files.manage_description", { directory: currentDirectory })}
             />
+            <WidgetRenderer widgets={getWidgets('server-files', 'after-header')} />
             
             <div className="flex flex-col gap-4">
                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-white/5 bg-white/10 p-4 backdrop-blur-sm shadow-xl shadow-black/20">
@@ -272,6 +283,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     onSearchChange={setSearchQuery}
                 />
                  </div>
+
+                 <WidgetRenderer widgets={getWidgets('server-files', 'after-search-bar')} />
 
                  <FileActionToolbar 
                     loading={loading || uploading}
@@ -338,6 +351,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     </div>
                 )}
 
+                 <WidgetRenderer widgets={getWidgets('server-files', 'before-files-list')} />
+
                  <FileList 
                     files={files}
                     loading={loading}
@@ -352,6 +367,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     serverUuid={uuidShort}
                     currentDirectory={currentDirectory}
                  />
+
+                 <WidgetRenderer widgets={getWidgets('server-files', 'after-files-list')} />
             </div>
 
             {/* Hidden Input for Upload */}
@@ -463,6 +480,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     setSelectedFiles([]);
                 }}
             />
+            <WidgetRenderer widgets={getWidgets('server-files', 'bottom-of-page')} />
         </div>
     );
 }

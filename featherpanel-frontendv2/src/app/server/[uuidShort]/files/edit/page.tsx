@@ -33,10 +33,12 @@ import { filesApi } from "@/lib/files-api";
 import { toast } from "sonner";
 import { Save, Loader2, FileCode, Lock } from "lucide-react";
 import { useServerPermissions } from "@/hooks/useServerPermissions";
+import { usePluginWidgets } from "@/hooks/usePluginWidgets";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/featherui/Button";
 import { PageHeader } from "@/components/featherui/PageHeader";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { WidgetRenderer } from "@/components/server/WidgetRenderer";
 
 export default function FileEditorPage({ 
     params, 
@@ -62,6 +64,9 @@ export default function FileEditorPage({
     const { hasPermission } = useServerPermissions(uuidShort);
     const canEdit = hasPermission("file.update");
 
+    // Plugin Widgets
+    const { fetchWidgets, getWidgets } = usePluginWidgets('server-file-editor')
+
     const fetchContent = useCallback(async () => {
         setLoading(true);
         try {
@@ -81,6 +86,10 @@ export default function FileEditorPage({
             fetchContent();
         }
     }, [uuidShort, fileName, directory, fetchContent]);
+
+    useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets]);
 
     const handleSave = async () => {
         if (!canEdit) return;
@@ -162,10 +171,12 @@ export default function FileEditorPage({
 
     return (
         <div className="flex flex-col gap-6 relative h-[calc(100vh-6rem)] pb-4">
+            <WidgetRenderer widgets={getWidgets('server-file-editor', 'top-of-page')} />
             <PageHeader
                 title={t("files.editor.title", { file: fileName })}
                 description={t("files.editor.description", { path: fullPath })}
             />
+            <WidgetRenderer widgets={getWidgets('server-file-editor', 'after-header')} />
 
             <div className="flex-1 rounded-4xl border border-border/50 bg-card/50 shadow-2xl backdrop-blur-3xl overflow-hidden p-1 flex flex-col group transition-all hover:border-border/80 relative min-h-0">
                 <div className="flex items-center justify-between p-3 border-b border-border/10 bg-muted/30 shrink-0">
@@ -242,6 +253,7 @@ export default function FileEditorPage({
                     </div>
                 </div>
             </div>
+            <WidgetRenderer widgets={getWidgets('server-file-editor', 'bottom-of-page')} />
         </div>
     );
 }

@@ -51,6 +51,7 @@ import {
 import { toast } from 'sonner'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useServerPermissions } from '@/hooks/useServerPermissions'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
 import { cn, copyToClipboard as copyUtil } from '@/lib/utils'
 
 // UI Components
@@ -59,6 +60,7 @@ import { Input } from '@/components/featherui/Input'
 import { PageHeader } from '@/components/featherui/PageHeader'
 import { EmptyState } from '@/components/featherui/EmptyState'
 import { ResourceCard } from '@/components/featherui/ResourceCard'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 import { Checkbox } from '@/components/ui/checkbox'
 import { HeadlessSelect } from '@/components/ui/headless-select'
 import { 
@@ -98,6 +100,9 @@ export default function ServerDatabasesPage() {
     const [availableHosts, setAvailableHosts] = useState<DatabaseHost[]>([])
     const [loading, setLoading] = useState(true)
     const [server, setServer] = useState<Server | null>(null)
+    
+    // Plugin Widgets
+    const { fetchWidgets, getWidgets } = usePluginWidgets('server-databases')
     const [searchQuery, setSearchQuery] = useState('')
     const [phpMyAdminInstalled, setPhpMyAdminInstalled] = useState(false)
     
@@ -178,6 +183,10 @@ export default function ServerDatabasesPage() {
             setLoading(false)
         }
     }, [uuidShort, searchQuery, pagination.current_page, pagination.per_page, t])
+
+    useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets])
 
     useEffect(() => {
         if (!permissionsLoading && !canRead) {
@@ -291,6 +300,7 @@ export default function ServerDatabasesPage() {
 
     return (
         <div key={pathname} className="space-y-8 pb-12">
+            <WidgetRenderer widgets={getWidgets('server-databases', 'top-of-page')} />
             {/* Header Section */}
             <PageHeader
                 title={t('serverDatabases.title')}
@@ -346,6 +356,8 @@ export default function ServerDatabasesPage() {
                 </div>
             )}
 
+            <WidgetRenderer widgets={getWidgets('server-databases', 'after-warning-banner')} />
+
             {/* Main Content Area */}
             <div className="space-y-6">
                 <div className="flex items-center gap-4">
@@ -359,6 +371,8 @@ export default function ServerDatabasesPage() {
                         />
                     </div>
                 </div>
+
+                <WidgetRenderer widgets={getWidgets('server-databases', 'before-databases-list')} />
 
                 {databases.length === 0 ? (
                     <EmptyState
@@ -464,6 +478,8 @@ export default function ServerDatabasesPage() {
                         ))}
                     </div>
                 )}
+
+                <WidgetRenderer widgets={getWidgets('server-databases', 'after-databases-list')} />
 
                 {/* Pagination */}
                 {pagination.total > pagination.per_page && (
@@ -797,6 +813,7 @@ export default function ServerDatabasesPage() {
                     </DialogFooter>
                 </div>
             </Dialog>
+            <WidgetRenderer widgets={getWidgets('server-databases', 'bottom-of-page')} />
         </div>
     )
 }

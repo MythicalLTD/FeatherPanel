@@ -51,6 +51,8 @@ import { ResourceCard } from "@/components/featherui/ResourceCard"
 import { cn, isEnabled } from "@/lib/utils"
 import axios from "axios"
 import { toast } from "sonner"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import type { 
     FirewallRule, 
     CreateFirewallRuleRequest, 
@@ -100,6 +102,9 @@ export default function ServerFirewallPage() {
   // Feature Flag
   const firewallEnabled = isEnabled(settings?.server_allow_user_made_firewall)
 
+  // Widgets
+  const { getWidgets, fetchWidgets } = usePluginWidgets("server-firewall")
+
   const fetchAllocations = React.useCallback(async () => {
     if (!uuidShort) return
     try {
@@ -139,6 +144,10 @@ export default function ServerFirewallPage() {
         }
     }
   }, [settingsLoading, permissionsLoading, firewallEnabled, canRead, fetchRules, fetchAllocations])
+
+  React.useEffect(() => {
+    fetchWidgets()
+  }, [fetchWidgets])
 
   // Helpers
   const sortedRules = React.useMemo(() => {
@@ -343,8 +352,8 @@ export default function ServerFirewallPage() {
   }
 
   return (
-
     <div key={pathname} className="space-y-8 pb-12 ">
+        <WidgetRenderer widgets={getWidgets("server-firewall", "top-of-page")} />
         <PageHeader
             title={t("serverFirewall.title")}
             description={t("serverFirewall.description")}
@@ -373,6 +382,7 @@ export default function ServerFirewallPage() {
                 </div>
             }
         />
+        <WidgetRenderer widgets={getWidgets("server-firewall", "after-header")} />
 
         {/* Info Alert */}
         <div className="relative overflow-hidden p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10 backdrop-blur-xl animate-in slide-in-from-top duration-500 shadow-sm">
@@ -388,6 +398,8 @@ export default function ServerFirewallPage() {
                 </div>
             </div>
         </div>
+
+        <WidgetRenderer widgets={getWidgets("server-firewall", "before-rules-list")} />
 
         {rules.length === 0 ? (
             <EmptyState
@@ -464,6 +476,8 @@ export default function ServerFirewallPage() {
                 ))}
             </div>
         )}
+
+        <WidgetRenderer widgets={getWidgets("server-firewall", "after-rules-list")} />
 
         {/* Create / Edit Modal */}
         <HeadlessModal
@@ -559,6 +573,7 @@ export default function ServerFirewallPage() {
                 </Button>
             </div>
         </HeadlessModal>
+        <WidgetRenderer widgets={getWidgets("server-firewall", "bottom-of-page")} />
     </div>
   )
 }

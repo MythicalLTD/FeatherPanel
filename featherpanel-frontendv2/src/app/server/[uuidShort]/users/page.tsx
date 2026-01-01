@@ -54,6 +54,8 @@ import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import { cn, isEnabled } from "@/lib/utils"
 import type { Subuser, SubuserPagination, SubusersResponse, SubuserPermissionsResponse } from "@/types/server"
 
@@ -64,6 +66,7 @@ export default function ServerSubusersPage() {
     const { t } = useTranslation()
     const { settings, loading: settingsLoading } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
+    const { getWidgets } = usePluginWidgets("server-users")
     
     // Permission checks
     const canRead = hasPermission("user.read")
@@ -321,6 +324,7 @@ export default function ServerSubusersPage() {
 
     return (
         <div key={pathname} className="space-y-8 pb-12">
+             <WidgetRenderer widgets={getWidgets("server-users", "top-of-page")} />
              {/* Header Section */}
              <PageHeader
                 title={t("serverSubusers.title")}
@@ -348,10 +352,11 @@ export default function ServerSubusersPage() {
                                 </Button>
                             )}
                     </>
-                }
-             />
+                 }
+              />
+              <WidgetRenderer widgets={getWidgets("server-users", "after-header")} />
 
-            {/* List */}
+             {/* List */}
             {subusers.length === 0 && !searchQuery ? (
                  <EmptyState
                     title={t("serverSubusers.noSubusers")}
@@ -369,9 +374,10 @@ export default function ServerSubusersPage() {
                             </Button>
                         )
                     }
-                />
+                 />
             ) : (
                 <div className="flex flex-col gap-6">
+                    <WidgetRenderer widgets={getWidgets("server-users", "before-subusers-list")} />
                     {/* Search Bar */}
                     <div className="flex gap-2">
                         <div className="relative flex-1">
@@ -485,8 +491,9 @@ export default function ServerSubusersPage() {
                                     <ChevronRight className="h-5 w-5" />
                                 </Button>
                             </div>
-                        </div>
+                         </div>
                     )}
+                    <WidgetRenderer widgets={getWidgets("server-users", "after-subusers-list")} />
                 </div>
             )}
 
@@ -658,8 +665,9 @@ export default function ServerSubusersPage() {
                             {t("common.saveChanges")}
                         </Button>
                     </div>
-                </div>
+                 </div>
             </HeadlessModal>
+            <WidgetRenderer widgets={getWidgets("server-users", "bottom-of-page")} />
         </div>
     )
 }

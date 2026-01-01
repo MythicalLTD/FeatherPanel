@@ -45,6 +45,8 @@ import { HeadlessSelect } from "@/components/ui/headless-select"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import type { SubdomainCreateRequest, SubdomainOverview } from "@/types/server"
 
 export default function CreateSubdomainPage() {
@@ -53,6 +55,7 @@ export default function CreateSubdomainPage() {
     const { t } = useTranslation()
     const { loading: settingsLoading } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
+    const { getWidgets } = usePluginWidgets("server-subdomains-new")
     
     // Using generic manage permission for now, similar to proxy
     const canManage = hasPermission("subdomains.manage") || hasPermission("control.start") // Fallback if specific perm doesn't exist
@@ -168,6 +171,7 @@ export default function CreateSubdomainPage() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <WidgetRenderer widgets={getWidgets("server-subdomains-new", "top-of-page")} />
             <PageHeader
                 title={t("serverSubdomains.createButton")}
                 description={t("serverSubdomains.newSubdomainDescription")}
@@ -198,6 +202,7 @@ export default function CreateSubdomainPage() {
                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-subdomains-new", "after-header")} />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Side: Forms */}
@@ -324,6 +329,7 @@ export default function CreateSubdomainPage() {
                     </div>
                 </div>
             </div>
+            <WidgetRenderer widgets={getWidgets("server-subdomains-new", "bottom-of-page")} />
         </div>
     )
 }

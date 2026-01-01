@@ -47,6 +47,8 @@ import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import { cn, isEnabled } from "@/lib/utils"
 import type { Proxy, ProxiesResponse } from "@/types/server"
 import { PageHeader } from "@/components/featherui/PageHeader"
@@ -67,6 +69,9 @@ export default function ServerProxyPage() {
     const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
     const [selectedProxy, setSelectedProxy] = React.useState<Proxy | null>(null)
     const [saving, setSaving] = React.useState(false)
+
+    // Widgets
+    const { getWidgets, fetchWidgets } = usePluginWidgets("server-proxy")
 
     // Permissions & Feature Flag
     const canManage = hasPermission("proxy.manage")
@@ -96,10 +101,11 @@ export default function ServerProxyPage() {
     React.useEffect(() => {
         if (proxyEnabled && canRead) {
             fetchData()
+            fetchWidgets()
         } else {
             setLoading(false)
         }
-    }, [fetchData, proxyEnabled, canRead])
+    }, [fetchData, fetchWidgets, proxyEnabled, canRead])
 
 
 
@@ -171,6 +177,7 @@ export default function ServerProxyPage() {
 
     return (
         <div key={pathname} className="space-y-8 pb-12 ">
+            <WidgetRenderer widgets={getWidgets("server-proxy", "top-of-page")} />
             {/* Header */}
             <PageHeader
                 title={t("serverProxy.title")}
@@ -206,6 +213,7 @@ export default function ServerProxyPage() {
                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-proxy", "after-header")} />
 
             {/* Info Banner */}
             <div className="relative overflow-hidden p-6 rounded-3xl bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500 shadow-sm">
@@ -221,6 +229,8 @@ export default function ServerProxyPage() {
                     </div>
                 </div>
             </div>
+
+            <WidgetRenderer widgets={getWidgets("server-proxy", "before-proxies-list")} />
 
             {/* Content */}
             {proxies.length === 0 ? (
@@ -286,6 +296,9 @@ export default function ServerProxyPage() {
                     ))}
                 </div>
             )}
+
+            <WidgetRenderer widgets={getWidgets("server-proxy", "after-proxies-list")} />
+            <WidgetRenderer widgets={getWidgets("server-proxy", "bottom-of-page")} />
 
             {/* Delete Modal */}
             <HeadlessModal

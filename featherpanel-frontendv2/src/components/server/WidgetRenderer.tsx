@@ -31,7 +31,7 @@ import { usePathname } from "next/navigation";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PluginWidget } from "@/types/plugin-widgets";
 
@@ -111,6 +111,7 @@ export function WidgetRenderer({ widgets, height = "400px" }: WidgetRendererProp
     };
 
     const shouldRenderAsCard = (widget: PluginWidget) => {
+        if (widget.useRawRendering) return false;
         if (widget.card === null) return true;
         if (typeof widget.card?.enabled === "boolean") return widget.card.enabled;
         return true;
@@ -139,49 +140,66 @@ export function WidgetRenderer({ widgets, height = "400px" }: WidgetRendererProp
             {widgets.map(widget => (
                 <div key={widget.id} className={cn("w-full min-w-0 transition-all", getGridClass(widget))}>
                     {shouldRenderAsCard(widget) ? (
-                        <Card className={cn("h-full flex flex-col overflow-hidden", 
+                        <Card className={cn(
+                            "h-full flex flex-col overflow-hidden transition-all duration-300",
+                            "bg-linear-to-br from-primary/10 via-primary/5 to-transparent",
+                            "border-primary/20 shadow-sm hover:shadow-md hover:border-primary/30",
                             widget.card?.variant === 'outline' && "border-primary/40",
-                            widget.card?.variant === 'ghost' && "border-transparent bg-transparent shadow-none",
-                             widget.classes?.card
+                            widget.classes?.card
                         )}>
                             {shouldShowHeader(widget) && (
-                                <CardHeader className={cn("space-y-1", widget.classes?.header)}>
+                                <CardHeader className={cn("space-y-1 pb-4", widget.classes?.header)}>
                                     <div className="flex items-center gap-3">
                                         {getCardIcon(widget) && (
-                                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                                <span className="text-sm font-semibold uppercase tracking-wide">{getCardIcon(widget)}</span>
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-[0_0_15px_rgba(var(--primary),0.1)] border border-primary/20">
+                                                <span className="text-sm font-bold uppercase tracking-wider">{getCardIcon(widget)}</span>
                                             </div>
                                         )}
-                                        <div className="flex flex-1 flex-col justify-center gap-1">
-                                            {getHeaderTitle(widget) && <CardTitle className="text-base">{getHeaderTitle(widget)}</CardTitle>}
-                                            {getHeaderDescription(widget) && <CardDescription>{getHeaderDescription(widget)}</CardDescription>}
+                                        <div className="flex flex-1 flex-col justify-center gap-0.5">
+                                            {getHeaderTitle(widget) && (
+                                                <CardTitle className="text-base font-bold tracking-tight text-foreground/90">
+                                                    {getHeaderTitle(widget)}
+                                                </CardTitle>
+                                            )}
+                                            {getHeaderDescription(widget) && (
+                                                <CardDescription className="text-xs text-muted-foreground/70 line-clamp-1">
+                                                    {getHeaderDescription(widget)}
+                                                </CardDescription>
+                                            )}
                                         </div>
                                     </div>
                                 </CardHeader>
                             )}
-                            <CardContent className={cn("relative flex-1 p-0 min-h-[200px]", 
-                                widget.card?.padding === 'sm' && "p-4",
-                                widget.card?.padding === 'md' && "p-6",
+                            <CardContent className={cn("relative flex-1 p-4", 
+                                widget.card?.padding === 'none' && "p-0",
+                                widget.card?.padding === 'sm' && "p-3",
+                                widget.card?.padding === 'md' && "p-5",
                                 widget.card?.padding === 'lg' && "p-8",
                                 widget.classes?.content
                             )}>
                                 <div className="relative w-full h-full" style={{ minHeight: widget.iframe?.minHeight || height }}>
                                     {/* Loading State */}
                                     {loadingStates[widget.id] !== false && (
-                                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80">
-                                            <div className="flex flex-col items-center space-y-3">
-                                                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                                                 <p className="text-sm text-muted-foreground">{widget.behavior?.loadingMessage || t("plugins.loadingContent")}</p>
+                                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-sm transition-all duration-300">
+                                            <div className="flex flex-col items-center space-y-4">
+                                                 <div className="relative flex items-center justify-center">
+                                                     <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                                     <div className="absolute h-6 w-6 animate-pulse rounded-full bg-primary/20" />
+                                                 </div>
+                                                 <p className="text-xs font-medium text-muted-foreground tracking-tight">{widget.behavior?.loadingMessage || t("plugins.loadingContent")}</p>
                                             </div>
                                         </div>
                                     )}
 
                                     {/* Error State */}
                                     {errorStates[widget.id] && (
-                                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 p-6">
-                                            <div className="text-center">
-                                                <p className="mb-4 text-sm text-muted-foreground">{errorStates[widget.id] || widget.behavior?.errorMessage}</p>
-                                                <Button size="sm" variant="outline" onClick={() => retryLoad(widget.id)}>
+                                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-md p-6 animate-fade-in">
+                                            <div className="max-w-[80%] text-center">
+                                                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+                                                     <AlertTriangle className="h-6 w-6" />
+                                                </div>
+                                                <p className="mb-6 text-sm font-medium text-foreground/80">{errorStates[widget.id] || widget.behavior?.errorMessage}</p>
+                                                <Button size="sm" variant="outline" className="h-9 border-primary/20 bg-primary/5 hover:bg-primary/10" onClick={() => retryLoad(widget.id)}>
                                                     <RotateCcw className="mr-2 h-4 w-4" />
                                                     {widget.behavior?.retryLabel || t("plugins.retry")}
                                                 </Button>
@@ -197,11 +215,16 @@ export function WidgetRenderer({ widgets, height = "400px" }: WidgetRendererProp
                                                 loadingStates[widget.id] ? "opacity-0" : "opacity-100",
                                                 widget.classes?.iframe
                                             )}
-                                            style={{ minHeight: widget.iframe?.minHeight || height }}
+                                            style={{ 
+                                                minHeight: widget.iframe?.minHeight || height,
+                                                background: 'transparent'
+                                            }}
                                             {...widget.iframe}
                                             referrerPolicy={widget.iframe?.referrerPolicy as React.HTMLAttributeReferrerPolicy}
                                             onLoad={() => handleIframeLoad(widget.id)}
                                             onError={() => handleIframeError(widget.id)}
+                                            // @ts-expect-error - legacy property but still useful for some browsers
+                                            allowTransparency="true"
                                         />
                                     )}
                                 </div>
@@ -216,10 +239,8 @@ export function WidgetRenderer({ widgets, height = "400px" }: WidgetRendererProp
 
                         </Card>
                     ) : (
-                         <div className={cn("relative w-full overflow-hidden rounded-lg border bg-card", widget.classes?.card)}> 
-                           {/* Non-card implementation similar to above... omitted for brevity as most widgets are cards */}
+                         <div className={cn("relative w-full", widget.classes?.card)}> 
                             <div className="relative w-full h-full" style={{ minHeight: widget.iframe?.minHeight || height }}>
-                                 {/* Similar loading/iframe logic */}
                                   {!errorStates[widget.id] && (
                                         <iframe
                                             data-widget-id={widget.id}
@@ -228,9 +249,14 @@ export function WidgetRenderer({ widgets, height = "400px" }: WidgetRendererProp
                                                 loadingStates[widget.id] ? "opacity-0" : "opacity-100",
                                                 widget.classes?.iframe
                                             )}
-                                            style={{ minHeight: widget.iframe?.minHeight || height }}
+                                            style={{ 
+                                                minHeight: widget.iframe?.minHeight || height,
+                                                background: 'transparent'
+                                            }}
                                             onLoad={() => handleIframeLoad(widget.id)}
                                             onError={() => handleIframeError(widget.id)}
+                                            // @ts-expect-error - allowTransparency is a legacy property but still useful for some browsers
+                                            allowTransparency="true"
                                         />
                                     )}
                             </div>

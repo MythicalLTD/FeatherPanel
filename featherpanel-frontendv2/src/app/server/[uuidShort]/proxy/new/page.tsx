@@ -50,6 +50,8 @@ import { HeadlessSelect } from "@/components/ui/headless-select"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import { cn, isEnabled } from "@/lib/utils"
 import type { AllocationItem, AllocationsResponse, ProxyCreateRequest, DnsVerifyResponse } from "@/types/server"
 import { PageHeader } from "@/components/featherui/PageHeader"
@@ -73,6 +75,9 @@ export default function CreateProxyPage() {
     const [dnsVerified, setDnsVerified] = React.useState(false)
     const [dnsError, setDnsError] = React.useState<string | null>(null)
     const [targetIp, setTargetIp] = React.useState<string | null>(null)
+
+    // Widgets
+    const { getWidgets, fetchWidgets } = usePluginWidgets("server-proxy-new")
 
     // Form State
     const [formData, setFormData] = React.useState<ProxyCreateRequest>({
@@ -110,10 +115,11 @@ export default function CreateProxyPage() {
     React.useEffect(() => {
         if (proxyEnabled && canManage) {
             fetchData()
+            fetchWidgets()
         } else {
             setLoading(false)
         }
-    }, [fetchData, proxyEnabled, canManage])
+    }, [fetchData, fetchWidgets, proxyEnabled, canManage])
 
     // DNS Verification
     const handleVerifyDns = async () => {
@@ -209,6 +215,7 @@ export default function CreateProxyPage() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <WidgetRenderer widgets={getWidgets("server-proxy-new", "top-of-page")} />
             {/* Navigation Header */}
             <PageHeader
                 title={t("serverProxy.createProxy")}
@@ -243,6 +250,7 @@ export default function CreateProxyPage() {
                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-proxy-new", "after-header")} />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Side: Forms */}
@@ -517,6 +525,7 @@ export default function CreateProxyPage() {
                     </div>
                 </div>
             </div>
+            <WidgetRenderer widgets={getWidgets("server-proxy-new", "bottom-of-page")} />
         </div>
     )
 }

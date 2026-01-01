@@ -32,6 +32,8 @@ import { BookOpen, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from '@/contexts/TranslationContext'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 
 interface Category {
 	id: number
@@ -46,6 +48,12 @@ export default function KnowledgeBasePage() {
 	const { t } = useTranslation()
 	const [categories, setCategories] = useState<Category[]>([])
 	const [loading, setLoading] = useState(true)
+
+	const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-knowledgebase')
+
+	useEffect(() => {
+		fetchWidgets()
+	}, [fetchWidgets])
 
 	useEffect(() => {
 		const fetchCategories = async () => {
@@ -80,10 +88,12 @@ export default function KnowledgeBasePage() {
 
 	return (
 		<div className="space-y-6">
+			<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'top-of-page')} />
 			<div>
 				<h1 className="text-3xl font-bold tracking-tight mb-2">{t('dashboard.knowledgebase.title')}</h1>
 				<p className="text-muted-foreground">{t('dashboard.knowledgebase.browseByCategory')}</p>
 			</div>
+			<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'after-header')} />
 
 			{/* Categories List */}
 			{loading ? (
@@ -93,7 +103,9 @@ export default function KnowledgeBasePage() {
 					))}
 				</div>
 			) : (
-				<div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
+				<>
+					<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'before-categories-list')} />
+					<div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
 					{categories.length === 0 ? (
 						<div className="py-24 text-center">
 							<div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6 font-bold text-primary">
@@ -149,7 +161,10 @@ export default function KnowledgeBasePage() {
 						</div>
 					)}
 				</div>
+				<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'after-categories-list')} />
+				</>
 			)}
+			<WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'bottom-of-page')} />
 		</div>
 	)
 }

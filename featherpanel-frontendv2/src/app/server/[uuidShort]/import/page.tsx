@@ -48,6 +48,8 @@ import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { formatDate } from "@/lib/utils"
 import axios from "axios"
 import { toast } from "sonner"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import { cn, isEnabled } from "@/lib/utils"
 import type { ImportItem, ImportsResponse } from "@/types/server"
 
@@ -61,6 +63,9 @@ export default function ServerImportPage() {
 
     const [imports, setImports] = React.useState<ImportItem[]>([])
     const [loading, setLoading] = React.useState(true)
+
+    // Widgets
+    const { getWidgets, fetchWidgets } = usePluginWidgets("server-import")
 
     const fetchImports = React.useCallback(async () => {
         try {
@@ -79,7 +84,8 @@ export default function ServerImportPage() {
 
     React.useEffect(() => {
         fetchImports()
-    }, [fetchImports])
+        fetchWidgets()
+    }, [fetchImports, fetchWidgets])
 
     const getStatusConfig = (status: ImportItem["status"]) => {
         switch (status) {
@@ -135,6 +141,7 @@ export default function ServerImportPage() {
 
     return (
         <div className="space-y-8">
+            <WidgetRenderer widgets={getWidgets("server-import", "top-of-page")} />
             <PageHeader
                 title={t("serverImport.title")}
                 description={t("serverImport.description")}
@@ -162,6 +169,7 @@ export default function ServerImportPage() {
                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-import", "after-header")} />
 
             {!isImportEnabled && (
                 <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-3">
@@ -171,6 +179,8 @@ export default function ServerImportPage() {
                     </p>
                 </div>
             )}
+
+            <WidgetRenderer widgets={getWidgets("server-import", "before-imports-list")} />
 
             {imports.length === 0 ? (
                 <EmptyState
@@ -242,6 +252,9 @@ export default function ServerImportPage() {
                     })}
                 </div>
             )}
+
+            <WidgetRenderer widgets={getWidgets("server-import", "after-imports-list")} />
+            <WidgetRenderer widgets={getWidgets("server-import", "bottom-of-page")} />
         </div>
     )
 }

@@ -49,6 +49,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'priority', type: 'integer', description: 'Display priority (higher = first)'),
         new OA\Property(property: 'page', type: 'string', description: 'Target page identifier'),
         new OA\Property(property: 'location', type: 'string', description: 'Widget placement location'),
+        new OA\Property(property: 'useRawRendering', type: 'boolean', description: 'Whether to render the widget without a card container and with full transparency'),
         new OA\Property(property: 'title', type: 'string', nullable: true, description: 'Optional title to display above the widget content'),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Optional description text for the widget'),
         new OA\Property(property: 'icon', type: 'string', nullable: true, description: 'Optional icon identifier used in the widget header'),
@@ -264,6 +265,7 @@ class PluginWidgetController
                                     'behavior' => $this->normalizeBehaviorOptions($widget['behavior'] ?? null),
                                     'iframe' => $this->normalizeIframeOptions($widget['iframe'] ?? null),
                                     'classes' => $this->normalizeClassOptions($widget['classes'] ?? null),
+                                    'useRawRendering' => (bool) ($widget['useRawRendering'] ?? false),
                                 ];
 
                                 // Add widget to location array

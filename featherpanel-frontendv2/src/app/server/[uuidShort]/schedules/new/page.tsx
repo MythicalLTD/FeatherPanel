@@ -45,13 +45,16 @@ import { HeadlessSelect } from "@/components/ui/headless-select"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
+import { isEnabled } from "@/lib/utils"
 import type { ScheduleCreateRequest } from "@/types/server"
 
 export default function CreateSchedulePage() {
     const { uuidShort } = useParams() as { uuidShort: string }
     const router = useRouter()
     const { t } = useTranslation()
-    const { loading: settingsLoading } = useSettings()
+    const { loading: settingsLoading, settings } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
     
     const canCreate = hasPermission("schedule.create")
@@ -70,6 +73,9 @@ export default function CreateSchedulePage() {
         only_when_online: 0,
         is_active: 1
     })
+
+    // Widgets
+    const { getWidgets, fetchWidgets } = usePluginWidgets("server-schedules-new")
 
     // Handlers
     const handleCreate = async (e: React.FormEvent) => {
@@ -97,6 +103,17 @@ export default function CreateSchedulePage() {
             setSaving(false)
         }
     }
+
+    React.useEffect(() => {
+        if (!settingsLoading && !isEnabled(settings?.server_allow_schedules)) {
+            router.push(`/server/${uuidShort}/schedules`)
+            toast.error(t("serverSchedules.disabled"))
+        }
+    }, [uuidShort, settings?.server_allow_schedules, t, router, settingsLoading])
+
+    React.useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets])
 
     if (permissionsLoading || settingsLoading) return null
 
@@ -144,10 +161,10 @@ export default function CreateSchedulePage() {
                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-schedules-new", "after-header")} />
 
+            {/* Form */}
             <form onSubmit={handleCreate} className="space-y-8">
-                {/* Schedule Name */}
-                {/* Schedule Name */}
                 {/* Schedule Name */}
                 <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm">
                     <div className="flex items-center gap-4 border-b border-border/10 pb-6">

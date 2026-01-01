@@ -49,6 +49,8 @@ import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { toast } from "sonner"
 import axios from "axios"
 import { cn, isEnabled } from "@/lib/utils"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import { PageHeader } from "@/components/featherui/PageHeader"
 import { EmptyState } from "@/components/featherui/EmptyState"
 
@@ -72,6 +74,9 @@ export default function CreateServerImportPage() {
         wipe: false,
         wipeAllFiles: false
     })
+
+    // Widgets
+    const { getWidgets, fetchWidgets } = usePluginWidgets("server-import-new")
 
     const [errors, setErrors] = React.useState<Record<string, string>>({})
 
@@ -134,6 +139,10 @@ export default function CreateServerImportPage() {
         }
     }
 
+    React.useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets])
+
     const isImportEnabled = isEnabled(settings?.server_allow_user_made_import)
 
     if (permissionsLoading || settingsLoading) return null
@@ -171,6 +180,7 @@ export default function CreateServerImportPage() {
 
     return (
         <div className="space-y-8 pb-16 ">
+            <WidgetRenderer widgets={getWidgets("server-import-new", "top-of-page")} />
             {/* Header */}
             <PageHeader
                 title={t("serverImport.createImport")}
@@ -203,6 +213,7 @@ export default function CreateServerImportPage() {
                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-import-new", "after-header")} />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Side: Forms */}
@@ -492,6 +503,7 @@ export default function CreateServerImportPage() {
 
             {/* Background Effect */}
             <div className="fixed inset-0 bg-linear-to-br from-primary/5 via-transparent to-blue-500/5 pointer-events-none -z-10" />
+            <WidgetRenderer widgets={getWidgets("server-import-new", "bottom-of-page")} />
         </div>
     )
 }

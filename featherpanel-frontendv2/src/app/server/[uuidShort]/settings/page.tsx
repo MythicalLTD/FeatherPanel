@@ -64,6 +64,8 @@ import {
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import type { Server } from "@/types/server"
 
 interface SftpDetails {
@@ -89,6 +91,7 @@ export default function ServerSettingsPage() {
     const { t } = useTranslation()
     const { loading: settingsLoading } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
+    const { getWidgets } = usePluginWidgets("server-settings")
 
     // Permissions
     const canRename = hasPermission("settings.rename")
@@ -261,10 +264,12 @@ export default function ServerSettingsPage() {
 
     return (
         <div key={pathname} className="max-w-6xl mx-auto space-y-8 pb-16 font-sans">
+            <WidgetRenderer widgets={getWidgets("server-settings", "top-of-page")} />
              <PageHeader 
                 title={t('serverSettings.title')} 
                 description={t('serverSettings.description')} 
             />
+            <WidgetRenderer widgets={getWidgets("server-settings", "after-header")} />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Side: Settings & SFTP */}
@@ -323,6 +328,7 @@ export default function ServerSettingsPage() {
                             )}
                         </div>
                     </PageCard>
+                    <WidgetRenderer widgets={getWidgets("server-settings", "after-server-info")} />
 
                     {/* SFTP Details */}
                     <PageCard
@@ -449,29 +455,33 @@ export default function ServerSettingsPage() {
                             </div>
                          </div>
                     </PageCard>
+                    <WidgetRenderer widgets={getWidgets("server-settings", "after-sftp-details")} />
                 </div>
 
                 {/* Right Side: Danger Zone */}
                 <div className="lg:col-span-4 space-y-8">
                      {/* Reinstall */}
                      {canReinstall && (
-                        <PageCard
-                            title={t('serverSettings.reinstallServer')}
-                            icon={Settings}
-                            variant="warning"
-                        >
-                             <p className="text-xs text-orange-200/60 font-medium leading-relaxed">
-                                {t('serverSettings.reinstallWarning')}
-                             </p>
-
-                             <Button 
-                                variant="destructive" 
-                                className="w-full bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/20 hover:border-orange-500/50 font-black uppercase tracking-widest mt-4 text-xs h-12 rounded-xl"
-                                onClick={() => setShowReinstallDialog(true)}
+                        <>
+                            <PageCard
+                                title={t('serverSettings.reinstallServer')}
+                                icon={Settings}
+                                variant="warning"
                             >
-                                {t('serverSettings.reinstallServer')}
-                             </Button>
-                        </PageCard>
+                                 <p className="text-xs text-orange-200/60 font-medium leading-relaxed">
+                                    {t('serverSettings.reinstallWarning')}
+                                 </p>
+
+                                 <Button 
+                                    variant="destructive" 
+                                    className="w-full bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/20 hover:border-orange-500/50 font-black uppercase tracking-widest mt-4 text-xs h-12 rounded-xl"
+                                    onClick={() => setShowReinstallDialog(true)}
+                                >
+                                     {t('serverSettings.reinstallServer')}
+                                 </Button>
+                            </PageCard>
+                            <WidgetRenderer widgets={getWidgets("server-settings", "after-server-actions")} />
+                        </>
                      )}
 
                      {/* Delete */}
@@ -496,11 +506,13 @@ export default function ServerSettingsPage() {
                                 generateMathQuestion()
                             }}
                         >
-                            {t('serverSettings.deleteServer')}
+                             {t('serverSettings.deleteServer')}
                          </Button>
                     </PageCard>
+                    <WidgetRenderer widgets={getWidgets("server-settings", "after-delete-server")} />
                 </div>
             </div>
+            <WidgetRenderer widgets={getWidgets("server-settings", "bottom-of-page")} />
 
             {/* Reinstall Dialog */}
             <Dialog open={showReinstallDialog} onOpenChange={setShowReinstallDialog}>

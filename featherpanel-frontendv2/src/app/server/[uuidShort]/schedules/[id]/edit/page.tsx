@@ -45,13 +45,15 @@ import { HeadlessSelect } from "@/components/ui/headless-select"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
 import type { Schedule, ScheduleUpdateRequest } from "@/types/server"
 
 export default function EditSchedulePage() {
     const { uuidShort, id } = useParams() as { uuidShort: string, id: string }
     const router = useRouter()
     const { t } = useTranslation()
-    const { loading: settingsLoading } = useSettings()
+    const { loading: settingsLoading, settings } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
     
     const canUpdate = hasPermission("schedule.update")
@@ -72,6 +74,9 @@ export default function EditSchedulePage() {
         only_when_online: 0,
         is_active: 1
     })
+
+    // Widgets
+    const { getWidgets, fetchWidgets } = usePluginWidgets("server-schedules-edit")
 
     // Fetch schedule data
     React.useEffect(() => {
@@ -108,7 +113,11 @@ export default function EditSchedulePage() {
         } else if (!permissionsLoading && !canUpdate) {
             router.push(`/server/${uuidShort}/schedules`)
         }
-    }, [uuidShort, id, canUpdate, permissionsLoading, router])
+    }, [uuidShort, id, canUpdate, permissionsLoading, router, settings?.server_allow_schedules])
+
+    React.useEffect(() => {
+        fetchWidgets()
+    }, [fetchWidgets])
 
     // Handlers
     const handleUpdate = async (e: React.FormEvent) => {
@@ -187,8 +196,12 @@ export default function EditSchedulePage() {
                     </div>
                 }
             />
+            <WidgetRenderer widgets={getWidgets("server-schedules-edit", "after-header")} />
 
+            {/* Form */}
             <form onSubmit={handleUpdate} className="space-y-8">
+                {/* Background Effect */}
+                <div className="fixed inset-0 bg-linear-to-br from-primary/5 via-transparent to-blue-500/5 pointer-events-none -z-10" />
                 {/* Schedule Name */}
                 <div className="bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm">
                     <div className="flex items-center gap-4 border-b border-border/10 pb-6">

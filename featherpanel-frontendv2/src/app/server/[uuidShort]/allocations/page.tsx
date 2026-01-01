@@ -71,6 +71,8 @@ import { Badge } from "@/components/ui/badge"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useTranslation } from "@/contexts/TranslationContext"
 import { useSettings } from "@/contexts/SettingsContext"
+import { WidgetRenderer } from "@/components/server/WidgetRenderer"
+import { usePluginWidgets } from "@/hooks/usePluginWidgets"
 import { Server, AllocationItem, AllocationsResponse, AvailableAllocationsResponse } from "@/types/server"
 import { copyToClipboard, cn, isEnabled } from "@/lib/utils"
 
@@ -95,6 +97,12 @@ export default function ServerAllocationsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isAutoAllocating, setIsAutoAllocating] = useState(false)
   
+  const { fetchWidgets, getWidgets } = usePluginWidgets('server-allocations')
+
+  useEffect(() => {
+    fetchWidgets()
+  }, [fetchWidgets])
+
   // Dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedAllocation, setSelectedAllocation] = useState<AllocationItem | null>(null)
@@ -373,6 +381,8 @@ export default function ServerAllocationsPage() {
         }
       />
 
+      <WidgetRenderer widgets={getWidgets('server-allocations', 'allocation-header')} />
+
       {/* Limit Reached Warning */}
       {limitReached && (
         <div className="relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500">
@@ -525,6 +535,8 @@ export default function ServerAllocationsPage() {
                 ))}
             </div>
         )}
+
+        <WidgetRenderer widgets={getWidgets('server-allocations', 'allocation-bottom')} />
 
         {/* Delete Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
