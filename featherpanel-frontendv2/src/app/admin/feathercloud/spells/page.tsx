@@ -224,6 +224,7 @@ export default function SpellsPage() {
             <PageHeader
                 title={t('admin.marketplace.spells.title')}
                 description={t('admin.marketplace.spells.subtitle')}
+                icon={Sparkles}
                 actions={
                     <Button variant="outline" onClick={() => router.push('/admin/feathercloud/marketplace')}>
                         <ArrowLeft className="h-4 w-4 mr-2" />

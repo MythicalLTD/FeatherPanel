@@ -26,14 +26,12 @@ SOFTWARE.
 
 'use client'
 
-import React from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { PageHeader } from '@/components/featherui/PageHeader'
 import { ResourceCard } from '@/components/featherui/ResourceCard'
 import { PageCard } from '@/components/featherui/PageCard'
-import { Button } from '@/components/featherui/Button'
-import { Puzzle, Sparkles, Languages, ArrowRight, Info, Lock } from 'lucide-react'
+import { Puzzle, Sparkles, Languages, Info, Store } from 'lucide-react'
 
 export default function MarketplacePage() {
     const { t } = useTranslation()
@@ -45,6 +43,7 @@ export default function MarketplacePage() {
             <PageHeader
                 title={t('admin.marketplace.title')}
                 description={t('admin.marketplace.subtitle')}
+                icon={Store}
             />
 
             {/* Marketplace Grid */}

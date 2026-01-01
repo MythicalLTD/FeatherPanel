@@ -2777,6 +2777,112 @@
 					"security_desc": "Installing third-party spells can be risky. FeatherPanel and its team are not liable for what you install."
 				}
 			}
+		},
+		"cloud_management": {
+			"title": "FeatherCloud Cloud Management",
+			"subtitle": "Connect your FeatherPanel instance to FeatherCloud using secure credentials",
+			"refresh_status": "Refresh Status",
+			"rotate_keys": "Rotate Keys",
+			"link": "Link with FeatherCloud",
+			"relink": "Re-link",
+			"linking": "Linking...",
+			"connection_status": {
+				"connected": "Connected to FeatherCloud",
+				"not_connected": "Not Connected",
+				"connected_desc": "Your panel is successfully linked. You can access premium plugins, FeatherAI, and cloud intelligence services.",
+				"not_connected_desc": "Link your panel with FeatherCloud to access premium features and cloud services.",
+				"active": "Active",
+				"inactive": "Inactive"
+			},
+			"credentials": {
+				"title": "Credential Information",
+				"description": "Last rotation timestamps for your cloud credentials",
+				"cloud_to_panel": "FeatherCloud → Panel",
+				"panel_to_cloud": "Panel → FeatherCloud",
+				"never_rotated": "Never rotated"
+			},
+			"features": {
+				"title": "Cloud-Powered Features",
+				"feather_ai": {
+					"title": "FeatherAI",
+					"description": "Access FeatherPanel's built-in AI model for intelligent automation and analysis without requiring external API keys.",
+					"coming_soon": "Coming Soon"
+				},
+				"premium_plugins": {
+					"title": "Premium Plugins",
+					"description": "Download and install paid plugins directly from the FeatherCloud marketplace with seamless integration.",
+					"premium": "Premium"
+				},
+				"cloud_intelligence": {
+					"title": "Cloud Intelligence Database",
+					"description": "Protect your host from abuse with real-time threat intelligence from across the FeatherCloud network.",
+					"active": "Active"
+				}
+			},
+			"cloud_info": {
+				"title": "Cloud Information",
+				"refresh": "Refresh",
+				"loading": "Loading cloud data...",
+				"team": "Team",
+				"total_credits": "Total Credits",
+				"total_purchases": "Total Purchases",
+				"team_members": "{count} team members"
+			},
+			"security": {
+				"title": "Security & Benefits",
+				"identification": {
+					"title": "Instance Identification",
+					"description": "Your credentials uniquely identify your FeatherPanel instance to its owner."
+				},
+				"privacy": {
+					"title": "Security & Privacy",
+					"description": "All credentials are encrypted and scoped to your environment."
+				},
+				"permissions": {
+					"title": "Permission-Based Access",
+					"description": "Keys inherit administrator permissions for granular control."
+				},
+				"audit": {
+					"title": "Full Audit Trail",
+					"description": "Every cloud service interaction is logged for complete traceability."
+				}
+			},
+			"oauth2": {
+				"title": "OAuth2 Integration",
+				"description": "Securely link your panel with FeatherCloud using OAuth2 authentication",
+				"how_it_works": "How it works:",
+				"step1": "You'll be redirected to FeatherCloud's OAuth2 authorization page",
+				"step2": "Your panel information (name, logo, URL) will be securely shared",
+				"step3": "FeatherCloud will generate and store the necessary credentials",
+				"step4": "You'll be redirected back to your panel once the connection is established"
+			},
+			"rotate_dialog": {
+				"title": "Confirm Key Rotation",
+				"description": "Are you sure you want to rotate your FeatherCloud credentials? This action will generate new keys for your panel.",
+				"important": "Important:",
+				"warning1": "New keys will be generated immediately",
+				"warning2": "You must update your FeatherCloud account with the new keys",
+				"warning3": "Old keys will no longer work after rotation",
+				"warning4": "Cloud credentials are currently empty - premium plugins cannot be downloaded until FeatherCloud credentials are configured",
+				"cancel": "Cancel",
+				"confirm": "Rotate Keys",
+				"rotating": "Rotating..."
+			},
+			"finish": {
+				"processing": "Processing OAuth2 Callback...",
+				"success": "Successfully Connected!",
+				"failed": "Connection Failed",
+				"processing_desc": "Please wait while we save your cloud credentials...",
+				"success_desc": "Your panel is now linked with FeatherCloud. You can now access premium plugins, FeatherAI, and cloud intelligence services.",
+				"whats_next": "What's Next?",
+				"next_step1": "Access premium plugins from the FeatherCloud marketplace",
+				"next_step2": "Use FeatherAI for intelligent automation and analysis",
+				"next_step3": "Benefit from cloud intelligence database for abuse prevention",
+				"error_desc": "Please try linking again from the Cloud Management page.",
+				"go_to_cloud": "Go to Cloud Management",
+				"return": "Return to Cloud Management",
+				"redirecting": "Redirecting automatically in 3 seconds..."
+			}
 		}
 	}
 }

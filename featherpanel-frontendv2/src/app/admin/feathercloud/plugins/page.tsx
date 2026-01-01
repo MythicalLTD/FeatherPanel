@@ -276,6 +276,7 @@ export default function PluginsPage() {
             <PageHeader
                 title={t('admin.marketplace.plugins.title')}
                 description={t('admin.marketplace.plugins.subtitle')}
+                icon={Puzzle}
                 actions={
                     <Button variant="outline" onClick={() => router.push('/admin/feathercloud/marketplace')}>
                         <ArrowLeft className="h-4 w-4 mr-2" />
