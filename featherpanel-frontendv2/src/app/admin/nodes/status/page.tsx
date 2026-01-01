@@ -36,6 +36,8 @@ import { RefreshCw, Server, Check, AlertTriangle, Cpu, MemoryStick, HardDrive } 
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { EmptyState } from '@/components/featherui/EmptyState';
+import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { formatBytes } from '@/lib/format';
@@ -133,11 +135,9 @@ export default function NodeStatusPage() {
 
     if (loading && !globalStats) {
         return (
-            <div className='flex items-center justify-center min-h-[400px]'>
-                <div className='flex items-center gap-3'>
-                    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
-                    <span className='text-muted-foreground'>{t('admin.nodes.loading')}</span>
-                </div>
+            <div className='space-y-6'>
+                <PageHeader title={t('admin.nodes.title')} description={t('admin.nodes.subtitle')} icon={Server} />
+                <TableSkeleton count={4} />
             </div>
         );
     }
@@ -283,125 +283,140 @@ export default function NodeStatusPage() {
                     <div className='space-y-4'>
                         <h2 className='text-2xl font-bold tracking-tight'>{t('admin.nodes.individual_nodes')}</h2>
                         <div className='grid gap-6 xl:grid-cols-2'>
-                            {nodes.map((node) => (
-                                <PageCard
-                                    key={node.id}
-                                    title={node.name}
-                                    description={node.fqdn}
-                                    icon={Server}
-                                    className='shadow-none! bg-card/50 backdrop-blur-sm'
-                                    variant={node.status === 'healthy' ? 'default' : 'danger'}
-                                    action={
-                                        <Badge variant={node.status === 'healthy' ? 'default' : 'destructive'}>
-                                            {node.status === 'healthy'
-                                                ? t('admin.nodes.online')
-                                                : t('admin.nodes.offline')}
-                                        </Badge>
-                                    }
-                                >
-                                    <div className='pt-2'>
-                                        {node.status === 'healthy' && node.utilization ? (
-                                            <div className='space-y-6'>
-                                                {/* CPU */}
-                                                <div className='space-y-2'>
-                                                    <div className='flex justify-between items-center text-sm'>
-                                                        <span className='font-medium'>
-                                                            {t('admin.nodes.cpu_usage')}
-                                                        </span>
-                                                        <span className='text-muted-foreground'>
-                                                            {node.utilization.cpu_percent.toFixed(1)}%
-                                                        </span>
-                                                    </div>
-                                                    <div className='h-2 w-full bg-secondary rounded-full overflow-hidden'>
-                                                        <div
-                                                            className='h-full bg-primary rounded-full transition-all duration-300'
-                                                            style={{
-                                                                width: `${Math.min(100, node.utilization.cpu_percent)}%`,
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className='flex justify-between text-xs text-muted-foreground font-mono'>
-                                                        <span>
-                                                            {t('admin.nodes.load')}: {node.utilization.load_average1}
-                                                        </span>
-                                                        <span>{node.utilization.load_average5}</span>
-                                                        <span>{node.utilization.load_average15}</span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Memory */}
-                                                <div className='space-y-2'>
-                                                    <div className='flex justify-between items-center text-sm'>
-                                                        <span className='font-medium'>{t('admin.nodes.memory')}</span>
-                                                        <span className='text-muted-foreground'>
-                                                            {formatBytes(node.utilization.memory_used)} /{' '}
-                                                            {formatBytes(node.utilization.memory_total)}
-                                                        </span>
-                                                    </div>
-                                                    <div className='h-2 w-full bg-secondary rounded-full overflow-hidden'>
-                                                        <div
-                                                            className='h-full bg-blue-500 rounded-full transition-all duration-300'
-                                                            style={{
-                                                                width: `${(node.utilization.memory_used / node.utilization.memory_total) * 100}%`,
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Disk */}
-                                                <div className='space-y-2'>
-                                                    <div className='flex justify-between items-center text-sm'>
-                                                        <span className='font-medium'>{t('admin.nodes.disk')}</span>
-                                                        <span className='text-muted-foreground'>
-                                                            {formatBytes(node.utilization.disk_used)} /{' '}
-                                                            {formatBytes(node.utilization.disk_total)}
-                                                        </span>
-                                                    </div>
-                                                    <div className='h-2 w-full bg-secondary rounded-full overflow-hidden'>
-                                                        <div
-                                                            className='h-full bg-green-500 rounded-full transition-all duration-300'
-                                                            style={{
-                                                                width: `${(node.utilization.disk_used / node.utilization.disk_total) * 100}%`,
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Swap */}
-                                                {node.utilization.swap_total > 0 && (
+                            {nodes.length === 0 ? (
+                                <div className='col-span-2'>
+                                    <EmptyState
+                                        title={t('admin.nodes.no_nodes')}
+                                        description={t('admin.nodes.no_nodes_description')}
+                                        icon={Server}
+                                    />
+                                </div>
+                            ) : (
+                                nodes.map((node) => (
+                                    <PageCard
+                                        key={node.id}
+                                        title={node.name}
+                                        description={node.fqdn}
+                                        icon={Server}
+                                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                        variant={node.status === 'healthy' ? 'default' : 'danger'}
+                                        action={
+                                            <Badge variant={node.status === 'healthy' ? 'default' : 'destructive'}>
+                                                {node.status === 'healthy'
+                                                    ? t('admin.nodes.online')
+                                                    : t('admin.nodes.offline')}
+                                            </Badge>
+                                        }
+                                    >
+                                        <div className='pt-2'>
+                                            {node.status === 'healthy' && node.utilization ? (
+                                                <div className='space-y-6'>
+                                                    {/* CPU */}
                                                     <div className='space-y-2'>
                                                         <div className='flex justify-between items-center text-sm'>
-                                                            <span className='font-medium'>{t('admin.nodes.swap')}</span>
+                                                            <span className='font-medium'>
+                                                                {t('admin.nodes.cpu_usage')}
+                                                            </span>
                                                             <span className='text-muted-foreground'>
-                                                                {formatBytes(node.utilization.swap_used)} /{' '}
-                                                                {formatBytes(node.utilization.swap_total)}
+                                                                {node.utilization.cpu_percent.toFixed(1)}%
                                                             </span>
                                                         </div>
                                                         <div className='h-2 w-full bg-secondary rounded-full overflow-hidden'>
                                                             <div
-                                                                className='h-full bg-orange-500 rounded-full transition-all duration-300'
+                                                                className='h-full bg-primary rounded-full transition-all duration-300'
                                                                 style={{
-                                                                    width: `${(node.utilization.swap_used / node.utilization.swap_total) * 100}%`,
+                                                                    width: `${Math.min(100, node.utilization.cpu_percent)}%`,
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div className='flex justify-between text-xs text-muted-foreground font-mono'>
+                                                            <span>
+                                                                {t('admin.nodes.load')}:{' '}
+                                                                {node.utilization.load_average1}
+                                                            </span>
+                                                            <span>{node.utilization.load_average5}</span>
+                                                            <span>{node.utilization.load_average15}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Memory */}
+                                                    <div className='space-y-2'>
+                                                        <div className='flex justify-between items-center text-sm'>
+                                                            <span className='font-medium'>
+                                                                {t('admin.nodes.memory')}
+                                                            </span>
+                                                            <span className='text-muted-foreground'>
+                                                                {formatBytes(node.utilization.memory_used)} /{' '}
+                                                                {formatBytes(node.utilization.memory_total)}
+                                                            </span>
+                                                        </div>
+                                                        <div className='h-2 w-full bg-secondary rounded-full overflow-hidden'>
+                                                            <div
+                                                                className='h-full bg-blue-500 rounded-full transition-all duration-300'
+                                                                style={{
+                                                                    width: `${(node.utilization.memory_used / node.utilization.memory_total) * 100}%`,
                                                                 }}
                                                             />
                                                         </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <Alert variant='destructive'>
-                                                <AlertTriangle className='h-4 w-4' />
-                                                <div className='ml-2'>
-                                                    <AlertTitle>{t('admin.nodes.offline')}</AlertTitle>
-                                                    <AlertDescription>
-                                                        {node.error || 'Cannot connect to Wings daemon'}
-                                                    </AlertDescription>
+
+                                                    {/* Disk */}
+                                                    <div className='space-y-2'>
+                                                        <div className='flex justify-between items-center text-sm'>
+                                                            <span className='font-medium'>{t('admin.nodes.disk')}</span>
+                                                            <span className='text-muted-foreground'>
+                                                                {formatBytes(node.utilization.disk_used)} /{' '}
+                                                                {formatBytes(node.utilization.disk_total)}
+                                                            </span>
+                                                        </div>
+                                                        <div className='h-2 w-full bg-secondary rounded-full overflow-hidden'>
+                                                            <div
+                                                                className='h-full bg-green-500 rounded-full transition-all duration-300'
+                                                                style={{
+                                                                    width: `${(node.utilization.disk_used / node.utilization.disk_total) * 100}%`,
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Swap */}
+                                                    {node.utilization.swap_total > 0 && (
+                                                        <div className='space-y-2'>
+                                                            <div className='flex justify-between items-center text-sm'>
+                                                                <span className='font-medium'>
+                                                                    {t('admin.nodes.swap')}
+                                                                </span>
+                                                                <span className='text-muted-foreground'>
+                                                                    {formatBytes(node.utilization.swap_used)} /{' '}
+                                                                    {formatBytes(node.utilization.swap_total)}
+                                                                </span>
+                                                            </div>
+                                                            <div className='h-2 w-full bg-secondary rounded-full overflow-hidden'>
+                                                                <div
+                                                                    className='h-full bg-orange-500 rounded-full transition-all duration-300'
+                                                                    style={{
+                                                                        width: `${(node.utilization.swap_used / node.utilization.swap_total) * 100}%`,
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            </Alert>
-                                        )}
-                                    </div>
-                                </PageCard>
-                            ))}
+                                            ) : (
+                                                <Alert variant='destructive'>
+                                                    <AlertTriangle className='h-4 w-4' />
+                                                    <div className='ml-2'>
+                                                        <AlertTitle>{t('admin.nodes.offline')}</AlertTitle>
+                                                        <AlertDescription>
+                                                            {node.error || 'Cannot connect to Wings daemon'}
+                                                        </AlertDescription>
+                                                    </div>
+                                                </Alert>
+                                            )}
+                                        </div>
+                                    </PageCard>
+                                ))
+                            )}
                         </div>
                     </div>
 

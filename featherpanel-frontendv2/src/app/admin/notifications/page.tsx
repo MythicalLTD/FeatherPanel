@@ -26,7 +26,7 @@ SOFTWARE.
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import axios, { isAxiosError } from 'axios';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -46,6 +46,7 @@ import {
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
@@ -111,41 +112,66 @@ export default function NotificationsPage() {
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isDeleting, setIsDeleting] = useState<number | null>(null);
 
-    const fetchNotifications = useCallback(async () => {
-        setLoading(true);
-        try {
-            const { data } = await axios.get('/api/admin/notifications', {
-                params: {
-                    page: pagination.page,
-                    limit: pagination.pageSize,
-                    search: searchQuery || undefined,
-                },
-            });
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+    const [refreshKey, setRefreshKey] = useState(0);
 
-            setNotifications(data.data.notifications || []);
-            const apiPagination = data.data.pagination;
-            setPagination((prev) => ({
-                ...prev,
-                page: apiPagination.current_page,
-                pageSize: apiPagination.per_page,
-                total: apiPagination.total_records,
-                totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
-                hasNext: apiPagination.has_next,
-                hasPrev: apiPagination.has_prev,
-            }));
-        } catch (error) {
-            console.error('Error fetching notifications:', error);
-            toast.error(t('admin.notifications.messages.fetch_failed'));
-        } finally {
-            setLoading(false);
-        }
-    }, [pagination.page, pagination.pageSize, searchQuery, t]);
-
+    // Debounce search query
     useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+            if (searchQuery !== debouncedSearchQuery) {
+                setPagination((prev) => ({ ...prev, page: 1 }));
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [debouncedSearchQuery, searchQuery]);
+
+    // Fetch notifications
+    useEffect(() => {
+        const controller = new AbortController();
+        const fetchNotifications = async () => {
+            setLoading(true);
+            try {
+                const { data } = await axios.get('/api/admin/notifications', {
+                    params: {
+                        page: pagination.page,
+                        limit: pagination.pageSize,
+                        search: debouncedSearchQuery || undefined,
+                    },
+                    signal: controller.signal,
+                });
+
+                setNotifications(data.data.notifications || []);
+                const apiPagination = data.data.pagination;
+                setPagination((prev) => ({
+                    ...prev,
+                    page: apiPagination.current_page,
+                    pageSize: apiPagination.per_page,
+                    total: apiPagination.total_records,
+                    totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
+                    hasNext: apiPagination.has_next,
+                    hasPrev: apiPagination.has_prev,
+                }));
+            } catch (error) {
+                if (!axios.isCancel(error)) {
+                    console.error('Error fetching notifications:', error);
+                    toast.error(t('admin.notifications.messages.fetch_failed'));
+                }
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
+            }
+        };
+
         fetchNotifications();
-    }, [fetchNotifications]);
+
+        return () => {
+            controller.abort();
+        };
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -155,7 +181,7 @@ export default function NotificationsPage() {
             toast.success(t('admin.notifications.messages.created'));
             setCreateOpen(false);
             resetNewNotification();
-            fetchNotifications();
+            setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error creating notification:', error);
             let errorMessage = t('admin.notifications.messages.create_failed');
@@ -186,7 +212,7 @@ export default function NotificationsPage() {
             toast.success(t('admin.notifications.messages.updated'));
             setEditOpen(false);
             setEditingNotification(null);
-            fetchNotifications();
+            setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error updating notification:', error);
             let errorMessage = t('admin.notifications.messages.update_failed');
@@ -202,11 +228,11 @@ export default function NotificationsPage() {
     const handleDelete = async (id: number) => {
         if (!confirm(t('admin.notifications.messages.delete_confirm'))) return;
 
-        setIsDeleting(id);
+        setIsSubmitting(true);
         try {
             await axios.delete(`/api/admin/notifications/${id}`);
             toast.success(t('admin.notifications.messages.deleted'));
-            setNotifications(notifications.filter((n) => n.id !== id));
+            setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error deleting notification:', error);
             let errorMessage = t('admin.notifications.messages.delete_failed');
@@ -215,7 +241,7 @@ export default function NotificationsPage() {
             }
             toast.error(errorMessage);
         } finally {
-            setIsDeleting(null);
+            setIsSubmitting(false);
         }
     };
 
@@ -304,12 +330,8 @@ export default function NotificationsPage() {
                 </div>
             </div>
 
-            {loading && notifications.length === 0 ? (
-                <div className='grid grid-cols-1 gap-4'>
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className='h-24 rounded-xl bg-card border animate-pulse' />
-                    ))}
-                </div>
+            {loading ? (
+                <TableSkeleton count={3} />
             ) : notifications.length === 0 ? (
                 <EmptyState
                     icon={Bell}
@@ -378,9 +400,9 @@ export default function NotificationsPage() {
                                             variant='ghost'
                                             className='text-destructive hover:text-destructive hover:bg-destructive/10'
                                             onClick={() => handleDelete(notification.id)}
-                                            disabled={isDeleting === notification.id}
+                                            disabled={isSubmitting}
                                         >
-                                            {isDeleting === notification.id ? (
+                                            {isSubmitting ? (
                                                 <RefreshCw className='h-4 w-4 animate-spin' />
                                             ) : (
                                                 <Trash2 className='h-4 w-4' />

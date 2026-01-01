@@ -24,7 +24,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import axios from 'axios';
@@ -37,12 +37,12 @@ import {
     Trash2,
     ChevronLeft,
     ChevronRight,
-    RefreshCw,
     AlertCircle,
     UserPlus,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -109,81 +109,86 @@ export default function UsersPage() {
     });
 
     const [availableRoles, setAvailableRoles] = useState<AvailableRole[]>([]);
-    const [searchDebounce, setSearchDebounce] = useState<NodeJS.Timeout | null>(null);
 
-    const fetchUsers = useCallback(async () => {
-        setLoading(true);
-        try {
-            const params: Record<string, string> = {
-                page: String(pagination.page),
-                limit: String(pagination.pageSize),
-            };
+    const [refreshKey, setRefreshKey] = useState(0);
 
-            if (searchQuery) params.search = searchQuery;
-            if (roleFilter) params.role = roleFilter;
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
-            const { data } = await axios.get('/api/admin/users', { params });
-            setUsers(data.data.users || []);
-
-            const apiPagination = data.data.pagination;
-            setPagination({
-                page: apiPagination.current_page,
-                pageSize: apiPagination.per_page,
-                total: apiPagination.total_records,
-                from: apiPagination.from,
-                to: apiPagination.to,
-                totalPages: apiPagination.total_pages,
-            });
-
-            // Extract available roles from first user or fetch separately
-            if (data.data.roles) {
-                setAvailableRoles(
-                    Object.entries(data.data.roles).map(([id, role]) => {
-                        const r = role as { name: string; display_name: string; color: string };
-                        return {
-                            id: String(id),
-                            name: r.name,
-                            display_name: r.display_name,
-                            color: r.color,
-                        };
-                    }),
-                );
-            }
-        } catch {
-            toast.error(t('admin.users.messages.fetch_failed'));
-        } finally {
-            setLoading(false);
-        }
-    }, [pagination.page, pagination.pageSize, searchQuery, roleFilter, t]);
-
+    // Debounce search query
     useEffect(() => {
-        fetchUsers();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pagination.page, roleFilter]);
-
-    // Debounced search effect
-    useEffect(() => {
-        if (searchDebounce) {
-            clearTimeout(searchDebounce);
-        }
-
-        const timeout = setTimeout(() => {
-            if (pagination.page !== 1) {
-                setPagination({ ...pagination, page: 1 });
-            } else {
-                fetchUsers();
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+            if (searchQuery !== debouncedSearchQuery) {
+                setPagination((prev) => ({ ...prev, page: 1 }));
             }
         }, 500);
 
-        setSearchDebounce(timeout);
+        return () => clearTimeout(timer);
+    }, [debouncedSearchQuery, searchQuery]);
 
-        return () => {
-            if (searchDebounce) {
-                clearTimeout(searchDebounce);
+    // Fetch users when pagination, role, or debounced search changes
+    useEffect(() => {
+        const controller = new AbortController();
+        const fetchUsers = async () => {
+            setLoading(true);
+            try {
+                const { data } = await axios.get('/api/admin/users', {
+                    params: {
+                        page: pagination.page,
+                        limit: pagination.pageSize,
+                        search: debouncedSearchQuery || undefined,
+                        role: roleFilter || undefined,
+                    },
+                    signal: controller.signal,
+                });
+
+                if (data?.success) {
+                    setUsers(data.data.users || []);
+                    setAvailableRoles(data.data.roles || []);
+                    const apiPagination = data.data.pagination;
+                    setPagination((prev) => ({
+                        ...prev,
+                        page: apiPagination.current_page,
+                        pageSize: apiPagination.per_page,
+                        total: apiPagination.total_records,
+                        totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
+                        hasNext: apiPagination.has_next,
+                        hasPrev: apiPagination.has_prev,
+                    }));
+                    if (data.data.roles) {
+                        setAvailableRoles(
+                            Object.entries(data.data.roles).map(([id, role]) => {
+                                const r = role as { name: string; display_name: string; color: string };
+                                return {
+                                    id: String(id),
+                                    name: r.name,
+                                    display_name: r.display_name,
+                                    color: r.color,
+                                };
+                            }),
+                        );
+                    }
+                } else {
+                    toast.error(data?.message || t('admin.users.messages.fetch_failed'));
+                    setUsers([]);
+                }
+            } catch (error) {
+                if (!axios.isCancel(error)) {
+                    toast.error(t('admin.users.messages.fetch_failed'));
+                }
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
             }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery]);
+
+        fetchUsers();
+
+        return () => {
+            controller.abort();
+        };
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, roleFilter, refreshKey, t]);
 
     const handleDeleteUser = async (user: ApiUser) => {
         if (!confirm(t('admin.users.messages.delete_confirm', { username: user.username }))) {
@@ -194,7 +199,7 @@ export default function UsersPage() {
             const { data } = await axios.delete(`/api/admin/users/${user.uuid}`);
             if (data?.success) {
                 toast.success(t('admin.users.messages.deleted'));
-                fetchUsers();
+                setRefreshKey((prev) => prev + 1);
             } else {
                 toast.error(data?.message || t('admin.users.messages.delete_failed'));
             }
@@ -285,7 +290,7 @@ export default function UsersPage() {
 
             {/* Users Grid */}
             {loading ? (
-                <EmptyState title={t('admin.users.loading')} description={t('admin.users.loading')} icon={RefreshCw} />
+                <TableSkeleton count={5} />
             ) : users.length === 0 ? (
                 <EmptyState
                     title={t('admin.users.no_results')}
