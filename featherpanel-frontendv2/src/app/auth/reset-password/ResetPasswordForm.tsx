@@ -37,6 +37,8 @@ import { useSettings } from '@/contexts/SettingsContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import Turnstile from 'react-turnstile'
 import axios from 'axios'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 
 export default function ResetPasswordForm() {
   const router = useRouter()
@@ -45,6 +47,11 @@ export default function ResetPasswordForm() {
   const { settings } = useSettings()
   const { theme } = useTheme()
   const token = searchParams.get('token')
+  const { getWidgets, fetchWidgets } = usePluginWidgets('auth-reset-password')
+
+  useEffect(() => {
+    fetchWidgets()
+  }, [fetchWidgets])
   
   const [form, setForm] = useState({
     password: '',
@@ -200,6 +207,7 @@ export default function ResetPasswordForm() {
 
   return (
     <div className="space-y-6">
+      <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-top')} />
       {/* Header */}
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold tracking-tight">{t('auth.reset_password.title')}</h2>
@@ -208,6 +216,7 @@ export default function ResetPasswordForm() {
         </p>
       </div>
 
+      <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-before-form')} />
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           label={t('auth.reset_password.new_password')}
@@ -275,6 +284,7 @@ export default function ResetPasswordForm() {
           </div>
         )}
       </form>
+      <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-after-form')} />
 
       {/* Footer */}
       <div className="text-center text-sm text-muted-foreground">
@@ -287,6 +297,7 @@ export default function ResetPasswordForm() {
           {t('auth.reset_password.sign_in')}
         </button>
       </div>
+      <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-bottom')} />
     </div>
   )
 }

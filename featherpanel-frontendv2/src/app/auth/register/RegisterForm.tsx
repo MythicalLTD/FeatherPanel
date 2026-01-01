@@ -37,12 +37,20 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import Turnstile from 'react-turnstile'
 import { authApi } from '@/lib/api/auth'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
+import { useEffect } from 'react'
 
 export default function RegisterForm() {
   const router = useRouter()
   const { settings } = useSettings()
   const { t } = useTranslation()
   const { theme } = useTheme()
+  const { getWidgets, fetchWidgets } = usePluginWidgets('auth-register')
+
+  useEffect(() => {
+    fetchWidgets()
+  }, [fetchWidgets])
   
   const [form, setForm] = useState({
     first_name: '',
@@ -195,6 +203,7 @@ export default function RegisterForm() {
 
   return (
     <div className="space-y-6">
+      <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-top')} />
       {/* Header */}
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold tracking-tight">{t('auth.register.title')}</h2>
@@ -203,6 +212,7 @@ export default function RegisterForm() {
         </p>
       </div>
 
+      <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-before-form')} />
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
@@ -304,6 +314,7 @@ export default function RegisterForm() {
           </div>
         )}
       </form>
+      <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-after-form')} />
 
       {/* Footer */}
       <div className="text-center text-sm text-muted-foreground">
@@ -315,6 +326,7 @@ export default function RegisterForm() {
           {t('auth.register.sign_in')}
         </Link>
       </div>
+      <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-bottom')} />
     </div>
   )
 }

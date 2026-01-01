@@ -37,12 +37,19 @@ import { useSettings } from '@/contexts/SettingsContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import Turnstile from 'react-turnstile'
 import axios from 'axios'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
 
 export default function SetupTwoFactorForm() {
   const router = useRouter()
   const { t } = useTranslation()
   const { settings } = useSettings()
   const { theme } = useTheme()
+  const { getWidgets, fetchWidgets } = usePluginWidgets('auth-setup-2fa')
+
+  useEffect(() => {
+    fetchWidgets()
+  }, [fetchWidgets])
 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -193,6 +200,7 @@ export default function SetupTwoFactorForm() {
 
   return (
     <div className="space-y-6">
+      <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-top')} />
       {/* Header */}
       <div className="text-center space-y-3">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2">
@@ -204,6 +212,7 @@ export default function SetupTwoFactorForm() {
         </p>
       </div>
 
+      <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-before-form')} />
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* QR Code */}
         <div className="flex justify-center p-6 bg-white dark:bg-muted/20 rounded-2xl border border-border/50">
@@ -302,6 +311,8 @@ export default function SetupTwoFactorForm() {
           )}
         </div>
       </form>
+      <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-after-form')} />
+      <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-bottom')} />
     </div>
   )
 }

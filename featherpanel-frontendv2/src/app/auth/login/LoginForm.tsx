@@ -38,6 +38,9 @@ import { useSession } from '@/contexts/SessionContext'
 import { Mail, Lock, ArrowRight } from 'lucide-react'
 import Turnstile from 'react-turnstile'
 import { authApi } from '@/lib/api/auth'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
+import { useEffect } from 'react'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -46,6 +49,11 @@ export default function LoginForm() {
   const { settings } = useSettings()
   const { theme } = useTheme()
   const { fetchSession } = useSession()
+  const { getWidgets, fetchWidgets } = usePluginWidgets('auth-login')
+
+  useEffect(() => {
+    fetchWidgets()
+  }, [fetchWidgets])
 
   
   const [form, setForm] = useState({
@@ -203,6 +211,7 @@ export default function LoginForm() {
 
   return (
     <div className="space-y-6">
+      <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-top')} />
       {/* Header */}
       {!isSsoLogin && (
         <div className="text-center space-y-2">
@@ -232,6 +241,7 @@ export default function LoginForm() {
         </div>
       ) : (
       <>
+      <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-before-form')} />
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           label={t('auth.login.username')}
@@ -310,6 +320,7 @@ export default function LoginForm() {
           </div>
         )}
       </form>
+      <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-after-form')} />
 
       {/* Discord Login - Only show if enabled */}
       {discordEnabled && (

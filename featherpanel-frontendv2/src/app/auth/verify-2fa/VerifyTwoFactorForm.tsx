@@ -34,11 +34,19 @@ import { Input } from '@/components/ui/input'
 import { ShieldCheck, ArrowRight } from 'lucide-react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import axios from 'axios'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
+import { useEffect } from 'react'
 
 export default function VerifyTwoFactorForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { t } = useTranslation()
+  const { getWidgets, fetchWidgets } = usePluginWidgets('auth-verify-2fa')
+
+  useEffect(() => {
+    fetchWidgets()
+  }, [fetchWidgets])
   
   // Support both legacy 'email' and new 'username_or_email' query params
   const email = searchParams.get('email') || searchParams.get('username_or_email') || ''
@@ -102,6 +110,7 @@ export default function VerifyTwoFactorForm() {
 
   return (
     <div className="space-y-6">
+      <WidgetRenderer widgets={getWidgets('auth-verify-2fa', 'auth-verify-2fa-top')} />
       {/* Header */}
       <div className="text-center space-y-3">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2">
@@ -113,6 +122,7 @@ export default function VerifyTwoFactorForm() {
         </p>
       </div>
 
+      <WidgetRenderer widgets={getWidgets('auth-verify-2fa', 'auth-verify-2fa-before-form')} />
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           label={t('auth.verify_2fa.code')}
@@ -152,6 +162,7 @@ export default function VerifyTwoFactorForm() {
           </div>
         )}
       </form>
+      <WidgetRenderer widgets={getWidgets('auth-verify-2fa', 'auth-verify-2fa-after-form')} />
 
       {/* Footer */}
       <div className="text-center text-sm text-muted-foreground">
@@ -164,6 +175,7 @@ export default function VerifyTwoFactorForm() {
           {t('auth.verify_2fa.go_back')}
         </button>
       </div>
+      <WidgetRenderer widgets={getWidgets('auth-verify-2fa', 'auth-verify-2fa-bottom')} />
     </div>
   )
 }

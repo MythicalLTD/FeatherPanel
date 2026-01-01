@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "eslint --fix && next build",
     "start": "next start",
-    "lint": "eslint --fix"
+    "lint": "eslint --fix",
+	"gen:widget:docs": "node scripts/export-widget-docs.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

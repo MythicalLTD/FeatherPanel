@@ -38,12 +38,20 @@ import { useSettings } from '@/contexts/SettingsContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import Turnstile from 'react-turnstile'
 import { authApi } from '@/lib/api/auth'
+import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { WidgetRenderer } from '@/components/server/WidgetRenderer'
+import { useEffect } from 'react'
 
 export default function ForgotPasswordForm() {
   const router = useRouter()
   const { t } = useTranslation()
   const { settings } = useSettings()
   const { theme } = useTheme()
+  const { getWidgets, fetchWidgets } = usePluginWidgets('auth-forgot-password')
+
+  useEffect(() => {
+    fetchWidgets()
+  }, [fetchWidgets])
 
   const [form, setForm] = useState({
     email: '',
@@ -125,6 +133,7 @@ export default function ForgotPasswordForm() {
   return (
     <>
       <div className="space-y-6">
+        <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-top')} />
         {/* Header */}
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold tracking-tight">{t('auth.forgot_password.title')}</h2>
@@ -133,6 +142,7 @@ export default function ForgotPasswordForm() {
           </p>
         </div>
 
+        <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-before-form')} />
         <form onSubmit={handleSubmit} className="space-y-5">
           <Input
             label={t('auth.forgot_password.email')}
@@ -184,6 +194,7 @@ export default function ForgotPasswordForm() {
             </div>
           )}
         </form>
+        <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-after-form')} />
 
         {/* Footer */}
         <div className="text-center text-sm text-muted-foreground">
@@ -195,6 +206,7 @@ export default function ForgotPasswordForm() {
             {t('auth.forgot_password.sign_in')}
           </Link>
         </div>
+        <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-bottom')} />
       </div>
 
       {/* Success Dialog */}
