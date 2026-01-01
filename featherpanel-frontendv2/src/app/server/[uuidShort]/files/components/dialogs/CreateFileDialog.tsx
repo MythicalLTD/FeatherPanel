@@ -24,9 +24,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import { useState } from "react";
-import { Button } from "@/components/featherui/Button";
-import { Input } from "@/components/featherui/Input";
+import { useState } from 'react';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
 import {
     Dialog,
     DialogContent,
@@ -34,9 +34,9 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { filesApi } from "@/lib/files-api";
-import { useTranslation } from "@/contexts/TranslationContext";
+} from '@/components/ui/dialog';
+import { filesApi } from '@/lib/files-api';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface CreateFileDialogProps {
     open: boolean;
@@ -48,8 +48,8 @@ interface CreateFileDialogProps {
 
 export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: CreateFileDialogProps) {
     const { t } = useTranslation();
-    const [name, setName] = useState("");
-    const [content, setContent] = useState("");
+    const [name, setName] = useState('');
+    const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -59,10 +59,10 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
         setLoading(true);
         try {
             // Need to handle path join correctly
-            const path = root === "/" ? name : `${root}/${name}`;
+            const path = root === '/' ? name : `${root}/${name}`;
             await filesApi.saveFileContent(uuid, path, content);
-            setName("");
-            setContent("");
+            setName('');
+            setContent('');
             onSuccess();
             onOpenChange(false);
         } catch (error) {
@@ -74,40 +74,38 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-xl">
+            <DialogContent className='sm:max-w-xl'>
                 <DialogHeader>
-                    <DialogTitle>{t("files.dialogs.create_file.title")}</DialogTitle>
-                    <DialogDescription>
-                        {t("files.dialogs.create_file.description", { root: root })}
-                    </DialogDescription>
+                    <DialogTitle>{t('files.dialogs.create_file.title')}</DialogTitle>
+                    <DialogDescription>{t('files.dialogs.create_file.description', { root: root })}</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">{t("files.dialogs.create_file.name_label")}</label>
-                         <Input
-                            placeholder={t("files.dialogs.create_file.name_placeholder")}
+                <form onSubmit={handleSubmit} className='space-y-4'>
+                    <div className='space-y-2'>
+                        <label className='text-sm font-medium'>{t('files.dialogs.create_file.name_label')}</label>
+                        <Input
+                            placeholder={t('files.dialogs.create_file.name_placeholder')}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             autoFocus
                         />
                     </div>
-                    <div className="space-y-2">
-                         <label className="text-sm font-medium">{t("files.dialogs.create_file.content_label")}</label>
-                         {/* Fallback to textarea usually implies standard HTML textarea styled with Tailwind */}
-                         <textarea
-                            className="flex min-h-[150px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            placeholder={t("files.dialogs.create_file.content_placeholder")}
+                    <div className='space-y-2'>
+                        <label className='text-sm font-medium'>{t('files.dialogs.create_file.content_label')}</label>
+                        {/* Fallback to textarea usually implies standard HTML textarea styled with Tailwind */}
+                        <textarea
+                            className='flex min-h-[150px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
+                            placeholder={t('files.dialogs.create_file.content_placeholder')}
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                         />
+                        />
                     </div>
-                   
+
                     <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                            {t("files.dialogs.create_file.cancel")}
+                        <Button type='button' variant='ghost' onClick={() => onOpenChange(false)}>
+                            {t('files.dialogs.create_file.cancel')}
                         </Button>
-                        <Button type="submit" disabled={!name || loading}>
-                            {loading ? t("files.dialogs.create_file.creating") : t("files.dialogs.create_file.create")}
+                        <Button type='submit' disabled={!name || loading}>
+                            {loading ? t('files.dialogs.create_file.creating') : t('files.dialogs.create_file.create')}
                         </Button>
                     </DialogFooter>
                 </form>

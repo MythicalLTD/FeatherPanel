@@ -24,25 +24,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-'use client'
+'use client';
 
-import React from 'react'
-import { Server, Users, HardDrive, Scroll } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useTranslation } from '@/contexts/TranslationContext'
+import React from 'react';
+import { Server, Users, HardDrive, Scroll } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface QuickStatsWidgetProps {
     stats?: {
-        servers: number
-        users: number
-        nodes: number
-        spells: number
-    }
-    loading?: boolean
+        servers: number;
+        users: number;
+        nodes: number;
+        spells: number;
+    };
+    loading?: boolean;
 }
 
 export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
-    const { t } = useTranslation()
+    const { t } = useTranslation();
 
     const items = [
         {
@@ -51,7 +51,7 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
             icon: Server,
             color: 'text-indigo-500',
             bg: 'bg-indigo-500/10',
-            border: 'border-indigo-500/20'
+            border: 'border-indigo-500/20',
         },
         {
             name: t('admin.stats.total_users'),
@@ -59,7 +59,7 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
             icon: Users,
             color: 'text-emerald-500',
             bg: 'bg-emerald-500/10',
-            border: 'border-emerald-500/20'
+            border: 'border-emerald-500/20',
         },
         {
             name: t('admin.stats.total_nodes'),
@@ -67,7 +67,7 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
             icon: HardDrive,
             color: 'text-amber-500',
             bg: 'bg-amber-500/10',
-            border: 'border-amber-500/20'
+            border: 'border-amber-500/20',
         },
         {
             name: t('admin.stats.total_spells'),
@@ -75,26 +75,34 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
             icon: Scroll,
             color: 'text-pink-500',
             bg: 'bg-pink-500/10',
-            border: 'border-pink-500/20'
-        }
-    ]
+            border: 'border-pink-500/20',
+        },
+    ];
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8'>
             {items.map((item, index) => (
-                <div 
-                    key={index} 
-                    className="group relative p-5 rounded-3xl bg-card/20 border border-border/40 backdrop-blur-3xl hover:border-primary/30 transition-all duration-300"
+                <div
+                    key={index}
+                    className='group relative p-5 rounded-3xl bg-card/20 border border-border/40 backdrop-blur-3xl hover:border-primary/30 transition-all duration-300'
                 >
-                    <div className="flex items-center gap-4">
-                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border border-white/5", item.bg, item.color)}>
-                            <item.icon className="h-5 w-5" />
+                    <div className='flex items-center gap-4'>
+                        <div
+                            className={cn(
+                                'h-10 w-10 rounded-xl flex items-center justify-center border border-white/5',
+                                item.bg,
+                                item.color,
+                            )}
+                        >
+                            <item.icon className='h-5 w-5' />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">{item.name}</p>
-                            <h3 className="text-xl font-black">
+                            <p className='text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
+                                {item.name}
+                            </p>
+                            <h3 className='text-xl font-black'>
                                 {loading ? (
-                                    <div className="h-6 w-12 bg-muted animate-pulse rounded-md mt-1" />
+                                    <div className='h-6 w-12 bg-muted animate-pulse rounded-md mt-1' />
                                 ) : (
                                     item.value.toLocaleString()
                                 )}
@@ -104,5 +112,5 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
                 </div>
             ))}
         </div>
-    )
+    );
 }

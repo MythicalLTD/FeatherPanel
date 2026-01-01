@@ -24,34 +24,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import eslintConfigPrettier from 'eslint-config-prettier';
+import nextTs from 'eslint-config-next/typescript';
 
 const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  {
-    plugins: {
-      local: {
-        rules: {
-          "license-header": (await import("./eslint-rules/license-header.js"))
-            .default,
+    ...nextVitals,
+    eslintConfigPrettier,
+    ...nextTs,
+    {
+        plugins: {
+            local: {
+                rules: {
+                    'license-header': (await import('./eslint-rules/license-header.js')).default,
+                },
+            },
         },
-      },
+        rules: {
+            'local/license-header': 'error',
+        },
     },
-    rules: {
-      "local/license-header": "error",
-    },
-  },
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
+    // Override default ignores of eslint-config-next.
+    globalIgnores([
+        // Default ignores of eslint-config-next:
+        '.next/**',
+        'out/**',
+        'build/**',
+        'next-env.d.ts',
+    ]),
 ]);
 
 export default eslintConfig;

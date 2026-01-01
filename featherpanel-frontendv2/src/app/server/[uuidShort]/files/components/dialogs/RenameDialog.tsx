@@ -24,18 +24,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/featherui/Button";
-import { Input } from "@/components/featherui/Input";
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { filesApi } from "@/lib/files-api";
-import { useTranslation } from "@/contexts/TranslationContext";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { filesApi } from '@/lib/files-api';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface RenameDialogProps {
     open: boolean;
@@ -77,20 +71,16 @@ export function RenameDialog({ open, onOpenChange, uuid, root, fileName, onSucce
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{t("files.dialogs.rename.title")}</DialogTitle>
+                    <DialogTitle>{t('files.dialogs.rename.title')}</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <Input
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        autoFocus
-                    />
+                <form onSubmit={handleSubmit} className='space-y-4'>
+                    <Input value={newName} onChange={(e) => setNewName(e.target.value)} autoFocus />
                     <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                            {t("files.dialogs.rename.cancel")}
+                        <Button type='button' variant='ghost' onClick={() => onOpenChange(false)}>
+                            {t('files.dialogs.rename.cancel')}
                         </Button>
-                        <Button type="submit" disabled={!newName || newName === fileName || loading}>
-                            {loading ? t("files.dialogs.rename.renaming") : t("files.dialogs.rename.rename")}
+                        <Button type='submit' disabled={!newName || newName === fileName || loading}>
+                            {loading ? t('files.dialogs.rename.renaming') : t('files.dialogs.rename.rename')}
                         </Button>
                     </DialogFooter>
                 </form>

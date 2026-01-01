@@ -24,16 +24,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import { Metadata } from 'next'
+import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Login',
-}
+    title: 'Login',
+};
 
-export default function LoginLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return children
+export default function LoginLayout({ children }: { children: React.ReactNode }) {
+    return children;
 }

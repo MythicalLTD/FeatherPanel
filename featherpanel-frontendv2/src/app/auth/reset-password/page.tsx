@@ -24,19 +24,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-'use client'
+'use client';
 
-import { Suspense } from 'react'
-import ResetPasswordForm from './ResetPasswordForm'
+import { Suspense } from 'react';
+import ResetPasswordForm from './ResetPasswordForm';
 
 export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-      </div>
-    }>
-      <ResetPasswordForm />
-    </Suspense>
-  )
+    return (
+        <Suspense
+            fallback={
+                <div className='flex items-center justify-center p-8'>
+                    <div className='animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent' />
+                </div>
+            }
+        >
+            <ResetPasswordForm />
+        </Suspense>
+    );
 }

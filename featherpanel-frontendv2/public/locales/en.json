@@ -2479,6 +2479,57 @@
 				"delete_confirm": "Are you sure you want to delete user {username}?",
 				"updating": "Updating user..."
 			}
+		},
+		"notifications": {
+			"title": "Notifications",
+			"subtitle": "Manage platform-wide announcements and alerts.",
+			"search_placeholder": "Search notifications...",
+			"create": "Create Notification",
+			"loading": "Loading notifications...",
+			"no_results": "No notifications found",
+			"refresh": "Refresh",
+			"clear_filters": "Clear Filters",
+			"view": "View",
+			"edit": "Edit",
+			"delete": "Delete",
+			"created_at": "Created At",
+			"type": "Type",
+			"message": "Message",
+			"dismissible": "Dismissible",
+			"sticky": "Sticky",
+			"non_dismissible": "Non-dismissible",
+			"not_sticky": "Not Sticky",
+			"types": {
+				"info": "Info",
+				"warning": "Warning",
+				"danger": "Danger",
+				"success": "Success",
+				"error": "Error"
+			},
+			"form": {
+				"title": "Title",
+				"type": "Type",
+				"message": "Message (Markdown)",
+				"dismissible": "Allow users to dismiss",
+				"sticky": "Sticky (Always visible)",
+				"create_title": "Create Notification",
+				"create_description": "Create a new notification to display to users.",
+				"edit_title": "Edit Notification",
+				"edit_description": "Update existing notification details.",
+				"view_title": "Notification Details",
+				"submit_create": "Create Notification",
+				"submit_update": "Save Changes"
+			},
+			"messages": {
+				"created": "Notification created successfully",
+				"updated": "Notification updated successfully",
+				"deleted": "Notification deleted successfully",
+				"create_failed": "Failed to create notification",
+				"update_failed": "Failed to update notification",
+				"delete_failed": "Failed to delete notification",
+				"delete_confirm": "Are you sure you want to delete this notification?",
+				"fetch_failed": "Failed to fetch notifications"
+			}
 		}
 	},
 	"landing": {

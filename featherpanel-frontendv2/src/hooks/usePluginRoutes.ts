@@ -24,12 +24,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import { useState, useEffect } from "react";
-import axios from "axios";
-import type { PluginSidebarResponse } from "@/types/navigation";
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import type { PluginSidebarResponse } from '@/types/navigation';
 
 // Global cache to share across all components
-let cachedPluginData: PluginSidebarResponse["data"]["sidebar"] | null = null;
+let cachedPluginData: PluginSidebarResponse['data']['sidebar'] | null = null;
 let isLoading = false;
 let loadPromise: Promise<void> | null = null;
 
@@ -38,94 +38,84 @@ let loadPromise: Promise<void> | null = null;
  * Uses a global cache to ensure the API is only called once across all components
  */
 export function usePluginRoutes() {
-  const [pluginData, setPluginData] = useState<
-    PluginSidebarResponse["data"]["sidebar"] | null
-  >(cachedPluginData);
+    const [pluginData, setPluginData] = useState<PluginSidebarResponse['data']['sidebar'] | null>(cachedPluginData);
 
-  useEffect(() => {
-    // If we already have cached data, use it
-    if (cachedPluginData) {
-      setPluginData(cachedPluginData);
-      return;
-    }
-
-    // If already loading, wait for that promise
-    if (isLoading && loadPromise) {
-      loadPromise.then(() => setPluginData(cachedPluginData));
-      return;
-    }
-
-    // Start loading
-    isLoading = true;
-    loadPromise = (async () => {
-      try {
-        const { data } = await axios
-          .get<PluginSidebarResponse>("/api/system/plugin-sidebar")
-          .catch(() => ({ data: { success: false, data: null } }));
-
-        if (data.success && data.data?.sidebar) {
-          cachedPluginData = data.data.sidebar;
-          setPluginData(data.data.sidebar);
+    useEffect(() => {
+        // If we already have cached data, use it
+        if (cachedPluginData) {
+            setPluginData(cachedPluginData);
+            return;
         }
-      } catch (error) {
-        console.error("Failed to fetch plugin sidebar", error);
-      } finally {
-        isLoading = false;
-        loadPromise = null;
-      }
-    })();
 
-    loadPromise.then(() => setPluginData(cachedPluginData));
-  }, []);
+        // If already loading, wait for that promise
+        if (isLoading && loadPromise) {
+            loadPromise.then(() => setPluginData(cachedPluginData));
+            return;
+        }
 
-  return pluginData;
+        // Start loading
+        isLoading = true;
+        loadPromise = (async () => {
+            try {
+                const { data } = await axios
+                    .get<PluginSidebarResponse>('/api/system/plugin-sidebar')
+                    .catch(() => ({ data: { success: false, data: null } }));
+
+                if (data.success && data.data?.sidebar) {
+                    cachedPluginData = data.data.sidebar;
+                    setPluginData(data.data.sidebar);
+                }
+            } catch (error) {
+                console.error('Failed to fetch plugin sidebar', error);
+            } finally {
+                isLoading = false;
+                loadPromise = null;
+            }
+        })();
+
+        loadPromise.then(() => setPluginData(cachedPluginData));
+    }, []);
+
+    return pluginData;
 }
 
 /**
  * Get all plugin paths for layout detection
  */
-export function getPluginPaths(
-  pluginData: PluginSidebarResponse["data"]["sidebar"] | null
-): string[] {
-  if (!pluginData) return [];
+export function getPluginPaths(pluginData: PluginSidebarResponse['data']['sidebar'] | null): string[] {
+    if (!pluginData) return [];
 
-  const paths: string[] = [];
+    const paths: string[] = [];
 
-  // Extract client plugin paths
-  if (pluginData.client) {
-    Object.values(pluginData.client).forEach((item) => {
-      if (item.redirect) {
-        const redirectPath = item.redirect.startsWith("/")
-          ? item.redirect
-          : `/${item.redirect}`;
-        paths.push(`/dashboard${redirectPath}`);
-      }
-    });
-  }
+    // Extract client plugin paths
+    if (pluginData.client) {
+        Object.values(pluginData.client).forEach((item) => {
+            if (item.redirect) {
+                const redirectPath = item.redirect.startsWith('/') ? item.redirect : `/${item.redirect}`;
+                paths.push(`/dashboard${redirectPath}`);
+            }
+        });
+    }
 
-  // Extract admin plugin paths
-  if (pluginData.admin) {
-    Object.values(pluginData.admin).forEach((item) => {
-      if (item.redirect) {
-        const redirectPath = item.redirect.startsWith("/")
-          ? item.redirect
-          : `/${item.redirect}`;
-        paths.push(`/admin${redirectPath}`);
-      }
-    });
-  }
+    // Extract admin plugin paths
+    if (pluginData.admin) {
+        Object.values(pluginData.admin).forEach((item) => {
+            if (item.redirect) {
+                const redirectPath = item.redirect.startsWith('/') ? item.redirect : `/${item.redirect}`;
+                paths.push(`/admin${redirectPath}`);
+            }
+        });
+    }
 
-  // Extract server plugin paths
-  if (pluginData.server) {
-    Object.values(pluginData.server).forEach((item) => {
-      if (item.redirect) {
-        const redirectPath = item.redirect.startsWith("/")
-          ? item.redirect
-          : `/${item.redirect}`;
-        paths.push(redirectPath);
-      }
-    });
-  }
+    // Extract server plugin paths
+    if (pluginData.server) {
+        Object.values(pluginData.server).forEach((item) => {
+            if (item.redirect) {
+                const redirectPath = item.redirect.startsWith('/') ? item.redirect : `/${item.redirect}`;
+                paths.push(redirectPath);
+            }
+        });
+    }
 
-  return paths;
+    return paths;
 }

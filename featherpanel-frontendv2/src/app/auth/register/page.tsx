@@ -24,15 +24,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-'use client'
+'use client';
 
-import { Suspense } from 'react'
-import RegisterForm from './RegisterForm'
+import { Suspense } from 'react';
+import RegisterForm from './RegisterForm';
 
 export default function RegisterPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <RegisterForm />
-    </Suspense>
-  )
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <RegisterForm />
+        </Suspense>
+    );
 }

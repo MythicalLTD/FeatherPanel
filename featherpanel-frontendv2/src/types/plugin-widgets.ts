@@ -24,102 +24,102 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export type PluginWidgetSizePreset = "full" | "half" | "third" | "quarter";
+export type PluginWidgetSizePreset = 'full' | 'half' | 'third' | 'quarter';
 
 export interface PluginWidgetSizeConfig {
-  default?: number;
-  sm?: number;
-  md?: number;
-  lg?: number;
-  xl?: number;
+    default?: number;
+    sm?: number;
+    md?: number;
+    lg?: number;
+    xl?: number;
 }
 
 export interface PluginWidgetLayoutConfig {
-  columns?: number;
-  sm?: number;
-  md?: number;
-  lg?: number;
-  xl?: number;
-  rowSpan?: number;
-  colSpan?: number;
+    columns?: number;
+    sm?: number;
+    md?: number;
+    lg?: number;
+    xl?: number;
+    rowSpan?: number;
+    colSpan?: number;
 }
 
 export interface PluginWidgetHeaderConfig {
-  show?: boolean;
-  title?: string | null;
-  description?: string | null;
-  icon?: string | null;
+    show?: boolean;
+    title?: string | null;
+    description?: string | null;
+    icon?: string | null;
 }
 
 export interface PluginWidgetFooterConfig {
-  show?: boolean;
-  text?: string | null;
+    show?: boolean;
+    text?: string | null;
 }
 
-export type PluginWidgetCardVariant = "default" | "outline" | "ghost" | "soft";
-export type PluginWidgetCardPadding = "none" | "sm" | "md" | "lg";
+export type PluginWidgetCardVariant = 'default' | 'outline' | 'ghost' | 'soft';
+export type PluginWidgetCardPadding = 'none' | 'sm' | 'md' | 'lg';
 
 export interface PluginWidgetCardConfig {
-  enabled?: boolean;
-  variant?: PluginWidgetCardVariant;
-  padding?: PluginWidgetCardPadding;
-  header?: PluginWidgetHeaderConfig;
-  bodyClass?: string;
-  footer?: PluginWidgetFooterConfig;
+    enabled?: boolean;
+    variant?: PluginWidgetCardVariant;
+    padding?: PluginWidgetCardPadding;
+    header?: PluginWidgetHeaderConfig;
+    bodyClass?: string;
+    footer?: PluginWidgetFooterConfig;
 }
 
 export interface PluginWidgetBehaviorConfig {
-  loadingMessage?: string;
-  errorMessage?: string;
-  retryLabel?: string;
-  emptyStateMessage?: string;
+    loadingMessage?: string;
+    errorMessage?: string;
+    retryLabel?: string;
+    emptyStateMessage?: string;
 }
 
 export interface PluginWidgetIframeConfig {
-  minHeight?: string;
-  maxHeight?: string;
-  sandbox?: string;
-  allow?: string;
-  loading?: "eager" | "lazy";
-  referrerPolicy?: string;
-  title?: string;
-  ariaLabel?: string;
+    minHeight?: string;
+    maxHeight?: string;
+    sandbox?: string;
+    allow?: string;
+    loading?: 'eager' | 'lazy';
+    referrerPolicy?: string;
+    title?: string;
+    ariaLabel?: string;
 }
 
 export interface PluginWidgetClassConfig {
-  container?: string;
-  card?: string;
-  header?: string;
-  content?: string;
-  iframe?: string;
-  footer?: string;
+    container?: string;
+    card?: string;
+    header?: string;
+    content?: string;
+    iframe?: string;
+    footer?: string;
 }
 
 export interface PluginWidget {
-  id: string;
-  plugin: string;
-  pluginName: string;
-  component: string;
-  enabled: boolean;
-  priority: number;
-  page: string;
-  location: string;
-  title?: string | null;
-  description?: string | null;
-  icon?: string | null;
-  size?: PluginWidgetSizePreset | PluginWidgetSizeConfig;
-  layout?: PluginWidgetLayoutConfig | null;
-  card?: PluginWidgetCardConfig | null;
-  behavior?: PluginWidgetBehaviorConfig | null;
-  iframe?: PluginWidgetIframeConfig | null;
-  classes?: PluginWidgetClassConfig | null;
-  useRawRendering: boolean;
+    id: string;
+    plugin: string;
+    pluginName: string;
+    component: string;
+    enabled: boolean;
+    priority: number;
+    page: string;
+    location: string;
+    title?: string | null;
+    description?: string | null;
+    icon?: string | null;
+    size?: PluginWidgetSizePreset | PluginWidgetSizeConfig;
+    layout?: PluginWidgetLayoutConfig | null;
+    card?: PluginWidgetCardConfig | null;
+    behavior?: PluginWidgetBehaviorConfig | null;
+    iframe?: PluginWidgetIframeConfig | null;
+    classes?: PluginWidgetClassConfig | null;
+    useRawRendering: boolean;
 }
 
 export interface WidgetsByLocation {
-  [location: string]: PluginWidget[];
+    [location: string]: PluginWidget[];
 }
 
 export interface WidgetsByPage {
-  [page: string]: WidgetsByLocation;
+    [page: string]: WidgetsByLocation;
 }

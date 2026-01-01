@@ -24,26 +24,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-'use client'
+'use client';
 
-import { Suspense } from 'react'
-import { useTranslation } from '@/contexts/TranslationContext'
-import TopLoadingBar from '@/components/common/TopLoadingBar'
-import AppPreloader from '@/components/common/AppPreloader'
+import { Suspense } from 'react';
+import { useTranslation } from '@/contexts/TranslationContext';
+import TopLoadingBar from '@/components/common/TopLoadingBar';
+import AppPreloader from '@/components/common/AppPreloader';
 
 export default function AppContent({ children }: { children: React.ReactNode }) {
-	const { initialLoading } = useTranslation()
+    const { initialLoading } = useTranslation();
 
-	if (initialLoading) {
-		return <AppPreloader />
-	}
+    if (initialLoading) {
+        return <AppPreloader />;
+    }
 
-	return (
-		<div className="">
-			<Suspense fallback={null}>
-				<TopLoadingBar />
-			</Suspense>
-			{children}
-		</div>
-	)
+    return (
+        <div className=''>
+            <Suspense fallback={null}>
+                <TopLoadingBar />
+            </Suspense>
+            {children}
+        </div>
+    );
 }

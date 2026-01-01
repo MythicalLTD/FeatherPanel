@@ -55,16 +55,17 @@ export function JavaVersionDialog({ isOpen, onClose, server, detectedIssue, onUp
     const availableDockerImages = useMemo(() => {
         if (!server.spell?.docker_images) return [];
         try {
-            const images = typeof server.spell.docker_images === 'string' 
-                ? JSON.parse(server.spell.docker_images) 
-                : server.spell.docker_images;
-            
-            return Object.entries(images).map(([label, value]) => ({ 
-                label, 
-                value: value as string 
+            const images =
+                typeof server.spell.docker_images === 'string'
+                    ? JSON.parse(server.spell.docker_images)
+                    : server.spell.docker_images;
+
+            return Object.entries(images).map(([label, value]) => ({
+                label,
+                value: value as string,
             }));
         } catch (e) {
-            console.error("Failed to parse docker images", e);
+            console.error('Failed to parse docker images', e);
             return [];
         }
     }, [server.spell]);
@@ -97,40 +98,36 @@ export function JavaVersionDialog({ isOpen, onClose, server, detectedIssue, onUp
         <Dialog open={isOpen} onClose={onClose}>
             <DialogHeader>
                 <DialogTitle>{t('features.javaVersion.title')}</DialogTitle>
-                <DialogDescription>
-                    {t('features.javaVersion.description')}
-                </DialogDescription>
+                <DialogDescription>{t('features.javaVersion.description')}</DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className='space-y-4 py-4'>
                 {detectedIssue && (
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                        <p className="text-sm text-red-800 dark:text-red-200">
-                            {detectedIssue}
-                        </p>
+                    <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4'>
+                        <p className='text-sm text-red-800 dark:text-red-200'>{detectedIssue}</p>
                     </div>
                 )}
 
-                <div className="space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                        {t('features.javaVersion.recommendation')}
-                    </p>
+                <div className='space-y-3'>
+                    <p className='text-sm text-muted-foreground'>{t('features.javaVersion.recommendation')}</p>
 
                     {availableDockerImages.length > 0 && (
-                        <div className="space-y-2">
+                        <div className='space-y-2'>
                             <Label>{t('serverStartup.availableImages')}</Label>
-                            <div className="grid gap-2 max-h-[200px] overflow-y-auto">
+                            <div className='grid gap-2 max-h-[200px] overflow-y-auto'>
                                 {availableDockerImages.map((img) => (
                                     <Button
                                         key={img.label}
-                                        variant={selectedImage === img.value ? "default" : "outline"}
-                                        size="sm"
-                                        className="justify-start text-left h-auto py-2"
+                                        variant={selectedImage === img.value ? 'default' : 'outline'}
+                                        size='sm'
+                                        className='justify-start text-left h-auto py-2'
                                         onClick={() => setSelectedImage(img.value)}
                                     >
-                                        <div className="flex flex-col items-start">
-                                            <span className="font-medium">{img.label}</span>
-                                            <span className="text-xs opacity-70 truncate max-w-[300px]">{img.value}</span>
+                                        <div className='flex flex-col items-start'>
+                                            <span className='font-medium'>{img.label}</span>
+                                            <span className='text-xs opacity-70 truncate max-w-[300px]'>
+                                                {img.value}
+                                            </span>
                                         </div>
                                     </Button>
                                 ))}
@@ -139,16 +136,16 @@ export function JavaVersionDialog({ isOpen, onClose, server, detectedIssue, onUp
                     )}
 
                     {selectedImage && (
-                        <div className="bg-muted p-3 rounded-lg">
-                            <Label className="text-xs">{t('features.javaVersion.selectedImage')}</Label>
-                            <p className="text-sm font-mono mt-1 break-all">{selectedImage}</p>
+                        <div className='bg-muted p-3 rounded-lg'>
+                            <Label className='text-xs'>{t('features.javaVersion.selectedImage')}</Label>
+                            <p className='text-sm font-mono mt-1 break-all'>{selectedImage}</p>
                         </div>
                     )}
                 </div>
             </div>
 
             <DialogFooter>
-                <Button variant="outline" onClick={onClose} disabled={updating}>
+                <Button variant='outline' onClick={onClose} disabled={updating}>
                     {t('common.cancel')}
                 </Button>
                 <Button disabled={!selectedImage || updating} onClick={handleUpdate}>

@@ -24,18 +24,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import React from 'react'
-import { cn } from '@/lib/utils'
+import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface ChangelogSectionProps {
-    title: string
-    items: string[]
-    color: 'emerald' | 'blue' | 'purple' | 'amber' | 'red'
-    icon: string
+    title: string;
+    items: string[];
+    color: 'emerald' | 'blue' | 'purple' | 'amber' | 'red';
+    icon: string;
 }
 
 export function ChangelogSection({ title, items, color, icon }: ChangelogSectionProps) {
-    if (!items || items.length === 0) return null
+    if (!items || items.length === 0) return null;
 
     const colorClasses = {
         emerald: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
@@ -43,7 +43,7 @@ export function ChangelogSection({ title, items, color, icon }: ChangelogSection
         purple: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
         amber: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
         red: 'text-red-500 bg-red-500/10 border-red-500/20',
-    }
+    };
 
     const dotClasses = {
         emerald: 'bg-emerald-500',
@@ -51,24 +51,34 @@ export function ChangelogSection({ title, items, color, icon }: ChangelogSection
         purple: 'bg-purple-500',
         amber: 'bg-amber-500',
         red: 'bg-red-500',
-    }
+    };
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center gap-2">
-                <div className={cn("flex items-center justify-center w-6 h-6 rounded-md border text-xs font-bold", colorClasses[color])}>
+        <div className='space-y-4'>
+            <div className='flex items-center gap-2'>
+                <div
+                    className={cn(
+                        'flex items-center justify-center w-6 h-6 rounded-md border text-xs font-bold',
+                        colorClasses[color],
+                    )}
+                >
                     {icon}
                 </div>
-                <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{title}</h4>
+                <h4 className='text-sm font-bold uppercase tracking-wider text-muted-foreground'>{title}</h4>
             </div>
-            <ul className="space-y-2">
+            <ul className='space-y-2'>
                 {items.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3 group">
-                        <div className={cn("mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 opacity-40 group-hover:opacity-100 transition-opacity", dotClasses[color])} />
-                        <span className="text-sm leading-relaxed">{item}</span>
+                    <li key={index} className='flex items-start gap-3 group'>
+                        <div
+                            className={cn(
+                                'mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 opacity-40 group-hover:opacity-100 transition-opacity',
+                                dotClasses[color],
+                            )}
+                        />
+                        <span className='text-sm leading-relaxed'>{item}</span>
                     </li>
                 ))}
             </ul>
         </div>
-    )
+    );
 }

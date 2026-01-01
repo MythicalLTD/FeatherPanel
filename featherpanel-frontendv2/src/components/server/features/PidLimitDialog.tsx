@@ -55,7 +55,7 @@ export function PidLimitDialog({ isOpen, onClose, server, onRestarted }: PidLimi
             await axios.post(`/api/user/servers/${server.uuidShort}/power`, {
                 action: 'restart',
             });
-            
+
             toast.success(t('features.pidLimit.serverRestarted'));
             if (onRestarted) onRestarted();
             onClose();
@@ -71,24 +71,18 @@ export function PidLimitDialog({ isOpen, onClose, server, onRestarted }: PidLimi
         <Dialog open={isOpen} onClose={onClose}>
             <DialogHeader>
                 <DialogTitle>{t('features.pidLimit.title')}</DialogTitle>
-                <DialogDescription>
-                    {t('features.pidLimit.description')}
-                </DialogDescription>
+                <DialogDescription>{t('features.pidLimit.description')}</DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
-                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
-                    <p className="text-sm text-orange-800 dark:text-orange-200">
-                        {t('features.pidLimit.explanation')}
-                    </p>
+            <div className='space-y-4 py-4'>
+                <div className='bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4'>
+                    <p className='text-sm text-orange-800 dark:text-orange-200'>{t('features.pidLimit.explanation')}</p>
                 </div>
 
-                <div className="space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                        {t('features.pidLimit.suggestions')}
-                    </p>
+                <div className='space-y-3'>
+                    <p className='text-sm text-muted-foreground'>{t('features.pidLimit.suggestions')}</p>
 
-                    <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
+                    <ul className='list-disc list-inside text-sm space-y-1 text-muted-foreground'>
                         <li>{t('features.pidLimit.suggestion1')}</li>
                         <li>{t('features.pidLimit.suggestion2')}</li>
                         <li>{t('features.pidLimit.suggestion3')}</li>
@@ -97,7 +91,7 @@ export function PidLimitDialog({ isOpen, onClose, server, onRestarted }: PidLimi
             </div>
 
             <DialogFooter>
-                <Button variant="outline" onClick={onClose} disabled={restarting}>
+                <Button variant='outline' onClick={onClose} disabled={restarting}>
                     {t('common.close')}
                 </Button>
                 <Button onClick={handleRestart} disabled={restarting}>

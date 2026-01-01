@@ -24,7 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-"use client";
+'use client';
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
@@ -54,9 +54,9 @@ export default function SystemHealthCheck() {
                 // Since this is a "SelfTest", we assume /api is proxied or available.
                 const res = await fetch('/api/selftest', {
                     headers: {
-                        'Accept': 'application/json',
+                        Accept: 'application/json',
                     },
-                    cache: 'no-store'
+                    cache: 'no-store',
                 });
 
                 if (!res.ok) {
@@ -80,12 +80,11 @@ export default function SystemHealthCheck() {
         };
 
         checkHealth();
-        
-        // Optional: Check every 5 minutes? 
+
+        // Optional: Check every 5 minutes?
         // For now just check on mount/navigation implicitly via layout re-renders if any.
         // Actually layout doesn't unmount on page change, so this runs once per hard load.
         // That is acceptable for a "Startup" kind of check.
-
     }, [pathname]);
 
     return null; // This component renders nothing

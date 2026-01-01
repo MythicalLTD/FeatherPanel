@@ -24,19 +24,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-'use client'
+'use client';
 
-import { Suspense } from 'react'
-import SetupTwoFactorForm from './SetupTwoFactorForm'
+import { Suspense } from 'react';
+import SetupTwoFactorForm from './SetupTwoFactorForm';
 
 export default function SetupTwoFactorPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-      </div>
-    }>
-      <SetupTwoFactorForm />
-    </Suspense>
-  )
+    return (
+        <Suspense
+            fallback={
+                <div className='flex items-center justify-center p-8'>
+                    <div className='animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent' />
+                </div>
+            }
+        >
+            <SetupTwoFactorForm />
+        </Suspense>
+    );
 }

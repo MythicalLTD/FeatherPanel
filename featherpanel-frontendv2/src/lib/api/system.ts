@@ -24,11 +24,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import api from "../api";
+import api from '../api';
 
 export const systemApi = {
-  getSettings: async () => {
-    const response = await api.get("/system/settings");
-    return response.data;
-  },
+    getSettings: async () => {
+        const response = await api.get('/system/settings');
+        return response.data;
+    },
 };

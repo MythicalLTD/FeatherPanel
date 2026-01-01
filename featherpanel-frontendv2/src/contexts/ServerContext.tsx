@@ -24,116 +24,111 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-"use client";
+'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
-import axios from "axios";
-import { Server } from "@/types/server";
-import { useSession } from "@/contexts/SessionContext";
-import PermissionsClass from "@/lib/permissions";
+import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import axios from 'axios';
+import { Server } from '@/types/server';
+import { useSession } from '@/contexts/SessionContext';
+import PermissionsClass from '@/lib/permissions';
 
 interface ServerContextType {
-  server: Server | null;
-  loading: boolean;
-  error: Error | null;
-  refreshServer: () => Promise<void>;
-  hasPermission: (permission: string) => boolean;
+    server: Server | null;
+    loading: boolean;
+    error: Error | null;
+    refreshServer: () => Promise<void>;
+    hasPermission: (permission: string) => boolean;
 }
 
 export const ServerContext = createContext<ServerContextType | undefined>(undefined);
 
 interface ServerProviderProps {
-  children: ReactNode;
-  uuidShort: string;
-  initialServer?: Server | null;
+    children: ReactNode;
+    uuidShort: string;
+    initialServer?: Server | null;
 }
 
 export function ServerProvider({ children, uuidShort, initialServer }: ServerProviderProps) {
-  const [server, setServer] = useState<Server | null>(initialServer || null);
-  const [loading, setLoading] = useState(!initialServer);
-  const [error, setError] = useState<Error | null>(null);
-  const { user: sessionUser, hasPermission: hasGlobalPermission } = useSession();
+    const [server, setServer] = useState<Server | null>(initialServer || null);
+    const [loading, setLoading] = useState(!initialServer);
+    const [error, setError] = useState<Error | null>(null);
+    const { user: sessionUser, hasPermission: hasGlobalPermission } = useSession();
 
-  const fetchServer = useCallback(async () => {
-    if (!uuidShort) return;
-    
-    // If we already have data and this is just a re-validation, don't set loading to true effectively
-    // But if we have no data, we must show loading
-    if (!server) {
-        setLoading(true);
-    }
+    const fetchServer = useCallback(async () => {
+        if (!uuidShort) return;
 
-    try {
-      const { data } = await axios.get<{ success: boolean; data: Server }>(
-        `/api/user/servers/${uuidShort}`
-      );
+        // If we already have data and this is just a re-validation, don't set loading to true effectively
+        // But if we have no data, we must show loading
+        if (!server) {
+            setLoading(true);
+        }
 
-      if (data.success) {
-        setServer(data.data);
-        setError(null);
-      }
-    } catch (err) {
-      console.error("Failed to fetch server:", err);
-      setError(err as Error);
-    } finally {
-      setLoading(false);
-    }
-  }, [uuidShort, server]);
+        try {
+            const { data } = await axios.get<{ success: boolean; data: Server }>(`/api/user/servers/${uuidShort}`);
 
-  // Initial fetch if no initial data provided or if uuidShort changes
-  useEffect(() => {
-    if (!initialServer) {
-        fetchServer();
-    } else {
-        // If initialServer provided (e.g. from SSR), ensure we set it
-        // This handles if uuidShort changes and we get new initialServer from parent
-        setServer(initialServer);
-        setLoading(false);
-    }
-  }, [uuidShort, initialServer, fetchServer]);
+            if (data.success) {
+                setServer(data.data);
+                setError(null);
+            }
+        } catch (err) {
+            console.error('Failed to fetch server:', err);
+            setError(err as Error);
+        } finally {
+            setLoading(false);
+        }
+    }, [uuidShort, server]);
 
-  const hasPermission = useCallback(
-    (permission: string): boolean => {
-      // 1. Global Admin gets everything
-      if (hasGlobalPermission(PermissionsClass.ADMIN_ROOT)) return true;
+    // Initial fetch if no initial data provided or if uuidShort changes
+    useEffect(() => {
+        if (!initialServer) {
+            fetchServer();
+        } else {
+            // If initialServer provided (e.g. from SSR), ensure we set it
+            // This handles if uuidShort changes and we get new initialServer from parent
+            setServer(initialServer);
+            setLoading(false);
+        }
+    }, [uuidShort, initialServer, fetchServer]);
 
-      if (!server || !sessionUser) return false;
+    const hasPermission = useCallback(
+        (permission: string): boolean => {
+            // 1. Global Admin gets everything
+            if (hasGlobalPermission(PermissionsClass.ADMIN_ROOT)) return true;
 
-      // 2. Server Owner gets everything
-      if (String(server.owner_id) === String(sessionUser.id)) return true;
+            if (!server || !sessionUser) return false;
 
-      // 3. Subuser Permissions (including wildcard check)
-      if (server.is_subuser && server.subuser_permissions) {
-        return (
-          server.subuser_permissions.includes("*") ||
-          server.subuser_permissions.includes(permission)
-        );
-      }
+            // 2. Server Owner gets everything
+            if (String(server.owner_id) === String(sessionUser.id)) return true;
 
-      return false;
-    },
-    [server, sessionUser, hasGlobalPermission]
-  );
+            // 3. Subuser Permissions (including wildcard check)
+            if (server.is_subuser && server.subuser_permissions) {
+                return server.subuser_permissions.includes('*') || server.subuser_permissions.includes(permission);
+            }
 
-  return (
-    <ServerContext.Provider
-      value={{
-        server,
-        loading,
-        error,
-        refreshServer: fetchServer,
-        hasPermission,
-      }}
-    >
-      {children}
-    </ServerContext.Provider>
-  );
+            return false;
+        },
+        [server, sessionUser, hasGlobalPermission],
+    );
+
+    return (
+        <ServerContext.Provider
+            value={{
+                server,
+                loading,
+                error,
+                refreshServer: fetchServer,
+                hasPermission,
+            }}
+        >
+            {children}
+        </ServerContext.Provider>
+    );
 }
 
 export function useServer() {
-  const context = useContext(ServerContext);
-  if (context === undefined) {
-    throw new Error("useServer must be used within a ServerProvider");
-  }
-  return context;
+    const context = useContext(ServerContext);
+    if (context === undefined) {
+        throw new Error('useServer must be used within a ServerProvider');
+    }
+    return context;
 }

@@ -24,8 +24,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import { useState } from "react";
-import { Button } from "@/components/featherui/Button";
+import { useState } from 'react';
+import { Button } from '@/components/featherui/Button';
 import {
     Dialog,
     DialogContent,
@@ -33,9 +33,9 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { filesApi } from "@/lib/files-api";
-import { useTranslation } from "@/contexts/TranslationContext";
+} from '@/components/ui/dialog';
+import { filesApi } from '@/lib/files-api';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface DeleteDialogProps {
     open: boolean;
@@ -67,22 +67,24 @@ export function DeleteDialog({ open, onOpenChange, uuid, root, files, onSuccess 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{t("files.dialogs.delete.title")}</DialogTitle>
-                    <DialogDescription className="text-destructive">
-                        {t("files.dialogs.delete.description", { count: String(files.length) })}
+                    <DialogTitle>{t('files.dialogs.delete.title')}</DialogTitle>
+                    <DialogDescription className='text-destructive'>
+                        {t('files.dialogs.delete.description', { count: String(files.length) })}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="max-h-32 overflow-y-auto rounded bg-muted/50 p-2 text-sm text-muted-foreground">
-                    <ul className="list-inside list-disc">
-                        {files.map(f => <li key={f}>{f}</li>)}
+                <div className='max-h-32 overflow-y-auto rounded bg-muted/50 p-2 text-sm text-muted-foreground'>
+                    <ul className='list-inside list-disc'>
+                        {files.map((f) => (
+                            <li key={f}>{f}</li>
+                        ))}
                     </ul>
                 </div>
                 <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
-                        {t("files.dialogs.delete.cancel")}
+                    <Button variant='ghost' onClick={() => onOpenChange(false)} disabled={loading}>
+                        {t('files.dialogs.delete.cancel')}
                     </Button>
-                    <Button variant="destructive" onClick={handleDelete} disabled={loading}>
-                        {loading ? t("files.dialogs.delete.deleting") : t("files.dialogs.delete.delete")}
+                    <Button variant='destructive' onClick={handleDelete} disabled={loading}>
+                        {loading ? t('files.dialogs.delete.deleting') : t('files.dialogs.delete.delete')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

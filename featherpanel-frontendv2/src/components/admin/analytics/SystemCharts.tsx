@@ -24,59 +24,57 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-'use client'
+'use client';
 
-import React from 'react'
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import React from 'react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
 interface SimplePieChartProps {
-  title: string
-  description: string
-  data: { name: string; value: number }[]
+    title: string;
+    description: string;
+    data: { name: string; value: number }[];
 }
 
 export function SimplePieChart({ title, description, data }: SimplePieChartProps) {
-  return (
-    <Card className="col-span-1 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="h-[350px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={80}
-              paddingAngle={5}
-              dataKey="value"
-              nameKey="name"
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '0.5rem', color: 'hsl(var(--foreground))' }}
-              itemStyle={{ color: 'hsl(var(--foreground))' }}
-            />
-            <Legend layout="horizontal" verticalAlign="bottom" align="center" />
-          </PieChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
-  )
+    return (
+        <Card className='col-span-1 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent className='h-[350px]'>
+                <ResponsiveContainer width='100%' height='100%'>
+                    <PieChart>
+                        <Pie
+                            data={data}
+                            cx='50%'
+                            cy='50%'
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={5}
+                            dataKey='value'
+                            nameKey='name'
+                        >
+                            {data.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: 'hsl(var(--card))',
+                                borderColor: 'hsl(var(--border))',
+                                borderRadius: '0.5rem',
+                                color: 'hsl(var(--foreground))',
+                            }}
+                            itemStyle={{ color: 'hsl(var(--foreground))' }}
+                        />
+                        <Legend layout='horizontal' verticalAlign='bottom' align='center' />
+                    </PieChart>
+                </ResponsiveContainer>
+            </CardContent>
+        </Card>
+    );
 }

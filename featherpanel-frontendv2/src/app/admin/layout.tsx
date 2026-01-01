@@ -24,12 +24,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import DashboardShell from '@/components/layout/DashboardShell'
+import DashboardShell from '@/components/layout/DashboardShell';
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return <DashboardShell>{children}</DashboardShell>
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    return <DashboardShell>{children}</DashboardShell>;
 }

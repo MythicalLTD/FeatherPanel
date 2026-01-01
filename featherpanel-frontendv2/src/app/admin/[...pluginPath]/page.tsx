@@ -24,12 +24,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-'use client'
+'use client';
 
-import { use } from 'react'
-import PluginPage from '@/components/dashboard/PluginPage'
+import { use } from 'react';
+import PluginPage from '@/components/dashboard/PluginPage';
 
 export default function AdminPluginPage({ params }: { params: Promise<{ pluginPath: string[] }> }) {
-    use(params)
-    return <PluginPage context="admin" />
+    use(params);
+    return <PluginPage context='admin' />;
 }

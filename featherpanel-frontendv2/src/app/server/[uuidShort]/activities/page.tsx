@@ -24,61 +24,55 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-'use client'
+'use client';
 
-import React, { useState, useEffect, use, useCallback } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import axios from 'axios'
-import { useTranslation } from '@/contexts/TranslationContext'
-import { useServerPermissions } from '@/hooks/useServerPermissions'
-import { HeadlessSelect } from '@/components/ui/headless-select'
-import { 
-    Dialog, 
-    DialogFooter, 
-    DialogHeader, 
-    DialogTitle,
-    DialogDescription
-} from '@/components/ui/dialog'
-import { 
-    Activity, 
-    RefreshCw, 
-    Search, 
-    X, 
-    Eye, 
-    Clock, 
-    ChevronLeft, 
-    ChevronRight, 
-    Archive, 
-    FileText, 
-    Server, 
-    Database, 
-    Users, 
-    Play, 
-    Pause, 
-    RotateCcw, 
-    Trash2, 
-    Lock, 
-    Unlock, 
-    Copy, 
-    CalendarClock, 
-    ListTodo, 
-    Network, 
-    Edit, 
-    User, 
+import React, { useState, useEffect, use, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import axios from 'axios';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { useServerPermissions } from '@/hooks/useServerPermissions';
+import { HeadlessSelect } from '@/components/ui/headless-select';
+import { Dialog, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+    Activity,
+    RefreshCw,
+    Search,
+    X,
+    Eye,
+    Clock,
+    ChevronLeft,
+    ChevronRight,
+    Archive,
+    FileText,
+    Server,
+    Database,
+    Users,
+    Play,
+    Pause,
+    RotateCcw,
+    Trash2,
+    Lock,
+    Unlock,
+    Copy,
+    CalendarClock,
+    ListTodo,
+    Network,
+    Edit,
+    User,
     Globe,
-    Loader2
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+    Loader2,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 // UI Components
-import { Button } from '@/components/featherui/Button'
-import { Input } from '@/components/featherui/Input'
-import { PageHeader } from '@/components/featherui/PageHeader'
-import { EmptyState } from '@/components/featherui/EmptyState'
-import { ResourceCard } from '@/components/featherui/ResourceCard' // Import ResourceCard
-import { WidgetRenderer } from '@/components/server/WidgetRenderer'
-import { usePluginWidgets } from '@/hooks/usePluginWidgets'
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
+import { PageHeader } from '@/components/featherui/PageHeader';
+import { EmptyState } from '@/components/featherui/EmptyState';
+import { ResourceCard } from '@/components/featherui/ResourceCard'; // Import ResourceCard
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 
 // Types
 type ActivityMetadata = {
@@ -116,13 +110,13 @@ type ActivityMetadata = {
     subusers?: unknown[];
     schedules?: unknown[];
     [key: string]: unknown;
-}
+};
 
 type ActivityUser = {
     username: string;
     avatar: string | null;
     role: string | null;
-}
+};
 
 type ActivityItem = {
     id: number;
@@ -137,20 +131,20 @@ type ActivityItem = {
     created_at?: string;
     updated_at?: string;
     user?: ActivityUser | null;
-}
+};
 
 export default function ServerActivityPage({ params }: { params: Promise<{ uuidShort: string }> }) {
-    const { uuidShort } = use(params)
-    const router = useRouter()
-    const pathname = usePathname()
-    const { t } = useTranslation()
-    const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
+    const { uuidShort } = use(params);
+    const router = useRouter();
+    const pathname = usePathname();
+    const { t } = useTranslation();
+    const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
     // State
-    const [loading, setLoading] = useState(true)
-    const [activities, setActivities] = useState<ActivityItem[]>([])
-    const [searchQuery, setSearchQuery] = useState('')
-    const [selectedEventFilter, setSelectedEventFilter] = useState('all')
+    const [loading, setLoading] = useState(true);
+    const [activities, setActivities] = useState<ActivityItem[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedEventFilter, setSelectedEventFilter] = useState('all');
     const [pagination, setPagination] = useState({
         current_page: 1,
         per_page: 10,
@@ -160,203 +154,229 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         has_prev: false,
         from: 0,
         to: 0,
-    })
+    });
 
-    const { fetchWidgets, getWidgets } = usePluginWidgets('server-activities')
+    const { fetchWidgets, getWidgets } = usePluginWidgets('server-activities');
 
     useEffect(() => {
-        fetchWidgets()
-    }, [fetchWidgets])
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     // Details Dialog State
-    const [detailsOpen, setDetailsOpen] = useState(false)
-    const [selectedItem, setSelectedItem] = useState<ActivityItem | null>(null)
+    const [detailsOpen, setDetailsOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<ActivityItem | null>(null);
 
-    const fetchActivities = useCallback(async (page = 1) => {
-        try {
-            setLoading(true)
-            const queryParams: Record<string, string | number> = {
-                page,
-                per_page: 10,
+    const fetchActivities = useCallback(
+        async (page = 1) => {
+            try {
+                setLoading(true);
+                const queryParams: Record<string, string | number> = {
+                    page,
+                    per_page: 10,
+                };
+                if (searchQuery.trim()) {
+                    queryParams.search = searchQuery.trim();
+                }
+
+                const { data } = await axios.get(`/api/user/servers/${uuidShort}/activities`, { params: queryParams });
+
+                if (!data.success) {
+                    toast.error(data.message || t('serverActivities.failedToFetch'));
+                    return;
+                }
+
+                const apiItems: ActivityItem[] = (data.data.activities.data || data.data.activities || []).map(
+                    (item: ActivityItem) => ({
+                        ...item,
+                        metadata: normalizeMetadata(item.metadata),
+                    }),
+                );
+
+                let filteredActivities = apiItems;
+
+                if (selectedEventFilter !== 'all') {
+                    filteredActivities = filteredActivities.filter((a) => {
+                        const eventLower = a.event.toLowerCase();
+                        switch (selectedEventFilter) {
+                            case 'backup':
+                                return eventLower.includes('backup');
+                            case 'power':
+                                return ['power', 'start', 'stop', 'restart', 'kill'].some((x) =>
+                                    eventLower.includes(x),
+                                );
+                            case 'file':
+                                return eventLower.includes('file') || eventLower.includes('download');
+                            case 'database':
+                                return eventLower.includes('database');
+                            case 'schedule':
+                                return eventLower.includes('schedule');
+                            case 'task':
+                                return eventLower.includes('task');
+                            case 'subuser':
+                                return eventLower.includes('subuser');
+                            case 'allocation':
+                                return eventLower.includes('allocation');
+                            case 'server':
+                                return eventLower.includes('server') && !eventLower.includes('subuser');
+                            default:
+                                return true;
+                        }
+                    });
+                }
+
+                setActivities(filteredActivities);
+
+                const p = data.data.pagination || {};
+                const totalPages = p.total_pages || p.last_page || 1;
+                const currentPage = p.current_page || 1;
+
+                setPagination({
+                    current_page: currentPage,
+                    per_page: p.per_page || 10,
+                    total_records: p.total || p.total_records || 0,
+                    total_pages: totalPages,
+                    has_next: currentPage < totalPages,
+                    has_prev: currentPage > 1,
+                    from: p.from || 0,
+                    to: p.to || 0,
+                });
+            } catch (error) {
+                console.error(error);
+                toast.error(t('serverActivities.failedToFetch'));
+            } finally {
+                setLoading(false);
             }
-            if (searchQuery.trim()) {
-                queryParams.search = searchQuery.trim()
-            }
-
-            const { data } = await axios.get(`/api/user/servers/${uuidShort}/activities`, { params: queryParams })
-
-            if (!data.success) {
-                toast.error(data.message || t('serverActivities.failedToFetch'))
-                return
-            }
-
-            const apiItems: ActivityItem[] = (data.data.activities.data || data.data.activities || []).map((item: ActivityItem) => ({
-                ...item,
-                metadata: normalizeMetadata(item.metadata)
-            }))
-
-            let filteredActivities = apiItems
-
-            if (selectedEventFilter !== 'all') {
-                filteredActivities = filteredActivities.filter((a) => {
-                    const eventLower = a.event.toLowerCase()
-                    switch (selectedEventFilter) {
-                        case 'backup': return eventLower.includes('backup')
-                        case 'power': return ['power', 'start', 'stop', 'restart', 'kill'].some(x => eventLower.includes(x))
-                        case 'file': return eventLower.includes('file') || eventLower.includes('download')
-                        case 'database': return eventLower.includes('database')
-                        case 'schedule': return eventLower.includes('schedule')
-                        case 'task': return eventLower.includes('task')
-                        case 'subuser': return eventLower.includes('subuser')
-                        case 'allocation': return eventLower.includes('allocation')
-                        case 'server': return eventLower.includes('server') && !eventLower.includes('subuser')
-                        default: return true
-                    }
-                })
-            }
-
-            setActivities(filteredActivities)
-            
-            const p = data.data.pagination || {}
-            const totalPages = p.total_pages || p.last_page || 1
-            const currentPage = p.current_page || 1
-            
-            setPagination({
-                current_page: currentPage,
-                per_page: p.per_page || 10,
-                total_records: p.total || p.total_records || 0,
-                total_pages: totalPages,
-                has_next: currentPage < totalPages,
-                has_prev: currentPage > 1,
-                from: p.from || 0,
-                to: p.to || 0,
-            })
-
-        } catch (error) {
-           console.error(error)
-           toast.error(t('serverActivities.failedToFetch'))
-        } finally {
-            setLoading(false)
-        }
-    }, [uuidShort, searchQuery, selectedEventFilter, t])
+        },
+        [uuidShort, searchQuery, selectedEventFilter, t],
+    );
 
     // Debounce Search
     useEffect(() => {
         const timer = setTimeout(() => {
-            fetchActivities(1)
-        }, 500)
-        return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery, selectedEventFilter])
+            fetchActivities(1);
+        }, 500);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery, selectedEventFilter]);
 
     // Initial Load
     useEffect(() => {
         if (!permissionsLoading) {
             if (!hasPermission('activity.read')) {
-                toast.error(t('serverActivities.noActivityPermission'))
-                router.push(`/server/${uuidShort}`)
-                return
+                toast.error(t('serverActivities.noActivityPermission'));
+                router.push(`/server/${uuidShort}`);
+                return;
             }
-            fetchActivities(1)
+            fetchActivities(1);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [permissionsLoading])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [permissionsLoading]);
 
     function normalizeMetadata(m: unknown): ActivityMetadata | undefined {
-        if (m == null) return undefined
-        if (typeof m === 'object') return m as ActivityMetadata
+        if (m == null) return undefined;
+        if (typeof m === 'object') return m as ActivityMetadata;
         if (typeof m === 'string') {
             try {
-                return JSON.parse(m) as ActivityMetadata
+                return JSON.parse(m) as ActivityMetadata;
             } catch {
-                return undefined
+                return undefined;
             }
         }
-        return undefined
+        return undefined;
     }
 
     function formatEvent(event: string) {
-        return event.replace(/_/g, ' ').replace(/:/g, ' ').split(' ').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+        return event
+            .replace(/_/g, ' ')
+            .replace(/:/g, ' ')
+            .split(' ')
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
     }
-    
+
     function getEventIcon(event: string) {
-        const eventLower = event.toLowerCase()
-        if (eventLower.includes('backup')) return Archive
-        if (['power', 'start', 'play'].some(x => eventLower.includes(x))) return Play
-        if (['stop', 'kill'].some(x => eventLower.includes(x))) return Pause
-        if (eventLower.includes('restart')) return RotateCcw
-        if (eventLower.includes('file') || eventLower.includes('download')) return FileText
-        if (eventLower.includes('database')) return Database
-        if (eventLower.includes('schedule')) return CalendarClock
-        if (eventLower.includes('task')) return ListTodo
-        if (['subuser', 'user'].some(x => eventLower.includes(x))) return Users
-        if (['allocation', 'network'].some(x => eventLower.includes(x))) return Network
-        if (['setting', 'updated', 'update'].some(x => eventLower.includes(x))) return Edit
-        if (['delete', 'deleted'].some(x => eventLower.includes(x))) return Trash2
-        if (eventLower.includes('lock')) return Lock
-        if (eventLower.includes('unlock')) return Unlock
-        return Server
+        const eventLower = event.toLowerCase();
+        if (eventLower.includes('backup')) return Archive;
+        if (['power', 'start', 'play'].some((x) => eventLower.includes(x))) return Play;
+        if (['stop', 'kill'].some((x) => eventLower.includes(x))) return Pause;
+        if (eventLower.includes('restart')) return RotateCcw;
+        if (eventLower.includes('file') || eventLower.includes('download')) return FileText;
+        if (eventLower.includes('database')) return Database;
+        if (eventLower.includes('schedule')) return CalendarClock;
+        if (eventLower.includes('task')) return ListTodo;
+        if (['subuser', 'user'].some((x) => eventLower.includes(x))) return Users;
+        if (['allocation', 'network'].some((x) => eventLower.includes(x))) return Network;
+        if (['setting', 'updated', 'update'].some((x) => eventLower.includes(x))) return Edit;
+        if (['delete', 'deleted'].some((x) => eventLower.includes(x))) return Trash2;
+        if (eventLower.includes('lock')) return Lock;
+        if (eventLower.includes('unlock')) return Unlock;
+        return Server;
     }
 
     function getEventIconClass(event: string) {
-        const eventLower = event.toLowerCase()
-        if (eventLower.includes('backup')) return 'text-blue-500 bg-blue-500/10 border-blue-500/20'
-        if (['start', 'play'].some(x => eventLower.includes(x))) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
-        if (['stop', 'kill'].some(x => eventLower.includes(x))) return 'text-red-500 bg-red-500/10 border-red-500/20'
-        if (eventLower.includes('restart')) return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20'
-        if (eventLower.includes('power')) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
-        if (eventLower.includes('file')) return 'text-orange-500 bg-orange-500/10 border-orange-500/20'
-        if (eventLower.includes('database')) return 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20'
-        if (eventLower.includes('schedule')) return 'text-purple-500 bg-purple-500/10 border-purple-500/20'
-        if (eventLower.includes('task')) return 'text-pink-500 bg-pink-500/10 border-pink-500/20'
-        if (['subuser', 'user'].some(x => eventLower.includes(x))) return 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20'
-        if (eventLower.includes('allocation')) return 'text-teal-500 bg-teal-500/10 border-teal-500/20'
-        if (eventLower.includes('delete')) return 'text-red-500 bg-red-500/10 border-red-500/20'
-        if (eventLower.includes('lock')) return 'text-amber-500 bg-amber-500/10 border-amber-500/20'
-        if (eventLower.includes('unlock')) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
-        return 'text-primary bg-primary/10 border-primary/20'
+        const eventLower = event.toLowerCase();
+        if (eventLower.includes('backup')) return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+        if (['start', 'play'].some((x) => eventLower.includes(x)))
+            return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+        if (['stop', 'kill'].some((x) => eventLower.includes(x))) return 'text-red-500 bg-red-500/10 border-red-500/20';
+        if (eventLower.includes('restart')) return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
+        if (eventLower.includes('power')) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+        if (eventLower.includes('file')) return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
+        if (eventLower.includes('database')) return 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20';
+        if (eventLower.includes('schedule')) return 'text-purple-500 bg-purple-500/10 border-purple-500/20';
+        if (eventLower.includes('task')) return 'text-pink-500 bg-pink-500/10 border-pink-500/20';
+        if (['subuser', 'user'].some((x) => eventLower.includes(x)))
+            return 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20';
+        if (eventLower.includes('allocation')) return 'text-teal-500 bg-teal-500/10 border-teal-500/20';
+        if (eventLower.includes('delete')) return 'text-red-500 bg-red-500/10 border-red-500/20';
+        if (eventLower.includes('lock')) return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+        if (eventLower.includes('unlock')) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+        return 'text-primary bg-primary/10 border-primary/20';
     }
 
     function displayMessage(item: ActivityItem): string {
-        if (item.message) return item.message
-        return formatEvent(item.event)
+        if (item.message) return item.message;
+        return formatEvent(item.event);
     }
 
     function formatRelativeTime(timestamp?: string) {
-        if (!timestamp) return ''
-        const now = new Date()
-        const date = new Date(timestamp)
-        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+        if (!timestamp) return '';
+        const now = new Date();
+        const date = new Date(timestamp);
+        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-        if (diffInSeconds < 60) return t('serverActivities.justNow')
+        if (diffInSeconds < 60) return t('serverActivities.justNow');
         if (diffInSeconds < 3600) {
-            const minutes = Math.floor(diffInSeconds / 60)
-            return t('serverActivities.minutesAgo', { minutes: String(minutes) })
+            const minutes = Math.floor(diffInSeconds / 60);
+            return t('serverActivities.minutesAgo', { minutes: String(minutes) });
         }
         if (diffInSeconds < 86400) {
-            const hours = Math.floor(diffInSeconds / 3600)
-            return t('serverActivities.hoursAgo', { hours: String(hours) })
+            const hours = Math.floor(diffInSeconds / 3600);
+            return t('serverActivities.hoursAgo', { hours: String(hours) });
         }
         if (diffInSeconds < 604800) {
-            const days = Math.floor(diffInSeconds / 86400)
-            return t('serverActivities.daysAgo', { days: String(days) })
+            const days = Math.floor(diffInSeconds / 86400);
+            return t('serverActivities.daysAgo', { days: String(days) });
         }
-        return date.toLocaleDateString()
+        return date.toLocaleDateString();
     }
 
-    const detailsPairs = selectedItem && selectedItem.metadata ? Object.entries(selectedItem.metadata).map(([k, v]) => ({
-        key: k, 
-        value: typeof v === 'object' ? JSON.stringify(v) : String(v) 
-    })) : []
+    const detailsPairs =
+        selectedItem && selectedItem.metadata
+            ? Object.entries(selectedItem.metadata).map(([k, v]) => ({
+                  key: k,
+                  value: typeof v === 'object' ? JSON.stringify(v) : String(v),
+              }))
+            : [];
 
-    const rawJson = selectedItem?.metadata ? JSON.stringify(selectedItem.metadata, null, 2) : ''
+    const rawJson = selectedItem?.metadata ? JSON.stringify(selectedItem.metadata, null, 2) : '';
 
     const changePage = (newPage: number) => {
         if (newPage >= 1 && newPage <= pagination.total_pages) {
-            setPagination(p => ({ ...p, current_page: newPage }))
-            fetchActivities(newPage)
+            setPagination((p) => ({ ...p, current_page: newPage }));
+            fetchActivities(newPage);
         }
-    }
+    };
 
     const filterOptions = [
         { id: 'all', name: t('serverActivities.allEvents') },
@@ -369,39 +389,34 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         { id: 'task', name: t('serverActivities.filterNames.task') },
         { id: 'subuser', name: t('serverActivities.filterNames.subuser') },
         { id: 'allocation', name: t('serverActivities.filterNames.allocation') },
-    ]
+    ];
 
     if (permissionsLoading || (loading && activities.length === 0)) {
         return (
-            <div className="flex flex-col items-center justify-center py-24">
-                <Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" />
-                <p className="mt-4 text-muted-foreground font-medium animate-pulse">{t('common.loading')}</p>
+            <div className='flex flex-col items-center justify-center py-24'>
+                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
+                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>{t('common.loading')}</p>
             </div>
-        )
+        );
     }
 
     return (
-        <div key={pathname} className="space-y-8 pb-12 ">
+        <div key={pathname} className='space-y-8 pb-12 '>
             {/* Header Section */}
             <PageHeader
                 title={t('serverActivities.title')}
                 description={
-                    <div className="flex items-center gap-3">
+                    <div className='flex items-center gap-3'>
                         <span>{t('serverActivities.description')}</span>
-                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20">
+                        <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'>
                             {pagination.total_records} {t('serverActivities.events')}
                         </span>
                     </div>
                 }
                 actions={
-                    <div className="flex items-center gap-3">
-                        <Button 
-                            variant="glass" 
-                            size="default" 
-                            onClick={() => fetchActivities()}
-                            disabled={loading}
-                        >
-                            <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                    <div className='flex items-center gap-3'>
+                        <Button variant='glass' size='default' onClick={() => fetchActivities()} disabled={loading}>
+                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
                             {t('common.refresh')}
                         </Button>
                     </div>
@@ -411,39 +426,39 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             <WidgetRenderer widgets={getWidgets('server-activities', 'activity-top')} />
 
             {/* Filter Bar */}
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1 group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors" />
-                    <Input 
+            <div className='flex flex-col md:flex-row gap-4'>
+                <div className='relative flex-1 group'>
+                    <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors' />
+                    <Input
                         placeholder={t('serverActivities.searchPlaceholder')}
-                        className="pl-12 h-14 text-base"
+                        className='pl-12 h-14 text-base'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="w-full md:w-64 flex gap-2">
+                <div className='w-full md:w-64 flex gap-2'>
                     <HeadlessSelect
                         value={selectedEventFilter}
                         onChange={(val: string | number) => {
-                            setSelectedEventFilter(String(val))
-                            setTimeout(() => fetchActivities(1), 0)
+                            setSelectedEventFilter(String(val));
+                            setTimeout(() => fetchActivities(1), 0);
                         }}
                         options={filterOptions}
                         placeholder={t('serverActivities.events')}
-                        buttonClassName="h-14 bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-base px-6 hover:bg-[#0A0A0A]/40 transition-colors font-medium"
+                        buttonClassName='h-14 bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-base px-6 hover:bg-[#0A0A0A]/40 transition-colors font-medium'
                     />
                     {(searchQuery || selectedEventFilter !== 'all') && (
-                        <Button 
-                            variant="glass" 
-                            size="icon" 
-                            className="h-14 w-14 rounded-xl hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50"
+                        <Button
+                            variant='glass'
+                            size='icon'
+                            className='h-14 w-14 rounded-xl hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50'
                             onClick={() => {
-                                setSearchQuery('')
-                                setSelectedEventFilter('all')
-                                setTimeout(() => fetchActivities(1), 0)
+                                setSearchQuery('');
+                                setSelectedEventFilter('all');
+                                setTimeout(() => fetchActivities(1), 0);
                             }}
                         >
-                            <X className="h-6 w-6" />
+                            <X className='h-6 w-6' />
                         </Button>
                     )}
                 </div>
@@ -453,114 +468,120 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             {activities.length === 0 ? (
                 <EmptyState
                     title={t('serverActivities.noActivitiesFound')}
-                    description={searchQuery || selectedEventFilter !== 'all' 
-                        ? t('serverActivities.noActivitiesSearchDescription') 
-                        : t('serverActivities.noActivitiesDescription')}
+                    description={
+                        searchQuery || selectedEventFilter !== 'all'
+                            ? t('serverActivities.noActivitiesSearchDescription')
+                            : t('serverActivities.noActivitiesDescription')
+                    }
                     icon={Activity}
-                    action={(searchQuery || selectedEventFilter !== 'all') ? (
-                        <Button 
-                            variant="glass" 
-                            size="default"
-                            onClick={() => {
-                                setSearchQuery('')
-                                setSelectedEventFilter('all')
-                                setTimeout(() => fetchActivities(1), 0)
-                            }}
-                            className="h-14 px-10 text-lg rounded-xl"
-                        >
-                            {t('common.clear')}
-                        </Button>
-                    ) : undefined}
+                    action={
+                        searchQuery || selectedEventFilter !== 'all' ? (
+                            <Button
+                                variant='glass'
+                                size='default'
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setSelectedEventFilter('all');
+                                    setTimeout(() => fetchActivities(1), 0);
+                                }}
+                                className='h-14 px-10 text-lg rounded-xl'
+                            >
+                                {t('common.clear')}
+                            </Button>
+                        ) : undefined
+                    }
                 />
             ) : (
-                <div className="space-y-4">
+                <div className='space-y-4'>
                     {activities.map((activity, index) => {
                         return (
                             <ResourceCard
                                 key={activity.id}
                                 onClick={() => {
-                                    setSelectedItem(activity)
-                                    setDetailsOpen(true)
+                                    setSelectedItem(activity);
+                                    setDetailsOpen(true);
                                 }}
                                 style={{ animationDelay: `${index * 50}ms` }}
-                                className="cursor-pointer animate-in slide-in-from-bottom-2 duration-500 fill-mode-both"
+                                className='cursor-pointer animate-in slide-in-from-bottom-2 duration-500 fill-mode-both'
                                 icon={getEventIcon(activity.event)}
                                 iconWrapperClassName={getEventIconClass(activity.event)}
                                 title={formatEvent(activity.event)}
                                 badges={
-                                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40 shadow-sm">
+                                    <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40 shadow-sm'>
                                         {activity.id}
                                     </span>
                                 }
                                 description={
                                     <>
-                                        <p className="w-full text-muted-foreground font-medium line-clamp-1 opacity-80 group-hover:opacity-100 transition-opacity mb-2">
+                                        <p className='w-full text-muted-foreground font-medium line-clamp-1 opacity-80 group-hover:opacity-100 transition-opacity mb-2'>
                                             {displayMessage(activity)}
                                         </p>
-                                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 border-t border-border/10 w-full">
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <User className="h-4 w-4 opacity-50" />
-                                                <span className="text-sm font-bold uppercase tracking-tight">
+                                        <div className='flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 border-t border-border/10 w-full'>
+                                            <div className='flex items-center gap-2 text-muted-foreground'>
+                                                <User className='h-4 w-4 opacity-50' />
+                                                <span className='text-sm font-bold uppercase tracking-tight'>
                                                     {activity.user?.username || t('serverActivities.details.system')}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <Clock className="h-4 w-4 opacity-50" />
-                                                <span className="text-sm font-semibold">
+                                            <div className='flex items-center gap-2 text-muted-foreground'>
+                                                <Clock className='h-4 w-4 opacity-50' />
+                                                <span className='text-sm font-semibold'>
                                                     {activity.timestamp ? formatRelativeTime(activity.timestamp) : '-'}
                                                 </span>
                                             </div>
                                             {activity.ip && (
-                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                    <Globe className="h-4 w-4 opacity-50" />
-                                                    <span className="text-xs font-mono font-bold opacity-60 italic">{activity.ip}</span>
+                                                <div className='flex items-center gap-2 text-muted-foreground'>
+                                                    <Globe className='h-4 w-4 opacity-50' />
+                                                    <span className='text-xs font-mono font-bold opacity-60 italic'>
+                                                        {activity.ip}
+                                                    </span>
                                                 </div>
                                             )}
                                         </div>
                                     </>
                                 }
                                 actions={
-                                    <div className="h-12 w-12 rounded-xl group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary transition-all flex items-center justify-center">
-                                        <Eye className="h-6 w-6" />
+                                    <div className='h-12 w-12 rounded-xl group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary transition-all flex items-center justify-center'>
+                                        <Eye className='h-6 w-6' />
                                     </div>
                                 }
                             />
-                        )
+                        );
                     })}
                 </div>
             )}
 
             {/* Pagination */}
             {pagination.total_records > pagination.per_page && (
-                <div className="flex items-center justify-between py-8 border-t border-border/40 px-6">
-                    <p className="text-sm font-bold opacity-40 uppercase tracking-widest">
-                        {t('serverActivities.pagination.showing', { 
-                            from: String(pagination.from), 
-                            to: String(pagination.to), 
-                            total: String(pagination.total_records) 
+                <div className='flex items-center justify-between py-8 border-t border-border/40 px-6'>
+                    <p className='text-sm font-bold opacity-40 uppercase tracking-widest'>
+                        {t('serverActivities.pagination.showing', {
+                            from: String(pagination.from),
+                            to: String(pagination.to),
+                            total: String(pagination.total_records),
                         })}
                     </p>
-                    <div className="flex items-center gap-3">
-                        <Button 
-                            variant="glass" 
-                            size="sm" 
+                    <div className='flex items-center gap-3'>
+                        <Button
+                            variant='glass'
+                            size='sm'
                             disabled={!pagination.has_prev || loading}
                             onClick={() => changePage(pagination.current_page - 1)}
-                            className="h-10 w-10 p-0 rounded-xl"
+                            className='h-10 w-10 p-0 rounded-xl'
                         >
-                            <ChevronLeft className="h-5 w-5" />
+                            <ChevronLeft className='h-5 w-5' />
                         </Button>
-                        <span className="h-10 px-4 rounded-xl text-sm font-black bg-primary/5 text-primary border border-primary/20 flex items-center justify-center min-w-12">
+                        <span className='h-10 px-4 rounded-xl text-sm font-black bg-primary/5 text-primary border border-primary/20 flex items-center justify-center min-w-12'>
                             {pagination.current_page} / {pagination.total_pages}
                         </span>
-                        <Button 
-                            variant="glass" 
-                            size="sm" 
+                        <Button
+                            variant='glass'
+                            size='sm'
                             disabled={!pagination.has_next || loading}
                             onClick={() => changePage(pagination.current_page + 1)}
-                            className="h-10 w-10 p-0 rounded-xl"
+                            className='h-10 w-10 p-0 rounded-xl'
                         >
-                            <ChevronRight className="h-5 w-5" />
+                            <ChevronRight className='h-5 w-5' />
                         </Button>
                     </div>
                 </div>
@@ -569,106 +590,123 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             <WidgetRenderer widgets={getWidgets('server-activities', 'activity-bottom')} />
 
             {/* DETAILS DIALOG */}
-            <Dialog 
-                open={detailsOpen} 
-                onClose={() => setDetailsOpen(false)}
-                className="max-w-[1200px]"
-            >
+            <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} className='max-w-[1200px]'>
                 {selectedItem && (
-                    <div className="space-y-8 p-2 w-full">
+                    <div className='space-y-8 p-2 w-full'>
                         <DialogHeader>
-                            <div className="flex items-center gap-6">
-                                <div className={cn(
-                                    "h-20 w-20 rounded-4xl flex items-center justify-center border-4 shadow-2xl transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0",
-                                    getEventIconClass(selectedItem.event)
-                                )}>
-                                    {React.createElement(getEventIcon(selectedItem.event), { className: "h-10 w-10" })}
+                            <div className='flex items-center gap-6'>
+                                <div
+                                    className={cn(
+                                        'h-20 w-20 rounded-4xl flex items-center justify-center border-4 shadow-2xl transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0',
+                                        getEventIconClass(selectedItem.event),
+                                    )}
+                                >
+                                    {React.createElement(getEventIcon(selectedItem.event), { className: 'h-10 w-10' })}
                                 </div>
-                                <div className="space-y-1.5 flex-1">
-                                    <div className="flex items-center gap-3">
-                                        <DialogTitle className="text-4xl font-black uppercase tracking-tighter leading-none">
+                                <div className='space-y-1.5 flex-1'>
+                                    <div className='flex items-center gap-3'>
+                                        <DialogTitle className='text-4xl font-black uppercase tracking-tighter leading-none'>
                                             {formatEvent(selectedItem.event)}
                                         </DialogTitle>
-                                        <span className="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-[0.2em] bg-white/10 border border-white/5 opacity-40">
+                                        <span className='px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-[0.2em] bg-white/10 border border-white/5 opacity-40'>
                                             #{selectedItem.id}
                                         </span>
                                     </div>
-                                    <DialogDescription className="text-xl font-medium opacity-70 leading-relaxed max-w-4xl">
+                                    <DialogDescription className='text-xl font-medium opacity-70 leading-relaxed max-w-4xl'>
                                         {selectedItem.message || t('serverActivities.details.description')}
                                     </DialogDescription>
                                 </div>
                             </div>
                         </DialogHeader>
 
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <div className='grid grid-cols-1 xl:grid-cols-2 gap-8'>
                             {/* Metadata Table */}
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3">
-                                        <div className="w-1.5 h-4 bg-primary rounded-full" />
+                            <div className='space-y-6'>
+                                <div className='flex items-center justify-between border-b border-white/5 pb-4'>
+                                    <h3 className='text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3'>
+                                        <div className='w-1.5 h-4 bg-primary rounded-full' />
                                         {t('serverActivities.details.metadataPayload')}
                                     </h3>
-                                    <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">{detailsPairs.length} Keys found</span>
+                                    <span className='text-[10px] font-black opacity-30 uppercase tracking-widest'>
+                                        {detailsPairs.length} Keys found
+                                    </span>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0">
-                                        <span className="text-[10px] font-black text-primary/50 uppercase tracking-widest">{t('serverActivities.details.executingUser')}</span>
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-xl bg-primary/20 flex items-center justify-center font-black text-xs border border-primary/20">
+                                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                                    <div className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0'>
+                                        <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                                            {t('serverActivities.details.executingUser')}
+                                        </span>
+                                        <div className='flex items-center gap-3'>
+                                            <div className='h-8 w-8 rounded-xl bg-primary/20 flex items-center justify-center font-black text-xs border border-primary/20'>
                                                 {selectedItem.user?.username?.substring(0, 2).toUpperCase() || 'S'}
                                             </div>
-                                            <span className="text-lg font-bold truncate">{selectedItem.user?.username || t('serverActivities.details.system')}</span>
+                                            <span className='text-lg font-bold truncate'>
+                                                {selectedItem.user?.username || t('serverActivities.details.system')}
+                                            </span>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0">
-                                        <span className="text-[10px] font-black text-primary/50 uppercase tracking-widest">{t('serverActivities.details.timestamp')}</span>
-                                        <div className="flex items-center gap-3">
-                                            <Clock className="h-5 w-5 text-primary opacity-50" />
-                                            <span className="text-lg font-bold">{selectedItem.timestamp ? new Date(selectedItem.timestamp).toLocaleString() : '-'}</span>
+                                    <div className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0'>
+                                        <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                                            {t('serverActivities.details.timestamp')}
+                                        </span>
+                                        <div className='flex items-center gap-3'>
+                                            <Clock className='h-5 w-5 text-primary opacity-50' />
+                                            <span className='text-lg font-bold'>
+                                                {selectedItem.timestamp
+                                                    ? new Date(selectedItem.timestamp).toLocaleString()
+                                                    : '-'}
+                                            </span>
                                         </div>
                                     </div>
                                     {detailsPairs.map((pair) => (
-                                        <div key={pair.key} className="flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all">
-                                            <span className="text-[10px] font-black text-primary/50 uppercase tracking-widest underline decoration-primary/20 decoration-2 underline-offset-4">{pair.key}</span>
-                                            <span className="text-base font-mono font-bold break-all leading-tight opacity-90 group-hover:opacity-100">{pair.value}</span>
+                                        <div
+                                            key={pair.key}
+                                            className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all'
+                                        >
+                                            <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest underline decoration-primary/20 decoration-2 underline-offset-4'>
+                                                {pair.key}
+                                            </span>
+                                            <span className='text-base font-mono font-bold break-all leading-tight opacity-90 group-hover:opacity-100'>
+                                                {pair.value}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
                             {/* Raw Logs */}
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3">
-                                        <div className="w-1.5 h-4 bg-primary rounded-full" />
+                            <div className='space-y-6'>
+                                <div className='flex items-center justify-between border-b border-white/5 pb-4'>
+                                    <h3 className='text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3'>
+                                        <div className='w-1.5 h-4 bg-primary rounded-full' />
                                         {t('serverActivities.details.diagnosticOutput')}
                                     </h3>
-                                    <Button 
-                                        variant="glass" 
-                                        size="sm" 
-                                        className="h-8 px-4 font-black uppercase tracking-wider opacity-40 hover:opacity-100 border-white/5"
+                                    <Button
+                                        variant='glass'
+                                        size='sm'
+                                        className='h-8 px-4 font-black uppercase tracking-wider opacity-40 hover:opacity-100 border-white/5'
                                         onClick={() => {
-                                            navigator.clipboard.writeText(rawJson)
-                                            toast.success(t('serverActivities.details.payloadCopied'))
+                                            navigator.clipboard.writeText(rawJson);
+                                            toast.success(t('serverActivities.details.payloadCopied'));
                                         }}
                                     >
-                                        <Copy className="h-3.5 w-3.5 mr-2" />
+                                        <Copy className='h-3.5 w-3.5 mr-2' />
                                         {t('serverActivities.details.copyPayload')}
                                     </Button>
                                 </div>
-                                <div className="relative group h-full">
-                                    <pre className="h-full max-h-[600px] bg-black/40 text-emerald-400 p-8 rounded-4xl overflow-x-auto font-mono text-base border border-white/5 custom-scrollbar leading-relaxed backdrop-blur-3xl shadow-2xl">
+                                <div className='relative group h-full'>
+                                    <pre className='h-full max-h-[600px] bg-black/40 text-emerald-400 p-8 rounded-4xl overflow-x-auto font-mono text-base border border-white/5 custom-scrollbar leading-relaxed backdrop-blur-3xl shadow-2xl'>
                                         {rawJson || '// No additional metadata available'}
                                     </pre>
                                 </div>
                             </div>
                         </div>
 
-                        <DialogFooter className="border-t border-white/5 pt-8 mt-4 flex items-center justify-end">
-                            <Button 
-                                size="default" 
-                                className="px-12 h-14 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/20"
+                        <DialogFooter className='border-t border-white/5 pt-8 mt-4 flex items-center justify-end'>
+                            <Button
+                                size='default'
+                                className='px-12 h-14 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/20'
                                 onClick={() => setDetailsOpen(false)}
                             >
                                 {t('serverActivities.details.closeEntry')}
@@ -678,5 +716,5 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                 )}
             </Dialog>
         </div>
-    )
+    );
 }

@@ -87,40 +87,36 @@ export function EulaDialog({ isOpen, onClose, server, onAccepted }: EulaDialogPr
     return (
         <Dialog open={isOpen} onClose={onClose}>
             <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-yellow-500" />
+                <DialogTitle className='flex items-center gap-2'>
+                    <AlertCircle className='h-5 w-5 text-yellow-500' />
                     {t('features.eula.title')}
                 </DialogTitle>
-                <DialogDescription>
-                    {t('features.eula.description')}
-                </DialogDescription>
+                <DialogDescription>{t('features.eula.description')}</DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                        {t('features.eula.eulaMessage')}
-                    </p>
+            <div className='space-y-4 py-4'>
+                <div className='bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4'>
+                    <p className='text-sm text-yellow-800 dark:text-yellow-200'>{t('features.eula.eulaMessage')}</p>
                 </div>
 
-                <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                        {t('features.eula.eulaExplanation')}
-                    </p>
+                <div className='space-y-2'>
+                    <p className='text-sm text-muted-foreground'>{t('features.eula.eulaExplanation')}</p>
                     <a
-                        href="https://www.minecraft.net/en-us/eula"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline flex items-center gap-1"
+                        href='https://www.minecraft.net/en-us/eula'
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='text-sm text-primary hover:underline flex items-center gap-1'
                     >
                         {t('features.eula.readEula')}
-                        <ExternalLink className="h-3 w-3" />
+                        <ExternalLink className='h-3 w-3' />
                     </a>
                 </div>
             </div>
 
             <DialogFooter>
-                <Button variant="outline" onClick={onClose} disabled={accepting}>{t('common.cancel')}</Button>
+                <Button variant='outline' onClick={onClose} disabled={accepting}>
+                    {t('common.cancel')}
+                </Button>
                 <Button onClick={handleAccept} disabled={accepting}>
                     {accepting ? t('features.eula.accepting') : t('features.eula.accept')}
                 </Button>
