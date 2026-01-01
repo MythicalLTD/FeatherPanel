@@ -11,6 +11,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.9",
     "@monaco-editor/react": "4.8.0-rc.3",
+    "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
     "@tailwindcss/typography": "^0.5.19",
@@ -23,6 +24,7 @@
     "@xterm/addon-webgl": "^0.19.0",
     "@xterm/xterm": "^6.0.0",
     "axios": "^1.13.2",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",

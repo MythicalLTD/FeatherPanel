@@ -27,10 +27,11 @@ SOFTWARE.
 'use client'
 
 import React from 'react'
-import { Wifi, Cpu, HardDrive, Database, Clock, Activity } from 'lucide-react'
+import { Wifi, Cpu, Clock, Activity, HardDrive, Database, ArrowDown, ArrowUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from '@/contexts/TranslationContext'
-import { formatMib, formatCpu as formatCpuGlobal } from '@/lib/utils'
+import { formatMib, formatCpu as formatCpuGlobal, cn, formatFileSize } from '@/lib/utils'
+import { Progress } from '@/components/ui/progress'
 
 interface ServerInfoCardsProps {
   serverIp: string
@@ -44,6 +45,9 @@ interface ServerInfoCardsProps {
   cpuUsage?: number
   memoryUsage?: number
   diskUsage?: number
+  networkRx?: number
+  networkTx?: number
+  className?: string
 }
 
 export default function ServerInfoCards({
@@ -57,6 +61,9 @@ export default function ServerInfoCards({
   cpuUsage = 0,
   memoryUsage = 0,
   diskUsage = 0,
+  networkRx = 0,
+  networkTx = 0,
+  className,
 }: ServerInfoCardsProps) {
   const { t } = useTranslation()
 
@@ -75,54 +82,7 @@ export default function ServerInfoCards({
     return formatMib(disk)
   }
 
-  const cards = [
-    {
-      title: t('servers.console.info_cards.address'),
-      value: serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A',
-      icon: Wifi,
-      iconColor: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
-      copyable: true,
-    },
-    {
-      title: t('servers.cpu'),
-      value: `${cpuUsage.toFixed(1)}%`,
-      subtitle: t('servers.console.info_cards.limit', { limit: formatCpu(cpuLimit) }),
-      icon: Cpu,
-      iconColor: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
-    },
-    {
-      title: t('servers.memory'),
-      value: formatMib(memoryUsage),
-      subtitle: t('servers.console.info_cards.limit', { limit: formatMemory(memoryLimit) }),
-      icon: Database,
-      iconColor: 'text-green-500',
-      bgColor: 'bg-green-500/10',
-    },
-    {
-      title: t('servers.disk'),
-      value: formatMib(diskUsage),
-      subtitle: t('servers.console.info_cards.limit', { limit: formatDisk(diskLimit) }),
-      icon: HardDrive,
-      iconColor: 'text-orange-500',
-      bgColor: 'bg-orange-500/10',
-    },
-    {
-      title: t('servers.console.info_cards.uptime'),
-      value: wingsUptime || 'N/A',
-      icon: Clock,
-      iconColor: 'text-cyan-500',
-      bgColor: 'bg-cyan-500/10',
-    },
-    {
-      title: t('servers.console.info_cards.ping'),
-      value: ping !== null ? `${ping}ms` : 'N/A',
-      icon: Activity,
-      iconColor: 'text-pink-500',
-      bgColor: 'bg-pink-500/10',
-    },
-  ]
+
 
 
 
@@ -157,58 +117,128 @@ export default function ServerInfoCards({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {cards.map((card) => {
-        const Icon = card.icon
-        return (
-          <div
-            key={card.title}
-            className="rounded-xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                {card.title}
-              </h3>
-              <div className={`h-10 w-10 rounded-lg ${card.bgColor} flex items-center justify-center`}>
-                <Icon className={`h-5 w-5 ${card.iconColor}`} />
-              </div>
+    <div className={cn("grid gap-6", className)}>
+      {/* Network Widget */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <h3 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
+          <Wifi className="h-4 w-4" />
+          {t('servers.console.info_cards.network_title') || "Network"}
+        </h3>
+        
+        <div className="space-y-4">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">{t('servers.console.info_cards.address')}</p>
+            <div className="flex items-center gap-2">
+              <code className="bg-muted px-2 py-1 rounded text-sm font-mono flex-1 truncate">
+                {serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A'}
+              </code>
+              <button
+                onClick={() => handleCopy(serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A')}
+                className="p-1.5 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                title={t('servers.console.info_cards.copy')}
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+              </button>
             </div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-2xl font-bold truncate flex-1" title={card.value}>
-                {card.value}
-              </div>
-              {'copyable' in card && card.copyable && card.value !== 'N/A' && (
-                <button
-                  onClick={() => handleCopy(card.value)}
-                  className="p-2 hover:bg-muted rounded-lg transition-colors"
-                  title={t('servers.console.info_cards.copy')}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                  </svg>
-                </button>
-              )}
-            </div>
-            {'subtitle' in card && card.subtitle && (
-              <div className="text-xs text-muted-foreground mt-1">
-                {card.subtitle}
-              </div>
-            )}
           </div>
-        )
-      })}
-    </div>
+
+          <div className="grid grid-cols-2 gap-4 pt-2">
+              <div>
+                 <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {t('servers.console.info_cards.uptime')}
+                 </p>
+                 <p className="font-medium text-sm">{wingsUptime || 'N/A'}</p>
+              </div>
+              <div>
+                 <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                    <Activity className="h-3 w-3" />
+                    {t('servers.console.info_cards.ping')}
+                 </p>
+                 <p className="font-medium text-sm">{ping !== null ? `${ping}ms` : 'N/A'}</p>
+              </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Resources Widget */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <h3 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
+           <Activity className="h-4 w-4" />
+           {t('servers.console.info_cards.resources_title')}
+        </h3>
+        
+        <div className="space-y-5">
+           {/* CPU */}
+           <div>
+              <div className="flex justify-between text-sm mb-1.5">
+                 <span className="text-muted-foreground flex gap-2 items-center"><Cpu className="h-3 w-3" />{t('servers.cpu')}</span>
+                 <span className="font-medium">{cpuUsage.toFixed(1)}%</span>
+              </div>
+              <Progress value={cpuLimit > 0 ? (cpuUsage / cpuLimit) * 100 : 0} className="h-1.5" />
+              <p className="text-[10px] text-muted-foreground mt-1 text-right">
+                  {t('servers.console.info_cards.limit', { limit: formatCpu(cpuLimit) })}
+              </p>
+           </div>
+
+           {/* Memory */}
+           <div>
+              <div className="flex justify-between text-sm mb-1.5">
+                 <span className="text-muted-foreground flex gap-2 items-center"><Database className="h-3 w-3" />{t('servers.memory')}</span>
+                 <span className="font-medium">{formatMib(memoryUsage)}</span>
+              </div>
+              <Progress value={memoryLimit > 0 ? (memoryUsage / memoryLimit) * 100 : 0} className="h-1.5" />
+              <p className="text-[10px] text-muted-foreground mt-1 text-right">
+                  {t('servers.console.info_cards.limit', { limit: formatMemory(memoryLimit) })}
+              </p>
+           </div>
+
+           {/* Disk */}
+           <div>
+              <div className="flex justify-between text-sm mb-1.5">
+                 <span className="text-muted-foreground flex gap-2 items-center"><HardDrive className="h-3 w-3" />{t('servers.disk')}</span>
+                 <span className="font-medium">{formatMib(diskUsage)}</span>
+              </div>
+              <Progress value={diskLimit > 0 ? (diskUsage / diskLimit) * 100 : 0} className="h-1.5" />
+              <p className="text-[10px] text-muted-foreground mt-1 text-right">
+                  {t('servers.console.info_cards.limit', { limit: formatDisk(diskLimit) })}
+              </p>
+           </div>
+
+         </div>
+      </div>
+
+      {/* Networking Widget */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <h3 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
+           <Activity className="h-4 w-4" />
+           {t('servers.console.info_cards.network_title')}
+        </h3>
+
+        <div className="space-y-4">
+           {/* Inbound */}
+           <div>
+              <div className="flex justify-between text-sm mb-1.5 align-middle">
+                 <span className="text-muted-foreground flex gap-2 items-center">
+                    <ArrowDown className="h-3 w-3" />
+                    {t('servers.console.info_cards.network_rx')}
+                 </span>
+                 <span className="font-medium">{formatFileSize(networkRx)}/s</span>
+              </div>
+           </div>
+
+           {/* Outbound */}
+           <div>
+              <div className="flex justify-between text-sm mb-1.5 align-middle">
+                 <span className="text-muted-foreground flex gap-2 items-center">
+                    <ArrowUp className="h-3 w-3" />
+                    {t('servers.console.info_cards.network_tx')}
+                 </span>
+                 <span className="font-medium">{formatFileSize(networkTx)}/s</span>
+              </div>
+           </div>
+        </div>
+      </div>
+      </div>
   )
 }

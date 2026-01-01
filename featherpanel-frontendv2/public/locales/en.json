@@ -574,7 +574,7 @@
     },
     "console": {
       "loading": "Loading server...",
-	  "noConsolePermissionSend": "You do not have permission to send commands.",
+      "noConsolePermissionSend": "You do not have permission to send commands.",
       "connection": {
         "connecting": "Connecting to Wings...",
         "connected": "Connected to Wings",
@@ -586,13 +586,17 @@
       "uuid": "UUID",
       "info_cards": {
         "address": "Server Address",
-        "uptime": "Wings Uptime",
-        "ping": "WebSocket Ping",
+        "uptime": "Server Uptime",
+        "ping": "Server Ping",
         "limit": "Limit: {limit}",
         "unlimited": "Unlimited",
         "copied": "Server address copied to clipboard",
         "copy_error": "Failed to copy address",
-        "copy": "Copy to clipboard"
+        "copy": "Copy to clipboard",
+        "network_title": "Network",
+        "resources_title": "Resources",
+        "network_rx": "Inbound",
+        "network_tx": "Outbound"
       },
       "performance": {
         "network": "Network",

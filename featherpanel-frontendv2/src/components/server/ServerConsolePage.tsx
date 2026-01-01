@@ -26,7 +26,7 @@ SOFTWARE.
 
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { useWingsWebSocket } from '@/hooks/useWingsWebSocket'
 import ServerHeader from '@/components/server/ServerHeader'
@@ -43,11 +43,48 @@ import { EulaDialog } from '@/components/server/features/EulaDialog'
 import { JavaVersionDialog } from '@/components/server/features/JavaVersionDialog'
 import { PidLimitDialog } from '@/components/server/features/PidLimitDialog'
 
+interface WingsStats {
+  uptime?: number;
+  cpu_absolute?: number;
+  memory_bytes?: number;
+  memory_limit_bytes?: number;
+  disk_bytes?: number;
+  network_rx_bytes?: number;
+  network_tx_bytes?: number;
+  network?: {
+    rx_bytes: number;
+    tx_bytes: number;
+  };
+  state?: string;
+}
+
+const formatUptime = (uptimeMs: number): string => {
+  // Wings sends uptime in milliseconds, convert to seconds
+  const seconds = Math.floor(uptimeMs / 1000)
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+
+  const parts: string[] = []
+  if (days > 0) parts.push(`${days}d`)
+  if (hours > 0) parts.push(`${hours}h`)
+  if (minutes > 0) parts.push(`${minutes}m`)
+  if (secs > 0 || parts.length === 0) parts.push(`${secs}s`)
+
+  return parts.join(' ')
+}
+
 export default function ServerConsolePage() {
   const { t } = useTranslation()
   const params = useParams()
   const serverUuid = params.uuidShort as string
   const terminalRef = useRef<ServerTerminalRef>(null)
+  
+  // Ref to store previous network stats for rate calculation
+  const prevNetworkRef = useRef({ rx: 0, tx: 0, timestamp: 0 })
+  // Ref to prevent server status overwriting WebSocket events
+  const hasInitializedStatus = useRef(false)
 
   // Permissions hook provides server data from context
   const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(serverUuid)
@@ -71,7 +108,8 @@ export default function ServerConsolePage() {
   const [currentCpu, setCurrentCpu] = useState(0)
   const [currentMemory, setCurrentMemory] = useState(0)
   const [currentDisk, setCurrentDisk] = useState(0)
-
+  const [currentNetworkRx, setCurrentNetworkRx] = useState(0)
+  const [currentNetworkTx, setCurrentNetworkTx] = useState(0)
 
   // Feature Detector
   const {
@@ -88,30 +126,21 @@ export default function ServerConsolePage() {
   // Permissions
   const canConnect = hasPermission('websocket.connect')
 
-  // Wings WebSocket connection
-  const {
-    connectionStatus,
-    ping,
-    sendCommand,
-    sendPowerAction,
-    requestStats,
-    requestLogs,
-  } = useWingsWebSocket({
-    serverUuid,
-    connect: canConnect,
-    onConsoleOutput: (output) => {
-      // Process log for feature detection
+  // Handler for console output
+  const handleConsoleOutput = useCallback((output: string) => {
       processLog(output)
-
-      // Write to terminal
       if (terminalRef.current) {
         terminalRef.current.writeln(output)
       }
-    },
-    onStatus: (status) => {
-      setServerStatus(status)
-    },
-    onStats: (stats) => {
+  }, [processLog])
+
+  // Handler for server status updates
+  const handleStatusUpdate = useCallback((status: string) => {
+    setServerStatus(status)
+  }, [])
+
+  // Handler for stats updates
+  const handleStatsUpdate = useCallback((stats: WingsStats) => {
       const timestamp = new Date().getTime()
       
       // Update uptime
@@ -149,44 +178,68 @@ export default function ServerConsolePage() {
         })
       }
 
-      // Update Network data (total rx + tx bytes)
+      // Update Network data (Calculate Rate)
       if (stats.network && stats.network.rx_bytes !== undefined && stats.network.tx_bytes !== undefined) {
-        const totalBytes = Number(stats.network.rx_bytes) + Number(stats.network.tx_bytes)
-        setNetworkData(prev => {
-          const newData = [...prev, { timestamp, value: totalBytes }]
-          return newData.slice(-maxDataPoints)
-        })
+        const currentRxBytes = Number(stats.network.rx_bytes)
+        const currentTxBytes = Number(stats.network.tx_bytes)
+        const now = new Date().getTime()
+
+        // Calculate rate if we have previous data
+        if (prevNetworkRef.current.timestamp > 0) {
+            const timeDiff = (now - prevNetworkRef.current.timestamp) / 1000 // seconds
+            if (timeDiff > 0) {
+                const rxRate = Math.max(0, (currentRxBytes - prevNetworkRef.current.rx)) / timeDiff
+                const txRate = Math.max(0, (currentTxBytes - prevNetworkRef.current.tx)) / timeDiff
+                
+                setCurrentNetworkRx(rxRate)
+                setCurrentNetworkTx(txRate)
+
+                // For the chart, we can show total bandwidth or just RX+TX rate
+                const totalRate = rxRate + txRate
+                 setNetworkData(prev => {
+                  const newData = [...prev, { timestamp, value: totalRate }]
+                  return newData.slice(-maxDataPoints)
+                })
+            }
+        }
+
+        // Update refs
+        prevNetworkRef.current = {
+            rx: currentRxBytes,
+            tx: currentTxBytes,
+            timestamp: now
+        }
       }
-    },
+  }, [])
+
+  // Wings WebSocket connection
+  const {
+    connectionStatus,
+    ping,
+    sendCommand,
+    sendPowerAction,
+    requestStats,
+    requestLogs,
+  } = useWingsWebSocket({
+    serverUuid,
+    connect: canConnect,
+    onConsoleOutput: handleConsoleOutput,
+    onStatus: handleStatusUpdate,
+    onStats: handleStatsUpdate,
   })
 
   // Initialize server status when server data is loaded
+  // Only override if we haven't set it yet to avoid overwriting live WS/State updates with stale API data
   useEffect(() => {
-    if (server?.status && server.status !== serverStatus) {
-      // Defer state update to avoid synchronous render loop warning
-      const timer = setTimeout(() => {
-        setServerStatus(server.status)
-      }, 0)
-      return () => clearTimeout(timer)
+    if (server?.status && !hasInitializedStatus.current) {
+       // Defer state update to avoid synchronous render loop warning/linter error
+       const timer = setTimeout(() => {
+          setServerStatus(server.status)
+          hasInitializedStatus.current = true
+       }, 0)
+       return () => clearTimeout(timer)
     }
-  }, [server?.status, serverStatus])
-
-  const formatUptime = (uptimeMs: number): string => {
-    // Wings sends uptime in milliseconds, convert to seconds
-    const seconds = Math.floor(uptimeMs / 1000)
-    const days = Math.floor(seconds / 86400)
-    const hours = Math.floor((seconds % 86400) / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = Math.floor(seconds % 60)
-
-    const parts: string[] = []
-    if (days > 0) parts.push(`${days}d`)
-    if (hours > 0) parts.push(`${hours}h`)
-    if (minutes > 0) parts.push(`${minutes}m`)
-    if (secs > 0 || parts.length === 0) parts.push(`${secs}s`)
-
-    return parts.join(' ')
-  }
+  }, [server?.status])
 
   // Request stats periodically for ping measurement
   useEffect(() => {
@@ -302,70 +355,81 @@ export default function ServerConsolePage() {
         onKill={() => sendPowerAction('kill')}
       />
 
-      {/* Wings Connection Status (only show if not connected and has permission) */}
-      {canConnect && connectionStatus !== 'connected' && (
-        <Card className={`border-2 ${connectionInfo.bgColor}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${connectionInfo.bgColor}`}>
-                <connectionInfo.icon className={`h-6 w-6 ${connectionInfo.color} ${connectionInfo.iconClass}`} />
-              </div>
-              <div className="flex-1">
-                <p className={`font-semibold ${connectionInfo.color}`}>
-                  {connectionInfo.message}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {t('servers.console.connection.info')}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        {/* Main Column: Terminal & Status Messages */}
+        <div className="xl:col-span-9 flex flex-col gap-6">
+            {/* Wings Connection Status (only show if not connected and has permission) */}
+            {canConnect && connectionStatus !== 'connected' && (
+                <Card className={`border-2 ${connectionInfo.bgColor}`}>
+                <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                    <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${connectionInfo.bgColor}`}>
+                        <connectionInfo.icon className={`h-6 w-6 ${connectionInfo.color} ${connectionInfo.iconClass}`} />
+                    </div>
+                    <div className="flex-1">
+                        <p className={`font-semibold ${connectionInfo.color}`}>
+                        {connectionInfo.message}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                        {t('servers.console.connection.info')}
+                        </p>
+                    </div>
+                    </div>
+                </CardContent>
+                </Card>
+            )}
 
-      {/* Permission Error */}
-      {!canConnect && (
-        <Card className="border-2 border-yellow-500/20 bg-yellow-500/10">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-lg flex items-center justify-center bg-yellow-500/10 border-yellow-500/20">
-                <AlertTriangle className="h-6 w-6 text-yellow-500" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-yellow-500">
-                  {t('serverConsole.subuserNoAccess')}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            {/* Permission Error */}
+            {!canConnect && (
+                <Card className="border-2 border-yellow-500/20 bg-yellow-500/10">
+                <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-lg flex items-center justify-center bg-yellow-500/10 border-yellow-500/20">
+                        <AlertTriangle className="h-6 w-6 text-yellow-500" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="font-semibold text-yellow-500">
+                        {t('serverConsole.subuserNoAccess')}
+                        </p>
+                    </div>
+                    </div>
+                </CardContent>
+                </Card>
+            )}
 
-      {/* Server Info Cards */}
-      {canConnect && (
-        <ServerInfoCards
-          serverIp={server.allocation?.ip || server.allocation?.ip_alias || ''}
-          serverPort={server.allocation?.port || 0}
-          cpuLimit={server.cpu || 0}
-          memoryLimit={server.memory || 0}
-          diskLimit={server.disk || 0}
-          wingsUptime={wingsUptime}
-          ping={ping}
-          cpuUsage={currentCpu}
-          memoryUsage={currentMemory}
-          diskUsage={currentDisk}
-        />
-      )}
+            {/* Terminal Console */}
+            {canConnect && (
+                <ServerTerminal 
+                ref={terminalRef}
+                onSendCommand={sendCommand}
+                canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
+                serverStatus={serverStatus}
+                />
+            )}
+        </div>
 
-      {/* Terminal Console */}
-      {canConnect && (
-        <ServerTerminal 
-          ref={terminalRef}
-          onSendCommand={sendCommand}
-          canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
-          serverStatus={serverStatus}
-        />
-      )}
+        {/* Sidebar Column: Info Cards */}
+        <div className="xl:col-span-3">
+             {/* Server Info Cards */}
+            {canConnect && (
+                <ServerInfoCards
+                    serverIp={server.allocation?.ip || server.allocation?.ip_alias || ''}
+                    serverPort={server.allocation?.port || 0}
+                    cpuLimit={server.cpu || 0}
+                    memoryLimit={server.memory || 0}
+                    diskLimit={server.disk || 0}
+                    wingsUptime={wingsUptime}
+                    ping={ping}
+                    cpuUsage={currentCpu}
+                    memoryUsage={currentMemory}
+                    diskUsage={currentDisk}
+                    networkRx={currentNetworkRx}
+                    networkTx={currentNetworkTx}
+                    className="xl:grid-cols-1"
+                />
+            )}
+        </div>
+      </div>
 
       {/* Performance Monitoring */}
       {server && canConnect && (

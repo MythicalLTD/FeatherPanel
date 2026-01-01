@@ -95,6 +95,8 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
+                <meta name="author" content="FeatherPanel" />
+                <noscript dangerouslySetInnerHTML={{ __html: `<!-- FEATHERPANEL_HEADER_PLACEHOLDER_START -->\n<!-- FEATHERPANEL_HEADER_PLACEHOLDER_END -->` }} />
 				<script
 					dangerouslySetInnerHTML={{
 						__html: `
@@ -122,6 +124,7 @@ export default function RootLayout({
 				/>
 			</head>
 			<body className="bg-background text-foreground">
+                <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_APP_PLACEHOLDER_START -->' }} />
 				<ThemeProvider>
 					<SettingsProvider>
 						<TranslationProvider>
@@ -135,6 +138,8 @@ export default function RootLayout({
 						</TranslationProvider>
 					</SettingsProvider>
 				</ThemeProvider>
+                <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_APP_PLACEHOLDER_END -->' }} />
+                <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_FOOTER_PLACEHOLDER_START -->\n<!-- FEATHERPANEL_FOOTER_PLACEHOLDER_END -->' }} />
 			</body>
 		</html>
 	)
