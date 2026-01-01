@@ -284,7 +284,7 @@ export default function StatusPage() {
                             filteredNodes.map((node) => (
                                 <div 
                                     key={node.id}
-                                    className="p-6 hover:bg-white/[0.015] transition-all duration-200 flex flex-col lg:flex-row lg:items-center justify-between gap-6 group border-l-2 border-l-transparent hover:border-l-primary"
+                                    className="p-6 hover:bg-white/1.5 transition-all duration-200 flex flex-col lg:flex-row lg:items-center justify-between gap-6 group border-l-2 border-l-transparent hover:border-l-primary"
                                 >
                                     <div className="flex items-center gap-5 flex-1 min-w-0">
                                         <div className={cn(

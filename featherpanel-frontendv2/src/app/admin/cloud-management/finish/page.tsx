@@ -149,15 +149,15 @@ export default function CloudManagementFinishPage() {
                         <p className="text-sm font-semibold text-green-800 dark:text-green-300">{t('admin.cloud_management.finish.whats_next')}</p>
                         <ul className="space-y-2 text-sm text-green-700 dark:text-green-400">
                             <li className="flex items-start gap-2">
-                                <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
                                 <span>{t('admin.cloud_management.finish.next_step1')}</span>
                             </li>
                             <li className="flex items-start gap-2">
-                                <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
                                 <span>{t('admin.cloud_management.finish.next_step2')}</span>
                             </li>
                             <li className="flex items-start gap-2">
-                                <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
                                 <span>{t('admin.cloud_management.finish.next_step3')}</span>
                             </li>
                         </ul>

@@ -84,7 +84,7 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
             {items.map((item, index) => (
                 <div 
                     key={index} 
-                    className="group relative p-5 rounded-[1.5rem] bg-card/20 border border-border/40 backdrop-blur-3xl hover:border-primary/30 transition-all duration-300"
+                    className="group relative p-5 rounded-3xl bg-card/20 border border-border/40 backdrop-blur-3xl hover:border-primary/30 transition-all duration-300"
                 >
                     <div className="flex items-center gap-4">
                         <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border border-white/5", item.bg, item.color)}>
