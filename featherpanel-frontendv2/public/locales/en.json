@@ -150,7 +150,7 @@
     "saveChanges": "Save Changes"
   },
   "branding": {
-    "running_on": "Running on {name} v{version}",
+    "running_on": "Running on {name} {version}",
     "copyright": "{company}"
   },
   "validation": {

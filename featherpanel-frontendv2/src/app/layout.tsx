@@ -85,6 +85,8 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
+import SystemHealthCheck from '@/components/SystemHealthCheck'
+
 export default function RootLayout({
 	children,
 }: {
@@ -125,6 +127,7 @@ export default function RootLayout({
 						<TranslationProvider>
 							<SessionProvider>
 								<NotificationProvider>
+                                    <SystemHealthCheck />
 									<AppContent>{children}</AppContent>
 									<Toaster richColors position="top-right" />
 								</NotificationProvider>
