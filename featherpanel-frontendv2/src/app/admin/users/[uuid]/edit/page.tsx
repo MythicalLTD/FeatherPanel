@@ -542,6 +542,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <Badge variant={user.two_fa_enabled === 'true' ? 'secondary' : 'outline'}>
                              {user.two_fa_enabled === 'true' ? t('admin.users.badges.2fa') : t('admin.users.badges.no_2fa')}
                         </Badge>
+                         {user.discord_oauth2_linked === 'true' && (
+                            <Badge className="bg-[#5865F2]/10 text-[#5865F2] border-[#5865F2]/20">
+                                {t('admin.users.badges.discord_linked')}
+                            </Badge>
+                        )}
                     </div>
                 </div>
 
@@ -566,6 +571,24 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                          <div className="flex justify-between">
                             <span className="text-muted-foreground">{t('admin.users.edit.account_info.last_ip')}</span>
                             <span className="font-mono">{user.last_ip}</span>
+                        </div>
+                    )}
+                    {user.first_ip && (
+                         <div className="flex justify-between">
+                            <span className="text-muted-foreground">{t('admin.users.edit.account_info.first_ip')}</span>
+                            <span className="font-mono">{user.first_ip}</span>
+                        </div>
+                    )}
+                    {user.discord_oauth2_username && (
+                         <div className="flex justify-between mt-4 pt-4 border-t border-border/50">
+                            <span className="text-muted-foreground">{t('admin.users.edit.account_info.discord_user')}</span>
+                            <span className="font-medium">{user.discord_oauth2_username}</span>
+                        </div>
+                    )}
+                    {user.discord_oauth2_id && (
+                         <div className="flex justify-between">
+                            <span className="text-muted-foreground">{t('admin.users.edit.account_info.discord_id')}</span>
+                            <span className="font-mono text-xs">{user.discord_oauth2_id}</span>
                         </div>
                     )}
                 </div>

@@ -68,6 +68,11 @@ interface ApiUser {
   two_fa_enabled?: string;
   last_seen?: string;
   created_at?: string;
+  discord_oauth2_id?: string | null;
+  discord_oauth2_linked?: string;
+  discord_oauth2_username?: string | null;
+  discord_oauth2_name?: string | null;
+  last_ip?: string | null;
 }
 
 interface Pagination {
@@ -323,6 +328,7 @@ export default function UsersPage() {
               badges.push({
                 label: user.role.display_name,
                 className: `border-transparent text-white`,
+                style: { backgroundColor: user.role.color },
               });
             }
 
@@ -345,6 +351,13 @@ export default function UsersPage() {
               });
             }
 
+            if (user.discord_oauth2_linked === 'true') {
+              badges.push({
+                label: t('admin.users.badges.discord_linked'),
+                className: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
+              });
+            }
+
             return (
               <ResourceCard
                 key={user.uuid}
@@ -353,17 +366,31 @@ export default function UsersPage() {
                 subtitle={user.email}
                 badges={badges}
                 description={
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground font-medium">
-                    {user.last_seen && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold">{t('admin.users.last_seen')}:</span>
-                        {user.last_seen}
-                      </div>
-                    )}
-                    {user.created_at && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold">{t('admin.users.created')}:</span>
-                        {user.created_at}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground font-medium">
+                      {user.last_seen && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold">{t('admin.users.last_seen')}:</span>
+                          {user.last_seen}
+                        </div>
+                      )}
+                      {user.created_at && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold">{t('admin.users.created')}:</span>
+                          {user.created_at}
+                        </div>
+                      )}
+                      {user.last_ip && (
+                        <div className="flex items-center gap-1.5">
+                           <span className="font-semibold">{t('admin.users.edit.account_info.last_ip')}:</span>
+                           {user.last_ip}
+                        </div>
+                      )}
+                    </div>
+                    {user.discord_oauth2_username && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
+                         <span className="font-semibold text-indigo-500/80">{t('admin.users.edit.account_info.discord_user')}:</span>
+                         {user.discord_oauth2_username}
                       </div>
                     )}
                   </div>

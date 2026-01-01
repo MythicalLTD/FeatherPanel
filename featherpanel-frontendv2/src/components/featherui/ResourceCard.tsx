@@ -33,6 +33,7 @@ import { ReactNode, ComponentType } from 'react'
 export interface ResourceBadge {
     label: string
     className?: string
+    style?: React.CSSProperties
 }
 
 interface ResourceCardProps {
@@ -74,6 +75,7 @@ export function ResourceCard({
                         "px-2 py-1 rounded-md text-xs font-medium border", 
                         badge.className || "bg-secondary text-secondary-foreground border-transparent"
                     )}
+                    style={badge.style}
                 >
                     {badge.label}
                 </span>

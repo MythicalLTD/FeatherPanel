@@ -137,17 +137,56 @@ function scan() {
     unusedKeys.push(key);
   });
 
-  // 4. Report
+  // 4. Report or Purge
+  const shouldPurge = process.argv.includes("--purge");
+
   if (unusedKeys.length > 0) {
-    console.log(
-      `\nFound ${unusedKeys.size} potentially unused translation keys:\n`
-    );
-    unusedKeys.sort().forEach((key) => {
-      console.log(`  - ${key}`);
-    });
-    console.log(
-      `\nNote: Some keys might be constructed dynamically or used in backend/other places.`
-    );
+    if (shouldPurge) {
+      console.log(`\nPurging ${unusedKeys.length} unused translation keys...`);
+      let purgedCount = 0;
+
+      unusedKeys.forEach((key) => {
+        const parts = key.split(".");
+        let current = localeContent;
+        let valid = true;
+
+        // Navigate to the parent object
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (current[parts[i]] === undefined) {
+            valid = false;
+            break;
+          }
+          current = current[parts[i]];
+        }
+
+        if (valid && current[parts[parts.length - 1]] !== undefined) {
+          delete current[parts[parts.length - 1]];
+          purgedCount++;
+        }
+      });
+
+      // Write back to file
+      fs.writeFileSync(
+        LOCALE_FILE,
+        JSON.stringify(localeContent, null, 4),
+        "utf8"
+      ); // 4 space indent per original file (usually)
+      console.log(
+        `\n✓ Successfully purged ${purgedCount} keys from ${LOCALE_FILE}`
+      );
+    } else {
+      console.log(
+        `\nFound ${unusedKeys.length} potentially unused translation keys:\n`
+      );
+      unusedKeys.sort().forEach((key) => {
+        console.log(`  - ${key}`);
+      });
+      console.log(
+        `\nNote: Some keys might be constructed dynamically or used in backend/other places.`
+      );
+      console.log(`\nRun with --purge to remove these keys automatically:`);
+      console.log(`  npm run scan:translations:unused -- --purge`);
+    }
   } else {
     console.log("\nSuccess! No unused translations found.");
   }
