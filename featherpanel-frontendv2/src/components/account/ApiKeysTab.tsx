@@ -40,7 +40,7 @@ import {
     Input as HeadlessInput,
 } from '@headlessui/react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, copyToClipboard } from '@/lib/utils';
 import { Key, Plus, Trash2, Eye, Pencil, RefreshCw, Copy, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -190,16 +190,6 @@ export default function ApiKeysTab() {
         } catch (error) {
             console.error('Error regenerating API keys:', error);
             toast.error('Failed to regenerate API keys');
-        }
-    };
-
-    const copyToClipboard = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            toast.success(t('account.apiKeys.keyCopied'));
-        } catch (error) {
-            console.error('Failed to copy:', error);
-            toast.error('Failed to copy to clipboard');
         }
     };
 
