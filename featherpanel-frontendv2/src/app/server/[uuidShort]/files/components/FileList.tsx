@@ -99,7 +99,7 @@ export function FileList({
     const allSelected = files.length > 0 && selectedFiles.length === files.length;
 
     return (
-        <div className='overflow-hidden rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/10 dark:shadow-black/40 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+        <div className='overflow-hidden rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/10 dark:shadow-black/40'>
             {/* Header */}
             <div
                 className='flex items-center gap-3 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 px-4 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/60 dark:text-white/40'

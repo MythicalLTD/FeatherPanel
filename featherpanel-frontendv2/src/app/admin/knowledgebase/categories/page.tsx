@@ -275,7 +275,7 @@ export default function KnowledgeBaseCategoriesPage() {
     };
 
     return (
-        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+        <div className='space-y-6'>
             <PageHeader
                 title={t('admin.knowledgebase.categories.title')}
                 description={t('admin.knowledgebase.categories.subtitle')}

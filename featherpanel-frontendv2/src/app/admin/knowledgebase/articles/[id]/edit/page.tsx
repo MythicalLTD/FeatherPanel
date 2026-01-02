@@ -313,7 +313,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
     };
 
     return (
-        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+        <div className='space-y-6'>
             <PageHeader
                 title={t('admin.knowledgebase.edit.title')}
                 description={t('admin.knowledgebase.edit.subtitle', { title: article?.title || '...' })}

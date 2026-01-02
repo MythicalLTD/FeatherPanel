@@ -244,7 +244,7 @@ export default function RateLimitsPage() {
     };
 
     return (
-        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+        <div className='space-y-6'>
             <PageHeader
                 title={t('admin.rate_limits.title')}
                 description={t('admin.rate_limits.description')}

@@ -142,7 +142,7 @@ export default function TicketPrioritiesPage() {
     };
 
     return (
-        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+        <div className='space-y-6'>
             <PageHeader
                 title={t('admin.tickets.priorities.title')}
                 description={t('admin.tickets.priorities.subtitle')}

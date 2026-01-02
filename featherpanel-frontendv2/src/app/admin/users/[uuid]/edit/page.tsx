@@ -365,7 +365,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     }
 
     return (
-        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+        <div className='space-y-6'>
             {/* Header */}
             <PageHeader
                 title={t('admin.users.edit.title', { username: user.username })}

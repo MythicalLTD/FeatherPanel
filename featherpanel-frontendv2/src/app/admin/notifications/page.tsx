@@ -304,7 +304,7 @@ export default function NotificationsPage() {
     };
 
     return (
-        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+        <div className='space-y-6'>
             <PageHeader
                 title={t('admin.notifications.title')}
                 description={t('admin.notifications.subtitle')}
