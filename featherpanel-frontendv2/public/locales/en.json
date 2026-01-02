@@ -3180,6 +3180,145 @@
 					"description": "Always backup your database before running migrations or major operations. FeatherPanel is not responsible for data loss due to unsafe operations."
 				}
 			}
+		},
+		"plugins": {
+			"title": "Plugins",
+			"description": "Manage installed plugins and their configurations",
+			"actions": {
+				"browse_marketplace": "Browse Marketplace",
+				"refresh": "Refresh",
+				"check_updates": "Check Updates",
+				"upload": "Upload Plugin (.fpa)",
+				"install_url": "Install URL",
+				"installing": "Installing...",
+				"configure": "Configure",
+				"uninstall": "Uninstall",
+				"view_info": "View Info",
+				"update": "Update",
+				"updating": "Updating...",
+				"save_settings": "Save All Settings",
+				"saving": "Saving...",
+				"close": "Close",
+				"cancel": "Cancel",
+				"install": "Install",
+				"reinstall": "Reinstall",
+				"select_all": "Select All",
+				"deselect_all": "Deselect All",
+				"dismiss": "Dismiss",
+				"visit_website": "Visit Website"
+			},
+			"grid": {
+				"empty_title": "No Plugins Installed",
+				"empty_description": "No plugins are currently installed on your system.",
+				"update_available": "Update Available",
+				"missing_dependencies": "Missing Dependencies",
+				"needs_configuration": "Needs Configuration",
+				"not_loaded": "Not loaded",
+				"version": "Version",
+				"author": "Author",
+				"target": "Target",
+				"missing_badge": "Missing: {dep}",
+				"config_badge": "Config: {cfg}",
+				"visit_action": "Visit"
+			},
+			"drawers": {
+				"config": {
+					"title": "Plugin Configuration",
+					"description": "Configure settings for {plugin}",
+					"loading": "Loading plugin configuration...",
+					"settings_title": "Plugin Settings",
+					"fields": "{count} fields",
+					"no_schema": "This plugin doesn't have a configuration schema defined",
+					"no_schema_desc": "The plugin developer needs to add a config section to conf.yml"
+				},
+				"info": {
+					"title": "Plugin Information",
+					"description": "Detailed information about {plugin}",
+					"sections": {
+						"identifier": "Identifier",
+						"name": "Name",
+						"version": "Version",
+						"author": "Author",
+						"target": "Target Version",
+						"flags": "Flags",
+						"website": "Website",
+						"description": "Description",
+						"dependencies": "Dependencies",
+						"required_configs": "Required Configurations"
+					}
+				}
+			},
+			"dialogs": {
+				"uninstall": {
+					"title": "Uninstall Plugin",
+					"description": "Are you sure you want to uninstall {plugin}?",
+					"confirm": "Uninstall"
+				},
+				"install_url": {
+					"title": "Install From URL",
+					"warning": "Warning: It is unsafe to install plugins from URLs that are not from the official repository."
+				},
+				"upload": {
+					"title": "Upload and Install Plugin",
+					"warning": "Warning: Uploading and installing third-party plugins can be unsafe unless from our official repo."
+				},
+				"update": {
+					"title": "Update Plugin",
+					"checking": "Checking update requirements...",
+					"available": "Update Available",
+					"version_info": "Update from {current} to {latest}",
+					"backup_warning": "It's recommended to backup your plugin configuration and data before updating. The update will replace the current plugin files."
+				},
+				"reinstall": {
+					"title": "Select Plugins to Reinstall",
+					"description": "Choose which previously installed plugins you would like to reinstall.",
+					"selected_count": "{count} of {total} selected",
+					"button_label": "Reinstall {count} Plugin(s)"
+				}
+			},
+			"banners": {
+				"updates": {
+					"title": "Updates Available",
+					"description": "Hey! It looks like there is an update for the following plugins:",
+					"check_all": "Check All Updates"
+				},
+				"previously_installed": {
+					"title": "Previously Installed Plugins",
+					"description": "You had {count} plugin(s) installed before. Would you like to reinstall them?",
+					"action": "Select Plugins to Reinstall"
+				}
+			},
+			"help": {
+				"install": {
+					"title": "Install & Upload",
+					"description": "Upload .fpa files via the GUI or install via a direct URL. Use the actions below to configure, export, or uninstall plugins."
+				},
+				"config": {
+					"title": "Configuration",
+					"description": "Click on any plugin card to configure its settings. Plugins may require specific configuration values to function properly."
+				},
+				"security": {
+					"title": "Security & Liability",
+					"description": "Installing third‑party plugins can be risky (panel corruption or system compromise). FeatherPanel and its team are not liable for what you install or develop."
+				},
+				"reminder": {
+					"title": "A careful reminder",
+					"description": "Always review documentation and source before installing plugins. Keep backups and test changes in a safe environment first."
+				}
+			},
+			"messages": {
+				"load_failed": "Failed to load plugins",
+				"install_success": "Plugin installed successfully",
+				"install_failed": "Failed to install plugin",
+				"update_success": "Plugin updated successfully",
+				"update_failed": "Failed to update plugin",
+				"uninstall_success": "Plugin uninstalled",
+				"uninstall_failed": "Failed to uninstall plugin",
+				"save_success": "Settings saved successfully",
+				"save_failed": "Failed to save settings",
+				"reinstall_success": "Plugins reinstalled successfully",
+				"reinstall_failed": "Failed to reinstall plugins"
+			}
 		}
 	},
 	"landing": {

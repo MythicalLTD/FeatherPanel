@@ -32,6 +32,7 @@ interface PageCardProps {
     title: string;
     description?: string;
     icon?: LucideIcon;
+    iconSrc?: string;
     children: React.ReactNode;
     footer?: React.ReactNode;
     variant?: 'default' | 'danger' | 'warning';
@@ -76,6 +77,7 @@ export function PageCard({
     title,
     description,
     icon: Icon,
+    iconSrc,
     children,
     footer,
     variant = 'default',
@@ -102,21 +104,34 @@ export function PageCard({
 
             <div className='flex items-center justify-between border-b border-border/10 pb-6 relative z-10'>
                 <div className='flex items-center gap-4'>
-                    {Icon && (
+                    {(Icon || iconSrc) && (
                         <div
                             className={cn(
-                                'h-10 w-10 rounded-xl flex items-center justify-center border',
+                                'h-10 w-10 rounded-xl flex items-center justify-center border overflow-hidden p-2',
                                 styles.iconBg,
                                 styles.iconBorder,
                             )}
                         >
-                            <Icon className={cn('h-5 w-5', styles.iconColor)} />
+                            {iconSrc ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={iconSrc} alt={title} className='h-full w-full object-contain' />
+                            ) : (
+                                Icon && <Icon className={cn('h-5 w-5', styles.iconColor)} />
+                            )}
                         </div>
                     )}
-                    <div className='space-y-0.5'>
-                        <h2 className={cn('text-xl font-black uppercase tracking-tight', styles.title)}>{title}</h2>
+                    <div className='space-y-0.5 flex-1 min-w-0'>
+                        <h2
+                            className={cn(
+                                'text-lg font-black uppercase tracking-tight line-clamp-2 break-all',
+                                styles.title,
+                            )}
+                            title={title}
+                        >
+                            {title}
+                        </h2>
                         {description && (
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50 truncate'>
                                 {description}
                             </p>
                         )}
