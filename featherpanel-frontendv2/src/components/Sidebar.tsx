@@ -95,6 +95,7 @@ function SidebarContent({
         // Prevent /dashboard from matching /dashboard/tickets, /dashboard/servers etc.
         if (href === '/dashboard') return false;
         if (href === '/admin') return false;
+        if (href === '/admin/tickets') return false;
 
         // If it's the server root (/server/[uuid]), only match exact.
         // This prevents the "Console" item from being highlighted on plugin pages like /server/[uuid]/[plugin]
