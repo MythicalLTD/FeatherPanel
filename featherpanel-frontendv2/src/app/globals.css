@@ -66,8 +66,8 @@
     --accent-foreground: 0 0% 93%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 12%;
-    --input: 220 15% 12%;
+    --border: 220 15% 8%; /* Almost background color to hide borders */
+    --input: 220 15% 10%;
     --ring: 262 83% 58%;
 }
 

@@ -42,6 +42,9 @@ import {
     CheckCircle,
     AlertTriangle,
     XCircle,
+    ChevronLeft,
+    ChevronRight,
+    KeyRound,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
@@ -50,6 +53,7 @@ import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
+import { PageCard } from '@/components/featherui/PageCard';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -300,7 +304,7 @@ export default function NotificationsPage() {
     };
 
     return (
-        <div className='space-y-6'>
+        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
             <PageHeader
                 title={t('admin.notifications.title')}
                 description={t('admin.notifications.subtitle')}
@@ -318,7 +322,7 @@ export default function NotificationsPage() {
                 }
             />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
+            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                     <Input
@@ -417,26 +421,51 @@ export default function NotificationsPage() {
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='flex justify-center gap-2 mt-4'>
+                <div className='flex items-center justify-center gap-2 mt-8'>
                     <Button
                         variant='outline'
+                        size='icon'
                         disabled={!pagination.hasPrev}
                         onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
                     >
-                        Previous
+                        <ChevronLeft className='h-4 w-4' />
                     </Button>
-                    <span className='flex items-center text-sm text-muted-foreground'>
-                        Page {pagination.page} of {pagination.totalPages}
-                    </span>
+                    <div className='flex items-center gap-2'>
+                        <span className='text-sm font-medium'>
+                            {pagination.page} / {pagination.totalPages}
+                        </span>
+                    </div>
                     <Button
                         variant='outline'
+                        size='icon'
                         disabled={!pagination.hasNext}
                         onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
                     >
-                        Next
+                        <ChevronRight className='h-4 w-4' />
                     </Button>
                 </div>
             )}
+
+            {/* Help Cards */}
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+                <PageCard title={t('admin.notifications.help.alerts.title')} icon={Bell}>
+                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                        {t('admin.notifications.help.alerts.description')}
+                    </p>
+                </PageCard>
+                <PageCard title={t('admin.notifications.help.markdown.title')} icon={Info}>
+                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                        {t('admin.notifications.help.markdown.description')}
+                    </p>
+                </PageCard>
+                <PageCard title={t('admin.notifications.help.delivery.title')} icon={KeyRound} variant='danger'>
+                    <ul className='list-disc list-inside space-y-1 text-sm text-muted-foreground'>
+                        <li>{t('admin.notifications.help.delivery.item1')}</li>
+                        <li>{t('admin.notifications.help.delivery.item2')}</li>
+                        <li>{t('admin.notifications.help.delivery.item3')}</li>
+                    </ul>
+                </PageCard>
+            </div>
 
             {/* Create Sheet */}
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>

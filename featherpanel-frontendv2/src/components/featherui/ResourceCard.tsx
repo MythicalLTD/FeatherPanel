@@ -96,7 +96,7 @@ export function ResourceCard({
             onClick={onClick}
             style={style}
             className={cn(
-                'group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-sm border border-border/50 hover:border-primary/40 hover:bg-accent/50 transition-all duration-300',
+                'group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-sm border border-border/10 hover:border-primary/30 hover:bg-accent/50 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-primary/5',
                 onClick && 'cursor-pointer',
                 className,
             )}
@@ -104,7 +104,7 @@ export function ResourceCard({
             <div className='p-6 flex flex-col md:flex-row md:items-center gap-6 relative z-10'>
                 <div
                     className={cn(
-                        'h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2',
+                        'h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2',
                         iconWrapperClassName,
                     )}
                 >

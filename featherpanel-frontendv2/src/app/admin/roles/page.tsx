@@ -1,36 +1,58 @@
 /*
 MIT License
+
 Copyright (c) 2024-2026 MythicalSystems and Contributors
+Copyright (c) 2024-2026 Cassian Gherman (NaysKutzu)
+Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import {
-    Users as UsersIcon,
+    Shield,
     Plus,
-    Eye,
     Pencil,
     Trash2,
     Search,
     RefreshCw,
-    Shield,
     X,
+    ChevronLeft,
+    ChevronRight,
     KeyRound,
-    Palette,
-    HelpCircle,
+    AlertCircle,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { EmptyState } from '@/components/featherui/EmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { PageCard } from '@/components/featherui/PageCard';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import Permissions from '@/lib/permissions';
 import { Badge } from '@/components/ui/badge';
 
 interface Role {
@@ -42,6 +64,12 @@ interface Role {
     updated_at: string;
 }
 
+interface Permission {
+    id: number;
+    role_id: number;
+    permission: string;
+}
+
 interface Pagination {
     page: number;
     pageSize: number;
@@ -51,19 +79,11 @@ interface Pagination {
     hasPrev: boolean;
 }
 
-interface Permission {
-    id: number;
-    role_id: number;
-    permission: string;
-}
-
 export default function RolesPage() {
     const { t } = useTranslation();
     const [roles, setRoles] = useState<Role[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-    const [refreshKey, setRefreshKey] = useState(0);
 
     // Pagination state
     const [pagination, setPagination] = useState<Pagination>({
@@ -75,31 +95,33 @@ export default function RolesPage() {
         hasPrev: false,
     });
 
-    // Sheet states
+    // Drawer states
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
-    const [viewOpen, setViewOpen] = useState(false);
     const [permissionsOpen, setPermissionsOpen] = useState(false);
 
-    // Data states
-    const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+    // Selected items
     const [editingRole, setEditingRole] = useState<Role | null>(null);
     const [permissionsRole, setPermissionsRole] = useState<Role | null>(null);
+    const [rolePermissions, setRolePermissions] = useState<Permission[]>([]);
+    const [loadingPermissions, setLoadingPermissions] = useState(false);
 
     // Form states
     const [newRole, setNewRole] = useState({
         name: '',
         display_name: '',
-        color: '#000000',
+        color: '#5B8DEF',
     });
-
-    // Permission states
-    const [permissions, setPermissions] = useState<Permission[]>([]);
-    const [newPermission, setNewPermission] = useState('');
-    const [loadingPermissions, setLoadingPermissions] = useState(false);
+    const [roleColorHex, setRoleColorHex] = useState('#5B8DEF');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [deletingId, setDeletingId] = useState<number | null>(null);
+
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    // Permissions management state
+    const [permissionSearch, setPermissionSearch] = useState('');
+    const allPermissions = useMemo(() => Permissions.getAll(), []);
 
     // Debounce search query
     useEffect(() => {
@@ -158,35 +180,6 @@ export default function RolesPage() {
         };
     }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t]);
 
-    // Fetch permissions
-    useEffect(() => {
-        if (!permissionsOpen || !permissionsRole) return;
-
-        const controller = new AbortController();
-        const fetchPermissions = async () => {
-            setLoadingPermissions(true);
-            try {
-                const { data } = await axios.get('/api/admin/permissions', {
-                    params: { role_id: permissionsRole.id },
-                    signal: controller.signal,
-                });
-                setPermissions(data.data.permissions || []);
-            } catch (error) {
-                if (!axios.isCancel(error)) {
-                    console.error('Error fetching permissions:', error);
-                    toast.error(t('admin.roles.messages.fetch_failed'));
-                }
-            } finally {
-                if (!controller.signal.aborted) {
-                    setLoadingPermissions(false);
-                }
-            }
-        };
-
-        fetchPermissions();
-        return () => controller.abort();
-    }, [permissionsOpen, permissionsRole, t]);
-
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -194,13 +187,13 @@ export default function RolesPage() {
             await axios.put('/api/admin/roles', newRole);
             toast.success(t('admin.roles.messages.created'));
             setCreateOpen(false);
-            setNewRole({ name: '', display_name: '', color: '#000000' });
+            resetNewRole();
             setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error creating role:', error);
             let errorMessage = t('admin.roles.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.error_message) {
-                errorMessage = error.response.data.error_message;
+            if (isAxiosError(error) && error.response?.data?.message) {
+                errorMessage = error.response.data.message;
             }
             toast.error(errorMessage);
         } finally {
@@ -214,11 +207,13 @@ export default function RolesPage() {
 
         setIsSubmitting(true);
         try {
-            await axios.patch(`/api/admin/roles/${editingRole.id}`, {
+            const payload = {
                 name: editingRole.name,
                 display_name: editingRole.display_name,
                 color: editingRole.color,
-            });
+            };
+
+            await axios.patch(`/api/admin/roles/${editingRole.id}`, payload);
             toast.success(t('admin.roles.messages.updated'));
             setEditOpen(false);
             setEditingRole(null);
@@ -226,8 +221,8 @@ export default function RolesPage() {
         } catch (error: unknown) {
             console.error('Error updating role:', error);
             let errorMessage = t('admin.roles.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.error_message) {
-                errorMessage = error.response.data.error_message;
+            if (isAxiosError(error) && error.response?.data?.message) {
+                errorMessage = error.response.data.message;
             }
             toast.error(errorMessage);
         } finally {
@@ -235,49 +230,53 @@ export default function RolesPage() {
         }
     };
 
-    const handleDelete = async (role: Role) => {
-        if (!confirm(t('admin.roles.messages.delete_confirm'))) return;
+    const handleDelete = async (id: number) => {
+        if (!confirm(t('admin.roles.delete_confirm'))) return;
 
-        setDeletingId(role.id);
+        setIsSubmitting(true);
         try {
-            await axios.delete(`/api/admin/roles/${role.id}`);
+            await axios.delete(`/api/admin/roles/${id}`);
             toast.success(t('admin.roles.messages.deleted'));
             setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error deleting role:', error);
             let errorMessage = t('admin.roles.messages.delete_failed');
-            if (isAxiosError(error) && error.response?.data?.error_message) {
-                errorMessage = error.response.data.error_message;
+            if (isAxiosError(error) && error.response?.data?.message) {
+                errorMessage = error.response.data.message;
             }
             toast.error(errorMessage);
         } finally {
-            setDeletingId(null);
+            setIsSubmitting(false);
         }
     };
 
-    const handleAddPermission = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!permissionsRole || !newPermission.trim()) return;
+    const fetchPermissions = async (roleId: number) => {
+        setLoadingPermissions(true);
+        try {
+            const { data } = await axios.get('/api/admin/permissions', {
+                params: { role_id: roleId },
+            });
+            setRolePermissions(data.data.permissions || []);
+        } catch (error) {
+            console.error('Error fetching permissions:', error);
+        } finally {
+            setLoadingPermissions(false);
+        }
+    };
 
+    const handleAddPermission = async (permissionValue: string) => {
+        if (!permissionsRole) return;
         try {
             const { data } = await axios.put('/api/admin/permissions', {
                 role_id: permissionsRole.id,
-                permission: newPermission.trim(),
+                permission: permissionValue,
             });
-
-            if (data?.success) {
-                toast.success(t('admin.roles.permissions.added'));
-                setNewPermission('');
-                // Refresh permissions
-                const refreshData = await axios.get('/api/admin/permissions', {
-                    params: { role_id: permissionsRole.id },
-                });
-                setPermissions(refreshData.data.data.permissions || []);
-            } else {
-                toast.error(data?.message || t('admin.roles.permissions.add_failed'));
+            if (data.success) {
+                toast.success(t('admin.roles.messages.permission_added'));
+                await fetchPermissions(permissionsRole.id);
             }
         } catch (error: unknown) {
-            let errorMessage = t('admin.roles.permissions.add_failed');
+            let errorMessage = t('admin.roles.messages.permission_failed');
             if (isAxiosError(error) && error.response?.data?.message) {
                 errorMessage = error.response.data.message;
             }
@@ -285,33 +284,71 @@ export default function RolesPage() {
         }
     };
 
-    const handleDeletePermission = async (id: number) => {
+    const handleDeletePermission = async (permissionId: number) => {
+        if (!permissionsRole) return;
         try {
-            const { data } = await axios.delete(`/api/admin/permissions/${id}`);
-            if (data?.success) {
-                toast.success(t('admin.roles.permissions.deleted'));
-                // Optimistic update
-                setPermissions(permissions.filter((p) => p.id !== id));
-            } else {
-                toast.error(data?.message || t('admin.roles.permissions.delete_failed'));
+            const { data } = await axios.delete(`/api/admin/permissions/${permissionId}`);
+            if (data.success) {
+                toast.success(t('admin.roles.messages.permission_removed'));
+                await fetchPermissions(permissionsRole.id);
             }
         } catch (error: unknown) {
-            let errorMessage = t('admin.roles.permissions.delete_failed');
+            let errorMessage = t('admin.roles.messages.permission_failed');
             if (isAxiosError(error) && error.response?.data?.message) {
                 errorMessage = error.response.data.message;
             }
             toast.error(errorMessage);
         }
     };
+
+    const resetNewRole = () => {
+        setNewRole({
+            name: '',
+            display_name: '',
+            color: '#5B8DEF',
+        });
+        setRoleColorHex('#5B8DEF');
+    };
+
+    const openEdit = (role: Role) => {
+        setEditingRole({ ...role });
+        setEditOpen(true);
+    };
+
+    const openPermissions = (role: Role) => {
+        setPermissionsRole(role);
+        fetchPermissions(role.id);
+        setPermissionsOpen(true);
+        setPermissionSearch('');
+    };
+
+    const filteredAvailablePermissions = useMemo(() => {
+        const assigned = new Set(rolePermissions.map((p) => p.permission));
+        const search = permissionSearch.toLowerCase();
+
+        return allPermissions.filter((p) => {
+            const isAssigned = assigned.has(p.value);
+            const matchesSearch =
+                p.value.toLowerCase().includes(search) ||
+                p.description.toLowerCase().includes(search) ||
+                p.category.toLowerCase().includes(search);
+            return !isAssigned && matchesSearch;
+        });
+    }, [rolePermissions, allPermissions, permissionSearch]);
 
     return (
-        <div className='space-y-6'>
+        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
             <PageHeader
                 title={t('admin.roles.title')}
                 description={t('admin.roles.subtitle')}
-                icon={UsersIcon}
+                icon={Shield}
                 actions={
-                    <Button onClick={() => setCreateOpen(true)}>
+                    <Button
+                        onClick={() => {
+                            resetNewRole();
+                            setCreateOpen(true);
+                        }}
+                    >
                         <Plus className='h-4 w-4 mr-2' />
                         {t('admin.roles.create')}
                     </Button>
@@ -331,176 +368,136 @@ export default function RolesPage() {
             </div>
 
             {loading ? (
-                <TableSkeleton count={5} />
+                <TableSkeleton count={3} />
+            ) : roles.length === 0 ? (
+                <EmptyState
+                    icon={Shield}
+                    title={t('admin.roles.no_results')}
+                    description={t('admin.roles.search_placeholder')}
+                    action={
+                        <Button
+                            onClick={() => {
+                                resetNewRole();
+                                setCreateOpen(true);
+                            }}
+                        >
+                            {t('admin.roles.create')}
+                        </Button>
+                    }
+                />
             ) : (
-                <div className='rounded-md border bg-card'>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>{t('admin.roles.table.name')}</TableHead>
-                                <TableHead>{t('admin.roles.table.display_name')}</TableHead>
-                                <TableHead>{t('admin.roles.table.color')}</TableHead>
-                                <TableHead>{t('admin.roles.table.created_at')}</TableHead>
-                                <TableHead className='text-right'>{t('admin.roles.table.actions')}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {roles.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className='h-24 text-center'>
-                                        {t('admin.roles.no_results')}
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                roles.map((role) => (
-                                    <TableRow key={role.id}>
-                                        <TableCell className='font-medium'>{role.name}</TableCell>
-                                        <TableCell>{role.display_name}</TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                style={{ backgroundColor: role.color, color: '#fff' }}
-                                                className='border-transparent hover:opacity-90'
-                                            >
-                                                {role.color}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{new Date(role.created_at).toLocaleDateString()}</TableCell>
-                                        <TableCell className='text-right'>
-                                            <div className='flex justify-end gap-2'>
-                                                <Button
-                                                    size='sm'
-                                                    variant='ghost'
-                                                    onClick={() => {
-                                                        setSelectedRole(role);
-                                                        setViewOpen(true);
-                                                    }}
-                                                >
-                                                    <Eye className='h-4 w-4' />
-                                                </Button>
-                                                <Button
-                                                    size='sm'
-                                                    variant='ghost'
-                                                    onClick={() => {
-                                                        setEditingRole(role);
-                                                        setEditOpen(true);
-                                                    }}
-                                                >
-                                                    <Pencil className='h-4 w-4' />
-                                                </Button>
-                                                <Button
-                                                    size='sm'
-                                                    variant='ghost'
-                                                    onClick={() => {
-                                                        setPermissionsRole(role);
-                                                        setPermissionsOpen(true);
-                                                    }}
-                                                >
-                                                    <Shield className='h-4 w-4' />
-                                                </Button>
-                                                <Button
-                                                    size='sm'
-                                                    variant='ghost'
-                                                    className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                                    onClick={() => handleDelete(role)}
-                                                    disabled={deletingId === role.id}
-                                                >
-                                                    {deletingId === role.id ? (
-                                                        <RefreshCw className='h-4 w-4 animate-spin' />
-                                                    ) : (
-                                                        <Trash2 className='h-4 w-4' />
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                <div className='grid grid-cols-1 gap-4'>
+                    {roles.map((role) => {
+                        const badges: ResourceBadge[] = [
+                            {
+                                label: role.name,
+                                className: 'bg-secondary text-secondary-foreground font-mono',
+                            },
+                        ];
+
+                        return (
+                            <ResourceCard
+                                key={role.id}
+                                icon={Shield}
+                                title={role.display_name}
+                                subtitle={`${t('admin.roles.form.color')}: ${role.color}`}
+                                badges={badges}
+                                iconClassName='text-primary'
+                                style={{
+                                    borderColor: role.color,
+                                    boxShadow: `0 0 10px -5px ${role.color}`,
+                                }}
+                                description={
+                                    <div className='flex items-center gap-2 mt-2'>
+                                        <div
+                                            className='w-6 h-6 rounded-md border border-border'
+                                            style={{ backgroundColor: role.color }}
+                                        />
+                                        <span className='text-sm text-muted-foreground'>
+                                            {t('admin.roles.labels.created')}:{' '}
+                                            {new Date(role.created_at).toLocaleDateString(undefined, {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </span>
+                                    </div>
+                                }
+                                actions={
+                                    <div className='flex items-center gap-2'>
+                                        <Button size='sm' variant='outline' onClick={() => openPermissions(role)}>
+                                            <Shield className='h-4 w-4 mr-2' />
+                                            {t('admin.roles.form.permissions')}
+                                        </Button>
+                                        <Button size='sm' variant='ghost' onClick={() => openEdit(role)}>
+                                            <Pencil className='h-4 w-4' />
+                                        </Button>
+                                        <Button
+                                            size='sm'
+                                            variant='ghost'
+                                            className='text-destructive hover:text-destructive hover:bg-destructive/10'
+                                            onClick={() => handleDelete(role.id)}
+                                            disabled={isSubmitting}
+                                        >
+                                            {isSubmitting ? (
+                                                <RefreshCw className='h-4 w-4 animate-spin' />
+                                            ) : (
+                                                <Trash2 className='h-4 w-4' />
+                                            )}
+                                        </Button>
+                                    </div>
+                                }
+                            />
+                        );
+                    })}
                 </div>
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='flex justify-center gap-2 mt-4'>
+                <div className='flex items-center justify-center gap-2 mt-8'>
                     <Button
                         variant='outline'
+                        size='icon'
                         disabled={!pagination.hasPrev}
                         onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
                     >
-                        Previous
+                        <ChevronLeft className='h-4 w-4' />
                     </Button>
-                    <span className='flex items-center text-sm text-muted-foreground'>
-                        Page {pagination.page} of {pagination.totalPages}
-                    </span>
+                    <div className='flex items-center gap-2'>
+                        <span className='text-sm font-medium'>
+                            {pagination.page} / {pagination.totalPages}
+                        </span>
+                    </div>
                     <Button
                         variant='outline'
+                        size='icon'
                         disabled={!pagination.hasNext}
                         onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
                     >
-                        Next
+                        <ChevronRight className='h-4 w-4' />
                     </Button>
                 </div>
             )}
 
             {/* Help Cards */}
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6'>
-                <Card>
-                    <CardContent className='pt-6'>
-                        <div className='flex items-start gap-3 text-sm text-muted-foreground'>
-                            <UsersIcon className='h-5 w-5 shrink-0 mt-0.5' />
-                            <div>
-                                <div className='font-semibold text-foreground mb-1'>Managing Roles</div>
-                                <p>
-                                    Create, view, edit, and delete roles. Use search and pagination to quickly find
-                                    roles by name or display name.
-                                </p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className='pt-6'>
-                        <div className='flex items-start gap-3 text-sm text-muted-foreground'>
-                            <KeyRound className='h-5 w-5 shrink-0 mt-0.5' />
-                            <div>
-                                <div className='font-semibold text-foreground mb-1'>Permissions</div>
-                                <p>
-                                    Assign granular permissions to each role. Use the Manage Permissions action to add
-                                    or remove capabilities safely.
-                                </p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className='pt-6'>
-                        <div className='flex items-start gap-3 text-sm text-muted-foreground'>
-                            <Palette className='h-5 w-5 shrink-0 mt-0.5' />
-                            <div>
-                                <div className='font-semibold text-foreground mb-1'>Role Color & Badges</div>
-                                <p>
-                                    Choose a color to visually distinguish roles across the UI (badges, labels, and
-                                    detail views).
-                                </p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className='md:col-span-2 lg:col-span-3'>
-                    <CardContent className='pt-6'>
-                        <div className='flex items-start gap-3 text-sm text-muted-foreground'>
-                            <HelpCircle className='h-5 w-5 shrink-0 mt-0.5' />
-                            <div>
-                                <div className='font-semibold text-foreground mb-1'>Tips & Best Practices</div>
-                                <ul className='list-disc list-inside space-y-1'>
-                                    <li>Follow least-privilege: grant only what is necessary.</li>
-                                    <li>Use descriptive display names so staff understands intent.</li>
-                                    <li>Test role changes with a non-admin account before rollout.</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+                <PageCard title={t('admin.roles.help.managing.title')} icon={Shield}>
+                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                        {t('admin.roles.help.managing.description')}
+                    </p>
+                </PageCard>
+                <PageCard title={t('admin.roles.help.permissions.title')} icon={AlertCircle}>
+                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                        {t('admin.roles.help.permissions.description')}
+                    </p>
+                </PageCard>
+                <PageCard title={t('admin.roles.help.security.title')} icon={KeyRound} variant='danger'>
+                    <ul className='list-disc list-inside space-y-1 text-sm text-muted-foreground'>
+                        <li>{t('admin.roles.help.security.item1')}</li>
+                        <li>{t('admin.roles.help.security.item2')}</li>
+                        <li>{t('admin.roles.help.security.item3')}</li>
+                    </ul>
+                </PageCard>
             </div>
 
             {/* Create Sheet */}
@@ -508,7 +505,7 @@ export default function RolesPage() {
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.roles.form.create_title')}</SheetTitle>
-                        <SheetDescription>{t('admin.roles.form.create_description')}</SheetDescription>
+                        <SheetDescription>{t('admin.roles.create_description')}</SheetDescription>
                     </SheetHeader>
 
                     <form onSubmit={handleCreate} className='space-y-4'>
@@ -519,8 +516,8 @@ export default function RolesPage() {
                                 value={newRole.name}
                                 onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
                                 required
+                                placeholder='admin'
                             />
-                            <p className='text-xs text-muted-foreground'>{t('admin.roles.form.name_help')}</p>
                         </div>
 
                         <div className='space-y-2'>
@@ -530,32 +527,37 @@ export default function RolesPage() {
                                 value={newRole.display_name}
                                 onChange={(e) => setNewRole({ ...newRole, display_name: e.target.value })}
                                 required
+                                placeholder='Administrator'
                             />
-                            <p className='text-xs text-muted-foreground'>{t('admin.roles.form.display_name_help')}</p>
                         </div>
 
                         <div className='space-y-2'>
                             <Label htmlFor='create-color'>{t('admin.roles.form.color')}</Label>
-                            <div className='flex items-center gap-3'>
-                                <input
-                                    id='create-color'
+                            <div className='flex items-center gap-2'>
+                                <Input
                                     type='color'
+                                    id='create-color-picker'
                                     value={newRole.color}
-                                    onChange={(e) => setNewRole({ ...newRole, color: e.target.value })}
-                                    className='h-10 w-10 rounded border border-input'
+                                    onChange={(e) => {
+                                        setNewRole({ ...newRole, color: e.target.value });
+                                        setRoleColorHex(e.target.value.toUpperCase());
+                                    }}
+                                    className='w-12 h-10 p-1 cursor-pointer'
                                 />
                                 <Input
-                                    value={newRole.color}
-                                    onChange={(e) => setNewRole({ ...newRole, color: e.target.value })}
+                                    id='create-color'
+                                    value={roleColorHex}
+                                    onChange={(e) => {
+                                        setRoleColorHex(e.target.value);
+                                        if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                                            setNewRole({ ...newRole, color: e.target.value });
+                                        }
+                                    }}
+                                    required
+                                    placeholder='#5B8DEF'
+                                    className='flex-1'
                                 />
-                                <Badge
-                                    style={{ backgroundColor: newRole.color, color: '#fff' }}
-                                    className='border-transparent h-8 px-3'
-                                >
-                                    {t('admin.roles.form.preview')}
-                                </Badge>
                             </div>
-                            <p className='text-xs text-muted-foreground'>{t('admin.roles.form.color_help')}</p>
                         </div>
 
                         <SheetFooter>
@@ -572,9 +574,7 @@ export default function RolesPage() {
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.roles.form.edit_title')}</SheetTitle>
-                        <SheetDescription>
-                            {t('admin.roles.form.edit_description', { name: editingRole?.name || '' })}
-                        </SheetDescription>
+                        <SheetDescription>{t('admin.roles.edit_description')}</SheetDescription>
                     </SheetHeader>
 
                     {editingRole && (
@@ -587,7 +587,6 @@ export default function RolesPage() {
                                     onChange={(e) => setEditingRole({ ...editingRole, name: e.target.value })}
                                     required
                                 />
-                                <p className='text-xs text-muted-foreground'>{t('admin.roles.form.name_help')}</p>
                             </div>
 
                             <div className='space-y-2'>
@@ -598,179 +597,144 @@ export default function RolesPage() {
                                     onChange={(e) => setEditingRole({ ...editingRole, display_name: e.target.value })}
                                     required
                                 />
-                                <p className='text-xs text-muted-foreground'>
-                                    {t('admin.roles.form.display_name_help')}
-                                </p>
                             </div>
 
                             <div className='space-y-2'>
                                 <Label htmlFor='edit-color'>{t('admin.roles.form.color')}</Label>
-                                <div className='flex items-center gap-3'>
-                                    <input
-                                        id='edit-color'
+                                <div className='flex items-center gap-2'>
+                                    <Input
                                         type='color'
+                                        id='edit-color-picker'
                                         value={editingRole.color}
                                         onChange={(e) => setEditingRole({ ...editingRole, color: e.target.value })}
-                                        className='h-10 w-10 rounded border border-input'
+                                        className='w-12 h-10 p-1 cursor-pointer'
                                     />
                                     <Input
+                                        id='edit-color'
                                         value={editingRole.color}
                                         onChange={(e) => setEditingRole({ ...editingRole, color: e.target.value })}
+                                        required
+                                        className='flex-1'
                                     />
-                                    <Badge
-                                        style={{ backgroundColor: editingRole.color, color: '#fff' }}
-                                        className='border-transparent h-8 px-3'
-                                    >
-                                        {t('admin.roles.form.preview')}
-                                    </Badge>
                                 </div>
-                                <p className='text-xs text-muted-foreground'>{t('admin.roles.form.color_help')}</p>
                             </div>
 
-                            <div className='flex justify-between items-center pt-4'>
-                                <Button
-                                    type='button'
-                                    variant='ghost'
-                                    onClick={() => {
-                                        setPermissionsRole(editingRole);
-                                        setPermissionsOpen(true);
-                                    }}
-                                >
-                                    <Shield className='h-4 w-4 mr-2' />
-                                    {t('admin.roles.form.manage_permissions')}
-                                </Button>
+                            <SheetFooter>
                                 <Button type='submit' loading={isSubmitting}>
                                     {t('admin.roles.form.submit_update')}
                                 </Button>
-                            </div>
+                            </SheetFooter>
                         </form>
-                    )}
-                </div>
-            </Sheet>
-
-            {/* View Sheet */}
-            <Sheet open={viewOpen} onOpenChange={setViewOpen}>
-                <div className='space-y-6'>
-                    <SheetHeader>
-                        <SheetTitle>Role Info</SheetTitle>
-                        <SheetDescription>Viewing details for role: {selectedRole?.name}</SheetDescription>
-                    </SheetHeader>
-
-                    {selectedRole && (
-                        <div className='space-y-4'>
-                            <div>
-                                <div className='font-semibold text-sm text-muted-foreground'>Name</div>
-                                <div>{selectedRole.name}</div>
-                            </div>
-                            <div>
-                                <div className='font-semibold text-sm text-muted-foreground'>Display Name</div>
-                                <div>{selectedRole.display_name}</div>
-                            </div>
-                            <div>
-                                <div className='font-semibold text-sm text-muted-foreground'>Color</div>
-                                <div className='flex items-center gap-2 mt-1'>
-                                    <Badge
-                                        style={{ backgroundColor: selectedRole.color, color: '#fff' }}
-                                        className='border-transparent'
-                                    >
-                                        {selectedRole.color}
-                                    </Badge>
-                                </div>
-                            </div>
-                            <div>
-                                <div className='font-semibold text-sm text-muted-foreground'>Created At</div>
-                                <div>{new Date(selectedRole.created_at).toLocaleString()}</div>
-                            </div>
-                            <div>
-                                <div className='font-semibold text-sm text-muted-foreground'>Updated At</div>
-                                <div>{new Date(selectedRole.updated_at).toLocaleString()}</div>
-                            </div>
-                        </div>
                     )}
                 </div>
             </Sheet>
 
             {/* Permissions Sheet */}
             <Sheet open={permissionsOpen} onOpenChange={setPermissionsOpen}>
-                <div className='space-y-6 flex flex-col h-full'>
+                <div className='h-full flex flex-col'>
                     <SheetHeader>
-                        <SheetTitle>{t('admin.roles.permissions.title')}</SheetTitle>
-                        <SheetDescription>
-                            {t('admin.roles.permissions.description', { name: permissionsRole?.name || '' })}
-                        </SheetDescription>
+                        <SheetTitle className='flex items-center gap-2'>
+                            {t('admin.roles.permissions.title')}
+                            {permissionsRole && (
+                                <Badge
+                                    className='font-mono text-xs'
+                                    style={{ backgroundColor: permissionsRole.color, color: '#fff' }}
+                                >
+                                    {permissionsRole.display_name}
+                                </Badge>
+                            )}
+                        </SheetTitle>
+                        <SheetDescription>{t('admin.roles.permissions.description')}</SheetDescription>
                     </SheetHeader>
 
-                    <Card className='flex-1 overflow-hidden flex flex-col'>
-                        <CardHeader>
-                            <CardTitle>{t('admin.roles.permissions.card_title')}</CardTitle>
-                            <CardDescription>{t('admin.roles.permissions.card_description')}</CardDescription>
-                        </CardHeader>
-                        <CardContent className='flex-1 flex flex-col min-h-0'>
-                            <div className='flex-1 overflow-auto rounded-md border'>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>{t('admin.roles.permissions.table_permission')}</TableHead>
-                                            <TableHead className='text-right w-[100px]'>
-                                                {t('admin.roles.permissions.table_actions')}
-                                            </TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {loadingPermissions ? (
-                                            <TableRow>
-                                                <TableCell colSpan={2} className='text-center py-4'>
-                                                    {t('common.loading')}
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : permissions.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell
-                                                    colSpan={2}
-                                                    className='text-center py-4 text-muted-foreground'
-                                                >
-                                                    {t('admin.roles.permissions.no_permissions')}
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            permissions.map((perm) => (
-                                                <TableRow key={perm.id}>
-                                                    <TableCell className='font-mono text-xs'>
-                                                        {perm.permission}
-                                                    </TableCell>
-                                                    <TableCell className='text-right'>
-                                                        <Button
-                                                            size='sm'
-                                                            variant='destructive'
-                                                            className='h-8 w-8 p-0'
-                                                            onClick={() => handleDeletePermission(perm.id)}
-                                                        >
-                                                            <X className='h-4 w-4' />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </div>
+                    <div className='flex-1 overflow-hidden flex flex-col gap-4 mt-6'>
+                        <div className='relative group'>
+                            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                            <Input
+                                placeholder={t('admin.roles.permissions.search')}
+                                value={permissionSearch}
+                                onChange={(e) => setPermissionSearch(e.target.value)}
+                                className='pl-10 h-11 bg-background/20 border-none focus-visible:ring-1 focus-visible:ring-primary/30'
+                            />
 
-                            <form onSubmit={handleAddPermission} className='mt-4 flex gap-2 items-end'>
-                                <div className='flex-1 space-y-2'>
-                                    <Label htmlFor='add-permission'>{t('admin.roles.permissions.add_label')}</Label>
-                                    <Input
-                                        id='add-permission'
-                                        value={newPermission}
-                                        onChange={(e) => setNewPermission(e.target.value)}
-                                        placeholder={t('admin.roles.permissions.add_placeholder')}
-                                    />
+                            {permissionSearch && (
+                                <div className='absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-xl max-h-[280px] overflow-auto bg-popover shadow-2xl p-1 border-none'>
+                                    {filteredAvailablePermissions.length === 0 ? (
+                                        <div className='p-4 text-sm text-muted-foreground text-center'>
+                                            {t('admin.roles.no_results')}
+                                        </div>
+                                    ) : (
+                                        <div className='space-y-0.5'>
+                                            {filteredAvailablePermissions.map((perm) => (
+                                                <div
+                                                    key={perm.value}
+                                                    className='flex flex-col p-2 hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-lg transition-colors group/item'
+                                                    onClick={() => {
+                                                        handleAddPermission(perm.value);
+                                                        setPermissionSearch('');
+                                                    }}
+                                                >
+                                                    <div className='flex items-center justify-between'>
+                                                        <span className='font-bold text-sm font-mono'>
+                                                            {perm.value}
+                                                        </span>
+                                                        <Plus className='h-3 w-3 opacity-0 group-hover/item:opacity-100 transition-opacity' />
+                                                    </div>
+                                                    <span className='text-xs text-muted-foreground line-clamp-1'>
+                                                        {perm.description}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                <Button type='submit' disabled={!newPermission.trim()}>
-                                    {t('admin.roles.permissions.add_button')}
-                                </Button>
-                            </form>
-                        </CardContent>
-                    </Card>
+                            )}
+                        </div>
+
+                        <div className='flex-1 overflow-y-auto rounded-xl bg-card/20'>
+                            {loadingPermissions ? (
+                                <div className='h-full flex flex-col items-center justify-center p-4 gap-2'>
+                                    <RefreshCw className='h-5 w-5 animate-spin text-muted-foreground' />
+                                    <span className='text-xs text-muted-foreground'>
+                                        {t('admin.roles.permissions.syncing')}
+                                    </span>
+                                </div>
+                            ) : rolePermissions.length === 0 ? (
+                                <div className='h-full flex items-center justify-center p-8 text-center text-muted-foreground text-sm'>
+                                    {t('admin.roles.form.no_permissions')}
+                                </div>
+                            ) : (
+                                <div className='divide-y divide-border/20'>
+                                    {rolePermissions.map((perm) => (
+                                        <div
+                                            key={perm.id}
+                                            className='p-3 flex items-center justify-between hover:bg-muted/30 transition-colors group/row'
+                                        >
+                                            <div className='flex flex-col min-w-0 pr-2'>
+                                                <span className='font-mono text-sm font-medium truncate'>
+                                                    {perm.permission}
+                                                </span>
+                                            </div>
+                                            <Button
+                                                size='sm'
+                                                variant='ghost'
+                                                className='h-8 w-8 p-0 text-destructive/50 hover:text-destructive hover:bg-destructive/10'
+                                                onClick={() => handleDeletePermission(perm.id)}
+                                            >
+                                                <X className='h-4 w-4' />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <SheetFooter className='pt-6'>
+                        <Button variant='secondary' onClick={() => setPermissionsOpen(false)} className='w-full'>
+                            {t('common.close')}
+                        </Button>
+                    </SheetFooter>
                 </div>
             </Sheet>
         </div>

@@ -1818,6 +1818,73 @@
 		}
 	},
 	"admin": {
+		"roles": {
+			"title": "Roles & Permissions",
+			"subtitle": "Manage roles and their associated permissions.",
+			"create": "Create Role",
+			"search_placeholder": "Search roles...",
+			"no_results": "No roles found",
+			"create_description": "Create a new role to assign permissions to users.",
+			"edit_description": "Modify the role details and permissions.",
+			"delete_confirm": "Are you sure you want to delete this role?",
+			"delete_warning": "This action cannot be undone.",
+			"messages": {
+				"fetch_failed": "Failed to fetch roles",
+				"created": "Role created successfully",
+				"create_failed": "Failed to create role",
+				"updated": "Role updated successfully",
+				"update_failed": "Failed to update role",
+				"deleted": "Role deleted successfully",
+				"delete_failed": "Failed to delete role",
+				"permission_added": "Permission added successfully",
+				"permission_removed": "Permission removed successfully",
+				"permission_failed": "Failed to update permissions"
+			},
+			"form": {
+				"create_title": "Create Role",
+				"edit_title": "Edit Role",
+				"name": "Name",
+				"display_name": "Display Name",
+				"color": "Color",
+				"submit_create": "Create Role",
+				"submit_update": "Update Role",
+				"permissions": "Permissions",
+				"add_permission": "Add Permission",
+				"no_permissions": "No permissions assigned"
+			},
+			"permissions": {
+				"title": "Manage Permissions",
+				"description": "Add or remove permissions for this role.",
+				"search": "Search permissions...",
+				"add": "Add",
+				"remove": "Remove",
+				"syncing": "Syncing..."
+			},
+			"pagination": {
+				"previous": "Previous",
+				"next": "Next",
+				"page_of": "Page {current} of {total}"
+			},
+			"labels": {
+				"created": "Created"
+			},
+			"help": {
+				"managing": {
+					"title": "Managing Roles",
+					"description": "Roles allow you to group permissions together and assign them to users. Use descriptive names and distinct colors to keep your administrative structure organized."
+				},
+				"permissions": {
+					"title": "Granular Permissions",
+					"description": "Each role can have an unlimited number of permission nodes. This allows for precise control over what each user group can see and do within the panel."
+				},
+				"security": {
+					"title": "Security First",
+					"item1": "Always follow the principle of least privilege.",
+					"item2": "Avoid giving 'admin' permissions to untrusted roles.",
+					"item3": "Regularly audit role assignments and permissions."
+				}
+			}
+		},
 		"system_health": {
 			"title": "System Health",
 			"description": "Real-time Infrastructure Monitoring",
@@ -2086,6 +2153,8 @@
 			"loading": "Loading node status...",
 			"total": "Total Nodes",
 			"healthy": "Healthy Nodes",
+			"no_nodes": "No Nodes",
+			"no_nodes_description": "No nodes found please make sure to setup a location and a node!",
 			"unhealthy": "Unhealthy Nodes",
 			"avg_cpu": "Avg CPU Usage",
 			"memory_usage": "Global Memory Usage",
@@ -2529,6 +2598,22 @@
 				"delete_failed": "Failed to delete notification",
 				"delete_confirm": "Are you sure you want to delete this notification?",
 				"fetch_failed": "Failed to fetch notifications"
+			},
+			"help": {
+				"alerts": {
+					"title": "System Alerts",
+					"description": "Notifications are a powerful way to communicate with all users. Use them for maintenance announcements, policy updates, or important system news."
+				},
+				"markdown": {
+					"title": "Rich Content",
+					"description": "Messages support full Markdown syntax. You can use bold text, lists, and even code blocks to make your announcements clear and engaging."
+				},
+				"delivery": {
+					"title": "sticky & Dismissible",
+					"item1": "Sticky notifications remain at the top of the dashboard.",
+					"item2": "Dismissible alerts can be hidden by users once read.",
+					"item3": "Use non-dismissible for critical legal or system notices."
+				}
 			}
 		}
 	},

@@ -40,13 +40,13 @@ export function EmptyState({ title, description, icon: Icon, action, className }
     return (
         <div
             className={cn(
-                'flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm',
+                'flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] backdrop-blur-sm',
                 className,
             )}
         >
             <div className='relative'>
                 <div className='absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse' />
-                <div className='relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3'>
+                <div className='relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center rotate-3'>
                     <Icon className='h-16 w-16 text-primary' />
                 </div>
             </div>
