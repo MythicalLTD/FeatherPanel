@@ -3319,6 +3319,57 @@
 				"reinstall_success": "Plugins reinstalled successfully",
 				"reinstall_failed": "Failed to reinstall plugins"
 			}
+		},
+		"redirect_links": {
+			"title": "Redirect Links",
+			"subtitle": "Manage URL redirects for your system.",
+			"create": "Create Redirect Link",
+			"search_placeholder": "Search by name or URL...",
+			"no_results": "No redirect links found.",
+			"table": {
+				"name": "Name",
+				"short_url": "Short URL",
+				"destination_url": "Destination URL",
+				"created_at": "Created",
+				"actions": "Actions"
+			},
+			"form": {
+				"create_title": "Create Redirect Link",
+				"create_description": "Create a new redirect link for your system.",
+				"edit_title": "Edit Redirect Link",
+				"edit_description": "Edit details for the redirect link.",
+				"view_title": "Redirect Link Details",
+				"name": "Name",
+				"slug": "Short URL Slug",
+				"slug_placeholder": "my-redirect",
+				"slug_help": "Leave empty to auto-generate from name.",
+				"url": "Destination URL",
+				"url_placeholder": "https://example.com",
+				"submit_create": "Create Redirect Link",
+				"submit_update": "Update Redirect Link"
+			},
+			"messages": {
+				"fetch_failed": "Failed to fetch redirect links.",
+				"created": "Redirect link created successfully.",
+				"create_failed": "Failed to create redirect link.",
+				"updated": "Redirect link updated successfully.",
+				"update_failed": "Failed to update redirect link.",
+				"deleted": "Redirect link deleted successfully.",
+				"delete_failed": "Failed to delete redirect link.",
+				"delete_confirm": "Are you sure you want to delete this redirect link? This action cannot be undone.",
+				"copy_success": "Short URL copied to clipboard.",
+				"copy_failed": "Failed to copy URL."
+			},
+			"help": {
+				"what_is": {
+					"title": "What are Redirect Links?",
+					"description": "Create short slugs that map to full URLs. Use paths like /discord to send users to your Discord, forum, status page, or any external resource."
+				},
+				"nice_pages": {
+					"title": "Nice redirect pages",
+					"description": "Visiting a slug displays a clean, animated redirect page before forwarding. It keeps links memorable and consistent across your brand."
+				}
+			}
 		}
 	},
 	"landing": {
@@ -3330,5 +3381,16 @@
 		"failedToLoadContent": "Failed to load content.",
 		"loadingContent": "Loading content...",
 		"retry": "Retry"
+	},
+	"public": {
+		"redirect": {
+			"title": "Redirecting...",
+			"subtitle": "Please wait while we redirect you to your destination.",
+			"target_title": "Redirecting to {name}",
+			"countdown": "You will be redirected in {count} seconds to:",
+			"continue": "Continue Now",
+			"go_home": "Go Home Instead",
+			"auto_redirect_help": "If you are not redirected automatically, click the button above."
+		}
 	}
 }
