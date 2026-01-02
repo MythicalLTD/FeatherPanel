@@ -2927,7 +2927,8 @@
 			"messages": {
 				"load_failed": "Failed to load settings.",
 				"save_success": "Settings saved successfully.",
-				"save_failed": "Failed to save settings."
+				"save_failed": "Failed to save settings.",
+				"no_changes": "No changes detected."
 			},
 			"logs": {
 				"uploading": "Uploading logs...",
@@ -3381,9 +3382,9 @@
 				"create_title": "Upload Image",
 				"create_description": "Upload a new image to your system.",
 				"edit_title": "Edit Image",
-				"edit_description": "Edit details for image: {{name}}",
+				"edit_description": "Edit details for image: {name}",
 				"view_title": "Image Details",
-				"view_description": "Viewing details for image: {{name}}",
+				"view_description": "Viewing details for image: {name}",
 				"name": "Name",
 				"file": "Image File",
 				"url": "Image URL",
@@ -3430,9 +3431,9 @@
 				"create_title": "Create Template",
 				"create_description": "Fill in the details to create a new email template.",
 				"edit_title": "Edit Template",
-				"edit_description": "Edit details for template: {{name}}",
+				"edit_description": "Edit details for template: {name}",
 				"preview_title": "Template Preview",
-				"preview_description": "Preview for template: {{name}}",
+				"preview_description": "Preview for template: {name}",
 				"mass_email_title": "Send Mass Email",
 				"mass_email_description": "Create and send HTML emails to all users in your system.",
 				"name": "Name",
@@ -3454,7 +3455,7 @@
 				"deleted": "Template deleted successfully.",
 				"delete_failed": "Failed to delete template.",
 				"delete_confirm": "Are you sure you want to delete this template? This action cannot be undone.",
-				"mass_email_queued": "Mass email queued successfully! {{count}} emails queued.",
+				"mass_email_queued": "Mass email queued successfully! {count} emails queued.",
 				"mass_email_failed": "Failed to queue mass email.",
 				"mass_email_warning_title": "Important Notice",
 				"mass_email_warning": "This will send emails to ALL users with valid email addresses in your system. Make sure your content is appropriate and test thoroughly before sending."
@@ -3472,6 +3473,42 @@
 					"title": "Legal & Compliance",
 					"description": "Update your Privacy Policy and Terms to reflect bulk messaging usage."
 				}
+			}
+		},
+		"featherai_agent": {
+			"title": "FeatherCloud AI Agent",
+			"subtitle": "Configure and customize your AI chatbot assistant",
+			"config": {
+				"title": "Chatbot Configuration",
+				"subtitle": "Configure and customize your AI chatbot assistant",
+				"enable": "Enable Chatbot",
+				"enable_description": "Enable or disable the AI chatbot feature for all users",
+				"general_settings": "General Settings",
+				"ai_provider": "AI Provider",
+				"ai_provider_description": "Select the AI provider to use for chatbot responses",
+				"temperature": "Temperature",
+				"temperature_description": "Controls randomness (0.0 = focused, 1.0 = creative)",
+				"max_tokens": "Max Tokens",
+				"max_tokens_description": "Maximum tokens in responses (1-8192)",
+				"max_history": "Max History",
+				"max_history_description": "Previous messages in context (1-50)",
+				"system_prompt_core": "AI Core System Prompt",
+				"system_prompt_core_readonly": "Core System Prompt (Read-Only)",
+				"system_prompt_core_description": "The core system prompt that defines the AI assistant's behavior and capabilities. This is read-only and loaded from the system configuration.",
+				"custom_prompts": "Custom Prompts",
+				"custom_system_prompt": "System Prompt (Optional)",
+				"custom_system_prompt_description": "Custom system prompt to prepend to all messages (max 1000 characters)",
+				"custom_user_prompt": "User Context Prompt (Optional)",
+				"custom_user_prompt_description": "User context prompt to append to all messages (max 1000 characters)",
+				"loading_settings": "Loading Settings",
+				"loading_settings_description": "Please wait while we fetch your configuration...",
+				"load_failed": "Failed to load settings",
+				"load_failed_description": "Unable to load chatbot settings. Please try again later.",
+				"save_success": "Chatbot settings saved successfully",
+				"save_failed": "Failed to save settings",
+				"reset_success": "Settings reset to saved values",
+				"no_changes": "No changes detected",
+				"prompt_load_failed": "Failed to load system prompt"
 			}
 		}
 	},
