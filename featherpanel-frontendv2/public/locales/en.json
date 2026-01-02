@@ -2932,7 +2932,7 @@
 			"logs": {
 				"uploading": "Uploading logs...",
 				"upload_failed": "Failed to upload logs.",
-				"uploaded_copied": "Logs uploaded! URL copied to clipboard: {{url}}"
+				"uploaded_copied": "Logs uploaded! URL copied to clipboard: {url}"
 			}
 		},
 		"rate_limits": {
@@ -2972,13 +2972,213 @@
 				"global_disabled": "Global rate limits disabled.",
 				"global_update_failed": "Failed to update global rate limits.",
 				"limit_required": "At least one rate limit must be set when enabled.",
-				"route_updated": "Updated rate limit for {{route}}.",
+				"route_updated": "Updated rate limit for {route}.",
 				"route_update_failed": "Failed to update rate limit.",
-				"reset_confirm": "Reset configuration for {{route}}?",
-				"reset_success": "Reset rate limit for {{route}}.",
+				"reset_confirm": "Reset configuration for {route}?",
+				"reset_success": "Reset rate limit for {route}.",
 				"reset_failed": "Failed to reset rate limit.",
-				"bulk_success": "Updated {{count}} rate limits.",
+				"bulk_success": "Updated {count} rate limits.",
 				"bulk_failed": "Failed to bulk update."
+			}
+		},
+		"pterodactyl_importer": {
+			"title": "Pterodactyl Importer",
+			"description": "Seamlessly migrate your data from Pterodactyl to FeatherPanel. Follow the guide below to import your servers, users, and nodes.",
+			"data_migration_badge": "Migration Assistant",
+			"toasts": {
+				"failed_load_key": "Failed to load API key details",
+				"failed_fetch_keys": "Failed to fetch API keys",
+				"key_created": "API key created successfully!",
+				"key_create_failed": "Failed to create API key"
+			},
+			"prerequisites": {
+				"title": "System Requirements",
+				"description": "Ensure your environment meets these criteria before starting the migration.",
+				"checking": "Validating environment...",
+				"failed": "Validation failed. Please retry.",
+				"success": "Ready for Migration",
+				"success_desc": "Your environment meets all requirements.",
+				"failed_title": "Requirements Not Met",
+				"failed_desc": "Please resolve the issues highlighted below.",
+				"items": {
+					"users": "Registered Users",
+					"nodes": "Compute Nodes",
+					"locations": "Locations",
+					"realms": "Realms",
+					"spells": "Spells",
+					"servers": "Active Servers",
+					"databases": "Databases",
+					"allocations": "Allocations",
+					"panel_status": "Installation Status",
+					"panel_clean": "Fresh Installation Verified",
+					"panel_dirty": "Existing Data Detected",
+					"must_have_max": "✓ Limit: {count} {item}",
+					"must_have_max_fail": "✗ Exceeds limit of {count} {item}",
+					"must_have_zero": "✓ Empty Registry",
+					"must_have_zero_fail": "✗ Registry must be empty"
+				},
+				"current": "Count: {count}"
+			},
+			"cli": {
+				"title": "Migration Assistant",
+				"description": "Use the FeatherPanel CLI to automate the migration process.",
+				"overview": "Migration Workflow",
+				"steps": {
+					"install": "Install CLI Tool",
+					"select_key": "Authenticate",
+					"config": "Configure Instance",
+					"migrate": "Execute Migration"
+				},
+				"step1": {
+					"title": "1. Helper Installation",
+					"description": "Execute the following command to install the necessary migration tools:",
+					"note": "Wait for the installation to complete before proceeding."
+				},
+				"step2": {
+					"title": "2. Authentication",
+					"description": "Generate or select an API key to authorize the migration agent.",
+					"select_label": "API Key Selection",
+					"create_new": "Generate New Key",
+					"loading": "Retrieving keys...",
+					"none_found": "No API keys available",
+					"placeholder": "Select an API key...",
+					"panel_url": "Panel URL",
+					"api_key": "Migration Key",
+					"click_create": "Click \"{button}\" to generate a secure migration key."
+				},
+				"step3": {
+					"title": "3. Configuration",
+					"description": "Initialize the CLI with your instance credentials:",
+					"values_title": "Required Configuration Values:",
+					"important": "⚠️ Prerequisite: Ensure Step 1 is complete."
+				},
+				"step4": {
+					"title": "4. Execution",
+					"description": "Begin the data import process:",
+					"note": "This will begin importing your Pterodactyl data."
+				},
+				"footer_note": "The CLI automatically handles database dumps and environment variable transfers."
+			},
+			"help": {
+				"title": "Help & Support",
+				"description": "Need help with the migration process? Check out our documentation or join our Discord community.",
+				"documentation": {
+					"title": "Migration Documentation",
+					"description": "Complete guide and tutorial for migrating from Pterodactyl"
+				},
+				"discord": {
+					"title": "MythicalSystems Discord",
+					"description": "Get support from our community and team"
+				}
+			},
+			"info": {
+				"title": "Excluded Data",
+				"description": "The following items are excluded from migration to ensure a clean import.",
+				"not_imported": "Exclusion List:",
+				"not_imported_desc": "To optimize performance, these items are not transferred:",
+				"items": [
+					"Server Audit Logs",
+					"Legacy API Keys",
+					"User Activity History",
+					"Session Data",
+					"Temporary Caches"
+				],
+				"footer": "Excluding this data significantly reduces migration time."
+			},
+			"create_key": {
+				"title": "Create New API Key",
+				"description": "Create a new API key for the Pterodactyl Migration Agent. This key will be used to authenticate the migration agent with your FeatherPanel instance.",
+				"name_label": "API Key Name",
+				"placeholder": "e.g., Pterodactyl Migration Agent",
+				"help_text": "Choose a descriptive name to identify this API key.",
+				"important": "Important:",
+				"warning": "Important: The private key will only be shown once when the API key is created. Make sure to copy it immediately as it cannot be retrieved later.",
+				"cancel": "Cancel",
+				"create": "Create API Key",
+				"creating": "Creating..."
+			},
+			"warning_dialog": {
+				"title": "Security Warning",
+				"subtitle": "Sensitive Information Exposure Risk",
+				"do_not": "Security Best Practices:",
+				"items": [
+					"Do not share your screen while viewing this page",
+					"Ensure you are not streaming or recording",
+					"Keep your API credentials private",
+					"Revoke keys immediately if exposed"
+				],
+				"desc": "This page displays sensitive credentials (API Keys) that grant full administrative access to your panel. Exposure could lead to total system compromise.",
+				"security_warning": "⚠️ ATTENTION: Close this page immediately if you are livestreaming or screen sharing.",
+				"go_back": "Exit Page",
+				"continue": "I Understand the Risks"
+			}
+		},
+		"database_management": {
+			"title": "Database Management",
+			"subtitle": "Inspect database health, run migrations, and manage utilities",
+			"actions": {
+				"loading_status": "Loading database status...",
+				"refresh": "Refresh Status",
+				"run_migrations": "Run Migrations",
+				"install_pma": "Install phpMyAdmin",
+				"delete_pma": "Delete phpMyAdmin",
+				"clear_output": "Clear Output"
+			},
+			"stats": {
+				"overview": "Overview",
+				"connections": "Connections",
+				"queries": "Queries",
+				"network": "Network",
+				"engine": "Engine",
+				"version": "Version",
+				"uptime": "Uptime",
+				"qps": "QPS",
+				"threads_connected": "Threads Connected",
+				"threads_running": "Threads Running",
+				"connections_total": "Total Connections",
+				"aborted_connects": "Aborted Connects",
+				"queries_total": "Total Queries",
+				"questions_total": "Total Questions",
+				"bytes_received": "Bytes Received",
+				"bytes_sent": "Bytes Sent"
+			},
+			"migrations": {
+				"title": "Migration Output",
+				"running": "Running migrations...",
+				"success": "Migrations completed successfully",
+				"failed": "Migration failed"
+			},
+			"pma": {
+				"status_title": "phpMyAdmin Status",
+				"installing": "Installing phpMyAdmin...",
+				"deleting": "Deleting phpMyAdmin...",
+				"already_installed": "phpMyAdmin is already installed",
+				"installed_success": "phpMyAdmin installed successfully",
+				"deleted_success": "phpMyAdmin deleted successfully",
+				"confirm_delete": "Are you sure you want to delete phpMyAdmin? This action cannot be undone."
+			},
+			"toasts": {
+				"failed_status": "Failed to fetch database status",
+				"failed_install": "Failed to install phpMyAdmin",
+				"failed_delete": "Failed to delete phpMyAdmin"
+			},
+			"help": {
+				"what_is": {
+					"title": "What is this page?",
+					"description": "View real-time database engine metrics and health status. Essential for diagnosing connectivity issues and monitoring performance."
+				},
+				"metrics": {
+					"title": "Status & Metrics",
+					"description": "Monitor key indicators like QPS, active threads, and network throughput. Use the refresh button to get the latest snapshot."
+				},
+				"migrations": {
+					"title": "Migrations",
+					"description": "Execute database schema updates when upgrading FeatherPanel or installing plugins. Always verify output logs."
+				},
+				"safety": {
+					"title": "Safety & Backups",
+					"description": "Always backup your database before running migrations or major operations. FeatherPanel is not responsible for data loss due to unsafe operations."
+				}
 			}
 		}
 	},
