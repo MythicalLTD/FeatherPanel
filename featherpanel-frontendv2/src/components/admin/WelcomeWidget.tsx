@@ -72,7 +72,7 @@ export function WelcomeWidget({ version }: { version?: string }) {
                             {t('admin.welcome.create_server')}
                         </Link>
                         <Link
-                            href='/admin/users/new'
+                            href='/admin/users/create'
                             className='flex items-center gap-2 px-5 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all border border-border/50'
                         >
                             <UserPlus className='h-4 w-4' />
