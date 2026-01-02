@@ -224,6 +224,7 @@ export default function PluginsPage() {
             await axios.post('/api/admin/plugins/online/install', { identifier });
             toast.success(`Successfully installed ${identifier}`);
             fetchInstalledPlugins();
+            setTimeout(() => window.location.reload(), 1500);
         } catch (err: unknown) {
             const e = err as { response?: { data?: { message?: string } } };
             toast.error(e?.response?.data?.message || 'Failed to install plugin');
