@@ -210,6 +210,7 @@ export default function DatabaseManagementPage() {
             <PageHeader
                 title={t('admin.database_management.title')}
                 description={t('admin.database_management.subtitle')}
+                icon={Database}
                 actions={
                     <div className='flex flex-wrap gap-2'>
                         <Button

@@ -28,7 +28,7 @@ SOFTWARE.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { adminRateLimitsApi, RateLimitConfig } from '@/lib/admin-rate-limits-api';
+import axios from 'axios';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -36,6 +36,20 @@ import { Input } from '@/components/featherui/Input';
 import { Switch } from '@/components/ui/switch';
 import { RefreshCw, Save, RotateCcw, Activity } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface RateLimitConfig {
+    _enabled?: boolean;
+    per_second?: number | null;
+    per_minute?: number | null;
+    per_hour?: number | null;
+    per_day?: number | null;
+    namespace?: string | null;
+}
+
+interface RateLimitsResponse {
+    _enabled?: boolean;
+    routes?: Record<string, RateLimitConfig>;
+}
 
 export default function RateLimitsPage() {
     const { t } = useTranslation();
@@ -48,13 +62,17 @@ export default function RateLimitsPage() {
     const fetchRateLimits = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await adminRateLimitsApi.fetchRateLimits();
-            if (response.success && response.data) {
-                setGlobalEnabled(response.data._enabled ?? false);
-                setRateLimits(response.data.routes || {});
+            const response = await axios.get<{
+                success: boolean;
+                data?: RateLimitsResponse;
+                message?: string;
+            }>('/api/admin/rate-limits');
+            if (response.data.success && response.data.data) {
+                setGlobalEnabled(response.data.data._enabled ?? false);
+                setRateLimits(response.data.data.routes || {});
                 setChangedRoutes(new Set());
             } else {
-                toast.error(response.message || t('admin.rate_limits.messages.load_failed'));
+                toast.error(response.data.message || t('admin.rate_limits.messages.load_failed'));
             }
         } catch {
             toast.error(t('admin.rate_limits.messages.load_failed'));
@@ -71,8 +89,13 @@ export default function RateLimitsPage() {
         setSaving(true);
         try {
             const newState = !globalEnabled;
-            const response = await adminRateLimitsApi.toggleGlobal(newState);
-            if (response.success) {
+            const response = await axios.patch<{ success: boolean; message?: string }>(
+                '/api/admin/rate-limits/global',
+                {
+                    _enabled: newState,
+                },
+            );
+            if (response.data.success) {
                 setGlobalEnabled(newState);
                 toast.success(
                     newState
@@ -80,7 +103,7 @@ export default function RateLimitsPage() {
                         : t('admin.rate_limits.messages.global_disabled'),
                 );
             } else {
-                toast.error(response.message || t('admin.rate_limits.messages.global_update_failed'));
+                toast.error(response.data.message || t('admin.rate_limits.messages.global_update_failed'));
             }
         } catch {
             toast.error(t('admin.rate_limits.messages.global_update_failed'));
@@ -135,8 +158,11 @@ export default function RateLimitsPage() {
             if (config.per_day && Number(config.per_day) > 0) cleanConfig.per_day = Number(config.per_day);
             if (config.namespace) cleanConfig.namespace = String(config.namespace);
 
-            const response = await adminRateLimitsApi.updateRoute(routeName, cleanConfig);
-            if (response.success) {
+            const response = await axios.put<{ success: boolean; message?: string }>(
+                `/api/admin/rate-limits/${routeName}`,
+                cleanConfig,
+            );
+            if (response.data.success) {
                 toast.success(t('admin.rate_limits.messages.route_updated', { route: routeName }));
                 setChangedRoutes((prev) => {
                     const newSet = new Set(prev);
@@ -144,7 +170,7 @@ export default function RateLimitsPage() {
                     return newSet;
                 });
             } else {
-                toast.error(response.message || t('admin.rate_limits.messages.route_update_failed'));
+                toast.error(response.data.message || t('admin.rate_limits.messages.route_update_failed'));
             }
         } catch {
             toast.error(t('admin.rate_limits.messages.route_update_failed'));
@@ -158,12 +184,14 @@ export default function RateLimitsPage() {
 
         setSaving(true);
         try {
-            const response = await adminRateLimitsApi.resetRoute(routeName);
-            if (response.success) {
+            const response = await axios.delete<{ success: boolean; message?: string }>(
+                `/api/admin/rate-limits/${routeName}`,
+            );
+            if (response.data.success) {
                 toast.success(t('admin.rate_limits.messages.reset_success', { route: routeName }));
                 fetchRateLimits();
             } else {
-                toast.error(response.message || t('admin.rate_limits.messages.reset_failed'));
+                toast.error(response.data.message || t('admin.rate_limits.messages.reset_failed'));
             }
         } catch {
             toast.error(t('admin.rate_limits.messages.reset_failed'));
@@ -193,16 +221,20 @@ export default function RateLimitsPage() {
                 routesToUpdate[routeName] = cleanConfig;
             });
 
-            const response = await adminRateLimitsApi.bulkUpdate(routesToUpdate);
-            if (response.success) {
+            const response = await axios.patch<{
+                success: boolean;
+                data?: { total_updated?: number };
+                message?: string;
+            }>('/api/admin/rate-limits/bulk', { routes: routesToUpdate });
+            if (response.data.success) {
                 toast.success(
                     t('admin.rate_limits.messages.bulk_success', {
-                        count: String(response.data?.total_updated || 0),
+                        count: String(response.data.data?.total_updated || 0),
                     }),
                 );
                 setChangedRoutes(new Set());
             } else {
-                toast.error(response.message || t('admin.rate_limits.messages.bulk_failed'));
+                toast.error(response.data.message || t('admin.rate_limits.messages.bulk_failed'));
             }
         } catch {
             toast.error(t('admin.rate_limits.messages.bulk_failed'));
