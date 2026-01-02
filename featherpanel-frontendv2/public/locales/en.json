@@ -140,7 +140,11 @@
 		"pending": "Pending",
 		"pleaseFixErrors": "Please fix the errors below.",
 		"processing": "Processing...",
-		"unknown": "Unknown"
+		"unknown": "Unknown",
+		"confirm_action": "Are you sure you want to perform this action?",
+		"details": "Details",
+		"no": "No",
+		"yes": "Yes"
 	},
 	"branding": {
 		"running_on": "Running on {name} {version}",
@@ -2614,6 +2618,141 @@
 					"item2": "Dismissible alerts can be hidden by users once read.",
 					"item3": "Use non-dismissible for critical legal or system notices."
 				}
+			}
+		},
+		"knowledgebase": {
+			"categories": {
+				"title": "Knowledgebase Categories",
+				"subtitle": "Manage all knowledgebase categories in your system.",
+				"search_placeholder": "Search by name...",
+				"no_results": "No categories found",
+				"create": "Create Category",
+				"view_articles": "View Articles",
+				"form": {
+					"name": "Name",
+					"icon": "Icon",
+					"description": "Description",
+					"position": "Position",
+					"create_title": "Create Category",
+					"create_description": "Fill in the details to create a new knowledgebase category.",
+					"edit_title": "Edit Category",
+					"edit_description": "Edit details for category: {name}"
+				},
+				"messages": {
+					"fetch_failed": "Failed to fetch categories",
+					"created": "Category created successfully",
+					"create_failed": "Failed to create category",
+					"updated": "Category updated successfully",
+					"update_failed": "Failed to update category",
+					"deleted": "Category deleted successfully",
+					"delete_failed": "Failed to delete category",
+					"delete_confirm": "Are you sure you want to delete category {name}?",
+					"upload_failed": "Failed to upload icon"
+				}
+			},
+			"articles": {
+				"title": "Articles",
+				"subtitle": "Manage articles in category: {name}",
+				"search_placeholder": "Search by title...",
+				"no_results": "No articles found",
+				"create": "Create Article",
+				"back_to_categories": "Back to Categories",
+				"status": {
+					"draft": "Draft",
+					"published": "Published",
+					"archived": "Archived"
+				},
+				"badges": {
+					"pinned": "Pinned"
+				},
+				"form": {
+					"title": "Title",
+					"content": "Content (Markdown)",
+					"save": "Save Changes",
+					"status": "Status",
+					"pinned": "Pinned",
+					"icon": "Icon (Optional)",
+					"edit": "Edit",
+					"preview": "Preview",
+					"create_title": "Create Article",
+					"create_description": "Fill in the details to create a new knowledgebase article."
+				},
+				"messages": {
+					"fetch_failed": "Failed to fetch articles",
+					"created": "Article created successfully",
+					"create_failed": "Failed to create article",
+					"updated": "Article updated successfully",
+					"update_failed": "Failed to update article",
+					"deleted": "Article deleted successfully",
+					"delete_failed": "Failed to delete article",
+					"delete_confirm": "Are you sure you want to delete article {title}?"
+				}
+			},
+			"edit": {
+				"title": "Edit Article",
+				"subtitle": "Edit knowledgebase article: {title}",
+				"tabs": {
+					"content": "Content",
+					"attachments": "Attachments",
+					"tags": "Tags"
+				},
+				"form": {
+					"category": "Category",
+					"select_category": "Select a category",
+					"save": "Save Changes"
+				},
+				"attachments": {
+					"title": "Attachments",
+					"description": "Upload any file for this article (max 50MB)",
+					"upload": "Upload File",
+					"downloadable": "Make downloadable for users",
+					"copy_markdown": "Copy markdown",
+					"copied": "Copied!",
+					"no_attachments": "No attachments",
+					"messages": {
+						"uploaded": "Attachment uploaded successfully",
+						"upload_failed": "Failed to upload attachment",
+						"deleted": "Attachment deleted successfully",
+						"delete_failed": "Failed to delete attachment"
+					},
+					"make_downloadable": "Make downloadable for users"
+				},
+				"tags": {
+					"title": "Tags",
+					"add": "Add Tag",
+					"add_dialog_title": "Add Tags",
+					"add_dialog_description": "Enter tag names separated by commas (e.g., tutorial, guide, faq)",
+					"placeholder": "tag1, tag2, tag3",
+					"no_tags": "No tags",
+					"messages": {
+						"added": "Successfully added {count} tag(s)",
+						"added_help": "Separate tags with commas",
+						"add_failed": "Failed to add tags",
+						"add_partial": "Added {success} tag(s), but {error} failed",
+						"deleted": "Tag deleted successfully",
+						"delete_failed": "Failed to delete tag"
+					}
+				}
+			},
+			"help": {
+				"managing": {
+					"title": "Knowledge Management",
+					"description": "Organize your documentation into categories. Each category can have many articles to help your users find what they need."
+				},
+				"content": {
+					"title": "Rich Content",
+					"description": "Articles support Markdown, allowing you to use formatting, images, and code blocks for clear and helpful guides."
+				},
+				"attachments": {
+					"title": "Assets & Tags",
+					"description": "Upload relevant files as attachments and use tags to make your articles more searchable and comprehensive."
+				}
+			},
+			"form": {
+				"save": "Save Changes"
+			},
+			"messages": {
+				"updated": "Knowledgebase updated successfully"
 			}
 		}
 	},
