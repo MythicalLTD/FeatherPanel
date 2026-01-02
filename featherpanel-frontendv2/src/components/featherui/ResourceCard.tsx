@@ -47,6 +47,7 @@ interface ResourceCardProps {
     style?: React.CSSProperties;
     iconWrapperClassName?: string;
     iconClassName?: string;
+    image?: string;
     onClick?: () => void;
 }
 
@@ -61,6 +62,7 @@ export function ResourceCard({
     style,
     iconWrapperClassName,
     iconClassName,
+    image,
     onClick,
 }: ResourceCardProps) {
     const renderBadges = () => {
@@ -102,13 +104,27 @@ export function ResourceCard({
             )}
         >
             <div className='p-6 flex flex-col md:flex-row md:items-center gap-6 relative z-10'>
+                {image ? (
+                    <div className='absolute inset-0 z-0 opacity-10 blur-sm group-hover:opacity-20 transition-opacity'>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={image} alt='' className='w-full h-full object-cover' />
+                    </div>
+                ) : (
+                    <div className='absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors' />
+                )}
+
                 <div
                     className={cn(
-                        'h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2',
+                        'h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 relative z-10 overflow-hidden',
                         iconWrapperClassName,
                     )}
                 >
-                    <Icon className={cn('h-8 w-8 text-primary', iconClassName)} />
+                    {image ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={image} alt={title} className='h-full w-full object-cover' />
+                    ) : (
+                        <Icon className={cn('h-8 w-8 text-primary', iconClassName)} />
+                    )}
                 </div>
 
                 <div className='flex-1 min-w-0 space-y-2'>

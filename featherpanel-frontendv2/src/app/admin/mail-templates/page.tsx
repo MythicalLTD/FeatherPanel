@@ -54,7 +54,7 @@ import {
     ChevronRight,
     Calendar,
 } from 'lucide-react';
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { toast } from 'sonner';
 
 interface MailTemplate {
@@ -90,6 +90,7 @@ export default function MailTemplatesPage() {
         to: 0,
     });
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
     // Sheet states
     const [createOpen, setCreateOpen] = useState(false);
@@ -104,6 +105,18 @@ export default function MailTemplatesPage() {
 
     // Action states
     const [processing, setProcessing] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+            if (searchQuery !== debouncedSearchQuery) {
+                setPagination((p) => ({ ...p, page: 1 }));
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery, debouncedSearchQuery]);
 
     const fetchTemplates = useCallback(async () => {
         setLoading(true);
@@ -112,7 +125,7 @@ export default function MailTemplatesPage() {
                 params: {
                     page: pagination.page,
                     limit: pagination.pageSize,
-                    search: searchQuery || undefined,
+                    search: debouncedSearchQuery || undefined,
                 },
             });
             if (data.success) {
@@ -136,11 +149,11 @@ export default function MailTemplatesPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, searchQuery, t]);
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, t]);
 
     useEffect(() => {
         fetchTemplates();
-    }, [fetchTemplates]);
+    }, [fetchTemplates, refreshKey]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -148,15 +161,15 @@ export default function MailTemplatesPage() {
         try {
             const { data } = await axios.post('/api/admin/mail-templates', formData);
             if (data.success) {
-                toast.success(t('admin.mail_templates.messages.created'));
-                setCreateOpen(false);
-                setFormData({ name: '', subject: '', body: '' });
-                fetchTemplates();
+                setRefreshKey((prev) => prev + 1);
             } else {
                 toast.error(data.message || t('admin.mail_templates.messages.create_failed'));
             }
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : t('admin.mail_templates.messages.create_failed');
+            let message = t('admin.mail_templates.messages.create_failed');
+            if (isAxiosError(error) && error.response?.data?.message) {
+                message = error.response.data.message;
+            }
             toast.error(message);
         } finally {
             setProcessing(false);
@@ -170,16 +183,15 @@ export default function MailTemplatesPage() {
         try {
             const { data } = await axios.patch(`/api/admin/mail-templates/${selectedTemplate.id}`, formData);
             if (data.success) {
-                toast.success(t('admin.mail_templates.messages.updated'));
-                setEditOpen(false);
-                setSelectedTemplate(null);
-                setFormData({ name: '', subject: '', body: '' });
-                fetchTemplates();
+                setRefreshKey((prev) => prev + 1);
             } else {
                 toast.error(data.message || t('admin.mail_templates.messages.update_failed'));
             }
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : t('admin.mail_templates.messages.update_failed');
+            let message = t('admin.mail_templates.messages.update_failed');
+            if (isAxiosError(error) && error.response?.data?.message) {
+                message = error.response.data.message;
+            }
             toast.error(message);
         } finally {
             setProcessing(false);
@@ -192,7 +204,7 @@ export default function MailTemplatesPage() {
             const { data } = await axios.delete(`/api/admin/mail-templates/${id}`);
             if (data.success) {
                 toast.success(t('admin.mail_templates.messages.deleted'));
-                fetchTemplates();
+                setRefreshKey((prev) => prev + 1);
             } else {
                 toast.error(data.message || t('admin.mail_templates.messages.delete_failed'));
             }
@@ -240,7 +252,7 @@ export default function MailTemplatesPage() {
     };
 
     return (
-        <div className='space-y-6'>
+        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
             <PageHeader
                 title={t('admin.mail_templates.title')}
                 description={t('admin.mail_templates.subtitle')}
@@ -365,6 +377,12 @@ export default function MailTemplatesPage() {
                     title={t('admin.mail_templates.no_results')}
                     description={t('admin.mail_templates.subtitle')}
                     icon={Mail}
+                    action={
+                        <Button onClick={openCreate}>
+                            <Plus className='w-4 h-4 mr-2' />
+                            {t('admin.mail_templates.create')}
+                        </Button>
+                    }
                 />
             )}
 
