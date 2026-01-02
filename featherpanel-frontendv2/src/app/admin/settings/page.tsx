@@ -56,6 +56,7 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [organizedSettings, setOrganizedSettings] = useState<OrganizedSettings | null>(null);
     const [settings, setSettings] = useState<Record<string, Setting>>({});
+    const [initialSettings, setInitialSettings] = useState<Record<string, Setting>>({});
     const [activeTab, setActiveTab] = useState<string>('general');
 
     // Log Upload State
@@ -70,6 +71,9 @@ export default function SettingsPage() {
                 if (response.success) {
                     setOrganizedSettings(response.data.organized_settings);
                     setSettings(response.data.settings);
+                    // Store initial settings deep copy to compare later
+                    setInitialSettings(JSON.parse(JSON.stringify(response.data.settings)));
+
                     // Set first tab as active if available
                     const categories = Object.keys(response.data.organized_settings);
                     if (categories.length > 0) {
@@ -99,18 +103,29 @@ export default function SettingsPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            // Prepare payload: only send values
-            const payload = Object.entries(settings).reduce(
-                (acc, [key, setting]) => {
-                    acc[key] = setting.value;
-                    return acc;
-                },
-                {} as Record<string, string | number | boolean>,
-            );
+            // Prepare payload: only send changed values
+            const payload: Record<string, string | number | boolean> = {};
+
+            Object.entries(settings).forEach(([key, setting]) => {
+                const initial = initialSettings[key];
+                // Compare as strings to handle potential type mismatches (e.g. "1" vs 1, "true" vs true)
+                // which can happen between backend response and form state
+                if (initial && String(initial.value) !== String(setting.value)) {
+                    payload[key] = setting.value;
+                }
+            });
+
+            if (Object.keys(payload).length === 0) {
+                toast.info(t('admin.settings.messages.no_changes') || 'No changes to save.');
+                setSaving(false);
+                return;
+            }
 
             const response = await adminSettingsApi.updateSettings(payload);
             if (response.success) {
                 toast.success(response.message || t('admin.settings.messages.save_success'));
+                // Update initial settings to current state after successful save
+                setInitialSettings(JSON.parse(JSON.stringify(settings)));
             } else {
                 toast.error(response.message || t('admin.settings.messages.save_failed'));
             }
