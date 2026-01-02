@@ -2934,6 +2934,52 @@
 				"upload_failed": "Failed to upload logs.",
 				"uploaded_copied": "Logs uploaded! URL copied to clipboard: {{url}}"
 			}
+		},
+		"rate_limits": {
+			"title": "Rate Limits",
+			"description": "Configure rate limits for API routes to prevent abuse.",
+			"actions": {
+				"refresh": "Refresh",
+				"save_all": "Save All"
+			},
+			"global": {
+				"title": "Global Rate Limiting",
+				"description_enabled": "Rate limiting is enabled globally. Individual routes can still be disabled.",
+				"description_disabled": "Rate limiting is disabled globally. No rate limits will be applied.",
+				"status_label": "Global Status",
+				"status_description": "Toggle standard rate limiting across the entire application.",
+				"enabled": "Enabled",
+				"disabled": "Disabled"
+			},
+			"routes": {
+				"title": "Route Configuration",
+				"description": "Manage rate limits for individual API routes.",
+				"table": {
+					"route": "Route",
+					"status": "Status",
+					"per_second": "/s",
+					"per_minute": "/m",
+					"per_hour": "/h",
+					"per_day": "/d",
+					"namespace": "Namespace",
+					"actions": "Actions",
+					"empty": "No rate limits configured."
+				}
+			},
+			"messages": {
+				"load_failed": "Failed to load rate limits.",
+				"global_enabled": "Global rate limits enabled.",
+				"global_disabled": "Global rate limits disabled.",
+				"global_update_failed": "Failed to update global rate limits.",
+				"limit_required": "At least one rate limit must be set when enabled.",
+				"route_updated": "Updated rate limit for {{route}}.",
+				"route_update_failed": "Failed to update rate limit.",
+				"reset_confirm": "Reset configuration for {{route}}?",
+				"reset_success": "Reset rate limit for {{route}}.",
+				"reset_failed": "Failed to reset rate limit.",
+				"bulk_success": "Updated {{count}} rate limits.",
+				"bulk_failed": "Failed to bulk update."
+			}
 		}
 	},
 	"landing": {
