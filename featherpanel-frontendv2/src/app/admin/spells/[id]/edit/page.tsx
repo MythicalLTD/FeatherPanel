@@ -982,56 +982,9 @@ export default function EditSpellPage() {
                                 ) : (
                                     // View Mode
                                     <div className='space-y-3'>
-                                        <div className='flex items-start justify-between'>
-                                            <div className='flex-1 min-w-0'>
-                                                <div className='flex items-center gap-2 mb-1'>
-                                                    <h4 className='font-semibold text-base'>{variable.name}</h4>
-                                                    <Badge variant='outline' className='text-xs font-mono'>
-                                                        {variable.env_variable}
-                                                    </Badge>
-                                                </div>
-                                                <p className='text-sm text-muted-foreground'>{variable.description}</p>
-                                            </div>
-                                            <div className='flex gap-2 ml-4 shrink-0'>
-                                                <Button
-                                                    size='sm'
-                                                    variant='outline'
-                                                    disabled={addingVariable || editingVariable !== null}
-                                                    onClick={() => startEditVariable(variable)}
-                                                >
-                                                    <Pencil className='h-4 w-4' />
-                                                </Button>
-                                                {confirmDeleteVariable === variable.id ? (
-                                                    <>
-                                                        <Button
-                                                            size='sm'
-                                                            variant='destructive'
-                                                            loading={deletingVariable}
-                                                            onClick={() => deleteVariable(variable)}
-                                                        >
-                                                            Confirm
-                                                        </Button>
-                                                        <Button
-                                                            size='sm'
-                                                            variant='outline'
-                                                            disabled={deletingVariable}
-                                                            onClick={() => setConfirmDeleteVariable(null)}
-                                                        >
-                                                            Cancel
-                                                        </Button>
-                                                    </>
-                                                ) : (
-                                                    <Button
-                                                        size='sm'
-                                                        variant='destructive'
-                                                        disabled={addingVariable || editingVariable !== null}
-                                                        onClick={() => deleteVariable(variable)}
-                                                    >
-                                                        <Trash2 className='h-4 w-4' />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
+                                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                                            {variable.description}
+                                        </p>
                                         <div className='grid grid-cols-2 gap-4 text-sm'>
                                             <div className='space-y-2'>
                                                 <div className='flex justify-between'>
