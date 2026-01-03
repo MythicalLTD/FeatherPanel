@@ -69,7 +69,8 @@ export function ServerSelectionModal({
         }, 300);
 
         return () => clearTimeout(timer);
-    }, [searchQuery, onSearch]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery]); // Only depend on searchQuery, not onSearch
 
     return (
         <HeadlessModal

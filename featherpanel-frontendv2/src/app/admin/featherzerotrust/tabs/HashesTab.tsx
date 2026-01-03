@@ -520,7 +520,7 @@ const HashesTab = () => {
                                     </div>
                                     <div className='flex flex-col'>
                                         <span className='text-[10px] text-muted-foreground uppercase tracking-tight'>
-                                            First Seen
+                                            {t('admin.featherzerotrust.hashes.firstSeen')}
                                         </span>
                                         <span className='text-[10px] opacity-80'>
                                             {new Date(h.first_seen).toLocaleDateString()}
@@ -528,7 +528,7 @@ const HashesTab = () => {
                                     </div>
                                     <div className='flex flex-col'>
                                         <span className='text-[10px] text-muted-foreground uppercase tracking-tight'>
-                                            Last Seen
+                                            {t('admin.featherzerotrust.hashes.lastSeen')}
                                         </span>
                                         <span className='text-[10px] opacity-80'>
                                             {new Date(h.last_seen).toLocaleDateString()}

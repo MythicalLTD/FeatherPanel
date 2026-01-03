@@ -26,7 +26,7 @@ SOFTWARE.
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/featherui/Button';
@@ -88,7 +88,7 @@ const ScannerTab = () => {
 
     const progressTimer = useRef<NodeJS.Timeout | null>(null);
 
-    const fetchServers = async (query = '') => {
+    const fetchServers = useCallback(async (query = '') => {
         setLoadingServers(true);
         try {
             const { data } = await axios.get('/api/admin/servers', {
@@ -102,7 +102,7 @@ const ScannerTab = () => {
         } finally {
             setLoadingServers(false);
         }
-    };
+    }, []);
 
     const startFakeProgress = () => {
         setScanProgress({

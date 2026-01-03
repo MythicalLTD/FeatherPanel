@@ -144,7 +144,7 @@ const LogsTab = () => {
                 setExecutionLog(data.data.execution);
                 setScanLogs(data.data.scan_logs || []);
             } else {
-                toast.error('Failed to load execution log details');
+                toast.error(t('admin.featherzerotrust.logs.messages.detailsFailed'));
                 setDrawerOpen(false);
             }
         } catch (error: unknown) {
@@ -194,8 +194,8 @@ const LogsTab = () => {
                 <TableSkeleton count={5} />
             ) : logs.length === 0 ? (
                 <EmptyState
-                    title='No execution logs found'
-                    description='Cron job execution history will appear here once scans are performed.'
+                    title={t('admin.featherzerotrust.logs.noLogs')}
+                    description={t('admin.featherzerotrust.logs.emptyDescription')}
                     icon={FileText}
                 />
             ) : (
@@ -204,8 +204,8 @@ const LogsTab = () => {
                         <ResourceCard
                             key={log.execution_id}
                             icon={getStatusIcon(log.status)}
-                            title={`Execution: ${log.execution_id}`}
-                            subtitle={`Started at: ${formatDate(log.started_at)}`}
+                            title={`${t('admin.featherzerotrust.logs.execution')}: ${log.execution_id}`}
+                            subtitle={`${t('admin.featherzerotrust.logs.startedAt')}: ${formatDate(log.started_at)}`}
                             badges={[
                                 {
                                     label: log.status.toUpperCase(),
@@ -222,7 +222,9 @@ const LogsTab = () => {
                                 <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-2'>
                                     <div className='flex items-center gap-2 text-xs text-muted-foreground'>
                                         <Server className='h-3 w-3' />
-                                        <span>{log.total_servers_scanned} Servers</span>
+                                        <span>
+                                            {log.total_servers_scanned} {t('admin.featherzerotrust.logs.servers')}
+                                        </span>
                                     </div>
                                     <div className='flex items-center gap-2 text-xs text-muted-foreground'>
                                         <AlertTriangle
@@ -234,7 +236,7 @@ const LogsTab = () => {
                                         <span
                                             className={cn(log.total_detections > 0 && 'text-destructive font-semibold')}
                                         >
-                                            {log.total_detections} Detections
+                                            {log.total_detections} {t('admin.featherzerotrust.logs.detections')}
                                         </span>
                                     </div>
                                     <div className='flex items-center gap-2 text-xs text-muted-foreground'>
@@ -242,7 +244,10 @@ const LogsTab = () => {
                                         <span>{formatDuration(log.details?.duration_seconds)}</span>
                                     </div>
                                     <div className='text-xs text-muted-foreground'>
-                                        Completed: {log.completed_at ? formatDate(log.completed_at) : 'In Progress'}
+                                        {t('admin.featherzerotrust.logs.completed')}:{' '}
+                                        {log.completed_at
+                                            ? formatDate(log.completed_at)
+                                            : t('admin.featherzerotrust.logs.inProgress')}
                                     </div>
                                 </div>
                             }
@@ -254,7 +259,7 @@ const LogsTab = () => {
                                     onClick={() => fetchLogDetails(log.execution_id)}
                                 >
                                     <Eye className='h-4 w-4 mr-2' />
-                                    View Details
+                                    {t('admin.featherzerotrust.logs.viewDetails')}
                                 </Button>
                             }
                         />
@@ -355,7 +360,8 @@ const LogsTab = () => {
                                                     <div className='flex items-start justify-between'>
                                                         <div>
                                                             <div className='text-sm font-bold'>
-                                                                {log.server_name || 'Unknown Server'}
+                                                                {log.server_name ||
+                                                                    t('admin.featherzerotrust.logs.unknownServer')}
                                                             </div>
                                                             <div className='text-[10px] text-muted-foreground font-mono'>
                                                                 {log.server_uuid}
