@@ -296,7 +296,7 @@ export default function EditSpellPage() {
     const submitVariable = async () => {
         try {
             if (editingVariable) {
-                await axios.patch(`/api/admin/spells/${spellId}/variables/${editingVariable.id}`, variableForm);
+                await axios.patch(`/api/admin/spell-variables/${editingVariable.id}`, variableForm);
                 toast.success(t('admin.spells.messages.variable_updated'));
             } else {
                 await axios.post(`/api/admin/spells/${spellId}/variables`, variableForm);
@@ -325,7 +325,7 @@ export default function EditSpellPage() {
 
         setDeletingVariable(true);
         try {
-            await axios.delete(`/api/admin/spells/${spellId}/variables/${variable.id}`);
+            await axios.delete(`/api/admin/spell-variables/${variable.id}`);
             toast.success(t('admin.spells.messages.variable_deleted'));
 
             // Refresh variables
