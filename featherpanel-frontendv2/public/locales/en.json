@@ -3464,6 +3464,144 @@
 				}
 			}
 		},
+		"spells": {
+			"title": "Spells",
+			"subtitle": "Manage all spells in your system",
+			"subtitle_realm": "Managing spells for realm: {realm}",
+			"create": "Create Spell",
+			"import": "Import Spell",
+			"export": "Export Spell",
+			"browse_marketplace": "Browse Marketplace",
+			"search_placeholder": "Search by name, description, or author...",
+			"no_results": "No spells found",
+			"table": {
+				"name": "Name",
+				"description": "Description",
+				"author": "Author",
+				"realm": "Realm",
+				"created_at": "Created",
+				"actions": "Actions"
+			},
+			"tabs": {
+				"general": "General",
+				"docker": "Docker",
+				"features": "Features",
+				"config": "Config",
+				"script": "Script",
+				"variables": "Variables"
+			},
+			"form": {
+				"create_title": "Create Spell",
+				"create_description": "Fill in the details to create a new spell",
+				"edit_title": "Edit Spell",
+				"edit_description": "Edit details for spell: {name}",
+				"view_title": "Spell Details",
+				"name": "Name",
+				"author": "Author",
+				"description": "Description",
+				"realm": "Realm",
+				"realm_placeholder": "Select a realm",
+				"update_url": "Update URL",
+				"banner_url": "Banner URL",
+				"banner_preview": "Preview:",
+				"docker_images": "Docker Images",
+				"add_docker_image": "Add Docker Image",
+				"script_container": "Script Container",
+				"script_entry": "Script Entry",
+				"force_outgoing_ip": "Force outgoing IP",
+				"features": "Features",
+				"add_feature": "Add Feature",
+				"file_denylist": "File Denylist (JSON)",
+				"config_files": "Config Files (JSON)",
+				"config_startup": "Config Startup (JSON)",
+				"config_logs": "Config Logs (JSON)",
+				"config_stop": "Config Stop",
+				"script_install": "Script Install",
+				"script_privilege": "Script Privilege",
+				"script_privilege_help": "Privileged scripts have elevated permissions",
+				"privileged": "Privileged",
+				"non_privileged": "Non-privileged",
+				"startup_command": "Startup Command",
+				"submit_create": "Create Spell",
+				"submit_update": "Save Changes",
+				"uuid": "UUID",
+				"script_is_privileged": "Privileged"
+			},
+			"variables": {
+				"title": "Variables",
+				"add": "Add Variable",
+				"new": "New Variable",
+				"editing": "Editing Variable",
+				"adding": "Adding",
+				"name": "Name",
+				"env_variable": "Env Variable",
+				"description_label": "Description",
+				"default_value": "Default Value",
+				"field_type": "Field Type",
+				"validation_rules": "Validation Rules",
+				"user_viewable": "User Viewable",
+				"user_editable": "User Editable",
+				"description": "Configure environment variables for this spell",
+				"help_text": "Variables allow you to customize server behavior at creation time. Define defaults, validation rules, and user permissions for each variable.",
+				"create_variable": "Create Variable",
+				"save_changes": "Save Changes",
+				"no_variables": "No variables configured",
+				"no_variables_help": "Click 'Add Variable' to create your first variable",
+				"field_types_help": "Field Types & Rules:",
+				"field_types_info": "Field Type: text, number, boolean, select, textarea",
+				"rules_info": "Rules: required|numeric|min:1|max:65535",
+				"field_types": {
+					"text": "Text",
+					"number": "Number",
+					"boolean": "Boolean",
+					"select": "Select",
+					"textarea": "Textarea"
+				}
+			},
+			"messages": {
+				"fetch_failed": "Failed to fetch spells",
+				"created": "Spell created successfully",
+				"create_failed": "Failed to create spell",
+				"updated": "Spell updated successfully",
+				"update_failed": "Failed to update spell",
+				"deleted": "Spell deleted successfully",
+				"delete_failed": "Failed to delete spell",
+				"delete_confirm": "Are you sure you want to delete this spell?",
+				"imported": "Spell imported successfully",
+				"import_failed": "Failed to import spell",
+				"export_failed": "Failed to export spell",
+				"invalid_json": "Invalid JSON file",
+				"variable_created": "Variable created successfully",
+				"variable_updated": "Variable updated successfully",
+				"variable_deleted": "Variable deleted successfully",
+				"variable_create_failed": "Failed to create variable",
+				"variable_update_failed": "Failed to update variable",
+				"variable_delete_failed": "Failed to delete variable",
+				"variable_delete_confirm": "Are you sure you want to delete this variable?"
+			},
+			"help": {
+				"cross_compatible": {
+					"title": "Cross-compatible spells",
+					"description": "Realms and spells are fully cross-compatible. We maintain a spells repository that works with both FeatherPanel and Pterodactyl, so you can fetch and use the same spells in either panel. You can also bring your own spells – import them here or host them in your own repo."
+				},
+				"what_are_spells": {
+					"title": "What are Spells (eggs)?",
+					"description": "Spells are server templates that define runtime, Docker image, startup, features, configs, and scripts. They live inside realms (categories) and power server creation."
+				},
+				"how_to_use": {
+					"title": "How you use them",
+					"description": "Install/import a spell, pick a realm, then create servers from it. Spells can include update URLs, tags, banners, and author info for easy discovery and updates."
+				},
+				"under_the_hood": {
+					"title": "Under the hood",
+					"description": "Configs (files/startup/logs/stop), file denylist, variables, Docker images, script container/entry, and optional privileged install scripts define behavior."
+				},
+				"sources": {
+					"title": "Sources & compatibility",
+					"description": "Use our cross-compatible spells repo (FeatherPanel ↔ Pterodactyl) or bring your own JSON-defined spells. Import locally or host them in your own repository."
+				}
+			}
+		},
 		"mail_templates": {
 			"title": "Mail Templates",
 			"subtitle": "Manage email templates for your system.",
