@@ -40,7 +40,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Sparkles, ArrowLeft, Trash2, Plus, Pencil, Settings } from 'lucide-react';
 
@@ -642,405 +641,448 @@ export default function EditSpellPage() {
 
                     {/* Add Variable Card */}
                     {addingVariable && (
-                        <Card className='border-2 border-primary'>
-                            <CardContent className='pt-4'>
-                                <div className='space-y-4'>
-                                    <div className='flex items-center justify-between mb-2'>
-                                        <h4 className='font-semibold'>{t('admin.spells.variables.new')}</h4>
-                                        <Badge variant='secondary'>{t('admin.spells.variables.adding')}</Badge>
-                                    </div>
-                                    <div className='grid grid-cols-2 gap-3'>
-                                        <div className='space-y-2'>
-                                            <Label>{t('admin.spells.variables.name')} *</Label>
-                                            <Input
-                                                value={variableForm.name}
-                                                onChange={(e) =>
-                                                    setVariableForm({ ...variableForm, name: e.target.value })
-                                                }
-                                                placeholder='Server Port'
-                                            />
-                                        </div>
-                                        <div className='space-y-2'>
-                                            <Label>{t('admin.spells.variables.env_variable')} *</Label>
-                                            <Input
-                                                value={variableForm.env_variable}
-                                                onChange={(e) =>
-                                                    setVariableForm({ ...variableForm, env_variable: e.target.value })
-                                                }
-                                                placeholder='SERVER_PORT'
-                                            />
-                                        </div>
-                                    </div>
+                        <PageCard
+                            title={t('admin.spells.variables.new')}
+                            description={t('admin.spells.variables.adding')}
+                            icon={Plus}
+                            variant='default'
+                            footer={
+                                <div className='flex justify-end gap-2'>
+                                    <Button size='sm' variant='outline' onClick={cancelVariableEdit}>
+                                        Cancel
+                                    </Button>
+                                    <Button size='sm' onClick={submitVariable}>
+                                        <Plus className='h-4 w-4 mr-2' />
+                                        {t('admin.spells.variables.create_variable')}
+                                    </Button>
+                                </div>
+                            }
+                        >
+                            <div className='space-y-4'>
+                                <div className='grid grid-cols-2 gap-3'>
                                     <div className='space-y-2'>
-                                        <Label>{t('admin.spells.variables.description_label')} *</Label>
-                                        <Textarea
-                                            value={variableForm.description}
-                                            onChange={(e) =>
-                                                setVariableForm({ ...variableForm, description: e.target.value })
-                                            }
-                                            placeholder='The port that the server will run on'
-                                            rows={2}
-                                        />
-                                    </div>
-                                    <div className='grid grid-cols-2 gap-3'>
-                                        <div className='space-y-2'>
-                                            <Label>{t('admin.spells.variables.default_value')} *</Label>
-                                            <Input
-                                                value={variableForm.default_value}
-                                                onChange={(e) =>
-                                                    setVariableForm({ ...variableForm, default_value: e.target.value })
-                                                }
-                                                placeholder='25565'
-                                            />
-                                        </div>
-                                        <div className='space-y-2'>
-                                            <Label>{t('admin.spells.variables.field_type')}</Label>
-                                            <Select
-                                                value={variableForm.field_type}
-                                                onChange={(e) =>
-                                                    setVariableForm({ ...variableForm, field_type: e.target.value })
-                                                }
-                                            >
-                                                <option value='text'>
-                                                    {t('admin.spells.variables.field_types.text')}
-                                                </option>
-                                                <option value='number'>
-                                                    {t('admin.spells.variables.field_types.number')}
-                                                </option>
-                                                <option value='boolean'>
-                                                    {t('admin.spells.variables.field_types.boolean')}
-                                                </option>
-                                                <option value='select'>
-                                                    {t('admin.spells.variables.field_types.select')}
-                                                </option>
-                                                <option value='textarea'>
-                                                    {t('admin.spells.variables.field_types.textarea')}
-                                                </option>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                    <div className='space-y-2'>
-                                        <Label>{t('admin.spells.variables.validation_rules')}</Label>
+                                        <Label>{t('admin.spells.variables.name')} *</Label>
                                         <Input
-                                            value={variableForm.rules}
-                                            onChange={(e) =>
-                                                setVariableForm({ ...variableForm, rules: e.target.value })
-                                            }
-                                            placeholder='required|numeric|min:1|max:65535'
+                                            value={variableForm.name}
+                                            onChange={(e) => setVariableForm({ ...variableForm, name: e.target.value })}
+                                            placeholder='Server Port'
                                         />
                                     </div>
-                                    <div className='flex items-center gap-6'>
-                                        <div className='flex items-center space-x-2'>
-                                            <Checkbox
-                                                id='add-viewable'
-                                                checked={variableForm.user_viewable === 'true'}
-                                                onCheckedChange={(checked) =>
-                                                    setVariableForm({
-                                                        ...variableForm,
-                                                        user_viewable: checked ? 'true' : 'false',
-                                                    })
-                                                }
-                                            />
-                                            <label
-                                                htmlFor='add-viewable'
-                                                className='text-sm font-medium cursor-pointer'
-                                            >
-                                                {t('admin.spells.variables.user_viewable')}
-                                            </label>
-                                        </div>
-                                        <div className='flex items-center space-x-2'>
-                                            <Checkbox
-                                                id='add-editable'
-                                                checked={variableForm.user_editable === 'true'}
-                                                onCheckedChange={(checked) =>
-                                                    setVariableForm({
-                                                        ...variableForm,
-                                                        user_editable: checked ? 'true' : 'false',
-                                                    })
-                                                }
-                                            />
-                                            <label
-                                                htmlFor='add-editable'
-                                                className='text-sm font-medium cursor-pointer'
-                                            >
-                                                {t('admin.spells.variables.user_editable')}
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div className='flex justify-end gap-2 pt-2 border-t'>
-                                        <Button size='sm' variant='outline' onClick={cancelVariableEdit}>
-                                            Cancel
-                                        </Button>
-                                        <Button size='sm' onClick={submitVariable}>
-                                            <Plus className='h-4 w-4 mr-2' />
-                                            {t('admin.spells.variables.create_variable')}
-                                        </Button>
+                                    <div className='space-y-2'>
+                                        <Label>{t('admin.spells.variables.env_variable')} *</Label>
+                                        <Input
+                                            value={variableForm.env_variable}
+                                            onChange={(e) =>
+                                                setVariableForm({ ...variableForm, env_variable: e.target.value })
+                                            }
+                                            placeholder='SERVER_PORT'
+                                        />
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
+                                <div className='space-y-2'>
+                                    <Label>{t('admin.spells.variables.description_label')} *</Label>
+                                    <Textarea
+                                        value={variableForm.description}
+                                        onChange={(e) =>
+                                            setVariableForm({ ...variableForm, description: e.target.value })
+                                        }
+                                        placeholder='The port that the server will run on'
+                                        rows={2}
+                                    />
+                                </div>
+                                <div className='grid grid-cols-2 gap-3'>
+                                    <div className='space-y-2'>
+                                        <Label>{t('admin.spells.variables.default_value')} *</Label>
+                                        <Input
+                                            value={variableForm.default_value}
+                                            onChange={(e) =>
+                                                setVariableForm({ ...variableForm, default_value: e.target.value })
+                                            }
+                                            placeholder='25565'
+                                        />
+                                    </div>
+                                    <div className='space-y-2'>
+                                        <Label>{t('admin.spells.variables.field_type')}</Label>
+                                        <Select
+                                            value={variableForm.field_type}
+                                            onChange={(e) =>
+                                                setVariableForm({ ...variableForm, field_type: e.target.value })
+                                            }
+                                        >
+                                            <option value='text'>{t('admin.spells.variables.field_types.text')}</option>
+                                            <option value='number'>
+                                                {t('admin.spells.variables.field_types.number')}
+                                            </option>
+                                            <option value='boolean'>
+                                                {t('admin.spells.variables.field_types.boolean')}
+                                            </option>
+                                            <option value='select'>
+                                                {t('admin.spells.variables.field_types.select')}
+                                            </option>
+                                            <option value='textarea'>
+                                                {t('admin.spells.variables.field_types.textarea')}
+                                            </option>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label>{t('admin.spells.variables.validation_rules')}</Label>
+                                    <Input
+                                        value={variableForm.rules}
+                                        onChange={(e) => setVariableForm({ ...variableForm, rules: e.target.value })}
+                                        placeholder='required|numeric|min:1|max:65535'
+                                    />
+                                </div>
+                                <div className='flex items-center gap-6'>
+                                    <div className='flex items-center space-x-2'>
+                                        <Checkbox
+                                            id='add-viewable'
+                                            checked={variableForm.user_viewable === 'true'}
+                                            onCheckedChange={(checked) =>
+                                                setVariableForm({
+                                                    ...variableForm,
+                                                    user_viewable: checked ? 'true' : 'false',
+                                                })
+                                            }
+                                        />
+                                        <label htmlFor='add-viewable' className='text-sm font-medium cursor-pointer'>
+                                            {t('admin.spells.variables.user_viewable')}
+                                        </label>
+                                    </div>
+                                    <div className='flex items-center space-x-2'>
+                                        <Checkbox
+                                            id='add-editable'
+                                            checked={variableForm.user_editable === 'true'}
+                                            onCheckedChange={(checked) =>
+                                                setVariableForm({
+                                                    ...variableForm,
+                                                    user_editable: checked ? 'true' : 'false',
+                                                })
+                                            }
+                                        />
+                                        <label htmlFor='add-editable' className='text-sm font-medium cursor-pointer'>
+                                            {t('admin.spells.variables.user_editable')}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </PageCard>
                     )}
 
                     {/* Variables List */}
                     <div className='space-y-3'>
                         {variables.map((variable) => (
-                            <Card key={variable.id}>
-                                <CardContent className='pt-4'>
-                                    {editingVariable?.id === variable.id ? (
-                                        // Edit Mode - Similar to Add Variable
-                                        <div className='space-y-4'>
-                                            <div className='flex items-center justify-between mb-2'>
-                                                <h4 className='font-semibold'>{t('admin.spells.variables.editing')}</h4>
-                                                <Badge variant='secondary'>Editing</Badge>
-                                            </div>
-                                            {/* Same form fields as add variable */}
-                                            <div className='grid grid-cols-2 gap-3'>
-                                                <div className='space-y-2'>
-                                                    <Label>{t('admin.spells.variables.name')} *</Label>
-                                                    <Input
-                                                        value={variableForm.name}
-                                                        onChange={(e) =>
-                                                            setVariableForm({ ...variableForm, name: e.target.value })
-                                                        }
-                                                    />
-                                                </div>
-                                                <div className='space-y-2'>
-                                                    <Label>{t('admin.spells.variables.env_variable')} *</Label>
-                                                    <Input
-                                                        value={variableForm.env_variable}
-                                                        onChange={(e) =>
-                                                            setVariableForm({
-                                                                ...variableForm,
-                                                                env_variable: e.target.value,
-                                                            })
-                                                        }
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className='space-y-2'>
-                                                <Label>{t('admin.spells.variables.description_label')} *</Label>
-                                                <Textarea
-                                                    value={variableForm.description}
-                                                    onChange={(e) =>
-                                                        setVariableForm({
-                                                            ...variableForm,
-                                                            description: e.target.value,
-                                                        })
-                                                    }
-                                                    rows={2}
-                                                />
-                                            </div>
-                                            <div className='grid grid-cols-2 gap-3'>
-                                                <div className='space-y-2'>
-                                                    <Label>{t('admin.spells.variables.default_value')} *</Label>
-                                                    <Input
-                                                        value={variableForm.default_value}
-                                                        onChange={(e) =>
-                                                            setVariableForm({
-                                                                ...variableForm,
-                                                                default_value: e.target.value,
-                                                            })
-                                                        }
-                                                    />
-                                                </div>
-                                                <div className='space-y-2'>
-                                                    <Label>{t('admin.spells.variables.field_type')}</Label>
-                                                    <Select
-                                                        value={variableForm.field_type}
-                                                        onChange={(e) =>
-                                                            setVariableForm({
-                                                                ...variableForm,
-                                                                field_type: e.target.value,
-                                                            })
-                                                        }
+                            <PageCard
+                                key={variable.id}
+                                title={variable.name}
+                                description={variable.env_variable}
+                                icon={Settings}
+                                variant='default'
+                                action={
+                                    editingVariable?.id !== variable.id && (
+                                        <div className='flex gap-2'>
+                                            <Button
+                                                size='sm'
+                                                variant='outline'
+                                                disabled={addingVariable || editingVariable !== null}
+                                                onClick={() => startEditVariable(variable)}
+                                            >
+                                                <Pencil className='h-4 w-4' />
+                                            </Button>
+                                            {confirmDeleteVariable === variable.id ? (
+                                                <>
+                                                    <Button
+                                                        size='sm'
+                                                        variant='destructive'
+                                                        loading={deletingVariable}
+                                                        onClick={() => deleteVariable(variable)}
                                                     >
-                                                        <option value='text'>
-                                                            {t('admin.spells.variables.field_types.text')}
-                                                        </option>
-                                                        <option value='number'>
-                                                            {t('admin.spells.variables.field_types.number')}
-                                                        </option>
-                                                        <option value='boolean'>
-                                                            {t('admin.spells.variables.field_types.boolean')}
-                                                        </option>
-                                                        <option value='select'>
-                                                            {t('admin.spells.variables.field_types.select')}
-                                                        </option>
-                                                        <option value='textarea'>
-                                                            {t('admin.spells.variables.field_types.textarea')}
-                                                        </option>
-                                                    </Select>
-                                                </div>
-                                            </div>
-                                            <div className='space-y-2'>
-                                                <Label>{t('admin.spells.variables.validation_rules')}</Label>
-                                                <Input
-                                                    value={variableForm.rules}
-                                                    onChange={(e) =>
-                                                        setVariableForm({ ...variableForm, rules: e.target.value })
-                                                    }
-                                                    placeholder='required|numeric|min:1|max:65535'
-                                                />
-                                            </div>
-                                            <div className='flex items-center gap-6'>
-                                                <div className='flex items-center space-x-2'>
-                                                    <Checkbox
-                                                        id={`edit-viewable-${variable.id}`}
-                                                        checked={variableForm.user_viewable === 'true'}
-                                                        onCheckedChange={(checked) =>
-                                                            setVariableForm({
-                                                                ...variableForm,
-                                                                user_viewable: checked ? 'true' : 'false',
-                                                            })
-                                                        }
-                                                    />
-                                                    <label
-                                                        htmlFor={`edit-viewable-${variable.id}`}
-                                                        className='text-sm font-medium cursor-pointer'
-                                                    >
-                                                        {t('admin.spells.variables.user_viewable')}
-                                                    </label>
-                                                </div>
-                                                <div className='flex items-center space-x-2'>
-                                                    <Checkbox
-                                                        id={`edit-editable-${variable.id}`}
-                                                        checked={variableForm.user_editable === 'true'}
-                                                        onCheckedChange={(checked) =>
-                                                            setVariableForm({
-                                                                ...variableForm,
-                                                                user_editable: checked ? 'true' : 'false',
-                                                            })
-                                                        }
-                                                    />
-                                                    <label
-                                                        htmlFor={`edit-editable-${variable.id}`}
-                                                        className='text-sm font-medium cursor-pointer'
-                                                    >
-                                                        {t('admin.spells.variables.user_editable')}
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            <div className='flex justify-end gap-2 pt-2 border-t'>
-                                                <Button size='sm' variant='outline' onClick={cancelVariableEdit}>
-                                                    Cancel
-                                                </Button>
-                                                <Button size='sm' onClick={submitVariable}>
-                                                    <Pencil className='h-4 w-4 mr-2' />
-                                                    {t('admin.spells.variables.save_changes')}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        // View Mode
-                                        <div className='space-y-3'>
-                                            <div className='flex items-start justify-between'>
-                                                <div className='flex-1 min-w-0'>
-                                                    <div className='flex items-center gap-2 mb-1'>
-                                                        <h4 className='font-semibold text-base'>{variable.name}</h4>
-                                                        <Badge variant='outline' className='text-xs font-mono'>
-                                                            {variable.env_variable}
-                                                        </Badge>
-                                                    </div>
-                                                    <p className='text-sm text-muted-foreground'>
-                                                        {variable.description}
-                                                    </p>
-                                                </div>
-                                                <div className='flex gap-2 ml-4 shrink-0'>
+                                                        Confirm
+                                                    </Button>
                                                     <Button
                                                         size='sm'
                                                         variant='outline'
-                                                        disabled={addingVariable || editingVariable !== null}
-                                                        onClick={() => startEditVariable(variable)}
+                                                        disabled={deletingVariable}
+                                                        onClick={() => setConfirmDeleteVariable(null)}
                                                     >
-                                                        <Pencil className='h-4 w-4' />
+                                                        Cancel
                                                     </Button>
-                                                    {confirmDeleteVariable === variable.id ? (
-                                                        <>
-                                                            <Button
-                                                                size='sm'
-                                                                variant='destructive'
-                                                                loading={deletingVariable}
-                                                                onClick={() => deleteVariable(variable)}
-                                                            >
-                                                                Confirm
-                                                            </Button>
-                                                            <Button
-                                                                size='sm'
-                                                                variant='outline'
-                                                                disabled={deletingVariable}
-                                                                onClick={() => setConfirmDeleteVariable(null)}
-                                                            >
-                                                                Cancel
-                                                            </Button>
-                                                        </>
-                                                    ) : (
+                                                </>
+                                            ) : (
+                                                <Button
+                                                    size='sm'
+                                                    variant='destructive'
+                                                    disabled={addingVariable || editingVariable !== null}
+                                                    onClick={() => deleteVariable(variable)}
+                                                >
+                                                    <Trash2 className='h-4 w-4' />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    )
+                                }
+                                footer={
+                                    editingVariable?.id === variable.id && (
+                                        <div className='flex justify-end gap-2'>
+                                            <Button size='sm' variant='outline' onClick={cancelVariableEdit}>
+                                                Cancel
+                                            </Button>
+                                            <Button size='sm' onClick={submitVariable}>
+                                                <Pencil className='h-4 w-4 mr-2' />
+                                                {t('admin.spells.variables.save_changes')}
+                                            </Button>
+                                        </div>
+                                    )
+                                }
+                            >
+                                {editingVariable?.id === variable.id ? (
+                                    // Edit Mode - Similar to Add Variable
+                                    <div className='space-y-4'>
+                                        <div className='flex items-center justify-between mb-2'>
+                                            <h4 className='font-semibold'>{t('admin.spells.variables.editing')}</h4>
+                                            <Badge variant='secondary'>Editing</Badge>
+                                        </div>
+                                        {/* Same form fields as add variable */}
+                                        <div className='grid grid-cols-2 gap-3'>
+                                            <div className='space-y-2'>
+                                                <Label>{t('admin.spells.variables.name')} *</Label>
+                                                <Input
+                                                    value={variableForm.name}
+                                                    onChange={(e) =>
+                                                        setVariableForm({ ...variableForm, name: e.target.value })
+                                                    }
+                                                />
+                                            </div>
+                                            <div className='space-y-2'>
+                                                <Label>{t('admin.spells.variables.env_variable')} *</Label>
+                                                <Input
+                                                    value={variableForm.env_variable}
+                                                    onChange={(e) =>
+                                                        setVariableForm({
+                                                            ...variableForm,
+                                                            env_variable: e.target.value,
+                                                        })
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className='space-y-2'>
+                                            <Label>{t('admin.spells.variables.description_label')} *</Label>
+                                            <Textarea
+                                                value={variableForm.description}
+                                                onChange={(e) =>
+                                                    setVariableForm({
+                                                        ...variableForm,
+                                                        description: e.target.value,
+                                                    })
+                                                }
+                                                rows={2}
+                                            />
+                                        </div>
+                                        <div className='grid grid-cols-2 gap-3'>
+                                            <div className='space-y-2'>
+                                                <Label>{t('admin.spells.variables.default_value')} *</Label>
+                                                <Input
+                                                    value={variableForm.default_value}
+                                                    onChange={(e) =>
+                                                        setVariableForm({
+                                                            ...variableForm,
+                                                            default_value: e.target.value,
+                                                        })
+                                                    }
+                                                />
+                                            </div>
+                                            <div className='space-y-2'>
+                                                <Label>{t('admin.spells.variables.field_type')}</Label>
+                                                <Select
+                                                    value={variableForm.field_type}
+                                                    onChange={(e) =>
+                                                        setVariableForm({
+                                                            ...variableForm,
+                                                            field_type: e.target.value,
+                                                        })
+                                                    }
+                                                >
+                                                    <option value='text'>
+                                                        {t('admin.spells.variables.field_types.text')}
+                                                    </option>
+                                                    <option value='number'>
+                                                        {t('admin.spells.variables.field_types.number')}
+                                                    </option>
+                                                    <option value='boolean'>
+                                                        {t('admin.spells.variables.field_types.boolean')}
+                                                    </option>
+                                                    <option value='select'>
+                                                        {t('admin.spells.variables.field_types.select')}
+                                                    </option>
+                                                    <option value='textarea'>
+                                                        {t('admin.spells.variables.field_types.textarea')}
+                                                    </option>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <div className='space-y-2'>
+                                            <Label>{t('admin.spells.variables.validation_rules')}</Label>
+                                            <Input
+                                                value={variableForm.rules}
+                                                onChange={(e) =>
+                                                    setVariableForm({ ...variableForm, rules: e.target.value })
+                                                }
+                                                placeholder='required|numeric|min:1|max:65535'
+                                            />
+                                        </div>
+                                        <div className='flex items-center gap-6'>
+                                            <div className='flex items-center space-x-2'>
+                                                <Checkbox
+                                                    id={`edit-viewable-${variable.id}`}
+                                                    checked={variableForm.user_viewable === 'true'}
+                                                    onCheckedChange={(checked) =>
+                                                        setVariableForm({
+                                                            ...variableForm,
+                                                            user_viewable: checked ? 'true' : 'false',
+                                                        })
+                                                    }
+                                                />
+                                                <label
+                                                    htmlFor={`edit-viewable-${variable.id}`}
+                                                    className='text-sm font-medium cursor-pointer'
+                                                >
+                                                    {t('admin.spells.variables.user_viewable')}
+                                                </label>
+                                            </div>
+                                            <div className='flex items-center space-x-2'>
+                                                <Checkbox
+                                                    id={`edit-editable-${variable.id}`}
+                                                    checked={variableForm.user_editable === 'true'}
+                                                    onCheckedChange={(checked) =>
+                                                        setVariableForm({
+                                                            ...variableForm,
+                                                            user_editable: checked ? 'true' : 'false',
+                                                        })
+                                                    }
+                                                />
+                                                <label
+                                                    htmlFor={`edit-editable-${variable.id}`}
+                                                    className='text-sm font-medium cursor-pointer'
+                                                >
+                                                    {t('admin.spells.variables.user_editable')}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div className='flex justify-end gap-2 pt-2 border-t'>
+                                            <Button size='sm' variant='outline' onClick={cancelVariableEdit}>
+                                                Cancel
+                                            </Button>
+                                            <Button size='sm' onClick={submitVariable}>
+                                                <Pencil className='h-4 w-4 mr-2' />
+                                                {t('admin.spells.variables.save_changes')}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    // View Mode
+                                    <div className='space-y-3'>
+                                        <div className='flex items-start justify-between'>
+                                            <div className='flex-1 min-w-0'>
+                                                <div className='flex items-center gap-2 mb-1'>
+                                                    <h4 className='font-semibold text-base'>{variable.name}</h4>
+                                                    <Badge variant='outline' className='text-xs font-mono'>
+                                                        {variable.env_variable}
+                                                    </Badge>
+                                                </div>
+                                                <p className='text-sm text-muted-foreground'>{variable.description}</p>
+                                            </div>
+                                            <div className='flex gap-2 ml-4 shrink-0'>
+                                                <Button
+                                                    size='sm'
+                                                    variant='outline'
+                                                    disabled={addingVariable || editingVariable !== null}
+                                                    onClick={() => startEditVariable(variable)}
+                                                >
+                                                    <Pencil className='h-4 w-4' />
+                                                </Button>
+                                                {confirmDeleteVariable === variable.id ? (
+                                                    <>
                                                         <Button
                                                             size='sm'
                                                             variant='destructive'
-                                                            disabled={addingVariable || editingVariable !== null}
+                                                            loading={deletingVariable}
                                                             onClick={() => deleteVariable(variable)}
                                                         >
-                                                            <Trash2 className='h-4 w-4' />
+                                                            Confirm
                                                         </Button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className='grid grid-cols-2 gap-4 text-sm'>
-                                                <div className='space-y-2'>
-                                                    <div className='flex justify-between'>
-                                                        <span className='text-muted-foreground'>Default Value:</span>
-                                                        <span className='font-mono text-xs'>
-                                                            {variable.default_value || '-'}
-                                                        </span>
-                                                    </div>
-                                                    <div className='flex justify-between'>
-                                                        <span className='text-muted-foreground'>Field Type:</span>
-                                                        <Badge variant='outline' className='text-xs'>
-                                                            {variable.field_type || 'text'}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                                <div className='space-y-2'>
-                                                    <div className='flex justify-between'>
-                                                        <span className='text-muted-foreground'>User Viewable:</span>
-                                                        <Badge
-                                                            variant={
-                                                                variable.user_viewable === 'true'
-                                                                    ? 'default'
-                                                                    : 'secondary'
-                                                            }
-                                                            className='text-xs'
+                                                        <Button
+                                                            size='sm'
+                                                            variant='outline'
+                                                            disabled={deletingVariable}
+                                                            onClick={() => setConfirmDeleteVariable(null)}
                                                         >
-                                                            {variable.user_viewable === 'true' ? 'Yes' : 'No'}
-                                                        </Badge>
-                                                    </div>
-                                                    <div className='flex justify-between'>
-                                                        <span className='text-muted-foreground'>User Editable:</span>
-                                                        <Badge
-                                                            variant={
-                                                                variable.user_editable === 'true'
-                                                                    ? 'default'
-                                                                    : 'secondary'
-                                                            }
-                                                            className='text-xs'
-                                                        >
-                                                            {variable.user_editable === 'true' ? 'Yes' : 'No'}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
+                                                            Cancel
+                                                        </Button>
+                                                    </>
+                                                ) : (
+                                                    <Button
+                                                        size='sm'
+                                                        variant='destructive'
+                                                        disabled={addingVariable || editingVariable !== null}
+                                                        onClick={() => deleteVariable(variable)}
+                                                    >
+                                                        <Trash2 className='h-4 w-4' />
+                                                    </Button>
+                                                )}
                                             </div>
-                                            {variable.rules && (
-                                                <div className='text-sm pt-2 border-t'>
-                                                    <span className='text-muted-foreground'>Validation Rules:</span>
-                                                    <code className='ml-2 text-xs bg-muted px-2 py-1 rounded font-mono'>
-                                                        {variable.rules}
-                                                    </code>
-                                                </div>
-                                            )}
                                         </div>
-                                    )}
-                                </CardContent>
-                            </Card>
+                                        <div className='grid grid-cols-2 gap-4 text-sm'>
+                                            <div className='space-y-2'>
+                                                <div className='flex justify-between'>
+                                                    <span className='text-muted-foreground'>Default Value:</span>
+                                                    <span className='font-mono text-xs'>
+                                                        {variable.default_value || '-'}
+                                                    </span>
+                                                </div>
+                                                <div className='flex justify-between'>
+                                                    <span className='text-muted-foreground'>Field Type:</span>
+                                                    <Badge variant='outline' className='text-xs'>
+                                                        {variable.field_type || 'text'}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                            <div className='space-y-2'>
+                                                <div className='flex justify-between'>
+                                                    <span className='text-muted-foreground'>User Viewable:</span>
+                                                    <Badge
+                                                        variant={
+                                                            variable.user_viewable === 'true' ? 'default' : 'secondary'
+                                                        }
+                                                        className='text-xs'
+                                                    >
+                                                        {variable.user_viewable === 'true' ? 'Yes' : 'No'}
+                                                    </Badge>
+                                                </div>
+                                                <div className='flex justify-between'>
+                                                    <span className='text-muted-foreground'>User Editable:</span>
+                                                    <Badge
+                                                        variant={
+                                                            variable.user_editable === 'true' ? 'default' : 'secondary'
+                                                        }
+                                                        className='text-xs'
+                                                    >
+                                                        {variable.user_editable === 'true' ? 'Yes' : 'No'}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {variable.rules && (
+                                            <div className='text-sm pt-2 border-t'>
+                                                <span className='text-muted-foreground'>Validation Rules:</span>
+                                                <code className='ml-2 text-xs bg-muted px-2 py-1 rounded font-mono'>
+                                                    {variable.rules}
+                                                </code>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </PageCard>
                         ))}
                     </div>
 
