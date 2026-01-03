@@ -808,7 +808,7 @@ export default function AdminSubdomainsPage() {
                                     {domainForm.spells.map((mapping, idx) => (
                                         <div
                                             key={idx}
-                                            className='group/mapping border border-white/5 bg-white/[0.02] rounded-3xl p-6 transition-all hover:bg-white/[0.04] hover:border-white/10'
+                                            className='group/mapping border border-white/5 bg-white/2 rounded-3xl p-6 transition-all hover:bg-white/4 hover:border-white/10'
                                         >
                                             <div className='flex items-start justify-between gap-4 mb-6'>
                                                 <div className='flex-1'>
@@ -896,7 +896,7 @@ export default function AdminSubdomainsPage() {
                                         </div>
                                     ))}
                                     {domainForm.spells.length === 0 && (
-                                        <div className='text-center py-12 border border-dashed border-white/5 rounded-3xl bg-white/[0.01]'>
+                                        <div className='text-center py-12 border border-dashed border-white/5 rounded-3xl bg-white/1'>
                                             <Zap className='w-8 h-8 mx-auto text-muted-foreground/20 mb-3' />
                                             <p className='text-sm text-muted-foreground/40'>
                                                 {t('admin.subdomains.spellRequired')}

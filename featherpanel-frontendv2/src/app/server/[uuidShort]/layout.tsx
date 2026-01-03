@@ -26,6 +26,7 @@ SOFTWARE.
 
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Metadata } from 'next';
+import ChatbotWidget from '@/components/ai/ChatbotWidget';
 
 type Props = {
     params: Promise<{ uuidShort: string }>;
@@ -105,6 +106,7 @@ export default async function ServerLayout({
     return (
         <ServerProvider uuidShort={uuidShort} initialServer={server}>
             <DashboardShell>{children}</DashboardShell>
+            <ChatbotWidget />
         </ServerProvider>
     );
 }

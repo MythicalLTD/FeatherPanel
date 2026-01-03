@@ -669,7 +669,7 @@ export default function PluginsPage() {
                             }
                         >
                             <div className='space-y-4 flex-1'>
-                                <p className='text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]'>
+                                <p className='text-sm text-muted-foreground line-clamp-2 min-h-10'>
                                     {plugin.description || 'No description available'}
                                 </p>
 

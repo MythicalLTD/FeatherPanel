@@ -3740,8 +3740,7 @@
 					"detailsFailed": "Failed to fetch execution log details",
 					"loadFailed": "Failed to load execution log details"
 				}
-			}
-			,
+			},
 			"config": {
 				"title": "Configuration",
 				"description": "Configure scanning behavior and detection rules",
@@ -3812,5 +3811,52 @@
 			"go_home": "Go Home Instead",
 			"auto_redirect_help": "If you are not redirected automatically, click the button above."
 		}
+	},
+	"chatbot": {
+		"title": "FeatherPanel AI",
+		"description": "Your intelligent assistant for server management",
+		"welcome": "Hi {name}! 👋 I'm your FeatherPanel AI assistant. How can I help you manage your servers today?",
+		"placeholder": "Type your message...",
+		"sendMessage": "Send message",
+		"thinking": "Thinking...",
+		"loading": "Loading...",
+		"newChat": "New Chat",
+		"openChat": "Open Chat",
+		"noConversations": "No conversations",
+		"noConversationsDescription": "Start a new chat to begin",
+		"newConversation": "New Conversation",
+		"conversationDeleted": "Conversation deleted",
+		"failedToLoadConversations": "Failed to load conversations",
+		"failedToLoadConversation": "Failed to load conversation",
+		"failedToDeleteConversation": "Failed to delete conversation",
+		"today": "Today",
+		"yesterday": "Yesterday",
+		"daysAgo": "{days} days ago",
+		"connectionError": "Sorry, I encountered an error connecting to the AI service. Please try again.",
+		"executingAction": "Executing action...",
+		"failedToExecuteAction": "Failed to execute action",
+		"startingServer": "Starting server {server}...",
+		"startedServer": "Server {server} started successfully",
+		"stoppedServer": "Server {server} stopped successfully",
+		"restartedServer": "Server {server} restarted successfully",
+		"killedServer": "Server {server} killed successfully",
+		"couldNotFindServer": "Could not find server: {server}",
+		"confirmActionServer": "Confirm {action} server",
+		"confirmActionServerDescription": "Are you sure you want to {action} the server \"{server}\"?",
+		"actionServer": "{action}",
+		"confirmCommandExecution": "Confirm Command Execution",
+		"confirmCommandExecutionDescription": "Send command \"{command}\" to server \"{server}\"?",
+		"sendCommand": "Send Command",
+		"sendingCommand": "Sending command to {server}...",
+		"sentCommand": "Command sent to {server}",
+		"failedToSendCommand": "Failed to send command",
+		"navigatingToServerPage": "Navigating...",
+		"windowControlled": "AI is controlling your window",
+		"aiControl": "AI Control",
+		"aiControlOn": "AI Control Active",
+		"pressEnterToSend": "Press Enter to send, Shift+Enter for new line",
+		"conversations": "Conversations",
+		"closeChat": "Close chat",
+		"toggleSidebar": "Toggle sidebar"
 	}
 }

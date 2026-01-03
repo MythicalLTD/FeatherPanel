@@ -216,7 +216,7 @@ const ConfigTab = () => {
                     {/* Basic Settings */}
                     <div className='space-y-6'>
                         <div className='flex items-center justify-between'>
-                            <h3 className='text-lg font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                            <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
                                 {t('admin.featherzerotrust.config.basicSettings')}
                             </h3>
                             <div className='flex gap-2'>
@@ -327,7 +327,7 @@ const ConfigTab = () => {
 
                     {/* Webhook Notifications */}
                     <div className='space-y-6 pt-6 border-t'>
-                        <h3 className='text-lg font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                        <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
                             {t('admin.featherzerotrust.config.notifications')}
                         </h3>
                         <div className='space-y-4'>
@@ -360,7 +360,7 @@ const ConfigTab = () => {
 
                     {/* File Pattern Matching */}
                     <div className='space-y-6 pt-6 border-t'>
-                        <h3 className='text-lg font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                        <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
                             {t('admin.featherzerotrust.config.exclusionRules')}
                         </h3>
                         <div className='grid grid-cols-1 gap-6'>
@@ -399,7 +399,7 @@ const ConfigTab = () => {
 
                     {/* Detection Patterns */}
                     <div className='space-y-6 pt-6 border-t'>
-                        <h3 className='text-lg font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                        <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
                             {t('admin.featherzerotrust.config.threatIndicators')}
                         </h3>
                         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -447,7 +447,7 @@ const ConfigTab = () => {
 
                     {/* Thresholds */}
                     <div className='space-y-6 pt-6 border-t'>
-                        <h3 className='text-lg font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                        <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
                             {t('admin.featherzerotrust.config.monitoringThresholds')}
                         </h3>
                         <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
