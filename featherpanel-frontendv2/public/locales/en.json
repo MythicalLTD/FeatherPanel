@@ -3419,6 +3419,51 @@
 				}
 			}
 		},
+		"realms": {
+			"title": "Realms",
+			"subtitle": "Manage all realms in your system",
+			"create": "Create Realm",
+			"search_placeholder": "Search by name or description...",
+			"no_results": "No realms found",
+			"view_spells": "View Spells",
+			"table": {
+				"name": "Name",
+				"description": "Description",
+				"created_at": "Created",
+				"actions": "Actions"
+			},
+			"form": {
+				"create_title": "Create Realm",
+				"create_description": "Fill in the details to create a new realm",
+				"edit_title": "Edit Realm",
+				"edit_description": "Edit details for this realm",
+				"view_title": "Realm Details",
+				"name": "Name",
+				"description": "Description",
+				"submit_create": "Create Realm",
+				"submit_update": "Update Realm"
+			},
+			"messages": {
+				"fetch_failed": "Failed to fetch realms",
+				"created": "Realm created successfully",
+				"create_failed": "Failed to create realm",
+				"updated": "Realm updated successfully",
+				"update_failed": "Failed to update realm",
+				"deleted": "Realm deleted successfully",
+				"delete_failed": "Failed to delete realm",
+				"delete_confirm": "Are you sure you want to delete this realm?"
+			},
+			"help": {
+				"what_are_realms": {
+					"title": "What are Realms?",
+					"description": "Realms are categories for your spells (known as 'eggs' in Pterodactyl's terms). Pterodactyl calls them nests; we call them realms because it's just better."
+				},
+				"organize_spells": {
+					"title": "Organize your spells",
+					"description": "Use realms as lightweight categories, similar to how locations group nodes. For example, a Minecraft realm contains Minecraft spells (eggs) like Paper, Vanilla, BungeeCord, and more."
+				}
+			}
+		},
 		"mail_templates": {
 			"title": "Mail Templates",
 			"subtitle": "Manage email templates for your system.",
