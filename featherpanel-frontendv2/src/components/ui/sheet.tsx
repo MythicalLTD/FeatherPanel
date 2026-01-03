@@ -112,6 +112,10 @@ export function SheetDescription({ children, className }: { children: React.Reac
     return <div className={cn('mt-2 text-muted-foreground', className)}>{children}</div>;
 }
 
+export function SheetContent({ children }: { children: React.ReactNode; className?: string; side?: 'left' | 'right' }) {
+    return <>{children}</>;
+}
+
 export function SheetFooter({ children, className }: { children: React.ReactNode; className?: string }) {
     return <div className={cn('mt-auto pt-6 border-t border-border/50 flex gap-4', className)}>{children}</div>;
 }
