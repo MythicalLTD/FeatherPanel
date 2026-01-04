@@ -162,7 +162,8 @@
 		"actions": "Actions",
 		"pagination": {
 			"showing": "Showing {from} - {to} of {total} results"
-		}
+		},
+		"primary": "Primary"
 	},
 	"branding": {
 		"running_on": "Running on {name} {version}",
@@ -2520,8 +2521,14 @@
 				"startup_configuration": "Startup Configuration",
 				"name": "Server Name",
 				"name_help": "Character limits: a-z A-Z 0-9 _ - . and [Space].",
+				"name_placeholder": "Enter server name",
 				"description": "Server Description",
 				"description_help": "A brief description of this server. (Optional)",
+				"description_placeholder": "A brief description (optional)",
+				"startup": "Startup Command",
+				"startup_help": "The command that will be used to start the server. The following data substitutes are available: {{SERVER_MEMORY}}, {{SERVER_IP}}, {{SERVER_PORT}}, and spell variables.",
+				"startup_placeholder": "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar server.jar",
+				"threads_placeholder": "e.g. 0, 0-1,3, or 0,1,3,4",
 				"owner": "Server Owner",
 				"owner_help": "Email address of the Server Owner.",
 				"select_owner": "Select owner...",
@@ -2635,8 +2642,98 @@
 						"allocation_required": "Allocation is required",
 						"realm_required": "Realm is required",
 						"spell_required": "Spell is required",
-						"docker_image_required": "Docker image is required"
+						"docker_image_required": "Docker image is required",
+						"startup_required": "Startup command is required"
 					}
+				}
+			},
+			"edit": {
+				"title": "Edit Server",
+				"description": "Modify configuration for {name}",
+				"save": "Save Changes",
+				"fetch_failed": "Failed to load server data",
+				"update_success": "Server updated successfully",
+				"update_failed": "Failed to update server",
+				"tabs": {
+					"details": "Details",
+					"resources": "Resources",
+					"application": "Application",
+					"limits": "Limits",
+					"startup": "Startup",
+					"allocations": "Allocations",
+					"actions": "Actions"
+				},
+				"details": {
+					"title": "Core Details",
+					"description": "Basic server information and ownership",
+					"external_id": "External ID",
+					"external_id_placeholder": "External ID (optional)",
+					"external_id_help": "External identifier for this server from an external system",
+					"skip_zerotrust": "Skip Zero Trust",
+					"skip_zerotrust_help": "Skip zero trust checks during server operations",
+					"location_node": "Node & Location",
+					"location_node_help": "Use the Server Transfer feature to change node or location"
+				},
+				"resources": {
+					"title": "Resource Limits",
+					"description": "Configure memory, CPU, disk, and other resource constraints"
+				},
+				"application": {
+					"title": "Application Configuration",
+					"description": "Configure realm, spell, and Docker image settings",
+					"variables_title": "Spell Variables",
+					"variables_description": "Configure environment variables for this spell"
+				},
+				"limits": {
+					"title": "Feature Limits",
+					"description": "Set limits for databases, allocations, and backups"
+				},
+				"startup": {
+					"title": "Startup Configuration",
+					"description": "Configure the startup command for this server",
+					"available_variables": "Available Variables:"
+				},
+				"allocations": {
+					"title": "Network Allocations",
+					"description": "Manage network allocations (IP:Port) for this server",
+					"default": "Default Allocation",
+					"using": "Using",
+					"of": "of",
+					"allowed": "allowed allocations",
+					"can_add": "Can add more",
+					"limit_reached": "Limit reached",
+					"no_alias": "No alias",
+					"add": "Add Allocation",
+					"delete_success": "Allocation removed successfully",
+					"delete_failed": "Failed to remove allocation"
+				},
+				"actions": {
+					"title": "Server Actions",
+					"suspension_title": "Suspension Status",
+					"suspension_description": "Control whether users can access this server",
+					"status": "Status",
+					"suspended": "Suspended",
+					"active": "Active",
+					"suspend": "Suspend",
+					"unsuspend": "Unsuspend",
+					"suspend_success": "Server suspended successfully",
+					"suspend_failed": "Failed to suspend server",
+					"unsuspend_success": "Server unsuspended successfully",
+					"unsuspend_failed": "Failed to unsuspend server",
+					"reinstall_title": "Reinstall Server",
+					"reinstall_description": "Reinstall the server using the current spell configuration",
+					"reinstall": "Reinstall Server",
+					"reinstall_confirm_title": "Reinstall Server?",
+					"reinstall_confirm_description": "This will reinstall {name} using the current spell. All server files will be deleted. This action cannot be undone.",
+					"reinstall_success": "Server reinstall initiated",
+					"reinstall_failed": "Failed to reinstall server",
+					"delete_title": "Delete Server",
+					"delete_description": "Permanently delete this server and all associated data",
+					"delete": "Delete Server",
+					"delete_confirm_title": "Delete Server?",
+					"delete_confirm_description": "This will permanently delete {name} and all associated files, databases, and backups. This action cannot be undone.",
+					"delete_success": "Server deleted successfully",
+					"delete_failed": "Failed to delete server"
 				}
 			}
 		},
