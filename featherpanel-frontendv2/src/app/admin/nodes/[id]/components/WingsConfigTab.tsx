@@ -30,7 +30,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Settings2, Save, RotateCw, AlertTriangle, Loader2 } from 'lucide-react';
@@ -110,16 +110,12 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
     const isDirty = content !== originalContent;
 
     return (
-        <Card className='border-none shadow-none bg-transparent'>
-            <CardHeader className='px-0 pt-0'>
-                <div className='flex items-center justify-between'>
-                    <div className='space-y-1'>
-                        <CardTitle className='text-lg flex items-center gap-2'>
-                            <Settings2 className='h-5 w-5 text-primary' />
-                            {t('admin.node.view.config.title')}
-                        </CardTitle>
-                        <CardDescription>{t('admin.node.view.config.description')}</CardDescription>
-                    </div>
+        <div className='space-y-6'>
+            <PageCard
+                title={t('admin.node.view.config.title')}
+                description={t('admin.node.view.config.description')}
+                icon={Settings2}
+                action={
                     <div className='flex items-center gap-3'>
                         <Button
                             variant='outline'
@@ -145,85 +141,86 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                             {t('common.save')}
                         </Button>
                     </div>
-                </div>
-            </CardHeader>
-            <CardContent className='px-0 space-y-6'>
-                {error ? (
-                    <div className='rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center'>
-                        <AlertTriangle className='h-8 w-8 text-destructive mx-auto mb-3' />
-                        <h3 className='text-sm font-bold text-destructive mb-1'>Failed to Load Configuration</h3>
-                        <p className='text-xs text-destructive/80 mb-4'>{error}</p>
-                        <Button variant='outline' size='sm' onClick={fetchConfig} className='rounded-xl'>
-                            Try Again
-                        </Button>
-                    </div>
-                ) : (
-                    <>
-                        <div className='rounded-2xl border border-border/50 bg-card overflow-hidden h-[500px] shadow-xl relative'>
-                            {loading && (
-                                <div className='absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center'>
-                                    <Loader2 className='h-8 w-8 text-primary animate-spin' />
-                                </div>
-                            )}
-                            <Editor
-                                height='100%'
-                                defaultLanguage='yaml'
-                                value={content}
-                                theme={theme === 'dark' ? 'vs-dark' : 'light'}
-                                onChange={(value) => setContent(value || '')}
-                                options={{
-                                    minimap: { enabled: true },
-                                    fontSize: 14,
-                                    lineNumbers: 'on',
-                                    scrollBeyondLastLine: false,
-                                    automaticLayout: true,
-                                    padding: { top: 20 },
-                                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                                    fontLigatures: true,
-                                }}
-                            />
+                }
+            >
+                <div className='space-y-6'>
+                    {error ? (
+                        <div className='rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center'>
+                            <AlertTriangle className='h-8 w-8 text-destructive mx-auto mb-3' />
+                            <h3 className='text-sm font-bold text-destructive mb-1'>Failed to Load Configuration</h3>
+                            <p className='text-xs text-destructive/80 mb-4'>{error}</p>
+                            <Button variant='outline' size='sm' onClick={fetchConfig} className='rounded-xl'>
+                                Try Again
+                            </Button>
                         </div>
-
-                        <div className='rounded-2xl border border-border/50 bg-muted/30 p-4'>
-                            <div className='flex items-center space-x-3'>
-                                <Checkbox
-                                    id='restart-wings'
-                                    checked={restart}
-                                    onCheckedChange={(checked) => setRestart(!!checked)}
-                                    className='h-5 w-5 rounded-lg border-2'
-                                />
-                                <div className='grid gap-1.5 leading-none'>
-                                    <label
-                                        htmlFor='restart-wings'
-                                        className='text-sm font-bold cursor-pointer select-none leading-none'
-                                    >
-                                        {t('admin.node.view.config.restart_checkbox')}
-                                    </label>
-                                    <p className='text-xs text-muted-foreground'>
-                                        {t('admin.node.view.config.restart_help')}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className='rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4'>
-                            <div className='flex items-start gap-4'>
-                                <div className='p-2 rounded-xl bg-blue-500/10'>
-                                    <Settings2 className='h-5 w-5 text-blue-500' />
-                                </div>
-                                <div className='flex-1'>
-                                    <div className='text-sm font-bold text-blue-600 dark:text-blue-500 mb-1'>
-                                        {t('admin.node.view.config.info_title')}
+                    ) : (
+                        <>
+                            <div className='rounded-2xl border border-border/50 bg-card overflow-hidden h-[500px] shadow-xl relative'>
+                                {loading && (
+                                    <div className='absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center'>
+                                        <Loader2 className='h-8 w-8 text-primary animate-spin' />
                                     </div>
-                                    <p className='text-xs text-blue-600/80 dark:text-blue-400/70 leading-relaxed'>
-                                        {t('admin.node.view.config.info_description')}
-                                    </p>
+                                )}
+                                <Editor
+                                    height='100%'
+                                    defaultLanguage='yaml'
+                                    value={content}
+                                    theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                                    onChange={(value) => setContent(value || '')}
+                                    options={{
+                                        minimap: { enabled: true },
+                                        fontSize: 14,
+                                        lineNumbers: 'on',
+                                        scrollBeyondLastLine: false,
+                                        automaticLayout: true,
+                                        padding: { top: 20 },
+                                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                        fontLigatures: true,
+                                    }}
+                                />
+                            </div>
+
+                            <div className='rounded-2xl border border-border/50 bg-muted/30 p-4'>
+                                <div className='flex items-center space-x-3'>
+                                    <Checkbox
+                                        id='restart-wings'
+                                        checked={restart}
+                                        onCheckedChange={(checked) => setRestart(!!checked)}
+                                        className='h-5 w-5 rounded-lg border-2'
+                                    />
+                                    <div className='grid gap-1.5 leading-none'>
+                                        <label
+                                            htmlFor='restart-wings'
+                                            className='text-sm font-bold cursor-pointer select-none leading-none'
+                                        >
+                                            {t('admin.node.view.config.restart_checkbox')}
+                                        </label>
+                                        <p className='text-xs text-muted-foreground'>
+                                            {t('admin.node.view.config.restart_help')}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
+                        </>
+                    )}
+                </div>
+            </PageCard>
+
+            <div className='rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4'>
+                <div className='flex items-start gap-4'>
+                    <div className='p-2 rounded-xl bg-blue-500/10'>
+                        <Settings2 className='h-5 w-5 text-blue-500' />
+                    </div>
+                    <div className='flex-1'>
+                        <div className='text-sm font-bold text-blue-600 dark:text-blue-500 mb-1'>
+                            {t('admin.node.view.config.info_title')}
                         </div>
-                    </>
-                )}
-            </CardContent>
-        </Card>
+                        <p className='text-xs text-blue-600/80 dark:text-blue-400/70 leading-relaxed'>
+                            {t('admin.node.view.config.info_description')}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }

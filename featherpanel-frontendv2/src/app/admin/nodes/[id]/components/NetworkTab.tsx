@@ -112,14 +112,16 @@ export function NetworkTab({ loading, data, error, onRefresh }: NetworkTabProps)
                 </div>
             </PageCard>
 
-            <div className='flex items-center gap-2 p-4 bg-muted/20 rounded-2xl border border-border/50'>
-                <Badge variant='outline' className='bg-primary/5 text-primary border-primary/10'>
-                    {t('admin.node.view.network.total_ips')}: {ips.ip_addresses.length}
-                </Badge>
-                <p className='text-[10px] text-muted-foreground italic leading-none'>
-                    {t('admin.node.view.network.help')}
-                </p>
-            </div>
+            <PageCard title={t('admin.node.view.network.total_ips')} icon={Network}>
+                <div className='flex items-center gap-4'>
+                    <Badge variant='outline' className='bg-primary/5 text-primary border-primary/10 px-4 py-2 text-sm'>
+                        {t('admin.node.view.network.total_ips')}: {ips.ip_addresses.length}
+                    </Badge>
+                    <p className='text-sm text-muted-foreground italic leading-relaxed'>
+                        {t('admin.node.view.network.help')}
+                    </p>
+                </div>
+            </PageCard>
         </div>
     );
 }

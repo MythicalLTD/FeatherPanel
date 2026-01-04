@@ -149,17 +149,11 @@ export function DockerTab({ nodeId, loading, data, error, onRefresh }: DockerTab
                 </div>
             </PageCard>
 
-            <div className='p-4 bg-primary/10 border border-primary/20 rounded-2xl flex items-start gap-4'>
-                <div className='p-2 bg-primary/20 rounded-xl h-fit'>
-                    <Info className='h-5 w-5 text-primary' />
-                </div>
-                <div>
-                    <h4 className='text-sm font-bold text-primary mb-1'>{t('admin.node.view.docker.info_title')}</h4>
-                    <p className='text-xs text-primary/70 leading-relaxed'>
-                        {t('admin.node.view.docker.info_description')}
-                    </p>
-                </div>
-            </div>
+            <PageCard title={t('admin.node.view.docker.info_title')} icon={Info}>
+                <p className='text-sm text-muted-foreground leading-relaxed'>
+                    {t('admin.node.view.docker.info_description')}
+                </p>
+            </PageCard>
         </div>
     );
 }

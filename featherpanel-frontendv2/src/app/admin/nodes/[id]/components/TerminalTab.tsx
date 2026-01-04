@@ -32,7 +32,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Terminal as TerminalIcon, Zap, Trash2, AlertTriangle } from 'lucide-react';
@@ -195,63 +195,62 @@ export function TerminalTab({ node }: TerminalTabProps) {
     };
 
     return (
-        <Card className='border-none shadow-none bg-transparent'>
-            <CardHeader className='px-0 pt-0'>
-                <CardTitle className='text-lg flex items-center gap-2'>
-                    <TerminalIcon className='h-5 w-5 text-primary' />
-                    {t('admin.node.view.terminal.title')}
-                </CardTitle>
-                <CardDescription>{t('admin.node.view.terminal.description')}</CardDescription>
-            </CardHeader>
-            <CardContent className='px-0 space-y-4'>
-                <div className='rounded-2xl border border-border bg-black overflow-hidden shadow-2xl shadow-black/50'>
-                    <div ref={terminalRef} className='w-full h-[450px] bg-black p-2' />
+        <div className='space-y-6'>
+            <PageCard
+                title={t('admin.node.view.terminal.title')}
+                description={t('admin.node.view.terminal.description')}
+                icon={TerminalIcon}
+            >
+                <div className='space-y-4'>
+                    <div className='rounded-2xl border border-border bg-black overflow-hidden shadow-2xl shadow-black/50'>
+                        <div ref={terminalRef} className='w-full h-[450px] bg-black p-2' />
+                    </div>
+
+                    <form className='flex gap-2' onSubmit={handleExecute}>
+                        <Input
+                            value={commandInput}
+                            onChange={(e) => setCommandInput(e.target.value)}
+                            placeholder={t('admin.node.view.terminal.placeholder')}
+                            className='flex-1 font-mono text-sm h-12 rounded-xl bg-muted/30 border-border/50 focus:bg-background transition-all'
+                            disabled={executing}
+                        />
+                        <Button
+                            type='submit'
+                            loading={executing}
+                            disabled={!commandInput.trim()}
+                            className='h-12 px-6 rounded-xl'
+                        >
+                            {!executing && <Zap className='h-4 w-4 mr-2' />}
+                            {t('admin.node.view.terminal.execute')}
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            onClick={handleClear}
+                            className='h-12 w-12 p-0 rounded-xl border-border/50 hover:bg-destructive/10 hover:text-destructive transition-colors'
+                            title={t('common.clear')}
+                        >
+                            <Trash2 className='h-4 w-4' />
+                        </Button>
+                    </form>
                 </div>
+            </PageCard>
 
-                <form className='flex gap-2' onSubmit={handleExecute}>
-                    <Input
-                        value={commandInput}
-                        onChange={(e) => setCommandInput(e.target.value)}
-                        placeholder={t('admin.node.view.terminal.placeholder')}
-                        className='flex-1 font-mono text-sm h-12 rounded-xl bg-muted/30 border-border/50 focus:bg-background transition-all'
-                        disabled={executing}
-                    />
-                    <Button
-                        type='submit'
-                        loading={executing}
-                        disabled={!commandInput.trim()}
-                        className='h-12 px-6 rounded-xl'
-                    >
-                        {!executing && <Zap className='h-4 w-4 mr-2' />}
-                        {t('admin.node.view.terminal.execute')}
-                    </Button>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        onClick={handleClear}
-                        className='h-12 w-12 p-0 rounded-xl border-border/50 hover:bg-destructive/10 hover:text-destructive transition-colors'
-                        title={t('common.clear')}
-                    >
-                        <Trash2 className='h-4 w-4' />
-                    </Button>
-                </form>
-
-                <div className='rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4 animate-in fade-in slide-in-from-bottom-2'>
-                    <div className='flex items-start gap-4'>
-                        <div className='p-2 rounded-xl bg-yellow-500/10'>
-                            <AlertTriangle className='h-5 w-5 text-yellow-500' />
+            <div className='rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4 animate-in fade-in slide-in-from-bottom-2'>
+                <div className='flex items-start gap-4'>
+                    <div className='p-2 rounded-xl bg-yellow-500/10'>
+                        <AlertTriangle className='h-5 w-5 text-yellow-500' />
+                    </div>
+                    <div className='flex-1'>
+                        <div className='text-sm font-bold text-yellow-600 dark:text-yellow-500 mb-1'>
+                            {t('admin.node.view.terminal.warning_title')}
                         </div>
-                        <div className='flex-1'>
-                            <div className='text-sm font-bold text-yellow-600 dark:text-yellow-500 mb-1'>
-                                {t('admin.node.view.terminal.warning_title')}
-                            </div>
-                            <p className='text-xs text-yellow-600/80 dark:text-yellow-500/70 leading-relaxed'>
-                                {t('admin.node.view.terminal.warning_description')}
-                            </p>
-                        </div>
+                        <p className='text-xs text-yellow-600/80 dark:text-yellow-500/70 leading-relaxed'>
+                            {t('admin.node.view.terminal.warning_description')}
+                        </p>
                     </div>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

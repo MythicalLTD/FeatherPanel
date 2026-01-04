@@ -30,6 +30,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/featherui/Button';
+import { PageCard } from '@/components/featherui/PageCard';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { LayoutGrid, AlertTriangle, Loader2, RotateCw, CheckCircle2, XCircle, Settings } from 'lucide-react';
@@ -46,8 +47,7 @@ export function ModulesTab({ node }: ModulesTabProps) {
     const { t } = useTranslation();
     const [modules, setModules] = useState<Module[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [toggling, setToggling] = useState<string | null>(null);
 
     // Config modal state
     const [configModalOpen, setConfigModalOpen] = useState(false);
@@ -58,20 +58,15 @@ export function ModulesTab({ node }: ModulesTabProps) {
 
     const fetchModules = useCallback(async () => {
         setLoading(true);
-        setError(null);
         try {
             const { data } = await axios.get(`/api/wings/admin/node/${node.id}/modules`);
             if (data.success) {
                 setModules(data.data?.data || data.data || []);
             } else {
-                setError(data.message || 'Failed to fetch modules');
+                console.error(data.message || 'Failed to fetch modules');
             }
         } catch (err: unknown) {
-            let msg = 'Failed to fetch modules';
-            if (axios.isAxiosError(err)) {
-                msg = err.response?.data?.message || err.message;
-            }
-            setError(msg);
+            console.error('Failed to fetch modules', err);
         } finally {
             setLoading(false);
         }
@@ -81,29 +76,33 @@ export function ModulesTab({ node }: ModulesTabProps) {
         fetchModules();
     }, [fetchModules]);
 
-    const toggleModule = async (moduleName: string, currentlyEnabled: boolean) => {
-        const action = currentlyEnabled ? 'disable' : 'enable';
-        setActionLoading(`${action}-${moduleName}`);
+    const handleToggle = async (module: Module) => {
+        const action = module.enabled ? 'disable' : 'enable';
+        setToggling(module.name);
         try {
-            const { data } = await axios.post(`/api/wings/admin/node/${node.id}/modules/${moduleName}/${action}`);
+            const { data } = await axios.post(`/api/wings/admin/node/${node.id}/modules/${module.name}/${action}`);
             if (data.success) {
-                toast.success(t(`admin.node.view.modules.${action}_success`, { name: moduleName }));
+                toast.success(t(`admin.node.view.modules.${action}_success`, { name: module.name }));
                 await fetchModules();
             } else {
-                toast.error(data.message || t(`admin.node.view.modules.${action}_failed`, { name: moduleName }));
+                toast.error(data.message || t(`admin.node.view.modules.${action}_failed`, { name: module.name }));
             }
         } catch (err: unknown) {
-            let msg = t(`admin.node.view.modules.${action}_failed`, { name: moduleName });
+            let msg = t(`admin.node.view.modules.${action}_failed`, { name: module.name });
             if (axios.isAxiosError(err)) {
                 msg = err.response?.data?.message || err.message;
             }
             toast.error(msg);
         } finally {
-            setActionLoading(null);
+            setToggling(null);
         }
     };
 
     const handleConfigure = async (module: Module) => {
+        if (module.enabled) {
+            toast.error(t('admin.node.view.modules.configure_disabled_notice'));
+            return;
+        }
         setSelectedModule(module);
         setFetchingConfig(true);
         setConfigModalOpen(true);
@@ -147,6 +146,7 @@ export function ModulesTab({ node }: ModulesTabProps) {
             if (data.success) {
                 toast.success(t('admin.node.view.modules.config_save_success', { name: selectedModule.name }));
                 setConfigModalOpen(false);
+                await fetchModules();
             } else {
                 toast.error(
                     data.message || t('admin.node.view.modules.config_save_failed', { name: selectedModule.name }),
@@ -165,82 +165,78 @@ export function ModulesTab({ node }: ModulesTabProps) {
 
     return (
         <>
-            <Card className='border-none shadow-none bg-transparent'>
-                <CardHeader className='px-0 pt-0'>
-                    <div className='flex items-center justify-between'>
-                        <div className='space-y-1'>
-                            <CardTitle className='text-lg flex items-center gap-2'>
-                                <LayoutGrid className='h-5 w-5 text-primary' />
-                                {t('admin.node.view.modules.title')}
-                            </CardTitle>
-                            <CardDescription>{t('admin.node.view.modules.description')}</CardDescription>
-                        </div>
+            <PageCard
+                title={t('admin.node.view.modules.title') || 'Wings Modules'}
+                description={
+                    t('admin.node.view.modules.description') || 'Manage extension modules for the Wings daemon.'
+                }
+                icon={LayoutGrid}
+            >
+                <div className='space-y-6'>
+                    <div className='flex justify-end'>
                         <Button
                             variant='outline'
                             size='sm'
                             onClick={fetchModules}
-                            disabled={loading}
-                            className='h-10 rounded-xl'
+                            loading={loading}
+                            className='rounded-xl'
                         >
-                            <RotateCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                            <RotateCw className={`h-3 w-3 mr-2 ${loading ? 'animate-spin' : ''}`} />
                             {t('common.reload')}
                         </Button>
                     </div>
-                </CardHeader>
-                <CardContent className='px-0 space-y-6'>
-                    {loading && !modules.length ? (
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                            {[1, 2, 3, 4].map((i) => (
-                                <div
-                                    key={i}
-                                    className='h-40 rounded-2xl bg-muted/30 animate-pulse border border-border/50'
-                                />
-                            ))}
-                        </div>
-                    ) : error ? (
-                        <div className='rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center'>
-                            <AlertTriangle className='h-10 w-10 text-destructive mx-auto mb-4' />
-                            <h3 className='text-base font-bold text-destructive mb-2'>Failed to Load Modules</h3>
-                            <p className='text-sm text-destructive/80 mb-6'>{error}</p>
-                            <Button variant='outline' onClick={fetchModules} className='rounded-xl'>
-                                Try Again
-                            </Button>
-                        </div>
-                    ) : !modules.length ? (
-                        <div className='rounded-2xl border border-border/50 bg-muted/10 p-12 text-center'>
-                            <LayoutGrid className='h-12 w-12 text-muted-foreground/30 mx-auto mb-4' />
-                            <h3 className='text-base font-bold text-muted-foreground mb-2'>
-                                {t('admin.node.view.modules.no_modules')}
-                            </h3>
-                            <p className='text-sm text-muted-foreground/60'>
-                                {t('admin.node.view.modules.no_modules_description')}
-                            </p>
-                        </div>
-                    ) : (
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                            {modules.map((module) => (
-                                <div
-                                    key={module.name}
-                                    className='group relative rounded-2xl border border-border/50 bg-card hover:border-primary/30 transition-all duration-300 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-primary/5'
-                                >
-                                    <div className='p-6'>
-                                        <div className='flex items-start justify-between mb-4'>
-                                            <div className='flex items-center gap-3'>
-                                                <div
-                                                    className={`p-3 rounded-xl ${module.enabled ? 'bg-primary/10' : 'bg-muted'} group-hover:scale-110 transition-transform duration-300`}
-                                                >
-                                                    <LayoutGrid
-                                                        className={`h-6 w-6 ${module.enabled ? 'text-primary' : 'text-muted-foreground'}`}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <h3 className='font-bold text-foreground group-hover:text-primary transition-colors'>
-                                                        {module.name}
-                                                    </h3>
-                                                    <div className='flex items-center gap-2 mt-1'>
+
+                    <div className='relative min-h-[400px]'>
+                        {loading && !modules.length ? (
+                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                {[1, 2, 3, 4].map((i) => (
+                                    <div
+                                        key={i}
+                                        className='h-48 rounded-2xl bg-muted/20 border border-border/50 animate-pulse'
+                                    />
+                                ))}
+                            </div>
+                        ) : !modules.length ? (
+                            <div className='flex flex-col items-center justify-center h-[400px] text-center space-y-4'>
+                                <div className='p-6 rounded-full bg-muted/30'>
+                                    <LayoutGrid className='h-12 w-12 text-muted-foreground/30' />
+                                </div>
+                                <div className='max-w-xs'>
+                                    <h3 className='text-lg font-bold'>{t('admin.node.view.modules.no_modules')}</h3>
+                                    <p className='text-sm text-muted-foreground'>
+                                        {t('admin.node.view.modules.no_modules_description')}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                {modules.map((module) => (
+                                    <Card
+                                        key={module.name}
+                                        className={`group relative overflow-hidden transition-all duration-300 border-border/50 bg-muted/10 hover:bg-muted/20 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 rounded-2xl`}
+                                    >
+                                        <CardHeader className='pb-4'>
+                                            <div className='flex items-start justify-between'>
+                                                <div className='flex items-center gap-4'>
+                                                    <div className='p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300'>
+                                                        <LayoutGrid className='h-5 w-5' />
+                                                    </div>
+                                                    <div className='space-y-1'>
+                                                        <div className='flex items-center gap-2'>
+                                                            <CardTitle className='text-base font-bold'>
+                                                                {module.name}
+                                                            </CardTitle>
+                                                            <span className='text-[10px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded'>
+                                                                v{module.version}
+                                                            </span>
+                                                        </div>
                                                         <Badge
-                                                            variant={module.enabled ? 'default' : 'secondary'}
-                                                            className='text-[10px] uppercase font-bold tracking-wider rounded-md'
+                                                            variant={module.enabled ? 'default' : 'outline'}
+                                                            className={`text-[10px] uppercase tracking-wider font-bold h-5 ${
+                                                                module.enabled
+                                                                    ? 'bg-primary/20 text-primary border-primary/20'
+                                                                    : 'text-muted-foreground'
+                                                            }`}
                                                         >
                                                             {module.enabled ? (
                                                                 <>
@@ -254,45 +250,46 @@ export function ModulesTab({ node }: ModulesTabProps) {
                                                                 </>
                                                             )}
                                                         </Badge>
-                                                        <span className='text-[10px] text-muted-foreground font-medium'>
-                                                            v{module.version}
-                                                        </span>
                                                     </div>
                                                 </div>
+                                                <Switch
+                                                    checked={module.enabled}
+                                                    onCheckedChange={() => handleToggle(module)}
+                                                    disabled={toggling === module.name}
+                                                />
                                             </div>
-                                            <Switch
-                                                checked={module.enabled}
-                                                onCheckedChange={() => toggleModule(module.name, module.enabled)}
-                                                disabled={!!actionLoading}
-                                                className='data-[state=checked]:bg-primary'
-                                            />
-                                        </div>
-                                        <p className='text-sm text-muted-foreground line-clamp-2 leading-relaxed'>
-                                            {module.description}
-                                        </p>
-                                    </div>
-                                    <div className='px-6 py-4 bg-muted/30 border-t border-border/50 flex items-center justify-between'>
-                                        <Button
-                                            variant='ghost'
-                                            size='sm'
-                                            disabled={!module.enabled || fetchingConfig}
-                                            onClick={() => handleConfigure(module)}
-                                            className='h-9 rounded-lg text-xs font-bold hover:bg-primary/10 hover:text-primary'
-                                        >
-                                            <Settings className='h-3.5 w-3.5 mr-2' />
-                                            {t('admin.node.view.modules.configure')}
-                                        </Button>
-                                        {actionLoading === `enable-${module.name}` ||
-                                        actionLoading === `disable-${module.name}` ? (
-                                            <Loader2 className='h-4 w-4 text-primary animate-spin' />
-                                        ) : null}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                                        </CardHeader>
+                                        <CardContent className='space-y-4'>
+                                            <CardDescription className='text-xs line-clamp-2 min-h-[32px]'>
+                                                {module.description}
+                                            </CardDescription>
+
+                                            <div className='pt-2 border-t border-border/50'>
+                                                <Button
+                                                    variant='ghost'
+                                                    size='sm'
+                                                    className='h-8'
+                                                    onClick={() => handleConfigure(module)}
+                                                    loading={fetchingConfig && selectedModule?.name === module.name}
+                                                    disabled={module.enabled}
+                                                >
+                                                    <Settings className='h-3 w-3 mr-2' />
+                                                    {t('admin.node.view.modules.configure')}
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                        {toggling === module.name && (
+                                            <div className='absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center z-10'>
+                                                <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                                            </div>
+                                        )}
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </PageCard>
 
             <Dialog open={configModalOpen} onOpenChange={setConfigModalOpen}>
                 <DialogHeader>
@@ -302,13 +299,19 @@ export function ModulesTab({ node }: ModulesTabProps) {
                     <DialogDescription>{t('admin.node.view.modules.configure_description')}</DialogDescription>
                 </DialogHeader>
 
-                <div className='py-4'>
+                <div className='py-4 space-y-4'>
+                    {selectedModule?.enabled && (
+                        <div className='p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs flex items-center gap-3'>
+                            <AlertTriangle className='h-4 w-4 shrink-0' />
+                            {t('admin.node.view.modules.configure_disabled_notice')}
+                        </div>
+                    )}
                     <textarea
                         className='w-full h-80 p-4 rounded-xl bg-muted/50 border border-border font-mono text-xs focus:ring-1 focus:ring-primary focus:outline-none'
                         value={configData}
                         onChange={(e) => setConfigData(e.target.value)}
                         placeholder='{ ... }'
-                        disabled={fetchingConfig || savingConfig}
+                        disabled={fetchingConfig || savingConfig || selectedModule?.enabled}
                     />
                 </div>
 
@@ -316,7 +319,11 @@ export function ModulesTab({ node }: ModulesTabProps) {
                     <Button variant='outline' onClick={() => setConfigModalOpen(false)} disabled={savingConfig}>
                         {t('common.cancel')}
                     </Button>
-                    <Button onClick={handleSaveConfig} loading={savingConfig} disabled={fetchingConfig}>
+                    <Button
+                        onClick={handleSaveConfig}
+                        loading={savingConfig}
+                        disabled={fetchingConfig || selectedModule?.enabled}
+                    >
                         {t('common.save')}
                     </Button>
                 </DialogFooter>
