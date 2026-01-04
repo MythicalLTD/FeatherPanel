@@ -130,7 +130,7 @@ export function AlertDialogAction({
 }: {
     children: React.ReactNode;
     className?: string;
-    onClick?: () => void;
+    onClick?: (event: React.MouseEvent) => void;
     disabled?: boolean;
 }) {
     return (
@@ -144,13 +144,15 @@ export function AlertDialogCancel({
     children,
     className,
     onClick,
+    disabled,
 }: {
     children: React.ReactNode;
     className?: string;
-    onClick?: () => void;
+    onClick?: (event: React.MouseEvent) => void;
+    disabled?: boolean;
 }) {
     return (
-        <Button variant='outline' onClick={onClick} className={className}>
+        <Button variant='outline' onClick={onClick} className={className} disabled={disabled}>
             {children}
         </Button>
     );

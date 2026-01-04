@@ -150,6 +150,11 @@
 		"normal": "Normal",
 		"banned": "Banned",
 		"details": "Details",
+		"console": "Console",
+		"resources": "Resources",
+		"relationships": "Relationships",
+		"areYouSure": "Are you sure?",
+		"delete_confirm_description": "This action cannot be undone and will permanently remove the record from our system.",
 		"no": "No",
 		"yes": "Yes",
 		"preview": "Preview",
@@ -2377,6 +2382,131 @@
 				}
 			}
 		},
+		"servers": {
+			"title": "Servers",
+			"description": "Manage all servers in your system.",
+			"search_placeholder": "Search by name, description, or status...",
+			"no_results": "No servers found",
+			"create": "Create Server",
+			"actions": {
+				"view": "View details",
+				"edit": "Edit server",
+				"delete": "Delete server",
+				"hard_delete": "Hard delete",
+				"transfer": "Transfer server",
+				"scan": "Scan for issues",
+				"confirm_delete": "Confirm Delete",
+				"cancel_delete": "Cancel"
+			},
+			"status": {
+				"running": "Running",
+				"stopped": "Stopped",
+				"suspended": "Suspended",
+				"installing": "Installing",
+				"installed": "Installed",
+				"transferring": "Transferring",
+				"unknown": "Unknown"
+			},
+			"details": {
+				"title": "Server Details",
+				"subtitle": "Viewing details for server: {name}",
+				"view_console": "View Console",
+				"tabs": {
+					"details": "Details",
+					"resources": "Resources",
+					"relationships": "Relationships"
+				},
+				"basic_info": "Basic Information",
+				"configuration": "Configuration",
+				"resource_limits": "Resource Limits",
+				"system_quotas": "System Quotas",
+				"labels": {
+					"status": "Status:",
+					"uuid": "UUID:",
+					"short_uuid": "Short UUID:",
+					"created": "Created:",
+					"updated": "Updated:",
+					"image": "Image:",
+					"startup": "Startup:",
+					"skip_scripts": "Skip Scripts:",
+					"oom_disabled": "OOM Disabled:",
+					"memory": "Memory:",
+					"swap": "Swap:",
+					"disk": "Disk:",
+					"cpu": "CPU:",
+					"io": "IO:",
+					"allocation_limit": "Allocation Limit:",
+					"database_limit": "Database Limit:",
+					"backup_limit": "Backup Limit:",
+					"owner": "Owner",
+					"node": "Node",
+					"realm_spell": "Realm & Spell"
+				}
+			},
+			"help": {
+				"managing": {
+					"title": "Managing Servers",
+					"description": "View, create, edit, and delete servers. Use search and pagination to quickly navigate large fleets."
+				},
+				"relationships": {
+					"title": "Relationships",
+					"description": "Each server belongs to an Owner (user), runs on a Node (machine), and is grouped by Realm & Spell (template/runtime)."
+				},
+				"resources": {
+					"title": "Resources & Limits",
+					"description": "Resource usage (RAM/CPU/Disk) and limits (allocations, databases, backups) are summarized per server."
+				},
+				"tips": {
+					"title": "Tips",
+					"item1": "Keep descriptions meaningful to identify purpose at a glance.",
+					"item2": "Review suspended/unknown statuses regularly to clean up stale hosts.",
+					"item3": "Align Realm/Spell choices with the intended workload/runtime."
+				}
+			},
+			"messages": {
+				"fetch_failed": "Failed to fetch servers",
+				"fetch_details_failed": "Failed to fetch server details",
+				"delete_success": "Server deleted successfully",
+				"delete_failed": "Failed to delete server",
+				"hard_delete_success": "Server hard deleted successfully",
+				"hard_delete_warning_title": "Hard Delete Warning",
+				"hard_delete_warning_p1": "Hard deleting a server should only be used if:",
+				"hard_delete_item1": "You have lost connection to Wings (the node daemon)",
+				"hard_delete_item2": "The node this server is on is permanently dead/offline",
+				"hard_delete_item3": "You need to remove the server from the database without contacting Wings",
+				"hard_delete_caution": "Hard delete will ONLY remove the server from the database. It will NOT delete the server files, containers, or any data from Wings!",
+				"hard_delete_p2": "If the node is still operational, use the regular 'Confirm Delete' option instead.",
+				"transfer_initiated": "Server transfer initiated successfully!",
+				"transfer_failed": "Failed to initiate server transfer",
+				"transfer_cancelled": "Server transfer cancelled successfully!",
+				"transfer_cancel_failed": "Failed to cancel server transfer",
+				"scan_started": "Starting scan for {name}...",
+				"scan_completed": "Scan completed for {name}. Found {count} detections.",
+				"scan_failed": "Failed to scan server"
+			},
+			"transfer": {
+				"title": "Transfer Server",
+				"description": "Transfer this server to a different node and choose the new primary allocation.",
+				"destination_node": "Destination Node",
+				"destination_allocation": "Destination Primary Allocation",
+				"select_node": "Select destination node...",
+				"select_allocation": "Select destination allocation...",
+				"current_node": "Current Node",
+				"warning_banner": "⚠️ USE AT YOUR OWN RISK ⚠️",
+				"warning_text": "Server transfers are NOT RECOMMENDED. This feature exists but is known to be unreliable. Things CAN and WILL go wrong.",
+				"beta_title": "BETA / Experimental Feature",
+				"beta_item1": "Transfers can be cancelled but partial data may remain.",
+				"beta_item2": "The server will be stopped during transfer.",
+				"beta_item3": "The selected allocation will become the only primary allocation.",
+				"beta_item4": "All extra allocations on the source node will be released.",
+				"beta_item5": "Backups will be deleted.",
+				"beta_item6": "Install logs and server logs are not transferred.",
+				"beta_item7": "Always create and verify backups EXTERNALLY before transferring.",
+				"beta_item8": "Network issues can cause partial transfers or data corruption.",
+				"submit": "I Understand - Start Transfer",
+				"submitting": "Starting Transfer..."
+			}
+		},
 		"tickets": {
 			"title": "Support Tickets",
 			"viewAndManage": "View and manage all support tickets in the system",
@@ -3101,6 +3231,14 @@
 			"back_to_list": "Back to Users",
 			"filters": {
 				"all_roles": "All Roles"
+			},
+			"common": {
+				"console": "Console",
+				"details": "Details",
+				"resources": "Resources",
+				"relationships": "Relationships",
+				"areYouSure": "Are you sure?",
+				"delete_confirm_description": "This action cannot be undone and will permanently remove the record from our system."
 			},
 			"badges": {
 				"active": "Active",
