@@ -1952,6 +1952,66 @@
 				}
 			}
 		},
+		"node": {
+			"title": "Nodes",
+			"viewAndManage": "Managing nodes for location: {location}",
+			"description": "View and manage all nodes in the system",
+			"search_placeholder": "Search by name, fqdn, or description...",
+			"no_results": "No nodes found",
+			"create": "Create Node",
+			"health": {
+				"checking": "Checking health...",
+				"refresh": "Refresh node health status",
+				"online": "Online",
+				"offline": "Offline",
+				"unknown": "Unknown"
+			},
+			"columns": {
+				"status": "Status",
+				"name": "Name",
+				"fqdn": "FQDN",
+				"location": "Location",
+				"actions": "Actions"
+			},
+			"actions": {
+				"view": "View node details",
+				"edit": "Edit node",
+				"databases": "Manage node databases",
+				"allocations": "Manage node allocations",
+				"delete": "Delete node",
+				"confirm_delete": "Confirm Delete",
+				"cancel_delete": "Cancel"
+			},
+			"help": {
+				"what": {
+					"title": "What are Nodes?",
+					"description": "Nodes are machines that run Wings, hosting and managing your containers for deployments."
+				},
+				"utility": {
+					"title": "What can Nodes do?",
+					"deploy": "Deploy/manage containers via Wings",
+					"health": "Report health for monitoring",
+					"limits": "Enforce memory/disk limits",
+					"storage": "Organize storage and networking"
+				},
+				"locations": {
+					"title": "Nodes and Locations",
+					"description": "Each node belongs to a location so you can separate infrastructure by region or purpose and deploy predictably."
+				},
+				"wings": {
+					"title": "About Wings (the daemon)",
+					"p1": "Wings is the daemon FeatherPanel uses to communicate with your Docker host. It knows how to schedule, deploy, and manage containers securely and reliably, so your servers start, stop, and scale where and how you expect.",
+					"p2": "By pairing locations and nodes with Wings, you get a clean separation of regions and infrastructure, plus predictable deployments with health checks, resource limits, and streamlined container management."
+				}
+			},
+			"messages": {
+				"fetch_failed": "Failed to fetch nodes",
+				"delete_success": "Node deleted successfully",
+				"delete_failed": "Failed to delete node",
+				"health_check_complete": "Node health check complete",
+				"health_check_failed": "Failed to check node health"
+			}
+		},
 		"tickets": {
 			"title": "Support Tickets",
 			"viewAndManage": "View and manage all support tickets in the system",
