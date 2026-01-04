@@ -2022,7 +2022,18 @@
 				"location": "Location",
 				"select_location": "Select a location",
 				"submit_create": "Create Node",
-				"submit_save": "Save Changes"
+				"submit_save": "Save Changes",
+				"wings": {
+					"config_title": "Wings Configuration",
+					"config_help": "This configuration file should be saved as /etc/featherpanel/config.yml on your Wings daemon.",
+					"copy_config": "Copy Config",
+					"reset_key": "Request Master Daemon Reset Key",
+					"confirm_reset_key": "Confirm Reset Key",
+					"reset_key_success": "Master daemon reset key requested successfully",
+					"reset_key_failed": "Failed to request reset key",
+					"config_copied": "Wings configuration copied to clipboard",
+					"copy_failed": "Failed to copy configuration"
+				}
 			},
 			"columns": {
 				"status": "Status",
@@ -2069,7 +2080,9 @@
 				"health_check_complete": "Node health check complete",
 				"health_check_failed": "Failed to check node health",
 				"created": "Node created successfully",
-				"create_failed": "Failed to create node"
+				"create_failed": "Failed to create node",
+				"update_success": "Node updated successfully",
+				"update_failed": "Failed to update node"
 			}
 		},
 		"tickets": {
