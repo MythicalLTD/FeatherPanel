@@ -26,7 +26,7 @@ SOFTWARE.
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -41,6 +41,7 @@ interface AllocationsTabProps {
     selectedEntities: SelectedEntities;
     setAllocationModalOpen: (open: boolean) => void;
     fetchAllocations: () => void;
+    refreshTrigger?: number;
 }
 
 export function AllocationsTab({
@@ -48,6 +49,7 @@ export function AllocationsTab({
     selectedEntities,
     setAllocationModalOpen,
     fetchAllocations,
+    refreshTrigger = 0,
 }: AllocationsTabProps) {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
@@ -73,6 +75,10 @@ export function AllocationsTab({
             setLoading(false);
         }
     }, [serverId]);
+
+    useEffect(() => {
+        fetchServerAllocations();
+    }, [fetchServerAllocations, refreshTrigger]);
 
     const deleteAllocation = async (allocationId: number) => {
         setDeletingId(allocationId);

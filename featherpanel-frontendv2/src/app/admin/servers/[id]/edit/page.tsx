@@ -26,7 +26,7 @@ SOFTWARE.
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -101,6 +101,20 @@ const initialSelectedEntities: SelectedEntities = {
     allocation: null,
 };
 
+// Local interface for server variable response
+interface ServerVariableResponse {
+    variable_id: number;
+    name: string;
+    description: string;
+    env_variable: string;
+    default_value: string;
+    user_viewable: number;
+    user_editable: number;
+    rules: string;
+    field_type: string;
+    variable_value?: string;
+}
+
 export default function EditServerPage() {
     const { t } = useTranslation();
     const router = useRouter();
@@ -145,6 +159,9 @@ export default function EditServerPage() {
     const [spellSearch, setSpellSearch] = useState('');
 
     // Fetch Server Data
+    const originalSpellId = useRef<number | null>(null);
+
+    // Fetch Server Data
     const fetchServerData = useCallback(async () => {
         setLoading(true);
         try {
@@ -173,6 +190,39 @@ export default function EditServerPage() {
                         locationsData.data.locations.find((loc: Location) => loc.id === serverNode.location_id) || null;
                 }
 
+                // Parse server variables (array -> map for form, array for display)
+                const variablesList = (server.variables || []) as ServerVariableResponse[];
+                const mappedVariables: SpellVariable[] = variablesList.map((v) => ({
+                    id: v.variable_id,
+                    name: v.name,
+                    description: v.description,
+                    env_variable: v.env_variable,
+                    default_value: v.default_value,
+                    user_viewable: v.user_viewable,
+                    user_editable: v.user_editable,
+                    rules: v.rules,
+                    field_type: v.field_type,
+                }));
+                // We set spellVariables immediately here
+                setSpellVariables(mappedVariables);
+
+                // Create values map for the form
+                const variablesMap: Record<string, string> = {};
+                variablesList.forEach((v) => {
+                    if (v.env_variable) {
+                        // Use variable_value if it exists (including empty string), otherwise default
+                        variablesMap[v.env_variable] =
+                            v.variable_value !== undefined && v.variable_value !== null
+                                ? v.variable_value
+                                : v.default_value;
+                    }
+                });
+
+                // Set original spell ID to prevent overwriting variables
+                if (server.spell_id) {
+                    originalSpellId.current = server.spell_id;
+                }
+
                 setForm({
                     name: server.name || '',
                     description: server.description || '',
@@ -195,7 +245,7 @@ export default function EditServerPage() {
                     allocation_limit: server.allocation_limit,
                     backup_limit: server.backup_limit,
                     allocation_id: server.allocation_id,
-                    variables: server.variables || {},
+                    variables: variablesMap,
                 });
 
                 setIsSuspended(Boolean(server.suspended));
@@ -238,7 +288,14 @@ export default function EditServerPage() {
         if (!form.spell_id) {
             setSpellDetails(null);
             setSpellVariables([]);
+            setDockerImages([]);
             return;
+        }
+
+        // Use equality check to see if this is the original spell
+        // Note: form.spell_id might be string or number, originalSpellId.current is number
+        if (originalSpellId.current && form.spell_id == originalSpellId.current) {
+            return; // Don't re-fetch if it's the original spell (we kept the server variables)
         }
 
         const fetchSpellDetails = async () => {
@@ -249,27 +306,34 @@ export default function EditServerPage() {
                 ]);
 
                 if (spellRes.data.success) {
-                    const spell = spellRes.data.data.spell;
+                    const spell = spellRes.data.data;
                     setSpellDetails(spell);
 
-                    if (!form.startup && spell.startup) {
-                        setForm((prev) => ({ ...prev, startup: spell.startup }));
-                    }
-
+                    // Update docker images
                     try {
                         const images = JSON.parse(spell.docker_images);
                         const imageList = Object.values(images) as string[];
                         setDockerImages(imageList);
-                        if (!form.image && imageList.length > 0) {
-                            setForm((prev) => ({ ...prev, image: imageList[0] }));
+                        // Reset image if not in new list
+                        if (!imageList.includes(form.image)) {
+                            setForm((prev) => ({ ...prev, image: imageList[0] || '' }));
                         }
                     } catch {
                         setDockerImages([]);
                     }
-                }
 
-                if (variablesRes.data.success) {
-                    setSpellVariables(variablesRes.data.data.variables || []);
+                    // Parse new spell variables
+                    if (variablesRes.data.success) {
+                        const newVariables = variablesRes.data.data || [];
+                        setSpellVariables(newVariables);
+
+                        // Reset form variables to defaults for new spell
+                        const newVariablesMap: Record<string, string> = {};
+                        newVariables.forEach((v: SpellVariable) => {
+                            newVariablesMap[v.env_variable] = v.default_value;
+                        });
+                        setForm((prev) => ({ ...prev, variables: newVariablesMap }));
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching spell details:', error);
@@ -277,7 +341,7 @@ export default function EditServerPage() {
         };
 
         fetchSpellDetails();
-    }, [form.spell_id]);
+    }, [form.spell_id, form.image]);
 
     // Fetch Functions
     const fetchOwners = async () => {
@@ -316,14 +380,23 @@ export default function EditServerPage() {
             const { data } = await axios.get('/api/admin/allocations', { params: { not_used: true } });
             const allAllocations = data.data.allocations || [];
             // Filter by current node and include the server's current allocation
-            const filtered = allAllocations.filter(
-                (a: Allocation) => a.node_id === node.id || a.id === form.allocation_id,
-            );
+            const filtered = allAllocations.filter((a: Allocation) => a.node_id === node.id);
+
+            // Ensure current allocation is in the list
+            if (form.allocation_id && selectedEntities.allocation) {
+                if (!filtered.find((a: Allocation) => a.id === form.allocation_id)) {
+                    filtered.push(selectedEntities.allocation);
+                }
+            }
+
             setAllocations(filtered);
         } catch (error) {
             console.error('Error fetching allocations:', error);
         }
     };
+
+    // Refresh trigger for AllocationsTab
+    const [allocationsRefreshTrigger, setAllocationsRefreshTrigger] = useState(0);
 
     // Selection Handlers
     const handleSelectOwner = (owner: User) => {
@@ -344,9 +417,36 @@ export default function EditServerPage() {
         setSpellModalOpen(false);
     };
 
-    const handleSelectAllocation = (allocation: Allocation) => {
-        setSelectedEntities((prev) => ({ ...prev, allocation }));
-        setForm((prev) => ({ ...prev, allocation_id: allocation.id }));
+    const handleSelectAllocation = async (allocation: Allocation) => {
+        if (activeTab === 'allocations') {
+            try {
+                const { data } = await axios.post(`/api/admin/servers/${serverId}/allocations`, {
+                    allocation_id: allocation.id,
+                });
+
+                if (data.success) {
+                    toast.success(t('admin.servers.edit.allocations.assign_success'));
+                    setAllocationsRefreshTrigger((prev) => prev + 1);
+                    // We need to refresh the allocations list in the AllocationsTab
+                    // Since we don't have direct access to its internal fetch, we can rely on it re-rendering
+                    // or trigger a refresh via a context/prop if needed.
+                    // However, looking at AllocationsTab, it has its own state.
+                    // We might need to force a refresh.
+                    // Actually, let's just close the modal. The user might need to hit refresh on the tab
+                    // or we can pass a callback?
+                    // Better approach: ensure AllocationsTab listens to something or we lift the state up?
+                    // For now, let's stick to the Vue logic pattern.
+                } else {
+                    toast.error(data.message || t('admin.servers.edit.allocations.assign_failed'));
+                }
+            } catch (error) {
+                console.error('Error assigning allocation:', error);
+                toast.error(t('admin.servers.edit.allocations.assign_failed'));
+            }
+        } else {
+            setSelectedEntities((prev) => ({ ...prev, allocation }));
+            setForm((prev) => ({ ...prev, allocation_id: allocation.id }));
+        }
         setAllocationModalOpen(false);
     };
 
@@ -376,6 +476,7 @@ export default function EditServerPage() {
                 description: form.description?.trim() || null,
                 owner_id: form.owner_id,
                 skip_scripts: form.skip_scripts,
+                skip_zerotrust: form.skip_zerotrust,
                 external_id: form.external_id?.trim() || null,
                 realms_id: form.realms_id,
                 spell_id: form.spell_id,
@@ -524,6 +625,7 @@ export default function EditServerPage() {
                             selectedEntities={selectedEntities}
                             setAllocationModalOpen={setAllocationModalOpen}
                             fetchAllocations={fetchAllocations}
+                            refreshTrigger={allocationsRefreshTrigger}
                         />
                     </TabsContent>
 
