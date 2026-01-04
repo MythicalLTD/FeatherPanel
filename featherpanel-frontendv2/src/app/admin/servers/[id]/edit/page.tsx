@@ -26,30 +26,31 @@ SOFTWARE.
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/featherui/Input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { HeadlessModal } from '@/components/ui/headless-modal';
-import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { PageHeader } from '@/components/featherui/PageHeader';
 import {
-    Server,
-    ArrowLeft,
     Save,
-    Loader2,
+    Server,
     Cpu,
     Wand2,
     Shield,
     Terminal,
     Network,
     Settings,
-    Search,
+    ArrowLeft,
+    Loader2,
+    Search as SearchIcon,
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { HeadlessModal } from '@/components/ui/headless-modal';
+import { toast } from 'sonner';
 
+// Import Tabs
 import { DetailsTab } from './DetailsTab';
 import { ResourcesTab } from './ResourcesTab';
 import { ApplicationTab } from './ApplicationTab';
@@ -57,6 +58,7 @@ import { LimitsTab } from './LimitsTab';
 import { StartupTab } from './StartupTab';
 import { AllocationsTab } from './AllocationsTab';
 import { ActionsTab } from './ActionsTab';
+
 import {
     ServerFormData,
     SelectedEntities,
@@ -157,8 +159,20 @@ export default function EditServerPage() {
     const [ownerSearch, setOwnerSearch] = useState('');
     const [realmSearch, setRealmSearch] = useState('');
     const [spellSearch, setSpellSearch] = useState('');
+    const [allocationSearch, setAllocationSearch] = useState('');
 
-    // Fetch Server Data
+    // Filter allocations for Search
+    const filteredAllocations = useMemo(() => {
+        if (!allocationSearch) return allocations;
+        const lowerSearch = allocationSearch.toLowerCase();
+        return allocations.filter((a) => {
+            return (
+                a.ip.toLowerCase().includes(lowerSearch) ||
+                String(a.port).includes(lowerSearch) ||
+                (a.ip_alias && a.ip_alias.toLowerCase().includes(lowerSearch))
+            );
+        });
+    }, [allocations, allocationSearch]);
     const originalSpellId = useRef<number | null>(null);
 
     // Fetch Server Data
@@ -702,10 +716,10 @@ export default function EditServerPage() {
                 isOpen={allocationModalOpen}
                 onClose={() => setAllocationModalOpen(false)}
                 title={t('admin.servers.form.select_allocation')}
-                items={allocations}
+                items={filteredAllocations}
                 onSelect={handleSelectAllocation}
-                search=''
-                onSearchChange={() => {}}
+                search={allocationSearch}
+                onSearchChange={setAllocationSearch}
                 renderItem={(item: Allocation) => (
                     <div>
                         <div className='font-medium font-mono'>
@@ -746,7 +760,7 @@ function SelectionModal<T extends { id: number | string }>({
         <HeadlessModal isOpen={isOpen} onClose={onClose} title={title} className='max-w-xl'>
             <div className='space-y-4'>
                 <div className='relative group'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                    <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                     <Input
                         placeholder={t('common.search')}
                         value={search}
