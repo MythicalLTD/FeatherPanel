@@ -58,16 +58,18 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
         setResult(null);
         setError(null);
         try {
-            const { data } = await axios.post(`/api/wings/admin/node/${nodeId}/diagnostics`, {
-                format: options.format,
-                include_endpoints: options.includeEndpoints,
-                include_logs: options.includeLogs,
-                log_lines: options.includeLogs ? options.logLines : undefined,
-                upload_api_url: options.format === 'url' ? options.uploadApiUrl : undefined,
+            const { data } = await axios.get(`/api/admin/nodes/${nodeId}/diagnostics`, {
+                params: {
+                    format: options.format,
+                    include_endpoints: options.includeEndpoints,
+                    include_logs: options.includeLogs,
+                    log_lines: options.includeLogs ? options.logLines : undefined,
+                    upload_api_url: options.format === 'url' ? options.uploadApiUrl : undefined,
+                },
             });
 
             if (data.success) {
-                setResult(data.data);
+                setResult(data.data.diagnostics);
                 toast.success(t('admin.node.view.diagnostics.success'));
             } else {
                 setError(data.message);

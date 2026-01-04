@@ -70,7 +70,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
 
         setUpdating(true);
         try {
-            const { data } = await axios.post(`/api/wings/admin/node/${nodeId}/self-update`);
+            const { data } = await axios.post(`/api/admin/nodes/${nodeId}/self-update`);
             if (data.success) {
                 toast.success(t('admin.node.view.self_update.success'));
                 onRefresh();
@@ -143,17 +143,37 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                             </div>
                         </div>
                     ) : versionStatus?.is_up_to_date ? (
-                        <div className='p-8 rounded-2xl bg-green-500/10 border border-green-500/20 text-center space-y-4'>
+                        <div className='p-8 rounded-2xl bg-green-500/10 border border-green-500/20 text-center space-y-6'>
                             <div className='p-4 rounded-full bg-green-500/20 w-fit mx-auto'>
                                 <CheckCircle2 className='h-10 w-10 text-green-500' />
                             </div>
-                            <div>
-                                <h3 className='text-xl font-bold text-green-500'>
-                                    {t('admin.node.view.self_update.is_latest')}
-                                </h3>
-                                <p className='text-sm text-muted-foreground'>
-                                    {t('admin.node.view.self_update.latest_help')}
-                                </p>
+                            <div className='space-y-4'>
+                                <div>
+                                    <h3 className='text-xl font-bold text-green-500'>
+                                        {t('admin.node.view.self_update.is_latest')}
+                                    </h3>
+                                    <p className='text-sm text-muted-foreground'>
+                                        {t('admin.node.view.self_update.latest_help')}
+                                    </p>
+                                </div>
+                                <div className='pt-2 border-t border-green-500/10'>
+                                    <p className='text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-3'>
+                                        Administrative Actions
+                                    </p>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        className='rounded-xl border-green-500/20 bg-green-500/5 hover:bg-green-500/10 text-green-600 dark:text-green-400'
+                                        loading={updating}
+                                        onClick={handleUpdate}
+                                    >
+                                        <RefreshCw className='h-3 w-3 mr-2' />
+                                        Force Reinstall {systemData?.wings.version}
+                                    </Button>
+                                    <p className='mt-2 text-[10px] text-muted-foreground italic'>
+                                        Reinstalls the current version. Useful if binary is corrupted.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     ) : (

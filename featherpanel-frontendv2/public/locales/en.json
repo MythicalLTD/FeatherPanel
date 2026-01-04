@@ -2225,7 +2225,20 @@
 				},
 				"modules": {
 					"title": "Wings Modules",
-					"description": "Manage extension modules for the Wings daemon."
+					"description": "Manage extension modules for the Wings daemon.",
+					"enable_success": "Module {name} enabled successfully.",
+					"disable_success": "Module {name} disabled successfully.",
+					"enable_failed": "Failed to enable module {name}.",
+					"disable_failed": "Failed to disable module {name}.",
+					"configure": "Configure",
+					"configure_title": "Configure Module: {name}",
+					"configure_description": "Modify the configuration for this module. Be careful, incorrect settings may cause the module to fail.",
+					"config_save_success": "Configuration for {name} saved successfully.",
+					"config_save_failed": "Failed to save configuration for {name}.",
+					"enabled_badge": "Enabled",
+					"disabled_badge": "Disabled",
+					"no_modules": "No Modules Found",
+					"no_modules_description": "This node doesn't have any Wings modules installed."
 				},
 				"network": {
 					"title": "Network Information",
