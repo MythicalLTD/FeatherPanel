@@ -61,7 +61,7 @@ import {
     AlertTriangle,
     Network,
 } from 'lucide-react';
-import { ApiServer, Pagination, ApiNode, ApiAllocation } from './types';
+import { ApiServer, Pagination, ApiNode, ApiAllocation } from '@/types/adminServerTypes';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import {
     AlertDialog,
