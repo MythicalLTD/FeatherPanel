@@ -173,7 +173,29 @@ export default function EditServerPage() {
             );
         });
     }, [allocations, allocationSearch]);
+
+    const filteredOwners = useMemo(() => {
+        if (!ownerSearch) return owners;
+        const lowerSearch = ownerSearch.toLowerCase();
+        return owners.filter((u) => {
+            return u.username.toLowerCase().includes(lowerSearch) || u.email.toLowerCase().includes(lowerSearch);
+        });
+    }, [owners, ownerSearch]);
+
+    const filteredRealms = useMemo(() => {
+        if (!realmSearch) return realms;
+        const lowerSearch = realmSearch.toLowerCase();
+        return realms.filter((r) => r.name.toLowerCase().includes(lowerSearch));
+    }, [realms, realmSearch]);
+
+    const filteredSpells = useMemo(() => {
+        if (!spellSearch) return spells;
+        const lowerSearch = spellSearch.toLowerCase();
+        return spells.filter((s) => s.name.toLowerCase().includes(lowerSearch));
+    }, [spells, spellSearch]);
+
     const originalSpellId = useRef<number | null>(null);
+    const originalVariables = useRef<Record<string, string>>({});
 
     // Fetch Server Data
     const fetchServerData = useCallback(async () => {
@@ -235,6 +257,7 @@ export default function EditServerPage() {
                 // Set original spell ID to prevent overwriting variables
                 if (server.spell_id) {
                     originalSpellId.current = server.spell_id;
+                    originalVariables.current = variablesMap;
                 }
 
                 setForm({
@@ -306,14 +329,13 @@ export default function EditServerPage() {
             return;
         }
 
-        // Use equality check to see if this is the original spell
-        // Note: form.spell_id might be string or number, originalSpellId.current is number
-        if (originalSpellId.current && form.spell_id == originalSpellId.current) {
-            return; // Don't re-fetch if it's the original spell (we kept the server variables)
-        }
-
         const fetchSpellDetails = async () => {
+            const isOriginal = originalSpellId.current && form.spell_id == originalSpellId.current;
+
             try {
+                // If original, skip fetching variables and restore from cache
+                // But we still need spell details for Sync (unless we cached that too, but easy to fetch)
+                // Always fetch variables to ensure we have the definitions from the API
                 const [spellRes, variablesRes] = await Promise.all([
                     axios.get(`/api/admin/spells/${form.spell_id}`),
                     axios.get(`/api/admin/spells/${form.spell_id}/variables`),
@@ -336,17 +358,27 @@ export default function EditServerPage() {
                         setDockerImages([]);
                     }
 
-                    // Parse new spell variables
+                    // Handle variables
                     if (variablesRes.data.success) {
-                        const newVariables = variablesRes.data.data || [];
-                        setSpellVariables(newVariables);
+                        const newVariables = variablesRes.data.data;
 
-                        // Reset form variables to defaults for new spell
-                        const newVariablesMap: Record<string, string> = {};
-                        newVariables.forEach((v: SpellVariable) => {
-                            newVariablesMap[v.env_variable] = v.default_value;
-                        });
-                        setForm((prev) => ({ ...prev, variables: newVariablesMap }));
+                        if (Array.isArray(newVariables)) {
+                            setSpellVariables(newVariables);
+
+                            if (isOriginal) {
+                                // If returning to original spell, restore saved values
+                                setForm((prev) => ({ ...prev, variables: originalVariables.current }));
+                            } else {
+                                // Otherwise, use defaults
+                                const newVariablesMap: Record<string, string> = {};
+                                newVariables.forEach((v: SpellVariable) => {
+                                    newVariablesMap[v.env_variable] = v.default_value;
+                                });
+                                setForm((prev) => ({ ...prev, variables: newVariablesMap }));
+                            }
+                        } else {
+                            setSpellVariables([]);
+                        }
                     }
                 }
             } catch (error) {
@@ -668,7 +700,7 @@ export default function EditServerPage() {
                 isOpen={ownerModalOpen}
                 onClose={() => setOwnerModalOpen(false)}
                 title={t('admin.servers.form.select_owner')}
-                items={owners}
+                items={filteredOwners}
                 onSelect={handleSelectOwner}
                 search={ownerSearch}
                 onSearchChange={setOwnerSearch}
@@ -684,7 +716,7 @@ export default function EditServerPage() {
                 isOpen={realmModalOpen}
                 onClose={() => setRealmModalOpen(false)}
                 title={t('admin.servers.form.select_realm')}
-                items={realms}
+                items={filteredRealms}
                 onSelect={handleSelectRealm}
                 search={realmSearch}
                 onSearchChange={setRealmSearch}
@@ -700,7 +732,7 @@ export default function EditServerPage() {
                 isOpen={spellModalOpen}
                 onClose={() => setSpellModalOpen(false)}
                 title={t('admin.servers.form.select_spell')}
-                items={spells}
+                items={filteredSpells}
                 onSelect={handleSelectSpell}
                 search={spellSearch}
                 onSearchChange={setSpellSearch}
