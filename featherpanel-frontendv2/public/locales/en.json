@@ -1,4 +1,12 @@
 {
+	"common": {
+		"back": "Back",
+		"save": "Save",
+		"cancel": "Cancel",
+		"loading": "Loading...",
+		"unknown": "Unknown",
+		"nA": "N/A"
+	},
 	"auth": {
 		"login": {
 			"title": "Welcome back",
@@ -1966,6 +1974,56 @@
 				"offline": "Offline",
 				"unknown": "Unknown"
 			},
+			"form": {
+				"create_title": "Create Node",
+				"create_description": "Fill in the details to create a new node.",
+				"edit_title": "Edit Node",
+				"edit_description": "Edit the selected node.",
+				"basic_details": "Basic Details",
+				"configuration": "Configuration",
+				"network": "Network",
+				"advanced": "Advanced",
+				"wings_config": "Wings Config",
+				"name": "Name",
+				"description": "Description",
+				"visibility": "Node Visibility",
+				"visibility_public": "Public",
+				"visibility_private": "Private",
+				"visibility_help": "By setting a node to private you will be denying the ability to auto-deploy to this node.",
+				"fqdn": "FQDN",
+				"fqdn_help": "Please enter domain name (e.g. node.example.com) to be used for connecting to the daemon. An IP address may be used only if you are not using SSL for this node.",
+				"ssl": "Communicate Over SSL",
+				"ssl_https": "Use SSL Connection",
+				"ssl_http": "Use HTTP Connection",
+				"ssl_warning": "Your Panel is currently configured to use a secure connection. In order for browsers to connect to your node it must use a SSL connection.",
+				"proxy": "Behind Proxy",
+				"proxy_none": "Not Behind Proxy",
+				"proxy_yes": "Behind Proxy",
+				"proxy_help": "If you are running the daemon behind a proxy such as Cloudflare, select this to have the daemon skip looking for certificates on boot.",
+				"daemon_base": "Daemon Server File Directory",
+				"daemon_base_help": "Enter the directory where server files should be stored. If you use OVH you should check your partition scheme. You may need to use /home/daemon-data to have enough space.",
+				"memory": "Total Memory",
+				"memory_mib": "MiB",
+				"memory_overallocate": "Memory Over-Allocation",
+				"disk": "Total Disk Space",
+				"disk_overallocate": "Disk Over-Allocation",
+				"daemon_port": "Daemon Port",
+				"daemon_sftp_port": "Daemon SFTP Port",
+				"ipv4": "Public IPv4",
+				"ipv4_help": "Please enter domain name (e.g. node.example.com) to be used for connecting to the daemon. An IP address may be used only if you are not using SSL for this node.",
+				"ipv6": "Public IPv6",
+				"ipv6_help": "Optional IPv6 address that clients can use to reach this node.",
+				"maintenance": "Maintenance Mode",
+				"maintenance_disabled": "Disabled",
+				"maintenance_enabled": "Enabled",
+				"maintenance_help": "When enabled, this node will not accept new server deployments.",
+				"upload_size": "Upload Size Limit",
+				"upload_size_help": "Maximum file upload size for this node.",
+				"location": "Location",
+				"select_location": "Select a location",
+				"submit_create": "Create Node",
+				"submit_save": "Save Changes"
+			},
 			"columns": {
 				"status": "Status",
 				"name": "Name",
@@ -2009,7 +2067,9 @@
 				"delete_success": "Node deleted successfully",
 				"delete_failed": "Failed to delete node",
 				"health_check_complete": "Node health check complete",
-				"health_check_failed": "Failed to check node health"
+				"health_check_failed": "Failed to check node health",
+				"created": "Node created successfully",
+				"create_failed": "Failed to create node"
 			}
 		},
 		"tickets": {
