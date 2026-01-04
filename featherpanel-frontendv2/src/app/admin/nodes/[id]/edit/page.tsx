@@ -34,7 +34,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Server, ArrowLeft, Save, Database, Network, Shield, Settings2, Loader2 } from 'lucide-react';
+import { Server, ArrowLeft, Save, Database, Network, Shield, Settings2, Loader2, LayoutGrid, Zap } from 'lucide-react';
 
 import { DetailsTab } from './DetailsTab';
 import { ConfigurationTab } from './ConfigurationTab';
@@ -43,35 +43,15 @@ import { AdvancedTab } from './AdvancedTab';
 import { WingsTab } from './WingsTab';
 import { AllocationsTab } from './AllocationsTab';
 
-interface Location {
-    id: number;
-    name: string;
-}
-
-interface NodeData {
-    id: number;
-    uuid: string;
-    name: string;
-    description: string;
-    location_id: number;
-    fqdn: string;
-    scheme: string;
-    behind_proxy: number;
-    maintenance_mode: number;
-    memory: number;
-    memory_overallocate: number;
-    disk: number;
-    disk_overallocate: number;
-    upload_size: number;
-    daemonListen: number;
-    daemonSFTP: number;
-    daemonBase: string;
-    public_ip_v4: string | null;
-    public_ip_v6: string | null;
-    daemon_token_id: string;
-    daemon_token: string;
-    public: number;
-}
+import { TerminalTab } from '../components/TerminalTab';
+import { ModulesTab } from '../components/ModulesTab';
+import { WingsConfigTab } from '../components/WingsConfigTab';
+import { DockerTab } from '../components/DockerTab';
+import { DiagnosticsTab } from '../components/DiagnosticsTab';
+import { UtilizationTab } from '../components/UtilizationTab';
+import { SystemInfoTab } from '../components/SystemInfoTab';
+import { SelfUpdateTab } from '../components/SelfUpdateTab';
+import { UtilizationResponse, DockerResponse, SystemInfoResponse, NodeData, Location } from '../types';
 
 export interface NodeForm {
     name: string;
@@ -129,6 +109,24 @@ export default function EditNodePage() {
         public_ip_v6: '',
     });
 
+    const [systemInfo, setSystemInfo] = useState<{
+        data: SystemInfoResponse | null;
+        loading: boolean;
+        error: string | null;
+    }>({ data: null, loading: false, error: null });
+
+    const [utilization, setUtilization] = useState<{
+        data: UtilizationResponse | null;
+        loading: boolean;
+        error: string | null;
+    }>({ data: null, loading: false, error: null });
+
+    const [dockerUsage, setDockerUsage] = useState<{
+        data: DockerResponse | null;
+        loading: boolean;
+        error: string | null;
+    }>({ data: null, loading: false, error: null });
+
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const fetchInitialData = useCallback(async () => {
@@ -148,18 +146,18 @@ export default function EditNodePage() {
                 return;
             }
 
-            setNodeData(node);
+            setNodeData(node as NodeData);
             setLocations(locationsRes.data.data.locations || []);
 
             setForm({
                 name: node.name,
                 description: node.description || '',
                 fqdn: node.fqdn,
-                location_id: node.location_id.toString(),
-                public: node.public === 1 ? 'true' : 'false',
+                location_id: node.location_id?.toString() || '',
+                public: Number(node.public) === 1 ? 'true' : 'false',
                 scheme: node.scheme,
-                behind_proxy: node.behind_proxy === 1 ? 'true' : 'false',
-                maintenance_mode: node.maintenance_mode === 1 ? 'true' : 'false',
+                behind_proxy: Number(node.behind_proxy) === 1 ? 'true' : 'false',
+                maintenance_mode: Number(node.maintenance_mode) === 1 ? 'true' : 'false',
                 memory: node.memory,
                 memory_overallocate: node.memory_overallocate,
                 disk: node.disk,
@@ -179,9 +177,78 @@ export default function EditNodePage() {
         }
     }, [nodeId, router, t]);
 
+    const fetchSystemInfo = useCallback(async () => {
+        setSystemInfo((prev) => ({ ...prev, loading: true, error: null }));
+        try {
+            const { data } = await axios.get(`/api/wings/admin/node/${nodeId}/system`);
+            if (data.success) {
+                setSystemInfo({ data: data.data, loading: false, error: null });
+            } else {
+                setSystemInfo({ data: null, loading: false, error: data.message });
+            }
+        } catch (e: unknown) {
+            let error = 'Failed to fetch system info';
+            if (axios.isAxiosError(e)) {
+                error = e.response?.data?.message || e.message;
+            }
+            setSystemInfo({
+                data: null,
+                loading: false,
+                error,
+            });
+        }
+    }, [nodeId]);
+
+    const fetchUtilization = useCallback(async () => {
+        setUtilization((prev) => ({ ...prev, loading: true, error: null }));
+        try {
+            const { data } = await axios.get(`/api/wings/admin/node/${nodeId}/utilization`);
+            if (data.success) {
+                setUtilization({ data: data.data, loading: false, error: null });
+            } else {
+                setUtilization({ data: null, loading: false, error: data.message });
+            }
+        } catch (e: unknown) {
+            let error = 'Failed to fetch utilization';
+            if (axios.isAxiosError(e)) {
+                error = e.response?.data?.message || e.message;
+            }
+            setUtilization({
+                data: null,
+                loading: false,
+                error,
+            });
+        }
+    }, [nodeId]);
+
+    const fetchDockerUsage = useCallback(async () => {
+        setDockerUsage((prev) => ({ ...prev, loading: true, error: null }));
+        try {
+            const { data } = await axios.get(`/api/wings/admin/node/${nodeId}/docker/disk`);
+            if (data.success) {
+                setDockerUsage({ data: data.data, loading: false, error: null });
+            } else {
+                setDockerUsage({ data: null, loading: false, error: data.message });
+            }
+        } catch (e: unknown) {
+            let error = 'Failed to fetch docker usage';
+            if (axios.isAxiosError(e)) {
+                error = e.response?.data?.message || e.message;
+            }
+            setDockerUsage({
+                data: null,
+                loading: false,
+                error,
+            });
+        }
+    }, [nodeId]);
+
     useEffect(() => {
         fetchInitialData();
-    }, [fetchInitialData]);
+        fetchSystemInfo();
+        fetchUtilization();
+        fetchDockerUsage();
+    }, [fetchInitialData, fetchSystemInfo, fetchUtilization, fetchDockerUsage]);
 
     const wingsConfigYaml = useMemo(() => {
         if (!nodeData) return '';
@@ -311,6 +378,14 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
         { id: 'network', label: t('admin.node.form.network'), icon: Settings2 },
         { id: 'advanced', label: t('admin.node.form.advanced'), icon: Shield },
         { id: 'wings', label: t('admin.node.form.wings_config'), icon: Shield },
+        { id: 'terminal', label: t('admin.node.view.terminal.title'), icon: Server },
+        { id: 'wings-config', label: t('admin.node.view.config.title'), icon: Settings2 },
+        { id: 'modules', label: t('admin.node.view.modules.title'), icon: LayoutGrid },
+        { id: 'utilization', label: t('admin.node.view.utilization.title'), icon: Zap },
+        { id: 'docker', label: t('admin.node.view.docker.title'), icon: Database },
+        { id: 'system-info', label: t('admin.node.view.system.title'), icon: Shield },
+        { id: 'diagnostics', label: t('admin.node.view.diagnostics.title'), icon: Shield },
+        { id: 'self-update', label: t('admin.node.view.self_update.title'), icon: Shield },
     ];
 
     return (
@@ -392,7 +467,85 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                             />
                         </TabsContent>
 
-                        {activeTab !== 'wings' && (
+                        <TabsContent value='terminal' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            {nodeData && <TerminalTab node={nodeData} />}
+                        </TabsContent>
+
+                        <TabsContent
+                            value='wings-config'
+                            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
+                        >
+                            {nodeData && <WingsConfigTab node={nodeData} />}
+                        </TabsContent>
+
+                        <TabsContent value='modules' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            {nodeData && <ModulesTab node={nodeData} />}
+                        </TabsContent>
+
+                        <TabsContent
+                            value='utilization'
+                            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
+                        >
+                            <UtilizationTab
+                                loading={utilization.loading}
+                                data={utilization.data}
+                                error={utilization.error}
+                                onRefresh={fetchUtilization}
+                            />
+                        </TabsContent>
+
+                        <TabsContent value='docker' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <DockerTab
+                                nodeId={Number(nodeId)}
+                                loading={dockerUsage.loading}
+                                data={dockerUsage.data}
+                                error={dockerUsage.error}
+                                onRefresh={fetchDockerUsage}
+                            />
+                        </TabsContent>
+
+                        <TabsContent
+                            value='system-info'
+                            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
+                        >
+                            <SystemInfoTab
+                                nodeId={Number(nodeId)}
+                                loading={systemInfo.loading}
+                                data={systemInfo.data}
+                                error={systemInfo.error}
+                                onRefresh={fetchSystemInfo}
+                            />
+                        </TabsContent>
+
+                        <TabsContent
+                            value='diagnostics'
+                            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
+                        >
+                            <DiagnosticsTab nodeId={Number(nodeId)} />
+                        </TabsContent>
+
+                        <TabsContent
+                            value='self-update'
+                            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
+                        >
+                            <SelfUpdateTab
+                                nodeId={Number(nodeId)}
+                                systemData={systemInfo.data}
+                                onRefresh={fetchSystemInfo}
+                            />
+                        </TabsContent>
+
+                        {![
+                            'wings',
+                            'terminal',
+                            'wings-config',
+                            'modules',
+                            'utilization',
+                            'docker',
+                            'system-info',
+                            'diagnostics',
+                            'self-update',
+                        ].includes(activeTab) && (
                             <div className='flex justify-end'>
                                 <Button onClick={() => handleSubmit()} loading={saving}>
                                     <Save className='h-4 w-4 mr-2' />
