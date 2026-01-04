@@ -694,7 +694,8 @@
 			"locations": "Locations",
 			"nodeStatus": "Node Status",
 			"subdomains": "Subdomains",
-			"realms": "Realms",
+			"realms": "Realms (Nests)",
+			"spells": "Spells (Eggs)",
 			"zeroTrust": "ZeroTrust Security",
 			"images": "Images",
 			"mailTemplates": "Mail Templates",
@@ -3472,6 +3473,7 @@
 			"import": "Import Spell",
 			"export": "Export Spell",
 			"browse_marketplace": "Browse Marketplace",
+			"viewall": "View All Spells",
 			"search_placeholder": "Search by name, description, or author...",
 			"no_results": "No spells found",
 			"table": {

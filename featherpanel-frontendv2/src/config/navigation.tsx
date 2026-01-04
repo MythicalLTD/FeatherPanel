@@ -61,6 +61,7 @@ import {
     Upload,
     Clock,
     Folder,
+    Sparkles,
 } from 'lucide-react';
 import { isEnabled } from '@/lib/utils';
 
@@ -172,7 +173,7 @@ export const getAdminNavigationItems = (t: TFunction, settings: AppSettings | nu
             group: 'infrastructure',
         },
         {
-            id: 'admin-realms',
+            id: 'admin-realms-parent',
             name: t('navigation.items.realms'),
             title: t('navigation.items.realms'),
             url: '/admin/realms',
@@ -181,6 +182,30 @@ export const getAdminNavigationItems = (t: TFunction, settings: AppSettings | nu
             category: 'admin',
             permission: Permissions.ADMIN_REALMS_VIEW,
             group: 'infrastructure',
+            children: [
+                {
+                    id: 'admin-realms',
+                    name: t('navigation.items.realms'),
+                    title: t('navigation.items.realms'),
+                    url: '/admin/realms',
+                    icon: Newspaper,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_REALMS_VIEW,
+                    group: 'infrastructure',
+                },
+                {
+                    id: 'admin-spells',
+                    name: t('navigation.items.spells'),
+                    title: t('navigation.items.spells'),
+                    url: '/admin/spells',
+                    icon: Sparkles,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_REALMS_VIEW,
+                    group: 'infrastructure',
+                },
+            ],
         },
         {
             id: 'admin-featherzerotrust',

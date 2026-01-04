@@ -44,6 +44,7 @@ export interface NavigationItem {
     description?: string;
     group?: string;
     badge?: string;
+    children?: NavigationItem[]; // Optional submenu items
 }
 
 export interface NavigationGroup {

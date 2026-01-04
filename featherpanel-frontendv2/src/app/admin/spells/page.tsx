@@ -63,6 +63,7 @@ import {
     Box,
     Wrench,
     GitBranch,
+    FolderTree,
 } from 'lucide-react';
 
 interface Spell {
@@ -303,6 +304,12 @@ export default function SpellsPage() {
                 icon={Sparkles}
                 actions={
                     <div className='flex items-center gap-2'>
+                        {currentRealm && (
+                            <Button variant='outline' onClick={() => router.push('/admin/spells')}>
+                                <FolderTree className='h-4 w-4 mr-2' />
+                                {t('admin.spells.viewall')}
+                            </Button>
+                        )}
                         <Button variant='outline' onClick={() => router.push('/admin/feathercloud/spells')}>
                             <CloudDownload className='h-4 w-4 mr-2' />
                             {t('admin.spells.browse_marketplace')}

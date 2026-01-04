@@ -30,7 +30,7 @@ SOFTWARE.
 import { Fragment, useState, useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import NextImage from 'next/image';
 import Link from 'next/link';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -67,6 +67,8 @@ function SidebarContent({
 
     // State for collapsed groups, initialized from localStorage
     const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
+    // State for collapsed submenu items
+    const [collapsedSubmenus, setCollapsedSubmenus] = useState<string[]>([]);
 
     // Load collapsed groups from localStorage on mount
     useEffect(() => {
@@ -76,6 +78,15 @@ function SidebarContent({
                 setCollapsedGroups(JSON.parse(saved));
             } catch (e) {
                 console.error('Failed to parse collapsed groups', e);
+            }
+        }
+
+        const savedSubmenus = localStorage.getItem('featherpanel_collapsed_submenus');
+        if (savedSubmenus) {
+            try {
+                setCollapsedSubmenus(JSON.parse(savedSubmenus));
+            } catch (e) {
+                console.error('Failed to parse collapsed submenus', e);
             }
         }
     }, []);
@@ -88,6 +99,16 @@ function SidebarContent({
 
         setCollapsedGroups(newCollapsed);
         localStorage.setItem('featherpanel_collapsed_groups', JSON.stringify(newCollapsed));
+    };
+
+    // Toggle submenu collapsed state
+    const toggleSubmenu = (itemId: string) => {
+        const newCollapsed = collapsedSubmenus.includes(itemId)
+            ? collapsedSubmenus.filter((id) => id !== itemId)
+            : [...collapsedSubmenus, itemId];
+
+        setCollapsedSubmenus(newCollapsed);
+        localStorage.setItem('featherpanel_collapsed_submenus', JSON.stringify(newCollapsed));
     };
 
     const isActive = (href: string) => {
@@ -224,6 +245,97 @@ function SidebarContent({
                                     const active = isActive(item.url);
                                     const Icon = item.icon;
                                     const isPluginAction = !!item.pluginJs;
+                                    const hasChildren = item.children && item.children.length > 0;
+                                    const isSubmenuCollapsed = collapsedSubmenus.includes(item.id);
+
+                                    // If item has children, render as expandable submenu
+                                    if (hasChildren) {
+                                        return (
+                                            <div key={item.id}>
+                                                <button
+                                                    onClick={() => toggleSubmenu(item.id)}
+                                                    className={cn(
+                                                        'group flex items-center w-full rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+                                                        'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                                                        collapsed && !mobile ? 'justify-center' : 'gap-3',
+                                                    )}
+                                                    title={collapsed && !mobile ? item.name : undefined}
+                                                >
+                                                    {typeof Icon === 'string' ? (
+                                                        <span
+                                                            className={cn(
+                                                                'shrink-0 flex items-center justify-center text-lg',
+                                                                collapsed && !mobile ? 'h-6 w-6' : 'h-5 w-5',
+                                                            )}
+                                                        >
+                                                            {Icon}
+                                                        </span>
+                                                    ) : (
+                                                        <Icon
+                                                            className={cn(
+                                                                'shrink-0 transition-transform group-hover:scale-110',
+                                                                collapsed && !mobile ? 'h-6 w-6' : 'h-5 w-5',
+                                                            )}
+                                                        />
+                                                    )}
+
+                                                    {(!collapsed || mobile) && (
+                                                        <span className='truncate flex-1 text-left'>{item.name}</span>
+                                                    )}
+
+                                                    {(!collapsed || mobile) && (
+                                                        <ChevronDown
+                                                            className={cn(
+                                                                'h-4 w-4 transition-transform duration-200',
+                                                                !isSubmenuCollapsed && 'rotate-180',
+                                                            )}
+                                                        />
+                                                    )}
+                                                </button>
+
+                                                {/* Render children */}
+                                                <div
+                                                    className={cn(
+                                                        'ml-4 space-y-1 transition-all duration-200 overflow-hidden',
+                                                        isSubmenuCollapsed || (collapsed && !mobile)
+                                                            ? 'max-h-0 opacity-0'
+                                                            : 'max-h-[500px] opacity-100 mt-1',
+                                                    )}
+                                                >
+                                                    {item.children?.map((child) => {
+                                                        const childActive = isActive(child.url);
+                                                        const ChildIcon = child.icon;
+
+                                                        return (
+                                                            <Link
+                                                                key={child.id}
+                                                                href={child.url}
+                                                                onClick={() => {
+                                                                    if (mobile) setMobileOpen(false);
+                                                                }}
+                                                                className={cn(
+                                                                    'group flex items-center w-full rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                                                                    childActive
+                                                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                                                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                                                                    'gap-3',
+                                                                )}
+                                                            >
+                                                                {typeof ChildIcon === 'string' ? (
+                                                                    <span className='shrink-0 flex items-center justify-center text-lg h-4 w-4'>
+                                                                        {ChildIcon}
+                                                                    </span>
+                                                                ) : (
+                                                                    <ChildIcon className='shrink-0 h-4 w-4' />
+                                                                )}
+                                                                <span className='truncate'>{child.name}</span>
+                                                            </Link>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
 
                                     if (isPluginAction) {
                                         return (
