@@ -1,12 +1,4 @@
 {
-	"common": {
-		"back": "Back",
-		"save": "Save",
-		"cancel": "Cancel",
-		"loading": "Loading...",
-		"unknown": "Unknown",
-		"nA": "N/A"
-	},
 	"auth": {
 		"login": {
 			"title": "Welcome back",
@@ -152,12 +144,16 @@
 		"processing": "Processing...",
 		"unknown": "Unknown",
 		"confirm_action": "Are you sure you want to perform this action?",
+		"normal": "Normal",
+		"banned": "Banned",
 		"details": "Details",
 		"no": "No",
 		"yes": "Yes",
 		"preview": "Preview",
-		"banned": "Banned",
-		"normal": "Normal"
+		"actions": "Actions",
+		"pagination": {
+			"showing": "Showing {from} - {to} of {total} results"
+		}
 	},
 	"branding": {
 		"running_on": "Running on {name} {version}",
@@ -2023,17 +2019,24 @@
 				"select_location": "Select a location",
 				"submit_create": "Create Node",
 				"submit_save": "Save Changes",
-				"wings": {
-					"config_title": "Wings Configuration",
-					"config_help": "This configuration file should be saved as /etc/featherpanel/config.yml on your Wings daemon.",
-					"copy_config": "Copy Config",
-					"reset_key": "Request Master Daemon Reset Key",
-					"confirm_reset_key": "Confirm Reset Key",
-					"reset_key_success": "Master daemon reset key requested successfully",
-					"reset_key_failed": "Failed to request reset key",
-					"config_copied": "Wings configuration copied to clipboard",
-					"copy_failed": "Failed to copy configuration"
-				}
+				"name_required": "Name is required",
+				"fqdn_required": "FQDN is required",
+				"fqdn_invalid": "Invalid FQDN format",
+				"location_required": "Location is required",
+				"daemon_base_required": "Daemon base path is required",
+				"ipv4_invalid": "Invalid IPv4 address",
+				"ipv6_invalid": "Invalid IPv6 address"
+			},
+			"wings": {
+				"config_title": "Wings Configuration",
+				"config_help": "This configuration file should be saved as /etc/featherpanel/config.yml on your Wings daemon.",
+				"copy_config": "Copy Config",
+				"reset_key": "Request Master Daemon Reset Key",
+				"confirm_reset_key": "Confirm Reset Key",
+				"reset_key_success": "Master daemon reset key requested successfully",
+				"reset_key_failed": "Failed to request reset key",
+				"config_copied": "Wings configuration copied to clipboard",
+				"copy_failed": "Failed to copy configuration"
 			},
 			"columns": {
 				"status": "Status",
@@ -2071,6 +2074,78 @@
 					"title": "About Wings (the daemon)",
 					"p1": "Wings is the daemon FeatherPanel uses to communicate with your Docker host. It knows how to schedule, deploy, and manage containers securely and reliably, so your servers start, stop, and scale where and how you expect.",
 					"p2": "By pairing locations and nodes with Wings, you get a clean separation of regions and infrastructure, plus predictable deployments with health checks, resource limits, and streamlined container management."
+				}
+			},
+			"allocations": {
+				"title": "Allocations",
+				"description": "Managing allocations for node: {name}",
+				"search_placeholder": "Search allocations...",
+				"create_allocation": "Create Allocation",
+				"delete_unused": "Delete Unused",
+				"delete_selected": "Delete Selected",
+				"ip_address": "IP Address",
+				"port": "Port",
+				"ip_alias": "IP Alias",
+				"server": "Server",
+				"notes": "Notes",
+				"assigned": "Assigned",
+				"available": "Available",
+				"view_details": "View allocation details",
+				"edit_allocation": "Edit allocation",
+				"delete_allocation": "Delete allocation",
+				"confirm_deletion": "Confirm deletion",
+				"confirm_bulk_delete_title": "Delete Selected Allocations?",
+				"confirm_bulk_delete_description": "Are you sure you want to delete {count} allocation(s)? Allocations that are assigned to servers will be skipped. This action cannot be undone.",
+				"confirm_delete_unused_title": "Delete Unused Allocations?",
+				"confirm_delete_unused_description": "Delete unused allocations that are not assigned to any server. Optionally filter by IP address (subnet) to delete only allocations from a specific IP. This action cannot be undone.",
+				"delete_unused_ip_filter": "IP Address (Optional)",
+				"delete_unused_ip_help": "Leave empty to delete all unused allocations, or enter a specific IP to delete only allocations from that subnet/IP.",
+				"help": {
+					"what_are_allocations": "What are Allocations?",
+					"what_are_allocations_text": "Allocations are IP:Port pairs a node uses to host servers. Each server needs an allocation to run and accept traffic.",
+					"what_you_will_need": "What you’ll need",
+					"what_you_will_need_ip": "IP address (from your node)",
+					"what_you_will_need_port": "Port or port range (e.g., 25565 or 25565-25600)",
+					"what_you_will_need_alias": "IP alias (optional) for friendly hostname",
+					"what_you_will_need_notes": "Notes (optional) for admin context",
+					"popular_game_ranges": "Popular game ranges (examples)",
+					"recommendation": "Recommendation: pre-create generous ranges (e.g., 25565-25900) to avoid running out during peak times.",
+					"protocols_and_firewall": "Protocols & Firewall",
+					"protocols_and_firewall_text": "Allocations are TCP/UDP by default. If you’re using a firewall other than iptables, ensure these ports are allowed on both protocols. For reverse proxies or DDoS protection layers, open/forward the same ranges there too."
+				},
+				"create": {
+					"title": "Create Allocation",
+					"description": "Fill in the details to create a new allocation.",
+					"mode": "Creation Mode",
+					"manual": "Manual",
+					"preset": "Preset",
+					"manual_help": "Manually specify port range",
+					"preset_help": "Use game presets for quick setup",
+					"game_preset": "Game Preset",
+					"select_preset": "Select a game preset",
+					"port_count": "Number of Ports",
+					"include_default": "Include Default Port?",
+					"include_default_help": "Include port {port} in the range",
+					"exclude_default_help": "Start from port {port} (exclude {default})",
+					"port_range_help": "Enter a single port (e.g., 25565) or a range (e.g., 25565-25700) to create multiple allocations at once."
+				},
+				"edit": {
+					"title": "Edit Allocation",
+					"description": "Edit details for allocation: {ip}:{port}"
+				},
+				"no_results": "No allocations found matching your search.",
+				"messages": {
+					"fetch_failed": "Failed to fetch allocations",
+					"create_success": "Allocations created successfully",
+					"create_failed": "Failed to create allocations",
+					"update_success": "Allocation updated successfully",
+					"update_failed": "Failed to update allocation",
+					"delete_success": "Allocation deleted successfully",
+					"delete_failed": "Failed to delete allocation",
+					"bulk_delete_success": "Selected allocations deleted successfully",
+					"bulk_delete_failed": "Failed to delete selected allocations",
+					"delete_unused_success": "Unused allocations deleted successfully",
+					"delete_unused_failed": "Failed to delete unused allocations"
 				}
 			},
 			"messages": {
