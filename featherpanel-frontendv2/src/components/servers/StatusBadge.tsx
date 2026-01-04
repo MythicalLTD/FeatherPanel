@@ -49,7 +49,7 @@ export function StatusBadge({ status, t }: StatusBadgeProps) {
                 colors[status as keyof typeof colors] || colors.stopped,
             )}
         >
-            <span className={cn('h-2 w-2 rounded-full', getStatusDotColor(status).replace('bg-', 'bg-'))} />
+            <span className={cn('h-2 w-2 rounded-full', getStatusDotColor(status))} />
             {displayStatus}
         </span>
     );
