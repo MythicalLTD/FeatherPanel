@@ -692,6 +692,7 @@
 			"notifications": "Notifications",
 			"servers": "Servers",
 			"locations": "Locations",
+			"nodes": "Nodes",
 			"nodeStatus": "Node Status",
 			"subdomains": "Subdomains",
 			"realms": "Realms (Nests)",
@@ -1886,6 +1887,68 @@
 					"item1": "Always follow the principle of least privilege.",
 					"item2": "Avoid giving 'admin' permissions to untrusted roles.",
 					"item3": "Regularly audit role assignments and permissions."
+				}
+			}
+		},
+		"locations": {
+			"title": "Locations",
+			"subtitle": "Manage all locations in your system.",
+			"create": "Create Location",
+			"search_placeholder": "Search by name or country...",
+			"no_results": "No locations found",
+			"create_description": "Create your first location to get started",
+			"messages": {
+				"fetch_failed": "Failed to fetch locations",
+				"fetch_details_failed": "Failed to fetch location details",
+				"created": "Location created successfully",
+				"create_failed": "Failed to create location",
+				"updated": "Location updated successfully",
+				"update_failed": "Failed to update location",
+				"deleted": "Location deleted successfully",
+				"delete_failed": "Failed to delete location",
+				"country_codes_failed": "Failed to load country codes"
+			},
+			"form": {
+				"create_title": "Create Location",
+				"create_description": "Fill in the details to create a new location.",
+				"edit_title": "Edit Location",
+				"edit_description": "Edit details for location: {name}",
+				"view_title": "Location Info",
+				"view_description": "Viewing details for location: {name}",
+				"name": "Name",
+				"name_required": "Name is required",
+				"description": "Description",
+				"flag": "Country Flag (Optional)",
+				"flag_none": "None",
+				"created_at": "Created At",
+				"updated_at": "Updated At"
+			},
+			"actions": {
+				"view": "View location details",
+				"edit": "Edit location",
+				"delete": "Delete location",
+				"view_nodes": "View location nodes",
+				"confirm_delete": "Confirm deletion",
+				"cancel_delete": "Cancel deletion"
+			},
+			"help": {
+				"what": {
+					"title": "What are Locations?",
+					"description": "Locations group nodes by geography or purpose. Keep your infrastructure organized and easy to navigate across regions and data centers."
+				},
+				"examples": {
+					"title": "Examples",
+					"usa": "USA",
+					"usa_desc": "nodes where Wings runs for US servers",
+					"romania": "Romania",
+					"romania_desc": "nodes where Romanian servers run",
+					"naming": "Use specific names like USA-East, USA-West, or Romania-Bucharest for clarity."
+				},
+				"getting_started": {
+					"title": "Getting Started",
+					"step1": "Click Create Location above to add your first location.",
+					"step2": "After creating, a Nodes button appears next to row actions.",
+					"step3": "Click Nodes to add and manage nodes for that location."
 				}
 			}
 		},
