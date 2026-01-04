@@ -92,6 +92,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <html lang='en' suppressHydrationWarning>
             <head>
                 <meta name='author' content='FeatherPanel' />
+                <script
+                    defer
+                    src='https://dynhost.mythical.systems/script.js'
+                    data-website-id='71281b01-8c95-4fac-9f58-6d68aac179d7'
+                ></script>
                 <noscript
                     dangerouslySetInnerHTML={{
                         __html: `<!-- FEATHERPANEL_HEADER_PLACEHOLDER_START -->\n<!-- FEATHERPANEL_HEADER_PLACEHOLDER_END -->`,
