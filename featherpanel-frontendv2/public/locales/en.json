@@ -2584,6 +2584,7 @@
 				"wizard": {
 					"step": "Step {current} of {total}",
 					"next": "Next",
+					"submitting": "Submitting...",
 					"previous": "Previous",
 					"review_create": "Review & Create",
 					"step1_title": "Owner & Core Details",
@@ -2598,7 +2599,44 @@
 					"step5_subtitle": "Set limits for databases, allocations, and backups",
 					"step6_title": "Review & Create",
 					"step6_subtitle": "Review your configuration and create the server",
-					"validation_error": "Please complete all required fields before proceeding"
+					"validation_error": "Please complete all required fields before proceeding",
+					"creating": "Creating...",
+					"review": {
+						"core_details": "Core Details",
+						"server_name": "Server Name",
+						"owner": "Owner",
+						"description": "Description",
+						"allocation": "Allocation",
+						"location": "Location",
+						"node": "Node",
+						"application": "Application",
+						"realm": "Realm",
+						"spell": "Spell",
+						"docker_image": "Docker Image",
+						"resource_limits": "Resource Limits",
+						"memory": "Memory",
+						"swap": "Swap",
+						"disk": "Disk",
+						"cpu": "CPU",
+						"feature_limits": "Feature Limits",
+						"databases": "Databases",
+						"allocations": "Allocations",
+						"backups": "Backups",
+						"startup_command": "Startup Command",
+						"unlimited": "∞ Unlimited",
+						"disabled": "Disabled",
+						"no_value": "—"
+					},
+					"validation": {
+						"name_required": "Server name is required",
+						"owner_required": "Server owner is required",
+						"location_required": "Location is required",
+						"node_required": "Node is required",
+						"allocation_required": "Allocation is required",
+						"realm_required": "Realm is required",
+						"spell_required": "Spell is required",
+						"docker_image_required": "Docker image is required"
+					}
 				}
 			}
 		},

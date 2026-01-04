@@ -37,7 +37,7 @@ class PluginRequiredConfigsTest extends TestCase
     protected function setUp(): void
     {
         if (!defined('APP_DEBUG')) {
-            define('APP_DEBUG', false);
+            define('APP_DEBUG', true);
         }
         if (!defined('APP_ADDONS_DIR')) {
             define('APP_ADDONS_DIR', dirname(__DIR__, 2) . '/storage/addons');

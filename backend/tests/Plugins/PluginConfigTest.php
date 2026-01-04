@@ -37,7 +37,7 @@ class PluginConfigTest extends TestCase
     protected function setUp(): void
     {
         if (!defined('APP_DEBUG')) {
-            define('APP_DEBUG', false);
+            define('APP_DEBUG', true);
         }
         App::getInstance(false, true, true);
     }

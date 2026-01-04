@@ -39,7 +39,7 @@ class LoggerFactoryTest extends TestCase
     {
         // Define APP_DEBUG if not already defined
         if (!defined('APP_DEBUG')) {
-            define('APP_DEBUG', false);
+            define('APP_DEBUG', true);
         }
 
         $this->testLogFile = sys_get_temp_dir() . '/test_logger_' . uniqid() . '.log';
