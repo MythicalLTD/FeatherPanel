@@ -142,6 +142,38 @@ export default function NodesPage() {
         fetchLocations();
     }, []);
 
+    // Redirect to locations if no location_id
+    useEffect(() => {
+        if (!loading && nodes.length === 0 && !locationIdFilter && !debouncedSearchQuery) {
+            router.replace('/admin/locations');
+        }
+    }, [loading, nodes.length, locationIdFilter, debouncedSearchQuery, router]);
+
+    const checkNodeHealth = useCallback(async (nodeId: number) => {
+        try {
+            const { data } = await axios.get(`/api/wings/admin/node/${nodeId}/system`);
+            setNodeHealth((prev) => ({ ...prev, [nodeId]: data.success ? 'online' : 'offline' }));
+        } catch (error) {
+            console.error(`Error checking health for node ${nodeId}:`, error);
+            setNodeHealth((prev) => ({ ...prev, [nodeId]: 'offline' }));
+        }
+    }, []);
+
+    const checkAllNodesHealth = useCallback(
+        async (nodesToCheck: Node[]) => {
+            setIsCheckingHealth(true);
+            try {
+                await Promise.all(nodesToCheck.map((node) => checkNodeHealth(node.id)));
+            } catch (error) {
+                console.error('Error checking all nodes health:', error);
+                toast.error(t('admin.node.messages.health_check_failed'));
+            } finally {
+                setIsCheckingHealth(false);
+            }
+        },
+        [checkNodeHealth, t],
+    );
+
     const fetchNodes = useCallback(async () => {
         setLoading(true);
         try {
@@ -154,7 +186,8 @@ export default function NodesPage() {
                 },
             });
 
-            setNodes(data.data.nodes || []);
+            const fetchedNodes = data.data.nodes || [];
+            setNodes(fetchedNodes);
             const apiPagination = data.data.pagination;
             setPagination({
                 page: apiPagination.current_page,
@@ -164,40 +197,22 @@ export default function NodesPage() {
                 hasNext: apiPagination.has_next,
                 hasPrev: apiPagination.has_prev,
             });
+
+            // Auto-check health after fetching nodes
+            if (fetchedNodes.length > 0) {
+                checkAllNodesHealth(fetchedNodes);
+            }
         } catch (error) {
             console.error('Error fetching nodes:', error);
             toast.error(t('admin.node.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, locationIdFilter, t]);
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, locationIdFilter, t, checkAllNodesHealth]);
 
     useEffect(() => {
         fetchNodes();
     }, [fetchNodes, refreshKey]);
-
-    const checkNodeHealth = async (nodeId: number) => {
-        try {
-            const { data } = await axios.get(`/api/admin/nodes/${nodeId}/health`);
-            setNodeHealth((prev) => ({ ...prev, [nodeId]: data.data.status }));
-        } catch (error) {
-            console.error(`Error checking health for node ${nodeId}:`, error);
-            setNodeHealth((prev) => ({ ...prev, [nodeId]: 'unhealthy' }));
-        }
-    };
-
-    const checkAllNodesHealth = async () => {
-        setIsCheckingHealth(true);
-        try {
-            await Promise.all(nodes.map((node) => checkNodeHealth(node.id)));
-            toast.success(t('admin.node.messages.health_check_complete'));
-        } catch (error) {
-            console.error('Error checking all nodes health:', error);
-            toast.error(t('admin.node.messages.health_check_failed'));
-        } finally {
-            setIsCheckingHealth(false);
-        }
-    };
 
     const handleDelete = (id: number) => {
         setConfirmDeleteId(id);
@@ -248,7 +263,7 @@ export default function NodesPage() {
                             variant='outline'
                             size='sm'
                             loading={isCheckingHealth}
-                            onClick={checkAllNodesHealth}
+                            onClick={() => checkAllNodesHealth(nodes)}
                             title={t('admin.node.health.refresh')}
                         >
                             <RefreshCw className='h-4 w-4' />
@@ -295,9 +310,9 @@ export default function NodesPage() {
                             {
                                 label: t(`admin.node.health.${health}`),
                                 className:
-                                    health === 'healthy'
+                                    health === 'online'
                                         ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                                        : health === 'unhealthy'
+                                        : health === 'offline'
                                           ? 'bg-red-500/10 text-red-500 border-red-500/20'
                                           : 'bg-muted text-muted-foreground',
                             },
