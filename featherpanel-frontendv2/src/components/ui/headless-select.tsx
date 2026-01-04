@@ -104,7 +104,7 @@ export function HeadlessSelect({
                     leaveFrom='opacity-100 translate-y-0 scale-100'
                     leaveTo='opacity-0 translate-y-2 scale-95'
                 >
-                    <Listbox.Options className='absolute mt-2 max-h-60 w-full overflow-auto rounded-2xl bg-popover/80 backdrop-blur-3xl border border-white/10 dark:border-white/5 py-1 text-base shadow-[0_20px_50px_rgba(0,0,0,0.3)] focus:outline-none sm:text-sm z-50 custom-scrollbar p-1.5 animate-in fade-in zoom-in-95 duration-200'>
+                    <Listbox.Options className='absolute mt-2 max-h-60 w-full overflow-auto rounded-2xl bg-popover/80 backdrop-blur-3xl border border-white/10 dark:border-white/5 py-1 text-base shadow-[0_20px_50px_rgba(0,0,0,0.3)] focus:outline-none sm:text-sm z-50 custom-scrollbar p-1.5 '>
                         {options.map((option) => (
                             <Listbox.Option
                                 key={option.id}

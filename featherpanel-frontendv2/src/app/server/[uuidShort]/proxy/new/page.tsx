@@ -214,7 +214,7 @@ export default function CreateProxyPage() {
     }
 
     return (
-        <div className='max-w-6xl mx-auto space-y-8 pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700'>
+        <div className='max-w-6xl mx-auto space-y-8 pb-16 '>
             <WidgetRenderer widgets={getWidgets('server-proxy-new', 'top-of-page')} />
             {/* Navigation Header */}
             <PageHeader

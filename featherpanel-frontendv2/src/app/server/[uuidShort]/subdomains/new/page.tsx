@@ -172,7 +172,7 @@ export default function CreateSubdomainPage() {
     }
 
     return (
-        <div className='max-w-6xl mx-auto space-y-8 pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700'>
+        <div className='max-w-6xl mx-auto space-y-8 pb-16 '>
             <WidgetRenderer widgets={getWidgets('server-subdomains-new', 'top-of-page')} />
             <PageHeader
                 title={t('serverSubdomains.createButton')}

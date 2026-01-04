@@ -169,7 +169,7 @@ export default function FeatherAiAgentPage() {
     const providerValue = String(getSettingValue('chatbot_ai_provider'));
 
     return (
-        <div className='min-h-screen space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700'>
+        <div className='min-h-screen space-y-8 pb-12 '>
             <PageHeader
                 title={t('admin.featherai_agent.title')}
                 description={t('admin.featherai_agent.subtitle')}

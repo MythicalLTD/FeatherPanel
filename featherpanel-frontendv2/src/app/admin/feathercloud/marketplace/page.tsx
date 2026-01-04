@@ -38,7 +38,7 @@ export default function MarketplacePage() {
     const router = useRouter();
 
     return (
-        <div className='space-y-8 animate-in fade-in duration-500'>
+        <div className='space-y-8 '>
             {/* Header section */}
             <PageHeader
                 title={t('admin.marketplace.title')}

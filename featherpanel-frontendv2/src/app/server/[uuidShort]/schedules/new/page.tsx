@@ -128,7 +128,7 @@ export default function CreateSchedulePage() {
     }
 
     return (
-        <div className='max-w-4xl mx-auto space-y-8 pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700'>
+        <div className='max-w-4xl mx-auto space-y-8 pb-16 '>
             {/* Navigation Header */}
             <PageHeader
                 title={t('serverSchedules.createSchedule')}

@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
     const isVisible = (widgetId: string) => !hiddenWidgets.includes(widgetId) || isCustomizing;
 
     return (
-        <div className='space-y-8 animate-in fade-in duration-700'>
+        <div className='space-y-8 '>
             {/* Plugin Widgets: Top of Page */}
             <WidgetRenderer widgets={getWidgets('admin-home', 'top-of-page')} />
 

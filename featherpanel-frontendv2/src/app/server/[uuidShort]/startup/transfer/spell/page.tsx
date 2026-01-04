@@ -574,7 +574,7 @@ export default function ServerTransferSpellPage() {
             <div className='relative min-h-[400px]'>
                 {/* Step 1: Realm Selection */}
                 {currentStep === 1 && (
-                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700'>
+                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 '>
                         {loadingRealms ? (
                             <div className='col-span-full flex items-center justify-center py-12'>
                                 <Loader2 className='h-8 w-8 animate-spin text-primary opacity-50' />
@@ -614,7 +614,7 @@ export default function ServerTransferSpellPage() {
 
                 {/* Step 2: Spell Selection */}
                 {currentStep === 2 && (
-                    <div className='space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700'>
+                    <div className='space-y-8 '>
                         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                             {loadingSpells ? (
                                 <div className='col-span-full flex items-center justify-center py-12'>
@@ -666,7 +666,7 @@ export default function ServerTransferSpellPage() {
 
                 {/* Step 3: Variable Configuration */}
                 {currentStep === 3 && targetSpell && (
-                    <div className='space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700'>
+                    <div className='space-y-8 '>
                         <div className='bg-orange-500/5 border border-orange-500/10 rounded-3xl p-8 shadow-xl'>
                             <div className='flex items-start gap-6'>
                                 <div className='h-14 w-14 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shrink-0 shadow-lg shadow-orange-500/5'>

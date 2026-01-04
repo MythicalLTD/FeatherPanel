@@ -206,7 +206,7 @@ export default function TicketCategoriesPage() {
     );
 
     return (
-        <div className='p-6 space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-700'>
+        <div className='p-6 space-y-8 max-w-[1600px] mx-auto '>
             <PageHeader
                 title={t('admin.tickets.categories.title')}
                 description={t('admin.tickets.categories.description')}
