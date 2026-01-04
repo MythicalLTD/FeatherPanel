@@ -24,7 +24,7 @@
                             <span>{{ t('serverFirewall.refresh') }}</span>
                         </Button>
                         <Button
-                            v-if="canManageFirewall && firewallEnabled"
+                            v-if="firewallEnabled"
                             size="sm"
                             :disabled="loading"
                             class="flex items-center gap-2"
@@ -34,7 +34,7 @@
                             <span>{{ t('serverFirewall.createRule') }}</span>
                         </Button>
                         <Button
-                            v-if="canManageFirewall && firewallEnabled"
+                            v-if="firewallEnabled"
                             variant="secondary"
                             size="sm"
                             :disabled="syncing || loading"
@@ -104,7 +104,7 @@
                         </p>
                     </div>
                     <Button
-                        v-if="canManageFirewall && firewallEnabled"
+                        v-if="firewallEnabled"
                         size="lg"
                         class="gap-2 shadow-lg"
                         @click="openCreateDrawer"
@@ -186,7 +186,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div v-if="canManageFirewall" class="flex flex-wrap items-center gap-2">
+                                <div class="flex flex-wrap items-center gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -386,7 +386,6 @@ import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import type { BreadcrumbEntry } from '@/layouts/DashboardLayout.vue';
-import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -408,7 +407,6 @@ import { Info, Shield, ShieldCheck, RefreshCw, Plus, Pencil, Trash2, CheckCircle
 const route = useRoute();
 const { t } = useI18n();
 const toast = useToast();
-const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
 
 const serverUuid = computed(() => route.params.uuidShort as string);
@@ -510,10 +508,6 @@ const errors = reactive<{
 
 const editingRuleId = ref<number | null>(null);
 
-const canManageFirewall = computed<boolean>(() => {
-    // Use dedicated firewall manage permission when available
-    return sessionStore.hasPermission('firewall.manage') || sessionStore.hasPermission('allocation.update');
-});
 
 const sortedRules = computed<FirewallRule[]>(() =>
     [...rules.value].sort((a, b) => {

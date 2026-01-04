@@ -52,7 +52,7 @@ SOFTWARE.
                             <span>{{ t('common.refresh') }}</span>
                         </Button>
                         <Button
-                            v-if="canManageImport && importEnabled"
+                            v-if="importEnabled"
                             size="sm"
                             :disabled="saving"
                             class="flex items-center gap-2"
@@ -123,7 +123,7 @@ SOFTWARE.
                         </p>
                     </div>
                     <Button
-                        v-if="canManageImport && importEnabled"
+                        v-if="importEnabled"
                         size="lg"
                         class="gap-2 shadow-lg"
                         :disabled="saving"
@@ -453,7 +453,6 @@ import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import type { BreadcrumbEntry } from '@/layouts/DashboardLayout.vue';
 import { useToast } from 'vue-toastification';
-import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import { useServerContext } from '@/composables/useServerContext';
 import { Button } from '@/components/ui/button';
@@ -487,7 +486,6 @@ import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 const route = useRoute();
 const { t } = useI18n();
 const toast = useToast();
-const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
 const { currentServer } = useServerContext();
 
@@ -553,10 +551,6 @@ const errors = reactive<{
     password: '',
     sourceLocation: '',
     destinationLocation: '',
-});
-
-const canManageImport = computed<boolean>(() => {
-    return sessionStore.hasPermission('import.manage');
 });
 
 // Plugin widgets

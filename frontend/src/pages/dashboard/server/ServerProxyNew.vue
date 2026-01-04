@@ -53,7 +53,7 @@ SOFTWARE.
                             <span>Refresh</span>
                         </Button>
                         <Button
-                            v-if="canManageProxy && proxyEnabled"
+                            v-if="proxyEnabled"
                             size="sm"
                             :disabled="loading || isMaxProxiesReached"
                             class="flex items-center gap-2"
@@ -123,7 +123,7 @@ SOFTWARE.
                         </p>
                     </div>
                     <Button
-                        v-if="canManageProxy && proxyEnabled"
+                        v-if="proxyEnabled"
                         size="lg"
                         class="gap-2 shadow-lg"
                         :disabled="isMaxProxiesReached"
@@ -201,7 +201,7 @@ SOFTWARE.
                                         </div>
                                     </div>
                                 </div>
-                                <div v-if="canManageProxy" class="flex flex-wrap items-center gap-2">
+                                <div class="flex flex-wrap items-center gap-2">
                                     <Button
                                         variant="destructive"
                                         size="sm"
@@ -501,7 +501,6 @@ import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import type { BreadcrumbEntry } from '@/layouts/DashboardLayout.vue';
 import { useToast } from 'vue-toastification';
-import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
@@ -525,7 +524,6 @@ import { Info, ArrowRightLeft, Plus, Network, CheckCircle, AlertTriangle, Trash2
 
 const route = useRoute();
 const toast = useToast();
-const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
 
 const serverUuid = computed(() => route.params.uuidShort as string);
@@ -623,10 +621,6 @@ const errors = reactive<{
     client_email: '',
     ssl_cert: '',
     ssl_key: '',
-});
-
-const canManageProxy = computed<boolean>(() => {
-    return sessionStore.hasPermission('proxy.manage');
 });
 
 const isMaxProxiesReached = computed<boolean>(() => {
