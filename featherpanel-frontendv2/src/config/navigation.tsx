@@ -152,8 +152,8 @@ export const getAdminNavigationItems = (t: TFunction, settings: AppSettings | nu
         },
         {
             id: 'admin-locations-parent',
-            name: t('navigation.items.locations'),
-            title: t('navigation.items.locations'),
+            name: t('navigation.items.locations_and_nodes'),
+            title: t('navigation.items.locations_and_nodes'),
             url: '/admin/locations',
             icon: Globe,
             isActive: false,

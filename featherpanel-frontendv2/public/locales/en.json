@@ -705,6 +705,7 @@
 			"roles": "Roles",
 			"notifications": "Notifications",
 			"servers": "Servers",
+			"locations_and_nodes": "Locations & Nodes",
 			"locations": "Locations",
 			"nodes": "Nodes",
 			"nodeStatus": "Node Status",
