@@ -2096,6 +2096,8 @@
 				"create_allocation": "Create Allocation",
 				"delete_unused": "Delete Unused",
 				"delete_selected": "Delete Selected",
+				"assign_failed": "Failed to assign allocation",
+				"assign_success": "Allocation assigned successfully",
 				"ip_address": "IP Address",
 				"port": "Port",
 				"ip_alias": "IP Alias",
@@ -2710,6 +2712,8 @@
 					"can_add": "Can add more",
 					"limit_reached": "Limit reached",
 					"no_alias": "No alias",
+					"assign_failed": "Failed to assign allocation",
+					"assign_success": "Allocation assigned successfully",
 					"add": "Add Allocation",
 					"delete_success": "Allocation removed successfully",
 					"delete_failed": "Failed to remove allocation"
