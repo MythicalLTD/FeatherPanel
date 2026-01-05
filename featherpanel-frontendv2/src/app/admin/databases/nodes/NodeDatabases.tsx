@@ -53,6 +53,8 @@ import {
     Activity,
     Server,
 } from 'lucide-react';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Database {
     id: number;
@@ -84,10 +86,12 @@ interface Pagination {
 
 interface NodeDatabasesProps {
     nodeId?: number;
+    slug?: string;
 }
 
-export function NodeDatabases({ nodeId }: NodeDatabasesProps) {
+export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDatabasesProps) {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets(slug);
     const [loading, setLoading] = useState(true);
     const [databases, setDatabases] = useState<Database[]>([]);
     const [node, setNode] = useState<Node | null>(null);
@@ -198,17 +202,8 @@ export function NodeDatabases({ nodeId }: NodeDatabasesProps) {
 
     useEffect(() => {
         fetchDatabases();
-    }, [fetchDatabases, refreshKey]);
-
-    useEffect(() => {
-        if (databases.length > 0) {
-            databases.forEach((db) => {
-                if (db.healthy === undefined) {
-                    handleHealthCheck(db);
-                }
-            });
-        }
-    }, [databases]);
+        fetchWidgets();
+    }, [fetchDatabases, refreshKey, fetchWidgets]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -278,22 +273,35 @@ export function NodeDatabases({ nodeId }: NodeDatabasesProps) {
         }
     };
 
-    const handleHealthCheck = async (db: Database) => {
-        try {
-            const { data } = await axios.get(`/api/admin/databases/${db.id}/health`);
-            if (data.data.healthy) {
-                toast.success(t('admin.node_databases.messages.health_healthy'));
-                setDatabases((prev) => prev.map((d) => (d.id === db.id ? { ...d, healthy: true } : d)));
-            } else {
+    const handleHealthCheck = useCallback(
+        async (db: Database) => {
+            try {
+                const { data } = await axios.get(`/api/admin/databases/${db.id}/health`);
+                if (data.data.healthy) {
+                    toast.success(t('admin.node_databases.messages.health_healthy'));
+                    setDatabases((prev) => prev.map((d) => (d.id === db.id ? { ...d, healthy: true } : d)));
+                } else {
+                    toast.error(t('admin.node_databases.messages.health_unhealthy'));
+                    setDatabases((prev) => prev.map((d) => (d.id === db.id ? { ...d, healthy: false } : d)));
+                }
+            } catch (error) {
+                console.error('Error checking health:', error);
                 toast.error(t('admin.node_databases.messages.health_unhealthy'));
                 setDatabases((prev) => prev.map((d) => (d.id === db.id ? { ...d, healthy: false } : d)));
             }
-        } catch (error) {
-            console.error('Error checking health:', error);
-            toast.error(t('admin.node_databases.messages.health_unhealthy'));
-            setDatabases((prev) => prev.map((d) => (d.id === db.id ? { ...d, healthy: false } : d)));
+        },
+        [t],
+    );
+
+    useEffect(() => {
+        if (databases.length > 0) {
+            databases.forEach((db) => {
+                if (db.healthy === undefined) {
+                    handleHealthCheck(db);
+                }
+            });
         }
-    };
+    }, [databases, handleHealthCheck]);
 
     const getDefaultPort = (type: string) => {
         switch (type) {
@@ -309,6 +317,7 @@ export function NodeDatabases({ nodeId }: NodeDatabasesProps) {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets(slug, 'top-of-page')} />
             <PageHeader
                 title={
                     nodeId && node
@@ -324,6 +333,8 @@ export function NodeDatabases({ nodeId }: NodeDatabasesProps) {
                     </Button>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets(slug, 'after-header')} />
 
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
@@ -348,6 +359,7 @@ export function NodeDatabases({ nodeId }: NodeDatabasesProps) {
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
+                    <WidgetRenderer widgets={getWidgets(slug, 'before-list')} />
                     {databases.map((db) => (
                         <ResourceCard
                             key={db.id}
@@ -701,6 +713,7 @@ export function NodeDatabases({ nodeId }: NodeDatabasesProps) {
                     )}
                 </div>
             </Sheet>
+            <WidgetRenderer widgets={getWidgets(slug, 'bottom-of-page')} />
         </div>
     );
 }

@@ -52,6 +52,8 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Sheet, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Image {
     id: number;
@@ -103,6 +105,8 @@ export default function ImagesPage() {
     const [processing, setProcessing] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-images');
+
     // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -149,7 +153,8 @@ export default function ImagesPage() {
 
     useEffect(() => {
         fetchImages();
-    }, [fetchImages, refreshKey]);
+        fetchWidgets();
+    }, [fetchImages, refreshKey, fetchWidgets]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -266,6 +271,7 @@ export default function ImagesPage() {
 
     return (
         <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+            <WidgetRenderer widgets={getWidgets('admin-images', 'top-of-page')} />
             <PageHeader
                 title={t('admin.images.title')}
                 description={t('admin.images.subtitle')}
@@ -278,6 +284,8 @@ export default function ImagesPage() {
                 }
             />
 
+            <WidgetRenderer widgets={getWidgets('admin-images', 'after-header')} />
+
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -289,6 +297,8 @@ export default function ImagesPage() {
                     />
                 </div>
             </div>
+
+            <WidgetRenderer widgets={getWidgets('admin-images', 'before-list')} />
 
             <div className='grid grid-cols-1 md:grid-cols-1 gap-4'>
                 {loading ? (
@@ -543,6 +553,7 @@ export default function ImagesPage() {
                     </div>
                 </div>
             </Sheet>
+            <WidgetRenderer widgets={getWidgets('admin-images', 'bottom-of-page')} />
         </div>
     );
 }

@@ -28,6 +28,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import axios from 'axios';
 import {
     BookOpen,
@@ -83,6 +85,8 @@ export default function KnowledgeBaseCategoriesPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-knowledgebase-categories');
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
         pageSize: 10,
@@ -152,8 +156,9 @@ export default function KnowledgeBaseCategoriesPage() {
     }, [pagination.page, pagination.pageSize, searchQuery, t]);
 
     useEffect(() => {
+        fetchWidgets();
         fetchCategories();
-    }, [fetchCategories]);
+    }, [fetchWidgets, fetchCategories]);
 
     const handleIconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -276,6 +281,7 @@ export default function KnowledgeBaseCategoriesPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-knowledgebase-categories', 'top-of-page')} />
             <PageHeader
                 title={t('admin.knowledgebase.categories.title')}
                 description={t('admin.knowledgebase.categories.subtitle')}
@@ -293,6 +299,8 @@ export default function KnowledgeBaseCategoriesPage() {
                 }
             />
 
+            <WidgetRenderer widgets={getWidgets('admin-knowledgebase-categories', 'after-header')} />
+
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -304,6 +312,8 @@ export default function KnowledgeBaseCategoriesPage() {
                     />
                 </div>
             </div>
+
+            <WidgetRenderer widgets={getWidgets('admin-knowledgebase-categories', 'before-list')} />
 
             {loading ? (
                 <TableSkeleton count={5} />
@@ -708,6 +718,8 @@ export default function KnowledgeBaseCategoriesPage() {
                     </SheetFooter>
                 </div>
             </Sheet>
+
+            <WidgetRenderer widgets={getWidgets('admin-knowledgebase-categories', 'bottom-of-page')} />
         </div>
     );
 }

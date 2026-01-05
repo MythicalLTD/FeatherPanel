@@ -28,6 +28,8 @@ SOFTWARE.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -130,6 +132,8 @@ export default function PterodactylImporterPage() {
 
     // Modals
     const [showWarningDialog, setShowWarningDialog] = useState(true);
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-pterodactyl-importer');
     const [showCreateApiKeyModal, setShowCreateApiKeyModal] = useState(false);
     const [newApiKeyName, setNewApiKeyName] = useState('');
     const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
@@ -240,9 +244,10 @@ export default function PterodactylImporterPage() {
     };
 
     useEffect(() => {
+        fetchWidgets();
         fetchPrerequisites();
         fetchApiClients();
-    }, [fetchPrerequisites, fetchApiClients]);
+    }, [fetchPrerequisites, fetchApiClients, fetchWidgets]);
 
     // Cheat code listener
     useEffect(() => {
@@ -277,15 +282,19 @@ export default function PterodactylImporterPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'top-of-page')} />
             <PageHeader
                 title={t('admin.pterodactyl_importer.title')}
                 description={t('admin.pterodactyl_importer.description')}
                 icon={Database}
             />
 
+            <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'after-header')} />
+
             {/* Prerequisites Section */}
             <div className='grid gap-6 md:grid-cols-3'>
                 <div className='md:col-span-2 space-y-6'>
+                    <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'before-content')} />
                     {/* System Requirements */}
                     <PageCard
                         title={t('admin.pterodactyl_importer.prerequisites.title')}
@@ -744,6 +753,8 @@ export default function PterodactylImporterPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'bottom-of-page')} />
         </div>
     );
 }

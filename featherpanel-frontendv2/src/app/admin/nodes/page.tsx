@@ -37,6 +37,8 @@ import { ResourceCard, type ResourceBadge } from '@/components/featherui/Resourc
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import {
     Server,
@@ -116,6 +118,13 @@ export default function NodesPage() {
         hasNext: false,
         hasPrev: false,
     });
+
+    // Plugin Widgets
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-nodes');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     // Debounce search
     useEffect(() => {
@@ -250,6 +259,9 @@ export default function NodesPage() {
 
     return (
         <div className='space-y-6'>
+            {/* Plugin Widgets: Top of Page */}
+            <WidgetRenderer widgets={getWidgets('admin-nodes', 'top-of-page')} />
+
             <PageHeader
                 title={t('admin.node.title')}
                 description={
@@ -277,6 +289,9 @@ export default function NodesPage() {
                 }
             />
 
+            {/* Plugin Widgets: After Header */}
+            <WidgetRenderer widgets={getWidgets('admin-nodes', 'after-header')} />
+
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -288,6 +303,9 @@ export default function NodesPage() {
                     />
                 </div>
             </div>
+
+            {/* Plugin Widgets: Before List */}
+            <WidgetRenderer widgets={getWidgets('admin-nodes', 'before-list')} />
 
             {loading ? (
                 <TableSkeleton count={5} />
@@ -451,6 +469,9 @@ export default function NodesPage() {
                     <p>{t('admin.node.help.wings.p2')}</p>
                 </div>
             </PageCard>
+
+            {/* Plugin Widgets: Bottom of Page */}
+            <WidgetRenderer widgets={getWidgets('admin-nodes', 'bottom-of-page')} />
         </div>
     );
 }

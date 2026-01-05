@@ -42,6 +42,8 @@ import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Sparkles, Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, FolderTree } from 'lucide-react';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Realm {
     id: number;
@@ -63,6 +65,7 @@ interface Pagination {
 export default function RealmsPage() {
     const { t } = useTranslation();
     const router = useRouter();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-realms');
     const [loading, setLoading] = useState(true);
     const [realms, setRealms] = useState<Realm[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -133,7 +136,8 @@ export default function RealmsPage() {
         };
 
         fetchRealms();
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t]);
+        fetchWidgets();
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets]);
 
     // CRUD Operations
     const handleCreate = async (e: React.FormEvent) => {
@@ -200,6 +204,7 @@ export default function RealmsPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-realms', 'top-of-page')} />
             <PageHeader
                 title={t('admin.realms.title')}
                 description={t('admin.realms.subtitle')}
@@ -211,6 +216,8 @@ export default function RealmsPage() {
                     </Button>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-realms', 'after-header')} />
 
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
@@ -235,6 +242,7 @@ export default function RealmsPage() {
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
+                    <WidgetRenderer widgets={getWidgets('admin-realms', 'before-list')} />
                     {realms.map((realm) => (
                         <ResourceCard
                             key={realm.id}
@@ -381,6 +389,7 @@ export default function RealmsPage() {
                     )}
                 </div>
             </Sheet>
+            <WidgetRenderer widgets={getWidgets('admin-realms', 'bottom-of-page')} />
         </div>
     );
 }

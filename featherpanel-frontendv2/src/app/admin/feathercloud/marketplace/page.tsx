@@ -26,8 +26,11 @@ SOFTWARE.
 
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -37,14 +40,25 @@ export default function MarketplacePage() {
     const { t } = useTranslation();
     const router = useRouter();
 
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-feathercloud-marketplace');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     return (
         <div className='space-y-8 '>
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'top-of-page')} />
             {/* Header section */}
             <PageHeader
                 title={t('admin.marketplace.title')}
                 description={t('admin.marketplace.subtitle')}
                 icon={Store}
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'after-header')} />
+
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'before-content')} />
 
             {/* Marketplace Grid */}
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
@@ -101,6 +115,8 @@ export default function MarketplacePage() {
                     </p>
                 </PageCard>
             </div>
+
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'bottom-of-page')} />
         </div>
     );
 }

@@ -37,6 +37,8 @@ import { ResourceCard, type ResourceBadge } from '@/components/featherui/Resourc
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import {
     Server,
@@ -163,9 +165,13 @@ export default function ServersPage() {
         }
     }, [pagination.page, pagination.pageSize, debouncedSearchQuery, t]);
 
+    // Plugin Widgets
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-servers');
+
     useEffect(() => {
+        fetchWidgets();
         fetchServers();
-    }, [fetchServers, refreshKey]);
+    }, [fetchServers, refreshKey, fetchWidgets]);
 
     const handleDelete = (server: ApiServer, hard: boolean = false) => {
         setConfirmDeleteId(server.id);
@@ -317,10 +323,11 @@ export default function ServersPage() {
         return `${cpu}%`;
     };
 
-  
-
     return (
         <div className='space-y-6'>
+            {/* Plugin Widgets: Top of Page */}
+            <WidgetRenderer widgets={getWidgets('admin-servers', 'top-of-page')} />
+
             <PageHeader
                 title={t('admin.servers.title')}
                 description={t('admin.servers.description')}
@@ -333,6 +340,9 @@ export default function ServersPage() {
                 }
             />
 
+            {/* Plugin Widgets: After Header */}
+            <WidgetRenderer widgets={getWidgets('admin-servers', 'after-header')} />
+
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -344,6 +354,9 @@ export default function ServersPage() {
                     />
                 </div>
             </div>
+
+            {/* Plugin Widgets: Before List */}
+            <WidgetRenderer widgets={getWidgets('admin-servers', 'before-list')} />
 
             {loading ? (
                 <TableSkeleton count={5} />
@@ -798,6 +811,9 @@ export default function ServersPage() {
                         </AlertDialogTitle>
                         <AlertDialogDescription>{t('admin.servers.transfer.description')}</AlertDialogDescription>
                     </AlertDialogHeader>
+
+                    {/* Plugin Widgets: Bottom of Page */}
+                    <WidgetRenderer widgets={getWidgets('admin-servers', 'bottom-of-page')} />
 
                     <div className='space-y-6 pt-4'>
                         {/* Server Info Summary */}

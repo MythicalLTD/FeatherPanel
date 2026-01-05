@@ -30,6 +30,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useFeatherCloud, type CreditsData, type TeamData } from '@/hooks/useFeatherCloud';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -125,6 +127,8 @@ export default function PluginsPage() {
     const [installedPluginIds, setInstalledPluginIds] = useState<string[]>([]);
     const [installingOnlineId, setInstallingOnlineId] = useState<string | null>(null);
 
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-feathercloud-plugins');
+
     // Fetch cloud data
     const fetchCloudData = useCallback(async () => {
         try {
@@ -196,10 +200,11 @@ export default function PluginsPage() {
     );
 
     useEffect(() => {
+        fetchWidgets();
         fetchCloudData();
         fetchPopularAddons();
         fetchInstalledPlugins();
-    }, [fetchCloudData, fetchPopularAddons, fetchInstalledPlugins]);
+    }, [fetchCloudData, fetchPopularAddons, fetchInstalledPlugins, fetchWidgets]);
 
     useEffect(() => {
         fetchOnlineAddons();
@@ -271,6 +276,7 @@ export default function PluginsPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-plugins', 'top-of-page')} />
             {/* Header */}
             <PageHeader
                 title={t('admin.marketplace.plugins.title')}
@@ -283,6 +289,8 @@ export default function PluginsPage() {
                     </Button>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-plugins', 'after-header')} />
 
             {/* Banner Notifications */}
             {!cloudAccountConfigured && (
@@ -405,6 +413,8 @@ export default function PluginsPage() {
                     </div>
                 </div>
             )}
+
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-plugins', 'before-content')} />
 
             {/* Search and Filters */}
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
@@ -822,6 +832,8 @@ export default function PluginsPage() {
                     </SheetFooter>
                 </div>
             </Sheet>
+
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-plugins', 'bottom-of-page')} />
         </div>
     );
 }

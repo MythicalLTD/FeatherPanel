@@ -56,6 +56,8 @@ import {
 } from 'lucide-react';
 import axios, { isAxiosError } from 'axios';
 import { toast } from 'sonner';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface MailTemplate {
     id: number;
@@ -107,6 +109,8 @@ export default function MailTemplatesPage() {
     const [processing, setProcessing] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-mail-templates');
+
     // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -153,7 +157,8 @@ export default function MailTemplatesPage() {
 
     useEffect(() => {
         fetchTemplates();
-    }, [fetchTemplates, refreshKey]);
+        fetchWidgets();
+    }, [fetchTemplates, refreshKey, fetchWidgets]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -253,6 +258,7 @@ export default function MailTemplatesPage() {
 
     return (
         <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+            <WidgetRenderer widgets={getWidgets('admin-mail-templates', 'top-of-page')} />
             <PageHeader
                 title={t('admin.mail_templates.title')}
                 description={t('admin.mail_templates.subtitle')}
@@ -271,6 +277,8 @@ export default function MailTemplatesPage() {
                 }
             />
 
+            <WidgetRenderer widgets={getWidgets('admin-mail-templates', 'after-header')} />
+
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -282,6 +290,8 @@ export default function MailTemplatesPage() {
                     />
                 </div>
             </div>
+
+            <WidgetRenderer widgets={getWidgets('admin-mail-templates', 'before-list')} />
 
             {loading ? (
                 <TableSkeleton count={5} />
@@ -593,6 +603,7 @@ export default function MailTemplatesPage() {
                     </form>
                 </div>
             </Sheet>
+            <WidgetRenderer widgets={getWidgets('admin-mail-templates', 'bottom-of-page')} />
         </div>
     );
 }

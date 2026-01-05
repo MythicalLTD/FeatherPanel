@@ -58,6 +58,8 @@ import {
     AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 // Types
 interface ConfigField {
@@ -165,6 +167,8 @@ export default function PluginsPage() {
     const [reinstallDialogOpen, setReinstallDialogOpen] = useState(false);
     const [selectedPluginsToReinstall, setSelectedPluginsToReinstall] = useState<Set<string>>(new Set());
     const [reinstallingPlugins, setReinstallingPlugins] = useState(false);
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-plugins');
 
     // Helper functions for version comparison
     const normalizeVersion = (v: string): string => v.replace(/^v/i, '');
@@ -282,7 +286,8 @@ export default function PluginsPage() {
 
     useEffect(() => {
         fetchPlugins();
-    }, [fetchPlugins]);
+        fetchWidgets();
+    }, [fetchPlugins, fetchWidgets]);
 
     useEffect(() => {
         if (plugins.length > 0) {
@@ -518,6 +523,7 @@ export default function PluginsPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-plugins', 'top-of-page')} />
             <PageHeader
                 title={t('admin.plugins.title')}
                 description={t('admin.plugins.description')}
@@ -546,6 +552,8 @@ export default function PluginsPage() {
                     </div>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-plugins', 'after-header')} />
 
             {/* Updates Banner */}
             {pluginsWithUpdates.length > 0 && (
@@ -1116,6 +1124,7 @@ export default function PluginsPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <WidgetRenderer widgets={getWidgets('admin-plugins', 'bottom-of-page')} />
         </div>
     );
 }

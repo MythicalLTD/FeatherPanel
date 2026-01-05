@@ -39,6 +39,8 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select-native';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import { Settings, Mail, Shield, Database, Server, Globe, Save, UploadCloud, Loader2, Copy } from 'lucide-react';
 import { copyToClipboard } from '@/lib/utils';
@@ -59,9 +61,15 @@ export default function SettingsPage() {
     const [initialSettings, setInitialSettings] = useState<Record<string, Setting>>({});
     const [activeTab, setActiveTab] = useState<string>('general');
 
-    // Log Upload State
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [uploadedLogs, setUploadedLogs] = useState<{ web: LogData; app: LogData } | null>(null);
+
+    // Plugin Widgets
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-settings');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -195,6 +203,9 @@ export default function SettingsPage() {
 
     return (
         <div className='space-y-6'>
+            {/* Plugin Widgets: Top of Page */}
+            <WidgetRenderer widgets={getWidgets('admin-settings', 'top-of-page')} />
+
             <PageHeader
                 title={t('admin.settings.title')}
                 description={t('admin.settings.subtitle')}
@@ -216,6 +227,9 @@ export default function SettingsPage() {
                     </div>
                 }
             />
+
+            {/* Plugin Widgets: After Header */}
+            <WidgetRenderer widgets={getWidgets('admin-settings', 'after-header')} />
 
             <div className='block'>
                 <Tabs
@@ -434,6 +448,9 @@ export default function SettingsPage() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Plugin Widgets: Bottom of Page */}
+            <WidgetRenderer widgets={getWidgets('admin-settings', 'bottom-of-page')} />
         </div>
     );
 }

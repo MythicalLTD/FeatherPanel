@@ -28,6 +28,8 @@ SOFTWARE.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { adminSettingsApi, Setting } from '@/lib/admin-settings-api';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
@@ -50,6 +52,8 @@ export default function FeatherAiAgentPage() {
     const [originalSettings, setOriginalSettings] = useState<Record<string, Setting> | null>(null);
     const [systemPrompt, setSystemPrompt] = useState<string>('');
     const [loadingSystemPrompt, setLoadingSystemPrompt] = useState(false);
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-ai-agent');
 
     const fetchChatbotSettings = useCallback(async () => {
         setLoading(true);
@@ -93,9 +97,10 @@ export default function FeatherAiAgentPage() {
     }, [t]);
 
     useEffect(() => {
+        fetchWidgets();
         fetchChatbotSettings();
         fetchSystemPrompt();
-    }, [fetchChatbotSettings, fetchSystemPrompt]);
+    }, [fetchChatbotSettings, fetchSystemPrompt, fetchWidgets]);
 
     const saveSettings = async () => {
         if (!chatbotSettings || !originalSettings) return;
@@ -170,11 +175,16 @@ export default function FeatherAiAgentPage() {
 
     return (
         <div className='min-h-screen space-y-8 pb-12 '>
+            <WidgetRenderer widgets={getWidgets('admin-ai-agent', 'top-of-page')} />
             <PageHeader
                 title={t('admin.featherai_agent.title')}
                 description={t('admin.featherai_agent.subtitle')}
                 icon={Sparkles}
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-ai-agent', 'after-header')} />
+
+            <WidgetRenderer widgets={getWidgets('admin-ai-agent', 'before-content')} />
 
             <PageCard
                 title={t('admin.featherai_agent.config.title')}
@@ -662,6 +672,8 @@ export default function FeatherAiAgentPage() {
                     </div>
                 )}
             </PageCard>
+
+            <WidgetRenderer widgets={getWidgets('admin-ai-agent', 'bottom-of-page')} />
         </div>
     );
 }

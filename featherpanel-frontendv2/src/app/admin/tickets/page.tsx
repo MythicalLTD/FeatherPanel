@@ -41,6 +41,8 @@ import Link from 'next/link';
 import { Select } from '@/components/ui/select-native';
 import { PageCard } from '@/components/featherui/PageCard';
 import { AlertCircle } from 'lucide-react';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface User {
     id: number;
@@ -82,6 +84,7 @@ interface Pagination {
 
 export default function TicketsPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-tickets');
     const [tickets, setTickets] = useState<ApiTicket[]>([]);
     const [categories, setCategories] = useState<Meta[]>([]);
     const [statuses, setStatuses] = useState<Meta[]>([]);
@@ -175,11 +178,20 @@ export default function TicketsPage() {
         };
 
         fetchTickets();
-
+        fetchWidgets();
         return () => {
             controller.abort();
         };
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, statusFilter, categoryFilter, refreshKey, t]);
+    }, [
+        pagination.page,
+        pagination.pageSize,
+        debouncedSearchQuery,
+        statusFilter,
+        categoryFilter,
+        refreshKey,
+        t,
+        fetchWidgets,
+    ]);
 
     const handleDelete = async (uuid: string, id: number) => {
         if (!confirm(t('admin.tickets.messages.delete_confirm'))) return;
@@ -199,6 +211,7 @@ export default function TicketsPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-tickets', 'top-of-page')} />
             <PageHeader title={t('admin.tickets.title')} description={t('admin.tickets.viewAndManage')} icon={Ticket} />
 
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
@@ -248,6 +261,8 @@ export default function TicketsPage() {
                 </div>
             </div>
 
+            <WidgetRenderer widgets={getWidgets('admin-tickets', 'after-header')} />
+
             {loading ? (
                 <TableSkeleton count={3} />
             ) : tickets.length === 0 ? (
@@ -258,6 +273,7 @@ export default function TicketsPage() {
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
+                    <WidgetRenderer widgets={getWidgets('admin-tickets', 'before-list')} />
                     {tickets.map((ticket) => {
                         const badges: ResourceBadge[] = [
                             {
@@ -384,6 +400,7 @@ export default function TicketsPage() {
                     </p>
                 </PageCard>
             </div>
+            <WidgetRenderer widgets={getWidgets('admin-tickets', 'bottom-of-page')} />
         </div>
     );
 }

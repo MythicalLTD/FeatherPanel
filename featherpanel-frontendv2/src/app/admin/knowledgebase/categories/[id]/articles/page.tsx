@@ -28,6 +28,8 @@ import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import axios from 'axios';
 import {
     FileText,
@@ -96,6 +98,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
     const [articles, setArticles] = useState<Article[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-knowledgebase-category-articles');
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
         pageSize: 10,
@@ -179,9 +183,10 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
     }, [id, pagination.page, pagination.pageSize, searchQuery, t]);
 
     useEffect(() => {
+        fetchWidgets();
         fetchCategory();
         fetchArticles();
-    }, [fetchCategory, fetchArticles]);
+    }, [fetchCategory, fetchArticles, fetchWidgets]);
 
     const handleIconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -268,6 +273,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-knowledgebase-category-articles', 'top-of-page')} />
             <PageHeader
                 title={t('admin.knowledgebase.articles.subtitle', { name: category?.name || '...' })}
                 description={category?.description}
@@ -291,6 +297,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 }
             />
 
+            <WidgetRenderer widgets={getWidgets('admin-knowledgebase-category-articles', 'after-header')} />
+
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -302,6 +310,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                     />
                 </div>
             </div>
+
+            <WidgetRenderer widgets={getWidgets('admin-knowledgebase-category-articles', 'before-list')} />
 
             {loading ? (
                 <TableSkeleton count={5} />
@@ -610,6 +620,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                     </SheetFooter>
                 </div>
             </Sheet>
+
+            <WidgetRenderer widgets={getWidgets('admin-knowledgebase-category-articles', 'bottom-of-page')} />
         </div>
     );
 }

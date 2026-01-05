@@ -36,6 +36,8 @@ import { Input } from '@/components/featherui/Input';
 import { Switch } from '@/components/ui/switch';
 import { RefreshCw, Save, RotateCcw, Activity } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface RateLimitConfig {
     _enabled?: boolean;
@@ -58,6 +60,7 @@ export default function RateLimitsPage() {
     const [globalEnabled, setGlobalEnabled] = useState(false);
     const [rateLimits, setRateLimits] = useState<Record<string, RateLimitConfig>>({});
     const [changedRoutes, setChangedRoutes] = useState<Set<string>>(new Set());
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-rate-limits');
 
     const fetchRateLimits = useCallback(async () => {
         setLoading(true);
@@ -83,7 +86,8 @@ export default function RateLimitsPage() {
 
     useEffect(() => {
         fetchRateLimits();
-    }, [fetchRateLimits]);
+        fetchWidgets();
+    }, [fetchRateLimits, fetchWidgets]);
 
     const handleGlobalToggle = async () => {
         setSaving(true);
@@ -245,6 +249,7 @@ export default function RateLimitsPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-rate-limits', 'top-of-page')} />
             <PageHeader
                 title={t('admin.rate_limits.title')}
                 description={t('admin.rate_limits.description')}
@@ -266,6 +271,8 @@ export default function RateLimitsPage() {
                     </div>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-rate-limits', 'after-header')} />
 
             <PageCard
                 title={t('admin.rate_limits.global.title')}
@@ -295,6 +302,8 @@ export default function RateLimitsPage() {
                     </div>
                 </div>
             </PageCard>
+
+            <WidgetRenderer widgets={getWidgets('admin-rate-limits', 'before-list')} />
 
             <PageCard
                 title={t('admin.rate_limits.routes.title')}
@@ -429,6 +438,7 @@ export default function RateLimitsPage() {
                     </table>
                 </div>
             </PageCard>
+            <WidgetRenderer widgets={getWidgets('admin-rate-limits', 'bottom-of-page')} />
         </div>
     );
 }

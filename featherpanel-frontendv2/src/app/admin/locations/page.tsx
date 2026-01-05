@@ -40,6 +40,8 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import {
     Globe,
@@ -109,6 +111,13 @@ export default function LocationsPage() {
 
     // Country codes
     const [countryCodes, setCountryCodes] = useState<Record<string, string>>({});
+
+    // Plugin Widgets
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-locations');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     // Debounce search
     useEffect(() => {
@@ -279,6 +288,9 @@ export default function LocationsPage() {
 
     return (
         <div className='space-y-6'>
+            {/* Plugin Widgets: Top of Page */}
+            <WidgetRenderer widgets={getWidgets('admin-locations', 'top-of-page')} />
+
             <PageHeader
                 title={t('admin.locations.title')}
                 description={t('admin.locations.subtitle')}
@@ -291,6 +303,9 @@ export default function LocationsPage() {
                 }
             />
 
+            {/* Plugin Widgets: After Header */}
+            <WidgetRenderer widgets={getWidgets('admin-locations', 'after-header')} />
+
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -302,6 +317,9 @@ export default function LocationsPage() {
                     />
                 </div>
             </div>
+
+            {/* Plugin Widgets: Before List */}
+            <WidgetRenderer widgets={getWidgets('admin-locations', 'before-list')} />
 
             {loading ? (
                 <TableSkeleton count={5} />
@@ -561,6 +579,9 @@ export default function LocationsPage() {
                     </form>
                 </SheetContent>
             </Sheet>
+
+            {/* Plugin Widgets: Bottom of Page */}
+            <WidgetRenderer widgets={getWidgets('admin-locations', 'bottom-of-page')} />
         </div>
     );
 }

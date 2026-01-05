@@ -49,6 +49,8 @@ import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Select } from '@/components/ui/select-native';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 
 interface UserRole {
@@ -113,6 +115,13 @@ export default function UsersPage() {
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+    // Plugin Widgets
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-users');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     // Debounce search query
     useEffect(() => {
@@ -243,6 +252,9 @@ export default function UsersPage() {
 
     return (
         <div className='space-y-6'>
+            {/* Plugin Widgets: Top of Page */}
+            <WidgetRenderer widgets={getWidgets('admin-users', 'top-of-page')} />
+
             {/* Header */}
             <PageHeader
                 title={t('admin.users.title')}
@@ -255,6 +267,9 @@ export default function UsersPage() {
                     </Button>
                 }
             />
+
+            {/* Plugin Widgets: After Header */}
+            <WidgetRenderer widgets={getWidgets('admin-users', 'after-header')} />
 
             {/* Search and Filters */}
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
@@ -287,6 +302,9 @@ export default function UsersPage() {
                     )}
                 </div>
             </div>
+
+            {/* Plugin Widgets: Before List */}
+            <WidgetRenderer widgets={getWidgets('admin-users', 'before-list')} />
 
             {/* Users Grid */}
             {loading ? (
@@ -449,6 +467,9 @@ export default function UsersPage() {
                     </ul>
                 </PageCard>
             </div>
+
+            {/* Plugin Widgets: Bottom of Page */}
+            <WidgetRenderer widgets={getWidgets('admin-users', 'bottom-of-page')} />
         </div>
     );
 }

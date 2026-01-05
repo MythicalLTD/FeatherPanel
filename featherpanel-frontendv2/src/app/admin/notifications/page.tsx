@@ -59,6 +59,8 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Notification {
     id: number;
@@ -83,6 +85,7 @@ interface Pagination {
 
 export default function NotificationsPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-notifications');
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -171,11 +174,11 @@ export default function NotificationsPage() {
         };
 
         fetchNotifications();
-
+        fetchWidgets();
         return () => {
             controller.abort();
         };
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t]);
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -305,6 +308,7 @@ export default function NotificationsPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-notifications', 'top-of-page')} />
             <PageHeader
                 title={t('admin.notifications.title')}
                 description={t('admin.notifications.subtitle')}
@@ -321,6 +325,8 @@ export default function NotificationsPage() {
                     </Button>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-notifications', 'after-header')} />
 
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
@@ -354,6 +360,7 @@ export default function NotificationsPage() {
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
+                    <WidgetRenderer widgets={getWidgets('admin-notifications', 'before-list')} />
                     {notifications.map((notification) => {
                         const Icon = getTypeIcon(notification.type);
                         const badges: ResourceBadge[] = [];
@@ -710,6 +717,7 @@ export default function NotificationsPage() {
                     )}
                 </div>
             </Sheet>
+            <WidgetRenderer widgets={getWidgets('admin-notifications', 'bottom-of-page')} />
         </div>
     );
 }

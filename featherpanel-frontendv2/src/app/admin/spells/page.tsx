@@ -65,6 +65,8 @@ import {
     GitBranch,
     FolderTree,
 } from 'lucide-react';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Spell {
     id: number;
@@ -97,6 +99,7 @@ interface Realm {
 export default function SpellsPage() {
     const { t } = useTranslation();
     const router = useRouter();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-spells');
     const searchParams = useSearchParams();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -190,7 +193,8 @@ export default function SpellsPage() {
         };
 
         fetchSpells();
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, realmIdParam, t]);
+        fetchWidgets();
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, realmIdParam, t, fetchWidgets]);
 
     const handleDelete = async (spell: Spell) => {
         if (!confirm(t('admin.spells.messages.delete_confirm'))) return;
@@ -298,6 +302,7 @@ export default function SpellsPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-spells', 'top-of-page')} />
             <PageHeader
                 title={t('admin.spells.title')}
                 description={subtitle}
@@ -317,6 +322,8 @@ export default function SpellsPage() {
                     </div>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-spells', 'after-header')} />
 
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
@@ -360,6 +367,7 @@ export default function SpellsPage() {
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
+                    <WidgetRenderer widgets={getWidgets('admin-spells', 'before-list')} />
                     {spells.map((spell) => (
                         <ResourceCard
                             key={spell.id}
@@ -493,6 +501,7 @@ export default function SpellsPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <WidgetRenderer widgets={getWidgets('admin-spells', 'bottom-of-page')} />
         </div>
     );
 }

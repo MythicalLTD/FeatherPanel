@@ -54,6 +54,8 @@ import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import Permissions from '@/lib/permissions';
 import { Badge } from '@/components/ui/badge';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Role {
     id: number;
@@ -81,6 +83,7 @@ interface Pagination {
 
 export default function RolesPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-roles');
     const [roles, setRoles] = useState<Role[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -174,11 +177,11 @@ export default function RolesPage() {
         };
 
         fetchRoles();
-
+        fetchWidgets();
         return () => {
             controller.abort();
         };
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t]);
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -338,6 +341,7 @@ export default function RolesPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-roles', 'top-of-page')} />
             <PageHeader
                 title={t('admin.roles.title')}
                 description={t('admin.roles.subtitle')}
@@ -354,6 +358,8 @@ export default function RolesPage() {
                     </Button>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-roles', 'after-header')} />
 
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
                 <div className='relative flex-1 group w-full'>
@@ -387,6 +393,7 @@ export default function RolesPage() {
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
+                    <WidgetRenderer widgets={getWidgets('admin-roles', 'before-list')} />
                     {roles.map((role) => {
                         const badges: ResourceBadge[] = [
                             {
@@ -737,6 +744,7 @@ export default function RolesPage() {
                     </SheetFooter>
                 </div>
             </Sheet>
+            <WidgetRenderer widgets={getWidgets('admin-roles', 'bottom-of-page')} />
         </div>
     );
 }

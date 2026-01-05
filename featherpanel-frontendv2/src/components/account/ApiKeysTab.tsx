@@ -44,6 +44,8 @@ import { cn, copyToClipboard } from '@/lib/utils';
 import { Key, Plus, Trash2, Eye, Pencil, RefreshCw, Copy, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface ApiClient {
     id: number;
@@ -55,8 +57,13 @@ interface ApiClient {
     updated_at: string;
 }
 
-export default function ApiKeysTab() {
+interface ApiKeysTabProps {
+    slug?: string;
+}
+
+export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProps) {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets(slug);
     const { hasPermission } = useSession();
     const { settings } = useSettings();
     const [clients, setClients] = useState<ApiClient[]>([]);
@@ -89,7 +96,8 @@ export default function ApiKeysTab() {
 
     useEffect(() => {
         fetchClients();
-    }, []);
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const filteredClients = clients.filter(
         (client) =>
@@ -206,6 +214,7 @@ export default function ApiKeysTab() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets(slug, 'top-of-page')} />
             <div className='flex items-center justify-between'>
                 <div>
                     <h3 className='text-lg font-semibold text-foreground'>{t('account.apiKeys.title')}</h3>
@@ -227,6 +236,8 @@ export default function ApiKeysTab() {
                     )}
                 </div>
             </div>
+
+            <WidgetRenderer widgets={getWidgets(slug, 'after-header')} />
 
             {/* Info Banner */}
             <div className='bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4'>
@@ -487,6 +498,7 @@ export default function ApiKeysTab() {
                     </DialogPanel>
                 </div>
             </Dialog>
+            <WidgetRenderer widgets={getWidgets(slug, 'bottom-of-page')} />
         </div>
     );
 }

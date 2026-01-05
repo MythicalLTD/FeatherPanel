@@ -30,6 +30,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -102,6 +104,8 @@ export default function SpellsPage() {
     const [installedSpellIds, setInstalledSpellIds] = useState<string[]>([]);
     const [installingId, setInstallingId] = useState<string | null>(null);
 
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-feathercloud-spells');
+
     // Fetch realms
     const fetchRealms = useCallback(async () => {
         try {
@@ -152,10 +156,11 @@ export default function SpellsPage() {
     );
 
     useEffect(() => {
+        fetchWidgets();
         fetchOnlineSpells();
         fetchRealms();
         fetchInstalledSpells();
-    }, [fetchOnlineSpells, fetchRealms, fetchInstalledSpells]);
+    }, [fetchOnlineSpells, fetchRealms, fetchInstalledSpells, fetchWidgets]);
 
     const openInstallDialog = (spell: OnlineSpell) => {
         setSelectedSpell(spell);
@@ -218,6 +223,7 @@ export default function SpellsPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'top-of-page')} />
             {/* Header */}
             <PageHeader
                 title={t('admin.marketplace.spells.title')}
@@ -230,6 +236,8 @@ export default function SpellsPage() {
                     </Button>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'after-header')} />
 
             {/* Online Publish Banner */}
             <PageCard
@@ -265,6 +273,8 @@ export default function SpellsPage() {
                     </div>
                 </div>
             </PageCard>
+
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'before-content')} />
 
             {/* Search and Filters */}
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
@@ -518,6 +528,8 @@ export default function SpellsPage() {
                     </SheetFooter>
                 </div>
             </Sheet>
+
+            <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'bottom-of-page')} />
         </div>
     );
 }

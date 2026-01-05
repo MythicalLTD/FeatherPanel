@@ -31,6 +31,8 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/ui/button';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import axios from 'axios';
 import {
     Activity,
@@ -84,6 +86,13 @@ export default function DatabaseManagementPage() {
     const [pmaDeleting, setPmaDeleting] = useState(false);
     const [pmaInstalled, setPmaInstalled] = useState(false);
     const [pmaStatusLoading, setPmaStatusLoading] = useState(false);
+
+    // Plugin Widgets
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-databases-management');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const fetchStatus = useCallback(async () => {
         setLoading(true);
@@ -207,6 +216,9 @@ export default function DatabaseManagementPage() {
 
     return (
         <div className='space-y-6 p-6'>
+            {/* Plugin Widgets: Top of Page */}
+            <WidgetRenderer widgets={getWidgets('admin-databases-management', 'top-of-page')} />
+
             <PageHeader
                 title={t('admin.database_management.title')}
                 description={t('admin.database_management.subtitle')}
@@ -248,6 +260,9 @@ export default function DatabaseManagementPage() {
                     </div>
                 }
             />
+
+            {/* Plugin Widgets: After Header */}
+            <WidgetRenderer widgets={getWidgets('admin-databases-management', 'after-header')} />
 
             {/* Status Grid */}
             {status && (
@@ -380,6 +395,9 @@ export default function DatabaseManagementPage() {
                     </p>
                 </div>
             </div>
+
+            {/* Plugin Widgets: Bottom of Page */}
+            <WidgetRenderer widgets={getWidgets('admin-databases-management', 'bottom-of-page')} />
         </div>
     );
 }

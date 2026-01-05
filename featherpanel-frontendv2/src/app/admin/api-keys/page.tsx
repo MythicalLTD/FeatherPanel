@@ -29,5 +29,5 @@ SOFTWARE.
 import ApiKeysTab from '@/components/account/ApiKeysTab';
 
 export default function CloudManagementPage() {
-    return <ApiKeysTab />;
+    return <ApiKeysTab slug='admin-api-keys' />;
 }

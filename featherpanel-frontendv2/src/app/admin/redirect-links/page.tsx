@@ -39,6 +39,8 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import {
     Link as LinkIcon,
     Plus,
@@ -104,6 +106,7 @@ export default function RedirectLinksPage() {
     const [newLink, setNewLink] = useState({ name: '', slug: '', url: '' });
     const [manualSlugEdit, setManualSlugEdit] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-redirect-links');
 
     // Debounce search
     useEffect(() => {
@@ -148,7 +151,8 @@ export default function RedirectLinksPage() {
         };
 
         fetchLinks();
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t]);
+        fetchWidgets();
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets]);
 
     // Auto-generate slug
     useEffect(() => {
@@ -227,6 +231,7 @@ export default function RedirectLinksPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-redirect-links', 'top-of-page')} />
             <PageHeader
                 title={t('admin.redirect_links.title')}
                 description={t('admin.redirect_links.subtitle')}
@@ -238,6 +243,10 @@ export default function RedirectLinksPage() {
                     </Button>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-redirect-links', 'after-header')} />
+
+            <WidgetRenderer widgets={getWidgets('admin-redirect-links', 'before-list')} />
 
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
@@ -541,6 +550,7 @@ export default function RedirectLinksPage() {
                     )}
                 </div>
             </Sheet>
+            <WidgetRenderer widgets={getWidgets('admin-redirect-links', 'bottom-of-page')} />
         </div>
     );
 }

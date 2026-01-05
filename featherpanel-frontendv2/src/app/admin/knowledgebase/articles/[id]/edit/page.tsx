@@ -28,6 +28,8 @@ import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import axios from 'axios';
 import {
     FileText,
@@ -128,6 +130,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
     const [tagsDialogOpen, setTagsDialogOpen] = useState(false);
     const [newTags, setNewTags] = useState('');
 
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-knowledgebase-article-edit');
+
     const fetchData = useCallback(async () => {
         try {
             const [artRes, catRes, attRes, tagRes] = await Promise.all([
@@ -152,8 +156,9 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
     }, [id, t]);
 
     useEffect(() => {
+        fetchWidgets();
         fetchData();
-    }, [fetchData]);
+    }, [fetchData, fetchWidgets]);
 
     const handleIconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -314,6 +319,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-knowledgebase-article-edit', 'top-of-page')} />
             <PageHeader
                 title={t('admin.knowledgebase.edit.title')}
                 description={t('admin.knowledgebase.edit.subtitle', { title: article?.title || '...' })}
@@ -332,8 +338,11 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 }
             />
 
+            <WidgetRenderer widgets={getWidgets('admin-knowledgebase-article-edit', 'after-header')} />
+
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
                 <div className='lg:col-span-2 space-y-6'>
+                    <WidgetRenderer widgets={getWidgets('admin-knowledgebase-article-edit', 'before-content')} />
                     <Tabs defaultValue='content' className='w-full'>
                         <div className='flex items-center justify-between bg-card/40 backdrop-blur-md p-2 rounded-2xl shadow-sm mb-6'>
                             <TabsList className='bg-transparent h-10'>
@@ -687,6 +696,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <WidgetRenderer widgets={getWidgets('admin-knowledgebase-article-edit', 'bottom-of-page')} />
         </div>
     );
 }

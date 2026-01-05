@@ -60,6 +60,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios, { isAxiosError } from 'axios';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 // Types
 export interface SubdomainSpellMapping {
@@ -156,6 +158,7 @@ interface Pagination {
 
 export default function AdminSubdomainsPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-subdomains');
     const [loading, setLoading] = useState(true);
     const [domains, setDomains] = useState<SubdomainDomain[]>([]);
     const [pagination, setPagination] = useState<Pagination>({
@@ -277,7 +280,8 @@ export default function AdminSubdomainsPage() {
 
     useEffect(() => {
         fetchDomains();
-    }, [fetchDomains, refreshKey]);
+        fetchWidgets();
+    }, [fetchDomains, refreshKey, fetchWidgets]);
 
     useEffect(() => {
         fetchInitialData();
@@ -449,6 +453,7 @@ export default function AdminSubdomainsPage() {
 
     return (
         <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+            <WidgetRenderer widgets={getWidgets('admin-subdomains', 'top-of-page')} />
             <PageHeader
                 title={t('admin.subdomains.title')}
                 description={t('admin.subdomains.description')}
@@ -473,11 +478,14 @@ export default function AdminSubdomainsPage() {
                 </div>
             </div>
 
+            <WidgetRenderer widgets={getWidgets('admin-subdomains', 'after-header')} />
+
             {loading ? (
                 <TableSkeleton count={5} />
             ) : domains.length > 0 ? (
                 <>
                     <div className='grid grid-cols-1 gap-4'>
+                        <WidgetRenderer widgets={getWidgets('admin-subdomains', 'before-list')} />
                         {domains.map((domain) => (
                             <ResourceCard
                                 key={domain.uuid}
@@ -964,6 +972,7 @@ export default function AdminSubdomainsPage() {
                     </div>
                 </div>
             </Sheet>
+            <WidgetRenderer widgets={getWidgets('admin-subdomains', 'bottom-of-page')} />
         </div>
     );
 }
