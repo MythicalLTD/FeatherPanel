@@ -196,10 +196,12 @@ export default function EditServerPage() {
 
     const originalSpellId = useRef<number | null>(null);
     const originalVariables = useRef<Record<string, string>>({});
+    const hasInitialLoaded = useRef(false);
 
     // Fetch Server Data
     const fetchServerData = useCallback(async () => {
         setLoading(true);
+        hasInitialLoaded.current = false;
         try {
             // Fetch server and locations in parallel
             const [serverRes, locationsRes] = await Promise.all([
@@ -276,7 +278,7 @@ export default function EditServerPage() {
                     disk: server.disk,
                     cpu: server.cpu,
                     io: server.io,
-                    oom_killer: Boolean(server.oom_disabled), // Note: API uses oom_disabled
+                    oom_killer: !Boolean(server.oom_disabled), // Note: API uses oom_disabled, we invert it for oom_killer
                     threads: server.threads || '',
                     database_limit: server.database_limit,
                     allocation_limit: server.allocation_limit,
@@ -342,7 +344,7 @@ export default function EditServerPage() {
                 ]);
 
                 if (spellRes.data.success) {
-                    const spell = spellRes.data.data;
+                    const spell = spellRes.data.data.spell;
                     setSpellDetails(spell);
 
                     // Update docker images
@@ -351,25 +353,33 @@ export default function EditServerPage() {
                         const imageList = Object.values(images) as string[];
                         setDockerImages(imageList);
                         // Reset image if not in new list
-                        if (!imageList.includes(form.image)) {
-                            setForm((prev) => ({ ...prev, image: imageList[0] || '' }));
-                        }
+                        setForm((prev) => {
+                            if (!imageList.includes(prev.image)) {
+                                return { ...prev, image: imageList[0] || '' };
+                            }
+                            return prev;
+                        });
                     } catch {
                         setDockerImages([]);
                     }
 
                     // Handle variables
                     if (variablesRes.data.success) {
-                        const newVariables = variablesRes.data.data;
+                        const newVariables = variablesRes.data.data.variables;
 
                         if (Array.isArray(newVariables)) {
                             setSpellVariables(newVariables);
 
-                            if (isOriginal) {
-                                // If returning to original spell, restore saved values
-                                setForm((prev) => ({ ...prev, variables: originalVariables.current }));
+                            // The user wants that each time we change realms and spell
+                            // they should use the spells ones instead of the old server ones.
+                            // However, we MUST keep the original ones on the first load of the page.
+                            if (isOriginal && !hasInitialLoaded.current) {
+                                hasInitialLoaded.current = true;
+                                // Keep the variables already set in fetchServerData
+                                // No action needed here as form.variables is already populated
                             } else {
-                                // Otherwise, use defaults
+                                // Either not original spell, or user manually changed back to original
+                                // Use defaults from the spell
                                 const newVariablesMap: Record<string, string> = {};
                                 newVariables.forEach((v: SpellVariable) => {
                                     newVariablesMap[v.env_variable] = v.default_value;
@@ -387,7 +397,7 @@ export default function EditServerPage() {
         };
 
         fetchSpellDetails();
-    }, [form.spell_id, form.image]);
+    }, [form.spell_id]);
 
     // Fetch Functions
     const fetchOwners = async () => {
@@ -504,9 +514,58 @@ export default function EditServerPage() {
         if (!form.realms_id) newErrors.realms_id = t('admin.servers.form.wizard.validation.realm_required');
         if (!form.spell_id) newErrors.spell_id = t('admin.servers.form.wizard.validation.spell_required');
         if (!form.startup) newErrors.startup = t('admin.servers.form.wizard.validation.startup_required');
+
+        // Spell variables validation
+        spellVariables.forEach((variable) => {
+            const value = form.variables[variable.env_variable];
+
+            // Check if required - allow default values
+            if (variable.rules.includes('required')) {
+                const effectiveValue = value ?? variable.default_value ?? '';
+                if (!effectiveValue || (typeof effectiveValue === 'string' && effectiveValue.trim() === '')) {
+                    newErrors[variable.env_variable] = `${variable.name} is required`;
+                    return;
+                }
+            }
+
+            // Skip validation if no value provided for optional fields
+            if (!value || (typeof value === 'string' && value.trim() === '')) {
+                return;
+            }
+
+            // Validate based on field type
+            switch (variable.field_type) {
+                case 'numeric': {
+                    if (!/^[0-9]+$/.test(value)) {
+                        newErrors[variable.env_variable] = `${variable.name} must be numeric`;
+                    }
+                    break;
+                }
+                case 'email': {
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                        newErrors[variable.env_variable] = `${variable.name} must be a valid email`;
+                    }
+                    break;
+                }
+                case 'url': {
+                    if (!/^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(value)) {
+                        newErrors[variable.env_variable] = `${variable.name} must be a valid URL`;
+                    }
+                    break;
+                }
+                case 'port': {
+                    const port = parseInt(value);
+                    if (isNaN(port) || port < 1 || port > 65535) {
+                        newErrors[variable.env_variable] = `${variable.name} must be a valid port (1-65535)`;
+                    }
+                    break;
+                }
+            }
+        });
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    }, [form, t]);
+    }, [form, t, spellVariables]);
 
     // Submit
     const handleSubmit = async () => {
@@ -539,7 +598,13 @@ export default function EditServerPage() {
                 allocation_limit: form.allocation_limit,
                 backup_limit: form.backup_limit,
                 allocation_id: form.allocation_id,
-                variables: form.variables,
+                variables: Object.entries(form.variables)
+                    .map(([key, value]) => {
+                        const sv = spellVariables.find((v) => v.env_variable === key);
+                        if (!sv) return null;
+                        return { variable_id: sv.id, variable_value: String(value ?? '') };
+                    })
+                    .filter((v) => v !== null),
             };
 
             const { data } = await axios.patch(`/api/admin/servers/${serverId}`, payload);

@@ -148,6 +148,8 @@
 		"processing": "Processing...",
 		"unknown": "Unknown",
 		"confirm_action": "Are you sure you want to perform this action?",
+		"yes": "Yes",
+		"no": "No",
 		"normal": "Normal",
 		"banned": "Banned",
 		"details": "Details",
@@ -156,8 +158,6 @@
 		"relationships": "Relationships",
 		"areYouSure": "Are you sure?",
 		"delete_confirm_description": "This action cannot be undone and will permanently remove the record from our system.",
-		"no": "No",
-		"yes": "Yes",
 		"preview": "Preview",
 		"actions": "Actions",
 		"pagination": {
@@ -743,7 +743,8 @@
 			"transferSpell": "Software Transfer",
 			"account": "Account",
 			"status": "Status",
-			"admin": "Admin"
+			"admin": "Admin",
+			"ticketConfigs": "Ticket Configs"
 		}
 	},
 	"navbar": {
@@ -2682,7 +2683,11 @@
 					"title": "Application Configuration",
 					"description": "Configure realm, spell, and Docker image settings",
 					"variables_title": "Spell Variables",
-					"variables_description": "Configure environment variables for this spell"
+					"variables_description": "Configure environment variables for this spell",
+					"variable_startup_access": "Startup Access",
+					"variable_rules": "Validation Rules",
+					"variable_field_type": "Field Type",
+					"variable_user_editable": "User Editable"
 				},
 				"limits": {
 					"title": "Feature Limits",

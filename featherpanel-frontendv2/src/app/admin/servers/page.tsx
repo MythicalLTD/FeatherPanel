@@ -74,7 +74,6 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 
 export default function ServersPage() {
@@ -318,20 +317,7 @@ export default function ServersPage() {
         return `${cpu}%`;
     };
 
-    const getStatusVariant = (status: string, suspended: boolean): string => {
-        if (suspended) return 'bg-red-500/10 text-red-500 border-red-500/20';
-        switch (status?.toLowerCase()) {
-            case 'running':
-                return 'bg-green-500/10 text-green-500 border-green-500/20';
-            case 'installing':
-            case 'transferring':
-                return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-            case 'stopped':
-                return 'bg-muted text-muted-foreground border-border/50';
-            default:
-                return 'bg-muted text-muted-foreground border-border/50';
-        }
-    };
+  
 
     return (
         <div className='space-y-6'>
@@ -376,13 +362,7 @@ export default function ServersPage() {
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
                     {servers.map((server) => {
-                        const isSuspended = !!server.suspended;
-                        const status = isSuspended ? 'suspended' : server.status || 'unknown';
                         const badges: ResourceBadge[] = [
-                            {
-                                label: t(`admin.servers.status.${status.toLowerCase()}`),
-                                className: getStatusVariant(server.status || '', isSuspended),
-                            },
                             {
                                 label: server.node?.name || 'Unknown Node',
                                 className: 'bg-primary/10 text-primary border-primary/20',
@@ -585,23 +565,6 @@ export default function ServersPage() {
                                                     {t('admin.servers.details.basic_info')}
                                                 </h4>
                                                 <div className='space-y-4'>
-                                                    <DetailItem
-                                                        label={t('admin.servers.details.labels.status')}
-                                                        value={
-                                                            <Badge
-                                                                className={getStatusVariant(
-                                                                    selectedServer?.status || '',
-                                                                    !!selectedServer?.suspended,
-                                                                )}
-                                                            >
-                                                                {selectedServer?.suspended
-                                                                    ? t('admin.servers.status.suspended')
-                                                                    : t(
-                                                                          `admin.servers.status.${(selectedServer?.status || 'unknown').toLowerCase()}`,
-                                                                      )}
-                                                            </Badge>
-                                                        }
-                                                    />
                                                     <DetailItem
                                                         label={t('admin.servers.details.labels.uuid')}
                                                         value={selectedServer?.uuid}

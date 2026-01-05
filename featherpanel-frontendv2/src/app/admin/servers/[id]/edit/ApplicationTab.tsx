@@ -166,30 +166,76 @@ export function ApplicationTab({
                     title={t('admin.servers.edit.application.variables_title')}
                     description={t('admin.servers.edit.application.variables_description')}
                 >
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                        {spellVariables.map((v) => (
-                            <div key={v.id} className='space-y-3'>
-                                <Label className='flex items-center gap-1.5'>
-                                    {v.name}
-                                    {v.rules.includes('required') && <span className='text-red-500 font-bold'>*</span>}
-                                </Label>
-                                <Input
-                                    value={form.variables[v.env_variable] || ''}
-                                    onChange={(e) =>
-                                        setForm((prev) => ({
-                                            ...prev,
-                                            variables: {
-                                                ...prev.variables,
-                                                [v.env_variable]: e.target.value,
-                                            },
-                                        }))
-                                    }
-                                    placeholder={v.default_value}
-                                    className='bg-muted/30 h-11'
-                                />
-                                <p className='text-xs text-muted-foreground'>{v.description}</p>
-                            </div>
-                        ))}
+                    <div className='space-y-6'>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                            {spellVariables.map((v) => (
+                                <div
+                                    key={v.id}
+                                    className='p-4 border border-border/50 rounded-2xl bg-muted/10 space-y-4'
+                                >
+                                    <div className='space-y-3'>
+                                        <Label className='flex items-center gap-1.5 font-semibold text-base'>
+                                            {v.name}
+                                            {v.rules.includes('required') && (
+                                                <span className='text-red-500 font-bold'>*</span>
+                                            )}
+                                        </Label>
+                                        <Input
+                                            value={form.variables[v.env_variable] || ''}
+                                            onChange={(e) =>
+                                                setForm((prev) => ({
+                                                    ...prev,
+                                                    variables: {
+                                                        ...prev.variables,
+                                                        [v.env_variable]: e.target.value,
+                                                    },
+                                                }))
+                                            }
+                                            placeholder={v.default_value}
+                                            className={`bg-card h-11 ${errors[v.env_variable] ? 'border-red-500' : ''}`}
+                                            required={v.rules.includes('required')}
+                                        />
+                                        {errors[v.env_variable] && (
+                                            <p className='text-xs text-red-500'>{errors[v.env_variable]}</p>
+                                        )}
+                                        <p className='text-sm text-muted-foreground leading-relaxed'>{v.description}</p>
+                                    </div>
+
+                                    <div className='pt-4 border-t border-border/30 space-y-2.5'>
+                                        <div className='flex items-center justify-between text-xs'>
+                                            <span className='text-muted-foreground font-medium'>
+                                                {t('admin.servers.edit.application.variable_startup_access')}
+                                            </span>
+                                            <code className='bg-muted px-2 py-0.5 rounded text-primary font-mono'>
+                                                {'{{' + v.env_variable + '}}'}
+                                            </code>
+                                        </div>
+                                        <div className='flex items-center justify-between text-xs'>
+                                            <span className='text-muted-foreground font-medium'>
+                                                {t('admin.servers.edit.application.variable_rules')}
+                                            </span>
+                                            <code className='bg-muted px-2 py-0.5 rounded font-mono'>{v.rules}</code>
+                                        </div>
+                                        <div className='flex items-center justify-between text-xs'>
+                                            <span className='text-muted-foreground font-medium'>
+                                                {t('admin.servers.edit.application.variable_field_type')}
+                                            </span>
+                                            <span className='capitalize font-medium'>{v.field_type}</span>
+                                        </div>
+                                        <div className='flex items-center justify-between text-xs'>
+                                            <span className='text-muted-foreground font-medium'>
+                                                {t('admin.servers.edit.application.variable_user_editable')}
+                                            </span>
+                                            <span
+                                                className={`font-medium ${v.user_editable ? 'text-emerald-500' : 'text-amber-500'}`}
+                                            >
+                                                {v.user_editable ? t('common.yes') : t('common.no')}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </PageCard>
             )}
