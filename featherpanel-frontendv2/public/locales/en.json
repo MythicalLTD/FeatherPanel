@@ -708,6 +708,7 @@
 			"locations_and_nodes": "Locations & Nodes",
 			"locations": "Locations",
 			"nodes": "Nodes",
+			"nodeDatabases": "Node Databases",
 			"nodeStatus": "Node Status",
 			"subdomains": "Subdomains",
 			"realms": "Realms (Nests)",
@@ -4042,6 +4043,71 @@
 				"safety": {
 					"title": "Safety & Backups",
 					"description": "Always backup your database before running migrations or major operations. FeatherPanel is not responsible for data loss due to unsafe operations."
+				}
+			}
+		},
+		"node_databases": {
+			"title": "Node Databases",
+			"viewAndManage_all": "View and manage all databases across all nodes",
+			"viewAndManage_node": "Managing databases for node: {node}",
+			"description": "These are databases that your users (clients) can create for their servers.",
+			"search_placeholder": "Search by name, host or username...",
+			"no_results": "No databases found",
+			"create": "Add Database",
+			"messages": {
+				"fetch_failed": "Failed to fetch databases",
+				"fetch_node_failed": "Failed to fetch node details",
+				"created": "Database created successfully",
+				"create_failed": "Failed to create database",
+				"updated": "Database updated successfully",
+				"update_failed": "Failed to update database",
+				"deleted": "Database deleted successfully",
+				"delete_failed": "Failed to delete database",
+				"delete_confirm": "Are you sure you want to delete this database?",
+				"health_healthy": "Database is healthy",
+				"health_unhealthy": "Database is unhealthy"
+			},
+			"table": {
+				"status": "Status",
+				"name": "Name",
+				"type": "Type",
+				"host": "Host",
+				"port": "Port",
+				"username": "Username",
+				"created": "Created"
+			},
+			"form": {
+				"create_title": "Add Database",
+				"create_description": "Add a new database to this node.",
+				"edit_title": "Edit Database",
+				"edit_description": "Edit the selected database.",
+				"view_title": "View Database",
+				"name": "Database Name",
+				"name_placeholder": "Enter database name",
+				"type": "Database Type",
+				"type_placeholder": "Select database type",
+				"host": "Host",
+				"host_placeholder": "localhost",
+				"host_help": "Enter the hostname or IP address of the database server.",
+				"port": "Port",
+				"port_placeholder": "3306",
+				"port_help": "Default ports: MySQL/MariaDB (3306), PostgreSQL (5432)",
+				"username": "Username",
+				"username_placeholder": "root",
+				"password": "Password",
+				"password_placeholder": "Enter password",
+				"submit_create": "Create Database",
+				"submit_update": "Update Database"
+			},
+			"status": {
+				"healthy": "Healthy",
+				"unhealthy": "Unhealthy",
+				"no_node": "No Node"
+			},
+			"help": {
+				"about_databases": {
+					"title": "About Databases",
+					"description": "These are databases that your users (clients) can create for their servers. Users can create multiple database types depending on the limits you set as the hosting owner. FeatherPanel supports a broad range of popular databases to fit many workloads."
 				}
 			}
 		},

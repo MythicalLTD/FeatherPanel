@@ -183,6 +183,17 @@ export const getAdminNavigationItems = (t: TFunction, settings: AppSettings | nu
                     permission: Permissions.ADMIN_NODES_VIEW,
                     group: 'infrastructure',
                 },
+                {
+                    id: 'admin-node-databases',
+                    name: t('navigation.items.nodeDatabases'),
+                    title: t('navigation.items.nodeDatabases'),
+                    url: '/admin/databases/nodes',
+                    icon: Database,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_NODES_VIEW,
+                    group: 'infrastructure',
+                },
             ],
         },
         {

@@ -40,6 +40,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { toast } from 'sonner';
 import {
     Server,
+    Database as DatabaseIcon,
     Plus,
     Search,
     RefreshCw,
@@ -343,6 +344,14 @@ export default function NodesPage() {
                                 }
                                 actions={
                                     <div className='flex items-center gap-2'>
+                                        <Button
+                                            size='sm'
+                                            variant='ghost'
+                                            onClick={() => router.push(`/admin/nodes/${node.id}/databases`)}
+                                            title={t('admin.node.actions.databases')}
+                                        >
+                                            <DatabaseIcon className='h-4 w-4' />
+                                        </Button>
                                         <Button
                                             size='sm'
                                             variant='ghost'
