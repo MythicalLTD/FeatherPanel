@@ -40,7 +40,6 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { Select } from '@/components/ui/select-native';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import {
@@ -56,6 +55,7 @@ import {
     ArrowRight,
     Settings,
     Info,
+    BadgeCheck,
 } from 'lucide-react';
 
 interface OnlineSpell {
@@ -100,19 +100,35 @@ export default function SpellsPage() {
     const [confirmInstallOpen, setConfirmInstallOpen] = useState(false);
     const [selectedSpell, setSelectedSpell] = useState<OnlineSpell | null>(null);
     const [selectedRealmId, setSelectedRealmId] = useState<string>('');
-    const [realms, setRealms] = useState<Realm[]>([]);
     const [installedSpellIds, setInstalledSpellIds] = useState<string[]>([]);
     const [installingId, setInstallingId] = useState<string | null>(null);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-feathercloud-spells');
 
+    // Realm selection state
+    const [realms, setRealms] = useState<Realm[]>([]);
+    const [realmsLoading, setRealmsLoading] = useState(false);
+    const [realmsSearch, setRealmsSearch] = useState('');
+    const [realmsPage, setRealmsPage] = useState(1);
+    const [realmsPagination, setRealmsPagination] = useState<OnlinePagination | null>(null);
+
     // Fetch realms
-    const fetchRealms = useCallback(async () => {
+    const fetchRealms = useCallback(async (page = 1, search = '') => {
+        setRealmsLoading(true);
         try {
-            const response = await axios.get('/api/admin/realms');
+            const params = new URLSearchParams({
+                page: String(page),
+                per_page: '10',
+            });
+            if (search) params.set('q', search);
+
+            const response = await axios.get(`/api/admin/realms?${params.toString()}`);
             setRealms(response.data?.data?.realms || []);
+            setRealmsPagination(response.data?.data?.pagination || null);
         } catch (error) {
             console.error('Failed to fetch realms:', error);
+        } finally {
+            setRealmsLoading(false);
         }
     }, []);
 
@@ -158,9 +174,15 @@ export default function SpellsPage() {
     useEffect(() => {
         fetchWidgets();
         fetchOnlineSpells();
-        fetchRealms();
+        fetchRealms(1, '');
         fetchInstalledSpells();
     }, [fetchOnlineSpells, fetchRealms, fetchInstalledSpells, fetchWidgets]);
+
+    useEffect(() => {
+        if (confirmInstallOpen) {
+            fetchRealms(realmsPage, realmsSearch);
+        }
+    }, [realmsPage, realmsSearch, confirmInstallOpen, fetchRealms]);
 
     const openInstallDialog = (spell: OnlineSpell) => {
         setSelectedSpell(spell);
@@ -338,7 +360,11 @@ export default function SpellsPage() {
                                 key={spell.identifier}
                                 icon={IconComponent}
                                 title={spell.name}
-                                subtitle={spell.author ? `by ${spell.author}` : undefined}
+                                subtitle={
+                                    spell.author
+                                        ? t('admin.marketplace.common.by_author', { author: spell.author })
+                                        : undefined
+                                }
                                 badges={
                                     [
                                         installedSpellIds.includes(spell.name)
@@ -463,40 +489,99 @@ export default function SpellsPage() {
                                 <Info className='h-5 w-5 text-blue-600 shrink-0 mt-0.5' />
                                 <div className='space-y-1'>
                                     <p className='text-sm font-bold text-blue-700'>
-                                        {t('admin.marketplace.plugins.installed')}
+                                        {t('admin.marketplace.spells.dialog.already_installed_title')}
                                     </p>
                                     <p className='text-xs text-blue-700/80 leading-relaxed font-medium'>
-                                        You already have this spell installed. Installing it again will create another
-                                        instance.
+                                        {t('admin.marketplace.spells.dialog.already_installed_desc')}
                                     </p>
                                 </div>
                             </div>
                         )}
 
-                        <div className='space-y-4'>
-                            <label className='text-sm font-bold flex items-center gap-2'>
-                                <Settings className='h-4 w-4 text-primary' />
-                                {t('admin.marketplace.spells.dialog.realm')}
-                            </label>
-                            <Select
-                                value={selectedRealmId}
-                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                                    setSelectedRealmId(e.target.value)
-                                }
-                                className='h-14 rounded-xl bg-muted/30 border-border/50 focus:border-primary/50 transition-colors text-sm'
-                            >
-                                <option value='' disabled>
-                                    {t('admin.marketplace.spells.dialog.choose_realm')}
-                                </option>
-                                {realms.map((realm) => (
-                                    <option key={realm.id} value={String(realm.id)}>
-                                        {realm.name}
-                                    </option>
-                                ))}
-                            </Select>
-                            <p className='text-[10px] text-muted-foreground pl-1 font-medium italic opacity-70'>
-                                {t('admin.marketplace.spells.dialog.realm_help')}
-                            </p>
+                        <div className='space-y-6'>
+                            <div className='space-y-2'>
+                                <label className='text-sm font-semibold text-foreground flex items-center gap-2'>
+                                    <Globe className='h-4 w-4 text-primary' />
+                                    {t('admin.marketplace.spells.dialog.realm')}
+                                </label>
+                                <p className='text-xs text-muted-foreground'>
+                                    {t('admin.marketplace.spells.dialog.realm_help')}
+                                </p>
+                            </div>
+
+                            <div className='relative group'>
+                                <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                                <Input
+                                    placeholder={t('common.search')}
+                                    value={realmsSearch}
+                                    onChange={(e) => {
+                                        setRealmsSearch(e.target.value);
+                                        setRealmsPage(1);
+                                    }}
+                                    className='pl-10 h-11'
+                                />
+                            </div>
+
+                            <div className='space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar'>
+                                {realmsLoading ? (
+                                    <div className='flex items-center justify-center py-10'>
+                                        <RefreshCw className='h-6 w-6 animate-spin text-primary' />
+                                    </div>
+                                ) : realms.length === 0 ? (
+                                    <div className='text-center py-10 text-muted-foreground text-sm'>
+                                        {t('common.no_results')}
+                                    </div>
+                                ) : (
+                                    realms.map((realm) => (
+                                        <div
+                                            key={realm.id}
+                                            onClick={() => setSelectedRealmId(String(realm.id))}
+                                            className={cn(
+                                                'p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between group/realm',
+                                                selectedRealmId === String(realm.id)
+                                                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                                    : 'border-border/50 hover:border-primary/50 bg-muted/30',
+                                            )}
+                                        >
+                                            <span className='font-semibold text-sm'>{realm.name}</span>
+                                            {selectedRealmId === String(realm.id) && (
+                                                <BadgeCheck className='h-4 w-4 text-primary animate-in zoom-in-50 duration-200' />
+                                            )}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {realmsPagination && realmsPagination.total_pages > 1 && (
+                                <div className='flex items-center justify-between px-1'>
+                                    <span className='text-xs text-muted-foreground font-medium'>
+                                        {t('common.pagination.page', {
+                                            current: String(realmsPage),
+                                            total: String(realmsPagination.total_pages),
+                                        })}
+                                    </span>
+                                    <div className='flex items-center gap-2'>
+                                        <Button
+                                            variant='outline'
+                                            size='icon'
+                                            className='h-8 w-8'
+                                            disabled={realmsPage === 1}
+                                            onClick={() => setRealmsPage((p) => p - 1)}
+                                        >
+                                            <ChevronLeft className='h-4 w-4' />
+                                        </Button>
+                                        <Button
+                                            variant='outline'
+                                            size='icon'
+                                            className='h-8 w-8'
+                                            disabled={realmsPage === realmsPagination.total_pages}
+                                            onClick={() => setRealmsPage((p) => p + 1)}
+                                        >
+                                            <ChevronRight className='h-4 w-4' />
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 

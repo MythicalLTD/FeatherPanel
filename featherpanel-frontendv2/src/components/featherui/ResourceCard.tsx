@@ -49,6 +49,7 @@ interface ResourceCardProps {
     iconClassName?: string;
     image?: string;
     onClick?: () => void;
+    highlightClassName?: string;
 }
 
 export function ResourceCard({
@@ -64,6 +65,7 @@ export function ResourceCard({
     iconClassName,
     image,
     onClick,
+    highlightClassName,
 }: ResourceCardProps) {
     const renderBadges = () => {
         if (!badges) return null;
@@ -103,16 +105,21 @@ export function ResourceCard({
                 className,
             )}
         >
-            <div className='p-6 flex flex-col md:flex-row md:items-center gap-6 relative z-10'>
-                {image ? (
-                    <div className='absolute inset-0 z-0 opacity-10 blur-sm group-hover:opacity-20 transition-opacity'>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={image} alt='' className='w-full h-full object-cover' />
-                    </div>
-                ) : (
-                    <div className='absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors' />
-                )}
+            {image ? (
+                <div className='absolute inset-0 z-0 opacity-10 blur-sm group-hover:opacity-20 transition-opacity'>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={image} alt='' className='w-full h-full object-cover' />
+                </div>
+            ) : (
+                <div
+                    className={cn(
+                        'absolute inset-0 transition-colors z-0',
+                        highlightClassName || 'bg-primary/5 group-hover:bg-primary/10',
+                    )}
+                />
+            )}
 
+            <div className='p-6 flex flex-col md:flex-row md:items-center gap-6 relative z-10'>
                 <div
                     className={cn(
                         'h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 relative z-10 overflow-hidden',

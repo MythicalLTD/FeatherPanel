@@ -75,6 +75,9 @@ export default function MarketplacePage() {
                     ]}
                     onClick={() => router.push('/admin/feathercloud/plugins')}
                     className='border-blue-500/20 hover:border-blue-500/40'
+                    highlightClassName='bg-linear-to-br from-blue-500/10 via-transparent to-transparent'
+                    iconClassName='text-blue-500'
+                    iconWrapperClassName='bg-blue-500/10 border-blue-500/20'
                 />
 
                 {/* Spells */}
@@ -90,6 +93,9 @@ export default function MarketplacePage() {
                     ]}
                     onClick={() => router.push('/admin/feathercloud/spells')}
                     className='border-purple-500/20 hover:border-purple-500/40'
+                    highlightClassName='bg-linear-to-br from-purple-500/10 via-transparent to-transparent'
+                    iconClassName='text-purple-500'
+                    iconWrapperClassName='bg-purple-500/10 border-purple-500/20'
                 />
 
                 {/* Translations */}
@@ -103,7 +109,10 @@ export default function MarketplacePage() {
                             className: 'bg-muted text-muted-foreground',
                         },
                     ]}
-                    className='opacity-75 grayscale-[0.5]'
+                    className='opacity-75 grayscale-[0.5] border-muted/20'
+                    highlightClassName='bg-linear-to-br from-muted/20 via-transparent to-transparent'
+                    iconClassName='text-muted-foreground'
+                    iconWrapperClassName='bg-muted/10 border-muted/20'
                 />
             </div>
 

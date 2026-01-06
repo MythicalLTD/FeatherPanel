@@ -381,7 +381,11 @@ export default function PluginsPage() {
                                     key={`popular-${addon.identifier}`}
                                     icon={IconComponent}
                                     title={addon.name}
-                                    subtitle={addon.author ? `by ${addon.author}` : undefined}
+                                    subtitle={
+                                        addon.author
+                                            ? t('admin.marketplace.common.by_author', { author: addon.author })
+                                            : undefined
+                                    }
                                     badges={
                                         [
                                             installedPluginIds.includes(addon.identifier)
@@ -397,16 +401,17 @@ export default function PluginsPage() {
                                                   }
                                                 : null,
                                             {
-                                                label: 'Featured',
+                                                label: t('admin.marketplace.plugins.featured'),
                                                 className:
                                                     'bg-amber-500 text-white border-amber-600 font-bold px-3 shadow-lg shadow-amber-500/20',
                                             },
                                         ].filter(Boolean) as ResourceBadge[]
                                     }
                                     onClick={() => viewPackageDetails(addon)}
-                                    className='bg-linear-to-br from-primary/5 via-transparent to-transparent shadow-none! border-primary/20 hover:border-primary/40 ring-1 ring-primary/5'
-                                    iconWrapperClassName='bg-primary/5 border-primary/10 group-hover:bg-primary/10 transition-colors'
-                                    iconClassName='text-primary/70'
+                                    className='border-blue-500/20 hover:border-blue-500/40'
+                                    highlightClassName='bg-linear-to-br from-blue-500/10 via-transparent to-transparent'
+                                    iconClassName='text-blue-500'
+                                    iconWrapperClassName='bg-blue-500/10 border-blue-500/20'
                                 />
                             );
                         })}
@@ -444,7 +449,7 @@ export default function PluginsPage() {
                             setSortBy(e.target.value);
                             setCurrentOnlinePage(1);
                         }}
-                        className='w-[160px] h-11 rounded-xl bg-background/50 border-border/50'
+                        className='w-[200px]'
                     >
                         <option value='downloads'>{t('admin.marketplace.plugins.sort.downloads')}</option>
                         <option value='created_at'>{t('admin.marketplace.plugins.sort.newest')}</option>
@@ -529,7 +534,11 @@ export default function PluginsPage() {
                                 key={addon.identifier}
                                 icon={IconComponent}
                                 title={addon.name}
-                                subtitle={addon.author ? `by ${addon.author}` : undefined}
+                                subtitle={
+                                    addon.author
+                                        ? t('admin.marketplace.common.by_author', { author: addon.author })
+                                        : undefined
+                                }
                                 badges={
                                     [
                                         installedPluginIds.includes(addon.identifier)
