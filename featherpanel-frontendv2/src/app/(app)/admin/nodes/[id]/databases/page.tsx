@@ -27,7 +27,7 @@ SOFTWARE.
 'use client';
 
 import { useParams } from 'next/navigation';
-import { NodeDatabases } from '@/app/admin/databases/nodes/NodeDatabases';
+import { NodeDatabases } from '@/app/(app)/admin/databases/nodes/NodeDatabases';
 
 export default function NodeDatabasesPage() {
     const params = useParams();
