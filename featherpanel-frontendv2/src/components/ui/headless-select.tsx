@@ -27,7 +27,7 @@ SOFTWARE.
 'use client';
 
 import { Fragment } from 'react';
-import { Listbox, Transition } from '@headlessui/react';
+import { Listbox, Transition, Field, Label, Description } from '@headlessui/react';
 import { Check, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -47,6 +47,7 @@ interface HeadlessSelectProps {
     description?: string;
     buttonClassName?: string;
     disabled?: boolean;
+    error?: string;
 }
 
 export function HeadlessSelect({
@@ -59,22 +60,25 @@ export function HeadlessSelect({
     label,
     description,
     disabled,
+    error,
 }: HeadlessSelectProps) {
     const selectedOption = options.find((o) => o.id === value) || null;
 
     return (
         <Listbox value={value} onChange={onChange} disabled={disabled}>
-            <div className={clsx('relative mt-1', className)}>
-                {label && (
-                    <Listbox.Label className='block text-sm font-semibold text-foreground mb-1'>{label}</Listbox.Label>
-                )}
-                {description && <p className='text-sm text-muted-foreground mb-2'>{description}</p>}
+            <Field className={clsx('relative', className)}>
+                {label && <Label className='block text-sm font-semibold text-foreground mb-2'>{label}</Label>}
+                {description && <Description className='text-sm text-muted-foreground mb-2'>{description}</Description>}
+
                 <Listbox.Button
                     className={clsx(
-                        'relative w-full cursor-pointer rounded-xl border transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary py-3 pl-4 pr-10 text-left shadow-sm',
-                        buttonClassName || 'bg-background border-border/50 hover:border-border text-sm',
-                        !disabled && 'hover:shadow-md group',
+                        'relative w-full h-12 cursor-pointer rounded-xl border bg-muted/30 text-sm transition-all duration-200 focus:outline-none focus:ring-4 px-4 py-3 text-left shadow-sm hover:shadow-md focus:shadow-lg font-semibold',
+                        error
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
+                            : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border',
                         disabled && 'opacity-50 cursor-not-allowed bg-muted/30',
+                        !disabled && 'group',
+                        buttonClassName,
                     )}
                 >
                     <span
@@ -95,6 +99,7 @@ export function HeadlessSelect({
                         />
                     </span>
                 </Listbox.Button>
+
                 <Transition
                     as={Fragment}
                     enter='transition ease-out duration-200'
@@ -154,7 +159,21 @@ export function HeadlessSelect({
                         ))}
                     </Listbox.Options>
                 </Transition>
-            </div>
+
+                {error && (
+                    <Description className='text-sm text-destructive mt-2 flex items-center gap-1 animate-fade-in'>
+                        <svg className='h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                            <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={2}
+                                d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                            />
+                        </svg>
+                        {error}
+                    </Description>
+                )}
+            </Field>
         </Listbox>
     );
 }

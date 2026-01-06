@@ -41,8 +41,8 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                 {description && <Description className='text-sm text-muted-foreground mb-2'>{description}</Description>}
                 <HeadlessTextarea
                     className={`
-            flex min-h-[80px] w-full rounded-xl border bg-background/50 backdrop-blur-sm px-4 py-3 text-sm
-            transition-all duration-200
+            flex min-h-[120px] w-full rounded-xl border bg-muted/30 px-4 py-3 text-sm
+            transition-all duration-200 font-semibold
             ${
                 error
                     ? 'border-destructive focus:border-destructive focus:ring-destructive/20'

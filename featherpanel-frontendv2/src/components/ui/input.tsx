@@ -51,8 +51,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                     <HeadlessInput
                         ref={ref}
                         className={`
-              w-full rounded-xl border bg-background/50 backdrop-blur-sm text-sm
-              transition-all duration-200
+              w-full h-12 rounded-xl border bg-muted/30 text-sm
+              transition-all duration-200 font-semibold
               ${icon ? 'pl-10 pr-4' : 'px-4'} py-3
               ${
                   error
