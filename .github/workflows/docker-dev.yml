@@ -254,8 +254,8 @@ jobs:
       - name: Cache pnpm dependencies
         uses: actions/cache@v4
         with:
-          path: ./featherpanel-frontendv2/node_modules
-          key: ${{ runner.os }}-pnpm-v2-${{ matrix.cache-key }}-${{ hashFiles('featherpanel-frontendv2/pnpm-lock.yaml') }}
+          path: ./frontendv2/node_modules
+          key: ${{ runner.os }}-pnpm-v2-${{ matrix.cache-key }}-${{ hashFiles('frontendv2/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-v2-${{ matrix.cache-key }}-
 
@@ -278,17 +278,17 @@ jobs:
       - name: Build & Push Frontend v2
         uses: docker/build-push-action@v5
         with:
-          context: ./featherpanel-frontendv2
+          context: ./frontendv2
           platforms: ${{ matrix.platform }}
           push: true
           cache-from: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-${{ matrix.cache-key }}
+            type=registry,ref=ghcr.io/mythicalltd/frontendv2:buildcache-${{ matrix.cache-key }}
             type=gha
           cache-to: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-${{ matrix.cache-key }},mode=max
+            type=registry,ref=ghcr.io/mythicalltd/frontendv2:buildcache-${{ matrix.cache-key }},mode=max
             type=gha,mode=max
           tags: |
-            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-${{ steps.platform-tag.outputs.tag }}
+            ghcr.io/mythicalltd/frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-${{ steps.platform-tag.outputs.tag }}
 
   manifest-frontendv2:
     name: Create Multi-Arch Manifest - Frontend v2
@@ -334,12 +334,12 @@ jobs:
 
       - name: Create and push manifest
         run: |
-          docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-frontendv2:dev \
-            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-amd64 \
-            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-arm64
-          docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }} \
-            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-amd64 \
-            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-arm64
-          docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }} \
-            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-amd64 \
-            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-arm64
+          docker buildx imagetools create --tag ghcr.io/mythicalltd/frontendv2:dev \
+            ghcr.io/mythicalltd/frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-amd64 \
+            ghcr.io/mythicalltd/frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-arm64
+          docker buildx imagetools create --tag ghcr.io/mythicalltd/frontendv2:dev-${{ steps.tags.outputs.branch }} \
+            ghcr.io/mythicalltd/frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-amd64 \
+            ghcr.io/mythicalltd/frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-arm64
+          docker buildx imagetools create --tag ghcr.io/mythicalltd/frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }} \
+            ghcr.io/mythicalltd/frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-amd64 \
+            ghcr.io/mythicalltd/frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-arm64
