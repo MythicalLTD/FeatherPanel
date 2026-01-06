@@ -53,7 +53,7 @@ interface SimplePieChartProps {
 
 export function SimplePieChart({ title, description, data }: SimplePieChartProps) {
     return (
-        <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+        <Card className='col-span-1 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>

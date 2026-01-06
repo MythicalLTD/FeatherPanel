@@ -29,7 +29,7 @@ SOFTWARE.
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import api from '@/lib/api';
-import { SimplePieChart, SimpleBarChart, NodeResourceChart } from '@/components/admin/analytics/InfrastructureCharts';
+import { SimplePieChart, SimpleBarChart, NodeResourceChart } from '@/components/admin/analytics/SharedCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { MapPin, Server, Network, Database } from 'lucide-react';

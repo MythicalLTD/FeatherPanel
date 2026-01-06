@@ -29,7 +29,7 @@ SOFTWARE.
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import api from '@/lib/api';
-import { SimplePieChart } from '@/components/admin/analytics/SystemCharts';
+import { SimplePieChart } from '@/components/admin/analytics/SharedCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -153,7 +153,7 @@ export default function SystemAnalyticsPage() {
                             />
                         </div>
 
-                        <Card className='md:col-span-2'>
+                        <Card className='md:col-span-2 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
                             <CardHeader>
                                 <CardTitle>{t('admin.analytics.system.recent_activity')}</CardTitle>
                                 <CardDescription>{t('admin.analytics.system.recent_activity_desc')}</CardDescription>
