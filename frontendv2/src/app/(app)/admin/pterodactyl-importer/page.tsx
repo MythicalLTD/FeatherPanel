@@ -130,9 +130,6 @@ export default function PterodactylImporterPage() {
     const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
     const [bypassPrerequisites, setBypassPrerequisites] = useState(false);
 
-    // Modals
-    const [showWarningDialog, setShowWarningDialog] = useState(true);
-
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-pterodactyl-importer');
     const [showCreateApiKeyModal, setShowCreateApiKeyModal] = useState(false);
     const [newApiKeyName, setNewApiKeyName] = useState('');
@@ -702,53 +699,6 @@ export default function PterodactylImporterPage() {
                             {isCreatingApiKey
                                 ? t('admin.pterodactyl_importer.create_key.creating')
                                 : t('admin.pterodactyl_importer.create_key.create')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Warning Dialog */}
-            <Dialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
-                <DialogContent className='sm:max-w-[600px] border-destructive/20'>
-                    <DialogHeader>
-                        <DialogTitle className='flex items-center gap-2 text-2xl font-bold text-destructive'>
-                            <AlertTriangle className='h-6 w-6' />
-                            {t('admin.pterodactyl_importer.warning_dialog.title')}
-                        </DialogTitle>
-                        <div className='mt-4 space-y-4'>
-                            <p className='font-semibold text-lg text-destructive'>
-                                {t('admin.pterodactyl_importer.warning_dialog.subtitle')}
-                            </p>
-                            <div className='rounded-xl border border-destructive/20 bg-destructive/5 p-4 space-y-3'>
-                                <p className='font-medium text-foreground'>
-                                    {t('admin.pterodactyl_importer.warning_dialog.do_not')}
-                                </p>
-                                <ul className='grid gap-2'>
-                                    {Object.values(
-                                        getTranslationObject('admin.pterodactyl_importer.warning_dialog.items'),
-                                    ).map((item, i) => (
-                                        <li key={i} className='flex items-start gap-2 text-sm text-muted-foreground'>
-                                            <XCircle className='h-4 w-4 mt-0.5 text-destructive shrink-0' />
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <p className='text-sm text-muted-foreground leading-relaxed'>
-                                {t('admin.pterodactyl_importer.warning_dialog.desc')}
-                            </p>
-                            <div className='rounded-xl bg-destructive text-destructive-foreground p-3 text-sm font-medium flex items-center gap-2'>
-                                <AlertTriangle className='h-4 w-4' />
-                                {t('admin.pterodactyl_importer.warning_dialog.security_warning')}
-                            </div>
-                        </div>
-                    </DialogHeader>
-                    <DialogFooter className='mt-6 flex gap-2'>
-                        <Button variant='outline' onClick={() => router.push('/admin')}>
-                            {t('admin.pterodactyl_importer.warning_dialog.go_back')}
-                        </Button>
-                        <Button variant='destructive' onClick={() => setShowWarningDialog(false)}>
-                            {t('admin.pterodactyl_importer.warning_dialog.continue')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

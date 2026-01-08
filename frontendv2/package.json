@@ -13,7 +13,11 @@
 		"format": "run-s lint:format",
 		"scan:translations": "node scripts/scan-translations.js",
 		"scan:translations:unused": "node scripts/scan-unused-translations.js",
-		"fix:translations": "node scripts/fix-translation-placeholders.js"
+		"fix:translations": "node scripts/fix-translation-placeholders.js",
+		"export:docs": "run-s export:docs:widgets export:docs:permissions export:docs:events",
+		"export:docs:widgets": "node scripts/export-widget-docs.js",
+		"export:docs:permissions": "node scripts/export-permissions-docs.js",
+		"export:docs:events": "node scripts/export-events-docs.js"
 	},
 	"dependencies": {
 		"@headlessui/react": "^2.2.9",
