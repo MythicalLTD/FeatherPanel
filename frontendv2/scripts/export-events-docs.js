@@ -558,6 +558,6 @@ categories.forEach(category => {
 });
 
 console.log(`\n✅ Plugin events documentation generated successfully!`);
-console.log(`   - Main page: /docs/events`);
+console.log(`   - Main page: /icanhasfeatherpanel/events`);
 console.log(`   - ${categories.length} category pages`);
 console.log(`   - ${events.length} total events`);
