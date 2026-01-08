@@ -26,7 +26,7 @@ SOFTWARE.
 'use client';
 
 import Link from 'next/link';
-import { Code2, Puzzle, BookOpen, ExternalLink, Zap, Shield } from 'lucide-react';
+import { Code2, Puzzle, BookOpen, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -57,7 +57,8 @@ export default function DocsPage() {
                                     <CardTitle className='text-2xl text-foreground'>Widgets</CardTitle>
                                 </div>
                                 <CardDescription className='text-base text-muted-foreground'>
-                                    Explore all available widget injection points and learn how to create custom widgets for FeatherPanel
+                                    Explore all available widget injection points and learn how to create custom widgets
+                                    for FeatherPanel
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -95,55 +96,6 @@ export default function DocsPage() {
                             </CardContent>
                         </Card>
                     </Link>
-
-                    <Link href='/icanhasfeatherpanel/events' className='group block'>
-                        <Card className='h-full transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/60 cursor-pointer border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80'>
-                            <CardHeader>
-                                <div className='flex items-center gap-3 mb-2'>
-                                    <div className='p-3 rounded-xl bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors backdrop-blur-sm'>
-                                        <Zap className='w-7 h-7 text-primary' />
-                                    </div>
-                                    <CardTitle className='text-2xl text-foreground'>Plugin Events</CardTitle>
-                                </div>
-                                <CardDescription className='text-base text-muted-foreground'>
-                                    Complete reference of all plugin events and hooks with actual data structures
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className='flex items-center gap-2 text-primary font-semibold group-hover:gap-3 transition-all'>
-                                    <span>View Events</span>
-                                    <ExternalLink className='w-4 h-4 group-hover:translate-x-1 transition-transform' />
-                                </div>
-                                <div className='mt-4'>
-                                    <Badge variant='secondary' className='text-xs bg-muted/50 border-border/50'>
-                                        338 Events Available
-                                    </Badge>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
-
-                    <Link href='/icanhasfeatherpanel/permissions' className='group block'>
-                        <Card className='h-full transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/60 cursor-pointer border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80'>
-                            <CardHeader>
-                                <div className='flex items-center gap-3 mb-2'>
-                                    <div className='p-3 rounded-xl bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors backdrop-blur-sm'>
-                                        <Shield className='w-7 h-7 text-primary' />
-                                    </div>
-                                    <CardTitle className='text-2xl text-foreground'>Permissions</CardTitle>
-                                </div>
-                                <CardDescription className='text-base text-muted-foreground'>
-                                    Complete permission node reference for role-based access control
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className='flex items-center gap-2 text-primary font-semibold group-hover:gap-3 transition-all'>
-                                    <span>View Permissions</span>
-                                    <ExternalLink className='w-4 h-4 group-hover:translate-x-1 transition-transform' />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
                 </div>
 
                 <Card className='border-primary/20 bg-primary/5 backdrop-blur-sm border-border/50'>
@@ -157,54 +109,18 @@ export default function DocsPage() {
                         <div className='space-y-2'>
                             <h3 className='font-semibold text-sm text-foreground'>For Widget Developers</h3>
                             <p className='text-sm text-muted-foreground'>
-                                Widgets allow you to extend FeatherPanel's functionality by injecting custom components into specific pages. 
-                                Each page has unique injection points where widgets can be rendered.
+                                Widgets allow you to extend FeatherPanel&apos;s functionality by injecting custom
+                                components into specific pages. Each page has unique injection points where widgets can
+                                be rendered.
                             </p>
                         </div>
                         <div className='space-y-2'>
                             <h3 className='font-semibold text-sm text-foreground'>Getting Started</h3>
                             <ol className='list-decimal list-inside space-y-1 text-sm text-muted-foreground'>
                                 <li>Browse available widget slugs and injection points</li>
-                                <li>Create your widget component following FeatherPanel's patterns</li>
+                                <li>Create your widget component following FeatherPanel&apos;s patterns</li>
                                 <li>Register your widget with the appropriate slug and injection point</li>
                             </ol>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className='mt-12 border-border/50 bg-card/50 backdrop-blur-sm'>
-                    <CardHeader>
-                        <CardTitle className='text-lg text-foreground'>License</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className='space-y-3 text-sm text-muted-foreground'>
-                            <p className='font-semibold text-foreground'>MIT License</p>
-                            <p>
-                                Copyright (c) 2024-2026 MythicalSystems and Contributors<br />
-                                Copyright (c) 2024-2026 Cassian Gherman (NaysKutzu)<br />
-                                Copyright (c) 2018 - 2021 Dane Everitt &lt;dane@daneeveritt.com&gt; and Contributors
-                            </p>
-                            <p>
-                                Permission is hereby granted, free of charge, to any person obtaining a copy
-                                of this software and associated documentation files (the "Software"), to deal
-                                in the Software without restriction, including without limitation the rights
-                                to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-                                copies of the Software, and to permit persons to whom the Software is
-                                furnished to do so, subject to the following conditions:
-                            </p>
-                            <p>
-                                The above copyright notice and this permission notice shall be included in all
-                                copies or substantial portions of the Software.
-                            </p>
-                            <p className='font-semibold text-foreground'>
-                                THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                                IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                                FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-                                AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-                                LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-                                OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-                                SOFTWARE.
-                            </p>
                         </div>
                     </CardContent>
                 </Card>

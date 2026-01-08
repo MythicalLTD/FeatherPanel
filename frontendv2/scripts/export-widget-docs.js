@@ -221,7 +221,7 @@ export default function DocsPage() {
                         <div className='space-y-2'>
                             <h3 className='font-semibold text-sm text-foreground'>For Widget Developers</h3>
                             <p className='text-sm text-muted-foreground'>
-                                Widgets allow you to extend FeatherPanel's functionality by injecting custom components into specific pages. 
+                                Widgets allow you to extend FeatherPanel&apos;s functionality by injecting custom components into specific pages. 
                                 Each page has unique injection points where widgets can be rendered.
                             </p>
                         </div>
@@ -229,7 +229,7 @@ export default function DocsPage() {
                             <h3 className='font-semibold text-sm text-foreground'>Getting Started</h3>
                             <ol className='list-decimal list-inside space-y-1 text-sm text-muted-foreground'>
                                 <li>Browse available widget slugs and injection points</li>
-                                <li>Create your widget component following FeatherPanel's patterns</li>
+                                <li>Create your widget component following FeatherPanel&apos;s patterns</li>
                                 <li>Register your widget with the appropriate slug and injection point</li>
                             </ol>
                         </div>
@@ -285,7 +285,7 @@ SOFTWARE.
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, FileCode, MapPin } from 'lucide-react';
+import { ArrowLeft, ArrowRight, MapPin } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -531,7 +531,7 @@ export default function WidgetDetailPage() {
                             <div>
                                 <h3 className='text-sm font-semibold text-foreground mb-2'>Widget Configuration</h3>
                                 <p className='text-sm text-muted-foreground mb-3'>
-                                    To inject a widget into this page, create a <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>widgets.json</code> file in your plugin's <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>Frontend/</code> directory:
+                                    To inject a widget into this page, create a <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>widgets.json</code> file in your plugin&apos;s <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>Frontend/</code> directory:
                                 </p>
                                 <pre className='p-4 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto backdrop-blur-sm'>
                                     <code className='text-sm font-mono text-foreground'>
@@ -574,10 +574,10 @@ export default function WidgetDetailPage() {
                                     Set the <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>size</code> property to control widget width:
                                 </p>
                                 <ul className='text-sm text-muted-foreground space-y-1 list-disc list-inside'>
-                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>"full"</code> - Full width (default)</li>
-                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>"half"</code> - Half width (2 per row)</li>
-                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>"third"</code> - One-third width (3 per row)</li>
-                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>"quarter"</code> - One-quarter width (4 per row)</li>
+                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>&quot;full&quot;</code> - Full width (default)</li>
+                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>&quot;half&quot;</code> - Half width (2 per row)</li>
+                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>&quot;third&quot;</code> - One-third width (3 per row)</li>
+                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>&quot;quarter&quot;</code> - One-quarter width (4 per row)</li>
                                 </ul>
                             </div>
                             

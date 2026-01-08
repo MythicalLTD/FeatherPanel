@@ -32,75 +32,63 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const categoryData = {
-    name: "FileManager",
+    name: 'FileManager',
     events: [
-  {
-    "method": "onDirectoryBrowsed",
-    "name": "featherpanel:admin:file_manager:directory:browsed",
-    "callback": "string path, array items.",
-    "category": "FileManager",
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onDirectoryBrowsed(), function ($path, $items) {\n        // Handle featherpanel:admin:file_manager:directory:browsed\n        // Parameters: string path, array items.\n    });\n}"
-  },
-  {
-    "method": "onFileCreated",
-    "name": "featherpanel:admin:file_manager:file:created",
-    "callback": "string path, bool is_directory.",
-    "category": "FileManager",
-    "actualData": [
-      "created_by",
-      "is_directory",
-      "path"
+        {
+            method: 'onDirectoryBrowsed',
+            name: 'featherpanel:admin:file_manager:directory:browsed',
+            callback: 'string path, array items.',
+            category: 'FileManager',
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onDirectoryBrowsed(), function ($path, $items) {\n        // Handle featherpanel:admin:file_manager:directory:browsed\n        // Parameters: string path, array items.\n    });\n}',
+        },
+        {
+            method: 'onFileCreated',
+            name: 'featherpanel:admin:file_manager:file:created',
+            callback: 'string path, bool is_directory.',
+            category: 'FileManager',
+            actualData: ['created_by', 'is_directory', 'path'],
+            sourceFiles: ['backend/app/Controllers/Admin/FileManagerController.php'],
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onFileCreated(), function ($createdBy, $isDirectory, $path) {\n        // Handle featherpanel:admin:file_manager:file:created\n        // Data keys: created_by, is_directory, path\n    });\n}',
+        },
+        {
+            method: 'onFileDeleted',
+            name: 'featherpanel:admin:file_manager:file:deleted',
+            callback: 'string path, bool was_directory.',
+            category: 'FileManager',
+            actualData: ['deleted_by', 'path', 'was_directory'],
+            sourceFiles: ['backend/app/Controllers/Admin/FileManagerController.php'],
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onFileDeleted(), function ($deletedBy, $path, $wasDirectory) {\n        // Handle featherpanel:admin:file_manager:file:deleted\n        // Data keys: deleted_by, path, was_directory\n    });\n}',
+        },
+        {
+            method: 'onFileManagerError',
+            name: 'featherpanel:admin:file_manager:error',
+            callback: 'string error message, array context.',
+            category: 'FileManager',
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onFileManagerError(), function ($message, $context) {\n        // Handle featherpanel:admin:file_manager:error\n        // Parameters: string error message, array context.\n    });\n}',
+        },
+        {
+            method: 'onFileRead',
+            name: 'featherpanel:admin:file_manager:file:read',
+            callback: 'string path, array file data.',
+            category: 'FileManager',
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onFileRead(), function ($path, $data) {\n        // Handle featherpanel:admin:file_manager:file:read\n        // Parameters: string path, array file data.\n    });\n}',
+        },
+        {
+            method: 'onFileSaved',
+            name: 'featherpanel:admin:file_manager:file:saved',
+            callback: 'string path, int size.',
+            category: 'FileManager',
+            actualData: ['path', 'saved_by', 'size'],
+            sourceFiles: ['backend/app/Controllers/Admin/FileManagerController.php'],
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onFileSaved(), function ($path, $savedBy, $size) {\n        // Handle featherpanel:admin:file_manager:file:saved\n        // Data keys: path, saved_by, size\n    });\n}',
+        },
     ],
-    "sourceFiles": [
-      "backend/app/Controllers/Admin/FileManagerController.php"
-    ],
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onFileCreated(), function ($createdBy, $isDirectory, $path) {\n        // Handle featherpanel:admin:file_manager:file:created\n        // Data keys: created_by, is_directory, path\n    });\n}"
-  },
-  {
-    "method": "onFileDeleted",
-    "name": "featherpanel:admin:file_manager:file:deleted",
-    "callback": "string path, bool was_directory.",
-    "category": "FileManager",
-    "actualData": [
-      "deleted_by",
-      "path",
-      "was_directory"
-    ],
-    "sourceFiles": [
-      "backend/app/Controllers/Admin/FileManagerController.php"
-    ],
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onFileDeleted(), function ($deletedBy, $path, $wasDirectory) {\n        // Handle featherpanel:admin:file_manager:file:deleted\n        // Data keys: deleted_by, path, was_directory\n    });\n}"
-  },
-  {
-    "method": "onFileManagerError",
-    "name": "featherpanel:admin:file_manager:error",
-    "callback": "string error message, array context.",
-    "category": "FileManager",
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onFileManagerError(), function ($message, $context) {\n        // Handle featherpanel:admin:file_manager:error\n        // Parameters: string error message, array context.\n    });\n}"
-  },
-  {
-    "method": "onFileRead",
-    "name": "featherpanel:admin:file_manager:file:read",
-    "callback": "string path, array file data.",
-    "category": "FileManager",
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onFileRead(), function ($path, $data) {\n        // Handle featherpanel:admin:file_manager:file:read\n        // Parameters: string path, array file data.\n    });\n}"
-  },
-  {
-    "method": "onFileSaved",
-    "name": "featherpanel:admin:file_manager:file:saved",
-    "callback": "string path, int size.",
-    "category": "FileManager",
-    "actualData": [
-      "path",
-      "saved_by",
-      "size"
-    ],
-    "sourceFiles": [
-      "backend/app/Controllers/Admin/FileManagerController.php"
-    ],
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\FileManagerEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(FileManagerEvent::onFileSaved(), function ($path, $savedBy, $size) {\n        // Handle featherpanel:admin:file_manager:file:saved\n        // Data keys: path, saved_by, size\n    });\n}"
-  }
-]
 };
 
 export default function CategoryEventsPage() {
@@ -110,7 +98,7 @@ export default function CategoryEventsPage() {
         // Replace escaped newlines with actual newlines
         return str.replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
     };
-    
+
     return (
         <div className='min-h-screen bg-background'>
             <div className='container mx-auto px-4 py-16 max-w-6xl'>
@@ -131,7 +119,8 @@ export default function CategoryEventsPage() {
                                 {categoryData.name}
                             </h1>
                             <p className='text-muted-foreground mt-1'>
-                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this category
+                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this
+                                category
                             </p>
                         </div>
                     </div>
@@ -139,7 +128,10 @@ export default function CategoryEventsPage() {
 
                 <div className='space-y-4'>
                     {categoryData.events.map((event) => (
-                        <Card key={event.name} className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'>
+                        <Card
+                            key={event.name}
+                            className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'
+                        >
                             <CardHeader>
                                 <div className='flex items-start justify-between gap-4 flex-wrap'>
                                     <div className='flex-1 min-w-0'>
@@ -153,7 +145,10 @@ export default function CategoryEventsPage() {
                                             <span className='font-semibold'>Callback parameters:</span> {event.callback}
                                         </CardDescription>
                                     </div>
-                                    <Badge variant='outline' className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'>
+                                    <Badge
+                                        variant='outline'
+                                        className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'
+                                    >
                                         {event.method}
                                     </Badge>
                                 </div>
@@ -161,15 +156,17 @@ export default function CategoryEventsPage() {
                             <CardContent className='space-y-4'>
                                 {event.actualData && event.actualData.length > 0 && (
                                     <div className='p-4 rounded-lg bg-muted/30 border border-border/50 backdrop-blur-sm'>
-                                        <h4 className='text-sm font-semibold text-foreground mb-2'>Event Data Structure</h4>
+                                        <h4 className='text-sm font-semibold text-foreground mb-2'>
+                                            Event Data Structure
+                                        </h4>
                                         <p className='text-xs text-muted-foreground mb-3'>
                                             This event receives the following data when emitted:
                                         </p>
                                         <div className='flex flex-wrap gap-2'>
                                             {event.actualData.map((key) => (
-                                                <Badge 
-                                                    key={key} 
-                                                    variant='outline' 
+                                                <Badge
+                                                    key={key}
+                                                    variant='outline'
                                                     className='text-xs font-mono bg-muted/50 border-border/50 text-foreground/80'
                                                 >
                                                     {key}
@@ -181,13 +178,17 @@ export default function CategoryEventsPage() {
                                                 <p className='text-xs text-muted-foreground mb-1'>Emitted from:</p>
                                                 <div className='space-y-1'>
                                                     {event.sourceFiles.slice(0, 2).map((file) => (
-                                                        <code key={file} className='text-xs text-muted-foreground block truncate'>
+                                                        <code
+                                                            key={file}
+                                                            className='text-xs text-muted-foreground block truncate'
+                                                        >
                                                             {file}
                                                         </code>
                                                     ))}
                                                     {event.sourceFiles.length > 2 && (
                                                         <p className='text-xs text-muted-foreground italic'>
-                                                            +{event.sourceFiles.length - 2} more location{event.sourceFiles.length - 2 !== 1 ? 's' : ''}
+                                                            +{event.sourceFiles.length - 2} more location
+                                                            {event.sourceFiles.length - 2 !== 1 ? 's' : ''}
                                                         </p>
                                                     )}
                                                 </div>
@@ -199,7 +200,7 @@ export default function CategoryEventsPage() {
                                     <h4 className='text-sm font-semibold text-foreground mb-2'>Usage Example</h4>
                                     <pre className='p-3 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto'>
                                         <code className='text-xs font-mono text-foreground'>
-{unescapeCode(event.exampleCode)}
+                                            {unescapeCode(event.exampleCode)}
                                         </code>
                                     </pre>
                                 </div>

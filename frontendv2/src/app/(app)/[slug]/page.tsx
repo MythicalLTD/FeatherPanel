@@ -55,6 +55,19 @@ export default function RedirectPage({ params }: { params: Promise<{ slug: strin
     const [redirectLink, setRedirectLink] = useState<RedirectLink | null>(null);
     const [countdown, setCountdown] = useState(5);
 
+    const startCountdown = (url: string) => {
+        const timer = setInterval(() => {
+            setCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    window.location.href = url;
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
     useEffect(() => {
         params.then((unwrappedParams) => {
             setPageSlug(unwrappedParams.slug);
@@ -93,19 +106,6 @@ export default function RedirectPage({ params }: { params: Promise<{ slug: strin
 
         checkRedirect();
     }, [pageSlug]);
-
-    const startCountdown = (url: string) => {
-        const timer = setInterval(() => {
-            setCountdown((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    window.location.href = url;
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-    };
 
     const redirectNow = () => {
         if (redirectLink) {
@@ -289,9 +289,7 @@ export default function RedirectPage({ params }: { params: Promise<{ slug: strin
                         {t('public.redirect.countdown', { count: countdown.toString() })}
                     </p>
                     <div className='bg-muted p-3 rounded-lg border border-border/50'>
-                        <p className='text-sm font-mono break-all text-primary'>
-                            {redirectLink?.url ?? ''}
-                        </p>
+                        <p className='text-sm font-mono break-all text-primary'>{redirectLink?.url ?? ''}</p>
                     </div>
                 </div>
 

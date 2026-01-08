@@ -94,7 +94,7 @@ function parseEventEmissions() {
                     });
                 }
             });
-        } catch (e) {
+        } catch {
             // Skip files that can't be read
         }
     });
@@ -287,7 +287,7 @@ export default function EventsPage() {
                     <CardHeader>
                         <CardTitle className='text-xl text-foreground'>About Plugin Events</CardTitle>
                         <CardDescription className='text-muted-foreground'>
-                            Understanding FeatherPanel's event-driven architecture
+                            Understanding FeatherPanel&apos;s event-driven architecture
                         </CardDescription>
                     </CardHeader>
                     <CardContent className='space-y-4'>
@@ -302,7 +302,7 @@ export default function EventsPage() {
                         <div className='space-y-2'>
                             <h3 className='font-semibold text-sm text-foreground'>Registering Event Listeners</h3>
                             <p className='text-sm text-muted-foreground mb-2'>
-                                In your plugin's main class, implement the <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>processEvents</code> method:
+                                In your plugin&apos;s main class, implement the <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>processEvents</code> method:
                             </p>
                             <pre className='p-3 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto backdrop-blur-sm'>
                                 <code className='text-xs font-mono text-foreground'>
@@ -332,7 +332,6 @@ export default function EventsPage() {
 }
 
 function generateCategoryPage(category, events) {
-    const sanitized = sanitizeCategory(category);
     const escapedCategory = category.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
     
     // Build code examples for each event

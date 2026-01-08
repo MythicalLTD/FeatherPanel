@@ -30,7 +30,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -104,7 +103,6 @@ interface SingleApiClientResponse {
 
 export default function PterodactylImporterPage() {
     const { t, translations } = useTranslation();
-    const router = useRouter();
 
     const getTranslationObject = (key: string): Record<string, string> => {
         const keys = key.split('.');

@@ -120,7 +120,7 @@ SOFTWARE.
 'use client';
 
 import Link from 'next/link';
-import { Shield, Lock, Key, ExternalLink } from 'lucide-react';
+import { Shield, Lock, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -182,7 +182,7 @@ export default function PermissionsPage() {
                     <CardHeader>
                         <CardTitle className='text-xl text-foreground'>About Permissions</CardTitle>
                         <CardDescription className='text-muted-foreground'>
-                            Understanding FeatherPanel's permission system
+                            Understanding FeatherPanel&apos;s permission system
                         </CardDescription>
                     </CardHeader>
                     <CardContent className='space-y-4'>
@@ -223,8 +223,6 @@ admin.settings.edit
 }
 
 function generateCategoryPage(category, permissions) {
-    const sanitized = sanitizeCategory(category);
-    const escapedCategory = category.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
     
     return `/*
 MIT License
