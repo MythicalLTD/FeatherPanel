@@ -100,19 +100,19 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
 
     return (
         <PageCard title={t('admin.version.title')} description={t('admin.version.description')} icon={Package}>
-            <div className='space-y-6'>
-                <div className='flex items-center justify-between p-4 rounded-3xl bg-secondary/30 border border-border/50'>
-                    <div className='space-y-1'>
-                        <p className='text-[10px] font-black uppercase text-muted-foreground tracking-widest'>
+            <div className='space-y-4 md:space-y-6'>
+                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 p-3 md:p-4 rounded-2xl md:rounded-3xl bg-secondary/30 border border-border/50'>
+                    <div className='space-y-1 min-w-0'>
+                        <p className='text-[9px] md:text-[10px] font-black uppercase text-muted-foreground tracking-widest'>
                             {t('admin.version.current_build')}
                         </p>
-                        <h4 className='text-xl font-black'>{current?.version || 'unknown'}</h4>
+                        <h4 className='text-lg md:text-xl font-black truncate'>{current?.version || 'unknown'}</h4>
                     </div>
-                    <div className='text-right space-y-1'>
-                        <p className='text-[10px] font-black uppercase text-muted-foreground tracking-widest'>
+                    <div className='text-left sm:text-right space-y-1 shrink-0'>
+                        <p className='text-[9px] md:text-[10px] font-black uppercase text-muted-foreground tracking-widest'>
                             {t('admin.version.release_type')}
                         </p>
-                        <span className='px-3 py-1 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/30'>
+                        <span className='inline-block px-2 md:px-3 py-1 rounded-full bg-primary/20 text-primary text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-primary/30'>
                             {current?.type || 'Stable'}
                         </span>
                     </div>
@@ -144,9 +144,9 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                     )}
 
                     {current?.php_version && (
-                        <div className='flex items-center gap-3 p-4 rounded-2xl bg-primary/5 border border-primary/10'>
-                            <Cpu className='h-4 w-4 text-primary' />
-                            <p className='text-xs font-bold text-muted-foreground'>
+                        <div className='flex items-center gap-2 md:gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl bg-primary/5 border border-primary/10'>
+                            <Cpu className='h-4 w-4 text-primary shrink-0' />
+                            <p className='text-[10px] md:text-xs font-bold text-muted-foreground break-words'>
                                 {t('admin.version.recommended_php')}{' '}
                                 <span className='text-foreground'>{current.php_version}</span>
                             </p>
@@ -154,8 +154,8 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                     )}
 
                     {(current?.release_description || latest?.release_description) && (
-                        <div className='p-4 rounded-2xl bg-muted/20 border border-border/50'>
-                            <div className='prose prose-sm prose-invert max-w-none text-xs text-muted-foreground leading-relaxed'>
+                        <div className='p-3 md:p-4 rounded-xl md:rounded-2xl bg-muted/20 border border-border/50'>
+                            <div className='prose prose-sm prose-invert max-w-none text-[10px] md:text-xs text-muted-foreground leading-relaxed'>
                                 <ReactMarkdown>
                                     {version?.update_available
                                         ? latest?.release_description
@@ -169,23 +169,23 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                         <div className='space-y-3'>
                             <button
                                 onClick={() => setShowChangelog(!showChangelog)}
-                                className='flex items-center justify-between w-full p-4 rounded-2xl bg-muted/10 border border-border/40 hover:bg-muted/20 transition-all group'
+                                className='flex items-center justify-between w-full p-3 md:p-4 rounded-xl md:rounded-2xl bg-muted/10 border border-border/40 hover:bg-muted/20 transition-all group'
                             >
-                                <div className='flex items-center gap-2'>
-                                    <Package className='h-4 w-4 text-primary' />
-                                    <span className='text-[10px] font-black uppercase tracking-widest'>
+                                <div className='flex items-center gap-2 min-w-0'>
+                                    <Package className='h-4 w-4 text-primary shrink-0' />
+                                    <span className='text-[9px] md:text-[10px] font-black uppercase tracking-widest truncate'>
                                         {t('admin.version.view_changelog')}
                                     </span>
                                 </div>
                                 {showChangelog ? (
-                                    <ChevronUp className='h-4 w-4 opacity-50' />
+                                    <ChevronUp className='h-4 w-4 opacity-50 shrink-0' />
                                 ) : (
-                                    <ChevronDown className='h-4 w-4 opacity-50' />
+                                    <ChevronDown className='h-4 w-4 opacity-50 shrink-0' />
                                 )}
                             </button>
 
                             {showChangelog && (
-                                <div className='p-6 rounded-3xl bg-muted/5 border border-border/30 space-y-8 animate-in fade-in slide-in-from-top-2 duration-300'>
+                                <div className='p-4 md:p-6 rounded-2xl md:rounded-3xl bg-muted/5 border border-border/30 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-top-2 duration-300'>
                                     <ChangelogSection
                                         title={t('admin.version.changelog.added')}
                                         items={changelogData?.changelog_added || []}
@@ -220,24 +220,24 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                             )}
                         </div>
                     )}
-                    <div className='grid grid-cols-2 gap-3 mt-2'>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 mt-2'>
                         <button
                             onClick={() =>
                                 toast.info('Integrity Check', { description: t('admin.version.integrity_coming_soon') })
                             }
-                            className='flex items-center justify-center gap-2 p-3 rounded-xl bg-muted/20 border border-border/50 hover:bg-muted/30 transition-all text-[10px] font-black uppercase tracking-widest group'
+                            className='flex items-center justify-center gap-2 p-2.5 md:p-3 rounded-xl bg-muted/20 border border-border/50 hover:bg-muted/30 transition-all text-[9px] md:text-[10px] font-black uppercase tracking-widest group'
                         >
-                            <ShieldCheck className='h-4 w-4 text-primary group-hover:scale-110 transition-transform' />
-                            {t('admin.version.verify_integrity')}
+                            <ShieldCheck className='h-3.5 w-3.5 md:h-4 md:w-4 text-primary group-hover:scale-110 transition-transform shrink-0' />
+                            <span className='truncate'>{t('admin.version.verify_integrity')}</span>
                         </button>
                         <a
                             href='https://featherpanel.com'
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='flex items-center justify-center gap-2 p-3 rounded-xl bg-muted/20 border border-border/50 hover:bg-muted/30 transition-all text-[10px] font-black uppercase tracking-widest group'
+                            className='flex items-center justify-center gap-2 p-2.5 md:p-3 rounded-xl bg-muted/20 border border-border/50 hover:bg-muted/30 transition-all text-[9px] md:text-[10px] font-black uppercase tracking-widest group'
                         >
-                            <ExternalLink className='h-4 w-4 text-primary group-hover:scale-110 transition-transform' />
-                            {t('admin.version.official_site')}
+                            <ExternalLink className='h-3.5 w-3.5 md:h-4 md:w-4 text-primary group-hover:scale-110 transition-transform shrink-0' />
+                            <span className='truncate'>{t('admin.version.official_site')}</span>
                         </a>
                     </div>
 

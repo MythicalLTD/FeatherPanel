@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
     const isVisible = (widgetId: string) => !hiddenWidgets.includes(widgetId) || isCustomizing;
 
     return (
-        <div className='space-y-8 '>
+        <div className='space-y-6 md:space-y-8'>
             {/* Plugin Widgets: Top of Page */}
             <WidgetRenderer widgets={getWidgets('admin-home', 'top-of-page')} />
 
@@ -146,35 +146,38 @@ export default function AdminDashboardPage() {
                 description={t('admin.dashboard.subtitle')}
                 icon={LayoutDashboard}
                 actions={
-                    <>
+                    <div className='flex flex-wrap items-center gap-2 md:gap-3'>
                         <button
                             onClick={() => setIsCustomizing(!isCustomizing)}
                             className={cn(
-                                'flex items-center gap-2 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border',
+                                'flex items-center gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-xl md:rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border',
                                 isCustomizing
                                     ? 'bg-amber-500/10 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-500/10'
                                     : 'bg-secondary/50 hover:bg-secondary border-border/50',
                             )}
                         >
                             <Settings className={cn('h-4 w-4', isCustomizing && 'animate-spin-slow')} />
-                            {isCustomizing ? t('admin.dashboard.stop_customizing') : t('admin.dashboard.customize')}
+                            <span className='hidden sm:inline'>{isCustomizing ? t('admin.dashboard.stop_customizing') : t('admin.dashboard.customize')}</span>
+                            <span className='sm:hidden'>{isCustomizing ? t('admin.dashboard.stop') : t('admin.dashboard.customize')}</span>
                         </button>
                         <button
                             onClick={clearCache}
                             disabled={isClearingCache}
-                            className='flex items-center gap-2 px-6 py-3 rounded-2xl bg-secondary hover:bg-secondary/80 border border-border/50 text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100'
+                            className='flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl bg-secondary hover:bg-secondary/80 border border-border/50 text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100'
                         >
                             <Trash2 className={cn('h-4 w-4', isClearingCache && 'animate-pulse')} />
-                            {t('admin.dashboard.clear_cache')}
+                            <span className='hidden sm:inline'>{t('admin.dashboard.clear_cache')}</span>
+                            <span className='sm:hidden'>{t('admin.dashboard.clear')}</span>
                         </button>
                         <Link
                             href='/admin/settings'
-                            className='flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-primary/20'
+                            className='flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-primary/20'
                         >
                             <Settings className='h-4 w-4' />
-                            {t('admin.dashboard.global_settings')}
+                            <span className='hidden sm:inline'>{t('admin.dashboard.global_settings')}</span>
+                            <span className='sm:hidden'>{t('admin.dashboard.settings')}</span>
                         </Link>
-                    </>
+                    </div>
                 }
             />
 
@@ -183,33 +186,33 @@ export default function AdminDashboardPage() {
 
             {/* APP_URL Warning */}
             {showAppUrlWarning && (
-                <div className='p-6 rounded-[2.5rem] bg-red-500/10 border border-red-500/20 backdrop-blur-3xl animate-in slide-in-from-top-4 duration-500 relative group overflow-hidden'>
+                <div className='p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] bg-red-500/10 border border-red-500/20 backdrop-blur-3xl animate-in slide-in-from-top-4 duration-500 relative group overflow-hidden'>
                     <div className='absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-3xl -mr-16 -mt-16 rounded-full group-hover:bg-red-500/20 transition-all duration-700' />
 
-                    <div className='relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6'>
-                        <div className='flex items-start gap-4'>
-                            <div className='h-12 w-12 rounded-2xl bg-red-500/20 flex items-center justify-center text-red-500 border border-red-500/30 shadow-lg shadow-red-500/10 shrink-0'>
-                                <AlertTriangle className='h-6 w-6' />
+                    <div className='relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6'>
+                        <div className='flex items-start gap-3 md:gap-4 min-w-0 flex-1'>
+                            <div className='h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-red-500/20 flex items-center justify-center text-red-500 border border-red-500/30 shadow-lg shadow-red-500/10 shrink-0'>
+                                <AlertTriangle className='h-5 w-5 md:h-6 md:w-6' />
                             </div>
-                            <div className='space-y-1'>
-                                <h3 className='text-xl font-black text-red-500 uppercase tracking-tight'>
+                            <div className='space-y-1 min-w-0 flex-1'>
+                                <h3 className='text-lg md:text-xl font-black text-red-500 uppercase tracking-tight'>
                                     {t('admin.dashboard.app_url_warning.title')}
                                 </h3>
-                                <p className='text-sm text-red-500/70 font-bold leading-relaxed max-w-2xl'>
+                                <p className='text-xs md:text-sm text-red-500/70 font-bold leading-relaxed'>
                                     {t('admin.dashboard.app_url_warning.message')}
                                 </p>
                             </div>
                         </div>
-                        <div className='flex items-center gap-2'>
+                        <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0'>
                             <button
                                 onClick={dismissWarning}
-                                className='px-5 py-2.5 rounded-xl border border-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 transition-all'
+                                className='px-4 md:px-5 py-2 md:py-2.5 rounded-xl border border-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 transition-all whitespace-nowrap'
                             >
                                 {t('admin.dashboard.app_url_warning.remind_me')}
                             </button>
                             <button
                                 onClick={() => router.push('/admin/settings/advanced')}
-                                className='px-5 py-2.5 rounded-xl bg-red-500 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-105 transition-all'
+                                className='px-4 md:px-5 py-2 md:py-2.5 rounded-xl bg-red-500 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-105 transition-all whitespace-nowrap'
                             >
                                 {t('admin.dashboard.app_url_warning.update_settings')}
                             </button>
@@ -264,8 +267,8 @@ export default function AdminDashboardPage() {
             <WidgetRenderer widgets={getWidgets('admin-home', 'before-widgets-grid')} />
 
             {/* Main Content Grid */}
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 items-start'>
-                <div className='space-y-8'>
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-start'>
+                <div className='space-y-6 md:space-y-8'>
                     <div className={cn('transition-all duration-500', !isVisible('health') && 'hidden')}>
                         <div className='relative'>
                             {isCustomizing && (
@@ -306,7 +309,7 @@ export default function AdminDashboardPage() {
                         </div>
                     </div>
                 </div>
-                <div className='space-y-8'>
+                <div className='space-y-6 md:space-y-8'>
                     <div className={cn('transition-all duration-500', !isVisible('version') && 'hidden')}>
                         <div className='relative'>
                             {isCustomizing && (

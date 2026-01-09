@@ -54,28 +54,28 @@ export function ChangelogSection({ title, items, color, icon }: ChangelogSection
     };
 
     return (
-        <div className='space-y-4'>
+        <div className='space-y-3 md:space-y-4'>
             <div className='flex items-center gap-2'>
                 <div
                     className={cn(
-                        'flex items-center justify-center w-6 h-6 rounded-md border text-xs font-bold',
+                        'flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-md border text-[10px] md:text-xs font-bold shrink-0',
                         colorClasses[color],
                     )}
                 >
                     {icon}
                 </div>
-                <h4 className='text-sm font-bold uppercase tracking-wider text-muted-foreground'>{title}</h4>
+                <h4 className='text-xs md:text-sm font-bold uppercase tracking-wider text-muted-foreground truncate'>{title}</h4>
             </div>
             <ul className='space-y-2'>
                 {items.map((item, index) => (
-                    <li key={index} className='flex items-start gap-3 group'>
+                    <li key={index} className='flex items-start gap-2 md:gap-3 group'>
                         <div
                             className={cn(
                                 'mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 opacity-40 group-hover:opacity-100 transition-opacity',
                                 dotClasses[color],
                             )}
                         />
-                        <span className='text-sm leading-relaxed'>{item}</span>
+                        <span className='text-xs md:text-sm leading-relaxed break-words'>{item}</span>
                     </li>
                 ))}
             </ul>

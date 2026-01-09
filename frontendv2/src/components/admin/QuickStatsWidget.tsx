@@ -80,29 +80,29 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
     ];
 
     return (
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8'>
             {items.map((item, index) => (
                 <div
                     key={index}
-                    className='group relative p-5 rounded-3xl bg-card/20 border border-border/40 backdrop-blur-3xl hover:border-primary/30 transition-all duration-300'
+                    className='group relative p-4 md:p-5 rounded-2xl md:rounded-3xl bg-card/20 border border-border/40 backdrop-blur-3xl hover:border-primary/30 transition-all duration-300'
                 >
-                    <div className='flex items-center gap-4'>
+                    <div className='flex items-center gap-3 md:gap-4'>
                         <div
                             className={cn(
-                                'h-10 w-10 rounded-xl flex items-center justify-center border border-white/5',
+                                'h-9 w-9 md:h-10 md:w-10 rounded-lg md:rounded-xl flex items-center justify-center border border-white/5 shrink-0',
                                 item.bg,
                                 item.color,
                             )}
                         >
-                            <item.icon className='h-5 w-5' />
+                            <item.icon className='h-4 w-4 md:h-5 md:w-5' />
                         </div>
-                        <div>
-                            <p className='text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
+                        <div className='min-w-0 flex-1'>
+                            <p className='text-[9px] md:text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60 truncate'>
                                 {item.name}
                             </p>
-                            <h3 className='text-xl font-black'>
+                            <h3 className='text-lg md:text-xl font-black'>
                                 {loading ? (
-                                    <div className='h-6 w-12 bg-muted animate-pulse rounded-md mt-1' />
+                                    <div className='h-5 md:h-6 w-12 bg-muted animate-pulse rounded-md mt-1' />
                                 ) : (
                                     item.value.toLocaleString()
                                 )}

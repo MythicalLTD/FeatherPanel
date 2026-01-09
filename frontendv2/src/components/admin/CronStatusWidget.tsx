@@ -68,12 +68,12 @@ export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
                     tasks.map((task) => (
                         <div
                             key={task.id}
-                            className='flex items-center justify-between p-4 rounded-2xl bg-muted/10 border border-border/50 group hover:bg-muted/20 transition-all'
+                            className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 p-3 md:p-4 rounded-xl md:rounded-2xl bg-muted/10 border border-border/50 group hover:bg-muted/20 transition-all'
                         >
-                            <div className='flex items-center gap-3 min-w-0'>
+                            <div className='flex items-center gap-3 min-w-0 flex-1'>
                                 <div
                                     className={cn(
-                                        'h-10 w-10 rounded-xl flex items-center justify-center shrink-0',
+                                        'h-9 w-9 md:h-10 md:w-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0',
                                         task.last_run_success && !task.late
                                             ? 'bg-green-500/10 text-green-500'
                                             : task.late
@@ -82,16 +82,16 @@ export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
                                     )}
                                 >
                                     {task.last_run_success && !task.late ? (
-                                        <CheckCircle2 className='h-5 w-5' />
+                                        <CheckCircle2 className='h-4 w-4 md:h-5 md:w-5' />
                                     ) : task.late ? (
-                                        <Clock className='h-5 w-5' />
+                                        <Clock className='h-4 w-4 md:h-5 md:w-5' />
                                     ) : (
-                                        <XCircle className='h-5 w-5' />
+                                        <XCircle className='h-4 w-4 md:h-5 md:w-5' />
                                     )}
                                 </div>
-                                <div className='min-w-0'>
-                                    <p className='text-sm font-bold tracking-tight truncate'>{task.task_name}</p>
-                                    <p className='text-[10px] text-muted-foreground uppercase font-bold opacity-70 truncate'>
+                                <div className='min-w-0 flex-1'>
+                                    <p className='text-xs md:text-sm font-bold tracking-tight truncate'>{task.task_name}</p>
+                                    <p className='text-[9px] md:text-[10px] text-muted-foreground uppercase font-bold opacity-70 truncate'>
                                         {t('admin.cron.last_run', {
                                             date: task.last_run_at
                                                 ? new Date(task.last_run_at).toLocaleString()
@@ -102,7 +102,7 @@ export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
                             </div>
                             <div
                                 className={cn(
-                                    'px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0',
+                                    'px-2 py-1 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-wider shrink-0 self-start sm:self-auto',
                                     task.last_run_success && !task.late
                                         ? 'bg-green-500/20 text-green-500'
                                         : task.late

@@ -73,28 +73,29 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
 
     return (
         <PageCard title={t('admin.quick_links.title')} description={t('admin.quick_links.description')} icon={Zap}>
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+            <div className='flex flex-wrap gap-3 md:gap-4'>
                 {links.map((link) => (
                     <Link
                         key={link.name}
                         href={link.href}
                         target={link.external ? '_blank' : undefined}
-                        className='flex items-center gap-4 p-4 rounded-2xl bg-muted/10 border border-border/50 hover:bg-muted/20 hover:scale-[1.02] active:scale-[0.98] transition-all group'
+                        rel={link.external ? 'noopener noreferrer' : undefined}
+                        className='relative flex items-center gap-3 md:gap-4 p-3 md:p-4 rounded-xl md:rounded-2xl bg-muted/10 border border-border/50 hover:bg-muted/20 hover:scale-[1.02] active:scale-[0.98] transition-all group flex-1 min-w-[200px] sm:min-w-[240px] lg:flex-initial lg:flex-1 xl:flex-initial'
                     >
                         <div
                             className={cn(
-                                'h-10 w-10 rounded-xl flex items-center justify-center border transition-all group-hover:first-letter:rotate-12',
+                                'h-9 w-9 md:h-10 md:w-10 rounded-lg md:rounded-xl flex items-center justify-center border transition-all shrink-0',
                                 link.bg,
                                 link.color,
                                 link.border,
                             )}
                         >
-                            <link.icon className='h-5 w-5' />
+                            <link.icon className='h-4 w-4 md:h-5 md:w-5' />
                         </div>
-                        <div className='min-w-0'>
-                            <p className='text-xs font-black uppercase tracking-widest truncate'>{link.name}</p>
+                        <div className='min-w-0 flex-1'>
+                            <p className='text-[10px] md:text-xs font-black uppercase tracking-widest break-words leading-tight whitespace-normal'>{link.name}</p>
                             {link.external && (
-                                <ExternalLink className='h-3 w-3 text-muted-foreground opacity-50 absolute top-4 right-4' />
+                                <ExternalLink className='h-3 w-3 text-muted-foreground opacity-50 absolute top-3 right-3 md:top-4 md:right-4 shrink-0' />
                             )}
                         </div>
                     </Link>
@@ -103,18 +104,18 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
                 <button
                     onClick={onClearCache}
                     disabled={isClearingCache}
-                    className='flex items-center gap-4 p-4 rounded-2xl bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 hover:scale-[1.02] active:scale-[0.98] transition-all group text-start w-full'
+                    className='relative flex items-center gap-3 md:gap-4 p-3 md:p-4 rounded-xl md:rounded-2xl bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 hover:scale-[1.02] active:scale-[0.98] transition-all group text-start flex-1 min-w-[200px] sm:min-w-[240px] lg:flex-initial lg:flex-1 xl:flex-initial disabled:opacity-50 disabled:cursor-not-allowed'
                 >
                     <div
                         className={cn(
-                            'h-10 w-10 rounded-xl flex items-center justify-center border border-red-500/20 bg-red-500/10 text-red-500 transition-all',
+                            'h-9 w-9 md:h-10 md:w-10 rounded-lg md:rounded-xl flex items-center justify-center border border-red-500/20 bg-red-500/10 text-red-500 transition-all shrink-0',
                             isClearingCache && 'animate-pulse',
                         )}
                     >
-                        <Trash2 className={cn('h-5 w-5', isClearingCache && 'animate-spin')} />
+                        <Trash2 className={cn('h-4 w-4 md:h-5 md:w-5', isClearingCache && 'animate-spin')} />
                     </div>
-                    <div className='min-w-0'>
-                        <p className='text-xs font-black uppercase tracking-widest text-red-500 truncate'>
+                    <div className='min-w-0 flex-1'>
+                        <p className='text-[10px] md:text-xs font-black uppercase tracking-widest text-red-500 break-words leading-tight whitespace-normal'>
                             {t('admin.quick_links.clear_system_cache')}
                         </p>
                     </div>

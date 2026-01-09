@@ -169,25 +169,25 @@ export function SystemHealthWidget() {
             description={t('admin.system_health.description')}
             icon={Activity}
         >
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4'>
                 {systems.map((system) => (
                     <div
                         key={system.name}
-                        className='flex items-center justify-between p-4 rounded-2xl bg-muted/10 border border-border/50 group hover:bg-muted/20 transition-all'
+                        className='flex items-center justify-between gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl bg-muted/10 border border-border/50 group hover:bg-muted/20 transition-all'
                     >
-                        <div className='flex items-center gap-3 min-w-0'>
+                        <div className='flex items-center gap-2 md:gap-3 min-w-0 flex-1'>
                             <div
                                 className={cn(
-                                    'h-10 w-10 rounded-xl bg-background flex items-center justify-center border border-border/50 group-hover:border-primary/30 transition-all shadow-sm shrink-0',
+                                    'h-9 w-9 md:h-10 md:w-10 rounded-lg md:rounded-xl bg-background flex items-center justify-center border border-border/50 group-hover:border-primary/30 transition-all shadow-sm shrink-0',
                                     system.loading && 'animate-pulse',
                                 )}
                             >
-                                <system.icon className={cn('h-5 w-5', system.color)} />
+                                <system.icon className={cn('h-4 w-4 md:h-5 md:w-5', system.color)} />
                             </div>
                             <div className='min-w-0 flex-1'>
-                                <p className='text-sm font-bold tracking-tight'>{system.name}</p>
+                                <p className='text-xs md:text-sm font-bold tracking-tight truncate'>{system.name}</p>
                                 <p
-                                    className='text-[10px] text-muted-foreground font-bold uppercase opacity-70 tracking-tighter truncate'
+                                    className='text-[9px] md:text-[10px] text-muted-foreground font-bold uppercase opacity-70 tracking-tighter truncate'
                                     title={system.detail}
                                 >
                                     {system.loading ? t('admin.system_health.status.fetching') : system.detail}
@@ -200,9 +200,9 @@ export function SystemHealthWidget() {
                           system.status === 'Usage' ||
                           system.status === 'Average' ||
                           system.status === 'Latency' ? (
-                            <CheckCircle2 className='h-5 w-5 text-green-500 shrink-0' />
+                            <CheckCircle2 className='h-4 w-4 md:h-5 md:w-5 text-green-500 shrink-0' />
                         ) : (
-                            <AlertTriangle className='h-5 w-5 text-red-500 shrink-0' />
+                            <AlertTriangle className='h-4 w-4 md:h-5 md:w-5 text-red-500 shrink-0' />
                         )}
                     </div>
                 ))}

@@ -79,12 +79,8 @@ export default function RedirectPage({ params }: { params: Promise<{ slug: strin
 
         const checkRedirect = async () => {
             try {
-                // Fixed: Use public endpoint instead of admin endpoint
                 const { data } = await axios.get(`/api/redirect-links/${pageSlug}`);
                 if (data.success && data.data) {
-                    // Check if data.data has redirect_link wrapper or is the object itself
-                    // Vue code uses data.data.redirect_link. Let's handle both just in case or match Vue exactly.
-                    // Vue: data.data.redirect_link
                     const link = data.data.redirect_link || data.data;
                     setRedirectLink(link);
                     startCountdown(link.url);
