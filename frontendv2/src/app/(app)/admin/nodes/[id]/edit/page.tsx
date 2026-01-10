@@ -33,8 +33,23 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Server, ArrowLeft, Save, Database, Network, Shield, Settings2, Loader2, LayoutGrid, Zap } from 'lucide-react';
+import {
+    Server,
+    ArrowLeft,
+    Save,
+    Database,
+    Network,
+    Shield,
+    Settings2,
+    Loader2,
+    LayoutGrid,
+    Zap,
+    Search as SearchIcon,
+    MapPin,
+} from 'lucide-react';
 
 import { DetailsTab } from './DetailsTab';
 import { ConfigurationTab } from './ConfigurationTab';
@@ -83,10 +98,24 @@ export default function EditNodePage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [locations, setLocations] = useState<Location[]>([]);
+    const [selectedLocationName, setSelectedLocationName] = useState<string>('');
     const [nodeData, setNodeData] = useState<NodeData | null>(null);
     const [copied, setCopied] = useState(false);
     const [resetting, setResetting] = useState(false);
     const [activeTab, setActiveTab] = useState('details');
+    const [locationModalOpen, setLocationModalOpen] = useState(false);
+
+    // Location Pagination States
+    const [locationPagination, setLocationPagination] = useState({
+        current_page: 1,
+        per_page: 10,
+        total_records: 0,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false,
+    });
+    const [locationSearch, setLocationSearch] = useState('');
+    const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
 
     const [form, setForm] = useState<NodeForm>({
         name: '',
@@ -132,10 +161,7 @@ export default function EditNodePage() {
     const fetchInitialData = useCallback(async () => {
         setLoading(true);
         try {
-            const [nodeRes, locationsRes] = await Promise.all([
-                axios.get(`/api/admin/nodes`),
-                axios.get('/api/admin/locations', { params: { limit: 100 } }),
-            ]);
+            const nodeRes = await axios.get(`/api/admin/nodes`);
 
             const allNodes: NodeData[] = nodeRes.data.data.nodes || [];
             const node = allNodes.find((n) => n.id === Number(nodeId));
@@ -147,7 +173,18 @@ export default function EditNodePage() {
             }
 
             setNodeData(node as NodeData);
-            setLocations(locationsRes.data.data.locations || []);
+
+            // Fetch the current location name if location_id exists
+            if (node.location_id) {
+                try {
+                    const locationRes = await axios.get(`/api/admin/locations/${node.location_id}`);
+                    if (locationRes.data?.data?.location) {
+                        setSelectedLocationName(locationRes.data.data.location.name);
+                    }
+                } catch (error) {
+                    console.error('Error fetching location:', error);
+                }
+            }
 
             setForm({
                 name: node.name,
@@ -242,6 +279,46 @@ export default function EditNodePage() {
             });
         }
     }, [nodeId]);
+
+    // Debounce location search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedLocationSearch(locationSearch);
+            setLocationPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [locationSearch]);
+
+    // Fetch locations with pagination
+    const fetchLocations = useCallback(async () => {
+        try {
+            const currentPage = locationPagination.current_page;
+            const perPage = locationPagination.per_page;
+
+            const { data } = await axios.get('/api/admin/locations', {
+                params: {
+                    page: currentPage,
+                    limit: perPage,
+                    search: debouncedLocationSearch,
+                },
+            });
+            setLocations(data.data.locations || []);
+            if (data.data.pagination) {
+                setLocationPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
+        } catch (error) {
+            console.error('Error fetching locations:', error);
+        }
+    }, [locationPagination.current_page, locationPagination.per_page, debouncedLocationSearch]);
+
+    useEffect(() => {
+        if (locationModalOpen) {
+            fetchLocations();
+        }
+    }, [locationModalOpen, locationPagination.current_page, debouncedLocationSearch, fetchLocations]);
 
     useEffect(() => {
         fetchInitialData();
@@ -435,7 +512,14 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
 
                     <div className='flex-1 space-y-6 min-w-0'>
                         <TabsContent value='details' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                            <DetailsTab form={form} setForm={setForm} locations={locations} errors={errors} />
+                            <DetailsTab
+                                form={form}
+                                setForm={setForm}
+                                errors={errors}
+                                selectedLocationName={selectedLocationName}
+                                setLocationModalOpen={setLocationModalOpen}
+                                fetchLocations={fetchLocations}
+                            />
                         </TabsContent>
 
                         <TabsContent value='config' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
@@ -556,6 +640,118 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                     </div>
                 </Tabs>
             </div>
+
+            {/* Location Selection Sheet */}
+            <Sheet open={locationModalOpen} onOpenChange={setLocationModalOpen}>
+                <SheetContent className='sm:max-w-2xl'>
+                    <SheetHeader>
+                        <SheetTitle>{t('admin.node.form.select_location')}</SheetTitle>
+                        <SheetDescription>
+                            {t('admin.node.form.select_location_description', {
+                                total: String(locationPagination.total_records || 0),
+                            })}
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    <div className='mt-6 space-y-4'>
+                        {/* Search */}
+                        <div className='relative'>
+                            <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <Input
+                                placeholder={t('admin.node.form.search_locations')}
+                                value={locationSearch}
+                                onChange={(e) => setLocationSearch(e.target.value)}
+                                className='pl-10'
+                            />
+                        </div>
+
+                        {/* Locations List */}
+                        <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
+                            {locations.length === 0 ? (
+                                <div className='text-center py-8 text-muted-foreground'>
+                                    {t('admin.node.form.no_locations_found')}
+                                </div>
+                            ) : (
+                                locations.map((location) => (
+                                    <button
+                                        key={location.id}
+                                        onClick={() => {
+                                            setForm((prev) => ({ ...prev, location_id: location.id.toString() }));
+                                            setSelectedLocationName(location.name);
+                                            setLocationModalOpen(false);
+                                        }}
+                                        className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                    >
+                                        <div className='flex items-start gap-3'>
+                                            <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
+                                                <MapPin className='h-5 w-5 text-primary' />
+                                            </div>
+                                            <div className='flex-1 min-w-0'>
+                                                <div className='font-medium'>{location.name}</div>
+                                                {location.description && (
+                                                    <div className='text-sm text-muted-foreground mt-1'>
+                                                        {location.description}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {locationPagination.total_pages > 1 && (
+                            <div className='flex items-center justify-between pt-4 border-t'>
+                                <div className='text-sm text-muted-foreground'>
+                                    {t('common.showing', {
+                                        from: String(
+                                            locationPagination.current_page * locationPagination.per_page -
+                                                locationPagination.per_page +
+                                                1,
+                                        ),
+                                        to: String(
+                                            Math.min(
+                                                locationPagination.current_page * locationPagination.per_page,
+                                                locationPagination.total_records,
+                                            ),
+                                        ),
+                                        total: String(locationPagination.total_records),
+                                    })}
+                                </div>
+                                <div className='flex gap-2'>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() =>
+                                            setLocationPagination((prev) => ({
+                                                ...prev,
+                                                current_page: prev.current_page - 1,
+                                            }))
+                                        }
+                                        disabled={!locationPagination.has_prev}
+                                    >
+                                        {t('common.previous')}
+                                    </Button>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() =>
+                                            setLocationPagination((prev) => ({
+                                                ...prev,
+                                                current_page: prev.current_page + 1,
+                                            }))
+                                        }
+                                        disabled={!locationPagination.has_next}
+                                    >
+                                        {t('common.next')}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </SheetContent>
+            </Sheet>
         </div>
     );
 }

@@ -105,12 +105,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         if (typeof window !== 'undefined' && !checkIsAuthPage()) {
             fetchNotifications();
             // Poll every 5 minutes
-            const interval = setInterval(() => {
-                // Re-check pathname before each fetch
-                if (!checkIsAuthPage()) {
-                    fetchNotifications();
-                }
-            }, 5 * 60 * 1000);
+            const interval = setInterval(
+                () => {
+                    // Re-check pathname before each fetch
+                    if (!checkIsAuthPage()) {
+                        fetchNotifications();
+                    }
+                },
+                5 * 60 * 1000,
+            );
             return () => clearInterval(interval);
         } else {
             setLoading(false);

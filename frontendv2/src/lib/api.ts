@@ -44,7 +44,11 @@ api.interceptors.response.use(
         const status = error.response?.status;
 
         // Check for invalid account token error (can be 400 or 401)
-        if (errorCode === 'INVALID_ACCOUNT_TOKEN' || status === 401 || (status === 400 && errorCode === 'INVALID_ACCOUNT_TOKEN')) {
+        if (
+            errorCode === 'INVALID_ACCOUNT_TOKEN' ||
+            status === 401 ||
+            (status === 400 && errorCode === 'INVALID_ACCOUNT_TOKEN')
+        ) {
             // Invalid token or unauthorized - clear all storage and redirect to login
             if (typeof window !== 'undefined') {
                 // Clear all storage

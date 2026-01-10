@@ -43,19 +43,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Editor } from '@monaco-editor/react';
 import { useTheme } from '@/contexts/ThemeContext';
-import {
-    Globe,
-    Plus,
-    Search,
-    Pencil,
-    Trash2,
-    Download,
-    Upload,
-    Check,
-    X,
-    FileCode,
-    Users,
-} from 'lucide-react';
+import { Globe, Plus, Search, Pencil, Trash2, Download, Upload, Check, X, FileCode, Users } from 'lucide-react';
 import router from 'next/router';
 
 interface TranslationFile {
@@ -117,7 +105,7 @@ export default function TranslationsPage() {
                     files = files.filter(
                         (file: TranslationFile) =>
                             file.code.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-                            file.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+                            file.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
                     );
                 }
 
@@ -322,10 +310,7 @@ export default function TranslationsPage() {
                 icon={Globe}
                 actions={
                     <div className='flex gap-2'>
-                        <Button
-                            onClick={() => router.push('/admin/feathercloud/translations')}
-                            variant='outline'
-                        >
+                        <Button onClick={() => router.push('/admin/feathercloud/translations')} variant='outline'>
                             <Users className='h-4 w-4 mr-2' />
                             {t('admin.translations.community_made')}
                         </Button>
@@ -343,11 +328,7 @@ export default function TranslationsPage() {
                             className='hidden'
                             id='translation-file-upload'
                         />
-                        <Button
-                            onClick={() => fileInputRef.current?.click()}
-                            loading={isUploading}
-                            variant='outline'
-                        >
+                        <Button onClick={() => fileInputRef.current?.click()} loading={isUploading} variant='outline'>
                             <Upload className='h-4 w-4 mr-2' />
                             {t('admin.translations.upload')}
                         </Button>
@@ -400,7 +381,9 @@ export default function TranslationsPage() {
                             title={file.name}
                             subtitle={
                                 <div className='flex items-center gap-2 text-xs'>
-                                    <span className={`px-2 py-1 rounded ${file.enabled ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 'bg-muted text-muted-foreground'}`}>
+                                    <span
+                                        className={`px-2 py-1 rounded ${file.enabled ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 'bg-muted text-muted-foreground'}`}
+                                    >
                                         {file.enabled ? (
                                             <>
                                                 <Check className='h-3 w-3 inline mr-1' />
@@ -443,11 +426,7 @@ export default function TranslationsPage() {
                             }
                             actions={
                                 <div className='flex items-center gap-2'>
-                                    <Button
-                                        size='sm'
-                                        variant='ghost'
-                                        onClick={() => loadTranslationContent(file.code)}
-                                    >
+                                    <Button size='sm' variant='ghost' onClick={() => loadTranslationContent(file.code)}>
                                         <Pencil className='h-4 w-4' />
                                     </Button>
                                     <Button size='sm' variant='ghost' onClick={() => handleDownload(file.code)}>

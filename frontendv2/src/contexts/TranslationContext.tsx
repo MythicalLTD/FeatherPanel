@@ -64,7 +64,6 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
 
-
     // Deep merge function for nested translation objects
     const deepMerge = (target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> => {
         const output = { ...target };
@@ -72,7 +71,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
             if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
                 output[key] = deepMerge(
                     (target[key] as Record<string, unknown>) || {},
-                    source[key] as Record<string, unknown>
+                    source[key] as Record<string, unknown>,
                 );
             } else {
                 output[key] = source[key];
@@ -104,7 +103,11 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
                 if (backendPrimaryResponse.ok) {
                     const backendPrimaryData = await backendPrimaryResponse.json();
                     if (backendPrimaryData && typeof backendPrimaryData === 'object') {
-                        if ('success' in backendPrimaryData && 'data' in backendPrimaryData && backendPrimaryData.success) {
+                        if (
+                            'success' in backendPrimaryData &&
+                            'data' in backendPrimaryData &&
+                            backendPrimaryData.success
+                        ) {
                             backendPrimaryTranslations = (backendPrimaryData.data || {}) as Record<string, unknown>;
                         } else {
                             backendPrimaryTranslations = backendPrimaryData as Record<string, unknown>;
@@ -148,7 +151,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(cacheKey, JSON.stringify(mergedTranslations));
 
         setInitialLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Load available languages from API
@@ -158,7 +161,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
             if (response.ok) {
                 const data = await response.json();
                 console.log('[TranslationContext] Languages API response:', data);
-                
+
                 // Backend returns ApiResponse format: { success: true, data: [...], message: "..." }
                 if (data && typeof data === 'object') {
                     if (data.success === true && Array.isArray(data.data)) {
@@ -175,7 +178,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
                         return;
                     }
                 }
-                
+
                 console.warn('[TranslationContext] Unexpected languages API response format:', data);
             } else {
                 console.warn('[TranslationContext] Languages API returned non-OK status:', response.status);

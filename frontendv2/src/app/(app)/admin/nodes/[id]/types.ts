@@ -171,6 +171,7 @@ export interface ModuleConfig {
 export interface Location {
     id: number;
     name: string;
+    description?: string;
 }
 
 export interface VersionStatus {

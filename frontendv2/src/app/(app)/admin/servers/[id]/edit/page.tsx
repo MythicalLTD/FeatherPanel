@@ -238,7 +238,6 @@ export default function EditServerPage() {
         return () => clearTimeout(timer);
     }, [spellSearch]);
 
-
     const originalSpellId = useRef<number | null>(null);
     const originalVariables = useRef<Record<string, string>>({});
     const hasInitialLoaded = useRef(false);
@@ -449,7 +448,7 @@ export default function EditServerPage() {
         try {
             const currentPage = ownerPagination.current_page;
             const perPage = ownerPagination.per_page;
-            
+
             const { data } = await axios.get('/api/admin/users', {
                 params: {
                     page: currentPage,
@@ -479,7 +478,7 @@ export default function EditServerPage() {
         try {
             const currentPage = realmPagination.current_page;
             const perPage = realmPagination.per_page;
-            
+
             const { data } = await axios.get('/api/admin/realms', {
                 params: {
                     page: currentPage,
@@ -510,7 +509,7 @@ export default function EditServerPage() {
         try {
             const currentPage = spellPagination.current_page;
             const perPage = spellPagination.per_page;
-            
+
             const { data } = await axios.get('/api/admin/spells', {
                 params: {
                     page: currentPage,
@@ -908,9 +907,7 @@ export default function EditServerPage() {
                                         <div className='flex items-center gap-3'>
                                             <Avatar className='h-10 w-10'>
                                                 <AvatarImage src={user.avatar} alt={user.username} />
-                                                <AvatarFallback>
-                                                    {user.username.charAt(0).toUpperCase()}
-                                                </AvatarFallback>
+                                                <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
                                             </Avatar>
                                             <div className='flex-1 min-w-0'>
                                                 <div className='flex items-center gap-2'>
@@ -928,10 +925,13 @@ export default function EditServerPage() {
                                                         </Badge>
                                                     )}
                                                 </div>
-                                                <div className='text-sm text-muted-foreground truncate'>{user.email}</div>
+                                                <div className='text-sm text-muted-foreground truncate'>
+                                                    {user.email}
+                                                </div>
                                                 {user.last_seen && (
                                                     <div className='text-xs text-muted-foreground mt-1'>
-                                                        {t('admin.users.last_seen')}: {new Date(user.last_seen).toLocaleDateString()}
+                                                        {t('admin.users.last_seen')}:{' '}
+                                                        {new Date(user.last_seen).toLocaleDateString()}
                                                     </div>
                                                 )}
                                             </div>
@@ -945,14 +945,20 @@ export default function EditServerPage() {
                         {ownerPagination.total_pages > 1 && (
                             <div className='flex items-center justify-between pt-4 border-t'>
                                 <div className='text-sm text-muted-foreground'>
-                                {t('common.showing', {
-                                    from: String(ownerPagination.current_page * ownerPagination.per_page - ownerPagination.per_page + 1),
-                                    to: String(Math.min(
-                                        ownerPagination.current_page * ownerPagination.per_page,
-                                        ownerPagination.total_records
-                                    )),
-                                    total: String(ownerPagination.total_records),
-                                })}
+                                    {t('common.showing', {
+                                        from: String(
+                                            ownerPagination.current_page * ownerPagination.per_page -
+                                                ownerPagination.per_page +
+                                                1,
+                                        ),
+                                        to: String(
+                                            Math.min(
+                                                ownerPagination.current_page * ownerPagination.per_page,
+                                                ownerPagination.total_records,
+                                            ),
+                                        ),
+                                        total: String(ownerPagination.total_records),
+                                    })}
                                 </div>
                                 <div className='flex gap-2'>
                                     <Button
@@ -1032,7 +1038,9 @@ export default function EditServerPage() {
                                             <div className='flex-1 min-w-0'>
                                                 <div className='font-medium'>{realm.name}</div>
                                                 {realm.description && (
-                                                    <div className='text-sm text-muted-foreground mt-1'>{realm.description}</div>
+                                                    <div className='text-sm text-muted-foreground mt-1'>
+                                                        {realm.description}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -1046,11 +1054,17 @@ export default function EditServerPage() {
                             <div className='flex items-center justify-between pt-4 border-t'>
                                 <div className='text-sm text-muted-foreground'>
                                     {t('common.showing', {
-                                        from: String(realmPagination.current_page * realmPagination.per_page - realmPagination.per_page + 1),
-                                        to: String(Math.min(
-                                            realmPagination.current_page * realmPagination.per_page,
-                                            realmPagination.total_records
-                                        )),
+                                        from: String(
+                                            realmPagination.current_page * realmPagination.per_page -
+                                                realmPagination.per_page +
+                                                1,
+                                        ),
+                                        to: String(
+                                            Math.min(
+                                                realmPagination.current_page * realmPagination.per_page,
+                                                realmPagination.total_records,
+                                            ),
+                                        ),
                                         total: String(realmPagination.total_records),
                                     })}
                                 </div>
@@ -1132,7 +1146,9 @@ export default function EditServerPage() {
                                             <div className='flex-1 min-w-0'>
                                                 <div className='font-medium'>{spell.name}</div>
                                                 {spell.description && (
-                                                    <div className='text-sm text-muted-foreground mt-1'>{spell.description}</div>
+                                                    <div className='text-sm text-muted-foreground mt-1'>
+                                                        {spell.description}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -1146,11 +1162,17 @@ export default function EditServerPage() {
                             <div className='flex items-center justify-between pt-4 border-t'>
                                 <div className='text-sm text-muted-foreground'>
                                     {t('common.showing', {
-                                        from: String(spellPagination.current_page * spellPagination.per_page - spellPagination.per_page + 1),
-                                        to: String(Math.min(
-                                            spellPagination.current_page * spellPagination.per_page,
-                                            spellPagination.total_records
-                                        )),
+                                        from: String(
+                                            spellPagination.current_page * spellPagination.per_page -
+                                                spellPagination.per_page +
+                                                1,
+                                        ),
+                                        to: String(
+                                            Math.min(
+                                                spellPagination.current_page * spellPagination.per_page,
+                                                spellPagination.total_records,
+                                            ),
+                                        ),
                                         total: String(spellPagination.total_records),
                                     })}
                                 </div>

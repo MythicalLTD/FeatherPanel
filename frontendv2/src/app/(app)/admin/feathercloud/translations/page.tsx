@@ -28,29 +28,17 @@ SOFTWARE.
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import {
-    Languages,
-    Search,
-    Download,
-    ExternalLink,
-    Globe,
-    Star,
-    Users,
-    Calendar,
-    FileText,
-} from 'lucide-react';
+import { Languages, Search, Download, Globe, Star, Users, Calendar, FileText } from 'lucide-react';
 
 interface CommunityTranslation {
     id: string;
@@ -96,7 +84,7 @@ export default function CommunityTranslationsPage() {
                 // TODO: Replace with actual API endpoint when available
                 // For now, return empty array - this will be populated when the API is ready
                 const mockTranslations: CommunityTranslation[] = [];
-                
+
                 setTranslations(mockTranslations);
                 setFilteredTranslations(mockTranslations);
             } catch (error) {
@@ -124,28 +112,28 @@ export default function CommunityTranslationsPage() {
                 translation.nativeName.toLowerCase().includes(query) ||
                 translation.lang.toLowerCase().includes(query) ||
                 translation.author.toLowerCase().includes(query) ||
-                translation.description?.toLowerCase().includes(query)
+                translation.description?.toLowerCase().includes(query),
         );
         setFilteredTranslations(filtered);
     }, [debouncedSearchQuery, translations]);
 
-    const handleDownload = async (translation: CommunityTranslation) => {
+    const handleDownload = async () => {
         try {
             // TODO: Replace with actual download endpoint when available
-            toast.info('Download functionality will be available when the API is ready');
+            toast.info(t('admin.feathercloud.translations.download_coming_soon'));
         } catch (error) {
             console.error('Error downloading translation:', error);
-            toast.error('Failed to download translation');
+            toast.error(t('admin.feathercloud.translations.download_failed'));
         }
     };
 
-    const handleInstall = async (translation: CommunityTranslation) => {
+    const handleInstall = async () => {
         try {
             // TODO: Replace with actual install endpoint when available
-            toast.info('Install functionality will be available when the API is ready');
+            toast.info(t('admin.marketplace.index.translations.install_coming_soon'));
         } catch (error) {
             console.error('Error installing translation:', error);
-            toast.error('Failed to install translation');
+            toast.error(t('admin.marketplace.index.translations.install_failed'));
         }
     };
 
@@ -164,7 +152,7 @@ export default function CommunityTranslationsPage() {
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-translations', 'before-content')} />
 
             {/* Search Bar */}
-            <PageCard>
+            <div className='backdrop-blur-3xl border border-border/50 rounded-3xl p-6 bg-card/50'>
                 <div className='flex gap-4 items-center'>
                     <div className='relative flex-1'>
                         <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
@@ -175,32 +163,33 @@ export default function CommunityTranslationsPage() {
                             className='pl-10'
                         />
                     </div>
-                    <Button
-                        variant='outline'
-                        onClick={() => router.push('/admin/translations')}
-                    >
+                    <Button variant='outline' onClick={() => router.push('/admin/translations')}>
                         <FileText className='h-4 w-4 mr-2' />
-                        Manage Local Translations
+                        {t('admin.marketplace.index.translations.manage_local')}
                     </Button>
                 </div>
-            </PageCard>
+            </div>
 
             {/* Translations List */}
             {loading ? (
-                <TableSkeleton columns={6} rows={5} />
+                <TableSkeleton count={5} />
             ) : filteredTranslations.length === 0 ? (
                 <EmptyState
                     icon={Languages}
-                    title={searchQuery ? 'No translations found' : 'No community translations available'}
+                    title={
+                        searchQuery
+                            ? t('admin.marketplace.index.translations.no_results')
+                            : t('admin.marketplace.index.translations.no_community')
+                    }
                     description={
                         searchQuery
-                            ? 'Try adjusting your search query'
-                            : 'Community translations will appear here when available. You can manage your local translations from the translations page.'
+                            ? t('admin.marketplace.index.translations.adjust_search')
+                            : t('admin.marketplace.index.translations.community_description')
                     }
                     action={
                         !searchQuery && (
                             <Button onClick={() => router.push('/admin/translations')}>
-                                Go to Translations Management
+                                {t('admin.marketplace.index.translations.go_to_management')}
                             </Button>
                         )
                     }
@@ -208,7 +197,10 @@ export default function CommunityTranslationsPage() {
             ) : (
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
                     {filteredTranslations.map((translation) => (
-                        <PageCard key={translation.id} className='hover:shadow-lg transition-shadow'>
+                        <div
+                            key={translation.id}
+                            className='backdrop-blur-3xl border border-border/50 rounded-3xl p-6 bg-card/50 hover:shadow-lg transition-shadow'
+                        >
                             <div className='space-y-4'>
                                 {/* Header */}
                                 <div className='flex items-start justify-between'>
@@ -222,15 +214,20 @@ export default function CommunityTranslationsPage() {
                                         </div>
                                     </div>
                                     {translation.verified && (
-                                        <Badge variant='default' className='bg-green-500/10 text-green-600 border-green-500/20'>
-                                            Verified
+                                        <Badge
+                                            variant='default'
+                                            className='bg-green-500/10 text-green-600 border-green-500/20'
+                                        >
+                                            {t('admin.marketplace.index.translations.verified')}
                                         </Badge>
                                     )}
                                 </div>
 
                                 {/* Description */}
                                 {translation.description && (
-                                    <p className='text-sm text-muted-foreground line-clamp-2'>{translation.description}</p>
+                                    <p className='text-sm text-muted-foreground line-clamp-2'>
+                                        {translation.description}
+                                    </p>
                                 )}
 
                                 {/* Metadata */}
@@ -255,25 +252,16 @@ export default function CommunityTranslationsPage() {
 
                                 {/* Actions */}
                                 <div className='flex gap-2 pt-2 border-t'>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        className='flex-1'
-                                        onClick={() => handleDownload(translation)}
-                                    >
+                                    <Button variant='outline' size='sm' className='flex-1' onClick={handleDownload}>
                                         <Download className='h-4 w-4 mr-2' />
-                                        Download
+                                        {t('admin.marketplace.index.translations.download')}
                                     </Button>
-                                    <Button
-                                        size='sm'
-                                        className='flex-1'
-                                        onClick={() => handleInstall(translation)}
-                                    >
-                                        Install
+                                    <Button size='sm' className='flex-1' onClick={handleInstall}>
+                                        {t('admin.marketplace.index.translations.install')}
                                     </Button>
                                 </div>
                             </div>
-                        </PageCard>
+                        </div>
                     ))}
                 </div>
             )}

@@ -28,25 +28,30 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
-import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
-import { Database } from 'lucide-react';
+import { Button } from '@/components/featherui/Button';
+import { Database, Search, MapPin } from 'lucide-react';
+import { Select } from '@/components/ui/select-native';
 
 import { type NodeForm } from './page';
-
-interface Location {
-    id: number;
-    name: string;
-}
 
 interface DetailsTabProps {
     form: NodeForm;
     setForm: React.Dispatch<React.SetStateAction<NodeForm>>;
-    locations: Location[];
     errors: Record<string, string>;
+    selectedLocationName: string;
+    setLocationModalOpen: (open: boolean) => void;
+    fetchLocations: () => void;
 }
 
-export function DetailsTab({ form, setForm, locations, errors }: DetailsTabProps) {
+export function DetailsTab({
+    form,
+    setForm,
+    errors,
+    selectedLocationName,
+    setLocationModalOpen,
+    fetchLocations,
+}: DetailsTabProps) {
     const { t } = useTranslation();
 
     return (
@@ -67,7 +72,7 @@ export function DetailsTab({ form, setForm, locations, errors }: DetailsTabProps
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.node.form.description')}</Label>
                         <Textarea
-                            placeholder='A brief description of this node...'
+                            placeholder={t('admin.node.form.description_placeholder')}
                             value={form.description}
                             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                                 setForm({ ...form, description: e.target.value })
@@ -79,20 +84,30 @@ export function DetailsTab({ form, setForm, locations, errors }: DetailsTabProps
                 <div className='space-y-6'>
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.node.form.location')}</Label>
-                        <Select
-                            value={form.location_id}
-                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                                setForm({ ...form, location_id: e.target.value })
-                            }
-                            className={errors.location_id ? 'border-red-500' : ''}
-                        >
-                            <option value=''>{t('admin.node.form.select_location')}</option>
-                            {locations.map((loc) => (
-                                <option key={loc.id} value={loc.id}>
-                                    {loc.name}
-                                </option>
-                            ))}
-                        </Select>
+                        <div className='flex gap-2'>
+                            <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                                {form.location_id && selectedLocationName ? (
+                                    <div className='flex items-center gap-2'>
+                                        <MapPin className='h-4 w-4 text-primary' />
+                                        <span className='font-medium text-foreground'>{selectedLocationName}</span>
+                                    </div>
+                                ) : (
+                                    <span className='text-muted-foreground'>
+                                        {t('admin.node.form.select_location')}
+                                    </span>
+                                )}
+                            </div>
+                            <Button
+                                type='button'
+                                size='icon'
+                                onClick={() => {
+                                    fetchLocations();
+                                    setLocationModalOpen(true);
+                                }}
+                            >
+                                <Search className='h-4 w-4' />
+                            </Button>
+                        </div>
                         {errors.location_id && (
                             <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>{errors.location_id}</p>
                         )}
