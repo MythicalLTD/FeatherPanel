@@ -148,6 +148,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(cacheKey, JSON.stringify(mergedTranslations));
 
         setInitialLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Load available languages from API

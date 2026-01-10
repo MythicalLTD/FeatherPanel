@@ -60,6 +60,13 @@ export interface User {
     uuid: string;
     username: string;
     email: string;
+    avatar?: string;
+    last_seen?: string;
+    role?: {
+        name: string;
+        display_name: string;
+        color: string;
+    };
 }
 
 export interface Location {

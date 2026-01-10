@@ -45,8 +45,12 @@ import {
     ArrowLeft,
     Loader2,
     Search as SearchIcon,
+    Box,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { toast } from 'sonner';
 
@@ -155,10 +159,43 @@ export default function EditServerPage() {
     const [spells, setSpells] = useState<Spell[]>([]);
     const [allocations, setAllocations] = useState<Allocation[]>([]);
 
-    // Search States
+    // Pagination States
+    const [ownerPagination, setOwnerPagination] = useState({
+        current_page: 1,
+        per_page: 10,
+        total_records: 0,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false,
+    });
     const [ownerSearch, setOwnerSearch] = useState('');
+    const [debouncedOwnerSearch, setDebouncedOwnerSearch] = useState('');
+
+    // Realm Pagination States
+    const [realmPagination, setRealmPagination] = useState({
+        current_page: 1,
+        per_page: 10,
+        total_records: 0,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false,
+    });
     const [realmSearch, setRealmSearch] = useState('');
+    const [debouncedRealmSearch, setDebouncedRealmSearch] = useState('');
+
+    // Spell Pagination States
+    const [spellPagination, setSpellPagination] = useState({
+        current_page: 1,
+        per_page: 10,
+        total_records: 0,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false,
+    });
     const [spellSearch, setSpellSearch] = useState('');
+    const [debouncedSpellSearch, setDebouncedSpellSearch] = useState('');
+
+    // Search States
     const [allocationSearch, setAllocationSearch] = useState('');
 
     // Filter allocations for Search
@@ -174,25 +211,33 @@ export default function EditServerPage() {
         });
     }, [allocations, allocationSearch]);
 
-    const filteredOwners = useMemo(() => {
-        if (!ownerSearch) return owners;
-        const lowerSearch = ownerSearch.toLowerCase();
-        return owners.filter((u) => {
-            return u.username.toLowerCase().includes(lowerSearch) || u.email.toLowerCase().includes(lowerSearch);
-        });
-    }, [owners, ownerSearch]);
+    // Debounce owner search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedOwnerSearch(ownerSearch);
+            setOwnerPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [ownerSearch]);
 
-    const filteredRealms = useMemo(() => {
-        if (!realmSearch) return realms;
-        const lowerSearch = realmSearch.toLowerCase();
-        return realms.filter((r) => r.name.toLowerCase().includes(lowerSearch));
-    }, [realms, realmSearch]);
+    // Debounce realm search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedRealmSearch(realmSearch);
+            setRealmPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [realmSearch]);
 
-    const filteredSpells = useMemo(() => {
-        if (!spellSearch) return spells;
-        const lowerSearch = spellSearch.toLowerCase();
-        return spells.filter((s) => s.name.toLowerCase().includes(lowerSearch));
-    }, [spells, spellSearch]);
+    // Debounce spell search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSpellSearch(spellSearch);
+            setSpellPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [spellSearch]);
+
 
     const originalSpellId = useRef<number | null>(null);
     const originalVariables = useRef<Record<string, string>>({});
@@ -400,34 +445,97 @@ export default function EditServerPage() {
     }, [form.spell_id]);
 
     // Fetch Functions
-    const fetchOwners = async () => {
+    const fetchOwners = useCallback(async () => {
         try {
-            const { data } = await axios.get('/api/admin/users', { params: { limit: 50, search: ownerSearch } });
+            const currentPage = ownerPagination.current_page;
+            const perPage = ownerPagination.per_page;
+            
+            const { data } = await axios.get('/api/admin/users', {
+                params: {
+                    page: currentPage,
+                    per_page: perPage,
+                    search: debouncedOwnerSearch,
+                },
+            });
             setOwners(data.data.users || []);
+            if (data.data.pagination) {
+                setOwnerPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
         } catch (error) {
             console.error('Error fetching owners:', error);
         }
-    };
+    }, [ownerPagination.current_page, ownerPagination.per_page, debouncedOwnerSearch]);
 
-    const fetchRealms = async () => {
+    useEffect(() => {
+        if (ownerModalOpen) {
+            fetchOwners();
+        }
+    }, [ownerModalOpen, ownerPagination.current_page, debouncedOwnerSearch, fetchOwners]);
+
+    const fetchRealms = useCallback(async () => {
         try {
-            const { data } = await axios.get('/api/admin/realms', { params: { limit: 50 } });
+            const currentPage = realmPagination.current_page;
+            const perPage = realmPagination.per_page;
+            
+            const { data } = await axios.get('/api/admin/realms', {
+                params: {
+                    page: currentPage,
+                    limit: perPage,
+                    search: debouncedRealmSearch,
+                },
+            });
             setRealms(data.data.realms || []);
+            if (data.data.pagination) {
+                setRealmPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
         } catch (error) {
             console.error('Error fetching realms:', error);
         }
-    };
+    }, [realmPagination.current_page, realmPagination.per_page, debouncedRealmSearch]);
 
-    const fetchSpells = async () => {
+    useEffect(() => {
+        if (realmModalOpen) {
+            fetchRealms();
+        }
+    }, [realmModalOpen, realmPagination.current_page, debouncedRealmSearch, fetchRealms]);
+
+    const fetchSpells = useCallback(async () => {
         if (!form.realms_id) return;
         try {
-            // Use /api/admin/spells with realm_id filter (not nested route)
-            const { data } = await axios.get('/api/admin/spells', { params: { limit: 50, realm_id: form.realms_id } });
+            const currentPage = spellPagination.current_page;
+            const perPage = spellPagination.per_page;
+            
+            const { data } = await axios.get('/api/admin/spells', {
+                params: {
+                    page: currentPage,
+                    limit: perPage,
+                    search: debouncedSpellSearch,
+                    realm_id: form.realms_id,
+                },
+            });
             setSpells(data.data.spells || []);
+            if (data.data.pagination) {
+                setSpellPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
         } catch (error) {
             console.error('Error fetching spells:', error);
         }
-    };
+    }, [form.realms_id, spellPagination.current_page, spellPagination.per_page, debouncedSpellSearch]);
+
+    useEffect(() => {
+        if (spellModalOpen && form.realms_id) {
+            fetchSpells();
+        }
+    }, [spellModalOpen, form.realms_id, spellPagination.current_page, debouncedSpellSearch, fetchSpells]);
 
     const fetchAllocations = async () => {
         if (!node?.id) return;
@@ -760,54 +868,325 @@ export default function EditServerPage() {
                 </div>
             </Tabs>
 
-            {/* Selection Modals */}
-            <SelectionModal
-                isOpen={ownerModalOpen}
-                onClose={() => setOwnerModalOpen(false)}
-                title={t('admin.servers.form.select_owner')}
-                items={filteredOwners}
-                onSelect={handleSelectOwner}
-                search={ownerSearch}
-                onSearchChange={setOwnerSearch}
-                renderItem={(item: User) => (
-                    <div>
-                        <div className='font-medium'>{item.username}</div>
-                        <div className='text-xs text-muted-foreground'>{item.email}</div>
-                    </div>
-                )}
-            />
+            {/* Owner Selection Sheet */}
+            <Sheet open={ownerModalOpen} onOpenChange={setOwnerModalOpen}>
+                <SheetContent className='sm:max-w-2xl'>
+                    <SheetHeader>
+                        <SheetTitle>{t('admin.servers.form.select_owner')}</SheetTitle>
+                        <SheetDescription>
+                            {t('admin.servers.form.select_owner_description', {
+                                total: String(ownerPagination.total_records),
+                            })}
+                        </SheetDescription>
+                    </SheetHeader>
 
-            <SelectionModal
-                isOpen={realmModalOpen}
-                onClose={() => setRealmModalOpen(false)}
-                title={t('admin.servers.form.select_realm')}
-                items={filteredRealms}
-                onSelect={handleSelectRealm}
-                search={realmSearch}
-                onSearchChange={setRealmSearch}
-                renderItem={(item: Realm) => (
-                    <div>
-                        <div className='font-medium'>{item.name}</div>
-                        {item.description && <div className='text-xs text-muted-foreground'>{item.description}</div>}
-                    </div>
-                )}
-            />
+                    <div className='mt-6 space-y-4'>
+                        {/* Search */}
+                        <div className='relative'>
+                            <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <Input
+                                placeholder={t('admin.servers.form.search_users')}
+                                value={ownerSearch}
+                                onChange={(e) => setOwnerSearch(e.target.value)}
+                                className='pl-10'
+                            />
+                        </div>
 
-            <SelectionModal
-                isOpen={spellModalOpen}
-                onClose={() => setSpellModalOpen(false)}
-                title={t('admin.servers.form.select_spell')}
-                items={filteredSpells}
-                onSelect={handleSelectSpell}
-                search={spellSearch}
-                onSearchChange={setSpellSearch}
-                renderItem={(item: Spell) => (
-                    <div>
-                        <div className='font-medium'>{item.name}</div>
-                        {item.description && <div className='text-xs text-muted-foreground'>{item.description}</div>}
+                        {/* Users List */}
+                        <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
+                            {owners.length === 0 ? (
+                                <div className='text-center py-8 text-muted-foreground'>
+                                    {t('admin.servers.form.no_users_found')}
+                                </div>
+                            ) : (
+                                owners.map((user) => (
+                                    <button
+                                        key={user.id}
+                                        onClick={() => handleSelectOwner(user)}
+                                        className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                    >
+                                        <div className='flex items-center gap-3'>
+                                            <Avatar className='h-10 w-10'>
+                                                <AvatarImage src={user.avatar} alt={user.username} />
+                                                <AvatarFallback>
+                                                    {user.username.charAt(0).toUpperCase()}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className='flex-1 min-w-0'>
+                                                <div className='flex items-center gap-2'>
+                                                    <span className='font-medium truncate'>{user.username}</span>
+                                                    {user.role && (
+                                                        <Badge
+                                                            style={{
+                                                                backgroundColor: `${user.role.color}20`,
+                                                                color: user.role.color,
+                                                                borderColor: `${user.role.color}40`,
+                                                            }}
+                                                            className='text-xs'
+                                                        >
+                                                            {user.role.display_name}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <div className='text-sm text-muted-foreground truncate'>{user.email}</div>
+                                                {user.last_seen && (
+                                                    <div className='text-xs text-muted-foreground mt-1'>
+                                                        {t('admin.users.last_seen')}: {new Date(user.last_seen).toLocaleDateString()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {ownerPagination.total_pages > 1 && (
+                            <div className='flex items-center justify-between pt-4 border-t'>
+                                <div className='text-sm text-muted-foreground'>
+                                {t('common.showing', {
+                                    from: String(ownerPagination.current_page * ownerPagination.per_page - ownerPagination.per_page + 1),
+                                    to: String(Math.min(
+                                        ownerPagination.current_page * ownerPagination.per_page,
+                                        ownerPagination.total_records
+                                    )),
+                                    total: String(ownerPagination.total_records),
+                                })}
+                                </div>
+                                <div className='flex gap-2'>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() =>
+                                            setOwnerPagination((prev) => ({
+                                                ...prev,
+                                                current_page: prev.current_page - 1,
+                                            }))
+                                        }
+                                        disabled={!ownerPagination.has_prev}
+                                    >
+                                        {t('common.previous')}
+                                    </Button>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() =>
+                                            setOwnerPagination((prev) => ({
+                                                ...prev,
+                                                current_page: prev.current_page + 1,
+                                            }))
+                                        }
+                                        disabled={!ownerPagination.has_next}
+                                    >
+                                        {t('common.next')}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                )}
-            />
+                </SheetContent>
+            </Sheet>
+
+            {/* Realm Selection Sheet */}
+            <Sheet open={realmModalOpen} onOpenChange={setRealmModalOpen}>
+                <SheetContent className='sm:max-w-2xl'>
+                    <SheetHeader>
+                        <SheetTitle>{t('admin.servers.form.select_realm')}</SheetTitle>
+                        <SheetDescription>
+                            {t('admin.servers.form.select_realm_description', {
+                                total: String(realmPagination.total_records || 0),
+                            })}
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    <div className='mt-6 space-y-4'>
+                        {/* Search */}
+                        <div className='relative'>
+                            <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <Input
+                                placeholder={t('admin.servers.form.search_realms')}
+                                value={realmSearch}
+                                onChange={(e) => setRealmSearch(e.target.value)}
+                                className='pl-10'
+                            />
+                        </div>
+
+                        {/* Realms List */}
+                        <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
+                            {realms.length === 0 ? (
+                                <div className='text-center py-8 text-muted-foreground'>
+                                    {t('admin.servers.form.no_realms_found')}
+                                </div>
+                            ) : (
+                                realms.map((realm) => (
+                                    <button
+                                        key={realm.id}
+                                        onClick={() => handleSelectRealm(realm)}
+                                        className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                    >
+                                        <div className='flex items-start gap-3'>
+                                            <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
+                                                <Box className='h-5 w-5 text-primary' />
+                                            </div>
+                                            <div className='flex-1 min-w-0'>
+                                                <div className='font-medium'>{realm.name}</div>
+                                                {realm.description && (
+                                                    <div className='text-sm text-muted-foreground mt-1'>{realm.description}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {realmPagination.total_pages > 1 && (
+                            <div className='flex items-center justify-between pt-4 border-t'>
+                                <div className='text-sm text-muted-foreground'>
+                                    {t('common.showing', {
+                                        from: String(realmPagination.current_page * realmPagination.per_page - realmPagination.per_page + 1),
+                                        to: String(Math.min(
+                                            realmPagination.current_page * realmPagination.per_page,
+                                            realmPagination.total_records
+                                        )),
+                                        total: String(realmPagination.total_records),
+                                    })}
+                                </div>
+                                <div className='flex gap-2'>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() =>
+                                            setRealmPagination((prev) => ({
+                                                ...prev,
+                                                current_page: prev.current_page - 1,
+                                            }))
+                                        }
+                                        disabled={!realmPagination.has_prev}
+                                    >
+                                        {t('common.previous')}
+                                    </Button>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() =>
+                                            setRealmPagination((prev) => ({
+                                                ...prev,
+                                                current_page: prev.current_page + 1,
+                                            }))
+                                        }
+                                        disabled={!realmPagination.has_next}
+                                    >
+                                        {t('common.next')}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </SheetContent>
+            </Sheet>
+
+            {/* Spell Selection Sheet */}
+            <Sheet open={spellModalOpen} onOpenChange={setSpellModalOpen}>
+                <SheetContent className='sm:max-w-2xl'>
+                    <SheetHeader>
+                        <SheetTitle>{t('admin.servers.form.select_spell')}</SheetTitle>
+                        <SheetDescription>
+                            {t('admin.servers.form.select_spell_description', {
+                                total: String(spellPagination.total_records || 0),
+                            })}
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    <div className='mt-6 space-y-4'>
+                        {/* Search */}
+                        <div className='relative'>
+                            <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <Input
+                                placeholder={t('admin.servers.form.search_spells')}
+                                value={spellSearch}
+                                onChange={(e) => setSpellSearch(e.target.value)}
+                                className='pl-10'
+                            />
+                        </div>
+
+                        {/* Spells List */}
+                        <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
+                            {spells.length === 0 ? (
+                                <div className='text-center py-8 text-muted-foreground'>
+                                    {t('admin.servers.form.no_spells_found')}
+                                </div>
+                            ) : (
+                                spells.map((spell) => (
+                                    <button
+                                        key={spell.id}
+                                        onClick={() => handleSelectSpell(spell)}
+                                        className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                    >
+                                        <div className='flex items-start gap-3'>
+                                            <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
+                                                <Wand2 className='h-5 w-5 text-primary' />
+                                            </div>
+                                            <div className='flex-1 min-w-0'>
+                                                <div className='font-medium'>{spell.name}</div>
+                                                {spell.description && (
+                                                    <div className='text-sm text-muted-foreground mt-1'>{spell.description}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {spellPagination.total_pages > 1 && (
+                            <div className='flex items-center justify-between pt-4 border-t'>
+                                <div className='text-sm text-muted-foreground'>
+                                    {t('common.showing', {
+                                        from: String(spellPagination.current_page * spellPagination.per_page - spellPagination.per_page + 1),
+                                        to: String(Math.min(
+                                            spellPagination.current_page * spellPagination.per_page,
+                                            spellPagination.total_records
+                                        )),
+                                        total: String(spellPagination.total_records),
+                                    })}
+                                </div>
+                                <div className='flex gap-2'>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() =>
+                                            setSpellPagination((prev) => ({
+                                                ...prev,
+                                                current_page: prev.current_page - 1,
+                                            }))
+                                        }
+                                        disabled={!spellPagination.has_prev}
+                                    >
+                                        {t('common.previous')}
+                                    </Button>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() =>
+                                            setSpellPagination((prev) => ({
+                                                ...prev,
+                                                current_page: prev.current_page + 1,
+                                            }))
+                                        }
+                                        disabled={!spellPagination.has_next}
+                                    >
+                                        {t('common.next')}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </SheetContent>
+            </Sheet>
 
             <SelectionModal
                 isOpen={allocationModalOpen}
