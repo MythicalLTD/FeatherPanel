@@ -140,7 +140,7 @@ export default function RegisterForm() {
                 setSuccess(t('common.success'));
 
                 setTimeout(() => {
-                    router.push('/dashboard');
+                    location.href = '/dashboard';
                 }, 1000);
             } else {
                 setError(response.message || t('common.error'));

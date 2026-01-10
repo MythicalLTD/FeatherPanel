@@ -180,9 +180,9 @@ export default function LoginForm() {
 
                 const redirect = searchParams.get('redirect');
                 if (redirect && redirect.startsWith('/')) {
-                    router.replace(redirect);
+                    location.href = redirect;
                 } else {
-                    router.replace('/dashboard');
+                    location.href = '/dashboard';
                 }
             } else {
                 setIsSsoLogin(false);
