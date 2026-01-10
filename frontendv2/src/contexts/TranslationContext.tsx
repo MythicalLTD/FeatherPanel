@@ -47,6 +47,7 @@ interface TranslationContextType {
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
 const DEFAULT_LOCALE = 'en';
+const PRIMARY_LOCALE = 'en'; // Primary language for fallback
 const CACHE_VERSION = '1.1';
 
 export function TranslationProvider({ children }: { children: ReactNode }) {
@@ -63,55 +64,123 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
 
-    // Load full translations from public folder or API
-    const loadFullTranslations = useCallback(async (lang: string) => {
-        try {
-            // Try to load from public folder first (fast, no network)
-            const publicResponse = await fetch(`/locales/${lang}.json`);
-            if (publicResponse.ok) {
-                const publicData = await publicResponse.json();
-                setTranslations(publicData);
-                setInitialLoading(false);
+
+    // Deep merge function for nested translation objects
+    const deepMerge = (target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> => {
+        const output = { ...target };
+        for (const key in source) {
+            if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                output[key] = deepMerge(
+                    (target[key] as Record<string, unknown>) || {},
+                    source[key] as Record<string, unknown>
+                );
+            } else {
+                output[key] = source[key];
             }
-        } catch {
-            // Ignore error, will try API next
         }
+        return output;
+    };
 
-        // Then try API in background for latest updates
+    // Load translations with fallback chain: backend lang -> backend primary -> frontend (en only)
+    const loadFullTranslations = useCallback(async (lang: string) => {
+        let frontendTranslations: Record<string, unknown> = {};
+        let backendPrimaryTranslations: Record<string, unknown> = {};
+        let backendLangTranslations: Record<string, unknown> = {};
+
+        // Step 1: Load frontend English translations (base layer - frontend only has en.json)
         try {
-            const cacheKey = `translations_${lang}_${CACHE_VERSION}`;
-            const cached = localStorage.getItem(cacheKey);
-
-            if (cached) {
-                const parsedCache = JSON.parse(cached);
-                setTranslations(parsedCache);
-                setInitialLoading(false);
-            }
-
-            // Fetch fresh from API
-            const response = await fetch(`/api/translations/${lang}`);
-            if (response.ok) {
-                const data = await response.json();
-                setTranslations(data);
-                localStorage.setItem(cacheKey, JSON.stringify(data));
+            const frontendResponse = await fetch(`/locales/${PRIMARY_LOCALE}.json`);
+            if (frontendResponse.ok) {
+                frontendTranslations = await frontendResponse.json();
             }
         } catch (error) {
-            console.error('Failed to load translations from API:', error);
-        } finally {
-            setInitialLoading(false);
+            console.warn('Failed to load frontend translations:', error);
         }
+
+        // Step 2: Load backend primary language (en) translations (fallback layer)
+        if (lang !== PRIMARY_LOCALE) {
+            try {
+                const backendPrimaryResponse = await fetch(`/api/system/translations/${PRIMARY_LOCALE}`);
+                if (backendPrimaryResponse.ok) {
+                    const backendPrimaryData = await backendPrimaryResponse.json();
+                    if (backendPrimaryData && typeof backendPrimaryData === 'object') {
+                        if ('success' in backendPrimaryData && 'data' in backendPrimaryData && backendPrimaryData.success) {
+                            backendPrimaryTranslations = (backendPrimaryData.data || {}) as Record<string, unknown>;
+                        } else {
+                            backendPrimaryTranslations = backendPrimaryData as Record<string, unknown>;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('Failed to load backend primary translations:', error);
+            }
+        }
+
+        // Step 3: Load backend language translations (top priority layer)
+        try {
+            const backendResponse = await fetch(`/api/system/translations/${lang}`);
+            if (backendResponse.ok) {
+                const backendData = await backendResponse.json();
+                if (backendData && typeof backendData === 'object') {
+                    if ('success' in backendData && 'data' in backendData && backendData.success) {
+                        backendLangTranslations = (backendData.data || {}) as Record<string, unknown>;
+                    } else {
+                        backendLangTranslations = backendData as Record<string, unknown>;
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to load backend language translations:', error);
+        }
+
+        // Step 4: Merge translations in order: frontend (en) -> backend primary (en) -> backend language
+        // This ensures backend language takes priority, missing keys fallback to backend primary, then frontend
+        let mergedTranslations = frontendTranslations;
+        if (Object.keys(backendPrimaryTranslations).length > 0) {
+            mergedTranslations = deepMerge(mergedTranslations, backendPrimaryTranslations);
+        }
+        if (Object.keys(backendLangTranslations).length > 0) {
+            mergedTranslations = deepMerge(mergedTranslations, backendLangTranslations);
+        }
+
+        setTranslations(mergedTranslations);
+        const cacheKey = `translations_${lang}_${CACHE_VERSION}`;
+        localStorage.setItem(cacheKey, JSON.stringify(mergedTranslations));
+
+        setInitialLoading(false);
     }, []);
 
     // Load available languages from API
     const loadAvailableLanguages = useCallback(async () => {
         try {
-            const response = await fetch('/api/translations/languages');
-            console.log('[DEBUG] [TranslationContext] [SSR] Where is this? Who knows...'); // This doesn't exist just yet (I was planning to add it so you can download language packages if you needed them and php will server them to the frontend)
+            const response = await fetch('/api/system/translations/languages');
             if (response.ok) {
-                const languages = await response.json();
-                setAvailableLanguages(languages);
+                const data = await response.json();
+                console.log('[TranslationContext] Languages API response:', data);
+                
+                // Backend returns ApiResponse format: { success: true, data: [...], message: "..." }
+                if (data && typeof data === 'object') {
+                    if (data.success === true && Array.isArray(data.data)) {
+                        // Proper ApiResponse format with languages array
+                        setAvailableLanguages(data.data);
+                        return;
+                    } else if (Array.isArray(data)) {
+                        // Direct array response (fallback)
+                        setAvailableLanguages(data);
+                        return;
+                    } else if (data.data && Array.isArray(data.data)) {
+                        // Data exists but success might be missing
+                        setAvailableLanguages(data.data);
+                        return;
+                    }
+                }
+                
+                console.warn('[TranslationContext] Unexpected languages API response format:', data);
+            } else {
+                console.warn('[TranslationContext] Languages API returned non-OK status:', response.status);
             }
-        } catch {
+        } catch (error) {
+            console.warn('[TranslationContext] Failed to load available languages from API:', error);
             // API not available, keep default
         }
     }, []);

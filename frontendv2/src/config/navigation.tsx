@@ -298,6 +298,17 @@ export const getAdminNavigationItems = (t: TFunction, settings: AppSettings | nu
             permission: Permissions.ADMIN_REDIRECT_LINKS_VIEW,
             group: 'content',
         },
+        {
+            id: 'admin-translations',
+            name: t('navigation.items.translations'),
+            title: t('navigation.items.translations'),
+            url: '/admin/translations',
+            icon: Globe,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_ROOT,
+            group: 'content',
+        },
         // System
         {
             id: 'admin-api-keys',

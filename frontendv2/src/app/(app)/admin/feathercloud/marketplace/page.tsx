@@ -105,14 +105,15 @@ export default function MarketplacePage() {
                     icon={Languages}
                     badges={[
                         {
-                            label: t('admin.marketplace.index.translations.coming_soon'),
-                            className: 'bg-muted text-muted-foreground',
+                            label: t('admin.marketplace.index.translations.available'),
+                            className: 'bg-green-500/10 text-green-600 border-green-500/20',
                         },
                     ]}
-                    className='opacity-75 grayscale-[0.5] border-muted/20'
-                    highlightClassName='bg-linear-to-br from-muted/20 via-transparent to-transparent'
-                    iconClassName='text-muted-foreground'
-                    iconWrapperClassName='bg-muted/10 border-muted/20'
+                    onClick={() => router.push('/admin/feathercloud/translations')}
+                    className='border-green-500/20 hover:border-green-500/40'
+                    highlightClassName='bg-linear-to-br from-green-500/10 via-transparent to-transparent'
+                    iconClassName='text-green-500'
+                    iconWrapperClassName='bg-green-500/10 border-green-500/20'
                 />
             </div>
 

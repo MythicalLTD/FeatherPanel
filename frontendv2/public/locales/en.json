@@ -714,6 +714,7 @@
 			"images": "Images",
 			"mailTemplates": "Mail Templates",
 			"redirectLinks": "Redirect Links",
+			"translations": "Translations",
 			"aiAgent": "AI Agent",
 			"settings": "Settings",
 			"rateLimits": "Rate Limits",
@@ -2862,6 +2863,9 @@
 			"clear_cache": "Clear Cache",
 			"global_settings": "Global Settings",
 			"clearing_cache": "Clearing system cache...",
+			"clear": "Clear",
+			"settings": "Settings",
+			"stop": "Stop",
 			"cache_cleared": "System cache has been cleared successfully.",
 			"cache_failed": "Failed to clear cache.",
 			"app_url_warning": {
@@ -3136,6 +3140,7 @@
 				"translations": {
 					"title": "Translations",
 					"description": "Translations for the panel provided by the community and official contributors",
+					"available": "Available",
 					"coming_soon": "Coming Soon"
 				},
 				"about": {
@@ -4144,6 +4149,73 @@
 					"title": "Nice redirect pages",
 					"description": "Visiting a slug displays a clean, animated redirect page before forwarding. It keeps links memorable and consistent across your brand."
 				}
+			}
+		},
+		"translations": {
+			"title": "Translations",
+			"subtitle": "Manage translation files for your system.",
+			"create": "Create Translation File",
+			"upload": "Upload Translation File",
+			"community_made": "Community Made Translations",
+			"search_placeholder": "Search by language code...",
+			"no_results": "No translation files found.",
+			"import_default": "Import Default English Translations",
+			"importing": "Importing...",
+			"table": {
+				"code": "Language Code",
+				"name": "Language Name",
+				"file": "File",
+				"size": "Size",
+				"modified": "Last Modified",
+				"enabled": "Status"
+			},
+			"form": {
+				"edit_title": "Edit Translation File",
+				"edit_description": "Edit translations for {lang}",
+				"create_title": "Create Translation File",
+				"create_description": "Create a new translation file.",
+				"language_code": "Language Code",
+				"language_code_placeholder": "en",
+				"language_code_help": "ISO 639-1 language code (e.g., en, de, fr)",
+				"json_content": "Translation JSON",
+				"submit_create": "Create Translation File",
+				"submit_update": "Save Translations",
+				"import_description": "Import default English translations from frontend to backend."
+			},
+			"messages": {
+				"fetch_failed": "Failed to fetch translation files.",
+				"fetch_content_failed": "Failed to fetch translation content.",
+				"created": "Translation file created successfully.",
+				"create_failed": "Failed to create translation file.",
+				"updated": "Translation file updated successfully.",
+				"update_failed": "Failed to update translation file.",
+				"deleted": "Translation file deleted successfully.",
+				"delete_failed": "Failed to delete translation file.",
+				"delete_confirm": "Are you sure you want to delete this translation file? This action cannot be undone.",
+				"imported": "Default English translations imported successfully.",
+				"import_failed": "Failed to import default English translations.",
+				"invalid_json": "Invalid JSON format. Please check your syntax.",
+				"uploaded": "Uploaded successfully.",
+				"upload_failed": "Failed to upload translation file.",
+				"save_success": "Translations saved successfully.",
+				"save_failed": "Failed to save translations."
+			},
+			"help": {
+				"what_is": {
+					"title": "What are Translations?",
+					"description": "Translation files allow you to provide your panel in multiple languages. Backend translations take priority over frontend translations."
+				},
+				"fallback": {
+					"title": "Translation Fallback",
+					"description": "If a translation key is missing in a language file, it will fallback to English, and then to frontend translations if still missing."
+				}
+			},
+			"enabled": {
+				"title": "Enabled Languages",
+				"description": "Manage which languages are available to users.",
+				"get_failed": "Failed to fetch enabled languages.",
+				"set_failed": "Failed to update enabled languages.",
+				"set_success": "Enabled languages updated successfully."
 			}
 		},
 		"images": {

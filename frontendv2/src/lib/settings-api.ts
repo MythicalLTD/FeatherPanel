@@ -55,9 +55,27 @@ export const settingsApi = {
                 },
             });
 
-            if (!res.ok) return null;
+            if (!res.ok) {
+                // Check if it's an invalid token error
+                if (res.status === 401 || res.status === 400) {
+                    const errorData = await res.json().catch(() => null);
+                    if (errorData?.error_code === 'INVALID_ACCOUNT_TOKEN') {
+                        // This is a public endpoint, but if we get invalid token, something is wrong
+                        // Don't log out here as this endpoint shouldn't require auth
+                        console.warn('Invalid token on public settings endpoint');
+                    }
+                }
+                return null;
+            }
 
             const data: SettingsResponse = await res.json();
+
+            // Check for invalid token in response data
+            if (data.error_code === 'INVALID_ACCOUNT_TOKEN') {
+                console.warn('Invalid token in settings response');
+                return null;
+            }
+
             return data.success ? data.data : null;
         } catch (error) {
             console.error('Failed to fetch settings:', error);

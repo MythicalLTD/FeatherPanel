@@ -27,7 +27,7 @@ SOFTWARE.
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
 import PermissionsClass from '@/lib/permissions';
 
@@ -85,24 +85,49 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
             try {
                 const res = await axios.get('/api/user/session');
-                if (res.data && res.data.success && res.data.data && res.data.data.user_info) {
+
+                // Validate response structure: must have success: true, data, and user_info
+                if (
+                    res.data &&
+                    res.data.success === true &&
+                    res.data.error === false &&
+                    res.data.data &&
+                    res.data.data.user_info &&
+                    typeof res.data.data.user_info === 'object'
+                ) {
                     setUser(res.data.data.user_info as UserInfo);
-                    setPermissions(res.data.data.permissions as PermissionsList);
+                    setPermissions((res.data.data.permissions as PermissionsList) || []);
                     setIsSessionChecked(true);
                     setIsLoading(false);
                     return true;
                 } else {
+                    // Session fetch failed - invalid response structure or success: false
+                    console.error('Invalid session response:', res.data);
+                    clearSession();
+                    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+                        router.push('/auth/login');
+                    }
                     setIsSessionChecked(true);
                     setIsLoading(false);
                     return false;
                 }
-            } catch {
+            } catch (error) {
+                // Check if it's an invalid token error
+                const axiosError = error as AxiosError<{ error_code?: string; error_message?: string }>;
+                const errorCode = axiosError?.response?.data?.error_code;
+                if (errorCode === 'INVALID_ACCOUNT_TOKEN' || axiosError?.response?.status === 401) {
+                    // Invalid token - force logout
+                    clearSession();
+                    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+                        router.push('/auth/login');
+                    }
+                }
                 setIsSessionChecked(true);
                 setIsLoading(false);
                 return false;
             }
         },
-        [isSessionChecked, user],
+        [isSessionChecked, user, router],
     );
 
     const refreshSession = async (): Promise<boolean> => {
@@ -118,6 +143,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
     const logout = async () => {
         try {
+            // Try to call backend logout endpoint
+            try {
+                await axios.delete('/api/user/auth/logout');
+            } catch (error) {
+                // Ignore errors during logout call - we'll still clear local session
+                console.error('Error calling logout endpoint:', error);
+            }
             clearSession();
         } catch (error) {
             console.error('Error during logout:', error);

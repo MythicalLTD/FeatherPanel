@@ -1,0 +1,112 @@
+services:
+  mysql:
+    image: mariadb:12.1
+    container_name: featherpanel_mysql
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-featherpanel_root}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-featherpanel}
+      MARIADB_USER: ${MARIADB_USER:-featherpanel}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-featherpanel_password}
+      MARIADB_AUTO_UPGRADE: "1"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - featherpanel_network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mariadb-admin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-pfeatherpanel_root",
+        ]
+      timeout: 20s
+      retries: 10
+
+  redis:
+    image: redis:8.4-alpine
+    container_name: featherpanel_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-featherpanel_redis}
+    volumes:
+      - redis_data:/data
+    networks:
+      - featherpanel_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    image: ghcr.io/mythicalltd/featherpanel-backend:latest
+    container_name: featherpanel_backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_HOST=mysql
+      - DATABASE_PORT=3306
+      - DATABASE_DATABASE=${MARIADB_DATABASE:-featherpanel}
+      - DATABASE_USER=${MARIADB_USER:-featherpanel}
+      - DATABASE_PASSWORD=${MARIADB_PASSWORD:-featherpanel_password}
+      - DATABASE_ENCRYPTION=xchacha20
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "cli", "help"]
+      timeout: 20s
+      retries: 10
+    volumes:
+      - featherpanel_attachments:/var/www/html/public/attachments
+      - featherpanel_config:/var/www/html/storage/config
+      - featherpanel_snapshots:/var/www/html/storage/backups
+    networks:
+      - featherpanel_network
+
+  frontendv2:
+    image: ghcr.io/mythicalltd/featherpanel-frontendv2:latest
+    container_name: featherpanel_frontendv2
+    restart: unless-stopped
+    environment:
+      - INTERNAL_API_URL=http://backend:80
+    volumes: []
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      timeout: 20s
+      retries: 10
+    ports:
+      - "4831:80"
+    networks:
+      - featherpanel_network
+
+volumes:
+  mariadb_data:
+    driver: local
+  redis_data:
+    driver: local
+  featherpanel_attachments:
+    driver: local
+  featherpanel_config:
+    driver: local
+  featherpanel_snapshots:
+    driver: local
+
+networks:
+  featherpanel_network:
+    driver: bridge

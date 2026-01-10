@@ -44,44 +44,78 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     const [dismissedIds, setDismissedIds] = useState<number[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Helper function to check if we're on an auth page
+    const checkIsAuthPage = useCallback(() => {
+        if (typeof window === 'undefined') return false;
+        return window.location.pathname.startsWith('/auth');
+    }, []);
+
     // Load dismissed IDs from localStorage on mount
     useEffect(() => {
-        const stored = localStorage.getItem('featherpanel_dismissed_notifications');
-        if (stored) {
-            try {
-                setDismissedIds(JSON.parse(stored));
-            } catch (e) {
-                console.error('Failed to parse dismissed notifications', e);
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('featherpanel_dismissed_notifications');
+            if (stored) {
+                try {
+                    setDismissedIds(JSON.parse(stored));
+                } catch (e) {
+                    console.error('Failed to parse dismissed notifications', e);
+                }
             }
         }
     }, []);
 
     // Save dismissed IDs to localStorage whenever they change
     useEffect(() => {
-        if (dismissedIds.length > 0) {
+        if (typeof window !== 'undefined' && dismissedIds.length > 0) {
             localStorage.setItem('featherpanel_dismissed_notifications', JSON.stringify(dismissedIds));
         }
     }, [dismissedIds]);
 
     const fetchNotifications = useCallback(async () => {
+        // Don't fetch notifications on auth pages
+        if (typeof window === 'undefined' || checkIsAuthPage()) {
+            setLoading(false);
+            return;
+        }
+
         try {
             const { data } = await axios.get<NotificationsResponse>('/api/user/notifications');
             if (data.success && data.data?.notifications) {
                 setNotifications(data.data.notifications);
             }
         } catch (error) {
-            console.error('Failed to fetch notifications', error);
+            // Silently fail on 401 errors (user not authenticated)
+            const axiosError = error as { response?: { status?: number } };
+            if (axiosError?.response?.status === 401) {
+                // User not authenticated - this is expected on auth pages
+                setNotifications([]);
+            } else {
+                // Only log non-auth errors
+                if (!checkIsAuthPage()) {
+                    console.error('Failed to fetch notifications', error);
+                }
+            }
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [checkIsAuthPage]);
 
     useEffect(() => {
-        fetchNotifications();
-        // Poll every 5 minutes
-        const interval = setInterval(fetchNotifications, 5 * 60 * 1000);
-        return () => clearInterval(interval);
-    }, [fetchNotifications]);
+        // Only fetch if not on auth page and window is available
+        if (typeof window !== 'undefined' && !checkIsAuthPage()) {
+            fetchNotifications();
+            // Poll every 5 minutes
+            const interval = setInterval(() => {
+                // Re-check pathname before each fetch
+                if (!checkIsAuthPage()) {
+                    fetchNotifications();
+                }
+            }, 5 * 60 * 1000);
+            return () => clearInterval(interval);
+        } else {
+            setLoading(false);
+        }
+    }, [fetchNotifications, checkIsAuthPage]);
 
     const dismissNotification = useCallback((id: number) => {
         setDismissedIds((prev) => {
