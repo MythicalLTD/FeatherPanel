@@ -624,6 +624,7 @@ class ServerService
 
     /**
      * Add JWT tokens to WebSocket deny list.
+	 * @deprecated Use deAuthUser instead
      */
     public function denyWebSocketJWT(string $serverUuid, array $jtis): WingsResponse
     {
@@ -639,6 +640,27 @@ class ServerService
         }
     }
 
+	/**
+	 * Deauthorizes a user (disconnects websockets and SFTP) on the Wings instance for the server.
+	 * 
+	 * @param string $user The user to deauthorize
+	 * @param string $serverUuid The server UUID
+	 * 
+	 * @return WingsResponse
+	 */
+	public function deAuthUser(string $user, string $serverUuid) : WingsResponse {
+		try {
+			$data = [
+				'user' => $user,
+				'servers' => [$serverUuid],
+			];
+			$response = $this->connection->post("/api/deauthorize-user", $data);
+			return new WingsResponse($response, 204);
+		} catch ( \Exception $e ) {
+			return new WingsResponse(['error' => $e->getMessage()], 500);
+		}
+	}
+	
     // ========================================
     // Server Sync
     // ========================================

@@ -37,6 +37,7 @@ use App\Chat\Server;
 use App\Chat\Subuser;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
+use App\Services\Wings\Wings;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -590,8 +591,16 @@ class SubuserController
             return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
         }
 
-        // Get user info for logging
-        $user = User::getUserById($subuser['user_id']);
+        // Get user info for logging and deauthorization
+        // Note: subuser table stores user_id (integer), not UUID, so we need to look up the User record
+        $subuserUser = User::getUserById($subuser['user_id']);
+        if (!$subuserUser || !isset($subuserUser['uuid']) || empty($subuserUser['uuid'])) {
+            // User doesn't exist or doesn't have a UUID - log warning but continue with deletion
+            App::getInstance(true)->getLogger()->warning('Subuser deletion: User not found or missing UUID for user_id: ' . $subuser['user_id'] . ', subuser_id: ' . $subuserId);
+            $subuserUserUuid = null;
+        } else {
+            $subuserUserUuid = $subuserUser['uuid'];
+        }
 
         // Delete subuser
         $success = Subuser::deleteSubuser($subuserId);
@@ -611,6 +620,25 @@ class SubuserController
                 ]
             );
         }
+
+		// Get node info
+		$node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+		// Deauthorize user from Wings (only if we have a valid user UUID)
+		// We need the UUID because Wings API expects UUID, not user_id
+		if ($subuserUserUuid !== null) {
+			$wings = $this->createWings($node);
+			$response = $wings->getServer()->deAuthUser($subuserUserUuid, $server['uuid']);
+			if (!$response->isSuccessful()) {
+				return ApiResponse::error('Failed to deauthorize user from Wings', 'WINGS_ERROR', $response->getStatusCode());
+			}
+		} else {
+			// Log that we skipped deauthorization due to missing UUID
+			App::getInstance(true)->getLogger()->warning('Skipped Wings deauthorization for subuser_id: ' . $subuserId . ' - user UUID not available');
+		} 
 
         // Log activity
         $node = Node::getNodeById($server['node_id']);
@@ -879,6 +907,21 @@ class SubuserController
             'total' => count(SubuserPermissions::PERMISSIONS),
         ]);
     }
+
+	 /**
+     * Create a Wings instance for the given node.
+     */
+    private function createWings(array $node): Wings
+    {
+        $scheme = $node['scheme'] ?? 'http';
+        $host = $node['fqdn'] ?? 'localhost';
+        $port = $node['daemonListen'] ?? 8080;
+        $token = $node['daemon_token'] ?? '';
+        $timeout = 30;
+
+        return new Wings($host, $port, $scheme, $token, $timeout);
+    }
+
 
     /**
      * Helper method to log server activity.

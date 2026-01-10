@@ -2,6 +2,11 @@
 
 ## v1.1.3 STABLE
 
+### Security
+
+- Users are now automatically deauthorized from the Wings connection if server ownership changes or their subuser access is revoked, ensuring tighter account security and access control. by @nayskutzu (CVE GHSA-8c39-xppg-479c)
+- Addressed a critical security vulnerability; details are confidential to protect users. by @nayskutzu (CVE GHSA-jw2v-cq5x-q68g)
+
 ### Added
 
 - Introduced a completely redesigned and modernized frontend architecture. by @nayskutzu

@@ -1441,6 +1441,43 @@ class ServersController
             }
         }
 
+        // Handle owner change: deauthorize old owner from Wings before updating
+        // Note: server table stores owner_id (integer), not UUID, so we need to look up the User record
+        if (isset($data['owner_id']) && (int) $data['owner_id'] !== (int) $server['owner_id']) {
+            $oldOwner = User::getUserById($server['owner_id']);
+            if ($oldOwner && isset($oldOwner['uuid']) && !empty($oldOwner['uuid'])) {
+                $oldOwnerUuid = $oldOwner['uuid'];
+                
+                // Get node info for Wings connection
+                $nodeInfo = Node::getNodeById($server['node_id']);
+                if ($nodeInfo) {
+                    try {
+                        $wings = new Wings(
+                            $nodeInfo['fqdn'],
+                            $nodeInfo['daemonListen'],
+                            $nodeInfo['scheme'],
+                            $nodeInfo['daemon_token'],
+                            30
+                        );
+                        
+                        // Deauthorize old owner from Wings
+                        $response = $wings->getServer()->deAuthUser($oldOwnerUuid, $server['uuid']);
+                        if (!$response->isSuccessful()) {
+                            App::getInstance(true)->getLogger()->warning('Failed to deauthorize old owner from Wings during server ownership change: ' . $response->getError() . ' (server_id: ' . $id . ', old_owner_id: ' . $server['owner_id'] . ')');
+                            // Don't fail the update, just log the warning
+                        }
+                    } catch (\Exception $e) {
+                        App::getInstance(true)->getLogger()->error('Exception while deauthorizing old owner from Wings: ' . $e->getMessage() . ' (server_id: ' . $id . ', old_owner_id: ' . $server['owner_id'] . ')');
+                        // Don't fail the update, just log the error
+                    }
+                } else {
+                    App::getInstance(true)->getLogger()->warning('Node not found for deauthorization during server ownership change (server_id: ' . $id . ', node_id: ' . $server['node_id'] . ')');
+                }
+            } else {
+                App::getInstance(true)->getLogger()->warning('Old owner not found or missing UUID during server ownership change (server_id: ' . $id . ', old_owner_id: ' . $server['owner_id'] . ')');
+            }
+        }
+
         // Log the data being sent for debugging
         App::getInstance(true)->getLogger()->debug('Updating server ID ' . $id . ' with data: ' . json_encode($serverUpdateData));
 
