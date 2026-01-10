@@ -321,13 +321,13 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           cache-from: |
-            type=registry,ref=ghcr.io/mythicalltd/frontendv2:buildcache-${{ matrix.cache-key }}
+            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-${{ matrix.cache-key }}
             type=gha
           cache-to: |
-            type=registry,ref=ghcr.io/mythicalltd/frontendv2:buildcache-${{ matrix.cache-key }},mode=max
+            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-${{ matrix.cache-key }},mode=max
             type=gha,mode=max
           tags: |
-            ghcr.io/mythicalltd/frontendv2:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
+            ghcr.io/mythicalltd/featherpanel-frontendv2:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
 
   manifest-frontendv2:
     name: Create Multi-Arch Manifest - Frontend v2
@@ -371,9 +371,9 @@ jobs:
 
       - name: Create and push manifest
         run: |
-          docker buildx imagetools create --tag ghcr.io/mythicalltd/frontendv2:${{ steps.version.outputs.tag }} \
-            ghcr.io/mythicalltd/frontendv2:${{ steps.version.outputs.tag }}-linux-amd64 \
-            ghcr.io/mythicalltd/frontendv2:${{ steps.version.outputs.tag }}-linux-arm64
-          docker buildx imagetools create --tag ghcr.io/mythicalltd/frontendv2:latest \
-            ghcr.io/mythicalltd/frontendv2:${{ steps.version.outputs.tag }}-linux-amd64 \
-            ghcr.io/mythicalltd/frontendv2:${{ steps.version.outputs.tag }}-linux-arm64
+          docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-frontendv2:${{ steps.version.outputs.tag }} \
+            ghcr.io/mythicalltd/featherpanel-frontendv2:${{ steps.version.outputs.tag }}-linux-amd64 \
+            ghcr.io/mythicalltd/featherpanel-frontendv2:${{ steps.version.outputs.tag }}-linux-arm64
+          docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-frontendv2:latest \
+            ghcr.io/mythicalltd/featherpanel-frontendv2:${{ steps.version.outputs.tag }}-linux-amd64 \
+            ghcr.io/mythicalltd/featherpanel-frontendv2:${{ steps.version.outputs.tag }}-linux-arm64

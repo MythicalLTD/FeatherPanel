@@ -27,7 +27,6 @@ SOFTWARE.
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -42,7 +41,6 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useEffect } from 'react';
 
 export default function RegisterForm() {
-    const router = useRouter();
     const { settings } = useSettings();
     const { t } = useTranslation();
     const { theme } = useTheme();
