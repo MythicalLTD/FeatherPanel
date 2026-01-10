@@ -157,8 +157,12 @@ export default function AdminDashboardPage() {
                             )}
                         >
                             <Settings className={cn('h-4 w-4', isCustomizing && 'animate-spin-slow')} />
-                            <span className='hidden sm:inline'>{isCustomizing ? t('admin.dashboard.stop_customizing') : t('admin.dashboard.customize')}</span>
-                            <span className='sm:hidden'>{isCustomizing ? t('admin.dashboard.stop') : t('admin.dashboard.customize')}</span>
+                            <span className='hidden sm:inline'>
+                                {isCustomizing ? t('admin.dashboard.stop_customizing') : t('admin.dashboard.customize')}
+                            </span>
+                            <span className='sm:hidden'>
+                                {isCustomizing ? t('admin.dashboard.stop') : t('admin.dashboard.customize')}
+                            </span>
                         </button>
                         <button
                             onClick={clearCache}

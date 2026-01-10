@@ -90,7 +90,9 @@ export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
                                     )}
                                 </div>
                                 <div className='min-w-0 flex-1'>
-                                    <p className='text-xs md:text-sm font-bold tracking-tight truncate'>{task.task_name}</p>
+                                    <p className='text-xs md:text-sm font-bold tracking-tight truncate'>
+                                        {task.task_name}
+                                    </p>
                                     <p className='text-[9px] md:text-[10px] text-muted-foreground uppercase font-bold opacity-70 truncate'>
                                         {t('admin.cron.last_run', {
                                             date: task.last_run_at

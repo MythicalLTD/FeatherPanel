@@ -637,7 +637,7 @@ export default function ServerSubusersPage() {
                         <div className='max-h-[50vh] overflow-y-auto space-y-6 pr-2 scrollbar-thin scrollbar-thumb-muted-foreground/10'>
                             {Object.entries(groupedPermissions).map(([category, data]) => (
                                 <div key={category} className='space-y-4'>
-                                    <div className='sticky top-0 bg-background/80 backdrop-blur-xl z-10 py-3 border-b border-border/5 -mx-2 px-2'>
+                                    <div className='sticky top-0 bg-card z-10 py-3 border-b border-border/5 -mx-2 px-2'>
                                         <h4 className='text-lg font-black uppercase tracking-tight text-primary'>
                                             {t(`serverSubusers.permissionCategories.${category}.name`)}
                                         </h4>

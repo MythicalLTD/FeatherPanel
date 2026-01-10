@@ -1,3 +1,4 @@
+// @ts-nocheck
 /*
 MIT License
 
@@ -85,7 +86,7 @@ const categoryData = {
 
 export default function CategoryEventsPage() {
     // Helper to unescape JSON-escaped strings
-    const unescapeCode = (str) => {
+    const unescapeCode = (str: string) => {
         // Replace double backslashes (escaped in JSON) with single backslash
         // Replace escaped newlines with actual newlines
         return str.replace(/\\\\/g, '\\').replace(/\\n/g, '\n');

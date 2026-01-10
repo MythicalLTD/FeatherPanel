@@ -111,7 +111,8 @@ function generateNextJsPages(results) {
 }
 
 function generateMainDocsPage(slugs) {
-    return `/*
+    return `// @ts-nocheck
+/*
 MIT License
 
 Copyright (c) 2024-2026 MythicalSystems and Contributors
@@ -257,7 +258,8 @@ function generateWidgetsListPage(results, sortedSlugs) {
         };
     });
     
-    return `/*
+    return `// @ts-nocheck
+/*
 MIT License
 
 Copyright (c) 2024-2026 MythicalSystems and Contributors
@@ -392,7 +394,8 @@ function generateWidgetDetailPage(slug, data) {
         ? injectionPoints[0].replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\$/g, '\\$')
         : 'injection-point';
     
-    return `/*
+    return `// @ts-nocheck
+/*
 MIT License
 
 Copyright (c) 2024-2026 MythicalSystems and Contributors

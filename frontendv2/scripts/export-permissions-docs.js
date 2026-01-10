@@ -92,7 +92,8 @@ function sanitizeCategory(category) {
 }
 
 function generateMainPermissionsPage(categories, totalPermissions) {
-    return `/*
+    return `// @ts-nocheck
+/*
 MIT License
 
 Copyright (c) 2024-2026 MythicalSystems and Contributors
@@ -224,7 +225,8 @@ admin.settings.edit
 
 function generateCategoryPage(category, permissions) {
     
-    return `/*
+    return `// @ts-nocheck
+/*
 MIT License
 
 Copyright (c) 2024-2026 MythicalSystems and Contributors

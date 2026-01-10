@@ -69,30 +69,34 @@ export function HeadlessModal({ isOpen, onClose, title, children, description, c
                         >
                             <Dialog.Panel
                                 className={cn(
-                                    'w-full max-w-md transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 text-left align-middle shadow-2xl transition-all relative',
+                                    'w-full max-w-md transform overflow-hidden rounded-2xl bg-card border border-border/50 text-left align-middle shadow-2xl transition-all relative',
                                     className,
                                 )}
                             >
-                                <Dialog.Title
-                                    as='h3'
-                                    className='text-lg font-semibold leading-6 text-foreground flex justify-between items-center mb-4'
-                                >
-                                    {title}
-                                    <button
-                                        type='button'
-                                        className='rounded-full p-2 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground absolute right-4 top-4'
-                                        onClick={onClose}
+                                <div className='bg-card/95 backdrop-blur-xl border-b border-border/5 px-6 pt-6 pb-4'>
+                                    <Dialog.Title
+                                        as='h3'
+                                        className='text-lg font-semibold leading-6 text-foreground flex justify-between items-center mb-2'
                                     >
-                                        <X className='h-4 w-4' />
-                                    </button>
-                                </Dialog.Title>
-                                {description && (
-                                    <div className='mt-2 mb-6'>
-                                        <p className='text-sm text-muted-foreground leading-relaxed'>{description}</p>
-                                    </div>
-                                )}
+                                        {title}
+                                        <button
+                                            type='button'
+                                            className='rounded-full p-2 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground -mr-2 -mt-2'
+                                            onClick={onClose}
+                                        >
+                                            <X className='h-4 w-4' />
+                                        </button>
+                                    </Dialog.Title>
+                                    {description && (
+                                        <div className='mt-2'>
+                                            <p className='text-sm text-muted-foreground leading-relaxed'>
+                                                {description}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
 
-                                <div className='mt-4'>{children}</div>
+                                <div className='p-6 pt-4'>{children}</div>
                             </Dialog.Panel>
                         </Transition.Child>
                     </div>

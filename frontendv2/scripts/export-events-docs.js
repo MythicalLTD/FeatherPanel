@@ -197,7 +197,8 @@ function sanitizeCategory(category) {
 }
 
 function generateMainEventsPage(categories, totalEvents) {
-    return `/*
+    return `// @ts-nocheck
+/*
 MIT License
 
 Copyright (c) 2024-2026 MythicalSystems and Contributors
@@ -377,7 +378,8 @@ function generateCategoryPage(category, events) {
         return { ...event, exampleCode };
     });
     
-    return `/*
+    return `// @ts-nocheck
+/*
 MIT License
 
 Copyright (c) 2024-2026 MythicalSystems and Contributors
@@ -417,7 +419,7 @@ const categoryData = {
 
 export default function CategoryEventsPage() {
     // Helper to unescape JSON-escaped strings
-    const unescapeCode = (str) => {
+    const unescapeCode = (str: string) => {
         // Replace double backslashes (escaped in JSON) with single backslash
         // Replace escaped newlines with actual newlines
         return str.replace(/\\\\\\\\/g, '\\\\').replace(/\\\\n/g, '\\n');

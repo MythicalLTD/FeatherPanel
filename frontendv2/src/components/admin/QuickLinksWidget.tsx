@@ -93,7 +93,9 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
                             <link.icon className='h-4 w-4 md:h-5 md:w-5' />
                         </div>
                         <div className='min-w-0 flex-1'>
-                            <p className='text-[10px] md:text-xs font-black uppercase tracking-widest break-words leading-tight whitespace-normal'>{link.name}</p>
+                            <p className='text-[10px] md:text-xs font-black uppercase tracking-widest break-words leading-tight whitespace-normal'>
+                                {link.name}
+                            </p>
                             {link.external && (
                                 <ExternalLink className='h-3 w-3 text-muted-foreground opacity-50 absolute top-3 right-3 md:top-4 md:right-4 shrink-0' />
                             )}
