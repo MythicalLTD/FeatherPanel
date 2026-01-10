@@ -37,12 +37,14 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Server, ArrowLeft, Save } from 'lucide-react';
+import { Server, ArrowLeft, Save, Search as SearchIcon, MapPin } from 'lucide-react';
 
 interface Location {
     id: number;
     name: string;
+    description?: string;
 }
 
 export default function CreateNodePage() {
@@ -51,6 +53,18 @@ export default function CreateNodePage() {
 
     const [loading, setLoading] = useState(false);
     const [locations, setLocations] = useState<Location[]>([]);
+    const [locationModalOpen, setLocationModalOpen] = useState(false);
+    const [selectedLocationName, setSelectedLocationName] = useState<string>('');
+    const [locationSearch, setLocationSearch] = useState('');
+    const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
+    const [locationPagination, setLocationPagination] = useState({
+        current_page: 1,
+        per_page: 10,
+        total_records: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false,
+    });
     const [form, setForm] = useState({
         name: '',
         description: '',
@@ -74,19 +88,45 @@ export default function CreateNodePage() {
 
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    // Debounce location search
     useEffect(() => {
-        const fetchLocations = async () => {
-            try {
-                const { data } = await axios.get('/api/admin/locations', {
-                    params: { limit: 100 },
-                });
-                setLocations(data.data.locations || []);
-            } catch (error) {
-                console.error('Error fetching locations:', error);
+        const timer = setTimeout(() => {
+            setDebouncedLocationSearch(locationSearch);
+            setLocationPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [locationSearch]);
+
+    // Fetch locations with pagination
+    const fetchLocations = useCallback(async () => {
+        try {
+            const currentPage = locationPagination.current_page;
+            const perPage = locationPagination.per_page;
+
+            const { data } = await axios.get('/api/admin/locations', {
+                params: {
+                    page: currentPage,
+                    limit: perPage,
+                    search: debouncedLocationSearch,
+                },
+            });
+            setLocations(data.data.locations || []);
+            if (data.data.pagination) {
+                setLocationPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
             }
-        };
-        fetchLocations();
-    }, []);
+        } catch (error) {
+            console.error('Error fetching locations:', error);
+        }
+    }, [locationPagination.current_page, locationPagination.per_page, debouncedLocationSearch]);
+
+    useEffect(() => {
+        if (locationModalOpen) {
+            fetchLocations();
+        }
+    }, [locationModalOpen, locationPagination.current_page, debouncedLocationSearch, fetchLocations]);
 
     const validate = useCallback(() => {
         const newErrors: Record<string, string> = {};
@@ -192,7 +232,7 @@ export default function CreateNodePage() {
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.node.form.description')}</Label>
                                     <Textarea
-                                        placeholder='A brief description of this node...'
+                                        placeholder={t('admin.node.form.description_placeholder')}
                                         value={form.description}
                                         onChange={(e) => setForm({ ...form, description: e.target.value })}
                                         className='min-h-[100px]'
@@ -200,18 +240,32 @@ export default function CreateNodePage() {
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.node.form.location')}</Label>
-                                    <Select
-                                        value={form.location_id}
-                                        onChange={(e) => setForm({ ...form, location_id: e.target.value })}
-                                        className={errors.location_id ? 'border-red-500' : ''}
-                                    >
-                                        <option value=''>{t('admin.node.form.select_location')}</option>
-                                        {locations.map((loc) => (
-                                            <option key={loc.id} value={loc.id}>
-                                                {loc.name}
-                                            </option>
-                                        ))}
-                                    </Select>
+                                    <div className='flex gap-2'>
+                                        <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                                            {form.location_id && selectedLocationName ? (
+                                                <div className='flex items-center gap-2'>
+                                                    <MapPin className='h-4 w-4 text-primary' />
+                                                    <span className='font-medium text-foreground'>
+                                                        {selectedLocationName}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className='text-muted-foreground'>
+                                                    {t('admin.node.form.select_location')}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <Button
+                                            type='button'
+                                            size='icon'
+                                            onClick={() => {
+                                                fetchLocations();
+                                                setLocationModalOpen(true);
+                                            }}
+                                        >
+                                            <SearchIcon className='h-4 w-4' />
+                                        </Button>
+                                    </div>
                                     {errors.location_id && (
                                         <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
                                             {errors.location_id}
@@ -470,6 +524,118 @@ export default function CreateNodePage() {
                     </Button>
                 </div>
             </form>
+
+            {/* Location Selection Sheet */}
+            <Sheet open={locationModalOpen} onOpenChange={setLocationModalOpen}>
+                <SheetContent className='sm:max-w-2xl'>
+                    <SheetHeader>
+                        <SheetTitle>{t('admin.node.form.select_location')}</SheetTitle>
+                        <SheetDescription>
+                            {t('admin.node.form.select_location_description', {
+                                total: String(locationPagination.total_records || 0),
+                            })}
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    <div className='mt-6 space-y-4'>
+                        {/* Search */}
+                        <div className='relative'>
+                            <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <Input
+                                placeholder={t('admin.node.form.search_locations')}
+                                value={locationSearch}
+                                onChange={(e) => setLocationSearch(e.target.value)}
+                                className='pl-10'
+                            />
+                        </div>
+
+                        {/* Locations List */}
+                        <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
+                            {locations.length === 0 ? (
+                                <div className='text-center py-8 text-muted-foreground'>
+                                    {t('admin.node.form.no_locations_found')}
+                                </div>
+                            ) : (
+                                locations.map((location) => (
+                                    <button
+                                        key={location.id}
+                                        onClick={() => {
+                                            setForm((prev) => ({ ...prev, location_id: location.id.toString() }));
+                                            setSelectedLocationName(location.name);
+                                            setLocationModalOpen(false);
+                                        }}
+                                        className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                    >
+                                        <div className='flex items-start gap-3'>
+                                            <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
+                                                <MapPin className='h-5 w-5 text-primary' />
+                                            </div>
+                                            <div className='flex-1 min-w-0'>
+                                                <div className='font-medium'>{location.name}</div>
+                                                {location.description && (
+                                                    <div className='text-sm text-muted-foreground mt-1'>
+                                                        {location.description}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {locationPagination.total_pages > 1 && (
+                            <div className='flex items-center justify-between pt-4 border-t'>
+                                <div className='text-sm text-muted-foreground'>
+                                    {t('common.showing', {
+                                        from: String(
+                                            locationPagination.current_page * locationPagination.per_page -
+                                                locationPagination.per_page +
+                                                1,
+                                        ),
+                                        to: String(
+                                            Math.min(
+                                                locationPagination.current_page * locationPagination.per_page,
+                                                locationPagination.total_records,
+                                            ),
+                                        ),
+                                        total: String(locationPagination.total_records),
+                                    })}
+                                </div>
+                                <div className='flex gap-2'>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() =>
+                                            setLocationPagination((prev) => ({
+                                                ...prev,
+                                                current_page: prev.current_page - 1,
+                                            }))
+                                        }
+                                        disabled={!locationPagination.has_prev}
+                                    >
+                                        {t('common.previous')}
+                                    </Button>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() =>
+                                            setLocationPagination((prev) => ({
+                                                ...prev,
+                                                current_page: prev.current_page + 1,
+                                            }))
+                                        }
+                                        disabled={!locationPagination.has_next}
+                                    >
+                                        {t('common.next')}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </SheetContent>
+            </Sheet>
         </div>
     );
 }

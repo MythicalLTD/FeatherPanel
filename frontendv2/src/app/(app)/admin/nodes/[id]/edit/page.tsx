@@ -320,6 +320,24 @@ export default function EditNodePage() {
         }
     }, [locationModalOpen, locationPagination.current_page, debouncedLocationSearch, fetchLocations]);
 
+    // Also fetch locations when form has location_id but selectedLocationName is empty
+    useEffect(() => {
+        if (form.location_id && !selectedLocationName && locations.length === 0) {
+            // Try to fetch the specific location
+            const fetchCurrentLocation = async () => {
+                try {
+                    const locationRes = await axios.get(`/api/admin/locations/${form.location_id}`);
+                    if (locationRes.data?.data?.location) {
+                        setSelectedLocationName(locationRes.data.data.location.name);
+                    }
+                } catch (error) {
+                    console.error('Error fetching current location:', error);
+                }
+            };
+            fetchCurrentLocation();
+        }
+    }, [form.location_id, selectedLocationName, locations.length]);
+
     useEffect(() => {
         fetchInitialData();
         fetchSystemInfo();
@@ -517,6 +535,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                                 setForm={setForm}
                                 errors={errors}
                                 selectedLocationName={selectedLocationName}
+                                locations={locations}
                                 setLocationModalOpen={setLocationModalOpen}
                                 fetchLocations={fetchLocations}
                             />

@@ -32,14 +32,22 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/featherui/Button';
 import { Database, Search, MapPin } from 'lucide-react';
 import { Select } from '@/components/ui/select-native';
+import { useMemo } from 'react';
 
 import { type NodeForm } from './page';
+
+interface Location {
+    id: number;
+    name: string;
+    description?: string;
+}
 
 interface DetailsTabProps {
     form: NodeForm;
     setForm: React.Dispatch<React.SetStateAction<NodeForm>>;
     errors: Record<string, string>;
     selectedLocationName: string;
+    locations: Location[];
     setLocationModalOpen: (open: boolean) => void;
     fetchLocations: () => void;
 }
@@ -49,10 +57,21 @@ export function DetailsTab({
     setForm,
     errors,
     selectedLocationName,
+    locations,
     setLocationModalOpen,
     fetchLocations,
 }: DetailsTabProps) {
     const { t } = useTranslation();
+
+    // Get location name from selectedLocationName or find in locations array
+    const displayLocationName = useMemo(() => {
+        if (selectedLocationName) return selectedLocationName;
+        if (form.location_id) {
+            const found = locations.find((loc) => loc.id.toString() === form.location_id);
+            return found?.name || '';
+        }
+        return '';
+    }, [selectedLocationName, form.location_id, locations]);
 
     return (
         <PageCard title={t('admin.node.form.basic_details')} icon={Database}>
@@ -61,7 +80,7 @@ export function DetailsTab({
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.node.form.name')}</Label>
                         <Input
-                            placeholder='My Production Node'
+                            placeholder={t('admin.node.form.name_placeholder')}
                             value={form.name}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                 setForm({ ...form, name: e.target.value })
@@ -86,10 +105,10 @@ export function DetailsTab({
                         <Label className='text-sm font-semibold'>{t('admin.node.form.location')}</Label>
                         <div className='flex gap-2'>
                             <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
-                                {form.location_id && selectedLocationName ? (
+                                {form.location_id && displayLocationName ? (
                                     <div className='flex items-center gap-2'>
                                         <MapPin className='h-4 w-4 text-primary' />
-                                        <span className='font-medium text-foreground'>{selectedLocationName}</span>
+                                        <span className='font-medium text-foreground'>{displayLocationName}</span>
                                     </div>
                                 ) : (
                                     <span className='text-muted-foreground'>
