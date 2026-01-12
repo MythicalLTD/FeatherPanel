@@ -62,6 +62,7 @@ import {
     Clock,
     Folder,
     Sparkles,
+    Code,
 } from 'lucide-react';
 import { isEnabled } from '@/lib/utils';
 
@@ -375,6 +376,18 @@ export const getAdminNavigationItems = (t: TFunction, settings: AppSettings | nu
             category: 'admin',
             permission: Permissions.ADMIN_DATABASES_MANAGE,
             group: 'system',
+        },
+        // Developer Tools
+        {
+            id: 'admin-dev-plugins',
+            name: t('navigation.items.devPlugins'),
+            title: t('navigation.items.devPlugins'),
+            url: '/admin/dev/plugins',
+            icon: Code,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_ROOT,
+            group: 'developer',
         },
         // FeatherCloud
         {

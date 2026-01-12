@@ -1,0 +1,862 @@
+/*
+MIT License
+
+Copyright (c) 2024-2026 MythicalSystems and Contributors
+Copyright (c) 2024-2026 Cassian Gherman (NaysKutzu)
+Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { useSession } from '@/contexts/SessionContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { PageHeader } from '@/components/featherui/PageHeader';
+import { PageCard } from '@/components/featherui/PageCard';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
+import { Textarea } from '@/components/featherui/Textarea';
+import { Select } from '@/components/ui/select-native';
+import { Label } from '@/components/ui/label';
+import { EmptyState } from '@/components/featherui/EmptyState';
+import { useDeveloperMode } from '@/hooks/useDeveloperMode';
+import { toast } from 'sonner';
+import { Code, ArrowLeft, Save, Lock, Loader2 } from 'lucide-react';
+
+interface DependencyItem {
+    type: 'php' | 'php-ext' | 'plugin';
+    value: string;
+}
+
+interface ConfigField {
+    name: string;
+    display_name: string;
+    type: 'text' | 'email' | 'url' | 'password' | 'number' | 'boolean';
+    description: string;
+    required: boolean;
+    validation: {
+        regex?: string;
+        message?: string;
+        min?: number;
+        max?: number;
+    };
+    default: string;
+}
+
+interface CreatePluginData {
+    identifier: string;
+    name: string;
+    description: string;
+    version: string;
+    target: string;
+    template: 'empty' | 'starter' | 'fresh';
+    author: string[];
+    flags: string[];
+    dependencies: DependencyItem[];
+    requiredConfigs: ConfigField[];
+}
+
+export default function CreatePluginPage() {
+    const { t } = useTranslation();
+    const router = useRouter();
+    const { user } = useSession();
+    const { settings } = useSettings();
+    const { isDeveloperModeEnabled, loading: developerModeLoading } = useDeveloperMode();
+    const [loading, setLoading] = useState(false);
+
+    const [form, setForm] = useState<CreatePluginData>({
+        identifier: '',
+        name: '',
+        description: '',
+        version: '1.0.0',
+        target: 'v3',
+        template: 'starter',
+        author: [user?.username || '', settings?.app_name || ''],
+        flags: ['hasEvents'],
+        dependencies: [
+            { type: 'php', value: '8.5' },
+            { type: 'php-ext', value: 'pdo' },
+        ],
+        requiredConfigs: [],
+    });
+
+    const pluginFlags = [
+        'hasInstallScript',
+        'hasRemovalScript',
+        'hasUpdateScript',
+        'developerIgnoreInstallScript',
+        'developerEscalateInstallScript',
+        'userEscalateInstallScript',
+        'hasEvents',
+    ];
+
+    const dependencyTypes = [
+        { value: 'php', label: t('admin.dev.plugins.create.dependency_types.php') },
+        { value: 'php-ext', label: t('admin.dev.plugins.create.dependency_types.php_ext') },
+        { value: 'plugin', label: t('admin.dev.plugins.create.dependency_types.plugin') },
+    ];
+
+    const phpVersions = ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5'];
+    const phpExtensions = [
+        'pdo',
+        'curl',
+        'json',
+        'mbstring',
+        'gd',
+        'zip',
+        'xml',
+        'openssl',
+        'sqlite3',
+        'mysql',
+        'pgsql',
+    ];
+    const availableTargets = ['v1', 'v2', 'v3'];
+    const availableTemplates = [
+        {
+            value: 'empty',
+            label: t('admin.dev.plugins.create.templates.empty.label'),
+            description: t('admin.dev.plugins.create.templates.empty.description'),
+        },
+        {
+            value: 'starter',
+            label: t('admin.dev.plugins.create.templates.starter.label'),
+            description: t('admin.dev.plugins.create.templates.starter.description'),
+        },
+        {
+            value: 'fresh',
+            label: t('admin.dev.plugins.create.templates.fresh.label'),
+            description: t('admin.dev.plugins.create.templates.fresh.description'),
+        },
+    ];
+
+    const fieldTypes = [
+        { value: 'text', label: t('admin.dev.plugins.create.field_types.text') },
+        { value: 'email', label: t('admin.dev.plugins.create.field_types.email') },
+        { value: 'url', label: t('admin.dev.plugins.create.field_types.url') },
+        { value: 'password', label: t('admin.dev.plugins.create.field_types.password') },
+        { value: 'number', label: t('admin.dev.plugins.create.field_types.number') },
+        { value: 'boolean', label: t('admin.dev.plugins.create.field_types.boolean') },
+    ];
+
+    useEffect(() => {
+        if (user?.username && form.author[0] === '') {
+            setForm((prev) => ({ ...prev, author: [user.username, prev.author[1]] }));
+        }
+        if (settings?.app_name && form.author[1] === '') {
+            setForm((prev) => ({ ...prev, author: [prev.author[0], settings.app_name] }));
+        }
+    }, [user, settings, form.author]);
+
+    const generateIdentifier = (name: string): string => {
+        return name
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '')
+            .substring(0, 32);
+    };
+
+    const handleNameInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+        setForm((prev) => ({
+            ...prev,
+            name: value,
+            identifier: generateIdentifier(value),
+        }));
+    };
+
+    const hasPhpVersionDependency = form.dependencies.some((dep) => dep.type === 'php');
+
+    const isDefaultDependency = (dep: DependencyItem | undefined, index: number): boolean => {
+        if (!dep) return false;
+        if (index === 0 && dep.type === 'php' && dep.value === '8.5') return true;
+        if (index === 1 && dep.type === 'php-ext' && dep.value === 'pdo') return true;
+        return false;
+    };
+
+    const availableFlags = pluginFlags.filter((flag) => !form.flags.includes(flag));
+
+    const createPlugin = async () => {
+        if (!form.identifier || !form.name) {
+            toast.error(t('admin.dev.plugins.create.validation.identifier_name_required'));
+            return;
+        }
+
+        const hasValidAuthors = form.author.some((author) => author.trim() !== '');
+        const hasValidFlags = form.flags.length > 0;
+        const hasValidDependencies = form.dependencies.length > 0;
+
+        if (!hasValidAuthors && !hasValidFlags && !hasValidDependencies) {
+            toast.error(t('admin.dev.plugins.create.validation.author_flag_dependency_required'));
+            return;
+        }
+
+        const formattedData = {
+            ...form,
+            dependencies: form.dependencies.map((dep) => `${dep.type}=${dep.value}`),
+            requiredConfigs: form.requiredConfigs.map((config) => config.name),
+            configSchema: form.requiredConfigs,
+        };
+
+        setLoading(true);
+        try {
+            const response = await axios.post('/api/admin/plugin-manager', formattedData);
+            if (response.data.success) {
+                toast.success(t('admin.dev.plugins.create.messages.created'));
+                router.push('/admin/dev/plugins');
+            } else {
+                toast.error(response.data.message || t('admin.dev.plugins.create.messages.create_failed'));
+            }
+        } catch (error) {
+            console.error('Failed to create plugin:', error);
+            toast.error(t('admin.dev.plugins.create.messages.create_failed'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Developer Mode Check
+    if (developerModeLoading) {
+        return (
+            <div className='flex items-center justify-center p-12'>
+                <Loader2 className='w-8 h-8 animate-spin text-primary' />
+            </div>
+        );
+    }
+
+    if (isDeveloperModeEnabled === false) {
+        return (
+            <div className='max-w-4xl mx-auto py-8 px-4'>
+                <EmptyState
+                    title={t('admin.dev.developerModeRequired') || 'Developer Mode Required'}
+                    description={
+                        t('admin.dev.developerModeDescription') ||
+                        'Developer mode must be enabled in settings to access developer tools.'
+                    }
+                    icon={Lock}
+                    action={
+                        <Button variant='outline' onClick={() => router.push('/admin/settings')}>
+                            {t('admin.dev.goToSettings') || 'Go to Settings'}
+                        </Button>
+                    }
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className='max-w-4xl mx-auto py-8 px-4'>
+            <PageHeader
+                title={t('admin.dev.plugins.create.title')}
+                description={t('admin.dev.plugins.create.description')}
+                icon={Code}
+                actions={
+                    <Button variant='outline' onClick={() => router.back()}>
+                        <ArrowLeft className='h-4 w-4 mr-2' />
+                        {t('common.back')}
+                    </Button>
+                }
+            />
+
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    createPlugin();
+                }}
+                className='space-y-8 mt-8'
+            >
+                <PageCard title={t('admin.dev.plugins.create.basic_info')} icon={Code}>
+                    <div className='space-y-6'>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                            <div>
+                                <Label className='text-sm font-semibold mb-2 block'>
+                                    {t('admin.dev.plugins.create.name')} *
+                                </Label>
+                                <Input
+                                    value={form.name}
+                                    onChange={handleNameInput}
+                                    placeholder='MyAwesomePlugin'
+                                    maxLength={32}
+                                />
+                                <p className='text-xs text-muted-foreground mt-1'>
+                                    {t('admin.dev.plugins.create.name_help')}
+                                </p>
+                            </div>
+                            <div>
+                                <Label className='text-sm font-semibold mb-2 block'>
+                                    {t('admin.dev.plugins.create.identifier')} *
+                                </Label>
+                                <Input
+                                    value={form.identifier}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, identifier: e.target.value }))}
+                                    placeholder='myawesomeplugin'
+                                    maxLength={32}
+                                    className='lowercase'
+                                />
+                                <p className='text-xs text-muted-foreground mt-1'>
+                                    {t('admin.dev.plugins.create.identifier_help')}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label className='text-sm font-semibold mb-2 block'>
+                                {t('admin.dev.plugins.create.description')}
+                            </Label>
+                            <Textarea
+                                value={form.description}
+                                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                                placeholder={t('admin.dev.plugins.create.description_placeholder')}
+                                rows={3}
+                            />
+                        </div>
+
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                            <div>
+                                <Label className='text-sm font-semibold mb-2 block'>
+                                    {t('admin.dev.plugins.create.version')}
+                                </Label>
+                                <Input
+                                    value={form.version}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, version: e.target.value }))}
+                                    placeholder='1.0.0'
+                                />
+                            </div>
+                            <div>
+                                <Label className='text-sm font-semibold mb-2 block'>
+                                    {t('admin.dev.plugins.create.target')}
+                                </Label>
+                                <Select
+                                    value={form.target}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, target: e.target.value }))}
+                                >
+                                    {availableTargets.map((target) => (
+                                        <option key={target} value={target}>
+                                            {target}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label className='text-sm font-semibold mb-2 block'>
+                                {t('admin.dev.plugins.create.template')}
+                            </Label>
+                            <Select
+                                value={form.template}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        template: e.target.value as 'empty' | 'starter' | 'fresh',
+                                    }))
+                                }
+                            >
+                                {availableTemplates.map((template) => (
+                                    <option key={template.value} value={template.value}>
+                                        {template.label} - {template.description}
+                                    </option>
+                                ))}
+                            </Select>
+                            <p className='text-xs text-muted-foreground mt-1'>
+                                {t('admin.dev.plugins.create.template_help')}
+                            </p>
+                        </div>
+                    </div>
+                </PageCard>
+
+                <PageCard title={t('admin.dev.plugins.create.authors')} icon={Code}>
+                    <div className='space-y-2'>
+                        {form.author.map((author, index) => (
+                            <div key={index} className='flex gap-2'>
+                                <Input
+                                    value={author}
+                                    onChange={(e) => {
+                                        const newAuthors = [...form.author];
+                                        newAuthors[index] = e.target.value;
+                                        setForm((prev) => ({ ...prev, author: newAuthors }));
+                                    }}
+                                    placeholder={t('admin.dev.plugins.create.author_placeholder')}
+                                    className='flex-1'
+                                />
+                                {form.author.length > 1 && (
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() => {
+                                            const newAuthors = form.author.filter((_, i) => i !== index);
+                                            setForm((prev) => ({ ...prev, author: newAuthors }));
+                                        }}
+                                    >
+                                        {t('common.remove')}
+                                    </Button>
+                                )}
+                            </div>
+                        ))}
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            onClick={() => setForm((prev) => ({ ...prev, author: [...prev.author, ''] }))}
+                        >
+                            {t('admin.dev.plugins.create.add_author')}
+                        </Button>
+                        <p className='text-xs text-muted-foreground'>{t('admin.dev.plugins.create.authors_help')}</p>
+                    </div>
+                </PageCard>
+
+                <PageCard title={t('admin.dev.plugins.create.flags')} icon={Code}>
+                    <div className='space-y-2'>
+                        {form.flags.map((flag, index) => (
+                            <div key={index} className='flex gap-2'>
+                                <Select
+                                    value={flag}
+                                    onChange={(e) => {
+                                        const newFlags = [...form.flags];
+                                        newFlags[index] = e.target.value;
+                                        setForm((prev) => ({ ...prev, flags: newFlags }));
+                                    }}
+                                    disabled={flag === 'hasEvents'}
+                                    className='flex-1'
+                                >
+                                    {pluginFlags.map((availableFlag) => (
+                                        <option
+                                            key={availableFlag}
+                                            value={availableFlag}
+                                            disabled={flag !== availableFlag && form.flags.includes(availableFlag)}
+                                        >
+                                            {availableFlag}
+                                            {flag !== availableFlag && form.flags.includes(availableFlag)
+                                                ? ' (already selected)'
+                                                : ''}
+                                        </option>
+                                    ))}
+                                </Select>
+                                {flag !== 'hasEvents' ? (
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() => {
+                                            const newFlags = form.flags.filter((_, i) => i !== index);
+                                            setForm((prev) => ({ ...prev, flags: newFlags }));
+                                        }}
+                                    >
+                                        {t('common.remove')}
+                                    </Button>
+                                ) : (
+                                    <Button type='button' variant='outline' size='sm' disabled>
+                                        {t('admin.dev.plugins.create.required')}
+                                    </Button>
+                                )}
+                            </div>
+                        ))}
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            onClick={() => {
+                                if (availableFlags.length === 0) {
+                                    toast.warning(t('admin.dev.plugins.create.all_flags_added'));
+                                    return;
+                                }
+                                setForm((prev) => ({ ...prev, flags: [...prev.flags, ''] }));
+                            }}
+                        >
+                            {t('admin.dev.plugins.create.add_flag')}
+                        </Button>
+                        <p className='text-xs text-muted-foreground'>{t('admin.dev.plugins.create.flags_help')}</p>
+                    </div>
+                </PageCard>
+
+                <PageCard title={t('admin.dev.plugins.create.dependencies')} icon={Code}>
+                    <div className='space-y-2'>
+                        {form.dependencies.map((dep, index) => (
+                            <div key={index} className='flex gap-2'>
+                                <Select
+                                    value={dep.type}
+                                    onChange={(e) => {
+                                        const newDeps = [...form.dependencies];
+                                        newDeps[index] = {
+                                            ...newDeps[index],
+                                            type: e.target.value as 'php' | 'php-ext' | 'plugin',
+                                        };
+                                        setForm((prev) => ({ ...prev, dependencies: newDeps }));
+                                    }}
+                                    disabled={isDefaultDependency(dep, index)}
+                                    className='w-32'
+                                >
+                                    {dependencyTypes.map((type) => (
+                                        <option
+                                            key={type.value}
+                                            value={type.value}
+                                            disabled={
+                                                type.value === 'php' && hasPhpVersionDependency && dep.type !== 'php'
+                                            }
+                                        >
+                                            {type.label}
+                                        </option>
+                                    ))}
+                                </Select>
+                                {dep.type === 'php' && (
+                                    <div className='flex-1'>
+                                        <Select
+                                            value={dep.value}
+                                            onChange={(e) => {
+                                                const newDeps = [...form.dependencies];
+                                                newDeps[index] = { ...newDeps[index], value: e.target.value };
+                                                setForm((prev) => ({ ...prev, dependencies: newDeps }));
+                                            }}
+                                            disabled={isDefaultDependency(dep, index)}
+                                        >
+                                            {phpVersions.map((version) => (
+                                                <option
+                                                    key={version}
+                                                    value={version}
+                                                    disabled={
+                                                        dep.value !== version &&
+                                                        form.dependencies.some(
+                                                            (d) => d.type === 'php' && d.value === version,
+                                                        )
+                                                    }
+                                                >
+                                                    {version}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                        <Input
+                                            value={dep.value}
+                                            onChange={(e) => {
+                                                const newDeps = [...form.dependencies];
+                                                newDeps[index] = { ...newDeps[index], value: e.target.value };
+                                                setForm((prev) => ({ ...prev, dependencies: newDeps }));
+                                            }}
+                                            placeholder={t('admin.dev.plugins.create.custom_php_version')}
+                                            className='mt-1'
+                                            disabled={isDefaultDependency(dep, index)}
+                                        />
+                                    </div>
+                                )}
+                                {dep.type === 'php-ext' && (
+                                    <div className='flex-1'>
+                                        <Select
+                                            value={dep.value}
+                                            onChange={(e) => {
+                                                const newDeps = [...form.dependencies];
+                                                newDeps[index] = { ...newDeps[index], value: e.target.value };
+                                                setForm((prev) => ({ ...prev, dependencies: newDeps }));
+                                            }}
+                                            disabled={isDefaultDependency(dep, index)}
+                                        >
+                                            {phpExtensions.map((ext) => (
+                                                <option
+                                                    key={ext}
+                                                    value={ext}
+                                                    disabled={
+                                                        dep.value !== ext &&
+                                                        form.dependencies.some(
+                                                            (d) => d.type === 'php-ext' && d.value === ext,
+                                                        )
+                                                    }
+                                                >
+                                                    {ext}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                        <Input
+                                            value={dep.value}
+                                            onChange={(e) => {
+                                                const newDeps = [...form.dependencies];
+                                                newDeps[index] = { ...newDeps[index], value: e.target.value };
+                                                setForm((prev) => ({ ...prev, dependencies: newDeps }));
+                                            }}
+                                            placeholder={t('admin.dev.plugins.create.custom_extension')}
+                                            className='mt-1'
+                                            disabled={isDefaultDependency(dep, index)}
+                                        />
+                                    </div>
+                                )}
+                                {dep.type === 'plugin' && (
+                                    <Input
+                                        value={dep.value}
+                                        onChange={(e) => {
+                                            const newDeps = [...form.dependencies];
+                                            newDeps[index] = { ...newDeps[index], value: e.target.value };
+                                            setForm((prev) => ({ ...prev, dependencies: newDeps }));
+                                        }}
+                                        placeholder={t('admin.dev.plugins.create.plugin_identifier')}
+                                        className='flex-1'
+                                    />
+                                )}
+                                {!isDefaultDependency(dep, index) ? (
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() => {
+                                            const newDeps = form.dependencies.filter((_, i) => i !== index);
+                                            setForm((prev) => ({ ...prev, dependencies: newDeps }));
+                                        }}
+                                    >
+                                        {t('common.remove')}
+                                    </Button>
+                                ) : (
+                                    <Button type='button' variant='outline' size='sm' disabled>
+                                        {t('admin.dev.plugins.create.required')}
+                                    </Button>
+                                )}
+                            </div>
+                        ))}
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            onClick={() =>
+                                setForm((prev) => ({
+                                    ...prev,
+                                    dependencies: [...prev.dependencies, { type: 'php-ext', value: '' }],
+                                }))
+                            }
+                        >
+                            {t('admin.dev.plugins.create.add_dependency')}
+                        </Button>
+                    </div>
+                </PageCard>
+
+                <PageCard title={t('admin.dev.plugins.create.config_fields')} icon={Code}>
+                    <div className='space-y-4'>
+                        {form.requiredConfigs.map((config, index) => (
+                            <div key={index} className='p-4 border rounded-lg space-y-3'>
+                                <div className='flex items-center justify-between'>
+                                    <h4 className='font-medium'>
+                                        {t('admin.dev.plugins.create.config_field')} {index + 1}
+                                    </h4>
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() => {
+                                            const newConfigs = form.requiredConfigs.filter((_, i) => i !== index);
+                                            setForm((prev) => ({ ...prev, requiredConfigs: newConfigs }));
+                                        }}
+                                    >
+                                        {t('common.remove')}
+                                    </Button>
+                                </div>
+
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                                    <div>
+                                        <Label className='text-xs font-medium mb-1 block'>
+                                            {t('admin.dev.plugins.create.field_name')} *
+                                        </Label>
+                                        <Input
+                                            value={config.name}
+                                            onChange={(e) => {
+                                                const newConfigs = [...form.requiredConfigs];
+                                                newConfigs[index] = { ...newConfigs[index], name: e.target.value };
+                                                setForm((prev) => ({ ...prev, requiredConfigs: newConfigs }));
+                                            }}
+                                            placeholder='api_key'
+                                            className='text-sm'
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className='text-xs font-medium mb-1 block'>
+                                            {t('admin.dev.plugins.create.display_name')} *
+                                        </Label>
+                                        <Input
+                                            value={config.display_name}
+                                            onChange={(e) => {
+                                                const newConfigs = [...form.requiredConfigs];
+                                                newConfigs[index] = {
+                                                    ...newConfigs[index],
+                                                    display_name: e.target.value,
+                                                };
+                                                setForm((prev) => ({ ...prev, requiredConfigs: newConfigs }));
+                                            }}
+                                            placeholder='API Key'
+                                            className='text-sm'
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                                    <div>
+                                        <Label className='text-xs font-medium mb-1 block'>
+                                            {t('admin.dev.plugins.create.field_type')}
+                                        </Label>
+                                        <Select
+                                            value={config.type}
+                                            onChange={(e) => {
+                                                const newConfigs = [...form.requiredConfigs];
+                                                newConfigs[index] = {
+                                                    ...newConfigs[index],
+                                                    type: e.target.value as ConfigField['type'],
+                                                };
+                                                setForm((prev) => ({ ...prev, requiredConfigs: newConfigs }));
+                                            }}
+                                            className='text-sm'
+                                        >
+                                            {fieldTypes.map((type) => (
+                                                <option key={type.value} value={type.value}>
+                                                    {type.label}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label className='text-xs font-medium mb-1 block'>
+                                            {t('admin.dev.plugins.create.default_value')}
+                                        </Label>
+                                        <Input
+                                            value={config.default}
+                                            onChange={(e) => {
+                                                const newConfigs = [...form.requiredConfigs];
+                                                newConfigs[index] = { ...newConfigs[index], default: e.target.value };
+                                                setForm((prev) => ({ ...prev, requiredConfigs: newConfigs }));
+                                            }}
+                                            placeholder={t('admin.dev.plugins.create.default_value_placeholder')}
+                                            className='text-sm'
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <Label className='text-xs font-medium mb-1 block'>
+                                        {t('admin.dev.plugins.create.description')}
+                                    </Label>
+                                    <Textarea
+                                        value={config.description}
+                                        onChange={(e) => {
+                                            const newConfigs = [...form.requiredConfigs];
+                                            newConfigs[index] = { ...newConfigs[index], description: e.target.value };
+                                            setForm((prev) => ({ ...prev, requiredConfigs: newConfigs }));
+                                        }}
+                                        placeholder={t('admin.dev.plugins.create.config_description_placeholder')}
+                                        rows={2}
+                                        className='text-sm'
+                                    />
+                                </div>
+
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                                    <div>
+                                        <Label className='text-xs font-medium mb-1 block'>
+                                            {t('admin.dev.plugins.create.validation_regex')}
+                                        </Label>
+                                        <Input
+                                            value={config.validation.regex || ''}
+                                            onChange={(e) => {
+                                                const newConfigs = [...form.requiredConfigs];
+                                                newConfigs[index] = {
+                                                    ...newConfigs[index],
+                                                    validation: {
+                                                        ...newConfigs[index].validation,
+                                                        regex: e.target.value,
+                                                    },
+                                                };
+                                                setForm((prev) => ({ ...prev, requiredConfigs: newConfigs }));
+                                            }}
+                                            placeholder='/^[a-zA-Z0-9]+$/'
+                                            className='text-sm'
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className='text-xs font-medium mb-1 block'>
+                                            {t('admin.dev.plugins.create.validation_message')}
+                                        </Label>
+                                        <Input
+                                            value={config.validation.message || ''}
+                                            onChange={(e) => {
+                                                const newConfigs = [...form.requiredConfigs];
+                                                newConfigs[index] = {
+                                                    ...newConfigs[index],
+                                                    validation: {
+                                                        ...newConfigs[index].validation,
+                                                        message: e.target.value,
+                                                    },
+                                                };
+                                                setForm((prev) => ({ ...prev, requiredConfigs: newConfigs }));
+                                            }}
+                                            placeholder={t('admin.dev.plugins.create.validation_message_placeholder')}
+                                            className='text-sm'
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className='flex items-center gap-2'>
+                                    <input
+                                        type='checkbox'
+                                        id={`required-${index}`}
+                                        checked={config.required}
+                                        onChange={(e) => {
+                                            const newConfigs = [...form.requiredConfigs];
+                                            newConfigs[index] = { ...newConfigs[index], required: e.target.checked };
+                                            setForm((prev) => ({ ...prev, requiredConfigs: newConfigs }));
+                                        }}
+                                    />
+                                    <Label htmlFor={`required-${index}`} className='text-sm'>
+                                        {t('admin.dev.plugins.create.required_field')}
+                                    </Label>
+                                </div>
+                            </div>
+                        ))}
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            onClick={() =>
+                                setForm((prev) => ({
+                                    ...prev,
+                                    requiredConfigs: [
+                                        ...prev.requiredConfigs,
+                                        {
+                                            name: '',
+                                            display_name: '',
+                                            type: 'text',
+                                            description: '',
+                                            required: true,
+                                            validation: {},
+                                            default: '',
+                                        },
+                                    ],
+                                }))
+                            }
+                        >
+                            {t('admin.dev.plugins.create.add_config_field')}
+                        </Button>
+                    </div>
+                </PageCard>
+
+                <div className='flex justify-end gap-2 pt-4'>
+                    <Button type='button' variant='outline' onClick={() => router.back()}>
+                        {t('common.cancel')}
+                    </Button>
+                    <Button type='submit' loading={loading}>
+                        <Save className='h-4 w-4 mr-2' />
+                        {loading ? t('admin.dev.plugins.create.creating') : t('admin.dev.plugins.create.create_plugin')}
+                    </Button>
+                </div>
+            </form>
+        </div>
+    );
+}

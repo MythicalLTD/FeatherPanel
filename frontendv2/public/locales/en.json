@@ -123,6 +123,7 @@
 		"create": "Create",
 		"view": "View",
 		"delete": "Delete",
+		"remove": "Remove",
 		"next": "Next",
 		"previous": "Previous",
 		"showing": "Showing {from} - {to} of {total} results",
@@ -725,6 +726,7 @@
 			"pterodactylImporter": "Pterodactyl Importer",
 			"apiKeys": "API Keys",
 			"plugins": "Plugins",
+			"devPlugins": "Dev Plugins",
 			"marketplace": "Marketplace",
 			"cloudManagement": "Cloud Management",
 			"knowledgebase": "Knowledge Base",
@@ -3270,6 +3272,12 @@
 				}
 			}
 		},
+		"feathercloud": {
+			"translations": {
+				"download_coming_soon": "Download functionality will be available when the API is ready",
+				"download_failed": "Failed to download translation"
+			}
+		},
 		"cloud_management": {
 			"title": "FeatherCloud Cloud Management",
 			"subtitle": "Connect your FeatherPanel instance to FeatherCloud using secure credentials",
@@ -4027,6 +4035,173 @@
 					"description": "These are databases that your users (clients) can create for their servers. Users can create multiple database types depending on the limits you set as the hosting owner. FeatherPanel supports a broad range of popular databases to fit many workloads."
 				}
 			}
+		},
+		"dev": {
+			"plugins": {
+				"title": "Plugin Manager",
+				"description": "Create and manage FeatherPanel plugins",
+				"search_placeholder": "Search plugins by name, identifier, description, or author...",
+				"loading": "Loading plugins...",
+				"no_results": "No plugins found matching your search",
+				"no_description": "No description available",
+				"resync_symlinks": "Resync Symlinks",
+				"delete": "Delete",
+				"saving": "Saving...",
+				"sdk": {
+					"title": "SDK Information",
+					"latest_update": "Latest update",
+					"update_message": "Plugins now support custom group assignments, allowing for enhanced organization and seamless management."
+				},
+				"actions": {
+					"refresh": "Refresh",
+					"create": "Create Plugin"
+				},
+				"empty": {
+					"title": "No plugins found",
+					"description": "Create your first plugin to get started"
+				},
+				"dependencies_ok": "Dependencies OK",
+				"dependencies_missing": "Dependencies Missing",
+				"configured": "Configured",
+				"needs_config": "Needs Config",
+				"author": "Author",
+				"messages": {
+					"fetch_failed": "Failed to fetch plugins",
+					"settings_saved": "All settings saved successfully",
+					"settings_save_failed": "Failed to save settings",
+					"exported": "Plugin {name} exported successfully",
+					"export_failed": "Failed to export plugin",
+					"uninstalled": "{name} uninstalled successfully",
+					"uninstall_failed": "Failed to uninstall plugin",
+					"symlinks_resynced": "Symlinks resynced successfully for {name}",
+					"symlinks_resync_failed": "Failed to resync symlinks",
+					"file_created": "{name} created successfully for {plugin}!",
+					"file_create_failed": "Failed to create item"
+				},
+				"details": {
+					"title": "Details",
+					"info": "Plugin Information",
+					"identifier": "Identifier",
+					"version": "Version",
+					"author": "Author",
+					"status": "Status",
+					"flags": "Flags",
+					"dependencies": "Dependencies",
+					"no_dependencies": "No dependencies",
+					"configuration": "Configuration",
+					"required": "Required",
+					"save_settings": "Save All Settings",
+					"no_config_schema": "This plugin doesn't have a configuration schema defined"
+				},
+				"create_action": {
+					"title": "Create {name}",
+					"creating": "Creating...",
+					"file_warning": "Be careful not to upload files containing secrets or sensitive data. Uploaded files may be accessible to others or stored in ways you do not expect."
+				},
+				"uninstall": {
+					"title": "Delete Plugin",
+					"description": "Are you sure you want to delete {name}? This action cannot be undone.",
+					"deleting": "Deleting..."
+				},
+				"create": {
+					"title": "Create New Plugin",
+					"basic_info": "Basic Information",
+					"name": "Name",
+					"name_help": "Plugin name cannot contain spaces or special characters",
+					"identifier": "Identifier",
+					"identifier_help": "Must be unique, lowercase, and contain only letters and numbers",
+					"description": "Description",
+					"description_placeholder": "A brief description of what this plugin does...",
+					"version": "Version",
+					"target": "Target",
+					"template": "Template",
+					"template_help": "Choose the template structure for your plugin",
+					"authors": "Authors",
+					"authors_help": "(at least one author, flag, or dependency required)",
+					"author_placeholder": "Author name",
+					"add_author": "Add Author",
+					"flags": "Plugin Flags",
+					"flags_help": "Note: The hasEvents flag is required and cannot be removed. Plugins need events to register new routes.",
+					"add_flag": "Add Flag",
+					"all_flags_added": "All available flags have been added",
+					"required": "Required",
+					"dependencies": "Dependencies",
+					"add_dependency": "Add Dependency",
+					"config_fields": "Configuration Fields",
+					"config_field": "Configuration Field",
+					"add_config_field": "Add Configuration Field",
+					"field_name": "Field Name",
+					"display_name": "Display Name",
+					"field_type": "Field Type",
+					"default_value": "Default Value",
+					"default_value_placeholder": "Default value",
+					"config_description_placeholder": "Describe what this configuration field is used for...",
+					"validation_regex": "Validation Regex (optional)",
+					"validation_message": "Validation Message",
+					"validation_message_placeholder": "Error message for validation",
+					"required_field": "Required field",
+					"creating": "Creating...",
+					"create_plugin": "Create Plugin",
+					"validation": {
+						"identifier_name_required": "Identifier and name are required",
+						"author_flag_dependency_required": "Plugin must have at least one author, flag, or dependency"
+					},
+					"messages": {
+						"created": "Plugin created successfully",
+						"create_failed": "Failed to create plugin"
+					},
+					"dependency_types": {
+						"php": "PHP Version",
+						"php_ext": "PHP Extension",
+						"plugin": "Plugin"
+					},
+					"templates": {
+						"empty": {
+							"label": "Empty Template",
+							"description": "Minimal structure with just conf.yml and basic directories"
+						},
+						"starter": {
+							"label": "Starter Template",
+							"description": "Full template with all example files and documentation"
+						},
+						"fresh": {
+							"label": "Fresh Template",
+							"description": "Clean template with basic structure and minimal examples"
+						}
+					},
+					"field_types": {
+						"text": "Text",
+						"email": "Email",
+						"url": "URL",
+						"password": "Password",
+						"number": "Number",
+						"boolean": "Boolean"
+					},
+					"custom_php_version": "Or enter custom version (e.g., 8.1.5)",
+					"custom_extension": "Or enter custom extension",
+					"plugin_identifier": "Plugin identifier"
+				},
+				"edit": {
+					"title": "Edit Plugin",
+					"description": "Edit plugin configuration",
+					"identifier_cannot_change": "Identifier cannot be changed after creation",
+					"updating": "Updating...",
+					"update_plugin": "Update Plugin",
+					"validation": {
+						"identifier_name_required": "Identifier and name are required",
+						"author_flag_dependency_required": "Plugin must have at least one author, flag, or dependency"
+					},
+					"messages": {
+						"identifier_required": "Plugin identifier is required",
+						"load_failed": "Failed to load plugin",
+						"updated": "Plugin updated successfully",
+						"update_failed": "Failed to update plugin"
+					}
+				}
+			},
+			"developerModeRequired": "Developer Mode Required",
+			"developerModeDescription": "Developer mode must be enabled in settings to access developer tools. Please enable it in Admin Settings to continue.",
+			"goToSettings": "Go to Settings"
 		},
 		"plugins": {
 			"title": "Plugins",

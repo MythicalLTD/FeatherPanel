@@ -334,7 +334,7 @@ export default function SettingsPage() {
                                                                 handleSettingChange(settingKey, e.target.value)
                                                             }
                                                             placeholder={currentSetting.placeholder}
-                                                            className='min-h-[100px] bg-white/5 border-white/5 focus:border-primary/50 transition-colors rounded-xl'
+                                                            className='min-h-[100px]'
                                                         />
                                                         <p className='text-sm text-muted-foreground'>
                                                             {currentSetting.description}
@@ -355,7 +355,6 @@ export default function SettingsPage() {
                                                             onChange={(e) =>
                                                                 handleSettingChange(settingKey, e.target.value)
                                                             }
-                                                            className='flex h-12 w-full rounded-xl border border-white/5 bg-white/5 px-5 py-2 text-base shadow-sm backdrop-blur-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 font-semibold'
                                                         >
                                                             {currentSetting.options.map((opt) => {
                                                                 let label = opt;
