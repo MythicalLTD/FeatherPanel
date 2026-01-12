@@ -291,6 +291,10 @@ class LogViewerController
     public function uploadLogs(Request $request): Response
     {
         try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to upload logs in non-developer mode', 403);
+            }
             $results = [];
 
             // Limit to last 10,000 lines to prevent memory issues

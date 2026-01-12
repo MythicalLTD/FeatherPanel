@@ -727,6 +727,7 @@
 			"apiKeys": "API Keys",
 			"plugins": "Plugins",
 			"devPlugins": "Dev Plugins",
+			"logViewer": "Log Viewer",
 			"marketplace": "Marketplace",
 			"cloudManagement": "Cloud Management",
 			"knowledgebase": "Knowledge Base",
@@ -4197,6 +4198,54 @@
 						"updated": "Plugin updated successfully",
 						"update_failed": "Failed to update plugin"
 					}
+				}
+			},
+			"console": {
+				"title": "Console",
+				"description": "Execute commands on the server",
+				"system_info": "System Information",
+				"system": "System",
+				"runtime": "Runtime",
+				"disk_usage": "Disk Usage",
+				"terminal": "Terminal",
+				"terminal_help": "Use Arrow Up/Down for command history, Ctrl+L to clear",
+				"enter_command": "Enter command...",
+				"executing": "Executing command...",
+				"quick_commands": "Quick Commands",
+				"show_system_info": "Show System Info",
+				"hide_system_info": "Hide System Info",
+				"clear_terminal": "Clear Terminal",
+				"refresh": "Refresh",
+				"messages": {
+					"fetch_failed": "Failed to fetch system info",
+					"execute_failed": "Failed to execute command",
+					"command_failed": "Command failed with exit code {code}"
+				}
+			},
+			"logs": {
+				"title": "Log Viewer",
+				"description": "View and manage application logs",
+				"log_type": "Log Type:",
+				"log_type_app": "App Logs",
+				"log_type_web": "Web Logs",
+				"lines": "Lines:",
+				"logs_output": "Logs Output",
+				"lines_count": "lines",
+				"clear": "Clear",
+				"no_logs": "No logs available",
+				"loading": "Loading logs...",
+				"modified": "Modified:",
+				"actions": {
+					"refresh": "Refresh",
+					"auto_refresh": "Auto Refresh",
+					"stop_auto": "Stop Auto",
+					"clear_logs": "Clear Logs"
+				},
+				"messages": {
+					"fetch_failed": "Failed to fetch logs",
+					"fetch_files_failed": "Failed to fetch log files",
+					"cleared": "Logs cleared successfully",
+					"clear_failed": "Failed to clear logs"
 				}
 			},
 			"developerModeRequired": "Developer Mode Required",

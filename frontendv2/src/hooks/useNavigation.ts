@@ -33,12 +33,14 @@ import type { NavigationItem, PluginSidebarItem } from '@/types/navigation';
 import { getAdminNavigationItems, getServerNavigationItems, getMainNavigationItems } from '@/config/navigation';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
+import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 
 export function useNavigation() {
     const pathname = usePathname();
     const { hasPermission } = useSession();
     const { settings } = useSettings();
     const { t } = useTranslation();
+    const { isDeveloperModeEnabled } = useDeveloperMode();
 
     // Use shared plugin routes hook
     const pluginRoutes = usePluginRoutes();
@@ -150,7 +152,7 @@ export function useNavigation() {
         };
 
         if (isAdmin) {
-            let items = getAdminNavigationItems(t, settings);
+            let items = getAdminNavigationItems(t, settings, isDeveloperModeEnabled ?? false);
 
             // Post-process for complex isActive states
             items = items.map((item) => {
@@ -218,6 +220,7 @@ export function useNavigation() {
         hasServerPermission,
         isServer,
         serverUuid,
+        isDeveloperModeEnabled,
     ]);
 
     return { navigationItems };

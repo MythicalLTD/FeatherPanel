@@ -107,6 +107,8 @@ class LogHelper
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['content' => $content]));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30); // 30 second timeout
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // 10 second connection timeout
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: application/x-www-form-urlencoded',
             ]);
@@ -114,7 +116,6 @@ class LogHelper
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlError = curl_error($ch);
-            // curl_close() is deprecated in PHP 8.5 (no-op since PHP 8.0)
 
             if ($curlError) {
                 App::getInstance(true)->getLogger()->error('mclo.gs curl error: ' . $curlError);
@@ -122,6 +123,15 @@ class LogHelper
                 return [
                     'success' => false,
                     'error' => 'Failed to connect to mclo.gs: ' . $curlError,
+                ];
+            }
+
+            if ($response === false) {
+                App::getInstance(true)->getLogger()->error('mclo.gs curl_exec returned false');
+
+                return [
+                    'success' => false,
+                    'error' => 'Failed to execute curl request to mclo.gs',
                 ];
             }
 

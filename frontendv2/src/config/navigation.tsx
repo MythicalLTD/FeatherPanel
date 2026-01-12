@@ -69,7 +69,11 @@ import { isEnabled } from '@/lib/utils';
 // Helper type for translation function
 type TFunction = (key: string) => string;
 
-export const getAdminNavigationItems = (t: TFunction, settings: AppSettings | null): NavigationItem[] => {
+export const getAdminNavigationItems = (
+    t: TFunction,
+    settings: AppSettings | null,
+    isDeveloperModeEnabled?: boolean | null,
+): NavigationItem[] => {
     const items: NavigationItem[] = [
         // Overview
         {
@@ -377,18 +381,44 @@ export const getAdminNavigationItems = (t: TFunction, settings: AppSettings | nu
             permission: Permissions.ADMIN_DATABASES_MANAGE,
             group: 'system',
         },
-        // Developer Tools
-        {
-            id: 'admin-dev-plugins',
-            name: t('navigation.items.devPlugins'),
-            title: t('navigation.items.devPlugins'),
-            url: '/admin/dev/plugins',
-            icon: Code,
-            isActive: false,
-            category: 'admin',
-            permission: Permissions.ADMIN_ROOT,
-            group: 'developer',
-        },
+        // Developer Tools (only show if developer mode is enabled)
+        ...(isDeveloperModeEnabled === true
+            ? [
+                  {
+                      id: 'admin-dev-plugins',
+                      name: t('navigation.items.devPlugins'),
+                      title: t('navigation.items.devPlugins'),
+                      url: '/admin/dev/plugins',
+                      icon: Code,
+                      isActive: false,
+                      category: 'admin' as const,
+                      permission: Permissions.ADMIN_ROOT,
+                      group: 'developer',
+                  },
+                  {
+                      id: 'admin-dev-console',
+                      name: t('navigation.items.console'),
+                      title: t('navigation.items.console'),
+                      url: '/admin/dev/console',
+                      icon: SquareTerminal,
+                      isActive: false,
+                      category: 'admin' as const,
+                      permission: Permissions.ADMIN_ROOT,
+                      group: 'developer',
+                  },
+                  {
+                      id: 'admin-dev-logs',
+                      name: t('navigation.items.logViewer') || 'Log Viewer',
+                      title: t('navigation.items.logViewer') || 'Log Viewer',
+                      url: '/admin/dev/logs',
+                      icon: FileText,
+                      isActive: false,
+                      category: 'admin' as const,
+                      permission: Permissions.ADMIN_ROOT,
+                      group: 'developer',
+                  },
+              ]
+            : []),
         // FeatherCloud
         {
             id: 'admin-feathercloud-marketplace',

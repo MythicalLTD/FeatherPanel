@@ -126,11 +126,11 @@ export const adminSettingsApi = {
         const { data } = await axios.post<{
             success: boolean;
             data: {
-                web: { success: boolean; id: string; url: string; raw: string };
-                app: { success: boolean; id: string; url: string; raw: string };
+                web: { success: boolean; id?: string; url?: string; raw?: string; error?: string };
+                app: { success: boolean; id?: string; url?: string; raw?: string; error?: string };
             };
             message?: string;
-        }>('/api/admin/system/support/upload-logs');
+        }>('/api/admin/log-viewer/upload');
         return data;
     },
 };

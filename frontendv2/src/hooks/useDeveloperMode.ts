@@ -26,6 +26,7 @@ SOFTWARE.
 
 import { useState, useEffect } from 'react';
 import { adminSettingsApi } from '@/lib/admin-settings-api';
+import { isEnabled } from '@/lib/utils';
 
 export function useDeveloperMode() {
     const [isDeveloperModeEnabled, setIsDeveloperModeEnabled] = useState<boolean | null>(null);
@@ -37,12 +38,7 @@ export function useDeveloperMode() {
                 const response = await adminSettingsApi.fetchSettings();
                 if (response.success && response.data?.settings) {
                     const developerModeSetting = response.data.settings['app_developer_mode'];
-                    const isEnabled =
-                        developerModeSetting?.value === true ||
-                        developerModeSetting?.value === 'true' ||
-                        developerModeSetting?.value === 1 ||
-                        developerModeSetting?.value === '1';
-                    setIsDeveloperModeEnabled(isEnabled);
+                    setIsDeveloperModeEnabled(isEnabled(developerModeSetting?.value));
                 } else {
                     setIsDeveloperModeEnabled(false);
                 }
