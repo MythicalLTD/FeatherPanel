@@ -39,7 +39,7 @@ import {
     Unlock,
     Trash2,
     ArrowLeft,
-	Edit,
+    Edit,
     RefreshCw,
     Copy,
     ExternalLink,

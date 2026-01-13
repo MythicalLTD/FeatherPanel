@@ -1617,16 +1617,16 @@ class ServerUserController
     public function deleteServer(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
-        $app = App::getInstance(true,false);
-		$user = $request->get('user');
+        $app = App::getInstance(true, false);
+        $user = $request->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
 
-		$config = $app->getConfig();
-		if (!$config->getSetting(ConfigInterface::SERVER_ALLOW_USER_SERVER_DELETION, 'false')) {
-			return ApiResponse::error('Server deletion is not allowed', 'SERVER_DELETION_NOT_ALLOWED', 403);
-		}
+        $config = $app->getConfig();
+        if (!$config->getSetting(ConfigInterface::SERVER_ALLOW_USER_SERVER_DELETION, 'false')) {
+            return ApiResponse::error('Server deletion is not allowed', 'SERVER_DELETION_NOT_ALLOWED', 403);
+        }
 
         // Get server details
         $server = Server::getServerByUuidShort($uuidShort);

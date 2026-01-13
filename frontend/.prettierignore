@@ -1,5 +1,0 @@
-# Temporarily ignore Vue files with TypeScript type assertions in templates
-# Prettier's Vue parser has issues with TS syntax in template interpolations
-src/pages/admin/feathercloud/FeatherZeroTrustLogDetails.vue
-src/pages/admin/feathercloud/FeatherZeroTrustLogs.vue
-

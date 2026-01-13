@@ -293,17 +293,6 @@ export const getAdminNavigationItems = (
             group: 'content',
         },
         {
-            id: 'admin-redirect-links',
-            name: t('navigation.items.redirectLinks'),
-            title: t('navigation.items.redirectLinks'),
-            url: '/admin/redirect-links',
-            icon: Link,
-            isActive: false,
-            category: 'admin',
-            permission: Permissions.ADMIN_REDIRECT_LINKS_VIEW,
-            group: 'content',
-        },
-        {
             id: 'admin-translations',
             name: t('navigation.items.translations'),
             title: t('navigation.items.translations'),

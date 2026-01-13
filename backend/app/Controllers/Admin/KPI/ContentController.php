@@ -129,24 +129,6 @@ class ContentController
     }
 
     #[OA\Get(
-        path: '/api/admin/analytics/redirect-links/overview',
-        summary: 'Get redirect links overview',
-        description: 'Retrieve statistics about redirect links.',
-        tags: ['Admin - Analytics'],
-        responses: [
-            new OA\Response(response: 200, description: 'Redirect links overview retrieved successfully'),
-            new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-        ]
-    )]
-    public function getRedirectLinksOverview(Request $request): Response
-    {
-        $stats = ContentAnalytics::getRedirectLinksOverview();
-
-        return ApiResponse::success($stats, 'Redirect links overview fetched successfully', 200);
-    }
-
-    #[OA\Get(
         path: '/api/admin/analytics/mail-templates/overview',
         summary: 'Get mail templates overview',
         description: 'Retrieve statistics about mail templates.',

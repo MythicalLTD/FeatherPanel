@@ -156,12 +156,6 @@ const widgets = [
         injectionPoints: ['after-header', 'before-list', 'bottom-of-page', 'top-of-page'],
     },
     {
-        slug: 'admin-redirect-links',
-        sanitizedSlug: 'admin-redirect-links',
-        files: ['src/app/(app)/admin/redirect-links/page.tsx'],
-        injectionPoints: ['after-header', 'before-list', 'bottom-of-page', 'top-of-page'],
-    },
-    {
         slug: 'admin-roles',
         sanitizedSlug: 'admin-roles',
         files: ['src/app/(app)/admin/roles/page.tsx'],

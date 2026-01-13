@@ -111,7 +111,7 @@ interface ConfigInterface
      * Servers Related Configs.
      */
     public const SERVER_ALLOW_EGG_CHANGE = 'server_allow_egg_change';
-	public const SERVER_ALLOW_USER_SERVER_DELETION = 'server_allow_user_server_deletion';
+    public const SERVER_ALLOW_USER_SERVER_DELETION = 'server_allow_user_server_deletion';
     public const SERVER_ALLOW_STARTUP_CHANGE = 'server_allow_startup_change';
     public const SERVER_ALLOW_SUBUSERS = 'server_allow_subusers';
     public const SERVER_ALLOW_SCHEDULES = 'server_allow_schedules';

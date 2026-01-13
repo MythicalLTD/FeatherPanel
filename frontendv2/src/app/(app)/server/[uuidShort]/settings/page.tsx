@@ -94,8 +94,8 @@ export default function ServerSettingsPage() {
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-settings');
 
-	// Config 
-	const canDeleteServer = isEnabled(settings?.server_allow_user_server_deletion || 'false');
+    // Config
+    const canDeleteServer = isEnabled(settings?.server_allow_user_server_deletion || 'false');
 
     // Permissions
     const canRename = hasPermission('settings.rename');
@@ -496,24 +496,24 @@ export default function ServerSettingsPage() {
                     {/* Delete */}
                     {canDeleteServer && (
                         <PageCard title={t('serverSettings.deleteServer')} icon={AlertTriangle} variant='danger'>
-                        <p className='text-xs text-red-200/60 font-medium leading-relaxed'>
-                            {t('serverSettings.deleteServerDescription')}
-                        </p>
+                            <p className='text-xs text-red-200/60 font-medium leading-relaxed'>
+                                {t('serverSettings.deleteServerDescription')}
+                            </p>
 
-                        <Button
-                            variant='destructive'
-                            className='w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 hover:border-red-500/50 font-black uppercase tracking-widest mt-4 text-xs h-12 rounded-xl'
-                            onClick={() => {
-                                setShowDeleteDialog(true);
-                                setDeleteStep(1);
-                                setConfirmIrreversible(false);
-                                setMathAnswer('');
-                                setConfirmServerName('');
-                                generateMathQuestion();
-                            }}
-                        >
-                            {t('serverSettings.deleteServer')}
-                        </Button>
+                            <Button
+                                variant='destructive'
+                                className='w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 hover:border-red-500/50 font-black uppercase tracking-widest mt-4 text-xs h-12 rounded-xl'
+                                onClick={() => {
+                                    setShowDeleteDialog(true);
+                                    setDeleteStep(1);
+                                    setConfirmIrreversible(false);
+                                    setMathAnswer('');
+                                    setConfirmServerName('');
+                                    generateMathQuestion();
+                                }}
+                            >
+                                {t('serverSettings.deleteServer')}
+                            </Button>
                         </PageCard>
                     )}
                     <WidgetRenderer widgets={getWidgets('server-settings', 'after-delete-server')} />

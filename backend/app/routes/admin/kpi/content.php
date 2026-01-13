@@ -90,17 +90,6 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_IMAGES_VIEW,
     );
 
-    // Redirect Links Overview
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-analytics-redirect-links-overview',
-        '/api/admin/analytics/redirect-links/overview',
-        function (Request $request) {
-            return (new ContentController())->getRedirectLinksOverview($request);
-        },
-        Permissions::ADMIN_REDIRECT_LINKS_VIEW,
-    );
-
     // Mail Templates Overview
     App::getInstance(true)->registerAdminRoute(
         $routes,

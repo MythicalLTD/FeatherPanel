@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS `featherpanel_redirect_links`;
