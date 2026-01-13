@@ -30,6 +30,7 @@ export interface Activity {
     name: string;
     context?: string;
     ip_address?: string;
+    country_code?: string;
     created_at: string;
     updated_at: string;
 }

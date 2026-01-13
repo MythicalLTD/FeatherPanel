@@ -66,9 +66,11 @@ export function ActivityFeed({ activities, formatDate }: ActivityFeedProps) {
                             </div>
 
                             {activity.ip_address && (
-                                <div className='flex items-center gap-1 text-xs text-muted-foreground'>
-                                    <Globe className='h-3 w-3' />
-                                    <span className='font-mono'>{activity.ip_address}</span>
+                                <div className='flex items-center gap-1 text-xs text-muted-foreground group/ip'>
+                                    <Globe className='h-3 w-3 shrink-0' />
+                                    <span className='font-mono blur-sm group-hover/ip:blur-none transition-all duration-200'>
+                                        {activity.ip_address}
+                                    </span>
                                 </div>
                             )}
                         </div>
