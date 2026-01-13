@@ -103,12 +103,7 @@
                             {{ t('serverFirewall.noRulesDescription') }}
                         </p>
                     </div>
-                    <Button
-                        v-if="firewallEnabled"
-                        size="lg"
-                        class="gap-2 shadow-lg"
-                        @click="openCreateDrawer"
-                    >
+                    <Button v-if="firewallEnabled" size="lg" class="gap-2 shadow-lg" @click="openCreateDrawer">
                         <Plus class="h-5 w-5" />
                         {{ t('serverFirewall.createRule') }}
                     </Button>
@@ -507,7 +502,6 @@ const errors = reactive<{
 });
 
 const editingRuleId = ref<number | null>(null);
-
 
 const sortedRules = computed<FirewallRule[]>(() =>
     [...rules.value].sort((a, b) => {

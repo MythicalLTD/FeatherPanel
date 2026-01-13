@@ -29,7 +29,7 @@ import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PageCardProps {
-    title: string;
+    title?: string;
     description?: string;
     icon?: LucideIcon;
     iconSrc?: string;

@@ -50,86 +50,6 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class TranslationsController
 {
-    /**
-     * List all available translation files
-     */
-    #[OA\Get(
-        path: '/api/admin/translations',
-        summary: 'List translation files',
-        description: 'Get a list of all available translation files',
-        tags: ['Admin - Translations'],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Translation files retrieved successfully',
-                content: new OA\JsonContent(
-                    type: 'array',
-                    items: new OA\Items(ref: '#/components/schemas/TranslationFile')
-                )
-            ),
-        ]
-    )]
-    /**
-     * Get enabled languages from settings
-     * Returns null if not set (meaning all languages are enabled)
-     * Returns array of language codes if set
-     */
-    private function getEnabledLanguages(): ?array
-    {
-        try {
-            $app = App::getInstance(true);
-            $config = $app->getConfig();
-            $enabledLangsJson = $config->getSetting('enabled_languages', null);
-
-            if ($enabledLangsJson === null) {
-                return null; // null means all languages enabled
-            }
-
-            $enabledLangs = json_decode($enabledLangsJson, true);
-            if (!is_array($enabledLangs)) {
-                return null; // Invalid JSON means all languages enabled
-            }
-
-            return $enabledLangs;
-        } catch (\Exception $e) {
-            return null; // Error means all languages enabled
-        }
-    }
-
-    /**
-     * Load language mapping from mapping.json file
-     */
-    private function getLanguageMapping(): array
-    {
-        static $mapping = null;
-        
-        if ($mapping !== null) {
-            return $mapping;
-        }
-
-        $mappingPath = APP_PUBLIC . '/translations/mapping.json';
-        $mapping = [];
-
-        if (file_exists($mappingPath)) {
-            $content = file_get_contents($mappingPath);
-            if ($content !== false) {
-                $decoded = json_decode($content, true);
-                if (is_array($decoded)) {
-                    $mapping = $decoded;
-                }
-            }
-        }
-
-        // Fallback to English if mapping file doesn't exist or is invalid
-        if (empty($mapping)) {
-            $mapping = [
-                'en' => ['name' => 'English', 'nativeName' => 'English'],
-            ];
-        }
-
-        return $mapping;
-    }
-
     public function list(Request $request): Response
     {
         $translationsDir = APP_PUBLIC . '/translations';
@@ -150,13 +70,13 @@ class TranslationsController
                     $filePath = $translationsDir . '/' . $file;
                     // null means all enabled, otherwise check if in array
                     $isEnabled = $enabledLanguages === null || in_array($code, $enabledLanguages);
-                    
+
                     // Get language info from mapping, or use fallback
                     $langInfo = $languageMapping[$code] ?? [
                         'name' => ucfirst($code),
                         'nativeName' => ucfirst($code),
                     ];
-                    
+
                     $files[] = [
                         'code' => $code,
                         'name' => $langInfo['name'] ?? ucfirst($code),
@@ -173,7 +93,7 @@ class TranslationsController
     }
 
     /**
-     * Get translation file content
+     * Get translation file content.
      */
     #[OA\Get(
         path: '/api/admin/translations/{lang}',
@@ -225,7 +145,7 @@ class TranslationsController
     }
 
     /**
-     * Update translation file
+     * Update translation file.
      */
     #[OA\Put(
         path: '/api/admin/translations/{lang}',
@@ -300,6 +220,7 @@ class TranslationsController
         if ($result === false) {
             $error = error_get_last();
             $errorMsg = $error ? $error['message'] : 'Unknown error';
+
             return ApiResponse::error('Failed to save translation file: ' . $errorMsg, 'SAVE_ERROR', 500);
         }
 
@@ -311,7 +232,7 @@ class TranslationsController
     }
 
     /**
-     * Download translation file
+     * Download translation file.
      */
     #[OA\Get(
         path: '/api/admin/translations/{lang}/download',
@@ -363,7 +284,7 @@ class TranslationsController
     }
 
     /**
-     * Create new translation file
+     * Create new translation file.
      */
     #[OA\Post(
         path: '/api/admin/translations/{lang}',
@@ -415,7 +336,7 @@ class TranslationsController
         // Get translations from request body or copy from English
         $translations = [];
         $content = $request->getContent();
-        
+
         if (!empty($content)) {
             $translations = json_decode($content, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -449,6 +370,7 @@ class TranslationsController
         if ($result === false) {
             $error = error_get_last();
             $errorMsg = $error ? $error['message'] : 'Unknown error';
+
             return ApiResponse::error('Failed to create translation file: ' . $errorMsg, 'CREATE_ERROR', 500);
         }
 
@@ -456,7 +378,7 @@ class TranslationsController
     }
 
     /**
-     * Upload translation file
+     * Upload translation file.
      */
     #[OA\Post(
         path: '/api/admin/translations/upload',
@@ -549,6 +471,7 @@ class TranslationsController
         if ($result === false) {
             $error = error_get_last();
             $errorMsg = $error ? $error['message'] : 'Unknown error';
+
             return ApiResponse::error('Failed to save translation file: ' . $errorMsg, 'SAVE_ERROR', 500);
         }
 
@@ -560,7 +483,7 @@ class TranslationsController
     }
 
     /**
-     * Delete translation file
+     * Delete translation file.
      */
     #[OA\Delete(
         path: '/api/admin/translations/{lang}',
@@ -611,7 +534,7 @@ class TranslationsController
     }
 
     /**
-     * Get enabled languages setting
+     * Get enabled languages setting.
      */
     #[OA\Get(
         path: '/api/admin/translations/enabled',
@@ -634,12 +557,13 @@ class TranslationsController
     public function getEnabled(Request $request): Response
     {
         $enabledLanguages = $this->getEnabledLanguages();
+
         // Return empty array if null (meaning all enabled) for consistency
         return ApiResponse::success(['enabled' => $enabledLanguages ?? []], 'Enabled languages retrieved successfully', 200);
     }
 
     /**
-     * Set enabled languages
+     * Set enabled languages.
      */
     #[OA\Put(
         path: '/api/admin/translations/enabled',
@@ -711,7 +635,7 @@ class TranslationsController
     }
 
     /**
-     * Enable a specific language
+     * Enable a specific language.
      */
     #[OA\Post(
         path: '/api/admin/translations/{lang}/enable',
@@ -761,7 +685,7 @@ class TranslationsController
     }
 
     /**
-     * Disable a specific language (except English)
+     * Disable a specific language (except English).
      */
     #[OA\Post(
         path: '/api/admin/translations/{lang}/disable',
@@ -815,5 +739,85 @@ class TranslationsController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to disable language: ' . $e->getMessage(), 'DISABLE_ERROR', 500);
         }
+    }
+
+    /**
+     * List all available translation files.
+     */
+    #[OA\Get(
+        path: '/api/admin/translations',
+        summary: 'List translation files',
+        description: 'Get a list of all available translation files',
+        tags: ['Admin - Translations'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Translation files retrieved successfully',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/TranslationFile')
+                )
+            ),
+        ]
+    )]
+    /**
+     * Get enabled languages from settings
+     * Returns null if not set (meaning all languages are enabled)
+     * Returns array of language codes if set.
+     */
+    private function getEnabledLanguages(): ?array
+    {
+        try {
+            $app = App::getInstance(true);
+            $config = $app->getConfig();
+            $enabledLangsJson = $config->getSetting('enabled_languages', null);
+
+            if ($enabledLangsJson === null) {
+                return null; // null means all languages enabled
+            }
+
+            $enabledLangs = json_decode($enabledLangsJson, true);
+            if (!is_array($enabledLangs)) {
+                return null; // Invalid JSON means all languages enabled
+            }
+
+            return $enabledLangs;
+        } catch (\Exception $e) {
+            return null; // Error means all languages enabled
+        }
+    }
+
+    /**
+     * Load language mapping from mapping.json file.
+     */
+    private function getLanguageMapping(): array
+    {
+        static $mapping = null;
+
+        if ($mapping !== null) {
+            return $mapping;
+        }
+
+        $mappingPath = APP_PUBLIC . '/translations/mapping.json';
+        $mapping = [];
+
+        if (file_exists($mappingPath)) {
+            $content = file_get_contents($mappingPath);
+            if ($content !== false) {
+                $decoded = json_decode($content, true);
+                if (is_array($decoded)) {
+                    $mapping = $decoded;
+                }
+            }
+        }
+
+        // Fallback to English if mapping file doesn't exist or is invalid
+        if (empty($mapping)) {
+            $mapping = [
+                'en' => ['name' => 'English', 'nativeName' => 'English'],
+            ];
+        }
+
+        return $mapping;
     }
 }

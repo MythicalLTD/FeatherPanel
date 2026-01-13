@@ -30,8 +30,8 @@
 
 use App\App;
 use Symfony\Component\HttpFoundation\Request;
-use App\Controllers\System\TranslationsController;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\System\TranslationsController;
 
 return function (RouteCollection $routes): void {
     // Register the more specific route FIRST (before the parameterized route)
@@ -52,6 +52,7 @@ return function (RouteCollection $routes): void {
         '/api/system/translations/{lang}',
         function (Request $request, array $args) {
             $lang = $args['lang'] ?? 'en';
+
             return (new TranslationsController())->getTranslations($request, $lang);
         },
     );

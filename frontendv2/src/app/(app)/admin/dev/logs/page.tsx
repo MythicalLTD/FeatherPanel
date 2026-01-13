@@ -142,12 +142,9 @@ export default function LogViewerPage() {
         if (isDeveloperModeEnabled !== true) return;
 
         try {
-            const response = await axios.post<{ success: boolean; message?: string }>(
-                '/api/admin/log-viewer/clear',
-                {
-                    type: currentLogType,
-                },
-            );
+            const response = await axios.post<{ success: boolean; message?: string }>('/api/admin/log-viewer/clear', {
+                type: currentLogType,
+            });
             if (response.data.success) {
                 setLogs('');
                 toast.success(t('admin.dev.logs.messages.cleared') || 'Logs cleared successfully');
@@ -299,7 +296,9 @@ export default function LogViewerPage() {
                 <div className='flex items-center justify-center py-12'>
                     <div className='flex items-center gap-3'>
                         <Loader2 className='w-6 h-6 animate-spin text-primary' />
-                        <span className='text-muted-foreground'>{t('admin.dev.logs.loading') || 'Loading logs...'}</span>
+                        <span className='text-muted-foreground'>
+                            {t('admin.dev.logs.loading') || 'Loading logs...'}
+                        </span>
                     </div>
                 </div>
             )}

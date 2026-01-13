@@ -158,24 +158,23 @@ class Subuser
 
         return false;
     }
-	/**
-	 * Get the user uuid by subuser id
-	 * @param int $id
-	 * 
-	 * @return string|null
-	 */
-	public static function getSubuserUserUuidBySubuserId(int $id): ?string
-	{
-		$subuser = self::getSubuserById($id);
-		if (!$subuser || !isset($subuser['user_id'])) {
-			return null;
-		}
-		$user = User::getUserById($subuser['user_id']);
-		if (!$user || !isset($user['uuid'])) {
-			return null;
-		}
-		return $user['uuid'];
-	}
+
+    /**
+     * Get the user uuid by subuser id.
+     */
+    public static function getSubuserUserUuidBySubuserId(int $id): ?string
+    {
+        $subuser = self::getSubuserById($id);
+        if (!$subuser || !isset($subuser['user_id'])) {
+            return null;
+        }
+        $user = User::getUserById($subuser['user_id']);
+        if (!$user || !isset($user['uuid'])) {
+            return null;
+        }
+
+        return $user['uuid'];
+    }
 
     /**
      * Fetch a subuser by ID.

@@ -30,9 +30,9 @@
 
 use App\App;
 use App\Permissions;
-use App\Controllers\Admin\TranslationsController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\TranslationsController;
 
 return function (RouteCollection $routes): void {
     // List all translation files
@@ -57,6 +57,7 @@ return function (RouteCollection $routes): void {
             if (!$lang) {
                 return \App\Helpers\ApiResponse::error('Missing language code', 'MISSING_LANG', 400);
             }
+
             return (new TranslationsController())->get($request, $lang);
         },
         Permissions::ADMIN_ROOT,
@@ -73,6 +74,7 @@ return function (RouteCollection $routes): void {
             if (!$lang) {
                 return \App\Helpers\ApiResponse::error('Missing language code', 'MISSING_LANG', 400);
             }
+
             return (new TranslationsController())->update($request, $lang);
         },
         Permissions::ADMIN_ROOT,
@@ -89,6 +91,7 @@ return function (RouteCollection $routes): void {
             if (!$lang) {
                 return \App\Helpers\ApiResponse::error('Missing language code', 'MISSING_LANG', 400);
             }
+
             return (new TranslationsController())->create($request, $lang);
         },
         Permissions::ADMIN_ROOT,
@@ -105,6 +108,7 @@ return function (RouteCollection $routes): void {
             if (!$lang) {
                 return \App\Helpers\ApiResponse::error('Missing language code', 'MISSING_LANG', 400);
             }
+
             return (new TranslationsController())->delete($request, $lang);
         },
         Permissions::ADMIN_ROOT,
@@ -121,6 +125,7 @@ return function (RouteCollection $routes): void {
             if (!$lang) {
                 return \App\Helpers\ApiResponse::error('Missing language code', 'MISSING_LANG', 400);
             }
+
             return (new TranslationsController())->download($request, $lang);
         },
         Permissions::ADMIN_ROOT,
@@ -161,6 +166,7 @@ return function (RouteCollection $routes): void {
             if (!$lang) {
                 return \App\Helpers\ApiResponse::error('Missing language code', 'MISSING_LANG', 400);
             }
+
             return (new TranslationsController())->enableLanguage($request, $lang);
         },
         Permissions::ADMIN_ROOT,
@@ -177,6 +183,7 @@ return function (RouteCollection $routes): void {
             if (!$lang) {
                 return \App\Helpers\ApiResponse::error('Missing language code', 'MISSING_LANG', 400);
             }
+
             return (new TranslationsController())->disableLanguage($request, $lang);
         },
         Permissions::ADMIN_ROOT,

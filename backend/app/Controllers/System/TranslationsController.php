@@ -89,6 +89,7 @@ class TranslationsController
                 $response = ApiResponse::sendManualResponse($cached, 200);
                 $response->headers->set('Cache-Control', 'public, max-age=3600');
                 $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + 3600) . ' GMT');
+
                 return $response;
             }
         }
@@ -108,6 +109,7 @@ class TranslationsController
                 } else {
                     $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
                 }
+
                 return $response;
             }
         }
@@ -144,92 +146,6 @@ class TranslationsController
         return $response;
     }
 
-    #[OA\Get(
-        path: '/api/system/translations/languages',
-        summary: 'Get available languages',
-        description: 'Retrieve list of available translation languages',
-        tags: ['System'],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Available languages retrieved successfully',
-                content: new OA\JsonContent(
-                    type: 'array',
-                    items: new OA\Items(
-                        type: 'object',
-                        properties: [
-                            new OA\Property(property: 'code', type: 'string', example: 'en'),
-                            new OA\Property(property: 'name', type: 'string', example: 'English'),
-                            new OA\Property(property: 'nativeName', type: 'string', example: 'English'),
-                        ]
-                    )
-                )
-            ),
-        ]
-    )]
-    /**
-     * Get enabled languages from settings
-     * Returns null if not set (meaning all languages are enabled)
-     * Returns array of language codes if set
-     */
-    private function getEnabledLanguages(): ?array
-    {
-        try {
-            $app = App::getInstance(true);
-            $config = $app->getConfig();
-            $enabledLangsJson = $config->getSetting('enabled_languages', null);
-
-            if ($enabledLangsJson === null) {
-                // If not set, return null to allow all languages (backward compatibility)
-                return null;
-            }
-
-            $enabledLangs = json_decode($enabledLangsJson, true);
-            if (!is_array($enabledLangs)) {
-                return null; // Invalid JSON means all languages enabled
-            }
-
-            return $enabledLangs;
-        } catch (\Exception $e) {
-            // If error, return null to allow all languages
-            return null;
-        }
-    }
-
-    /**
-     * Load language mapping from mapping.json file
-     */
-    private function getLanguageMapping(): array
-    {
-        static $mapping = null;
-        
-        if ($mapping !== null) {
-            return $mapping;
-        }
-
-        $mappingPath = APP_PUBLIC . '/translations/mapping.json';
-        $mapping = [];
-
-        if (file_exists($mappingPath)) {
-            $content = file_get_contents($mappingPath);
-            if ($content !== false) {
-                $decoded = json_decode($content, true);
-                if (is_array($decoded)) {
-                    $mapping = $decoded;
-                }
-            }
-        }
-
-        // Fallback to English if mapping file doesn't exist or is invalid
-        if (empty($mapping)) {
-            $mapping = [
-                'en' => ['name' => 'English', 'nativeName' => 'English'],
-            ];
-        }
-
-        return $mapping;
-    }
-
     public function getLanguages(Request $request): Response
     {
         $translationsDir = APP_PUBLIC . '/translations';
@@ -261,7 +177,7 @@ class TranslationsController
                         'name' => ucfirst($code),
                         'nativeName' => ucfirst($code),
                     ];
-                    
+
                     $languages[] = [
                         'code' => $code,
                         'name' => $langInfo['name'] ?? ucfirst($code),
@@ -283,5 +199,91 @@ class TranslationsController
         }
 
         return ApiResponse::success($languages, 'Available languages retrieved successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/system/translations/languages',
+        summary: 'Get available languages',
+        description: 'Retrieve list of available translation languages',
+        tags: ['System'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Available languages retrieved successfully',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'code', type: 'string', example: 'en'),
+                            new OA\Property(property: 'name', type: 'string', example: 'English'),
+                            new OA\Property(property: 'nativeName', type: 'string', example: 'English'),
+                        ]
+                    )
+                )
+            ),
+        ]
+    )]
+    /**
+     * Get enabled languages from settings
+     * Returns null if not set (meaning all languages are enabled)
+     * Returns array of language codes if set.
+     */
+    private function getEnabledLanguages(): ?array
+    {
+        try {
+            $app = App::getInstance(true);
+            $config = $app->getConfig();
+            $enabledLangsJson = $config->getSetting('enabled_languages', null);
+
+            if ($enabledLangsJson === null) {
+                // If not set, return null to allow all languages (backward compatibility)
+                return null;
+            }
+
+            $enabledLangs = json_decode($enabledLangsJson, true);
+            if (!is_array($enabledLangs)) {
+                return null; // Invalid JSON means all languages enabled
+            }
+
+            return $enabledLangs;
+        } catch (\Exception $e) {
+            // If error, return null to allow all languages
+            return null;
+        }
+    }
+
+    /**
+     * Load language mapping from mapping.json file.
+     */
+    private function getLanguageMapping(): array
+    {
+        static $mapping = null;
+
+        if ($mapping !== null) {
+            return $mapping;
+        }
+
+        $mappingPath = APP_PUBLIC . '/translations/mapping.json';
+        $mapping = [];
+
+        if (file_exists($mappingPath)) {
+            $content = file_get_contents($mappingPath);
+            if ($content !== false) {
+                $decoded = json_decode($content, true);
+                if (is_array($decoded)) {
+                    $mapping = $decoded;
+                }
+            }
+        }
+
+        // Fallback to English if mapping file doesn't exist or is invalid
+        if (empty($mapping)) {
+            $mapping = [
+                'en' => ['name' => 'English', 'nativeName' => 'English'],
+            ];
+        }
+
+        return $mapping;
     }
 }

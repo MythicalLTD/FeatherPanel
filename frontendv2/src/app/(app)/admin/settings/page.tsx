@@ -47,9 +47,10 @@ import { copyToClipboard } from '@/lib/utils';
 
 interface LogData {
     success: boolean;
-    id: string;
-    url: string;
-    raw: string;
+    id?: string;
+    url?: string;
+    raw?: string;
+    error?: string;
 }
 
 export default function SettingsPage() {
@@ -145,18 +146,23 @@ export default function SettingsPage() {
     };
 
     const handleUploadLogs = async () => {
-        const promise = adminSettingsApi.uploadLogs();
+        const promise = adminSettingsApi.uploadLogs().then((data) => {
+            // If the API returns success: false, throw an error to trigger the error handler
+            if (!data.success || !data.data) {
+                throw new Error(data.message || t('admin.settings.logs.upload_failed'));
+            }
+            return data;
+        });
         toast.promise(promise, {
             loading: t('admin.settings.logs.uploading'),
             success: (data) => {
-                if (data.success && data.data) {
-                    setUploadedLogs(data.data);
-                    setShowLogDialog(true);
-                    return t('admin.settings.messages.save_success');
-                }
-                return t('admin.settings.logs.upload_failed');
+                setUploadedLogs(data.data);
+                setShowLogDialog(true);
+                return t('admin.settings.messages.save_success');
             },
-            error: t('admin.settings.logs.upload_failed'),
+            error: (error) => {
+                return error instanceof Error ? error.message : t('admin.settings.logs.upload_failed');
+            },
         });
     };
 
@@ -419,29 +425,49 @@ export default function SettingsPage() {
                         <div className='space-y-4 pt-4'>
                             <div className='space-y-2'>
                                 <Label>Panel Logs (Web)</Label>
-                                <div className='flex gap-2'>
-                                    <Input value={uploadedLogs.web.url} readOnly />
-                                    <Button
-                                        size='icon'
-                                        variant='outline'
-                                        onClick={() => copyToClipboard(uploadedLogs.web.url)}
-                                    >
-                                        <Copy className='h-4 w-4' />
-                                    </Button>
-                                </div>
+                                {uploadedLogs.web.success && uploadedLogs.web.url ? (
+                                    <div className='flex gap-2'>
+                                        <Input value={uploadedLogs.web.url} readOnly />
+                                        <Button
+                                            size='icon'
+                                            variant='outline'
+                                            onClick={() => {
+                                                if (uploadedLogs.web.url) {
+                                                    copyToClipboard(uploadedLogs.web.url);
+                                                }
+                                            }}
+                                        >
+                                            <Copy className='h-4 w-4' />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <p className='text-sm text-destructive'>
+                                        {uploadedLogs.web.error || 'Failed to upload web logs'}
+                                    </p>
+                                )}
                             </div>
                             <div className='space-y-2'>
                                 <Label>System Logs (App)</Label>
-                                <div className='flex gap-2'>
-                                    <Input value={uploadedLogs.app.url} readOnly />
-                                    <Button
-                                        size='icon'
-                                        variant='outline'
-                                        onClick={() => copyToClipboard(uploadedLogs.app.url)}
-                                    >
-                                        <Copy className='h-4 w-4' />
-                                    </Button>
-                                </div>
+                                {uploadedLogs.app.success && uploadedLogs.app.url ? (
+                                    <div className='flex gap-2'>
+                                        <Input value={uploadedLogs.app.url} readOnly />
+                                        <Button
+                                            size='icon'
+                                            variant='outline'
+                                            onClick={() => {
+                                                if (uploadedLogs.app.url) {
+                                                    copyToClipboard(uploadedLogs.app.url);
+                                                }
+                                            }}
+                                        >
+                                            <Copy className='h-4 w-4' />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <p className='text-sm text-destructive'>
+                                        {uploadedLogs.app.error || 'Failed to upload app logs'}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}

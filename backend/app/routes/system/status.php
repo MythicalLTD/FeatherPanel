@@ -32,7 +32,6 @@ use App\App;
 use RateLimit\Rate;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\User\NodeStatusController;
-use App\Controllers\System\Selftest;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
@@ -48,5 +47,4 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(60), // Default: Admin can override in ratelimit.json
         'public-status'
     );
-
 };

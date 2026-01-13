@@ -1447,7 +1447,7 @@ class ServersController
             $oldOwner = User::getUserById($server['owner_id']);
             if ($oldOwner && isset($oldOwner['uuid']) && !empty($oldOwner['uuid'])) {
                 $oldOwnerUuid = $oldOwner['uuid'];
-                
+
                 // Get node info for Wings connection
                 $nodeInfo = Node::getNodeById($server['node_id']);
                 if ($nodeInfo) {
@@ -1459,7 +1459,7 @@ class ServersController
                             $nodeInfo['daemon_token'],
                             30
                         );
-                        
+
                         // Deauthorize old owner from Wings
                         $response = $wings->getServer()->deAuthUser($oldOwnerUuid, $server['uuid']);
                         if (!$response->isSuccessful()) {

@@ -40,7 +40,7 @@ class PluginHelperTest extends TestCase
             define('APP_ADDONS_DIR', dirname(__DIR__, 2) . '/storage/addons');
         }
         if (!defined('APP_DEBUG')) {
-            define('APP_DEBUG', true);
+            define('APP_DEBUG', false);
         }
         App::getInstance(false, true, true);
     }

@@ -37,8 +37,8 @@ use App\Chat\Server;
 use App\Chat\Subuser;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
-use App\Services\Wings\Wings;
 use App\Helpers\ApiResponse;
+use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -621,24 +621,24 @@ class SubuserController
             );
         }
 
-		// Get node info
-		$node = Node::getNodeById($server['node_id']);
+        // Get node info
+        $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
-		// Deauthorize user from Wings (only if we have a valid user UUID)
-		// We need the UUID because Wings API expects UUID, not user_id
-		if ($subuserUserUuid !== null) {
-			$wings = $this->createWings($node);
-			$response = $wings->getServer()->deAuthUser($subuserUserUuid, $server['uuid']);
-			if (!$response->isSuccessful()) {
-				return ApiResponse::error('Failed to deauthorize user from Wings', 'WINGS_ERROR', $response->getStatusCode());
-			}
-		} else {
-			// Log that we skipped deauthorization due to missing UUID
-			App::getInstance(true)->getLogger()->warning('Skipped Wings deauthorization for subuser_id: ' . $subuserId . ' - user UUID not available');
-		} 
+        // Deauthorize user from Wings (only if we have a valid user UUID)
+        // We need the UUID because Wings API expects UUID, not user_id
+        if ($subuserUserUuid !== null) {
+            $wings = $this->createWings($node);
+            $response = $wings->getServer()->deAuthUser($subuserUserUuid, $server['uuid']);
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to deauthorize user from Wings', 'WINGS_ERROR', $response->getStatusCode());
+            }
+        } else {
+            // Log that we skipped deauthorization due to missing UUID
+            App::getInstance(true)->getLogger()->warning('Skipped Wings deauthorization for subuser_id: ' . $subuserId . ' - user UUID not available');
+        }
 
         // Log activity
         $node = Node::getNodeById($server['node_id']);
@@ -908,7 +908,7 @@ class SubuserController
         ]);
     }
 
-	 /**
+    /**
      * Create a Wings instance for the given node.
      */
     private function createWings(array $node): Wings
@@ -921,7 +921,6 @@ class SubuserController
 
         return new Wings($host, $port, $scheme, $token, $timeout);
     }
-
 
     /**
      * Helper method to log server activity.

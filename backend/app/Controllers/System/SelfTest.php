@@ -30,11 +30,11 @@
 
 namespace App\Controllers\System;
 
+use App\Cache\Cache;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Cache\Cache;
 
 #[OA\Schema(
     schema: 'SelftestResponse',
@@ -99,7 +99,7 @@ class SelfTest
 
         // Permissions Check
         $permissions = [];
-        
+
         $logsDir = defined('APP_LOGS_DIR') ? APP_LOGS_DIR : __DIR__ . '/../../../storage/logs';
         $cacheDir = defined('APP_CACHE_DIR') ? APP_CACHE_DIR : __DIR__ . '/../../../storage/caches';
         $configDir = defined('APP_STORAGE_DIR') ? APP_STORAGE_DIR . 'config' : __DIR__ . '/../../../storage/config';

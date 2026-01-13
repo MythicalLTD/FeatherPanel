@@ -82,7 +82,7 @@ function formatBytes(bytes: number): string {
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
 
 export default function ConsolePage() {
@@ -96,7 +96,7 @@ export default function ConsolePage() {
     const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
     const [showSystemInfo, setShowSystemInfo] = useState(false);
     const [commandHistory, setCommandHistory] = useState<string[]>([]);
-    const [historyIndex, setHistoryIndex] = useState(-1);
+    const [, setHistoryIndex] = useState(-1);
     const terminalRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -207,7 +207,11 @@ export default function ConsolePage() {
                 addTerminalLine('info', `[${result.return_code}] ${result.execution_time}ms`);
 
                 if (result.return_code !== 0 && !result.stderr) {
-                    toast.warning(t('admin.dev.console.messages.command_failed', { code: result.return_code }));
+                    toast.warning(
+                        t('admin.dev.console.messages.command_failed', {
+                            code: result.return_code.toString() || 'Unknown',
+                        }),
+                    );
                 }
             } else {
                 addTerminalLine('error', `Error: ${response.data.message || 'Unknown error'}`);
@@ -221,7 +225,16 @@ export default function ConsolePage() {
             setIsLoading(false);
             scrollToBottom();
         }
-    }, [commandInput, isDeveloperModeEnabled, getPrompt, currentDirectory, systemInfo, addTerminalLine, scrollToBottom, t]);
+    }, [
+        commandInput,
+        isDeveloperModeEnabled,
+        getPrompt,
+        currentDirectory,
+        systemInfo,
+        addTerminalLine,
+        scrollToBottom,
+        t,
+    ]);
 
     const clearTerminal = useCallback(() => {
         setTerminalLines([]);
@@ -381,13 +394,16 @@ export default function ConsolePage() {
                             <h3 className='font-semibold mb-2'>{t('admin.dev.console.disk_usage') || 'Disk Usage'}</h3>
                             <div className='text-sm space-y-1'>
                                 <div>
-                                    <span className='text-muted-foreground'>Used:</span> {formatBytes(systemInfo.disk_usage.used)}
+                                    <span className='text-muted-foreground'>Used:</span>{' '}
+                                    {formatBytes(systemInfo.disk_usage.used)}
                                 </div>
                                 <div>
-                                    <span className='text-muted-foreground'>Free:</span> {formatBytes(systemInfo.disk_usage.free)}
+                                    <span className='text-muted-foreground'>Free:</span>{' '}
+                                    {formatBytes(systemInfo.disk_usage.free)}
                                 </div>
                                 <div>
-                                    <span className='text-muted-foreground'>Usage:</span> {systemInfo.disk_usage.percentage}%
+                                    <span className='text-muted-foreground'>Usage:</span>{' '}
+                                    {systemInfo.disk_usage.percentage}%
                                 </div>
                             </div>
                         </div>
