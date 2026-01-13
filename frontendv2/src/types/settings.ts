@@ -37,6 +37,7 @@ export interface AppSettings {
     server_allow_user_made_firewall: string;
     server_allow_user_made_import: string;
     server_allow_user_made_proxy: string;
+	server_allow_user_server_deletion: string;
     smtp_enabled: string;
     status_page_enabled: string;
     ticket_system_enabled: string;

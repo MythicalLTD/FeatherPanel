@@ -67,6 +67,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import type { Server } from '@/types/server';
+import { isEnabled } from '@/lib/utils';
 
 interface SftpDetails {
     host: string;
@@ -89,9 +90,12 @@ export default function ServerSettingsPage() {
     const router = useRouter();
     const pathname = usePathname();
     const { t } = useTranslation();
-    const { loading: settingsLoading } = useSettings();
+    const { loading: settingsLoading, settings } = useSettings();
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-settings');
+
+	// Config 
+	const canDeleteServer = isEnabled(settings?.server_allow_user_server_deletion || 'false');
 
     // Permissions
     const canRename = hasPermission('settings.rename');
@@ -205,15 +209,9 @@ export default function ServerSettingsPage() {
         }
     };
 
-    // TODO: Implement Delete Server API call (check Vue logic for endpoint)
-    // Vue uses likely DELETE /api/user/servers/:uuid
     const handleDelete = async () => {
         setDeleting(true);
         try {
-            // Verify endpoint in Vue... it was likely implicitly handled or I need to verify.
-            // Looking at standard Pterodactyl-like API, usually it's DELETE.
-            // Wait, I should double check the API endpoint in the next step or assume standard.
-            // For now, I'll put a placeholder and verify.
             await axios.delete(`/api/user/servers/${uuidShort}`);
             toast.success(t('serverSettings.serverDeleted'));
             router.push('/dashboard');
@@ -496,7 +494,8 @@ export default function ServerSettingsPage() {
                     )}
 
                     {/* Delete */}
-                    <PageCard title={t('serverSettings.deleteServer')} icon={AlertTriangle} variant='danger'>
+                    {canDeleteServer && (
+                        <PageCard title={t('serverSettings.deleteServer')} icon={AlertTriangle} variant='danger'>
                         <p className='text-xs text-red-200/60 font-medium leading-relaxed'>
                             {t('serverSettings.deleteServerDescription')}
                         </p>
@@ -515,7 +514,8 @@ export default function ServerSettingsPage() {
                         >
                             {t('serverSettings.deleteServer')}
                         </Button>
-                    </PageCard>
+                        </PageCard>
+                    )}
                     <WidgetRenderer widgets={getWidgets('server-settings', 'after-delete-server')} />
                 </div>
             </div>
