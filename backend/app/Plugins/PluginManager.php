@@ -68,10 +68,17 @@ class PluginManager
     {
         try {
             $pluginsDir = PluginHelper::getPluginsDir();
+            if (empty($pluginsDir)) {
+                return [];
+            }
             $allFiles = scandir($pluginsDir);
 
-            return array_values(array_filter($allFiles, function ($file) {
-                return !in_array($file, ['.', '..', '', '.gitignore', '.gitkeep']);
+            return array_values(array_filter($allFiles, function ($file) use ($pluginsDir) {
+                if (in_array($file, ['.', '..', '', '.gitignore', '.gitkeep'])) {
+                    return false;
+                }
+                // Only return directories (plugins are directories)
+                return is_dir($pluginsDir . '/' . $file);
             }));
         } catch (\Exception $e) {
             $this->logger->error('Failed to get plugins without loader: ' . $e->getMessage());
@@ -123,10 +130,17 @@ class PluginManager
     private function getPluginFiles(): array
     {
         $pluginsDir = PluginHelper::getPluginsDir();
+        if (empty($pluginsDir)) {
+            return [];
+        }
         $allFiles = scandir($pluginsDir);
 
-        return array_filter($allFiles, function ($file) {
-            return !in_array($file, ['.', '..', '', '.gitignore', '.gitkeep']);
+        return array_filter($allFiles, function ($file) use ($pluginsDir) {
+            if (in_array($file, ['.', '..', '', '.gitignore', '.gitkeep'])) {
+                return false;
+            }
+            // Only return directories (plugins are directories)
+            return is_dir($pluginsDir . '/' . $file);
         });
     }
 
