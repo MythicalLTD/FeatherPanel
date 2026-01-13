@@ -3497,20 +3497,29 @@
 					"discord_id": "Discord ID",
 					"generate_sso": "Generate SSO Link"
 				},
+				"actions": {
+					"title": "Actions",
+					"sso": {
+						"title": "Single Sign-On",
+						"generate": "Generate SSO Link"
+					}
+				},
 				"servers": {
 					"title": "Servers",
 					"name": "Name",
 					"status": "Status",
 					"created": "Created",
 					"actions": "Actions",
-					"offline": "Offline"
+					"offline": "Offline",
+					"no_servers": "No servers found for this user."
 				},
 				"activities": {
 					"title": "Activities",
 					"name": "Name",
 					"context": "Context",
 					"ip": "IP Address",
-					"created": "Created At"
+					"created": "Created At",
+					"no_activities": "No activity logs found."
 				},
 				"mails": {
 					"title": "Mails",
@@ -3518,7 +3527,8 @@
 					"status": "Status",
 					"created": "Created At",
 					"preview": "Preview",
-					"actions": "Actions"
+					"actions": "Actions",
+					"no_mails": "No mails found."
 				}
 			},
 			"messages": {

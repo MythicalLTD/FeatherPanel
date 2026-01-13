@@ -39,6 +39,7 @@ import {
     Unlock,
     Trash2,
     ArrowLeft,
+	Edit,
     RefreshCw,
     Copy,
     ExternalLink,
@@ -606,7 +607,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                     </PageCard>
 
                     {/* Danger Zone / Actions */}
-                    <PageCard title='Actions' icon={Shield} variant='default'>
+                    <PageCard title={t('admin.users.edit.actions.title')} icon={Shield} variant='default'>
                         <div className='space-y-3'>
                             <Button
                                 variant={user.banned === 'true' ? 'default' : 'destructive'}
@@ -639,7 +640,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
                         <div className='mt-6 pt-6 border-t border-border/50'>
                             <Label className='mb-2 block text-xs uppercase text-muted-foreground font-bold tracking-wider'>
-                                Single Sign-On
+                                {t('admin.users.edit.actions.sso.title')}
                             </Label>
                             <div className='space-y-2'>
                                 {ssoLink ? (
@@ -661,7 +662,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         ) : (
                                             <Key className='h-4 w-4 mr-2' />
                                         )}
-                                        {t('admin.users.edit.account_info.generate_sso')}
+                                        {t('admin.users.edit.actions.sso.generate')}
                                     </Button>
                                 )}
                             </div>
@@ -713,7 +714,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                     {ownedServers.length === 0 ? (
                                         <tr>
                                             <td colSpan={4} className='p-8 text-center text-muted-foreground'>
-                                                No servers found for this user.
+                                                {t('admin.users.edit.servers.no_servers')}
                                             </td>
                                         </tr>
                                     ) : (
@@ -756,7 +757,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                                 (window.location.href = `/admin/servers/${server.id}/edit`)
                                                             }
                                                         >
-                                                            <RefreshCw className='h-4 w-4' />
+                                                            <Edit className='h-4 w-4' />
                                                         </Button>
                                                     </div>
                                                 </td>
@@ -793,7 +794,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                     {!user.activities || user.activities.length === 0 ? (
                                         <tr>
                                             <td colSpan={4} className='p-8 text-center text-muted-foreground'>
-                                                No activity logs found.
+                                                {t('admin.users.edit.activities.no_activities')}
                                             </td>
                                         </tr>
                                     ) : (
@@ -839,7 +840,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                     {!user.mails || user.mails.length === 0 ? (
                                         <tr>
                                             <td colSpan={4} className='p-8 text-center text-muted-foreground'>
-                                                No mails found.
+                                                {t('admin.users.edit.mails.no_mails')}
                                             </td>
                                         </tr>
                                     ) : (
@@ -886,7 +887,6 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         </DialogDescription>
                     </DialogHeader>
                     <div className='overflow-auto max-h-[60vh] border rounded-xl bg-muted/50 p-4 mt-4'>
-                        {}
                         <div
                             className='prose prose-sm dark:prose-invert max-w-none'
                             dangerouslySetInnerHTML={{ __html: mailPreview?.body || '' }}
