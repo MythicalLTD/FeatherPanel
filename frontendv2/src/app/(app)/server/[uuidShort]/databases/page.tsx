@@ -608,7 +608,6 @@ export default function ServerDatabasesPage() {
                                     onChange={(e) => setCreateForm({ ...createForm, database_name: e.target.value })}
                                     placeholder={t('serverDatabases.databaseNamePlaceholder')}
                                     required
-                                    className='h-12 bg-card border-border/50 focus:border-primary/50 transition-all rounded-xl'
                                 />
                                 <p className='text-[10px] text-muted-foreground italic px-1'>
                                     {t('serverDatabases.databaseNameHelp')}
@@ -624,7 +623,6 @@ export default function ServerDatabasesPage() {
                                         value={createForm.remote}
                                         onChange={(e) => setCreateForm({ ...createForm, remote: e.target.value })}
                                         placeholder='%'
-                                        className='h-12 bg-card border-border/50 focus:border-primary/50 transition-all rounded-xl'
                                     />
                                     <p className='text-[10px] text-muted-foreground italic px-1'>
                                         {t('serverDatabases.remoteAccessHelp')}
@@ -644,7 +642,6 @@ export default function ServerDatabasesPage() {
                                                 max_connections: parseInt(e.target.value) || 0,
                                             })
                                         }
-                                        className='h-12 bg-card border-border/50 focus:border-primary/50 transition-all rounded-xl'
                                     />
                                     <p className='text-[10px] text-muted-foreground italic px-1'>
                                         {t('serverDatabases.maxConnectionsHelp')}
@@ -771,9 +768,11 @@ export default function ServerDatabasesPage() {
                                                 {item.label}
                                             </label>
                                             <div className='relative group'>
-                                                <code className='block w-full px-4 py-2 bg-card rounded-xl text-xs font-mono border border-border/50 truncate pr-10'>
-                                                    {item.value || 'N/A'}
-                                                </code>
+                                                <Input
+                                                    readOnly
+                                                    value={item.value || 'N/A'}
+                                                    className='pr-10 font-mono text-xs bg-card border-border/50'
+                                                />
                                                 <Button
                                                     variant='glass'
                                                     size='sm'
@@ -800,9 +799,11 @@ export default function ServerDatabasesPage() {
                                             {t('serverDatabases.username')}
                                         </label>
                                         <div className='relative group'>
-                                            <code className='block w-full px-4 py-2 bg-card rounded-xl text-xs font-mono border border-border/50 truncate pr-10'>
-                                                {viewingDatabase.username}
-                                            </code>
+                                            <Input
+                                                readOnly
+                                                value={viewingDatabase.username}
+                                                className='pr-10 font-mono text-xs bg-card border-border/50'
+                                            />
                                             <Button
                                                 variant='glass'
                                                 size='sm'
@@ -826,9 +827,12 @@ export default function ServerDatabasesPage() {
                                             </button>
                                         </div>
                                         <div className='relative group'>
-                                            <code className='block w-full px-4 py-2 bg-card rounded-xl text-xs font-mono border border-border/50 truncate pr-10'>
-                                                {showPassword ? viewingDatabase.password : '••••••••••••••••'}
-                                            </code>
+                                            <Input
+                                                readOnly
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={viewingDatabase.password || ''}
+                                                className='pr-10 font-mono text-xs bg-card border-border/50'
+                                            />
                                             <Button
                                                 variant='glass'
                                                 size='sm'

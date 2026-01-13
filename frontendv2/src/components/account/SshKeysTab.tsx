@@ -53,6 +53,7 @@ import {
     Input as HeadlessInput,
 } from '@headlessui/react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/featherui/Input';
 import { cn } from '@/lib/utils';
 import { Key, Plus, Trash2, Eye, Pencil, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -273,12 +274,11 @@ export default function SshKeysTab() {
 
             {/* Search */}
             <div className='relative'>
-                <input
+                <Input
                     type='text'
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('account.sshKeys.searchPlaceholder')}
-                    className='w-full px-4 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary'
                 />
             </div>
 

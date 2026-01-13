@@ -44,6 +44,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/featherui/Input';
 import { Clock, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -172,12 +173,11 @@ export default function ActivityTab() {
 
             {/* Search */}
             <div className='relative'>
-                <input
+                <Input
                     type='text'
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('account.activity.searchPlaceholder')}
-                    className='w-full px-4 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary'
                 />
             </div>
 

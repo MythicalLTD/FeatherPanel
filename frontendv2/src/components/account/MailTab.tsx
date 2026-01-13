@@ -45,6 +45,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Dialog, DialogPanel, DialogTitle, Description as DialogDescription } from '@headlessui/react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/featherui/Input';
 import { cn } from '@/lib/utils';
 import { Mail, RefreshCw, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
@@ -242,12 +243,11 @@ export default function MailTab() {
 
             {/* Search */}
             <div className='relative'>
-                <input
+                <Input
                     type='text'
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('account.mail.searchPlaceholder')}
-                    className='w-full px-4 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary'
                 />
             </div>
 

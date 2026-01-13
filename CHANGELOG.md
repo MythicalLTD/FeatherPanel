@@ -14,6 +14,7 @@
 ### Fixed
 
 - Implement route name validation in admin rate limits API, enhancing error handling for invalid requests. Enable debug mode across various files for improved troubleshooting during development. by @nayskutzu
+- Improve plugin directory handling in PluginManager by adding checks for empty directories and ensuring only directories are returned, enhancing plugin management reliability.
 
 ### Updated
 

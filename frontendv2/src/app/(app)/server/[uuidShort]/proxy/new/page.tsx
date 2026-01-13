@@ -291,6 +291,7 @@ export default function CreateProxyPage() {
                                     }}
                                     placeholder='play.example.com'
                                     disabled={saving}
+                                    className='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
                                 />
                                 <p className='text-xs text-muted-foreground ml-1'>
                                     {t('serverProxy.domainDescription')}
@@ -457,7 +458,7 @@ export default function CreateProxyPage() {
                                                     setFormData({ ...formData, client_email: e.target.value })
                                                 }
                                                 placeholder='admin@example.com'
-                                                className='pl-11'
+                                                className='pl-11 h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
                                                 disabled={saving}
                                                 required
                                             />

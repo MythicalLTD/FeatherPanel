@@ -50,11 +50,11 @@ import {
     Description,
     Field,
     Fieldset,
-    Input as HeadlessInput,
     Label,
-    Textarea as HeadlessTextarea,
 } from '@headlessui/react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/featherui/Input';
+import { Textarea } from '@/components/featherui/Textarea';
 import axios from 'axios';
 import { toast } from 'sonner';
 import Turnstile from 'react-turnstile';
@@ -265,17 +265,12 @@ export default function ProfileTab() {
                         {allowUsernameChange && (
                             <Field>
                                 <Label className='text-sm font-medium text-foreground'>{t('account.username')}</Label>
-                                <HeadlessInput
+                                <Input
                                     value={formData.username}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
                                     disabled={isSubmitting}
                                     placeholder={t('account.usernamePlaceholder')}
-                                    className={cn(
-                                        'mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2',
-                                        'text-sm text-foreground placeholder:text-muted-foreground',
-                                        'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                                        'disabled:opacity-50 disabled:cursor-not-allowed',
-                                    )}
+                                    className='mt-2'
                                 />
                             </Field>
                         )}
@@ -283,18 +278,13 @@ export default function ProfileTab() {
                         {allowEmailChange && (
                             <Field>
                                 <Label className='text-sm font-medium text-foreground'>{t('account.email')}</Label>
-                                <HeadlessInput
+                                <Input
                                     type='email'
                                     value={formData.email}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                                     disabled={isSubmitting}
                                     placeholder={t('account.emailPlaceholder')}
-                                    className={cn(
-                                        'mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2',
-                                        'text-sm text-foreground placeholder:text-muted-foreground',
-                                        'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                                        'disabled:opacity-50 disabled:cursor-not-allowed',
-                                    )}
+                                    className='mt-2'
                                 />
                             </Field>
                         )}
@@ -302,17 +292,12 @@ export default function ProfileTab() {
                         {allowFirstNameChange && (
                             <Field>
                                 <Label className='text-sm font-medium text-foreground'>{t('account.firstName')}</Label>
-                                <HeadlessInput
+                                <Input
                                     value={formData.first_name}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, first_name: e.target.value }))}
                                     disabled={isSubmitting}
                                     placeholder={t('account.firstNamePlaceholder')}
-                                    className={cn(
-                                        'mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2',
-                                        'text-sm text-foreground placeholder:text-muted-foreground',
-                                        'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                                        'disabled:opacity-50 disabled:cursor-not-allowed',
-                                    )}
+                                    className='mt-2'
                                 />
                             </Field>
                         )}
@@ -320,17 +305,12 @@ export default function ProfileTab() {
                         {allowLastNameChange && (
                             <Field>
                                 <Label className='text-sm font-medium text-foreground'>{t('account.lastName')}</Label>
-                                <HeadlessInput
+                                <Input
                                     value={formData.last_name}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, last_name: e.target.value }))}
                                     disabled={isSubmitting}
                                     placeholder={t('account.lastNamePlaceholder')}
-                                    className={cn(
-                                        'mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2',
-                                        'text-sm text-foreground placeholder:text-muted-foreground',
-                                        'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                                        'disabled:opacity-50 disabled:cursor-not-allowed',
-                                    )}
+                                    className='mt-2'
                                 />
                             </Field>
                         )}
@@ -371,18 +351,13 @@ export default function ProfileTab() {
 
                         <Field>
                             <Label className='text-sm font-medium text-foreground'>{t('account.newPassword')}</Label>
-                            <HeadlessInput
+                            <Input
                                 type='password'
                                 value={formData.password}
                                 onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
                                 disabled={isSubmitting}
                                 placeholder={t('account.passwordPlaceholder')}
-                                className={cn(
-                                    'mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2',
-                                    'text-sm text-foreground placeholder:text-muted-foreground',
-                                    'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                                    'disabled:opacity-50 disabled:cursor-not-allowed',
-                                )}
+                                className='mt-2'
                             />
                             <Description className='text-xs text-muted-foreground mt-1'>
                                 {t('account.passwordHint')}
@@ -392,18 +367,13 @@ export default function ProfileTab() {
 
                     <Field>
                         <Label className='text-sm font-medium text-foreground'>{t('account.ticketSignature')}</Label>
-                        <HeadlessTextarea
+                        <Textarea
                             value={formData.ticket_signature}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, ticket_signature: e.target.value }))}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData((prev) => ({ ...prev, ticket_signature: e.target.value }))}
                             disabled={isSubmitting}
                             placeholder={t('account.ticketSignaturePlaceholder')}
                             rows={4}
-                            className={cn(
-                                'mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2',
-                                'text-sm text-foreground placeholder:text-muted-foreground font-mono',
-                                'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                                'disabled:opacity-50 disabled:cursor-not-allowed resize-none custom-scrollbar',
-                            )}
+                            className='mt-2 font-mono'
                         />
                         <Description className='text-xs text-muted-foreground mt-1'>
                             {t('account.ticketSignatureHint')}

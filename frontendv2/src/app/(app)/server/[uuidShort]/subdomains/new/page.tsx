@@ -286,6 +286,7 @@ export default function CreateSubdomainPage() {
                                     onChange={(e) => setFormData({ ...formData, subdomain: e.target.value })}
                                     placeholder={t('serverSubdomains.subdomainPlaceholder')}
                                     disabled={saving}
+                                    className='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
                                 />
                                 <p className='text-xs text-muted-foreground ml-1'>
                                     {t('serverSubdomains.subdomainHint')}

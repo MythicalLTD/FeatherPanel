@@ -65,6 +65,7 @@ import {
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 
 import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
@@ -406,14 +407,14 @@ export default function ServerSubusersPage() {
                     {/* Search Bar */}
                     <div className='flex gap-2'>
                         <div className='relative flex-1'>
-                            <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground' />
-                            <input
+                            <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10' />
+                            <Input
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && fetchSubusers(1)}
                                 type='text'
                                 placeholder={t('serverSubusers.searchPlaceholder')}
-                                className='w-full pl-12 pr-4 h-14 bg-card/40 backdrop-blur-xl border border-border/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium'
+                                className='pl-12 h-14'
                             />
                         </div>
                         <Button
@@ -538,14 +539,14 @@ export default function ServerSubusersPage() {
                             {t('serverSubusers.emailLabel')}
                         </label>
                         <div className='relative'>
-                            <Mail className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground' />
-                            <input
+                            <Mail className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10' />
+                            <Input
                                 value={addEmail}
                                 onChange={(e) => setAddEmail(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddSubuser()}
                                 type='email'
                                 placeholder={t('serverSubusers.emailPlaceholder')}
-                                className='w-full pl-12 pr-4 h-14 bg-card/40 border border-border/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium'
+                                className='pl-12 h-14'
                             />
                         </div>
                     </div>
