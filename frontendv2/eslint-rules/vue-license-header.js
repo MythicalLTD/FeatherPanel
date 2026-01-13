@@ -31,7 +31,10 @@ export default {
                 const text = sourceCode.getText();
 
                 // Check if license header already exists anywhere in the file
-                if (text.includes('MIT License') && text.includes('MythicalSystems')) {
+                if (
+                    text.includes('This file is part of FeatherPanel') &&
+                    text.includes('GNU Affero General Public License')
+                ) {
                     return;
                 }
 

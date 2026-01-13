@@ -15,8 +15,6 @@ const VALID_EXTENSIONS = [
   ".vue",
   ".ts",
   ".tsx",
-  ".js",
-  ".jsx",
   ".php",
   ".css",
   ".yml",
@@ -45,8 +43,6 @@ const targetDir = process.argv[2] || process.cwd();
 
 // Regular expressions for detecting comments
 const COMMENT_PATTERNS = {
-  ".js": [/\/\/.*$/m, /\/\*[\s\S]*?\*\//g],
-  ".jsx": [/\/\/.*$/m, /\/\*[\s\S]*?\*\//g],
   ".ts": [/\/\/.*$/m, /\/\*[\s\S]*?\*\//g],
   ".tsx": [/\/\/.*$/m, /\/\*[\s\S]*?\*\//g],
   ".vue": [/<!--[\s\S]*?-->/g, /\/\/.*$/m, /\/\*[\s\S]*?\*\//g],
