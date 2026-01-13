@@ -48,10 +48,10 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { toast } from 'sonner';
-import { Server, X, ChevronRight, ChevronLeft, Plus, Search, Loader2 } from 'lucide-react';
+import { Server, X, ChevronRight, ChevronLeft, Plus, Search as SearchIcon, Loader2 } from 'lucide-react';
 
 // Types
 import {
@@ -153,6 +153,55 @@ export default function CreateServerPage() {
     const [realmSearch, setRealmSearch] = useState('');
     const [spellSearch, setSpellSearch] = useState('');
 
+    // Debounced Search States
+    const [debouncedOwnerSearch, setDebouncedOwnerSearch] = useState('');
+    const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
+    const [debouncedNodeSearch, setDebouncedNodeSearch] = useState('');
+    const [debouncedRealmSearch, setDebouncedRealmSearch] = useState('');
+    const [debouncedSpellSearch, setDebouncedSpellSearch] = useState('');
+
+    // Pagination States
+    const [ownerPagination, setOwnerPagination] = useState({
+        current_page: 1,
+        per_page: 10,
+        total_records: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false,
+    });
+    const [locationPagination, setLocationPagination] = useState({
+        current_page: 1,
+        per_page: 10,
+        total_records: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false,
+    });
+    const [nodePagination, setNodePagination] = useState({
+        current_page: 1,
+        per_page: 10,
+        total_records: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false,
+    });
+    const [realmPagination, setRealmPagination] = useState({
+        current_page: 1,
+        per_page: 10,
+        total_records: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false,
+    });
+    const [spellPagination, setSpellPagination] = useState({
+        current_page: 1,
+        per_page: 10,
+        total_records: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false,
+    });
+
     // Submission State
     const [submitting, setSubmitting] = useState(false);
 
@@ -222,36 +271,112 @@ export default function CreateServerPage() {
         fetchSpellDetails();
     }, [formData.spellId]);
 
-    // Fetch Functions
+    // Debounce search effects
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedOwnerSearch(ownerSearch);
+            setOwnerPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [ownerSearch]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedLocationSearch(locationSearch);
+            setLocationPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [locationSearch]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedNodeSearch(nodeSearch);
+            setNodePagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [nodeSearch]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedRealmSearch(realmSearch);
+            setRealmPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [realmSearch]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSpellSearch(spellSearch);
+            setSpellPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [spellSearch]);
+
+    // Fetch Functions with Pagination
     const fetchOwners = useCallback(async () => {
         try {
-            const { data } = await axios.get('/api/admin/users', { params: { search: ownerSearch, limit: 10 } });
+            const { data } = await axios.get('/api/admin/users', {
+                params: {
+                    search: debouncedOwnerSearch,
+                    page: ownerPagination.current_page,
+                    limit: ownerPagination.per_page,
+                },
+            });
             setOwners(data.data.users || []);
+            if (data.data.pagination) {
+                setOwnerPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
         } catch (error) {
             console.error('Error fetching users:', error);
         }
-    }, [ownerSearch]);
+    }, [debouncedOwnerSearch, ownerPagination.current_page, ownerPagination.per_page]);
 
     const fetchLocations = useCallback(async () => {
         try {
-            const { data } = await axios.get('/api/admin/locations', { params: { search: locationSearch, limit: 10 } });
+            const { data } = await axios.get('/api/admin/locations', {
+                params: {
+                    search: debouncedLocationSearch,
+                    page: locationPagination.current_page,
+                    limit: locationPagination.per_page,
+                },
+            });
             setLocations(data.data.locations || []);
+            if (data.data.pagination) {
+                setLocationPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
         } catch (error) {
             console.error('Error fetching locations:', error);
         }
-    }, [locationSearch]);
+    }, [debouncedLocationSearch, locationPagination.current_page, locationPagination.per_page]);
 
     const fetchNodes = useCallback(async () => {
         if (!formData.locationId) return;
         try {
             const { data } = await axios.get('/api/admin/nodes', {
-                params: { location_id: formData.locationId, search: nodeSearch, limit: 10 },
+                params: {
+                    location_id: formData.locationId,
+                    search: debouncedNodeSearch,
+                    page: nodePagination.current_page,
+                    limit: nodePagination.per_page,
+                },
             });
             setNodes(data.data.nodes || []);
+            if (data.data.pagination) {
+                setNodePagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
         } catch (error) {
             console.error('Error fetching nodes:', error);
         }
-    }, [formData.locationId, nodeSearch]);
+    }, [formData.locationId, debouncedNodeSearch, nodePagination.current_page, nodePagination.per_page]);
 
     const fetchAllocations = useCallback(async () => {
         if (!formData.nodeId) return;
@@ -268,50 +393,84 @@ export default function CreateServerPage() {
 
     const fetchRealms = useCallback(async () => {
         try {
-            const { data } = await axios.get('/api/admin/realms', { params: { search: realmSearch, limit: 10 } });
+            const { data } = await axios.get('/api/admin/realms', {
+                params: {
+                    search: debouncedRealmSearch,
+                    page: realmPagination.current_page,
+                    limit: realmPagination.per_page,
+                },
+            });
             setRealms(data.data.realms || []);
+            if (data.data.pagination) {
+                setRealmPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
         } catch (error) {
             console.error('Error fetching realms:', error);
         }
-    }, [realmSearch]);
+    }, [debouncedRealmSearch, realmPagination.current_page, realmPagination.per_page]);
 
     const fetchSpells = useCallback(async () => {
         if (!formData.realmId) return;
         try {
             const { data } = await axios.get('/api/admin/spells', {
-                params: { realm_id: formData.realmId, search: spellSearch, limit: 10 },
+                params: {
+                    realm_id: formData.realmId,
+                    search: debouncedSpellSearch,
+                    page: spellPagination.current_page,
+                    limit: spellPagination.per_page,
+                },
             });
             setSpells(data.data.spells || []);
+            if (data.data.pagination) {
+                setSpellPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
         } catch (error) {
             console.error('Error fetching spells:', error);
         }
-    }, [formData.realmId, spellSearch]);
+    }, [formData.realmId, debouncedSpellSearch, spellPagination.current_page, spellPagination.per_page]);
 
-    // Debounced search effects
+    // Fetch when modals open or pagination/search changes
     useEffect(() => {
-        const timer = setTimeout(() => fetchOwners(), 300);
-        return () => clearTimeout(timer);
-    }, [ownerSearch, fetchOwners]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => fetchLocations(), 300);
-        return () => clearTimeout(timer);
-    }, [locationSearch, fetchLocations]);
+        if (ownerModalOpen) {
+            fetchOwners();
+        }
+    }, [ownerModalOpen, fetchOwners]);
 
     useEffect(() => {
-        const timer = setTimeout(() => fetchNodes(), 300);
-        return () => clearTimeout(timer);
-    }, [nodeSearch, fetchNodes]);
+        if (locationModalOpen) {
+            fetchLocations();
+        }
+    }, [locationModalOpen, fetchLocations]);
 
     useEffect(() => {
-        const timer = setTimeout(() => fetchRealms(), 300);
-        return () => clearTimeout(timer);
-    }, [realmSearch, fetchRealms]);
+        if (nodeModalOpen) {
+            fetchNodes();
+        }
+    }, [nodeModalOpen, fetchNodes]);
 
     useEffect(() => {
-        const timer = setTimeout(() => fetchSpells(), 300);
-        return () => clearTimeout(timer);
-    }, [spellSearch, fetchSpells]);
+        if (allocationModalOpen) {
+            fetchAllocations();
+        }
+    }, [allocationModalOpen, fetchAllocations]);
+
+    useEffect(() => {
+        if (realmModalOpen) {
+            fetchRealms();
+        }
+    }, [realmModalOpen, fetchRealms]);
+
+    useEffect(() => {
+        if (spellModalOpen) {
+            fetchSpells();
+        }
+    }, [spellModalOpen, fetchSpells]);
 
     // Step Validation
     const validateCurrentStep = () => {
@@ -566,15 +725,17 @@ export default function CreateServerPage() {
                 )}
             </div>
 
-            {/* Selection Modals */}
-            <SelectionModal
-                isOpen={ownerModalOpen}
-                onClose={() => setOwnerModalOpen(false)}
+            {/* Selection Sheets */}
+            <SelectionSheet
+                open={ownerModalOpen}
+                onOpenChange={setOwnerModalOpen}
                 title={t('admin.servers.form.select_owner')}
                 items={owners}
                 onSelect={handleSelectOwner}
                 search={ownerSearch}
                 onSearchChange={setOwnerSearch}
+                pagination={ownerPagination}
+                onPaginationChange={setOwnerPagination}
                 renderItem={(owner) => (
                     <div className='flex flex-col'>
                         <span className='font-semibold'>{owner.username}</span>
@@ -583,25 +744,29 @@ export default function CreateServerPage() {
                 )}
             />
 
-            <SelectionModal
-                isOpen={locationModalOpen}
-                onClose={() => setLocationModalOpen(false)}
+            <SelectionSheet
+                open={locationModalOpen}
+                onOpenChange={setLocationModalOpen}
                 title={t('admin.servers.form.select_location')}
                 items={locations}
                 onSelect={handleSelectLocation}
                 search={locationSearch}
                 onSearchChange={setLocationSearch}
+                pagination={locationPagination}
+                onPaginationChange={setLocationPagination}
                 renderItem={(location) => <span className='font-semibold'>{location.name}</span>}
             />
 
-            <SelectionModal
-                isOpen={nodeModalOpen}
-                onClose={() => setNodeModalOpen(false)}
+            <SelectionSheet
+                open={nodeModalOpen}
+                onOpenChange={setNodeModalOpen}
                 title={t('admin.servers.form.select_node')}
                 items={nodes}
                 onSelect={handleSelectNode}
                 search={nodeSearch}
                 onSearchChange={setNodeSearch}
+                pagination={nodePagination}
+                onPaginationChange={setNodePagination}
                 renderItem={(node) => (
                     <div className='flex flex-col'>
                         <span className='font-semibold'>{node.name}</span>
@@ -610,14 +775,16 @@ export default function CreateServerPage() {
                 )}
             />
 
-            <SelectionModal
-                isOpen={allocationModalOpen}
-                onClose={() => setAllocationModalOpen(false)}
+            <SelectionSheet
+                open={allocationModalOpen}
+                onOpenChange={setAllocationModalOpen}
                 title={t('admin.servers.form.select_allocation')}
                 items={allocations}
                 onSelect={handleSelectAllocation}
                 search=''
                 onSearchChange={() => {}}
+                pagination={null}
+                onPaginationChange={() => {}}
                 renderItem={(allocation) => (
                     <span className='font-semibold font-mono'>
                         {allocation.ip}:{allocation.port}
@@ -625,25 +792,29 @@ export default function CreateServerPage() {
                 )}
             />
 
-            <SelectionModal
-                isOpen={realmModalOpen}
-                onClose={() => setRealmModalOpen(false)}
+            <SelectionSheet
+                open={realmModalOpen}
+                onOpenChange={setRealmModalOpen}
                 title={t('admin.servers.form.select_realm')}
                 items={realms}
                 onSelect={handleSelectRealm}
                 search={realmSearch}
                 onSearchChange={setRealmSearch}
+                pagination={realmPagination}
+                onPaginationChange={setRealmPagination}
                 renderItem={(realm) => <span className='font-semibold'>{realm.name}</span>}
             />
 
-            <SelectionModal
-                isOpen={spellModalOpen}
-                onClose={() => setSpellModalOpen(false)}
+            <SelectionSheet
+                open={spellModalOpen}
+                onOpenChange={setSpellModalOpen}
                 title={t('admin.servers.form.select_spell')}
                 items={spells}
                 onSelect={handleSelectSpell}
                 search={spellSearch}
                 onSearchChange={setSpellSearch}
+                pagination={spellPagination}
+                onPaginationChange={setSpellPagination}
                 renderItem={(spell) => (
                     <div className='flex flex-col'>
                         <span className='font-semibold'>{spell.name}</span>
@@ -655,58 +826,141 @@ export default function CreateServerPage() {
     );
 }
 
-// Selection Modal Component
-interface SelectionModalProps<T> {
-    isOpen: boolean;
-    onClose: () => void;
+// Selection Sheet Component with Pagination
+interface PaginationState {
+    current_page: number;
+    per_page: number;
+    total_records: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+}
+
+interface SelectionSheetProps<T> {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     title: string;
     items: T[];
     onSelect: (item: T) => void;
     search: string;
     onSearchChange: (val: string) => void;
+    pagination: PaginationState | null;
+    onPaginationChange: (pagination: PaginationState) => void;
     renderItem: (item: T) => React.ReactNode;
 }
 
-function SelectionModal<T extends { id: number | string }>({
-    isOpen,
-    onClose,
+function SelectionSheet<T extends { id: number | string }>({
+    open,
+    onOpenChange,
     title,
     items,
     onSelect,
     search,
     onSearchChange,
+    pagination,
+    onPaginationChange,
     renderItem,
-}: SelectionModalProps<T>) {
+}: SelectionSheetProps<T>) {
     const { t } = useTranslation();
     return (
-        <HeadlessModal isOpen={isOpen} onClose={onClose} title={title} className='max-w-xl'>
-            <div className='space-y-4'>
-                <div className='relative group'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
-                    <Input
-                        placeholder={t('common.search')}
-                        value={search}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        className='pl-10 h-10'
-                    />
-                </div>
+        <Sheet open={open} onOpenChange={onOpenChange}>
+            <SheetContent className='sm:max-w-2xl'>
+                <SheetHeader>
+                    <SheetTitle>{title}</SheetTitle>
+                    <SheetDescription>
+                        {pagination
+                            ? t('common.showing', {
+                                  from: String((pagination.current_page - 1) * pagination.per_page + 1),
+                                  to: String(
+                                      Math.min(
+                                          pagination.current_page * pagination.per_page,
+                                          pagination.total_records,
+                                      ),
+                                  ),
+                                  total: String(pagination.total_records),
+                              })
+                            : t('common.select_an_option')}
+                    </SheetDescription>
+                </SheetHeader>
 
-                <div className='max-h-[400px] overflow-y-auto space-y-2 pr-1 custom-scrollbar'>
-                    {items.length === 0 ? (
-                        <div className='text-center py-8 text-muted-foreground'>{t('common.no_results')}</div>
-                    ) : (
-                        items.map((item) => (
-                            <div
-                                key={item.id}
-                                className='p-3 rounded-xl border border-border/50 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all'
-                                onClick={() => onSelect(item)}
-                            >
-                                {renderItem(item)}
+                <div className='mt-6 space-y-4'>
+                    {/* Search */}
+                    <div className='relative group'>
+                        <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                        <Input
+                            placeholder={t('common.search')}
+                            value={search}
+                            onChange={(e) => onSearchChange(e.target.value)}
+                            className='pl-10'
+                        />
+                    </div>
+
+                    {/* Items List */}
+                    <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar'>
+                        {items.length === 0 ? (
+                            <div className='text-center py-8 text-muted-foreground'>{t('common.no_results')}</div>
+                        ) : (
+                            items.map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => onSelect(item)}
+                                    className='w-full p-3 rounded-xl border border-border/50 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all text-left'
+                                >
+                                    {renderItem(item)}
+                                </button>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Pagination */}
+                    {pagination && pagination.total_pages > 1 && (
+                        <div className='flex items-center justify-between pt-4 border-t border-border/50'>
+                            <div className='text-sm text-muted-foreground'>
+                                {t('common.showing', {
+                                    from: String((pagination.current_page - 1) * pagination.per_page + 1),
+                                    to: String(
+                                        Math.min(
+                                            pagination.current_page * pagination.per_page,
+                                            pagination.total_records,
+                                        ),
+                                    ),
+                                    total: String(pagination.total_records),
+                                })}
                             </div>
-                        ))
+                            <div className='flex gap-2'>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    onClick={() =>
+                                        onPaginationChange({
+                                            ...pagination,
+                                            current_page: pagination.current_page - 1,
+                                        })
+                                    }
+                                    disabled={!pagination.has_prev}
+                                >
+                                    <ChevronLeft className='h-4 w-4 mr-2' />
+                                    {t('common.previous')}
+                                </Button>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    onClick={() =>
+                                        onPaginationChange({
+                                            ...pagination,
+                                            current_page: pagination.current_page + 1,
+                                        })
+                                    }
+                                    disabled={!pagination.has_next}
+                                >
+                                    {t('common.next')}
+                                    <ChevronRight className='h-4 w-4 ml-2' />
+                                </Button>
+                            </div>
+                        </div>
                     )}
                 </div>
-            </div>
-        </HeadlessModal>
+            </SheetContent>
+        </Sheet>
     );
 }
