@@ -3,6 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const { promisify } = require("util");
+const { execSync } = require("child_process");
 const readFileAsync = promisify(fs.readFile);
 
 const DEFAULT_README_PATH = path.join(__dirname, ".github", "README.md");
@@ -48,6 +49,7 @@ const COMMENT_PATTERNS = {
   ".vue": [/<!--[\s\S]*?-->/g, /\/\/.*$/m, /\/\*[\s\S]*?\*\//g],
   ".php": [/\/\/.*$/m, /\/\*[\s\S]*?\*\//g, /#.*$/m],
   ".css": [/\/\*[\s\S]*?\*\//g],
+  ".gitignore": [/#.*$/m],
 };
 
 // Format number to human readable format (e.g. 1000 -> 1k)
@@ -71,9 +73,13 @@ function printUsage() {
       "Usage: node count.js [targetDir] [options]",
       "",
       "Options:",
-      "  --update-readme          Update the default README with the latest counts.",
+      "  --update-readme          Update the default README with the latest counts (default).",
       "  --readme <path>          Update the specified README file.",
       "  --no-readme              Do not update a README file (overrides other options).",
+      "  --use-git                Only count files tracked by git (default).",
+      "  --no-git                 Don't use git, traverse filesystem instead.",
+      "  --use-gitignore          Use .gitignore patterns when not using git.",
+      "  --no-gitignore           Don't use .gitignore patterns.",
       "  -h, --help               Show this help message.",
     ].join("\n")
   );
@@ -82,7 +88,9 @@ function printUsage() {
 function parseArguments(argv) {
   const args = [...argv];
   let targetDir = process.cwd();
-  let readmePath = null;
+  let readmePath = DEFAULT_README_PATH; // Default to updating README
+  let useGit = true; // Default to using git
+  let useGitignore = false; // Git handles ignore patterns
 
   if (args.length > 0 && !args[0].startsWith("-")) {
     targetDir = path.resolve(args.shift());
@@ -111,6 +119,18 @@ function parseArguments(argv) {
       case "--no-readme":
         readmePath = null;
         break;
+      case "--use-git":
+        useGit = true;
+        break;
+      case "--no-git":
+        useGit = false;
+        break;
+      case "--no-gitignore":
+        useGitignore = false;
+        break;
+      case "--use-gitignore":
+        useGitignore = true;
+        break;
       case "--help":
       case "-h":
         printUsage();
@@ -124,6 +144,8 @@ function parseArguments(argv) {
     targetDir,
     readmePath,
     shouldUpdateReadme: Boolean(readmePath),
+    useGit,
+    useGitignore,
   };
 }
 
@@ -206,6 +228,137 @@ function updateReadmeWithResults(
   return true;
 }
 
+// Parse .gitignore patterns
+function parseGitignore(gitignorePath, baseDir) {
+  if (!fs.existsSync(gitignorePath)) {
+    return [];
+  }
+
+  const content = fs.readFileSync(gitignorePath, "utf8");
+  const patterns = [];
+  const lines = content.split("\n");
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Skip empty lines and comments
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    // Convert pattern to regex
+    let pattern = trimmed;
+    const isNegation = pattern.startsWith("!");
+    if (isNegation) {
+      pattern = pattern.substring(1);
+    }
+
+    // Handle directory patterns (ending with /)
+    const isDirectory = pattern.endsWith("/");
+    if (isDirectory) {
+      pattern = pattern.slice(0, -1);
+    }
+
+    // Convert glob patterns to regex
+    let regexPattern = pattern
+      .replace(/\./g, "\\.")
+      .replace(/\*\*/g, ".*")
+      .replace(/\*/g, "[^/]*")
+      .replace(/\?/g, ".");
+
+    // If pattern doesn't start with /, it matches anywhere
+    if (!pattern.startsWith("/")) {
+      regexPattern = `.*${regexPattern}`;
+    } else {
+      regexPattern = regexPattern.substring(1);
+    }
+
+    // Add directory match if needed
+    if (isDirectory) {
+      regexPattern = `${regexPattern}.*`;
+    }
+
+    patterns.push({
+      pattern: new RegExp(`^${regexPattern}`),
+      isNegation,
+      baseDir,
+    });
+  }
+
+  return patterns;
+}
+
+// Collect all .gitignore files
+function collectGitignoreFiles(dir, gitignoreFiles = [], baseDir = null) {
+  if (!baseDir) {
+    baseDir = dir;
+  }
+
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    const gitignorePath = path.join(dir, ".gitignore");
+
+    if (fs.existsSync(gitignorePath)) {
+      gitignoreFiles.push(gitignorePath);
+    }
+
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const fullPath = path.join(dir, entry.name);
+        // Skip excluded directories
+        if (
+          EXCLUDED_DIRS.some((excluded) =>
+            entry.name.toLowerCase().includes(excluded.toLowerCase())
+          )
+        ) {
+          continue;
+        }
+        collectGitignoreFiles(fullPath, gitignoreFiles, baseDir);
+      }
+    }
+  } catch (error) {
+    // Ignore errors (e.g., permission denied)
+  }
+
+  return gitignoreFiles;
+}
+
+// Check if a path should be ignored based on .gitignore patterns
+function shouldIgnore(filePath, gitignorePatterns, baseDir) {
+  const relativePath = path.relative(baseDir, filePath).replace(/\\/g, "/");
+
+  // Check patterns in order (later patterns override earlier ones)
+  let ignored = false;
+  for (const { pattern, isNegation } of gitignorePatterns) {
+    if (pattern.test(relativePath) || pattern.test(`/${relativePath}`)) {
+      if (isNegation) {
+        ignored = false;
+      } else {
+        ignored = true;
+      }
+    }
+  }
+
+  return ignored;
+}
+
+// Get git-tracked files
+function getGitTrackedFiles(targetDir) {
+  try {
+    const output = execSync("git ls-files", {
+      cwd: targetDir,
+      encoding: "utf8",
+    });
+    return new Set(
+      output
+        .split("\n")
+        .filter((line) => line.trim())
+        .map((line) => path.resolve(targetDir, line))
+    );
+  } catch (error) {
+    return null;
+  }
+}
+
 async function countLinesInFile(filePath) {
   try {
     let content = await readFileAsync(filePath, "utf8");
@@ -227,7 +380,17 @@ async function countLinesInFile(filePath) {
   }
 }
 
-async function traverseDirectory(dir, results = {}) {
+async function traverseDirectory(
+  dir,
+  results = {},
+  gitignorePatterns = [],
+  baseDir = null,
+  gitTrackedFiles = null
+) {
+  if (!baseDir) {
+    baseDir = dir;
+  }
+
   try {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
 
@@ -243,9 +406,38 @@ async function traverseDirectory(dir, results = {}) {
         ) {
           continue;
         }
-        await traverseDirectory(fullPath, results);
+
+        // Check if directory should be ignored
+        if (
+          gitignorePatterns.length > 0 &&
+          shouldIgnore(fullPath, gitignorePatterns, baseDir)
+        ) {
+          continue;
+        }
+
+        await traverseDirectory(
+          fullPath,
+          results,
+          gitignorePatterns,
+          baseDir,
+          gitTrackedFiles
+        );
       } else if (entry.isFile()) {
+        // Skip if using git and file is not tracked
+        if (gitTrackedFiles !== null && !gitTrackedFiles.has(fullPath)) {
+          continue;
+        }
+
+        // Check if file should be ignored
+        if (
+          gitignorePatterns.length > 0 &&
+          shouldIgnore(fullPath, gitignorePatterns, baseDir)
+        ) {
+          continue;
+        }
+
         const ext = path.extname(entry.name).toLowerCase();
+
         if (VALID_EXTENSIONS.includes(ext)) {
           const lineCount = await countLinesInFile(fullPath);
           if (!results[ext]) {
@@ -273,7 +465,13 @@ async function main() {
     process.exit(1);
   }
 
-  const { targetDir, readmePath, shouldUpdateReadme } = parsedArgs;
+  const {
+    targetDir,
+    readmePath,
+    shouldUpdateReadme,
+    useGit,
+    useGitignore,
+  } = parsedArgs;
 
   let countings = "";
 
@@ -282,7 +480,33 @@ async function main() {
   countings += `Excluding directories: ${EXCLUDED_DIRS.join(", ")} \n`;
   countings += "Excluding also comments and empty lines \n";
 
-  const results = await traverseDirectory(targetDir);
+  // Collect gitignore patterns
+  let gitignorePatterns = [];
+  let gitTrackedFiles = null;
+
+  if (useGit) {
+    countings += "Using git-tracked files only \n";
+    gitTrackedFiles = getGitTrackedFiles(targetDir);
+    if (!gitTrackedFiles) {
+      console.warn("Warning: Not a git repository or git not available. Falling back to file system traversal.");
+    }
+  } else if (useGitignore) {
+    countings += "Respecting .gitignore patterns \n";
+    const gitignoreFiles = collectGitignoreFiles(targetDir);
+    for (const gitignoreFile of gitignoreFiles) {
+      const gitignoreDir = path.dirname(gitignoreFile);
+      const patterns = parseGitignore(gitignoreFile, targetDir);
+      gitignorePatterns.push(...patterns);
+    }
+  }
+
+  const results = await traverseDirectory(
+    targetDir,
+    {},
+    gitignorePatterns,
+    targetDir,
+    gitTrackedFiles
+  );
 
   countings += "\nResults:\n";
   countings += "-".repeat(50) + "\n";
