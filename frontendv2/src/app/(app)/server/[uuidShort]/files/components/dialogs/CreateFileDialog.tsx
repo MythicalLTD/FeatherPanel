@@ -52,6 +52,7 @@ import {
 } from '@/components/ui/dialog';
 import { filesApi } from '@/lib/files-api';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { Textarea } from '@/components/featherui/Textarea';
 
 interface CreateFileDialogProps {
     open: boolean;
@@ -107,8 +108,8 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
                     <div className='space-y-2'>
                         <label className='text-sm font-medium'>{t('files.dialogs.create_file.content_label')}</label>
                         {/* Fallback to textarea usually implies standard HTML textarea styled with Tailwind */}
-                        <textarea
-                            className='flex min-h-[150px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
+                        <Textarea
+                            className='flex min-h-[150px] w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
                             placeholder={t('files.dialogs.create_file.content_placeholder')}
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
