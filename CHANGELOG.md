@@ -11,6 +11,10 @@
 
 - Introduced a completely redesigned and modernized frontend architecture. by @nayskutzu
 
+### Fixed
+
+- Implement route name validation in admin rate limits API, enhancing error handling for invalid requests. Enable debug mode across various files for improved troubleshooting during development. by @nayskutzu
+
 ### Updated
 
 - Upgraded the primary database engine to MariaDB 12. by @nayskutzu

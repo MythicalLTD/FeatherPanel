@@ -20,6 +20,7 @@ use App\Permissions;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\Admin\RateLimitController;
 use Symfony\Component\Routing\RouteCollection;
+use App\Helpers\ApiResponse;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
@@ -37,7 +38,11 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-rate-limits-show',
         '/api/admin/rate-limits/{routeName}',
-        function (Request $request, string $routeName) {
+        function (Request $request, array $args) {
+            $routeName = $args['routeName'] ?? null;
+            if (!$routeName || !is_string($routeName)) {
+                return ApiResponse::error('Missing or invalid route name', 'INVALID_ROUTE_NAME', 400);
+            }
             return (new RateLimitController())->show($request, $routeName);
         },
         Permissions::ADMIN_SETTINGS_VIEW,
@@ -48,7 +53,11 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-rate-limits-update',
         '/api/admin/rate-limits/{routeName}',
-        function (Request $request, string $routeName) {
+        function (Request $request, array $args) {
+            $routeName = $args['routeName'] ?? null;
+            if (!$routeName || !is_string($routeName)) {
+                return ApiResponse::error('Missing or invalid route name', 'INVALID_ROUTE_NAME', 400);
+            }
             return (new RateLimitController())->update($request, $routeName);
         },
         Permissions::ADMIN_SETTINGS_EDIT,
@@ -59,7 +68,11 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-rate-limits-delete',
         '/api/admin/rate-limits/{routeName}',
-        function (Request $request, string $routeName) {
+        function (Request $request, array $args) {
+            $routeName = $args['routeName'] ?? null;
+            if (!$routeName || !is_string($routeName)) {
+                return ApiResponse::error('Missing or invalid route name', 'INVALID_ROUTE_NAME', 400);
+            }
             return (new RateLimitController())->delete($request, $routeName);
         },
         Permissions::ADMIN_SETTINGS_EDIT,
