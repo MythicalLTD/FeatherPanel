@@ -101,6 +101,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 import SystemHealthCheck from '@/components/SystemHealthCheck';
+import PluginAssets from '@/components/common/PluginAssets';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -150,6 +151,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         <TranslationProvider>
                             <SessionProvider>
                                 <NotificationProvider>
+                                    <PluginAssets />
                                     <SystemHealthCheck />
                                     <AppContent>{children}</AppContent>
                                     <Toaster richColors position='top-right' />

@@ -27,6 +27,7 @@ SOFTWARE.
 import '@/app/(app)/globals.css';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Toaster } from 'sonner';
+import PluginAssets from '@/components/common/PluginAssets';
 
 export default function DocsRootLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -60,6 +61,7 @@ export default function DocsRootLayout({ children }: { children: React.ReactNode
             </head>
             <body className='bg-background text-foreground' suppressHydrationWarning>
                 <ThemeProvider>
+                    <PluginAssets />
                     {children}
                     <Toaster richColors position='top-right' />
                 </ThemeProvider>
