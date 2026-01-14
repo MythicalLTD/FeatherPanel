@@ -88,6 +88,12 @@
 			"login": "Login",
 			"dashboard": "Dashboard"
 		},
+		"plugin": {
+			"not_found": "Plugin page not found",
+			"spell_restriction": "This plugin is restricted to specific server types and cannot be accessed on this server.",
+			"load_failed": "This page could not be loaded or doesn't exist.",
+			"return_to_console": "Return to Server Console"
+		},
 		"500": {
 			"title": "Something Went Wrong",
 			"message": "We encountered an unexpected error. Don't worry, our team has been notified and we're working on it.",

@@ -43,9 +43,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { RefreshCw, AlertTriangle } from 'lucide-react';
+import { RefreshCw, AlertTriangle, ArrowLeft, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn, isEnabled } from '@/lib/utils';
 import type { PluginSidebarItem } from '@/types/navigation';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
@@ -149,7 +151,7 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                         ) {
                             // Check if server's spell_id is in the allowed list
                             if (!matchingItem.allowedOnlyOnSpells.includes(serverSpellId)) {
-                                setError('This plugin is not available for this server type');
+                                setError(t('errors.plugin.spell_restriction'));
                                 setLoading(false);
                                 return;
                             }
@@ -171,11 +173,11 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
 
                     setIframeSrc(componentUrl);
                 } else {
-                    setError('Plugin page not found');
+                    setError(t('errors.plugin.not_found'));
                 }
             } catch (err) {
                 console.error('Error processing plugin data:', err);
-                setError('Failed to load plugin information');
+                setError(t('errors.plugin.load_failed'));
             } finally {
                 setLoading(false);
             }
@@ -256,23 +258,60 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
     }
 
     if (error) {
-        const isSpellRestriction = error.includes('not available for this server type');
+        const isSpellRestriction = error.includes('not available for this server type') || error === t('errors.plugin.spell_restriction');
+        const isPluginNotFound = error === t('errors.plugin.not_found') || error === 'Plugin page not found';
+        
+        // If plugin page not found, show inline 404 message
+        if (isPluginNotFound) {
+            return (
+                <div className='flex flex-col items-center justify-center min-h-[60vh] text-center p-8'>
+                    <div className='relative mb-8'>
+                        <h1 className='text-9xl md:text-[12rem] font-black bg-linear-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent leading-none'>
+                            404
+                        </h1>
+                        <div className='absolute inset-0 flex items-center justify-center'>
+                            <div className='text-6xl md:text-7xl opacity-10'>🔍</div>
+                        </div>
+                    </div>
+                    <div className='space-y-4 max-w-md'>
+                        <h2 className='text-2xl md:text-3xl font-bold tracking-tight'>
+                            {t('errors.404.title')}
+                        </h2>
+                        <p className='text-muted-foreground'>{t('errors.404.message')}</p>
+                        <div className='flex flex-col sm:flex-row gap-3 justify-center pt-4'>
+                            <Button onClick={() => router.back()} variant='outline' className='group'>
+                                <ArrowLeft className='h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform' />
+                                {t('errors.404.go_back')}
+                            </Button>
+                            <Link href='/dashboard'>
+                                <Button className='w-full sm:w-auto group'>
+                                    <Home className='h-4 w-4 mr-2' />
+                                    {t('errors.404.go_home')}
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        // For other errors (like spell restrictions), show custom error UI
         return (
             <div className='flex flex-col items-center justify-center h-[50vh] text-center p-4'>
                 <AlertTriangle className='h-12 w-12 text-destructive mb-4' />
                 <h3 className='text-xl font-bold mb-2'>{error}</h3>
                 <p className='text-muted-foreground mb-4'>
                     {isSpellRestriction
-                        ? 'This plugin is restricted to specific server types and cannot be accessed on this server.'
-                        : 'This page could not be loaded or doesn&apos;t exist.'}
+                        ? t('errors.plugin.spell_restriction')
+                        : t('errors.plugin.load_failed')}
                 </p>
                 {isSpellRestriction && serverUuid && (
-                    <button
+                    <Button
                         onClick={() => router.push(`/server/${serverUuid}`)}
                         className='px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors'
                     >
-                        Return to Server Console
-                    </button>
+                        {t('errors.plugin.return_to_console')}
+                    </Button>
                 )}
             </div>
         );
