@@ -33,15 +33,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const widgetData = {
-    slug: 'dashboard-tickets-create',
+    slug: 'admin-feathercloud-translations',
     files: [
   {
     "name": "page.tsx",
-    "path": "src/app/(app)/dashboard/tickets/create/page.tsx"
+    "path": "src/app/(app)/admin/feathercloud/translations/page.tsx"
   }
 ],
     injectionPoints: [
   "after-header",
+  "before-content",
   "bottom-of-page",
   "top-of-page"
 ]
@@ -156,7 +157,7 @@ export default function WidgetDetailPage() {
   "component": "my-widget.html",
   "enabled": true,
   "priority": 100,
-  "page": "dashboard-tickets-create",
+  "page": "admin-feathercloud-translations",
   "location": "after-header",
   "size": "full"
 }`}

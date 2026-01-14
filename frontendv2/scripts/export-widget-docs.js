@@ -155,7 +155,7 @@ SOFTWARE.
 'use client';
 
 import Link from 'next/link';
-import { Code2, Puzzle, BookOpen, ExternalLink } from 'lucide-react';
+import { Code2, Puzzle, BookOpen, ExternalLink, Shield, Zap } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -175,7 +175,7 @@ export default function DocsPage() {
                     </p>
                 </div>
 
-                <div className='grid md:grid-cols-2 gap-6 mb-12'>
+                <div className='grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12'>
                     <Link href='/icanhasfeatherpanel/widgets' className='group block'>
                         <Card className='h-full transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/60 cursor-pointer border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80'>
                             <CardHeader>
@@ -219,6 +219,50 @@ export default function DocsPage() {
                             <CardContent>
                                 <div className='flex items-center gap-2 text-primary font-semibold group-hover:gap-3 transition-all'>
                                     <span>View API Docs</span>
+                                    <ExternalLink className='w-4 h-4 group-hover:translate-x-1 transition-transform' />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Link>
+
+                    <Link href='/icanhasfeatherpanel/permissions' className='group block'>
+                        <Card className='h-full transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/60 cursor-pointer border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80'>
+                            <CardHeader>
+                                <div className='flex items-center gap-3 mb-2'>
+                                    <div className='p-3 rounded-xl bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors backdrop-blur-sm'>
+                                        <Shield className='w-7 h-7 text-primary' />
+                                    </div>
+                                    <CardTitle className='text-2xl text-foreground'>Permissions</CardTitle>
+                                </div>
+                                <CardDescription className='text-base text-muted-foreground'>
+                                    Complete reference of all permission nodes available in FeatherPanel for role-based access control
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className='flex items-center gap-2 text-primary font-semibold group-hover:gap-3 transition-all'>
+                                    <span>View Permissions</span>
+                                    <ExternalLink className='w-4 h-4 group-hover:translate-x-1 transition-transform' />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Link>
+
+                    <Link href='/icanhasfeatherpanel/events' className='group block'>
+                        <Card className='h-full transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/60 cursor-pointer border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80'>
+                            <CardHeader>
+                                <div className='flex items-center gap-3 mb-2'>
+                                    <div className='p-3 rounded-xl bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors backdrop-blur-sm'>
+                                        <Zap className='w-7 h-7 text-primary' />
+                                    </div>
+                                    <CardTitle className='text-2xl text-foreground'>Events</CardTitle>
+                                </div>
+                                <CardDescription className='text-base text-muted-foreground'>
+                                    Complete reference of all plugin events and hooks available in FeatherPanel for extending functionality
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className='flex items-center gap-2 text-primary font-semibold group-hover:gap-3 transition-all'>
+                                    <span>View Events</span>
                                     <ExternalLink className='w-4 h-4 group-hover:translate-x-1 transition-transform' />
                                 </div>
                             </CardContent>

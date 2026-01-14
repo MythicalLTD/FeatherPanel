@@ -33,103 +33,109 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const categoryData = {
-    name: 'Databases',
+    name: "Databases",
     events: [
-        {
-            method: 'onDatabaseConnectionError',
-            name: 'featherpanel:admin:databases:database:connection:error',
-            callback: 'int database id, string error message.',
-            category: 'Databases',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseConnectionError(), function ($id, $message) {\n        // Handle featherpanel:admin:databases:database:connection:error\n        // Parameters: int database id, string error message.\n    });\n}',
-        },
-        {
-            method: 'onDatabaseConnectionTested',
-            name: 'featherpanel:admin:databases:connection:tested',
-            callback: 'array connection data, array test results.',
-            category: 'Databases',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseConnectionTested(), function ($data, $results) {\n        // Handle featherpanel:admin:databases:connection:tested\n        // Parameters: array connection data, array test results.\n    });\n}',
-        },
-        {
-            method: 'onDatabaseCreated',
-            name: 'featherpanel:admin:databases:database:created',
-            callback: 'array database data.',
-            category: 'Databases',
-            actualData: ['created_by', 'database_data', 'database_id'],
-            sourceFiles: ['backend/app/Controllers/Admin/DatabasesController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseCreated(), function ($createdBy, $databaseData, $databaseId) {\n        // Handle featherpanel:admin:databases:database:created\n        // Data keys: created_by, database_data, database_id\n    });\n}',
-        },
-        {
-            method: 'onDatabaseDeleted',
-            name: 'featherpanel:admin:databases:database:deleted',
-            callback: 'int database id, array database data.',
-            category: 'Databases',
-            actualData: ['database', 'deleted_by'],
-            sourceFiles: ['backend/app/Controllers/Admin/DatabasesController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseDeleted(), function ($database, $deletedBy) {\n        // Handle featherpanel:admin:databases:database:deleted\n        // Data keys: database, deleted_by\n    });\n}',
-        },
-        {
-            method: 'onDatabaseHealthChecked',
-            name: 'featherpanel:admin:databases:database:health:checked',
-            callback: 'int database id, array health data.',
-            category: 'Databases',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseHealthChecked(), function ($id, $data) {\n        // Handle featherpanel:admin:databases:database:health:checked\n        // Parameters: int database id, array health data.\n    });\n}',
-        },
-        {
-            method: 'onDatabaseNotFound',
-            name: 'featherpanel:admin:databases:database:not:found',
-            callback: 'int database id, string error message.',
-            category: 'Databases',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseNotFound(), function ($id, $message) {\n        // Handle featherpanel:admin:databases:database:not:found\n        // Parameters: int database id, string error message.\n    });\n}',
-        },
-        {
-            method: 'onDatabaseRetrieved',
-            name: 'featherpanel:admin:databases:database:retrieved',
-            callback: 'int database id, array database data.',
-            category: 'Databases',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseRetrieved(), function ($id, $data) {\n        // Handle featherpanel:admin:databases:database:retrieved\n        // Parameters: int database id, array database data.\n    });\n}',
-        },
-        {
-            method: 'onDatabasesByNodeRetrieved',
-            name: 'featherpanel:admin:databases:by:node:retrieved',
-            callback: 'int node id, array databases.',
-            category: 'Databases',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabasesByNodeRetrieved(), function ($id, $databases) {\n        // Handle featherpanel:admin:databases:by:node:retrieved\n        // Parameters: int node id, array databases.\n    });\n}',
-        },
-        {
-            method: 'onDatabasesError',
-            name: 'featherpanel:admin:databases:error',
-            callback: 'string error message, array context.',
-            category: 'Databases',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabasesError(), function ($message, $context) {\n        // Handle featherpanel:admin:databases:error\n        // Parameters: string error message, array context.\n    });\n}',
-        },
-        {
-            method: 'onDatabasesRetrieved',
-            name: 'featherpanel:admin:databases:retrieved',
-            callback: 'array databases list.',
-            category: 'Databases',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabasesRetrieved(), function ($list) {\n        // Handle featherpanel:admin:databases:retrieved\n        // Parameters: array databases list.\n    });\n}',
-        },
-        {
-            method: 'onDatabaseUpdated',
-            name: 'featherpanel:admin:databases:database:updated',
-            callback: 'int database id, array old data, array new data.',
-            category: 'Databases',
-            actualData: ['database', 'updated_by', 'updated_data'],
-            sourceFiles: ['backend/app/Controllers/Admin/DatabasesController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseUpdated(), function ($database, $updatedBy, $updatedData) {\n        // Handle featherpanel:admin:databases:database:updated\n        // Data keys: database, updated_by, updated_data\n    });\n}',
-        },
+  {
+    "method": "onDatabaseConnectionError",
+    "name": "featherpanel:admin:databases:database:connection:error",
+    "callback": "int database id, string error message.",
+    "category": "Databases",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseConnectionError(), function ($id, $message) {\n        // Handle featherpanel:admin:databases:database:connection:error\n        // Parameters: int database id, string error message.\n    });\n}"
+  },
+  {
+    "method": "onDatabaseConnectionTested",
+    "name": "featherpanel:admin:databases:connection:tested",
+    "callback": "array connection data, array test results.",
+    "category": "Databases",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseConnectionTested(), function ($data, $results) {\n        // Handle featherpanel:admin:databases:connection:tested\n        // Parameters: array connection data, array test results.\n    });\n}"
+  },
+  {
+    "method": "onDatabaseCreated",
+    "name": "featherpanel:admin:databases:database:created",
+    "callback": "array database data.",
+    "category": "Databases",
+    "actualData": [
+      "created_by",
+      "database_data",
+      "database_id"
     ],
+    "sourceFiles": [
+      "backend/app/Controllers/Admin/DatabasesController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseCreated(), function ($createdBy, $databaseData, $databaseId) {\n        // Handle featherpanel:admin:databases:database:created\n        // Data keys: created_by, database_data, database_id\n    });\n}"
+  },
+  {
+    "method": "onDatabaseDeleted",
+    "name": "featherpanel:admin:databases:database:deleted",
+    "callback": "int database id, array database data.",
+    "category": "Databases",
+    "actualData": [
+      "database",
+      "deleted_by"
+    ],
+    "sourceFiles": [
+      "backend/app/Controllers/Admin/DatabasesController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseDeleted(), function ($database, $deletedBy) {\n        // Handle featherpanel:admin:databases:database:deleted\n        // Data keys: database, deleted_by\n    });\n}"
+  },
+  {
+    "method": "onDatabaseHealthChecked",
+    "name": "featherpanel:admin:databases:database:health:checked",
+    "callback": "int database id, array health data.",
+    "category": "Databases",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseHealthChecked(), function ($id, $data) {\n        // Handle featherpanel:admin:databases:database:health:checked\n        // Parameters: int database id, array health data.\n    });\n}"
+  },
+  {
+    "method": "onDatabaseNotFound",
+    "name": "featherpanel:admin:databases:database:not:found",
+    "callback": "int database id, string error message.",
+    "category": "Databases",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseNotFound(), function ($id, $message) {\n        // Handle featherpanel:admin:databases:database:not:found\n        // Parameters: int database id, string error message.\n    });\n}"
+  },
+  {
+    "method": "onDatabaseRetrieved",
+    "name": "featherpanel:admin:databases:database:retrieved",
+    "callback": "int database id, array database data.",
+    "category": "Databases",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseRetrieved(), function ($id, $data) {\n        // Handle featherpanel:admin:databases:database:retrieved\n        // Parameters: int database id, array database data.\n    });\n}"
+  },
+  {
+    "method": "onDatabasesByNodeRetrieved",
+    "name": "featherpanel:admin:databases:by:node:retrieved",
+    "callback": "int node id, array databases.",
+    "category": "Databases",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabasesByNodeRetrieved(), function ($id, $databases) {\n        // Handle featherpanel:admin:databases:by:node:retrieved\n        // Parameters: int node id, array databases.\n    });\n}"
+  },
+  {
+    "method": "onDatabasesError",
+    "name": "featherpanel:admin:databases:error",
+    "callback": "string error message, array context.",
+    "category": "Databases",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabasesError(), function ($message, $context) {\n        // Handle featherpanel:admin:databases:error\n        // Parameters: string error message, array context.\n    });\n}"
+  },
+  {
+    "method": "onDatabasesRetrieved",
+    "name": "featherpanel:admin:databases:retrieved",
+    "callback": "array databases list.",
+    "category": "Databases",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabasesRetrieved(), function ($list) {\n        // Handle featherpanel:admin:databases:retrieved\n        // Parameters: array databases list.\n    });\n}"
+  },
+  {
+    "method": "onDatabaseUpdated",
+    "name": "featherpanel:admin:databases:database:updated",
+    "callback": "int database id, array old data, array new data.",
+    "category": "Databases",
+    "actualData": [
+      "database",
+      "updated_by",
+      "updated_data"
+    ],
+    "sourceFiles": [
+      "backend/app/Controllers/Admin/DatabasesController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\DatabasesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(DatabasesEvent::onDatabaseUpdated(), function ($database, $updatedBy, $updatedData) {\n        // Handle featherpanel:admin:databases:database:updated\n        // Data keys: database, updated_by, updated_data\n    });\n}"
+  }
+]
 };
 
 export default function CategoryEventsPage() {
@@ -139,7 +145,7 @@ export default function CategoryEventsPage() {
         // Replace escaped newlines with actual newlines
         return str.replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
     };
-
+    
     return (
         <div className='min-h-screen bg-background'>
             <div className='container mx-auto px-4 py-16 max-w-6xl'>
@@ -160,8 +166,7 @@ export default function CategoryEventsPage() {
                                 {categoryData.name}
                             </h1>
                             <p className='text-muted-foreground mt-1'>
-                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this
-                                category
+                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this category
                             </p>
                         </div>
                     </div>
@@ -169,10 +174,7 @@ export default function CategoryEventsPage() {
 
                 <div className='space-y-4'>
                     {categoryData.events.map((event) => (
-                        <Card
-                            key={event.name}
-                            className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'
-                        >
+                        <Card key={event.name} className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'>
                             <CardHeader>
                                 <div className='flex items-start justify-between gap-4 flex-wrap'>
                                     <div className='flex-1 min-w-0'>
@@ -186,10 +188,7 @@ export default function CategoryEventsPage() {
                                             <span className='font-semibold'>Callback parameters:</span> {event.callback}
                                         </CardDescription>
                                     </div>
-                                    <Badge
-                                        variant='outline'
-                                        className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'
-                                    >
+                                    <Badge variant='outline' className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'>
                                         {event.method}
                                     </Badge>
                                 </div>
@@ -197,17 +196,15 @@ export default function CategoryEventsPage() {
                             <CardContent className='space-y-4'>
                                 {event.actualData && event.actualData.length > 0 && (
                                     <div className='p-4 rounded-lg bg-muted/30 border border-border/50 backdrop-blur-sm'>
-                                        <h4 className='text-sm font-semibold text-foreground mb-2'>
-                                            Event Data Structure
-                                        </h4>
+                                        <h4 className='text-sm font-semibold text-foreground mb-2'>Event Data Structure</h4>
                                         <p className='text-xs text-muted-foreground mb-3'>
                                             This event receives the following data when emitted:
                                         </p>
                                         <div className='flex flex-wrap gap-2'>
                                             {event.actualData.map((key) => (
-                                                <Badge
-                                                    key={key}
-                                                    variant='outline'
+                                                <Badge 
+                                                    key={key} 
+                                                    variant='outline' 
                                                     className='text-xs font-mono bg-muted/50 border-border/50 text-foreground/80'
                                                 >
                                                     {key}
@@ -219,17 +216,13 @@ export default function CategoryEventsPage() {
                                                 <p className='text-xs text-muted-foreground mb-1'>Emitted from:</p>
                                                 <div className='space-y-1'>
                                                     {event.sourceFiles.slice(0, 2).map((file) => (
-                                                        <code
-                                                            key={file}
-                                                            className='text-xs text-muted-foreground block truncate'
-                                                        >
+                                                        <code key={file} className='text-xs text-muted-foreground block truncate'>
                                                             {file}
                                                         </code>
                                                     ))}
                                                     {event.sourceFiles.length > 2 && (
                                                         <p className='text-xs text-muted-foreground italic'>
-                                                            +{event.sourceFiles.length - 2} more location
-                                                            {event.sourceFiles.length - 2 !== 1 ? 's' : ''}
+                                                            +{event.sourceFiles.length - 2} more location{event.sourceFiles.length - 2 !== 1 ? 's' : ''}
                                                         </p>
                                                     )}
                                                 </div>
@@ -241,7 +234,7 @@ export default function CategoryEventsPage() {
                                     <h4 className='text-sm font-semibold text-foreground mb-2'>Usage Example</h4>
                                     <pre className='p-3 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto'>
                                         <code className='text-xs font-mono text-foreground'>
-                                            {unescapeCode(event.exampleCode)}
+{unescapeCode(event.exampleCode)}
                                         </code>
                                     </pre>
                                 </div>

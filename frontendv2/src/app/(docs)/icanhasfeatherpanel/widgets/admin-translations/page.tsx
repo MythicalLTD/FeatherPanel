@@ -33,11 +33,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const widgetData = {
-    slug: 'dashboard-tickets-create',
+    slug: 'admin-translations',
     files: [
   {
     "name": "page.tsx",
-    "path": "src/app/(app)/dashboard/tickets/create/page.tsx"
+    "path": "src/app/(app)/admin/translations/page.tsx"
   }
 ],
     injectionPoints: [
@@ -156,7 +156,7 @@ export default function WidgetDetailPage() {
   "component": "my-widget.html",
   "enabled": true,
   "priority": 100,
-  "page": "dashboard-tickets-create",
+  "page": "admin-translations",
   "location": "after-header",
   "size": "full"
 }`}

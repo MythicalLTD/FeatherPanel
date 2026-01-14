@@ -32,37 +32,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 
 const categories = [
-    'Admin API',
-    'Admin Allocations',
-    'Admin Dashboard View',
-    'Admin Database Snapshots',
-    'Admin Databases',
-    'Admin Email Templates',
-    'Admin FeatherZeroTrust',
-    'Admin Images',
-    'Admin Knowledgebase Articles',
-    'Admin Knowledgebase Categories',
-    'Admin Locations',
-    'Admin Nodes',
-    'Admin Notifications',
-    'Admin Plugins',
-    'Admin Realms',
-    'Admin Redirect Links',
-    'Admin Role Permissions',
-    'Admin Roles',
-    'Admin Root',
-    'Admin Servers',
-    'Admin Settings',
-    'Admin Spells',
-    'Admin Statistics',
-    'Admin Subdomains',
-    'Admin Ticket Attachments',
-    'Admin Ticket Categories',
-    'Admin Ticket Messages',
-    'Admin Ticket Priorities',
-    'Admin Ticket Statuses',
-    'Admin Tickets',
-    'Admin Users',
+  "Admin API",
+  "Admin Allocations",
+  "Admin Dashboard View",
+  "Admin Database Snapshots",
+  "Admin Databases",
+  "Admin Email Templates",
+  "Admin FeatherZeroTrust",
+  "Admin Images",
+  "Admin Knowledgebase Articles",
+  "Admin Knowledgebase Categories",
+  "Admin Locations",
+  "Admin Nodes",
+  "Admin Notifications",
+  "Admin Plugins",
+  "Admin Realms",
+  "Admin Redirect Links",
+  "Admin Role Permissions",
+  "Admin Roles",
+  "Admin Root",
+  "Admin Servers",
+  "Admin Settings",
+  "Admin Spells",
+  "Admin Statistics",
+  "Admin Subdomains",
+  "Admin Ticket Attachments",
+  "Admin Ticket Categories",
+  "Admin Ticket Messages",
+  "Admin Ticket Priorities",
+  "Admin Ticket Statuses",
+  "Admin Tickets",
+  "Admin Users"
 ];
 
 export default function PermissionsPage() {
@@ -77,14 +77,10 @@ export default function PermissionsPage() {
                         Permission Nodes
                     </h1>
                     <p className='text-xl text-muted-foreground max-w-2xl mx-auto'>
-                        Complete reference of all permission nodes available in FeatherPanel for role-based access
-                        control
+                        Complete reference of all permission nodes available in FeatherPanel for role-based access control
                     </p>
                     <div className='flex items-center justify-center gap-4 pt-2'>
-                        <Badge
-                            variant='secondary'
-                            className='text-sm px-4 py-1.5 font-semibold bg-card border border-border/50'
-                        >
+                        <Badge variant='secondary' className='text-sm px-4 py-1.5 font-semibold bg-card border border-border/50'>
                             31 Categories
                         </Badge>
                         <Badge variant='outline' className='text-sm px-4 py-1.5 font-semibold bg-card border-border/50'>
@@ -95,16 +91,9 @@ export default function PermissionsPage() {
 
                 <div className='grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12'>
                     {categories.map((category) => {
-                        const sanitized = category
-                            .toLowerCase()
-                            .replace(/[^a-z0-9]+/g, '-')
-                            .replace(/^-+|-+$/g, '');
+                        const sanitized = category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                         return (
-                            <Link
-                                key={category}
-                                href={`/icanhasfeatherpanel/permissions/${sanitized}`}
-                                className='block'
-                            >
+                            <Link key={category} href={`/icanhasfeatherpanel/permissions/${sanitized}`} className='block'>
                                 <Card className='h-full transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/60 cursor-pointer border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 group'>
                                     <CardHeader className='pb-3'>
                                         <div className='flex items-center gap-3 mb-2'>
@@ -139,9 +128,8 @@ export default function PermissionsPage() {
                         <div className='space-y-2'>
                             <h3 className='font-semibold text-sm text-foreground'>Role-Based Access Control</h3>
                             <p className='text-sm text-muted-foreground'>
-                                FeatherPanel uses a role-based permission system where permissions are assigned to
-                                roles, and users are assigned roles. Each permission node controls access to specific
-                                features or actions.
+                                FeatherPanel uses a role-based permission system where permissions are assigned to roles, 
+                                and users are assigned roles. Each permission node controls access to specific features or actions.
                             </p>
                         </div>
                         <div className='space-y-2'>
@@ -151,17 +139,17 @@ export default function PermissionsPage() {
                             </p>
                             <pre className='p-3 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto backdrop-blur-sm'>
                                 <code className='text-xs font-mono text-foreground'>
-                                    admin.users.view admin.servers.create admin.settings.edit
+admin.users.view
+admin.servers.create
+admin.settings.edit
                                 </code>
                             </pre>
                         </div>
                         <div className='space-y-2'>
                             <h3 className='font-semibold text-sm text-foreground'>Root Permission</h3>
                             <p className='text-sm text-muted-foreground'>
-                                The{' '}
-                                <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>admin.root</code>{' '}
-                                permission grants full access to everything in the panel. Users with this permission
-                                bypass all other permission checks.
+                                The <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>admin.root</code> permission 
+                                grants full access to everything in the panel. Users with this permission bypass all other permission checks.
                             </p>
                         </div>
                     </CardContent>

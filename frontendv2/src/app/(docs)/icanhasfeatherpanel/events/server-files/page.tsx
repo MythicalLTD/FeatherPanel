@@ -33,77 +33,106 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const categoryData = {
-    name: 'ServerFiles',
+    name: "ServerFiles",
     events: [
-        {
-            method: 'onServerDirectoryCreated',
-            name: 'featherpanel:user:server:directory:created',
-            callback: 'string server uuid, string directory path.',
-            category: 'ServerFiles',
-            actualData: ['directory_path', 'server_uuid', 'user_uuid'],
-            sourceFiles: ['backend/app/Controllers/User/Server/Files/ServerFilesController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerDirectoryCreated(), function ($directoryPath, $serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:directory:created\n        // Data keys: directory_path, server_uuid, user_uuid\n    });\n}',
-        },
-        {
-            method: 'onServerFileRenamed',
-            name: 'featherpanel:user:server:file:renamed',
-            callback: 'string server uuid, string file path.',
-            category: 'ServerFiles',
-            actualData: ['files', 'root', 'server_uuid', 'user_uuid'],
-            sourceFiles: ['backend/app/Controllers/User/Server/Files/ServerFilesController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerFileRenamed(), function ($files, $root, $serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:file:renamed\n        // Data keys: files, root, server_uuid, user_uuid\n    });\n}',
-        },
-        {
-            method: 'onServerFileSaved',
-            name: 'featherpanel:user:server:file:saved',
-            callback: 'string server uuid, string file path, int size.',
-            category: 'ServerFiles',
-            actualData: ['file_path', 'server_uuid', 'user_uuid'],
-            sourceFiles: ['backend/app/Controllers/User/Server/Files/ServerFilesController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerFileSaved(), function ($filePath, $serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:file:saved\n        // Data keys: file_path, server_uuid, user_uuid\n    });\n}',
-        },
-        {
-            method: 'onServerFilesDeleted',
-            name: 'featherpanel:user:server:files:deleted',
-            callback: 'string server uuid, array files deleted.',
-            category: 'ServerFiles',
-            actualData: ['server_uuid', 'user_uuid'],
-            sourceFiles: ['backend/app/Controllers/User/Server/Files/ServerFilesController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerFilesDeleted(), function ($serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:files:deleted\n        // Data keys: server_uuid, user_uuid\n    });\n}',
-        },
-        {
-            method: 'onServerFilesError',
-            name: 'featherpanel:user:server:files:error',
-            callback: 'string error message, array context.',
-            category: 'ServerFiles',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerFilesError(), function ($message, $context) {\n        // Handle featherpanel:user:server:files:error\n        // Parameters: string error message, array context.\n    });\n}',
-        },
-        {
-            method: 'onServerFileUploaded',
-            name: 'featherpanel:user:server:file:uploaded',
-            callback: 'string server uuid, array file data.',
-            category: 'ServerFiles',
-            actualData: ['file_path', 'server_uuid', 'user_uuid'],
-            sourceFiles: ['backend/app/Controllers/User/Server/Files/ServerFilesController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerFileUploaded(), function ($filePath, $serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:file:uploaded\n        // Data keys: file_path, server_uuid, user_uuid\n    });\n}',
-        },
-        {
-            method: 'onServerPullProcessDeleted',
-            name: 'featherpanel:user:server:pull:deleted',
-            callback: 'string server uuid, string pull id.',
-            category: 'ServerFiles',
-            actualData: ['pull_id', 'server_uuid', 'user_uuid'],
-            sourceFiles: ['backend/app/Controllers/User/Server/Files/ServerFilesController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerPullProcessDeleted(), function ($pullId, $serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:pull:deleted\n        // Data keys: pull_id, server_uuid, user_uuid\n    });\n}',
-        },
+  {
+    "method": "onServerDirectoryCreated",
+    "name": "featherpanel:user:server:directory:created",
+    "callback": "string server uuid, string directory path.",
+    "category": "ServerFiles",
+    "actualData": [
+      "directory_path",
+      "server_uuid",
+      "user_uuid"
     ],
+    "sourceFiles": [
+      "backend/app/Controllers/User/Server/Files/ServerFilesController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerDirectoryCreated(), function ($directoryPath, $serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:directory:created\n        // Data keys: directory_path, server_uuid, user_uuid\n    });\n}"
+  },
+  {
+    "method": "onServerFileRenamed",
+    "name": "featherpanel:user:server:file:renamed",
+    "callback": "string server uuid, string file path.",
+    "category": "ServerFiles",
+    "actualData": [
+      "files",
+      "root",
+      "server_uuid",
+      "user_uuid"
+    ],
+    "sourceFiles": [
+      "backend/app/Controllers/User/Server/Files/ServerFilesController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerFileRenamed(), function ($files, $root, $serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:file:renamed\n        // Data keys: files, root, server_uuid, user_uuid\n    });\n}"
+  },
+  {
+    "method": "onServerFileSaved",
+    "name": "featherpanel:user:server:file:saved",
+    "callback": "string server uuid, string file path, int size.",
+    "category": "ServerFiles",
+    "actualData": [
+      "file_path",
+      "server_uuid",
+      "user_uuid"
+    ],
+    "sourceFiles": [
+      "backend/app/Controllers/User/Server/Files/ServerFilesController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerFileSaved(), function ($filePath, $serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:file:saved\n        // Data keys: file_path, server_uuid, user_uuid\n    });\n}"
+  },
+  {
+    "method": "onServerFilesDeleted",
+    "name": "featherpanel:user:server:files:deleted",
+    "callback": "string server uuid, array files deleted.",
+    "category": "ServerFiles",
+    "actualData": [
+      "server_uuid",
+      "user_uuid"
+    ],
+    "sourceFiles": [
+      "backend/app/Controllers/User/Server/Files/ServerFilesController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerFilesDeleted(), function ($serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:files:deleted\n        // Data keys: server_uuid, user_uuid\n    });\n}"
+  },
+  {
+    "method": "onServerFilesError",
+    "name": "featherpanel:user:server:files:error",
+    "callback": "string error message, array context.",
+    "category": "ServerFiles",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerFilesError(), function ($message, $context) {\n        // Handle featherpanel:user:server:files:error\n        // Parameters: string error message, array context.\n    });\n}"
+  },
+  {
+    "method": "onServerFileUploaded",
+    "name": "featherpanel:user:server:file:uploaded",
+    "callback": "string server uuid, array file data.",
+    "category": "ServerFiles",
+    "actualData": [
+      "file_path",
+      "server_uuid",
+      "user_uuid"
+    ],
+    "sourceFiles": [
+      "backend/app/Controllers/User/Server/Files/ServerFilesController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerFileUploaded(), function ($filePath, $serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:file:uploaded\n        // Data keys: file_path, server_uuid, user_uuid\n    });\n}"
+  },
+  {
+    "method": "onServerPullProcessDeleted",
+    "name": "featherpanel:user:server:pull:deleted",
+    "callback": "string server uuid, string pull id.",
+    "category": "ServerFiles",
+    "actualData": [
+      "pull_id",
+      "server_uuid",
+      "user_uuid"
+    ],
+    "sourceFiles": [
+      "backend/app/Controllers/User/Server/Files/ServerFilesController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\ServerFilesEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(ServerFilesEvent::onServerPullProcessDeleted(), function ($pullId, $serverUuid, $userUuid) {\n        // Handle featherpanel:user:server:pull:deleted\n        // Data keys: pull_id, server_uuid, user_uuid\n    });\n}"
+  }
+]
 };
 
 export default function CategoryEventsPage() {
@@ -113,7 +142,7 @@ export default function CategoryEventsPage() {
         // Replace escaped newlines with actual newlines
         return str.replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
     };
-
+    
     return (
         <div className='min-h-screen bg-background'>
             <div className='container mx-auto px-4 py-16 max-w-6xl'>
@@ -134,8 +163,7 @@ export default function CategoryEventsPage() {
                                 {categoryData.name}
                             </h1>
                             <p className='text-muted-foreground mt-1'>
-                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this
-                                category
+                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this category
                             </p>
                         </div>
                     </div>
@@ -143,10 +171,7 @@ export default function CategoryEventsPage() {
 
                 <div className='space-y-4'>
                     {categoryData.events.map((event) => (
-                        <Card
-                            key={event.name}
-                            className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'
-                        >
+                        <Card key={event.name} className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'>
                             <CardHeader>
                                 <div className='flex items-start justify-between gap-4 flex-wrap'>
                                     <div className='flex-1 min-w-0'>
@@ -160,10 +185,7 @@ export default function CategoryEventsPage() {
                                             <span className='font-semibold'>Callback parameters:</span> {event.callback}
                                         </CardDescription>
                                     </div>
-                                    <Badge
-                                        variant='outline'
-                                        className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'
-                                    >
+                                    <Badge variant='outline' className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'>
                                         {event.method}
                                     </Badge>
                                 </div>
@@ -171,17 +193,15 @@ export default function CategoryEventsPage() {
                             <CardContent className='space-y-4'>
                                 {event.actualData && event.actualData.length > 0 && (
                                     <div className='p-4 rounded-lg bg-muted/30 border border-border/50 backdrop-blur-sm'>
-                                        <h4 className='text-sm font-semibold text-foreground mb-2'>
-                                            Event Data Structure
-                                        </h4>
+                                        <h4 className='text-sm font-semibold text-foreground mb-2'>Event Data Structure</h4>
                                         <p className='text-xs text-muted-foreground mb-3'>
                                             This event receives the following data when emitted:
                                         </p>
                                         <div className='flex flex-wrap gap-2'>
                                             {event.actualData.map((key) => (
-                                                <Badge
-                                                    key={key}
-                                                    variant='outline'
+                                                <Badge 
+                                                    key={key} 
+                                                    variant='outline' 
                                                     className='text-xs font-mono bg-muted/50 border-border/50 text-foreground/80'
                                                 >
                                                     {key}
@@ -193,17 +213,13 @@ export default function CategoryEventsPage() {
                                                 <p className='text-xs text-muted-foreground mb-1'>Emitted from:</p>
                                                 <div className='space-y-1'>
                                                     {event.sourceFiles.slice(0, 2).map((file) => (
-                                                        <code
-                                                            key={file}
-                                                            className='text-xs text-muted-foreground block truncate'
-                                                        >
+                                                        <code key={file} className='text-xs text-muted-foreground block truncate'>
                                                             {file}
                                                         </code>
                                                     ))}
                                                     {event.sourceFiles.length > 2 && (
                                                         <p className='text-xs text-muted-foreground italic'>
-                                                            +{event.sourceFiles.length - 2} more location
-                                                            {event.sourceFiles.length - 2 !== 1 ? 's' : ''}
+                                                            +{event.sourceFiles.length - 2} more location{event.sourceFiles.length - 2 !== 1 ? 's' : ''}
                                                         </p>
                                                     )}
                                                 </div>
@@ -215,7 +231,7 @@ export default function CategoryEventsPage() {
                                     <h4 className='text-sm font-semibold text-foreground mb-2'>Usage Example</h4>
                                     <pre className='p-3 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto'>
                                         <code className='text-xs font-mono text-foreground'>
-                                            {unescapeCode(event.exampleCode)}
+{unescapeCode(event.exampleCode)}
                                         </code>
                                     </pre>
                                 </div>

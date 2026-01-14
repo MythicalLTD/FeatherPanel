@@ -33,100 +33,109 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const categoryData = {
-    name: 'User',
+    name: "User",
     events: [
-        {
-            method: 'onUserApiKeyCreated',
-            name: 'featherpanel:user:api:create',
-            callback: 'string user uuid, string api key id.',
-            category: 'User',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserApiKeyCreated(), function ($uuid, $id) {\n        // Handle featherpanel:user:api:create\n        // Parameters: string user uuid, string api key id.\n    });\n}',
-        },
-        {
-            method: 'onUserApiKeyDeleted',
-            name: 'featherpanel:user:api:delete',
-            callback: 'string user uuid, string api key id.',
-            category: 'User',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserApiKeyDeleted(), function ($uuid, $id) {\n        // Handle featherpanel:user:api:delete\n        // Parameters: string user uuid, string api key id.\n    });\n}',
-        },
-        {
-            method: 'onUserApiKeyUpdated',
-            name: 'featherpanel:user:api:update',
-            callback: 'string user uuid, string api key id.',
-            category: 'User',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserApiKeyUpdated(), function ($uuid, $id) {\n        // Handle featherpanel:user:api:update\n        // Parameters: string user uuid, string api key id.\n    });\n}',
-        },
-        {
-            method: 'onUserCreated',
-            name: 'featherpanel:user:created',
-            callback: 'array user data, int user id, array created by.',
-            category: 'User',
-            actualData: ['created_by', 'user', 'user_id'],
-            sourceFiles: [
-                'backend/app/Controllers/Admin/PterodactylImporterController.php',
-                'backend/app/Controllers/Admin/UsersController.php',
-            ],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserCreated(), function ($createdBy, $user, $userId) {\n        // Handle featherpanel:user:created\n        // Data keys: created_by, user, user_id\n    });\n}',
-        },
-        {
-            method: 'onUserDeleted',
-            name: 'featherpanel:user:deleted',
-            callback: 'array user data, array deleted by.',
-            category: 'User',
-            actualData: ['deleted_by', 'user'],
-            sourceFiles: ['backend/app/Controllers/Admin/UsersController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserDeleted(), function ($deletedBy, $user) {\n        // Handle featherpanel:user:deleted\n        // Data keys: deleted_by, user\n    });\n}',
-        },
-        {
-            method: 'onUserSshKeyCreated',
-            name: 'featherpanel:user:ssh:create',
-            callback: 'string user uuid, string ssh key id.',
-            category: 'User',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserSshKeyCreated(), function ($uuid, $id) {\n        // Handle featherpanel:user:ssh:create\n        // Parameters: string user uuid, string ssh key id.\n    });\n}',
-        },
-        {
-            method: 'onUserSshKeyDeleted',
-            name: 'featherpanel:user:ssh:delete',
-            callback: 'string user uuid, string ssh key id.',
-            category: 'User',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserSshKeyDeleted(), function ($uuid, $id) {\n        // Handle featherpanel:user:ssh:delete\n        // Parameters: string user uuid, string ssh key id.\n    });\n}',
-        },
-        {
-            method: 'onUserSshKeyUpdated',
-            name: 'featherpanel:user:ssh:update',
-            callback: 'string user uuid, string ssh key id.',
-            category: 'User',
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserSshKeyUpdated(), function ($uuid, $id) {\n        // Handle featherpanel:user:ssh:update\n        // Parameters: string user uuid, string ssh key id.\n    });\n}',
-        },
-        {
-            method: 'onUserUpdate',
-            name: 'featherpanel:user:update',
-            callback: 'string user uuid.',
-            category: 'User',
-            actualData: ['user_uuid'],
-            sourceFiles: ['backend/app/Controllers/User/User/SessionController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserUpdate(), function ($userUuid) {\n        // Handle featherpanel:user:update\n        // Data keys: user_uuid\n    });\n}',
-        },
-        {
-            method: 'onUserUpdated',
-            name: 'featherpanel:user:updated',
-            callback: 'array user data, array updated data, array updated by.',
-            category: 'User',
-            actualData: ['updated_by', 'updated_data', 'user'],
-            sourceFiles: ['backend/app/Controllers/Admin/UsersController.php'],
-            exampleCode:
-                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserUpdated(), function ($updatedBy, $updatedData, $user) {\n        // Handle featherpanel:user:updated\n        // Data keys: updated_by, updated_data, user\n    });\n}',
-        },
+  {
+    "method": "onUserApiKeyCreated",
+    "name": "featherpanel:user:api:create",
+    "callback": "string user uuid, string api key id.",
+    "category": "User",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserApiKeyCreated(), function ($uuid, $id) {\n        // Handle featherpanel:user:api:create\n        // Parameters: string user uuid, string api key id.\n    });\n}"
+  },
+  {
+    "method": "onUserApiKeyDeleted",
+    "name": "featherpanel:user:api:delete",
+    "callback": "string user uuid, string api key id.",
+    "category": "User",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserApiKeyDeleted(), function ($uuid, $id) {\n        // Handle featherpanel:user:api:delete\n        // Parameters: string user uuid, string api key id.\n    });\n}"
+  },
+  {
+    "method": "onUserApiKeyUpdated",
+    "name": "featherpanel:user:api:update",
+    "callback": "string user uuid, string api key id.",
+    "category": "User",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserApiKeyUpdated(), function ($uuid, $id) {\n        // Handle featherpanel:user:api:update\n        // Parameters: string user uuid, string api key id.\n    });\n}"
+  },
+  {
+    "method": "onUserCreated",
+    "name": "featherpanel:user:created",
+    "callback": "array user data, int user id, array created by.",
+    "category": "User",
+    "actualData": [
+      "created_by",
+      "user",
+      "user_id"
     ],
+    "sourceFiles": [
+      "backend/app/Controllers/Admin/PterodactylImporterController.php",
+      "backend/app/Controllers/Admin/UsersController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserCreated(), function ($createdBy, $user, $userId) {\n        // Handle featherpanel:user:created\n        // Data keys: created_by, user, user_id\n    });\n}"
+  },
+  {
+    "method": "onUserDeleted",
+    "name": "featherpanel:user:deleted",
+    "callback": "array user data, array deleted by.",
+    "category": "User",
+    "actualData": [
+      "deleted_by",
+      "user"
+    ],
+    "sourceFiles": [
+      "backend/app/Controllers/Admin/UsersController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserDeleted(), function ($deletedBy, $user) {\n        // Handle featherpanel:user:deleted\n        // Data keys: deleted_by, user\n    });\n}"
+  },
+  {
+    "method": "onUserSshKeyCreated",
+    "name": "featherpanel:user:ssh:create",
+    "callback": "string user uuid, string ssh key id.",
+    "category": "User",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserSshKeyCreated(), function ($uuid, $id) {\n        // Handle featherpanel:user:ssh:create\n        // Parameters: string user uuid, string ssh key id.\n    });\n}"
+  },
+  {
+    "method": "onUserSshKeyDeleted",
+    "name": "featherpanel:user:ssh:delete",
+    "callback": "string user uuid, string ssh key id.",
+    "category": "User",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserSshKeyDeleted(), function ($uuid, $id) {\n        // Handle featherpanel:user:ssh:delete\n        // Parameters: string user uuid, string ssh key id.\n    });\n}"
+  },
+  {
+    "method": "onUserSshKeyUpdated",
+    "name": "featherpanel:user:ssh:update",
+    "callback": "string user uuid, string ssh key id.",
+    "category": "User",
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserSshKeyUpdated(), function ($uuid, $id) {\n        // Handle featherpanel:user:ssh:update\n        // Parameters: string user uuid, string ssh key id.\n    });\n}"
+  },
+  {
+    "method": "onUserUpdate",
+    "name": "featherpanel:user:update",
+    "callback": "string user uuid.",
+    "category": "User",
+    "actualData": [
+      "user_uuid"
+    ],
+    "sourceFiles": [
+      "backend/app/Controllers/User/User/SessionController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserUpdate(), function ($userUuid) {\n        // Handle featherpanel:user:update\n        // Data keys: user_uuid\n    });\n}"
+  },
+  {
+    "method": "onUserUpdated",
+    "name": "featherpanel:user:updated",
+    "callback": "array user data, array updated data, array updated by.",
+    "category": "User",
+    "actualData": [
+      "updated_by",
+      "updated_data",
+      "user"
+    ],
+    "sourceFiles": [
+      "backend/app/Controllers/Admin/UsersController.php"
+    ],
+    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\UserEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(UserEvent::onUserUpdated(), function ($updatedBy, $updatedData, $user) {\n        // Handle featherpanel:user:updated\n        // Data keys: updated_by, updated_data, user\n    });\n}"
+  }
+]
 };
 
 export default function CategoryEventsPage() {
@@ -136,7 +145,7 @@ export default function CategoryEventsPage() {
         // Replace escaped newlines with actual newlines
         return str.replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
     };
-
+    
     return (
         <div className='min-h-screen bg-background'>
             <div className='container mx-auto px-4 py-16 max-w-6xl'>
@@ -157,8 +166,7 @@ export default function CategoryEventsPage() {
                                 {categoryData.name}
                             </h1>
                             <p className='text-muted-foreground mt-1'>
-                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this
-                                category
+                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this category
                             </p>
                         </div>
                     </div>
@@ -166,10 +174,7 @@ export default function CategoryEventsPage() {
 
                 <div className='space-y-4'>
                     {categoryData.events.map((event) => (
-                        <Card
-                            key={event.name}
-                            className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'
-                        >
+                        <Card key={event.name} className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'>
                             <CardHeader>
                                 <div className='flex items-start justify-between gap-4 flex-wrap'>
                                     <div className='flex-1 min-w-0'>
@@ -183,10 +188,7 @@ export default function CategoryEventsPage() {
                                             <span className='font-semibold'>Callback parameters:</span> {event.callback}
                                         </CardDescription>
                                     </div>
-                                    <Badge
-                                        variant='outline'
-                                        className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'
-                                    >
+                                    <Badge variant='outline' className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'>
                                         {event.method}
                                     </Badge>
                                 </div>
@@ -194,17 +196,15 @@ export default function CategoryEventsPage() {
                             <CardContent className='space-y-4'>
                                 {event.actualData && event.actualData.length > 0 && (
                                     <div className='p-4 rounded-lg bg-muted/30 border border-border/50 backdrop-blur-sm'>
-                                        <h4 className='text-sm font-semibold text-foreground mb-2'>
-                                            Event Data Structure
-                                        </h4>
+                                        <h4 className='text-sm font-semibold text-foreground mb-2'>Event Data Structure</h4>
                                         <p className='text-xs text-muted-foreground mb-3'>
                                             This event receives the following data when emitted:
                                         </p>
                                         <div className='flex flex-wrap gap-2'>
                                             {event.actualData.map((key) => (
-                                                <Badge
-                                                    key={key}
-                                                    variant='outline'
+                                                <Badge 
+                                                    key={key} 
+                                                    variant='outline' 
                                                     className='text-xs font-mono bg-muted/50 border-border/50 text-foreground/80'
                                                 >
                                                     {key}
@@ -216,17 +216,13 @@ export default function CategoryEventsPage() {
                                                 <p className='text-xs text-muted-foreground mb-1'>Emitted from:</p>
                                                 <div className='space-y-1'>
                                                     {event.sourceFiles.slice(0, 2).map((file) => (
-                                                        <code
-                                                            key={file}
-                                                            className='text-xs text-muted-foreground block truncate'
-                                                        >
+                                                        <code key={file} className='text-xs text-muted-foreground block truncate'>
                                                             {file}
                                                         </code>
                                                     ))}
                                                     {event.sourceFiles.length > 2 && (
                                                         <p className='text-xs text-muted-foreground italic'>
-                                                            +{event.sourceFiles.length - 2} more location
-                                                            {event.sourceFiles.length - 2 !== 1 ? 's' : ''}
+                                                            +{event.sourceFiles.length - 2} more location{event.sourceFiles.length - 2 !== 1 ? 's' : ''}
                                                         </p>
                                                     )}
                                                 </div>
@@ -238,7 +234,7 @@ export default function CategoryEventsPage() {
                                     <h4 className='text-sm font-semibold text-foreground mb-2'>Usage Example</h4>
                                     <pre className='p-3 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto'>
                                         <code className='text-xs font-mono text-foreground'>
-                                            {unescapeCode(event.exampleCode)}
+{unescapeCode(event.exampleCode)}
                                         </code>
                                     </pre>
                                 </div>

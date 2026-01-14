@@ -33,15 +33,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const widgetData = {
-    slug: 'dashboard-tickets-create',
+    slug: 'admin-dev-plugins',
     files: [
   {
     "name": "page.tsx",
-    "path": "src/app/(app)/dashboard/tickets/create/page.tsx"
+    "path": "src/app/(app)/admin/dev/plugins/page.tsx"
   }
 ],
     injectionPoints: [
   "after-header",
+  "before-list",
   "bottom-of-page",
   "top-of-page"
 ]
@@ -156,7 +157,7 @@ export default function WidgetDetailPage() {
   "component": "my-widget.html",
   "enabled": true,
   "priority": 100,
-  "page": "dashboard-tickets-create",
+  "page": "admin-dev-plugins",
   "location": "after-header",
   "size": "full"
 }`}

@@ -35,22 +35,22 @@ import { Button } from '@/components/ui/button';
 const widgetData = {
     slug: 'server-console',
     files: [
-        {
-            name: 'ServerConsolePage.tsx',
-            path: 'src/components/server/ServerConsolePage.tsx',
-        },
-    ],
+  {
+    "name": "ServerConsolePage.tsx",
+    "path": "src/components/server/ServerConsolePage.tsx"
+  }
+],
     injectionPoints: [
-        'after-header',
-        'after-performance',
-        'after-terminal',
-        'after-wings-status',
-        'before-performance',
-        'before-terminal',
-        'bottom-of-page',
-        'top-of-page',
-        'under-server-info-cards',
-    ],
+  "after-header",
+  "after-performance",
+  "after-terminal",
+  "after-wings-status",
+  "before-performance",
+  "before-terminal",
+  "bottom-of-page",
+  "top-of-page",
+  "under-server-info-cards"
+]
 };
 
 export default function WidgetDetailPage() {
@@ -73,7 +73,9 @@ export default function WidgetDetailPage() {
                             <h1 className='text-4xl font-black tracking-tight font-mono bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
                                 {widgetData.slug}
                             </h1>
-                            <p className='text-muted-foreground mt-1'>Widget slug and injection point details</p>
+                            <p className='text-muted-foreground mt-1'>
+                                Widget slug and injection point details
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -103,8 +105,7 @@ export default function WidgetDetailPage() {
                                 </div>
                             ) : (
                                 <p className='text-sm text-muted-foreground italic'>
-                                    No injection points found in source files. They may be rendered dynamically or in
-                                    child components.
+                                    No injection points found in source files. They may be rendered dynamically or in child components.
                                 </p>
                             )}
                         </CardContent>
@@ -128,13 +129,8 @@ export default function WidgetDetailPage() {
                                         className='p-3 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/50 transition-colors backdrop-blur-sm'
                                     >
                                         <div className='flex items-center justify-between gap-2'>
-                                            <code className='text-sm font-mono text-foreground truncate'>
-                                                {file.name}
-                                            </code>
-                                            <Badge
-                                                variant='outline'
-                                                className='text-xs bg-muted/50 border-border/50 flex-shrink-0'
-                                            >
+                                            <code className='text-sm font-mono text-foreground truncate'>{file.name}</code>
+                                            <Badge variant='outline' className='text-xs bg-muted/50 border-border/50 flex-shrink-0'>
                                                 {file.path}
                                             </Badge>
                                         </div>
@@ -157,19 +153,11 @@ export default function WidgetDetailPage() {
                             <div>
                                 <h3 className='text-sm font-semibold text-foreground mb-2'>Widget Configuration</h3>
                                 <p className='text-sm text-muted-foreground mb-3'>
-                                    To inject a widget into this page, create a{' '}
-                                    <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>
-                                        widgets.json
-                                    </code>{' '}
-                                    file in your plugin&apos;s{' '}
-                                    <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>
-                                        Frontend/
-                                    </code>{' '}
-                                    directory:
+                                    To inject a widget into this page, create a <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>widgets.json</code> file in your plugin&apos;s <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>Frontend/</code> directory:
                                 </p>
                                 <pre className='p-4 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto backdrop-blur-sm'>
                                     <code className='text-sm font-mono text-foreground'>
-                                        {`{
+{`{
   "id": "my-plugin-widget",
   "component": "my-widget.html",
   "enabled": true,
@@ -181,24 +169,18 @@ export default function WidgetDetailPage() {
                                     </code>
                                 </pre>
                             </div>
-
+                            
                             {widgetData.injectionPoints.length > 0 && (
                                 <div>
-                                    <h3 className='text-sm font-semibold text-foreground mb-2'>
-                                        Available Injection Points
-                                    </h3>
+                                    <h3 className='text-sm font-semibold text-foreground mb-2'>Available Injection Points</h3>
                                     <p className='text-sm text-muted-foreground mb-2'>
-                                        This page supports the following injection points. Use the{' '}
-                                        <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>
-                                            location
-                                        </code>{' '}
-                                        property in your widget configuration:
+                                        This page supports the following injection points. Use the <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>location</code> property in your widget configuration:
                                     </p>
                                     <div className='flex flex-wrap gap-2'>
                                         {widgetData.injectionPoints.map((ip) => (
-                                            <Badge
-                                                key={ip}
-                                                variant='outline'
+                                            <Badge 
+                                                key={ip} 
+                                                variant='outline' 
                                                 className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80'
                                             >
                                                 {ip}
@@ -207,42 +189,20 @@ export default function WidgetDetailPage() {
                                     </div>
                                 </div>
                             )}
-
+                            
                             <div>
                                 <h3 className='text-sm font-semibold text-foreground mb-2'>Widget Sizing</h3>
                                 <p className='text-sm text-muted-foreground mb-2'>
-                                    Set the{' '}
-                                    <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>size</code>{' '}
-                                    property to control widget width:
+                                    Set the <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>size</code> property to control widget width:
                                 </p>
                                 <ul className='text-sm text-muted-foreground space-y-1 list-disc list-inside'>
-                                    <li>
-                                        <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>
-                                            &quot;full&quot;
-                                        </code>{' '}
-                                        - Full width (default)
-                                    </li>
-                                    <li>
-                                        <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>
-                                            &quot;half&quot;
-                                        </code>{' '}
-                                        - Half width (2 per row)
-                                    </li>
-                                    <li>
-                                        <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>
-                                            &quot;third&quot;
-                                        </code>{' '}
-                                        - One-third width (3 per row)
-                                    </li>
-                                    <li>
-                                        <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>
-                                            &quot;quarter&quot;
-                                        </code>{' '}
-                                        - One-quarter width (4 per row)
-                                    </li>
+                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>&quot;full&quot;</code> - Full width (default)</li>
+                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>&quot;half&quot;</code> - Half width (2 per row)</li>
+                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>&quot;third&quot;</code> - One-third width (3 per row)</li>
+                                    <li><code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>&quot;quarter&quot;</code> - One-quarter width (4 per row)</li>
                                 </ul>
                             </div>
-
+                            
                             <div>
                                 <h3 className='text-sm font-semibold text-foreground mb-2'>Widget Context</h3>
                                 <p className='text-sm text-muted-foreground mb-2'>
@@ -250,8 +210,9 @@ export default function WidgetDetailPage() {
                                 </p>
                                 <pre className='p-4 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto backdrop-blur-sm'>
                                     <code className='text-sm font-mono text-foreground'>
-                                        const context = window.FeatherPanel?.widgetContext || {}; const userUuid =
-                                        context.userUuid; const serverUuid = context.serverUuid;
+const context = window.FeatherPanel?.widgetContext || {};
+const userUuid = context.userUuid;
+const serverUuid = context.serverUuid;
                                     </code>
                                 </pre>
                             </div>

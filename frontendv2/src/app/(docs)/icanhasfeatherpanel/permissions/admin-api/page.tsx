@@ -33,15 +33,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const categoryData = {
-    name: 'Admin API',
+    name: "Admin API",
     permissions: [
-        {
-            constant: 'ADMIN_API_BYPASS_RESTRICTIONS',
-            node: 'admin.api.bypass_restrictions',
-            category: 'Admin API',
-            description: 'Bypass API rate limits and restrictions',
-        },
-    ],
+  {
+    "constant": "ADMIN_API_BYPASS_RESTRICTIONS",
+    "node": "admin.api.bypass_restrictions",
+    "category": "Admin API",
+    "description": "Bypass API rate limits and restrictions"
+  }
+]
 };
 
 export default function CategoryPermissionsPage() {
@@ -65,8 +65,7 @@ export default function CategoryPermissionsPage() {
                                 {categoryData.name}
                             </h1>
                             <p className='text-muted-foreground mt-1'>
-                                {categoryData.permissions.length} permission
-                                {categoryData.permissions.length !== 1 ? 's' : ''} in this category
+                                {categoryData.permissions.length} permission{categoryData.permissions.length !== 1 ? 's' : ''} in this category
                             </p>
                         </div>
                     </div>
@@ -74,10 +73,7 @@ export default function CategoryPermissionsPage() {
 
                 <div className='space-y-4'>
                     {categoryData.permissions.map((perm) => (
-                        <Card
-                            key={perm.node}
-                            className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'
-                        >
+                        <Card key={perm.node} className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'>
                             <CardHeader>
                                 <div className='flex items-start justify-between gap-4'>
                                     <div className='flex-1 min-w-0'>
@@ -91,10 +87,7 @@ export default function CategoryPermissionsPage() {
                                             {perm.description}
                                         </CardDescription>
                                     </div>
-                                    <Badge
-                                        variant='outline'
-                                        className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'
-                                    >
+                                    <Badge variant='outline' className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'>
                                         {perm.constant}
                                     </Badge>
                                 </div>
@@ -115,7 +108,7 @@ export default function CategoryPermissionsPage() {
                             <h3 className='text-sm font-semibold text-foreground mb-2'>PHP Backend</h3>
                             <pre className='p-4 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto backdrop-blur-sm'>
                                 <code className='text-sm font-mono text-foreground'>
-                                    {`use App\\Helpers\\PermissionHelper;
+{`use App\\Helpers\\PermissionHelper;
 
 // Check if user has permission
 if (PermissionHelper::hasPermission($userUuid, 'admin.api.bypass_restrictions')) {
@@ -128,7 +121,7 @@ if (PermissionHelper::hasPermission($userUuid, 'admin.api.bypass_restrictions'))
                             <h3 className='text-sm font-semibold text-foreground mb-2'>Using Permission Constants</h3>
                             <pre className='p-4 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto backdrop-blur-sm'>
                                 <code className='text-sm font-mono text-foreground'>
-                                    {`use App\\Permissions;
+{`use App\\Permissions;
 
 // Use constant instead of string
 if (PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_API_BYPASS_RESTRICTIONS)) {
