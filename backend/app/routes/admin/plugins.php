@@ -82,6 +82,22 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-plugins-spell-restrictions',
+        '/api/admin/plugins/{identifier}/spell-restrictions',
+        function (Request $request, array $args) {
+            $identifier = $args['identifier'] ?? null;
+            if (!$identifier || !is_string($identifier)) {
+                return \App\Helpers\ApiResponse::error('Missing or invalid identifier', 'INVALID_IDENTIFIER', 400);
+            }
+
+            return (new PluginsController())->setSpellRestrictions($request, $identifier);
+        },
+        Permissions::ADMIN_PLUGINS_MANAGE,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-plugins-uninstall',
         '/api/admin/plugins/{identifier}/uninstall',
         function (Request $request, array $args) {

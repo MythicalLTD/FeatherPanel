@@ -4286,9 +4286,14 @@
 				"empty_description": "No plugins are currently installed on your system.",
 				"version": "Version",
 				"author": "Author",
+				"author_unknown": "Unknown",
+				"no_description": "No description available",
 				"missing_badge": "Missing: {dep}",
 				"config_badge": "Config: {cfg}",
-				"visit_action": "Visit"
+				"visit_action": "Visit",
+				"update_checking": "Checking...",
+				"update_available": "Update Available",
+				"not_loaded": "Not Loaded"
 			},
 			"drawers": {
 				"config": {
@@ -4296,8 +4301,26 @@
 					"description": "Configure settings for {plugin}",
 					"loading": "Loading plugin configuration...",
 					"settings_title": "Plugin Settings",
+					"fields_count": "{count} fields",
+					"required": "Required",
 					"no_schema": "This plugin doesn't have a configuration schema defined",
-					"no_schema_desc": "The plugin developer needs to add a config section to conf.yml"
+					"no_schema_desc": "The plugin developer needs to add a config section to conf.yml",
+					"spell_restrictions": {
+						"title": "Server Sidebar Spell Restrictions",
+						"description": "Configure which server types (spells) this plugin should appear on. Leave empty to show on all server types.",
+						"search_placeholder": "Type to search spells...",
+						"selected_spells": "Selected Spells",
+						"selected_count": "{count} selected",
+						"loading": "Loading spells...",
+						"no_spells": "No spells found",
+						"no_spells_search": "Try a different search term",
+						"selected_badge": "Selected",
+						"save": "Save Spell Restrictions",
+						"saving": "Saving...",
+						"previous": "Previous",
+						"next": "Next",
+						"page_info": "Page {current} of {total}"
+					}
 				},
 				"info": {
 					"sections": {
@@ -4312,6 +4335,10 @@
 				},
 				"install_url": {
 					"title": "Install From URL",
+					"url_label": "Plugin URL",
+					"url_placeholder": "https://example.com/plugin.fpa",
+					"url_description": "Enter the direct URL to a FeatherPanel plugin file (.fpa).",
+					"security_warning_title": "Security Warning",
 					"warning": "Warning: It is unsafe to install plugins from URLs that are not from the official repository."
 				},
 				"upload": {
@@ -4367,7 +4394,13 @@
 				"save_success": "Settings saved successfully",
 				"save_failed": "Failed to save settings",
 				"reinstall_success": "Plugins reinstalled successfully",
-				"reinstall_failed": "Failed to reinstall plugins"
+				"reinstall_failed": "Failed to reinstall plugins",
+				"spell_restrictions_saved": "Spell restrictions saved successfully",
+				"spell_restrictions_save_failed": "Failed to save spell restrictions",
+				"config_load_failed": "Failed to load full configuration",
+				"spells_load_failed": "Failed to load spells",
+				"up_to_date": "{plugin} is up to date",
+				"update_check_failed": "Failed to check for update"
 			}
 		},
 		"redirect_links": {

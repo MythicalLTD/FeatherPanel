@@ -71,6 +71,10 @@ import {
     Save,
     Plus,
     AlertTriangle,
+    X,
+    Search,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -115,6 +119,7 @@ interface PluginConfig {
     plugin: Plugin;
     settings: Record<string, string>;
     configSchema?: ConfigField[];
+    allowedOnlyOnSpells?: number[];
 }
 
 interface UpdateRequirements {
@@ -154,6 +159,17 @@ export default function PluginsPage() {
     const [configError, setConfigError] = useState<string | null>(null);
     const [pluginConfig, setPluginConfig] = useState<PluginConfig | null>(null);
     const [savingSetting, setSavingSetting] = useState(false);
+
+    // Spell restrictions
+    const [selectedSpellIds, setSelectedSpellIds] = useState<Set<number>>(new Set());
+    const [selectedSpellsDetails, setSelectedSpellsDetails] = useState<Array<{ id: number; name: string; description?: string }>>([]);
+    const [spellSearchQuery, setSpellSearchQuery] = useState('');
+    const [spellPage, setSpellPage] = useState(1);
+    const [spells, setSpells] = useState<Array<{ id: number; name: string; description?: string }>>([]);
+    const [spellsLoading, setSpellsLoading] = useState(false);
+    const [, setSpellsTotal] = useState(0);
+    const [spellsTotalPages, setSpellsTotalPages] = useState(1);
+    const [savingSpellRestrictions, setSavingSpellRestrictions] = useState(false);
 
     // Dialogs
     const [installUrl, setInstallUrl] = useState('');
@@ -343,7 +359,20 @@ export default function PluginsPage() {
                 plugin: pluginData,
                 settings,
                 configSchema: apiData.configSchema || apiData.config || [],
+                allowedOnlyOnSpells: apiData.allowedOnlyOnSpells || [],
             });
+
+            // Initialize selected spell IDs and fetch their details
+            if (apiData.allowedOnlyOnSpells && Array.isArray(apiData.allowedOnlyOnSpells) && apiData.allowedOnlyOnSpells.length > 0) {
+                const spellIds = apiData.allowedOnlyOnSpells;
+                setSelectedSpellIds(new Set(spellIds));
+                
+                // Fetch details for selected spells
+                fetchSelectedSpellsDetails(spellIds);
+            } else {
+                setSelectedSpellIds(new Set());
+                setSelectedSpellsDetails([]);
+            }
         } catch (error) {
             console.error(error);
             setPluginConfig({
@@ -353,7 +382,7 @@ export default function PluginsPage() {
                 configSchema: plugin.configSchema || [],
             });
             if (axios.isAxiosError(error) && error.response?.status !== 404) {
-                setConfigError('Failed to load full configuration');
+                setConfigError(t('admin.plugins.messages.config_load_failed'));
             }
         } finally {
             setConfigLoading(false);
@@ -362,8 +391,107 @@ export default function PluginsPage() {
 
     const openPluginConfig = async (plugin: Plugin) => {
         setSelectedPlugin(plugin);
+        // Reset spell search and page when opening config
+        setSpellSearchQuery('');
+        setSpellPage(1);
         setConfigDrawerOpen(true);
         await loadPluginConfig(plugin);
+        // Fetch spells after config loads and drawer is open
+        setTimeout(() => {
+            fetchSpells();
+        }, 100);
+    };
+
+    const fetchSelectedSpellsDetails = async (spellIds: number[]) => {
+        try {
+            // Fetch each selected spell by ID
+            const spellPromises = spellIds.map((id) =>
+                axios.get(`/api/admin/spells/${id}`).catch(() => null)
+            );
+            const spellResponses = await Promise.all(spellPromises);
+            const selectedSpells = spellResponses
+                .filter((response) => response?.data?.success && response.data.data?.spell)
+                .map((response) => ({
+                    id: response!.data.data.spell.id,
+                    name: response!.data.data.spell.name,
+                    description: response!.data.data.spell.description,
+                }));
+            setSelectedSpellsDetails(selectedSpells);
+        } catch (error) {
+            console.error('Error fetching selected spells details:', error);
+        }
+    };
+
+    const fetchSpells = useCallback(async () => {
+        setSpellsLoading(true);
+        try {
+            const response = await axios.get('/api/admin/spells', {
+                params: {
+                    page: spellPage,
+                    limit: 20,
+                    search: spellSearchQuery.trim() || undefined,
+                },
+            });
+            const data = response.data.data;
+            setSpells(data.spells || []);
+            setSpellsTotal(data.pagination?.total_records || 0);
+            setSpellsTotalPages(data.pagination?.total_pages || 1);
+        } catch (error) {
+            console.error('Error fetching spells:', error);
+            toast.error(t('admin.plugins.messages.spells_load_failed'));
+        } finally {
+            setSpellsLoading(false);
+        }
+    }, [spellPage, spellSearchQuery, t]);
+
+    // Debounce spell search - wait for user to finish typing
+    useEffect(() => {
+        if (!configDrawerOpen) return;
+        
+        // Don't debounce page changes, only search queries
+        if (spellSearchQuery !== '') {
+            const timer = setTimeout(() => {
+                fetchSpells();
+            }, 1000); // Wait 1 second after user stops typing
+
+            return () => clearTimeout(timer);
+        }
+        // Don't fetch when search is empty - let the drawer open effect handle it
+    }, [spellSearchQuery, configDrawerOpen, fetchSpells]);
+
+    // Fetch spells when page changes (no debounce)
+    useEffect(() => {
+        if (configDrawerOpen && spellPage > 0) {
+            fetchSpells();
+        }
+    }, [spellPage, configDrawerOpen, fetchSpells]);
+
+    // Reset state when drawer closes
+    useEffect(() => {
+        if (!configDrawerOpen) {
+            setSpellSearchQuery('');
+            setSpellPage(1);
+            setSelectedSpellIds(new Set());
+            setSelectedSpellsDetails([]);
+        }
+    }, [configDrawerOpen]);
+
+    const saveSpellRestrictions = async () => {
+        if (!selectedPlugin) return;
+        setSavingSpellRestrictions(true);
+        try {
+            await axios.post(`/api/admin/plugins/${selectedPlugin.identifier}/spell-restrictions`, {
+                allowedOnlyOnSpells: Array.from(selectedSpellIds),
+            });
+            toast.success(t('admin.plugins.messages.spell_restrictions_saved'));
+            // Reload config to get updated spell restrictions
+            await loadPluginConfig(selectedPlugin);
+        } catch (error) {
+            console.error(error);
+            toast.error(t('admin.plugins.messages.spell_restrictions_save_failed'));
+        } finally {
+            setSavingSpellRestrictions(false);
+        }
     };
 
     const saveAllSettings = async () => {
@@ -467,13 +595,15 @@ export default function PluginsPage() {
                 setUpdateRequirements(requirements);
                 setUpdateDialogOpen(true);
             } else {
-                toast.info(`${plugin.name || plugin.identifier} is up to date`);
+                toast.info(t('admin.plugins.messages.up_to_date', {
+                    plugin: plugin.name || plugin.identifier,
+                }));
             }
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || 'Failed to check for update');
+                toast.error(error.response?.data?.message || t('admin.plugins.messages.update_check_failed'));
             } else {
-                toast.error('Failed to check for update');
+                toast.error(t('admin.plugins.messages.update_check_failed'));
             }
         } finally {
             setCheckingUpdateId(null);
@@ -693,7 +823,7 @@ export default function PluginsPage() {
                         >
                             <div className='space-y-4 flex-1'>
                                 <p className='text-sm text-muted-foreground line-clamp-2 min-h-10'>
-                                    {plugin.description || 'No description available'}
+                                    {plugin.description || t('admin.plugins.grid.no_description')}
                                 </p>
 
                                 <div className='space-y-2'>
@@ -706,7 +836,7 @@ export default function PluginsPage() {
                                     <div className='flex items-center justify-between text-xs'>
                                         <span className='text-muted-foreground'>{t('admin.plugins.grid.author')}</span>
                                         <span className='font-medium truncate max-w-[120px]'>
-                                            {plugin.author || 'Unknown'}
+                                            {plugin.author || t('admin.plugins.grid.author_unknown')}
                                         </span>
                                     </div>
                                     {plugin.website && (
@@ -744,8 +874,8 @@ export default function PluginsPage() {
                                                 }`}
                                             />
                                             {checkingUpdateId === plugin.identifier
-                                                ? 'Checking...'
-                                                : 'Update Available'}
+                                                ? t('admin.plugins.grid.update_checking')
+                                                : t('admin.plugins.grid.update_available')}
                                         </Badge>
                                     )}
                                     {plugin.unmetDependencies?.map((dep) => (
@@ -768,7 +898,7 @@ export default function PluginsPage() {
                                     ))}
                                     {!plugin.loaded && (
                                         <Badge variant='secondary' className='text-[10px]'>
-                                            Not Loaded
+                                            {t('admin.plugins.grid.not_loaded')}
                                         </Badge>
                                     )}
                                 </div>
@@ -854,7 +984,7 @@ export default function PluginsPage() {
                                                             variant='secondary'
                                                             className='text-[10px] uppercase tracking-wider font-bold'
                                                         >
-                                                            Required
+                                                            {t('admin.plugins.drawers.config.required')}
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -946,6 +1076,229 @@ export default function PluginsPage() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Spell Restrictions Section */}
+                            <div className='rounded-lg border border-border bg-muted/30 p-6 space-y-5'>
+                                <div className='space-y-1.5'>
+                                    <h3 className='text-base font-semibold text-foreground'>
+                                        {t('admin.plugins.drawers.config.spell_restrictions.title')}
+                                    </h3>
+                                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                                        {t('admin.plugins.drawers.config.spell_restrictions.description')}
+                                    </p>
+                                </div>
+
+                                <div className='space-y-4'>
+                                    {/* Search */}
+                                    <div className='relative'>
+                                        <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none' />
+                                        <Input
+                                            placeholder={t('admin.plugins.drawers.config.spell_restrictions.search_placeholder')}
+                                            value={spellSearchQuery}
+                                            onChange={(e) => {
+                                                setSpellSearchQuery(e.target.value);
+                                                setSpellPage(1);
+                                            }}
+                                            className='pl-10 h-10 bg-background/50 border-border text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:bg-background'
+                                        />
+                                        {spellsLoading && (
+                                            <div className='absolute right-3 top-1/2 transform -translate-y-1/2'>
+                                                <RefreshCw className='h-4 w-4 animate-spin text-muted-foreground' />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Selected Spells */}
+                                    {selectedSpellIds.size > 0 && (
+                                        <div className='space-y-2.5'>
+                                            <div className='flex items-center justify-between'>
+                                                <p className='text-sm font-medium text-foreground'>
+                                                    {t('admin.plugins.drawers.config.spell_restrictions.selected_spells')}
+                                                </p>
+                                                <Badge variant='secondary' className='text-xs bg-primary/20 text-primary border-primary/30'>
+                                                    {t('admin.plugins.drawers.config.spell_restrictions.selected_count', {
+                                                        count: String(selectedSpellIds.size),
+                                                    })}
+                                                </Badge>
+                                            </div>
+                                            <div className='flex flex-wrap gap-2 p-3 rounded-md bg-background/50 border border-border'>
+                                                {selectedSpellsDetails.map((spell) => (
+                                                    <Badge
+                                                        key={spell.id}
+                                                        variant='secondary'
+                                                        className='flex items-center gap-1.5 px-2.5 py-1 bg-primary/20 text-primary border-primary/30 hover:bg-primary/25 transition-colors'
+                                                    >
+                                                        <span className='text-xs font-medium'>{spell.name}</span>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const newSet = new Set(selectedSpellIds);
+                                                                newSet.delete(spell.id);
+                                                                setSelectedSpellIds(newSet);
+                                                                setSelectedSpellsDetails((prev) => prev.filter((s) => s.id !== spell.id));
+                                                            }}
+                                                            className='ml-0.5 hover:bg-destructive/30 rounded-full p-0.5 transition-colors'
+                                                        >
+                                                            <X className='h-3 w-3' />
+                                                        </button>
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Spell List */}
+                                    <div className='border border-border rounded-md bg-background/50 overflow-hidden'>
+                                        <div className='max-h-[320px] overflow-y-auto'>
+                                            {spellsLoading && spellSearchQuery === '' && spellPage === 1 ? (
+                                                <div className='flex items-center justify-center py-12'>
+                                                    <RefreshCw className='h-5 w-5 animate-spin mr-2 text-muted-foreground' />
+                                                    <span className='text-sm text-muted-foreground'>
+                                                        {t('admin.plugins.drawers.config.spell_restrictions.loading')}
+                                                    </span>
+                                                </div>
+                                            ) : spells.length === 0 ? (
+                                                <div className='text-center py-12'>
+                                                    <Puzzle className='h-8 w-8 mx-auto mb-2 text-muted-foreground/50' />
+                                                    <p className='text-sm font-medium text-foreground'>
+                                                        {t('admin.plugins.drawers.config.spell_restrictions.no_spells')}
+                                                    </p>
+                                                    {spellSearchQuery && (
+                                                        <p className='text-xs text-muted-foreground mt-1'>
+                                                            {t('admin.plugins.drawers.config.spell_restrictions.no_spells_search')}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className='divide-y divide-border'>
+                                                    {spells.map((spell) => {
+                                                        const isSelected = selectedSpellIds.has(spell.id);
+                                                        return (
+                                                            <div
+                                                                key={spell.id}
+                                                                className={`p-3 transition-all cursor-pointer flex items-start gap-3 ${
+                                                                    isSelected
+                                                                        ? 'bg-primary/10 hover:bg-primary/15 border-l-2 border-l-primary'
+                                                                        : 'hover:bg-muted/40 bg-background/30'
+                                                                }`}
+                                                                onClick={() => {
+                                                                    const newSet = new Set(selectedSpellIds);
+                                                                    if (newSet.has(spell.id)) {
+                                                                        newSet.delete(spell.id);
+                                                                        setSelectedSpellsDetails((prev) => prev.filter((s) => s.id !== spell.id));
+                                                                    } else {
+                                                                        newSet.add(spell.id);
+                                                                        setSelectedSpellsDetails((prev) => {
+                                                                            if (prev.find((s) => s.id === spell.id)) return prev;
+                                                                            return [...prev, { id: spell.id, name: spell.name, description: spell.description }];
+                                                                        });
+                                                                    }
+                                                                    setSelectedSpellIds(newSet);
+                                                                }}
+                                                            >
+                                                                <div className='flex-1 min-w-0'>
+                                                                    <div className='flex items-center gap-2'>
+                                                                        <div className={`font-medium text-sm ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                                                                            {spell.name}
+                                                                        </div>
+                                                                        {isSelected && (
+                                                                            <Badge variant='outline' className='text-[10px] px-1.5 py-0 border-primary/40 text-primary bg-primary/10'>
+                                                                                {t('admin.plugins.drawers.config.spell_restrictions.selected_badge')}
+                                                                            </Badge>
+                                                                        )}
+                                                                    </div>
+                                                                    {spell.description && (
+                                                                        <div className='text-xs text-muted-foreground mt-1 line-clamp-2'>
+                                                                            {spell.description}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className='flex-shrink-0 pt-0.5'>
+                                                                    <div className='relative'>
+                                                                        <input
+                                                                            type='checkbox'
+                                                                            checked={isSelected}
+                                                                            onChange={() => {
+                                                                                const newSet = new Set(selectedSpellIds);
+                                                                                if (newSet.has(spell.id)) {
+                                                                                    newSet.delete(spell.id);
+                                                                                    setSelectedSpellsDetails((prev) => prev.filter((s) => s.id !== spell.id));
+                                                                                } else {
+                                                                                    newSet.add(spell.id);
+                                                                                    setSelectedSpellsDetails((prev) => {
+                                                                                        if (prev.find((s) => s.id === spell.id)) return prev;
+                                                                                        return [...prev, { id: spell.id, name: spell.name, description: spell.description }];
+                                                                                    });
+                                                                                }
+                                                                                setSelectedSpellIds(newSet);
+                                                                            }}
+                                                                            className='h-4 w-4 rounded border-2 border-border cursor-pointer checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/30 transition-all appearance-none bg-background/50 checked:before:content-["✓"] checked:before:text-white checked:before:text-xs checked:before:flex checked:before:items-center checked:before:justify-center'
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Pagination */}
+                                    {spellsTotalPages > 1 && (
+                                        <div className='flex items-center justify-between pt-2 border-t border-border'>
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() => setSpellPage((p) => Math.max(1, p - 1))}
+                                                disabled={spellPage === 1 || spellsLoading}
+                                                className='h-8 bg-background/50 border-border hover:bg-muted/50'
+                                            >
+                                                <ChevronLeft className='h-3.5 w-3.5 mr-1.5' />
+                                                {t('admin.plugins.drawers.config.spell_restrictions.previous')}
+                                            </Button>
+                                            <span className='text-xs text-muted-foreground font-medium'>
+                                                {t('admin.plugins.drawers.config.spell_restrictions.page_info', {
+                                                    current: String(spellPage),
+                                                    total: String(spellsTotalPages),
+                                                })}
+                                            </span>
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() => setSpellPage((p) => Math.min(spellsTotalPages, p + 1))}
+                                                disabled={spellPage === spellsTotalPages || spellsLoading}
+                                                className='h-8 bg-background/50 border-border hover:bg-muted/50'
+                                            >
+                                                {t('admin.plugins.drawers.config.spell_restrictions.next')}
+                                                <ChevronRight className='h-3.5 w-3.5 ml-1.5' />
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {/* Save Button */}
+                                    <div className='pt-1'>
+                                        <Button
+                                            className='w-full h-10 font-medium bg-primary hover:bg-primary/90'
+                                            onClick={saveSpellRestrictions}
+                                            disabled={savingSpellRestrictions}
+                                        >
+                                            {savingSpellRestrictions ? (
+                                                <>
+                                                    <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
+                                                    {t('admin.plugins.drawers.config.spell_restrictions.saving')}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className='h-4 w-4 mr-2' />
+                                                    {t('admin.plugins.drawers.config.spell_restrictions.save')}
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ) : null}
                 </div>
@@ -987,20 +1340,20 @@ export default function PluginsPage() {
                     </DialogHeader>
                     <div className='space-y-4 py-4'>
                         <div className='space-y-2'>
-                            <label className='text-sm font-medium'>Plugin URL</label>
+                            <label className='text-sm font-medium'>{t('admin.plugins.dialogs.install_url.url_label')}</label>
                             <Input
-                                placeholder='https://example.com/plugin.fpa'
+                                placeholder={t('admin.plugins.dialogs.install_url.url_placeholder')}
                                 value={installUrl}
                                 onChange={(e) => setInstallUrl(e.target.value)}
                             />
                             <p className='text-xs text-muted-foreground'>
-                                Enter the direct URL to a FeatherPanel plugin file (.fpa).
+                                {t('admin.plugins.dialogs.install_url.url_description')}
                             </p>
                         </div>
                         <div className='rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700'>
                             <div className='font-semibold mb-1 flex items-center gap-2'>
                                 <AlertTriangle className='h-4 w-4' />
-                                Security Warning
+                                {t('admin.plugins.dialogs.install_url.security_warning_title')}
                             </div>
                             {t('admin.plugins.dialogs.install_url.warning')}
                         </div>

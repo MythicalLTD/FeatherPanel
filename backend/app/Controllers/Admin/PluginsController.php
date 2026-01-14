@@ -213,11 +213,22 @@ class PluginsController
             // Get enhanced config schema if available
             $configSchema = PluginConfig::getPluginRequiredAdminConfig($identifier);
 
+            // Get spell restrictions for server sidebar filtering
+            $allowedOnlyOnSpells = PluginSettings::getSetting($identifier, 'plugin-sidebar-server-allowedOnlyOnSpells');
+            $allowedSpellIds = [];
+            if ($allowedOnlyOnSpells) {
+                $decoded = json_decode($allowedOnlyOnSpells, true);
+                if (is_array($decoded)) {
+                    $allowedSpellIds = array_map('intval', $decoded);
+                }
+            }
+
             return ApiResponse::success([
                 'config' => $info,
                 'plugin' => $info,
                 'settings' => $settingsList,
                 'configSchema' => $configSchema,
+                'allowedOnlyOnSpells' => $allowedSpellIds,
             ], 'Plugin config fetched successfully', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to fetch plugin config: ' . $e->getMessage(), 500);
@@ -401,6 +412,98 @@ class PluginsController
             ], 'Setting removed successfully', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to remove setting: ' . $e->getMessage(), 'SETTING_REMOVE_FAILED', 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/admin/plugins/{identifier}/spell-restrictions',
+        summary: 'Set plugin spell restrictions for server sidebar',
+        description: 'Configure which server spells (server types) a plugin\'s sidebar items should be shown on. If empty, plugin shows on all server types. If set, plugin only shows on specified spell IDs.',
+        tags: ['Admin - Plugins'],
+        parameters: [
+            new OA\Parameter(
+                name: 'identifier',
+                in: 'path',
+                description: 'Plugin identifier',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'allowedOnlyOnSpells', type: 'array', items: new OA\Items(type: 'integer'), description: 'Array of spell IDs where this plugin should be shown. Empty array means show on all spells.'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Spell restrictions updated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'identifier', type: 'string', description: 'Plugin identifier'),
+                        new OA\Property(property: 'allowedOnlyOnSpells', type: 'array', items: new OA\Items(type: 'integer'), description: 'Updated spell IDs'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid JSON or invalid plugin identifier'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Plugin not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update spell restrictions'),
+        ]
+    )]
+    public function setSpellRestrictions(Request $request, string $identifier): Response
+    {
+        try {
+            // Check if plugin exists by trying to load its config
+            $info = PluginConfig::getConfig($identifier);
+            if (empty($info) || !isset($info['plugin'])) {
+                return ApiResponse::error('Plugin not found', 'PLUGIN_NOT_FOUND', 404);
+            }
+
+            $data = json_decode($request->getContent(), true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+            }
+
+            $allowedOnlyOnSpells = $data['allowedOnlyOnSpells'] ?? [];
+            if (!is_array($allowedOnlyOnSpells)) {
+                return ApiResponse::error('allowedOnlyOnSpells must be an array', 'INVALID_ARRAY', 400);
+            }
+
+            // Validate all values are integers
+            $validatedSpellIds = [];
+            foreach ($allowedOnlyOnSpells as $spellId) {
+                $spellIdInt = filter_var($spellId, FILTER_VALIDATE_INT);
+                if ($spellIdInt === false || $spellIdInt <= 0) {
+                    return ApiResponse::error('All spell IDs must be positive integers', 'INVALID_SPELL_ID', 400);
+                }
+                $validatedSpellIds[] = $spellIdInt;
+            }
+
+            // Save as JSON string
+            PluginSettings::setSettings($identifier, 'plugin-sidebar-server-allowedOnlyOnSpells', [
+                'value' => json_encode($validatedSpellIds),
+            ]);
+
+            // Log activity
+            $admin = $request->get('user');
+            Activity::createActivity([
+                'user_uuid' => $admin['uuid'] ?? null,
+                'name' => 'plugin_spell_restrictions_update',
+                'context' => "Updated spell restrictions for plugin $identifier",
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            return ApiResponse::success([
+                'identifier' => $identifier,
+                'allowedOnlyOnSpells' => $validatedSpellIds,
+            ], 'Spell restrictions updated successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to update spell restrictions: ' . $e->getMessage(), 'SPELL_RESTRICTIONS_UPDATE_FAILED', 500);
         }
     }
 

@@ -18,7 +18,9 @@
 namespace App\Controllers\System;
 
 use App\App;
+use App\Chat\Server;
 use App\Chat\User;
+use App\Plugins\PluginSettings;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
@@ -72,12 +74,37 @@ class PluginSidebarController
             'admin' => [],
         ];
 
+        // Get current server's spell_id if we're in server context
+        $currentServerSpellId = null;
+        if (isset($_COOKIE['serverUuid'])) {
+            $serverUuid = $_COOKIE['serverUuid'];
+            $server = Server::getServerByUuid($serverUuid);
+            if ($server && isset($server['spell_id'])) {
+                $currentServerSpellId = (int) $server['spell_id'];
+            }
+        }
+
         // Scan plugins for sidebar configuration
         $pluginDir = __DIR__ . '/../../../storage/addons';
         if (is_dir($pluginDir)) {
             $plugins = array_diff(scandir($pluginDir), ['.', '..']);
 
             foreach ($plugins as $plugin) {
+                // Check if plugin has spell restrictions for server sidebar
+                if ($currentServerSpellId !== null) {
+                    $allowedOnlyOnSpells = PluginSettings::getSetting($plugin, 'plugin-sidebar-server-allowedOnlyOnSpells');
+                    if ($allowedOnlyOnSpells !== null && $allowedOnlyOnSpells !== '') {
+                        $allowedSpellIds = json_decode($allowedOnlyOnSpells, true);
+                        if (is_array($allowedSpellIds) && !empty($allowedSpellIds)) {
+                            // Plugin has restrictions - check if current server's spell is allowed
+                            $allowedSpellIds = array_map('intval', $allowedSpellIds);
+                            if (!in_array($currentServerSpellId, $allowedSpellIds, true)) {
+                                // Skip this plugin's server sidebar items - not allowed on this spell
+                                continue;
+                            }
+                        }
+                    }
+                }
                 $sidebarConfigPath = $pluginDir . "/$plugin/Frontend/sidebar.json";
 
                 // Check if plugin has sidebar configuration
@@ -120,6 +147,20 @@ class PluginSidebarController
                         if (is_array($legacySidebar)) {
                             // Process legacy format
                             foreach ($legacySidebar as $section => $items) {
+                                // Skip server section if plugin has spell restrictions and doesn't match
+                                if ($section === 'server' && $currentServerSpellId !== null) {
+                                    $allowedOnlyOnSpells = PluginSettings::getSetting($plugin, 'plugin-sidebar-server-allowedOnlyOnSpells');
+                                    if ($allowedOnlyOnSpells !== null && $allowedOnlyOnSpells !== '') {
+                                        $allowedSpellIds = json_decode($allowedOnlyOnSpells, true);
+                                        if (is_array($allowedSpellIds) && !empty($allowedSpellIds)) {
+                                            $allowedSpellIds = array_map('intval', $allowedSpellIds);
+                                            if (!in_array($currentServerSpellId, $allowedSpellIds, true)) {
+                                                continue; // Skip this plugin's server sidebar items
+                                            }
+                                        }
+                                    }
+                                }
+
                                 if (isset($sidebarData[$section]) && is_array($items)) {
                                     foreach ($items as $key => $item) {
                                         $pluginKey = "/{$plugin}" . $key;
