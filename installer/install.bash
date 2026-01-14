@@ -192,7 +192,7 @@ print_banner() {
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 
-	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.0.0${NC}"
+	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.0.1${NC}"
 
 	echo -e "${CYAN}${BOLD}┌────────────────────────────────────────────────────────────┐${NC}"
 	echo -e "${CYAN}${BOLD}${NC}  🌐 Website:  ${BLUE}www.mythical.systems${NC}           ${CYAN}${BOLD}${NC}"
@@ -238,10 +238,10 @@ show_main_menu() {
     print_banner
     draw_hr
     echo -e "${BOLD}Choose a component:${NC}"
-    echo -e "  ${GREEN}[0]${NC} ${BOLD}Panel${NC} ${BLUE}(Web Interface)${NC}"
-    echo -e "  ${BLUE}[1]${NC} ${BOLD}Wings${NC} ${BLUE}(Game Server Daemon)${NC}"
-    echo -e "  ${CYAN}[2]${NC} ${BOLD}CLI${NC} ${BLUE}(Migration & Server Management)${NC}"
-    echo -e "  ${YELLOW}[3]${NC} ${BOLD}SSL Certificates${NC} ${BLUE}(Let's Encrypt)${NC}"
+    echo -e "  ${GREEN}[1]${NC} ${BOLD}Panel${NC} ${BLUE}(Web Interface)${NC}"
+    echo -e "  ${BLUE}[2]${NC} ${BOLD}Wings${NC} ${BLUE}(Game Server Daemon)${NC}"
+    echo -e "  ${CYAN}[3]${NC} ${BOLD}CLI${NC} ${BLUE}(Migration & Server Management)${NC}"
+    echo -e "  ${YELLOW}[4]${NC} ${BOLD}SSL Certificates${NC} ${BLUE}(Let's Encrypt)${NC}"
     draw_hr
 }
 
@@ -252,22 +252,22 @@ show_panel_menu() {
     print_centered "Panel Operations" "$CYAN"
     draw_hr
     echo ""
-    echo -e "  ${GREEN}${BOLD}[0]${NC} ${BOLD}Install Panel${NC}"
+    echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install Panel${NC}"
     echo -e "     ${BLUE}→ Install FeatherPanel web interface using Docker${NC}"
     echo -e "     ${BLUE}→ Choose access method (Cloudflare Tunnel, Nginx, Apache, Direct)${NC}"
     echo -e "     ${BLUE}→ Choose release type (Stable Release or Development Build)${NC}"
     echo ""
-    echo -e "  ${RED}${BOLD}[1]${NC} ${BOLD}Uninstall Panel${NC}"
+    echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall Panel${NC}"
     echo -e "     ${YELLOW}⚠️  WARNING: This will remove all Panel data and containers${NC}"
     echo -e "     ${BLUE}→ Stops and removes Docker containers${NC}"
     echo -e "     ${BLUE}→ Removes installation files and configuration${NC}"
     echo ""
-    echo -e "  ${YELLOW}${BOLD}[2]${NC} ${BOLD}Update Panel${NC}"
+    echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update Panel${NC}"
     echo -e "     ${BLUE}→ Pull latest Docker images${NC}"
     echo -e "     ${BLUE}→ Restart containers with new version${NC}"
     echo -e "     ${BLUE}→ Switch between release and dev builds${NC}"
     echo ""
-    echo -e "  ${CYAN}${BOLD}[3]${NC} ${BOLD}Backup Manager${NC}"
+    echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Backup Manager${NC}"
     echo -e "     ${BLUE}→ Create, list, restore, and manage backups${NC}"
     echo -e "     ${BLUE}→ Backup database, volumes, and configuration${NC}"
     echo -e "     ${BLUE}→ Export/Import for migrating to another server${NC}"
@@ -282,28 +282,28 @@ show_backup_menu() {
     print_centered "Backup Manager" "$CYAN"
     draw_hr
     echo ""
-    echo -e "  ${GREEN}${BOLD}[0]${NC} ${BOLD}Create Backup${NC}"
+    echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Create Backup${NC}"
     echo -e "     ${BLUE}→ Create a full backup of Panel data and configuration${NC}"
     echo -e "     ${BLUE}→ Includes database, volumes, and config files${NC}"
     echo ""
-    echo -e "  ${BLUE}${BOLD}[1]${NC} ${BOLD}List Backups${NC}"
+    echo -e "  ${BLUE}${BOLD}[2]${NC} ${BOLD}List Backups${NC}"
     echo -e "     ${BLUE}→ View all available backups${NC}"
     echo -e "     ${BLUE}→ Shows backup size, date, and details${NC}"
     echo ""
-    echo -e "  ${YELLOW}${BOLD}[2]${NC} ${BOLD}Restore Backup${NC}"
+    echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Restore Backup${NC}"
     echo -e "     ${YELLOW}⚠️  WARNING: This will replace current data with backup${NC}"
     echo -e "     ${BLUE}→ Restore Panel from a previous backup${NC}"
     echo -e "     ${BLUE}→ Stops containers, restores data, then restarts${NC}"
     echo ""
-    echo -e "  ${RED}${BOLD}[3]${NC} ${BOLD}Delete Backup${NC}"
+    echo -e "  ${RED}${BOLD}[4]${NC} ${BOLD}Delete Backup${NC}"
     echo -e "     ${YELLOW}⚠️  WARNING: This will permanently delete the backup${NC}"
     echo -e "     ${BLUE}→ Remove a backup file from disk${NC}"
     echo ""
-    echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Export for Migration${NC}"
+    echo -e "  ${CYAN}${BOLD}[5]${NC} ${BOLD}Export for Migration${NC}"
     echo -e "     ${BLUE}→ Create migration package to move Panel to another server${NC}"
     echo -e "     ${BLUE}→ Includes all data, config, and transfer instructions${NC}"
     echo ""
-    echo -e "  ${GREEN}${BOLD}[5]${NC} ${BOLD}Import Migration${NC}"
+    echo -e "  ${GREEN}${BOLD}[6]${NC} ${BOLD}Import Migration${NC}"
     echo -e "     ${YELLOW}⚠️  WARNING: This will replace current installation${NC}"
     echo -e "     ${BLUE}→ Import Panel data from another server${NC}"
     echo -e "     ${BLUE}→ Restores complete Panel installation from migration package${NC}"
@@ -340,21 +340,21 @@ show_wings_menu() {
     print_centered "Wings Operations" "$CYAN"
     draw_hr
     echo ""
-    echo -e "  ${GREEN}${BOLD}[0]${NC} ${BOLD}Install Wings${NC}"
+    echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install Wings${NC}"
     echo -e "     ${BLUE}→ Install FeatherWings game server daemon${NC}"
     echo -e "     ${BLUE}→ Creates systemd service for automatic startup${NC}"
-    echo -e "     ${YELLOW}⚠️  Requires SSL certificate (option 3) before installation${NC}"
+    echo -e "     ${YELLOW}⚠️  Requires SSL certificate (option 4) before installation${NC}"
     echo ""
-    echo -e "  ${RED}${BOLD}[1]${NC} ${BOLD}Uninstall Wings${NC}"
+    echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall Wings${NC}"
     echo -e "     ${YELLOW}⚠️  WARNING: This will remove Wings and its configuration${NC}"
     echo -e "     ${BLUE}→ Stops and removes systemd service${NC}"
     echo -e "     ${BLUE}→ Removes Wings binary and data (optional)${NC}"
     echo ""
-    echo -e "  ${YELLOW}${BOLD}[2]${NC} ${BOLD}Update Wings${NC}"
+    echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update Wings${NC}"
     echo -e "     ${BLUE}→ Download latest Wings binary${NC}"
     echo -e "     ${BLUE}→ Restart Wings service with new version${NC}"
     echo ""
-    echo -e "  ${CYAN}${BOLD}[3]${NC} ${BOLD}Create SSL Certificate${NC}"
+    echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Create SSL Certificate${NC}"
     echo -e "     ${BLUE}→ Required before installing Wings${NC}"
     echo -e "     ${BLUE}→ Creates Let's Encrypt certificate for Wings domain${NC}"
     echo ""
@@ -368,18 +368,18 @@ show_cli_menu() {
     print_centered "CLI Operations" "$CYAN"
     draw_hr
     echo ""
-    echo -e "  ${GREEN}${BOLD}[0]${NC} ${BOLD}Install CLI${NC}"
+    echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install CLI${NC}"
     echo -e "     ${BLUE}→ Install FeatherPanel CLI tool${NC}"
     echo -e "     ${BLUE}→ Downloads latest release from GitHub${NC}"
     echo -e "     ${BLUE}→ Makes 'feathercli' command available system-wide${NC}"
     echo -e "     ${CYAN}→ Used for Pterodactyl to FeatherPanel migration${NC}"
     echo -e "     ${CYAN}→ Server management interface via CLI using FeatherPanel API${NC}"
     echo ""
-    echo -e "  ${RED}${BOLD}[1]${NC} ${BOLD}Uninstall CLI${NC}"
+    echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall CLI${NC}"
     echo -e "     ${YELLOW}⚠️  WARNING: This will remove the CLI binary${NC}"
     echo -e "     ${BLUE}→ Removes feathercli command${NC}"
     echo ""
-    echo -e "  ${YELLOW}${BOLD}[2]${NC} ${BOLD}Update CLI${NC}"
+    echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update CLI${NC}"
     echo -e "     ${BLUE}→ Download latest CLI binary${NC}"
     echo -e "     ${BLUE}→ Updates to newest version${NC}"
     echo ""
@@ -393,25 +393,25 @@ show_ssl_menu() {
     print_centered "SSL Certificate Operations" "$CYAN"
     draw_hr
     echo ""
-    echo -e "  ${GREEN}${BOLD}[0]${NC} ${BOLD}Install Certbot${NC}"
+    echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install Certbot${NC}"
     echo -e "     ${BLUE}→ Install Let's Encrypt client (Certbot)${NC}"
     echo -e "     ${BLUE}→ Auto-detects and installs web server plugins${NC}"
     echo ""
-    echo -e "  ${BLUE}${BOLD}[1]${NC} ${BOLD}Create Certificate (HTTP)${NC}"
+    echo -e "  ${BLUE}${BOLD}[2]${NC} ${BOLD}Create Certificate (HTTP)${NC}"
     echo -e "     ${BLUE}→ Uses HTTP challenge method${NC}"
     echo -e "     ${BLUE}→ Requires port 80 to be available${NC}"
     echo -e "     ${BLUE}→ Works with Nginx, Apache, or standalone mode${NC}"
     echo ""
-    echo -e "  ${YELLOW}${BOLD}[2]${NC} ${BOLD}Create Certificate (DNS)${NC}"
+    echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Create Certificate (DNS)${NC}"
     echo -e "     ${BLUE}→ Uses DNS challenge method${NC}"
     echo -e "     ${BLUE}→ Requires manual TXT record creation${NC}"
     echo -e "     ${BLUE}→ Works when port 80 is not available${NC}"
     echo ""
-    echo -e "  ${CYAN}${BOLD}[3]${NC} ${BOLD}Setup Auto-Renewal${NC}"
+    echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Setup Auto-Renewal${NC}"
     echo -e "     ${BLUE}→ Configures automatic certificate renewal${NC}"
     echo -e "     ${BLUE}→ Creates cron job for daily renewal checks${NC}"
     echo ""
-    echo -e "  ${RED}${BOLD}[4]${NC} ${BOLD}Install acme.sh${NC}"
+    echo -e "  ${RED}${BOLD}[5]${NC} ${BOLD}Install acme.sh${NC}"
     echo -e "     ${YELLOW}⚠️  Advanced tool for power users${NC}"
     echo -e "     ${BLUE}→ Alternative SSL certificate management tool${NC}"
     echo ""
@@ -790,11 +790,13 @@ setup_cloudflare_tunnel_full_auto() {
         
         if [ -n "$HOSTNAME_EXISTS" ] && [ "$HOSTNAME_EXISTS" != "null" ] && [ "$HOSTNAME_EXISTS" != "" ]; then
             # Update existing ingress rule for this hostname
-            NEW_INGRESS=$(echo "$EXISTING_INGRESS" | jq --arg hostname "$CF_HOSTNAME" 'map(if .hostname == $hostname then {hostname: $hostname, service: "http://localhost:4831"} else . end)')
+            # Use container name instead of localhost since cloudflared runs in bridge mode
+            NEW_INGRESS=$(echo "$EXISTING_INGRESS" | jq --arg hostname "$CF_HOSTNAME" 'map(if .hostname == $hostname then {hostname: $hostname, service: "http://featherpanel_frontendv2:80"} else . end)')
         else
             # Remove catch-all if it exists, add new rule, then re-add catch-all
+            # Use container name instead of localhost since cloudflared runs in bridge mode
             INGRESS_WITHOUT_CATCHALL=$(echo "$EXISTING_INGRESS" | jq 'map(select(.service != "http_status:404"))')
-            NEW_INGRESS=$(echo "$INGRESS_WITHOUT_CATCHALL" | jq --arg hostname "$CF_HOSTNAME" '. + [{hostname: $hostname, service: "http://localhost:4831"}] + [{service: "http_status:404"}]')
+            NEW_INGRESS=$(echo "$INGRESS_WITHOUT_CATCHALL" | jq --arg hostname "$CF_HOSTNAME" '. + [{hostname: $hostname, service: "http://featherpanel_frontendv2:80"}] + [{service: "http_status:404"}]')
         fi
         
         curl -s -X PUT "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/configurations" \
@@ -805,11 +807,12 @@ setup_cloudflare_tunnel_full_auto() {
     else
         # No existing config, create new one
         log_info "Creating tunnel configuration..."
+        # Use container name instead of localhost since cloudflared runs in bridge mode
         curl -s -X PUT "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/configurations" \
             -H "X-Auth-Email: $CF_EMAIL" \
             -H "X-Auth-Key: $CF_API_KEY" \
             -H "Content-Type: application/json" \
-            --data "$(jq -n --arg hostname "$CF_HOSTNAME" '{config:{ingress:[{hostname:$hostname,service:"http://localhost:4831"},{service:"http_status:404"}]}}')" > /dev/null
+            --data "$(jq -n --arg hostname "$CF_HOSTNAME" '{config:{ingress:[{hostname:$hostname,service:"http://featherpanel_frontendv2:80"},{service:"http_status:404"}]}}')" > /dev/null
     fi
 
     log_info "Full-automatic Cloudflare Tunnel setup complete."
@@ -844,15 +847,26 @@ setup_cloudflare_tunnel_client() {
             sudo usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
             log_success "Docker installed. You may need to re-login for group changes to take effect."
             fi
+        
+        # Ensure the FeatherPanel network exists (created by docker-compose)
+        # If network doesn't exist yet, create it
+        if ! docker network inspect featherpanel_network >/dev/null 2>&1; then
+            log_info "Creating FeatherPanel Docker network..."
+            docker network create featherpanel_network >/dev/null 2>&1 || true
+        fi
+        
+        # Connect cloudflared to the same network as FeatherPanel containers
+        # Using bridge mode instead of host to prevent intercepting traffic meant for other containers (like Wings)
+        # This allows Wings and other services to bind ports directly without interference
         if ! run_with_spinner "Starting Cloudflare Tunnel container" "Cloudflare Tunnel container running." \
-            docker run -d --network host --restart always cloudflare/cloudflared:latest tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN"; then
+            docker run -d --network featherpanel_network --restart always --name cloudflared cloudflare/cloudflared:latest tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN"; then
             return 1
         fi
         log_info "Cloudflare Tunnel setup complete."
         if [ "$CF_TUNNEL_MODE" == "2" ]; then
             echo -e "\033[0;33mYou have chosen Semi-Automatic Cloudflare Tunnel setup.\033[0m"
             echo -e "\033[0;33mPlease manually create a DNS record for your hostname pointing to the tunnel in your Cloudflare dashboard.\033[0m"
-            echo -e "\033[0;33mThe ingress rule should point to http://localhost:4831.\033[0m"
+            echo -e "\033[0;33mThe ingress rule should point to http://featherpanel_frontendv2:80 (container name) since cloudflared is on bridge network.\033[0m"
             echo -e "\033[0;33mMore information: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/create-remote-tunnel-api/\033[0m"
         fi
     else
@@ -2719,8 +2733,9 @@ import_migration() {
                 log_info "Using docker-compose.yml from migration package"
             else
                 log_info "Downloading docker-compose.yml..."
+                COMPOSE_URL=$(get_compose_file_url)
                 if ! run_with_spinner "Downloading docker-compose.yml" "docker-compose.yml downloaded." \
-                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
+                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "$COMPOSE_URL"; then
                     log_error "Failed to download docker-compose.yml"
                     return 1
                 fi
@@ -2898,6 +2913,23 @@ get_dev_image_tag() {
     fi
     
     echo "$tag"
+}
+
+# Function to get docker-compose file URL based on dev mode
+get_compose_file_url() {
+    local branch="main"
+    local compose_file="docker-compose.yml"
+    
+    # If dev mode is enabled, use docker-compose.v2.dev.yml
+    if [ "$USE_DEV" = true ]; then
+        compose_file="docker-compose.v2.dev.yml"
+        # Use DEV_BRANCH if set, otherwise default to main
+        if [ -n "$DEV_BRANCH" ]; then
+            branch="$DEV_BRANCH"
+        fi
+    fi
+    
+    echo "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/${branch}/${compose_file}"
 }
 
 # Docker-only flow
@@ -3184,39 +3216,39 @@ if [ -f /etc/os-release ]; then
         
         # Environment overrides for non-interactive mode
         case "${FP_COMPONENT:-}" in
-            panel) COMPONENT_TYPE="0";;
-            wings) COMPONENT_TYPE="1";;
-            cli) COMPONENT_TYPE="2";;
-            ssl) COMPONENT_TYPE="3";;
+            panel) COMPONENT_TYPE="1";;
+            wings) COMPONENT_TYPE="2";;
+            cli) COMPONENT_TYPE="3";;
+            ssl) COMPONENT_TYPE="4";;
             *) COMPONENT_TYPE="";;
         esac
 
-        while [[ ! "$COMPONENT_TYPE" =~ ^[0-3]$ ]]; do
+        while [[ ! "$COMPONENT_TYPE" =~ ^[1-4]$ ]]; do
             show_main_menu
-            prompt "${BOLD}Enter component${NC} ${BLUE}(0/1/2/3)${NC}: " COMPONENT_TYPE
-            if [[ ! "$COMPONENT_TYPE" =~ ^[0-3]$ ]]; then
-                echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC}, ${YELLOW}2${NC} or ${YELLOW}3${NC}."; sleep 1
+            prompt "${BOLD}Enter component${NC} ${BLUE}(1/2/3/4)${NC}: " COMPONENT_TYPE
+            if [[ ! "$COMPONENT_TYPE" =~ ^[1-4]$ ]]; then
+                echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC}, ${YELLOW}2${NC}, ${YELLOW}3${NC} or ${YELLOW}4${NC}."; sleep 1
             fi
         done
 
         # Show appropriate menu based on component selection
-        if [ "$COMPONENT_TYPE" = "0" ]; then
+        if [ "$COMPONENT_TYPE" = "1" ]; then
             # Panel operations
-            while [[ ! "$INST_TYPE" =~ ^[0-3]$ ]]; do
+            while [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; do
                 show_panel_menu
                 echo ""
-                prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(0/1/2/3)${NC}: " INST_TYPE
-                if [[ ! "$INST_TYPE" =~ ^[0-3]$ ]]; then
+                prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4)${NC}: " INST_TYPE
+                if [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; then
                     echo ""
                     echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-                    echo -e "${YELLOW}Please enter ${BOLD}0${NC} (Install), ${BOLD}1${NC} (Uninstall), ${BOLD}2${NC} (Update), or ${BOLD}3${NC} (Backup)${NC}"
+                    echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), or ${BOLD}4${NC} (Backup)${NC}"
                     echo ""
                     sleep 2
                 fi
             done
             
             # Add confirmation for destructive operations
-            if [ "$INST_TYPE" = "1" ]; then
+            if [ "$INST_TYPE" = "2" ]; then
                 echo ""
                 draw_hr
                 echo -e "${RED}${BOLD}⚠️  WARNING: Uninstall Operation${NC}"
@@ -3234,23 +3266,23 @@ if [ -f /etc/os-release ]; then
                     exit 0
                 fi
             fi
-        elif [ "$COMPONENT_TYPE" = "1" ]; then
+        elif [ "$COMPONENT_TYPE" = "2" ]; then
             # Wings operations
-            while [[ ! "$INST_TYPE" =~ ^[0-3]$ ]]; do
+            while [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; do
                 show_wings_menu
                 echo ""
-                prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(0/1/2/3)${NC}: " INST_TYPE
-                if [[ ! "$INST_TYPE" =~ ^[0-3]$ ]]; then
+                prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4)${NC}: " INST_TYPE
+                if [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; then
                     echo ""
                     echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-                    echo -e "${YELLOW}Please enter ${BOLD}0${NC} (Install), ${BOLD}1${NC} (Uninstall), ${BOLD}2${NC} (Update), or ${BOLD}3${NC} (SSL)${NC}"
+                    echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), or ${BOLD}4${NC} (SSL)${NC}"
                     echo ""
                     sleep 2
                 fi
             done
             
             # Add confirmation for destructive operations
-            if [ "$INST_TYPE" = "1" ]; then
+            if [ "$INST_TYPE" = "2" ]; then
                 echo ""
                 draw_hr
                 echo -e "${RED}${BOLD}⚠️  WARNING: Uninstall Operation${NC}"
@@ -3268,23 +3300,23 @@ if [ -f /etc/os-release ]; then
                     exit 0
                 fi
             fi
-        elif [ "$COMPONENT_TYPE" = "2" ]; then
+        elif [ "$COMPONENT_TYPE" = "3" ]; then
             # CLI operations
-            while [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; do
+            while [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; do
                 show_cli_menu
                 echo ""
-                prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(0/1/2)${NC}: " INST_TYPE
-                if [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; then
+                prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3)${NC}: " INST_TYPE
+                if [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; then
                     echo ""
                     echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-                    echo -e "${YELLOW}Please enter ${BOLD}0${NC} (Install), ${BOLD}1${NC} (Uninstall), or ${BOLD}2${NC} (Update)${NC}"
+                    echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), or ${BOLD}3${NC} (Update)${NC}"
                     echo ""
                     sleep 2
                 fi
             done
             
             # Add confirmation for destructive operations
-            if [ "$INST_TYPE" = "1" ]; then
+            if [ "$INST_TYPE" = "2" ]; then
                 echo ""
                 draw_hr
                 echo -e "${RED}${BOLD}⚠️  WARNING: Uninstall Operation${NC}"
@@ -3303,14 +3335,14 @@ if [ -f /etc/os-release ]; then
             fi
         else
             # SSL operations
-            while [[ ! "$INST_TYPE" =~ ^[0-4]$ ]]; do
+            while [[ ! "$INST_TYPE" =~ ^[1-5]$ ]]; do
                 show_ssl_menu
                 echo ""
-                prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(0/1/2/3/4)${NC}: " INST_TYPE
-                if [[ ! "$INST_TYPE" =~ ^[0-4]$ ]]; then
+                prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4/5)${NC}: " INST_TYPE
+                if [[ ! "$INST_TYPE" =~ ^[1-5]$ ]]; then
                     echo ""
                     echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-                    echo -e "${YELLOW}Please enter ${BOLD}0${NC} (Install Certbot), ${BOLD}1${NC} (HTTP Cert), ${BOLD}2${NC} (DNS Cert), ${BOLD}3${NC} (Auto-Renewal), or ${BOLD}4${NC} (acme.sh)${NC}"
+                    echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install Certbot), ${BOLD}2${NC} (HTTP Cert), ${BOLD}3${NC} (DNS Cert), ${BOLD}4${NC} (Auto-Renewal), or ${BOLD}5${NC} (acme.sh)${NC}"
                     echo ""
                     sleep 2
                 fi
@@ -3319,9 +3351,9 @@ if [ -f /etc/os-release ]; then
 
         # Environment overrides for non-interactive mode
         case "${FP_ACTION:-}" in
-            install) INST_TYPE="0";;
-            uninstall) INST_TYPE="1";;
-            update) INST_TYPE="2";;
+            install) INST_TYPE="1";;
+            uninstall) INST_TYPE="2";;
+            update) INST_TYPE="3";;
             *) ;;
         esac
         
@@ -3350,7 +3382,7 @@ CF_HOSTNAME=""
         panel_domain=""
 
         # Handle operations based on component and action
-        if [ "$COMPONENT_TYPE" = "0" ] && [ "$INST_TYPE" = "0" ]; then
+        if [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "1" ]; then
             # Panel Install
             # Check if FeatherPanel is already installed (unless skip flag is set)
             if [ "$SKIP_INSTALL_CHECK" = false ]; then
@@ -3407,7 +3439,7 @@ CF_HOSTNAME=""
                         1)
                             echo ""
                             echo -e "${GREEN}To update FeatherPanel, please run the installer again and select:${NC}"
-                            echo -e "  ${CYAN}•${NC} Component: ${BOLD}Panel${NC} (option 0)"
+                            echo -e "  ${CYAN}•${NC} Component: ${BOLD}Panel${NC} (option 1)"
                             echo -e "  ${CYAN}•${NC} Operation: ${BOLD}Update Panel${NC} (option 2)"
                             echo ""
                             echo -e "${BLUE}Or use: ${BOLD}FP_COMPONENT=panel FP_ACTION=update $0${NC}"
@@ -3676,8 +3708,9 @@ CF_HOSTNAME=""
             fi
 
             if [ ! -f /var/www/featherpanel/docker-compose.yml ]; then
+                COMPOSE_URL=$(get_compose_file_url)
                 if ! run_with_spinner "Downloading docker-compose.yml for FeatherPanel" "docker-compose.yml downloaded." \
-                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
+                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "$COMPOSE_URL"; then
                     exit 1
                 fi
             fi
@@ -4153,7 +4186,7 @@ CF_HOSTNAME=""
             draw_hr
             
             log_info "Installation log saved at: $LOG_FILE"
-        elif [ "$COMPONENT_TYPE" = "0" ] && [ "$INST_TYPE" = "1" ]; then
+        elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "2" ]; then
             # Panel Uninstall
             if [ ! -f /var/www/featherpanel/.installed ]; then
                 echo "FeatherPanel does not appear to be installed. Nothing to uninstall."
@@ -4166,7 +4199,7 @@ CF_HOSTNAME=""
                     echo "Uninstallation cancelled."
                     exit 0
                 fi
-        elif [ "$COMPONENT_TYPE" = "0" ] && [ "$INST_TYPE" = "2" ]; then
+        elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "3" ]; then
             # Panel Update
             if [ ! -f /var/www/featherpanel/.installed ]; then
                 echo "FeatherPanel does not appear to be installed. Nothing to update."
@@ -4289,15 +4322,16 @@ CF_HOSTNAME=""
             
             print_banner
             log_step "Updating FeatherPanel components..."
+            COMPOSE_URL=$(get_compose_file_url)
             if [ ! -f /var/www/featherpanel/docker-compose.yml ]; then
                 if ! run_with_spinner "Downloading docker-compose.yml for FeatherPanel" "docker-compose.yml downloaded." \
-                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
+                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "$COMPOSE_URL"; then
                     upload_logs_on_fail
                     exit 1
                 fi
             else
                 if ! run_with_spinner "Refreshing docker-compose.yml from upstream" "docker-compose.yml refreshed." \
-                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
+                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "$COMPOSE_URL"; then
                     log_warn "Could not refresh compose file; keeping existing copy."
                 fi
             fi
@@ -4406,7 +4440,7 @@ CF_HOSTNAME=""
 
             log_success "FeatherPanel updated successfully."
                     exit 0
-        elif [ "$COMPONENT_TYPE" = "0" ] && [ "$INST_TYPE" = "3" ]; then
+        elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "4" ]; then
             # Panel Backup Manager
             if [ ! -f /var/www/featherpanel/.installed ]; then
                 log_error "FeatherPanel is not installed. Nothing to backup."
@@ -4414,21 +4448,21 @@ CF_HOSTNAME=""
             fi
             
             BACKUP_ACTION=""
-            while [[ ! "$BACKUP_ACTION" =~ ^[0-5]$ ]]; do
+            while [[ ! "$BACKUP_ACTION" =~ ^[1-6]$ ]]; do
                 show_backup_menu
                 echo ""
-                prompt "${BOLD}${CYAN}Select backup operation${NC} ${BLUE}(0/1/2/3/4/5)${NC}: " BACKUP_ACTION
-                if [[ ! "$BACKUP_ACTION" =~ ^[0-5]$ ]]; then
+                prompt "${BOLD}${CYAN}Select backup operation${NC} ${BLUE}(1/2/3/4/5/6)${NC}: " BACKUP_ACTION
+                if [[ ! "$BACKUP_ACTION" =~ ^[1-6]$ ]]; then
                     echo ""
                     echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-                    echo -e "${YELLOW}Please enter ${BOLD}0${NC} (Create), ${BOLD}1${NC} (List), ${BOLD}2${NC} (Restore), ${BOLD}3${NC} (Delete), ${BOLD}4${NC} (Export), or ${BOLD}5${NC} (Import)${NC}"
+                    echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Create), ${BOLD}2${NC} (List), ${BOLD}3${NC} (Restore), ${BOLD}4${NC} (Delete), ${BOLD}5${NC} (Export), or ${BOLD}6${NC} (Import)${NC}"
                     echo ""
                     sleep 2
                 fi
             done
             
             case $BACKUP_ACTION in
-                0)
+                1)
                     # Create Backup
                     if create_backup; then
                         log_success "Backup operation completed. See log at $LOG_FILE"
@@ -4437,12 +4471,12 @@ CF_HOSTNAME=""
                         exit 1
                     fi
                     ;;
-                1)
+                2)
                     # List Backups
                     list_backups
                     log_info "Backup listing completed. See log at $LOG_FILE"
                     ;;
-                2)
+                3)
                     # Restore Backup
                     if restore_backup; then
                         log_success "Backup restore completed. See log at $LOG_FILE"
@@ -4451,7 +4485,7 @@ CF_HOSTNAME=""
                         exit 1
                     fi
                     ;;
-                3)
+                4)
                     # Delete Backup
                     if delete_backup; then
                         log_success "Backup deletion completed. See log at $LOG_FILE"
@@ -4460,7 +4494,7 @@ CF_HOSTNAME=""
                         exit 1
                     fi
                     ;;
-                4)
+                5)
                     # Export for Migration
                     if export_migration; then
                         log_success "Migration export completed. See log at $LOG_FILE"
@@ -4469,7 +4503,7 @@ CF_HOSTNAME=""
                         exit 1
                     fi
                     ;;
-                5)
+                6)
                     # Import Migration
                     if import_migration; then
                         log_success "Migration import completed. See log at $LOG_FILE"
@@ -4479,7 +4513,7 @@ CF_HOSTNAME=""
                     fi
                     ;;
             esac
-        elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "0" ]; then
+        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then
             # Wings Install
             if [ -f /usr/local/bin/featherwings ]; then
                 read -r -p "FeatherWings appears to be already installed. Do you want to reinstall? (y/n): " reinstall
@@ -4491,7 +4525,7 @@ CF_HOSTNAME=""
             
             # Check if SSL certificate exists
             echo "Wings requires SSL certificates for secure communication with the panel."
-            echo "Please create an SSL certificate first using Wings SSL Certificate option (3)."
+            echo "Please create an SSL certificate first using Wings SSL Certificate option (4)."
             echo ""
             echo "Available certificates:"
             if [ -d "/etc/letsencrypt/live" ]; then
@@ -4523,7 +4557,7 @@ CF_HOSTNAME=""
             install_wings
             log_success "Wings installation finished. See log at $LOG_FILE"
             log_warn "Remember to configure FeatherWings with SSL certificates in /etc/featherpanel/config.yml"
-        elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "1" ]; then
+        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
             # Wings Uninstall
             if [ ! -f /usr/local/bin/featherwings ]; then
                 echo "FeatherWings does not appear to be installed. Nothing to uninstall."
@@ -4536,7 +4570,7 @@ CF_HOSTNAME=""
                 echo "Uninstallation cancelled."
                 exit 0
             fi
-        elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "2" ]; then
+        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "3" ]; then
             # Wings Update
             if [ ! -f /usr/local/bin/featherwings ]; then
                 echo "FeatherWings does not appear to be installed. Nothing to update."
@@ -4546,7 +4580,7 @@ CF_HOSTNAME=""
             update_wings
             log_success "Wings updated successfully."
             exit 0
-        elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "3" ]; then
+        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "4" ]; then
             # Wings SSL Certificate
             if create_wings_ssl_certificate; then
                 log_success "Wings SSL certificate creation finished. See log at $LOG_FILE"
@@ -4561,7 +4595,7 @@ CF_HOSTNAME=""
                 draw_hr
                 exit 1
             fi
-        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "0" ]; then
+        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "1" ]; then
             # CLI Install
             if [ -f /usr/local/bin/feathercli ]; then
                 log_warn "FeatherPanel CLI appears to be already installed."
@@ -4580,7 +4614,7 @@ CF_HOSTNAME=""
                 log_error "CLI installation failed. See log at $LOG_FILE"
                 exit 1
             fi
-        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then
+        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "2" ]; then
             # CLI Uninstall
             if [ ! -f /usr/local/bin/feathercli ]; then
                 echo "FeatherPanel CLI does not appear to be installed. Nothing to uninstall."
@@ -4588,7 +4622,7 @@ CF_HOSTNAME=""
             fi
             uninstall_feathercli
             log_success "CLI uninstallation finished. See log at $LOG_FILE"
-        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
+        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "3" ]; then
             # CLI Update
             if [ ! -f /usr/local/bin/feathercli ]; then
                 echo "FeatherPanel CLI does not appear to be installed. Nothing to update."
@@ -4601,11 +4635,11 @@ CF_HOSTNAME=""
                 log_error "CLI update failed. See log at $LOG_FILE"
                 exit 1
             fi
-        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "0" ]; then
+        elif [ "$COMPONENT_TYPE" = "4" ] && [ "$INST_TYPE" = "1" ]; then
             # SSL - Install Certbot
             install_certbot
             log_success "SSL certificate tools installation finished. See log at $LOG_FILE"
-        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "1" ]; then
+        elif [ "$COMPONENT_TYPE" = "4" ] && [ "$INST_TYPE" = "2" ]; then
             # SSL - Create Certificate (HTTP/Standalone)
             if create_ssl_certificate_http; then
                 log_success "SSL certificate creation finished. See log at $LOG_FILE"
@@ -4613,7 +4647,7 @@ CF_HOSTNAME=""
                 log_error "SSL certificate creation failed. See log at $LOG_FILE"
                 exit 1
             fi
-        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "2" ]; then
+        elif [ "$COMPONENT_TYPE" = "4" ] && [ "$INST_TYPE" = "3" ]; then
             # SSL - Create Certificate (DNS)
             if create_ssl_certificate_dns; then
                 log_success "SSL certificate creation finished. See log at $LOG_FILE"
@@ -4621,7 +4655,7 @@ CF_HOSTNAME=""
                 log_error "SSL certificate creation failed. See log at $LOG_FILE"
                 exit 1
             fi
-        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "3" ]; then
+        elif [ "$COMPONENT_TYPE" = "4" ] && [ "$INST_TYPE" = "4" ]; then
             # SSL - Setup Auto-Renewal
             if setup_ssl_auto_renewal; then
                 log_success "SSL auto-renewal setup finished. See log at $LOG_FILE"
@@ -4629,7 +4663,7 @@ CF_HOSTNAME=""
                 log_error "SSL auto-renewal setup failed. See log at $LOG_FILE"
                 exit 1
             fi
-        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "4" ]; then
+        elif [ "$COMPONENT_TYPE" = "4" ] && [ "$INST_TYPE" = "5" ]; then
             # SSL - Install acme.sh
             install_acme_sh
             log_success "acme.sh installation finished. See log at $LOG_FILE"

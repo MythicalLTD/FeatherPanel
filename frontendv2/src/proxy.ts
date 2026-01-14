@@ -29,6 +29,7 @@ export function proxy(request: NextRequest) {
         '/auth/setup-2fa',
         '/auth/verify-2fa',
         '/auth/logout',
+        '/maintenance',
     ];
 
     const isPublicRoute = publicRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'));
