@@ -46,12 +46,7 @@ import Image from 'next/image';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import {
-    Description,
-    Field,
-    Fieldset,
-    Label,
-} from '@headlessui/react';
+import { Description, Field, Fieldset, Label } from '@headlessui/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
@@ -369,7 +364,9 @@ export default function ProfileTab() {
                         <Label className='text-sm font-medium text-foreground'>{t('account.ticketSignature')}</Label>
                         <Textarea
                             value={formData.ticket_signature}
-                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData((prev) => ({ ...prev, ticket_signature: e.target.value }))}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                                setFormData((prev) => ({ ...prev, ticket_signature: e.target.value }))
+                            }
                             disabled={isSubmitting}
                             placeholder={t('account.ticketSignaturePlaceholder')}
                             rows={4}

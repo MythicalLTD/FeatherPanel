@@ -58,7 +58,8 @@ export default function DocsPage() {
                                     <CardTitle className='text-2xl text-foreground'>Widgets</CardTitle>
                                 </div>
                                 <CardDescription className='text-base text-muted-foreground'>
-                                    Explore all available widget injection points and learn how to create custom widgets for FeatherPanel
+                                    Explore all available widget injection points and learn how to create custom widgets
+                                    for FeatherPanel
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -107,7 +108,8 @@ export default function DocsPage() {
                                     <CardTitle className='text-2xl text-foreground'>Permissions</CardTitle>
                                 </div>
                                 <CardDescription className='text-base text-muted-foreground'>
-                                    Complete reference of all permission nodes available in FeatherPanel for role-based access control
+                                    Complete reference of all permission nodes available in FeatherPanel for role-based
+                                    access control
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -129,7 +131,8 @@ export default function DocsPage() {
                                     <CardTitle className='text-2xl text-foreground'>Events</CardTitle>
                                 </div>
                                 <CardDescription className='text-base text-muted-foreground'>
-                                    Complete reference of all plugin events and hooks available in FeatherPanel for extending functionality
+                                    Complete reference of all plugin events and hooks available in FeatherPanel for
+                                    extending functionality
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -153,8 +156,9 @@ export default function DocsPage() {
                         <div className='space-y-2'>
                             <h3 className='font-semibold text-sm text-foreground'>For Widget Developers</h3>
                             <p className='text-sm text-muted-foreground'>
-                                Widgets allow you to extend FeatherPanel&apos;s functionality by injecting custom components into specific pages. 
-                                Each page has unique injection points where widgets can be rendered.
+                                Widgets allow you to extend FeatherPanel&apos;s functionality by injecting custom
+                                components into specific pages. Each page has unique injection points where widgets can
+                                be rendered.
                             </p>
                         </div>
                         <div className='space-y-2'>

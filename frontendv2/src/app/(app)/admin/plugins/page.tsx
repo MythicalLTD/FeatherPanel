@@ -162,7 +162,9 @@ export default function PluginsPage() {
 
     // Spell restrictions
     const [selectedSpellIds, setSelectedSpellIds] = useState<Set<number>>(new Set());
-    const [selectedSpellsDetails, setSelectedSpellsDetails] = useState<Array<{ id: number; name: string; description?: string }>>([]);
+    const [selectedSpellsDetails, setSelectedSpellsDetails] = useState<
+        Array<{ id: number; name: string; description?: string }>
+    >([]);
     const [spellSearchQuery, setSpellSearchQuery] = useState('');
     const [spellPage, setSpellPage] = useState(1);
     const [spells, setSpells] = useState<Array<{ id: number; name: string; description?: string }>>([]);
@@ -363,10 +365,14 @@ export default function PluginsPage() {
             });
 
             // Initialize selected spell IDs and fetch their details
-            if (apiData.allowedOnlyOnSpells && Array.isArray(apiData.allowedOnlyOnSpells) && apiData.allowedOnlyOnSpells.length > 0) {
+            if (
+                apiData.allowedOnlyOnSpells &&
+                Array.isArray(apiData.allowedOnlyOnSpells) &&
+                apiData.allowedOnlyOnSpells.length > 0
+            ) {
                 const spellIds = apiData.allowedOnlyOnSpells;
                 setSelectedSpellIds(new Set(spellIds));
-                
+
                 // Fetch details for selected spells
                 fetchSelectedSpellsDetails(spellIds);
             } else {
@@ -405,9 +411,7 @@ export default function PluginsPage() {
     const fetchSelectedSpellsDetails = async (spellIds: number[]) => {
         try {
             // Fetch each selected spell by ID
-            const spellPromises = spellIds.map((id) =>
-                axios.get(`/api/admin/spells/${id}`).catch(() => null)
-            );
+            const spellPromises = spellIds.map((id) => axios.get(`/api/admin/spells/${id}`).catch(() => null));
             const spellResponses = await Promise.all(spellPromises);
             const selectedSpells = spellResponses
                 .filter((response) => response?.data?.success && response.data.data?.spell)
@@ -447,7 +451,7 @@ export default function PluginsPage() {
     // Debounce spell search - wait for user to finish typing
     useEffect(() => {
         if (!configDrawerOpen) return;
-        
+
         // Don't debounce page changes, only search queries
         if (spellSearchQuery !== '') {
             const timer = setTimeout(() => {
@@ -595,9 +599,11 @@ export default function PluginsPage() {
                 setUpdateRequirements(requirements);
                 setUpdateDialogOpen(true);
             } else {
-                toast.info(t('admin.plugins.messages.up_to_date', {
-                    plugin: plugin.name || plugin.identifier,
-                }));
+                toast.info(
+                    t('admin.plugins.messages.up_to_date', {
+                        plugin: plugin.name || plugin.identifier,
+                    }),
+                );
             }
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -1093,7 +1099,9 @@ export default function PluginsPage() {
                                     <div className='relative'>
                                         <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none' />
                                         <Input
-                                            placeholder={t('admin.plugins.drawers.config.spell_restrictions.search_placeholder')}
+                                            placeholder={t(
+                                                'admin.plugins.drawers.config.spell_restrictions.search_placeholder',
+                                            )}
                                             value={spellSearchQuery}
                                             onChange={(e) => {
                                                 setSpellSearchQuery(e.target.value);
@@ -1113,12 +1121,20 @@ export default function PluginsPage() {
                                         <div className='space-y-2.5'>
                                             <div className='flex items-center justify-between'>
                                                 <p className='text-sm font-medium text-foreground'>
-                                                    {t('admin.plugins.drawers.config.spell_restrictions.selected_spells')}
+                                                    {t(
+                                                        'admin.plugins.drawers.config.spell_restrictions.selected_spells',
+                                                    )}
                                                 </p>
-                                                <Badge variant='secondary' className='text-xs bg-primary/20 text-primary border-primary/30'>
-                                                    {t('admin.plugins.drawers.config.spell_restrictions.selected_count', {
-                                                        count: String(selectedSpellIds.size),
-                                                    })}
+                                                <Badge
+                                                    variant='secondary'
+                                                    className='text-xs bg-primary/20 text-primary border-primary/30'
+                                                >
+                                                    {t(
+                                                        'admin.plugins.drawers.config.spell_restrictions.selected_count',
+                                                        {
+                                                            count: String(selectedSpellIds.size),
+                                                        },
+                                                    )}
                                                 </Badge>
                                             </div>
                                             <div className='flex flex-wrap gap-2 p-3 rounded-md bg-background/50 border border-border'>
@@ -1135,7 +1151,9 @@ export default function PluginsPage() {
                                                                 const newSet = new Set(selectedSpellIds);
                                                                 newSet.delete(spell.id);
                                                                 setSelectedSpellIds(newSet);
-                                                                setSelectedSpellsDetails((prev) => prev.filter((s) => s.id !== spell.id));
+                                                                setSelectedSpellsDetails((prev) =>
+                                                                    prev.filter((s) => s.id !== spell.id),
+                                                                );
                                                             }}
                                                             className='ml-0.5 hover:bg-destructive/30 rounded-full p-0.5 transition-colors'
                                                         >
@@ -1165,7 +1183,9 @@ export default function PluginsPage() {
                                                     </p>
                                                     {spellSearchQuery && (
                                                         <p className='text-xs text-muted-foreground mt-1'>
-                                                            {t('admin.plugins.drawers.config.spell_restrictions.no_spells_search')}
+                                                            {t(
+                                                                'admin.plugins.drawers.config.spell_restrictions.no_spells_search',
+                                                            )}
                                                         </p>
                                                     )}
                                                 </div>
@@ -1185,12 +1205,22 @@ export default function PluginsPage() {
                                                                     const newSet = new Set(selectedSpellIds);
                                                                     if (newSet.has(spell.id)) {
                                                                         newSet.delete(spell.id);
-                                                                        setSelectedSpellsDetails((prev) => prev.filter((s) => s.id !== spell.id));
+                                                                        setSelectedSpellsDetails((prev) =>
+                                                                            prev.filter((s) => s.id !== spell.id),
+                                                                        );
                                                                     } else {
                                                                         newSet.add(spell.id);
                                                                         setSelectedSpellsDetails((prev) => {
-                                                                            if (prev.find((s) => s.id === spell.id)) return prev;
-                                                                            return [...prev, { id: spell.id, name: spell.name, description: spell.description }];
+                                                                            if (prev.find((s) => s.id === spell.id))
+                                                                                return prev;
+                                                                            return [
+                                                                                ...prev,
+                                                                                {
+                                                                                    id: spell.id,
+                                                                                    name: spell.name,
+                                                                                    description: spell.description,
+                                                                                },
+                                                                            ];
                                                                         });
                                                                     }
                                                                     setSelectedSpellIds(newSet);
@@ -1198,12 +1228,19 @@ export default function PluginsPage() {
                                                             >
                                                                 <div className='flex-1 min-w-0'>
                                                                     <div className='flex items-center gap-2'>
-                                                                        <div className={`font-medium text-sm ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                                                                        <div
+                                                                            className={`font-medium text-sm ${isSelected ? 'text-primary' : 'text-foreground'}`}
+                                                                        >
                                                                             {spell.name}
                                                                         </div>
                                                                         {isSelected && (
-                                                                            <Badge variant='outline' className='text-[10px] px-1.5 py-0 border-primary/40 text-primary bg-primary/10'>
-                                                                                {t('admin.plugins.drawers.config.spell_restrictions.selected_badge')}
+                                                                            <Badge
+                                                                                variant='outline'
+                                                                                className='text-[10px] px-1.5 py-0 border-primary/40 text-primary bg-primary/10'
+                                                                            >
+                                                                                {t(
+                                                                                    'admin.plugins.drawers.config.spell_restrictions.selected_badge',
+                                                                                )}
                                                                             </Badge>
                                                                         )}
                                                                     </div>
@@ -1219,15 +1256,35 @@ export default function PluginsPage() {
                                                                             type='checkbox'
                                                                             checked={isSelected}
                                                                             onChange={() => {
-                                                                                const newSet = new Set(selectedSpellIds);
+                                                                                const newSet = new Set(
+                                                                                    selectedSpellIds,
+                                                                                );
                                                                                 if (newSet.has(spell.id)) {
                                                                                     newSet.delete(spell.id);
-                                                                                    setSelectedSpellsDetails((prev) => prev.filter((s) => s.id !== spell.id));
+                                                                                    setSelectedSpellsDetails((prev) =>
+                                                                                        prev.filter(
+                                                                                            (s) => s.id !== spell.id,
+                                                                                        ),
+                                                                                    );
                                                                                 } else {
                                                                                     newSet.add(spell.id);
                                                                                     setSelectedSpellsDetails((prev) => {
-                                                                                        if (prev.find((s) => s.id === spell.id)) return prev;
-                                                                                        return [...prev, { id: spell.id, name: spell.name, description: spell.description }];
+                                                                                        if (
+                                                                                            prev.find(
+                                                                                                (s) =>
+                                                                                                    s.id === spell.id,
+                                                                                            )
+                                                                                        )
+                                                                                            return prev;
+                                                                                        return [
+                                                                                            ...prev,
+                                                                                            {
+                                                                                                id: spell.id,
+                                                                                                name: spell.name,
+                                                                                                description:
+                                                                                                    spell.description,
+                                                                                            },
+                                                                                        ];
                                                                                     });
                                                                                 }
                                                                                 setSelectedSpellIds(newSet);
@@ -1340,7 +1397,9 @@ export default function PluginsPage() {
                     </DialogHeader>
                     <div className='space-y-4 py-4'>
                         <div className='space-y-2'>
-                            <label className='text-sm font-medium'>{t('admin.plugins.dialogs.install_url.url_label')}</label>
+                            <label className='text-sm font-medium'>
+                                {t('admin.plugins.dialogs.install_url.url_label')}
+                            </label>
                             <Input
                                 placeholder={t('admin.plugins.dialogs.install_url.url_placeholder')}
                                 value={installUrl}

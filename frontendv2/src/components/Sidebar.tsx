@@ -46,6 +46,7 @@ import { Fragment, useState, useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { DynamicIcon } from 'lucide-react/dynamic';
 import NextImage from 'next/image';
 import Link from 'next/link';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -58,6 +59,36 @@ import type { NavigationItem } from '@/types/navigation';
 interface SidebarProps {
     mobileOpen: boolean;
     setMobileOpen: (open: boolean) => void;
+}
+
+// Helper function to render icon for navigation items
+function renderIcon(item: NavigationItem, className: string, sizeClass: string) {
+    // If lucideIcon is provided, use DynamicIcon (always prioritize lucideIcon over icon)
+    if (item.lucideIcon) {
+        // DynamicIcon requires a specific icon name type, but we're loading dynamically from config
+        // The icon name is validated at runtime by lucide-react
+        // We use type assertion here since the icon name comes from plugin configuration
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const iconName: any = item.lucideIcon;
+        return (
+            <DynamicIcon
+                name={iconName}
+                className={cn('shrink-0 transition-transform group-hover:scale-110', className, sizeClass)}
+            />
+        );
+    }
+
+    // Otherwise, use the regular icon (string emoji or LucideIcon component)
+    const Icon = item.icon;
+    if (typeof Icon === 'string') {
+        return (
+            <span className={cn('shrink-0 flex items-center justify-center text-lg', className, sizeClass)}>
+                {Icon}
+            </span>
+        );
+    }
+
+    return <Icon className={cn('shrink-0 transition-transform group-hover:scale-110', className, sizeClass)} />;
 }
 
 // Move SidebarContent outside to avoid creating component during render
@@ -258,7 +289,6 @@ function SidebarContent({
                             >
                                 {groupedItems[group].map((item) => {
                                     const active = isActive(item.url);
-                                    const Icon = item.icon;
                                     const isPluginAction = !!item.pluginJs;
                                     const hasChildren = item.children && item.children.length > 0;
                                     const isSubmenuCollapsed = collapsedSubmenus.includes(item.id);
@@ -276,23 +306,7 @@ function SidebarContent({
                                                     )}
                                                     title={collapsed && !mobile ? item.name : undefined}
                                                 >
-                                                    {typeof Icon === 'string' ? (
-                                                        <span
-                                                            className={cn(
-                                                                'shrink-0 flex items-center justify-center text-lg',
-                                                                collapsed && !mobile ? 'h-6 w-6' : 'h-5 w-5',
-                                                            )}
-                                                        >
-                                                            {Icon}
-                                                        </span>
-                                                    ) : (
-                                                        <Icon
-                                                            className={cn(
-                                                                'shrink-0 transition-transform group-hover:scale-110',
-                                                                collapsed && !mobile ? 'h-6 w-6' : 'h-5 w-5',
-                                                            )}
-                                                        />
-                                                    )}
+                                                    {renderIcon(item, '', collapsed && !mobile ? 'h-6 w-6' : 'h-5 w-5')}
 
                                                     {(!collapsed || mobile) && (
                                                         <span className='truncate flex-1 text-left'>{item.name}</span>
@@ -319,7 +333,6 @@ function SidebarContent({
                                                 >
                                                     {item.children?.map((child) => {
                                                         const childActive = isActive(child.url);
-                                                        const ChildIcon = child.icon;
 
                                                         return (
                                                             <Link
@@ -336,13 +349,7 @@ function SidebarContent({
                                                                     'gap-3',
                                                                 )}
                                                             >
-                                                                {typeof ChildIcon === 'string' ? (
-                                                                    <span className='shrink-0 flex items-center justify-center text-lg h-4 w-4'>
-                                                                        {ChildIcon}
-                                                                    </span>
-                                                                ) : (
-                                                                    <ChildIcon className='shrink-0 h-4 w-4' />
-                                                                )}
+                                                                {renderIcon(child, '', 'h-4 w-4')}
                                                                 <span className='truncate'>{child.name}</span>
                                                             </Link>
                                                         );
@@ -373,23 +380,7 @@ function SidebarContent({
                                                 )}
                                                 title={collapsed && !mobile ? item.name : undefined}
                                             >
-                                                {typeof Icon === 'string' ? (
-                                                    <span
-                                                        className={cn(
-                                                            'shrink-0 flex items-center justify-center text-lg',
-                                                            collapsed && !mobile ? 'h-6 w-6' : 'h-5 w-5',
-                                                        )}
-                                                    >
-                                                        {Icon}
-                                                    </span>
-                                                ) : (
-                                                    <Icon
-                                                        className={cn(
-                                                            'shrink-0 transition-transform group-hover:scale-110',
-                                                            collapsed && !mobile ? 'h-6 w-6' : 'h-5 w-5',
-                                                        )}
-                                                    />
-                                                )}
+                                                {renderIcon(item, '', collapsed && !mobile ? 'h-6 w-6' : 'h-5 w-5')}
 
                                                 {(!collapsed || mobile) && (
                                                     <span className='truncate'>{item.name}</span>
@@ -422,23 +413,7 @@ function SidebarContent({
                                             )}
                                             title={collapsed && !mobile ? item.name : undefined}
                                         >
-                                            {typeof Icon === 'string' ? (
-                                                <span
-                                                    className={cn(
-                                                        'shrink-0 flex items-center justify-center text-lg',
-                                                        collapsed && !mobile ? 'h-6 w-6' : 'h-5 w-5',
-                                                    )}
-                                                >
-                                                    {Icon}
-                                                </span>
-                                            ) : (
-                                                <Icon
-                                                    className={cn(
-                                                        'shrink-0 transition-transform group-hover:scale-110',
-                                                        collapsed && !mobile ? 'h-6 w-6' : 'h-5 w-5',
-                                                    )}
-                                                />
-                                            )}
+                                            {renderIcon(item, '', collapsed && !mobile ? 'h-6 w-6' : 'h-5 w-5')}
 
                                             {(!collapsed || mobile) && <span className='truncate'>{item.name}</span>}
 

@@ -33,90 +33,73 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const categoryData = {
-    name: "Settings",
+    name: 'Settings',
     events: [
-  {
-    "method": "onSettingRetrieved",
-    "name": "featherpanel:admin:settings:setting:retrieved",
-    "callback": "string setting name, array setting data.",
-    "category": "Settings",
-    "actualData": [
-      "setting_data",
-      "setting_name"
+        {
+            method: 'onSettingRetrieved',
+            name: 'featherpanel:admin:settings:setting:retrieved',
+            callback: 'string setting name, array setting data.',
+            category: 'Settings',
+            actualData: ['setting_data', 'setting_name'],
+            sourceFiles: ['backend/app/Controllers/Admin/SettingsController.php'],
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingRetrieved(), function ($settingData, $settingName) {\n        // Handle featherpanel:admin:settings:setting:retrieved\n        // Data keys: setting_data, setting_name\n    });\n}',
+        },
+        {
+            method: 'onSettingsByCategoryRetrieved',
+            name: 'featherpanel:admin:settings:category:retrieved',
+            callback: 'string category, array settings.',
+            category: 'Settings',
+            actualData: ['categories', 'category', 'category_config', 'settings'],
+            sourceFiles: ['backend/app/Controllers/Admin/SettingsController.php'],
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingsByCategoryRetrieved(), function ($categories, $category, $categoryConfig, $settings) {\n        // Handle featherpanel:admin:settings:category:retrieved\n        // Data keys: categories, category, category_config, settings\n    });\n}',
+        },
+        {
+            method: 'onSettingsError',
+            name: 'featherpanel:admin:settings:error',
+            callback: 'string error message, array context.',
+            category: 'Settings',
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingsError(), function ($message, $context) {\n        // Handle featherpanel:admin:settings:error\n        // Parameters: string error message, array context.\n    });\n}',
+        },
+        {
+            method: 'onSettingsRetrieved',
+            name: 'featherpanel:admin:settings:retrieved',
+            callback: 'array settings data.',
+            category: 'Settings',
+            actualData: ['categories', 'organized_settings', 'settings'],
+            sourceFiles: ['backend/app/Controllers/Admin/SettingsController.php'],
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingsRetrieved(), function ($categories, $organizedSettings, $settings) {\n        // Handle featherpanel:admin:settings:retrieved\n        // Data keys: categories, organized_settings, settings\n    });\n}',
+        },
+        {
+            method: 'onSettingsUpdated',
+            name: 'featherpanel:admin:settings:updated',
+            callback: 'array updated settings, array old values.',
+            category: 'Settings',
+            actualData: ['settings_data', 'updated_settings', 'user'],
+            sourceFiles: ['backend/app/Controllers/Admin/SettingsController.php'],
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingsUpdated(), function ($settingsData, $updatedSettings, $user) {\n        // Handle featherpanel:admin:settings:updated\n        // Data keys: settings_data, updated_settings, user\n    });\n}',
+        },
+        {
+            method: 'onSettingUpdated',
+            name: 'featherpanel:admin:settings:setting:updated',
+            callback: 'string setting name, mixed old value, mixed new value.',
+            category: 'Settings',
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingUpdated(), function ($name, $value, $value) {\n        // Handle featherpanel:admin:settings:setting:updated\n        // Parameters: string setting name, mixed old value, mixed new value.\n    });\n}',
+        },
+        {
+            method: 'onSettingValidationError',
+            name: 'featherpanel:admin:settings:validation:error',
+            callback: 'string setting name, string error message.',
+            category: 'Settings',
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingValidationError(), function ($name, $message) {\n        // Handle featherpanel:admin:settings:validation:error\n        // Parameters: string setting name, string error message.\n    });\n}',
+        },
     ],
-    "sourceFiles": [
-      "backend/app/Controllers/Admin/SettingsController.php"
-    ],
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingRetrieved(), function ($settingData, $settingName) {\n        // Handle featherpanel:admin:settings:setting:retrieved\n        // Data keys: setting_data, setting_name\n    });\n}"
-  },
-  {
-    "method": "onSettingsByCategoryRetrieved",
-    "name": "featherpanel:admin:settings:category:retrieved",
-    "callback": "string category, array settings.",
-    "category": "Settings",
-    "actualData": [
-      "categories",
-      "category",
-      "category_config",
-      "settings"
-    ],
-    "sourceFiles": [
-      "backend/app/Controllers/Admin/SettingsController.php"
-    ],
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingsByCategoryRetrieved(), function ($categories, $category, $categoryConfig, $settings) {\n        // Handle featherpanel:admin:settings:category:retrieved\n        // Data keys: categories, category, category_config, settings\n    });\n}"
-  },
-  {
-    "method": "onSettingsError",
-    "name": "featherpanel:admin:settings:error",
-    "callback": "string error message, array context.",
-    "category": "Settings",
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingsError(), function ($message, $context) {\n        // Handle featherpanel:admin:settings:error\n        // Parameters: string error message, array context.\n    });\n}"
-  },
-  {
-    "method": "onSettingsRetrieved",
-    "name": "featherpanel:admin:settings:retrieved",
-    "callback": "array settings data.",
-    "category": "Settings",
-    "actualData": [
-      "categories",
-      "organized_settings",
-      "settings"
-    ],
-    "sourceFiles": [
-      "backend/app/Controllers/Admin/SettingsController.php"
-    ],
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingsRetrieved(), function ($categories, $organizedSettings, $settings) {\n        // Handle featherpanel:admin:settings:retrieved\n        // Data keys: categories, organized_settings, settings\n    });\n}"
-  },
-  {
-    "method": "onSettingsUpdated",
-    "name": "featherpanel:admin:settings:updated",
-    "callback": "array updated settings, array old values.",
-    "category": "Settings",
-    "actualData": [
-      "settings_data",
-      "updated_settings",
-      "user"
-    ],
-    "sourceFiles": [
-      "backend/app/Controllers/Admin/SettingsController.php"
-    ],
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingsUpdated(), function ($settingsData, $updatedSettings, $user) {\n        // Handle featherpanel:admin:settings:updated\n        // Data keys: settings_data, updated_settings, user\n    });\n}"
-  },
-  {
-    "method": "onSettingUpdated",
-    "name": "featherpanel:admin:settings:setting:updated",
-    "callback": "string setting name, mixed old value, mixed new value.",
-    "category": "Settings",
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingUpdated(), function ($name, $value, $value) {\n        // Handle featherpanel:admin:settings:setting:updated\n        // Parameters: string setting name, mixed old value, mixed new value.\n    });\n}"
-  },
-  {
-    "method": "onSettingValidationError",
-    "name": "featherpanel:admin:settings:validation:error",
-    "callback": "string setting name, string error message.",
-    "category": "Settings",
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\SettingsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(SettingsEvent::onSettingValidationError(), function ($name, $message) {\n        // Handle featherpanel:admin:settings:validation:error\n        // Parameters: string setting name, string error message.\n    });\n}"
-  }
-]
 };
 
 export default function CategoryEventsPage() {
@@ -126,7 +109,7 @@ export default function CategoryEventsPage() {
         // Replace escaped newlines with actual newlines
         return str.replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
     };
-    
+
     return (
         <div className='min-h-screen bg-background'>
             <div className='container mx-auto px-4 py-16 max-w-6xl'>
@@ -147,7 +130,8 @@ export default function CategoryEventsPage() {
                                 {categoryData.name}
                             </h1>
                             <p className='text-muted-foreground mt-1'>
-                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this category
+                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this
+                                category
                             </p>
                         </div>
                     </div>
@@ -155,7 +139,10 @@ export default function CategoryEventsPage() {
 
                 <div className='space-y-4'>
                     {categoryData.events.map((event) => (
-                        <Card key={event.name} className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'>
+                        <Card
+                            key={event.name}
+                            className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'
+                        >
                             <CardHeader>
                                 <div className='flex items-start justify-between gap-4 flex-wrap'>
                                     <div className='flex-1 min-w-0'>
@@ -169,7 +156,10 @@ export default function CategoryEventsPage() {
                                             <span className='font-semibold'>Callback parameters:</span> {event.callback}
                                         </CardDescription>
                                     </div>
-                                    <Badge variant='outline' className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'>
+                                    <Badge
+                                        variant='outline'
+                                        className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'
+                                    >
                                         {event.method}
                                     </Badge>
                                 </div>
@@ -177,15 +167,17 @@ export default function CategoryEventsPage() {
                             <CardContent className='space-y-4'>
                                 {event.actualData && event.actualData.length > 0 && (
                                     <div className='p-4 rounded-lg bg-muted/30 border border-border/50 backdrop-blur-sm'>
-                                        <h4 className='text-sm font-semibold text-foreground mb-2'>Event Data Structure</h4>
+                                        <h4 className='text-sm font-semibold text-foreground mb-2'>
+                                            Event Data Structure
+                                        </h4>
                                         <p className='text-xs text-muted-foreground mb-3'>
                                             This event receives the following data when emitted:
                                         </p>
                                         <div className='flex flex-wrap gap-2'>
                                             {event.actualData.map((key) => (
-                                                <Badge 
-                                                    key={key} 
-                                                    variant='outline' 
+                                                <Badge
+                                                    key={key}
+                                                    variant='outline'
                                                     className='text-xs font-mono bg-muted/50 border-border/50 text-foreground/80'
                                                 >
                                                     {key}
@@ -197,13 +189,17 @@ export default function CategoryEventsPage() {
                                                 <p className='text-xs text-muted-foreground mb-1'>Emitted from:</p>
                                                 <div className='space-y-1'>
                                                     {event.sourceFiles.slice(0, 2).map((file) => (
-                                                        <code key={file} className='text-xs text-muted-foreground block truncate'>
+                                                        <code
+                                                            key={file}
+                                                            className='text-xs text-muted-foreground block truncate'
+                                                        >
                                                             {file}
                                                         </code>
                                                     ))}
                                                     {event.sourceFiles.length > 2 && (
                                                         <p className='text-xs text-muted-foreground italic'>
-                                                            +{event.sourceFiles.length - 2} more location{event.sourceFiles.length - 2 !== 1 ? 's' : ''}
+                                                            +{event.sourceFiles.length - 2} more location
+                                                            {event.sourceFiles.length - 2 !== 1 ? 's' : ''}
                                                         </p>
                                                     )}
                                                 </div>
@@ -215,7 +211,7 @@ export default function CategoryEventsPage() {
                                     <h4 className='text-sm font-semibold text-foreground mb-2'>Usage Example</h4>
                                     <pre className='p-3 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto'>
                                         <code className='text-xs font-mono text-foreground'>
-{unescapeCode(event.exampleCode)}
+                                            {unescapeCode(event.exampleCode)}
                                         </code>
                                     </pre>
                                 </div>

@@ -47,6 +47,7 @@ export interface NavigationItem {
     title: string;
     url: string;
     icon: LucideIcon | string; // LucideIcon for built-in, string (emoji/url) for plugins
+    lucideIcon?: string; // Lucide icon name for dynamic loading (e.g., "camera", "search") - if provided, will be used instead of icon
     isActive: boolean;
     category: 'main' | 'admin' | 'server';
     permission?: string;
@@ -70,6 +71,7 @@ export interface NavigationGroup {
 export interface PluginSidebarItem {
     name: string;
     icon: string;
+    lucideIcon?: string; // Lucide icon name (e.g., "camera", "search") - if provided, will be used instead of icon emoji
     js?: string;
     redirect?: string;
     component?: string;

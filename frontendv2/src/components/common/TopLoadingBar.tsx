@@ -107,12 +107,21 @@ export default function TopLoadingBar() {
     });
 
     useEffect(() => {
-        setLoading(true);
-        // Shorter timeout for snappier feel
-        const timeout = setTimeout(() => {
-            setLoading(false);
-        }, 200);
-        return () => clearTimeout(timeout);
+        // Use requestAnimationFrame to avoid synchronous setState in effect
+        let timeoutId: NodeJS.Timeout;
+        const rafId = requestAnimationFrame(() => {
+            setLoading(true);
+            // Shorter timeout for snappier feel
+            timeoutId = setTimeout(() => {
+                setLoading(false);
+            }, 200);
+        });
+        return () => {
+            cancelAnimationFrame(rafId);
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+        };
     }, [pathname, searchParams]);
 
     if (!loading) return null;

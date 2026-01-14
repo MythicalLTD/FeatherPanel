@@ -65,7 +65,7 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
 
     // Use shared plugin routes hook
     const pluginData = usePluginRoutes();
-    
+
     // Get server context for spell_id checking (only for server context)
     const { server } = useServerPermissions(serverUuid || '');
     const serverSpellId = server?.spell_id || null;

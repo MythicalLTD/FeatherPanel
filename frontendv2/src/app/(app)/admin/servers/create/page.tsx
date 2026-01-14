@@ -872,10 +872,7 @@ function SelectionSheet<T extends { id: number | string }>({
                             ? t('common.showing', {
                                   from: String((pagination.current_page - 1) * pagination.per_page + 1),
                                   to: String(
-                                      Math.min(
-                                          pagination.current_page * pagination.per_page,
-                                          pagination.total_records,
-                                      ),
+                                      Math.min(pagination.current_page * pagination.per_page, pagination.total_records),
                                   ),
                                   total: String(pagination.total_records),
                               })

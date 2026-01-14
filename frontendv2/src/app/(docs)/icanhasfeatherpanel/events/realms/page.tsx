@@ -33,80 +33,71 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const categoryData = {
-    name: "Realms",
+    name: 'Realms',
     events: [
-  {
-    "method": "onRealmCreated",
-    "name": "featherpanel:admin:realms:realm:created",
-    "callback": "array realm data.",
-    "category": "Realms",
-    "actualData": [
-      "created_by",
-      "realm"
+        {
+            method: 'onRealmCreated',
+            name: 'featherpanel:admin:realms:realm:created',
+            callback: 'array realm data.',
+            category: 'Realms',
+            actualData: ['created_by', 'realm'],
+            sourceFiles: ['backend/app/Controllers/Admin/RealmsController.php'],
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmCreated(), function ($createdBy, $realm) {\n        // Handle featherpanel:admin:realms:realm:created\n        // Data keys: created_by, realm\n    });\n}',
+        },
+        {
+            method: 'onRealmDeleted',
+            name: 'featherpanel:admin:realms:realm:deleted',
+            callback: 'int realm id, array realm data.',
+            category: 'Realms',
+            actualData: ['deleted_by', 'realm'],
+            sourceFiles: ['backend/app/Controllers/Admin/RealmsController.php'],
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmDeleted(), function ($deletedBy, $realm) {\n        // Handle featherpanel:admin:realms:realm:deleted\n        // Data keys: deleted_by, realm\n    });\n}',
+        },
+        {
+            method: 'onRealmNotFound',
+            name: 'featherpanel:admin:realms:realm:not:found',
+            callback: 'int realm id, string error message.',
+            category: 'Realms',
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmNotFound(), function ($id, $message) {\n        // Handle featherpanel:admin:realms:realm:not:found\n        // Parameters: int realm id, string error message.\n    });\n}',
+        },
+        {
+            method: 'onRealmRetrieved',
+            name: 'featherpanel:admin:realms:realm:retrieved',
+            callback: 'int realm id, array realm data.',
+            category: 'Realms',
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmRetrieved(), function ($id, $data) {\n        // Handle featherpanel:admin:realms:realm:retrieved\n        // Parameters: int realm id, array realm data.\n    });\n}',
+        },
+        {
+            method: 'onRealmsError',
+            name: 'featherpanel:admin:realms:error',
+            callback: 'string error message, array context.',
+            category: 'Realms',
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmsError(), function ($message, $context) {\n        // Handle featherpanel:admin:realms:error\n        // Parameters: string error message, array context.\n    });\n}',
+        },
+        {
+            method: 'onRealmsRetrieved',
+            name: 'featherpanel:admin:realms:retrieved',
+            callback: 'array realms list.',
+            category: 'Realms',
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmsRetrieved(), function ($list) {\n        // Handle featherpanel:admin:realms:retrieved\n        // Parameters: array realms list.\n    });\n}',
+        },
+        {
+            method: 'onRealmUpdated',
+            name: 'featherpanel:admin:realms:realm:updated',
+            callback: 'int realm id, array old data, array new data.',
+            category: 'Realms',
+            actualData: ['realm', 'updated_by', 'updated_data'],
+            sourceFiles: ['backend/app/Controllers/Admin/RealmsController.php'],
+            exampleCode:
+                'use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmUpdated(), function ($realm, $updatedBy, $updatedData) {\n        // Handle featherpanel:admin:realms:realm:updated\n        // Data keys: realm, updated_by, updated_data\n    });\n}',
+        },
     ],
-    "sourceFiles": [
-      "backend/app/Controllers/Admin/RealmsController.php"
-    ],
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmCreated(), function ($createdBy, $realm) {\n        // Handle featherpanel:admin:realms:realm:created\n        // Data keys: created_by, realm\n    });\n}"
-  },
-  {
-    "method": "onRealmDeleted",
-    "name": "featherpanel:admin:realms:realm:deleted",
-    "callback": "int realm id, array realm data.",
-    "category": "Realms",
-    "actualData": [
-      "deleted_by",
-      "realm"
-    ],
-    "sourceFiles": [
-      "backend/app/Controllers/Admin/RealmsController.php"
-    ],
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmDeleted(), function ($deletedBy, $realm) {\n        // Handle featherpanel:admin:realms:realm:deleted\n        // Data keys: deleted_by, realm\n    });\n}"
-  },
-  {
-    "method": "onRealmNotFound",
-    "name": "featherpanel:admin:realms:realm:not:found",
-    "callback": "int realm id, string error message.",
-    "category": "Realms",
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmNotFound(), function ($id, $message) {\n        // Handle featherpanel:admin:realms:realm:not:found\n        // Parameters: int realm id, string error message.\n    });\n}"
-  },
-  {
-    "method": "onRealmRetrieved",
-    "name": "featherpanel:admin:realms:realm:retrieved",
-    "callback": "int realm id, array realm data.",
-    "category": "Realms",
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmRetrieved(), function ($id, $data) {\n        // Handle featherpanel:admin:realms:realm:retrieved\n        // Parameters: int realm id, array realm data.\n    });\n}"
-  },
-  {
-    "method": "onRealmsError",
-    "name": "featherpanel:admin:realms:error",
-    "callback": "string error message, array context.",
-    "category": "Realms",
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmsError(), function ($message, $context) {\n        // Handle featherpanel:admin:realms:error\n        // Parameters: string error message, array context.\n    });\n}"
-  },
-  {
-    "method": "onRealmsRetrieved",
-    "name": "featherpanel:admin:realms:retrieved",
-    "callback": "array realms list.",
-    "category": "Realms",
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmsRetrieved(), function ($list) {\n        // Handle featherpanel:admin:realms:retrieved\n        // Parameters: array realms list.\n    });\n}"
-  },
-  {
-    "method": "onRealmUpdated",
-    "name": "featherpanel:admin:realms:realm:updated",
-    "callback": "int realm id, array old data, array new data.",
-    "category": "Realms",
-    "actualData": [
-      "realm",
-      "updated_by",
-      "updated_data"
-    ],
-    "sourceFiles": [
-      "backend/app/Controllers/Admin/RealmsController.php"
-    ],
-    "exampleCode": "use App\\Plugins\\PluginEvents;\nuse App\\Plugins\\Events\\Events\\RealmsEvent;\n\npublic static function processEvents(PluginEvents $evt): void\n{\n    $evt->on(RealmsEvent::onRealmUpdated(), function ($realm, $updatedBy, $updatedData) {\n        // Handle featherpanel:admin:realms:realm:updated\n        // Data keys: realm, updated_by, updated_data\n    });\n}"
-  }
-]
 };
 
 export default function CategoryEventsPage() {
@@ -116,7 +107,7 @@ export default function CategoryEventsPage() {
         // Replace escaped newlines with actual newlines
         return str.replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
     };
-    
+
     return (
         <div className='min-h-screen bg-background'>
             <div className='container mx-auto px-4 py-16 max-w-6xl'>
@@ -137,7 +128,8 @@ export default function CategoryEventsPage() {
                                 {categoryData.name}
                             </h1>
                             <p className='text-muted-foreground mt-1'>
-                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this category
+                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this
+                                category
                             </p>
                         </div>
                     </div>
@@ -145,7 +137,10 @@ export default function CategoryEventsPage() {
 
                 <div className='space-y-4'>
                     {categoryData.events.map((event) => (
-                        <Card key={event.name} className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'>
+                        <Card
+                            key={event.name}
+                            className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'
+                        >
                             <CardHeader>
                                 <div className='flex items-start justify-between gap-4 flex-wrap'>
                                     <div className='flex-1 min-w-0'>
@@ -159,7 +154,10 @@ export default function CategoryEventsPage() {
                                             <span className='font-semibold'>Callback parameters:</span> {event.callback}
                                         </CardDescription>
                                     </div>
-                                    <Badge variant='outline' className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'>
+                                    <Badge
+                                        variant='outline'
+                                        className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'
+                                    >
                                         {event.method}
                                     </Badge>
                                 </div>
@@ -167,15 +165,17 @@ export default function CategoryEventsPage() {
                             <CardContent className='space-y-4'>
                                 {event.actualData && event.actualData.length > 0 && (
                                     <div className='p-4 rounded-lg bg-muted/30 border border-border/50 backdrop-blur-sm'>
-                                        <h4 className='text-sm font-semibold text-foreground mb-2'>Event Data Structure</h4>
+                                        <h4 className='text-sm font-semibold text-foreground mb-2'>
+                                            Event Data Structure
+                                        </h4>
                                         <p className='text-xs text-muted-foreground mb-3'>
                                             This event receives the following data when emitted:
                                         </p>
                                         <div className='flex flex-wrap gap-2'>
                                             {event.actualData.map((key) => (
-                                                <Badge 
-                                                    key={key} 
-                                                    variant='outline' 
+                                                <Badge
+                                                    key={key}
+                                                    variant='outline'
                                                     className='text-xs font-mono bg-muted/50 border-border/50 text-foreground/80'
                                                 >
                                                     {key}
@@ -187,13 +187,17 @@ export default function CategoryEventsPage() {
                                                 <p className='text-xs text-muted-foreground mb-1'>Emitted from:</p>
                                                 <div className='space-y-1'>
                                                     {event.sourceFiles.slice(0, 2).map((file) => (
-                                                        <code key={file} className='text-xs text-muted-foreground block truncate'>
+                                                        <code
+                                                            key={file}
+                                                            className='text-xs text-muted-foreground block truncate'
+                                                        >
                                                             {file}
                                                         </code>
                                                     ))}
                                                     {event.sourceFiles.length > 2 && (
                                                         <p className='text-xs text-muted-foreground italic'>
-                                                            +{event.sourceFiles.length - 2} more location{event.sourceFiles.length - 2 !== 1 ? 's' : ''}
+                                                            +{event.sourceFiles.length - 2} more location
+                                                            {event.sourceFiles.length - 2 !== 1 ? 's' : ''}
                                                         </p>
                                                     )}
                                                 </div>
@@ -205,7 +209,7 @@ export default function CategoryEventsPage() {
                                     <h4 className='text-sm font-semibold text-foreground mb-2'>Usage Example</h4>
                                     <pre className='p-3 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto'>
                                         <code className='text-xs font-mono text-foreground'>
-{unescapeCode(event.exampleCode)}
+                                            {unescapeCode(event.exampleCode)}
                                         </code>
                                     </pre>
                                 </div>

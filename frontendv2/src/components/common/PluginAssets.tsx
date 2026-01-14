@@ -48,7 +48,7 @@ export default function PluginAssets() {
         // Load plugin CSS
         const cssLinkId = 'featherpanel-plugin-css';
         let cssLink = document.getElementById(cssLinkId) as HTMLLinkElement;
-        
+
         if (!cssLink) {
             cssLink = document.createElement('link');
             cssLink.id = cssLinkId;
@@ -66,7 +66,7 @@ export default function PluginAssets() {
         // Load plugin JavaScript
         const jsScriptId = 'featherpanel-plugin-js';
         let jsScript = document.getElementById(jsScriptId) as HTMLScriptElement;
-        
+
         if (!jsScript) {
             jsScript = document.createElement('script');
             jsScript.id = jsScriptId;

@@ -45,7 +45,8 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'pluginName', type: 'string', description: 'Plugin display name'),
         new OA\Property(property: 'title', type: 'string', description: 'Sidebar item title'),
         new OA\Property(property: 'url', type: 'string', description: 'Sidebar item URL'),
-        new OA\Property(property: 'icon', type: 'string', description: 'Sidebar item icon'),
+        new OA\Property(property: 'icon', type: 'string', description: 'Sidebar item icon (emoji or URL). Used as fallback if lucideIcon is not provided.'),
+        new OA\Property(property: 'lucideIcon', type: 'string', nullable: true, description: 'Lucide icon name (e.g., "camera", "search"). If provided, this will be used instead of the icon field. See https://lucide.dev/icons/ for available icons.'),
         new OA\Property(property: 'permission', type: 'string', nullable: true, description: 'Required permission for this item'),
         new OA\Property(property: 'group', type: 'string', nullable: true, description: 'Group name for organizing items (e.g., "Minecraft Java Edition"). Items with the same group name will be grouped together.'),
     ]

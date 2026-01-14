@@ -65,7 +65,7 @@ export function useNavigation() {
 
     // Call hook at top level - valid usage
     const { hasPermission: hasServerPermission, server } = useServerPermissions(serverUuid || '');
-    
+
     // Get server's spell_id for filtering plugin sidebar items
     const serverSpellId = server?.spell_id || null;
 
@@ -75,17 +75,23 @@ export function useNavigation() {
             pluginItems: Record<string, PluginSidebarItem>,
             category: 'main' | 'admin' | 'server',
             serverUuid?: string,
-            serverSpellId?: number | null,
+            spellId?: number | null,
         ): NavigationItem[] => {
+            // Use outer serverSpellId for filtering to ensure we capture the latest value
+            const currentSpellId = category === 'server' ? serverSpellId : spellId;
             return Object.entries(pluginItems)
                 .filter(([, item]) => {
                     // Filter based on spell restrictions for server sidebar items
                     if (category === 'server') {
                         // If plugin has spell restrictions defined
-                        if (item.allowedOnlyOnSpells && Array.isArray(item.allowedOnlyOnSpells) && item.allowedOnlyOnSpells.length > 0) {
+                        if (
+                            item.allowedOnlyOnSpells &&
+                            Array.isArray(item.allowedOnlyOnSpells) &&
+                            item.allowedOnlyOnSpells.length > 0
+                        ) {
                             // Only show if we have a server spell_id and it's in the allowed list
-                            if (serverSpellId !== null && serverSpellId !== undefined) {
-                                return item.allowedOnlyOnSpells.includes(serverSpellId);
+                            if (currentSpellId !== null && currentSpellId !== undefined) {
+                                return item.allowedOnlyOnSpells.includes(currentSpellId);
                             }
                             // If plugin has restrictions but no server spell_id, don't show
                             return false;
@@ -97,84 +103,85 @@ export function useNavigation() {
                     return true;
                 })
                 .map(([url, item]) => {
-                // Build full URL based on category
-                let prefix = '';
-                if (category === 'admin') prefix = '/admin';
-                if (category === 'main') prefix = '/dashboard';
+                    // Build full URL based on category
+                    let prefix = '';
+                    if (category === 'admin') prefix = '/admin';
+                    if (category === 'main') prefix = '/dashboard';
 
-                let processedUrl = url;
+                    let processedUrl = url;
 
-                // Handle server specific prefix and url cleaning
-                if (category === 'server') {
-                    if (serverUuid) {
-                        prefix = `/server/${serverUuid}`;
+                    // Handle server specific prefix and url cleaning
+                    if (category === 'server') {
+                        if (serverUuid) {
+                            prefix = `/server/${serverUuid}`;
+                        }
+                        // Remove leading /server to avoid duplication when appending to prefix
+                        if (processedUrl.startsWith('/server')) {
+                            processedUrl = processedUrl.replace('/server', '');
+                        }
                     }
-                    // Remove leading /server to avoid duplication when appending to prefix
-                    if (processedUrl.startsWith('/server')) {
-                        processedUrl = processedUrl.replace('/server', '');
+
+                    const cleanUrl = processedUrl.startsWith('/') ? processedUrl : `/${processedUrl}`;
+                    const fullUrl = `${prefix}${cleanUrl}`;
+
+                    // Allow plugins to override redirect
+                    let redirectUrl = item.redirect;
+                    if (category === 'server' && redirectUrl && redirectUrl.startsWith('/server')) {
+                        redirectUrl = redirectUrl.replace('/server', '');
                     }
-                }
 
-                const cleanUrl = processedUrl.startsWith('/') ? processedUrl : `/${processedUrl}`;
-                const fullUrl = `${prefix}${cleanUrl}`;
+                    const cleanRedirect = redirectUrl
+                        ? redirectUrl.startsWith('/')
+                            ? redirectUrl
+                            : `/${redirectUrl}`
+                        : null;
 
-                // Allow plugins to override redirect
-                let redirectUrl = item.redirect;
-                if (category === 'server' && redirectUrl && redirectUrl.startsWith('/server')) {
-                    redirectUrl = redirectUrl.replace('/server', '');
-                }
+                    const fullRedirect = cleanRedirect ? `${prefix}${cleanRedirect}` : fullUrl;
 
-                const cleanRedirect = redirectUrl
-                    ? redirectUrl.startsWith('/')
-                        ? redirectUrl
-                        : `/${redirectUrl}`
-                    : null;
+                    // Legacy-style group normalization
+                    const builtInGroups: Record<string, string[]> = {
+                        server: ['management', 'files', 'networking', 'automation', 'configuration'],
+                        admin: [
+                            'overview',
+                            'feathercloud',
+                            'users',
+                            'tickets',
+                            'networking',
+                            'infrastructure',
+                            'content',
+                            'system',
+                        ],
+                        main: ['overview', 'support'],
+                    };
 
-                const fullRedirect = cleanRedirect ? `${prefix}${cleanRedirect}` : fullUrl;
-
-                // Legacy-style group normalization
-                const builtInGroups: Record<string, string[]> = {
-                    server: ['management', 'files', 'networking', 'automation', 'configuration'],
-                    admin: [
-                        'overview',
-                        'feathercloud',
-                        'users',
-                        'tickets',
-                        'networking',
-                        'infrastructure',
-                        'content',
-                        'system',
-                    ],
-                    main: ['overview', 'support'],
-                };
-
-                let normalizedGroup = item.group || 'plugins';
-                if (item.group) {
-                    const lowerGroup = item.group.toLowerCase();
-                    const matchingBuiltIn = builtInGroups[category]?.find((bg) => bg.toLowerCase() === lowerGroup);
-                    if (matchingBuiltIn) {
-                        normalizedGroup = matchingBuiltIn;
+                    let normalizedGroup = item.group || 'plugins';
+                    if (item.group) {
+                        const lowerGroup = item.group.toLowerCase();
+                        const matchingBuiltIn = builtInGroups[category]?.find((bg) => bg.toLowerCase() === lowerGroup);
+                        if (matchingBuiltIn) {
+                            normalizedGroup = matchingBuiltIn;
+                        }
                     }
-                }
 
-                return {
-                    id: `plugin-${item.plugin}-${url}`,
-                    name: item.name,
-                    title: item.name,
-                    url: fullUrl,
-                    icon: item.icon,
-                    isActive: pathname === fullUrl || pathname.startsWith(fullUrl + '/'),
-                    category,
-                    isPlugin: true,
-                    pluginJs: item.js,
-                    pluginRedirect: fullRedirect,
-                    pluginName: item.pluginName,
-                    showBadge: item.showBadge,
-                    description: item.description,
-                    permission: item.permission,
-                    group: normalizedGroup,
-                };
-            });
+                    return {
+                        id: `plugin-${item.plugin}-${url}`,
+                        name: item.name,
+                        title: item.name,
+                        url: fullUrl,
+                        icon: item.icon,
+                        lucideIcon: item.lucideIcon,
+                        isActive: pathname === fullUrl || pathname.startsWith(fullUrl + '/'),
+                        category,
+                        isPlugin: true,
+                        pluginJs: item.js,
+                        pluginRedirect: fullRedirect,
+                        pluginName: item.pluginName,
+                        showBadge: item.showBadge,
+                        description: item.description,
+                        permission: item.permission,
+                        group: normalizedGroup,
+                    };
+                });
         },
         [pathname, serverSpellId],
     );

@@ -32,47 +32,47 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 
 const categories = [
-  "Allocations",
-  "App",
-  "Auth",
-  "CloudManagement",
-  "CloudPlugins",
-  "Console",
-  "DatabaseManagement",
-  "DatabaseSnapshots",
-  "Databases",
-  "FeatherZeroTrust",
-  "FileManager",
-  "Images",
-  "Knowledgebase",
-  "Locations",
-  "LogViewer",
-  "MailTemplates",
-  "Nodes",
-  "Notifications",
-  "Permissions",
-  "PluginManager",
-  "PluginsSettings",
-  "Realms",
-  "RedirectLinks",
-  "Roles",
-  "Server",
-  "ServerAllocation",
-  "ServerBackup",
-  "ServerDatabase",
-  "ServerFiles",
-  "ServerSchedule",
-  "ServerSubuser",
-  "ServerTask",
-  "ServerUser",
-  "Settings",
-  "Spells",
-  "Subdomains",
-  "Ticket",
-  "User",
-  "UserApiClient",
-  "UserSshKey",
-  "Wings"
+    'Allocations',
+    'App',
+    'Auth',
+    'CloudManagement',
+    'CloudPlugins',
+    'Console',
+    'DatabaseManagement',
+    'DatabaseSnapshots',
+    'Databases',
+    'FeatherZeroTrust',
+    'FileManager',
+    'Images',
+    'Knowledgebase',
+    'Locations',
+    'LogViewer',
+    'MailTemplates',
+    'Nodes',
+    'Notifications',
+    'Permissions',
+    'PluginManager',
+    'PluginsSettings',
+    'Realms',
+    'RedirectLinks',
+    'Roles',
+    'Server',
+    'ServerAllocation',
+    'ServerBackup',
+    'ServerDatabase',
+    'ServerFiles',
+    'ServerSchedule',
+    'ServerSubuser',
+    'ServerTask',
+    'ServerUser',
+    'Settings',
+    'Spells',
+    'Subdomains',
+    'Ticket',
+    'User',
+    'UserApiClient',
+    'UserSshKey',
+    'Wings',
 ];
 
 export default function EventsPage() {
@@ -87,10 +87,14 @@ export default function EventsPage() {
                         Plugin Events & Hooks
                     </h1>
                     <p className='text-xl text-muted-foreground max-w-2xl mx-auto'>
-                        Complete reference of all plugin events and hooks available in FeatherPanel for extending functionality
+                        Complete reference of all plugin events and hooks available in FeatherPanel for extending
+                        functionality
                     </p>
                     <div className='flex items-center justify-center gap-4 pt-2'>
-                        <Badge variant='secondary' className='text-sm px-4 py-1.5 font-semibold bg-card border border-border/50'>
+                        <Badge
+                            variant='secondary'
+                            className='text-sm px-4 py-1.5 font-semibold bg-card border border-border/50'
+                        >
                             41 Event Categories
                         </Badge>
                         <Badge variant='outline' className='text-sm px-4 py-1.5 font-semibold bg-card border-border/50'>
@@ -101,7 +105,13 @@ export default function EventsPage() {
 
                 <div className='grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12'>
                     {categories.map((category) => {
-                        const sanitized = category.toLowerCase().replace(/([A-Z])/g, '-$1').replace(/^-+/, '').replace(/[^a-z0-9-]+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+                        const sanitized = category
+                            .toLowerCase()
+                            .replace(/([A-Z])/g, '-$1')
+                            .replace(/^-+/, '')
+                            .replace(/[^a-z0-9-]+/g, '-')
+                            .replace(/-+/g, '-')
+                            .replace(/^-+|-+$/g, '');
                         return (
                             <Link key={category} href={`/icanhasfeatherpanel/events/${sanitized}`} className='block'>
                                 <Card className='h-full transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/60 cursor-pointer border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 group'>
@@ -138,27 +148,37 @@ export default function EventsPage() {
                         <div className='space-y-2'>
                             <h3 className='font-semibold text-sm text-foreground'>Event System Overview</h3>
                             <p className='text-sm text-muted-foreground'>
-                                FeatherPanel uses an event-driven architecture that allows plugins to hook into system events 
-                                and extend functionality without modifying core code. Events are emitted at key points in the 
-                                application lifecycle and can be listened to by plugins.
+                                FeatherPanel uses an event-driven architecture that allows plugins to hook into system
+                                events and extend functionality without modifying core code. Events are emitted at key
+                                points in the application lifecycle and can be listened to by plugins.
                             </p>
                         </div>
                         <div className='space-y-2'>
                             <h3 className='font-semibold text-sm text-foreground'>Registering Event Listeners</h3>
                             <p className='text-sm text-muted-foreground mb-2'>
-                                In your plugin&apos;s main class, implement the <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>processEvents</code> method:
+                                In your plugin&apos;s main class, implement the{' '}
+                                <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>
+                                    processEvents
+                                </code>{' '}
+                                method:
                             </p>
                             <pre className='p-3 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto backdrop-blur-sm'>
                                 <code className='text-xs font-mono text-foreground'>
-{"public static function processEvents(PluginEvents $event): void\n{\n    $event->on('featherpanel:user:created', function ($user) {\n        // Handle user creation\n    });\n}"}
+                                    {
+                                        "public static function processEvents(PluginEvents $event): void\n{\n    $event->on('featherpanel:user:created', function ($user) {\n        // Handle user creation\n    });\n}"
+                                    }
                                 </code>
                             </pre>
                         </div>
                         <div className='space-y-2'>
                             <h3 className='font-semibold text-sm text-foreground'>Event Naming</h3>
                             <p className='text-sm text-muted-foreground'>
-                                Events follow a consistent naming pattern: <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>featherpanel:category:action</code>. 
-                                Each event includes callback parameter information to help you understand what data is available.
+                                Events follow a consistent naming pattern:{' '}
+                                <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>
+                                    featherpanel:category:action
+                                </code>
+                                . Each event includes callback parameter information to help you understand what data is
+                                available.
                             </p>
                         </div>
                     </CardContent>
