@@ -92,7 +92,12 @@
 			"not_found": "Plugin page not found",
 			"spell_restriction": "This plugin is restricted to specific server types and cannot be accessed on this server.",
 			"load_failed": "This page could not be loaded or doesn't exist.",
-			"return_to_console": "Return to Server Console"
+			"return_to_console": "Return to Server Console",
+			"reload": "Reload Plugin",
+			"reload_title": "Reload Content",
+			"loading_content": "Loading content...",
+			"failed_to_load": "Failed to load content",
+			"retry_loading": "Retry Loading"
 		},
 		"500": {
 			"title": "Something Went Wrong",

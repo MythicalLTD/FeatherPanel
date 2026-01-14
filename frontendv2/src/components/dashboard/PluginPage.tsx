@@ -1,30 +1,4 @@
 /*
-MIT License
-
-Copyright (c) 2024-2026 MythicalSystems and Contributors
-Copyright (c) 2024-2026 Cassian Gherman (NaysKutzu)
-Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-/*
 This file is part of FeatherPanel.
 
 Copyright (C) 2025 MythicalSystems Studios
@@ -258,9 +232,10 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
     }
 
     if (error) {
-        const isSpellRestriction = error.includes('not available for this server type') || error === t('errors.plugin.spell_restriction');
+        const isSpellRestriction =
+            error.includes('not available for this server type') || error === t('errors.plugin.spell_restriction');
         const isPluginNotFound = error === t('errors.plugin.not_found') || error === 'Plugin page not found';
-        
+
         // If plugin page not found, show inline 404 message
         if (isPluginNotFound) {
             return (
@@ -274,9 +249,7 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                         </div>
                     </div>
                     <div className='space-y-4 max-w-md'>
-                        <h2 className='text-2xl md:text-3xl font-bold tracking-tight'>
-                            {t('errors.404.title')}
-                        </h2>
+                        <h2 className='text-2xl md:text-3xl font-bold tracking-tight'>{t('errors.404.title')}</h2>
                         <p className='text-muted-foreground'>{t('errors.404.message')}</p>
                         <div className='flex flex-col sm:flex-row gap-3 justify-center pt-4'>
                             <Button onClick={() => router.back()} variant='outline' className='group'>
@@ -294,16 +267,14 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                 </div>
             );
         }
-        
+
         // For other errors (like spell restrictions), show custom error UI
         return (
             <div className='flex flex-col items-center justify-center h-[50vh] text-center p-4'>
                 <AlertTriangle className='h-12 w-12 text-destructive mb-4' />
                 <h3 className='text-xl font-bold mb-2'>{error}</h3>
                 <p className='text-muted-foreground mb-4'>
-                    {isSpellRestriction
-                        ? t('errors.plugin.spell_restriction')
-                        : t('errors.plugin.load_failed')}
+                    {isSpellRestriction ? t('errors.plugin.spell_restriction') : t('errors.plugin.load_failed')}
                 </p>
                 {isSpellRestriction && serverUuid && (
                     <Button
@@ -325,10 +296,10 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                     <button
                         onClick={retryLoad}
                         className='flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg shadow-lg hover:shadow-xl transition-all font-medium text-sm'
-                        title='Reload Content'
+                        title={t('errors.plugin.reload_title')}
                     >
                         <RefreshCw className={cn('h-4 w-4', iframeLoading && 'animate-spin')} />
-                        <span>Reload Plugin</span>
+                        <span>{t('errors.plugin.reload')}</span>
                     </button>
                 </div>
             )}
@@ -340,7 +311,7 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                         <div className='animate-spin rounded-full h-16 w-16 border-4 border-muted border-t-primary' />
                         <div className='absolute inset-0 animate-pulse rounded-full h-16 w-16 bg-primary/20' />
                     </div>
-                    <p className='text-muted-foreground text-lg font-medium'>Loading content...</p>
+                    <p className='text-muted-foreground text-lg font-medium'>{t('errors.plugin.loading_content')}</p>
                 </div>
             )}
 
@@ -350,13 +321,13 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                     <div className='w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6'>
                         <AlertTriangle className='h-10 w-10 text-destructive' />
                     </div>
-                    <h3 className='text-xl font-bold mb-3'>Failed to load content</h3>
+                    <h3 className='text-xl font-bold mb-3'>{t('errors.plugin.failed_to_load')}</h3>
                     <p className='text-muted-foreground mb-6 max-w-md'>{iframeError}</p>
                     <button
                         onClick={retryLoad}
                         className='px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all font-medium'
                     >
-                        Retry Loading
+                        {t('errors.plugin.retry_loading')}
                     </button>
                 </div>
             )}
