@@ -125,9 +125,22 @@ class PluginSidebarController
                                             $item['component'] = $this->addComponentParameters($item['component'], $section, $request);
                                         }
 
+                                        // Add spell restrictions info for frontend filtering (only for server section)
+                                        $spellRestrictions = null;
+                                        if ($section === 'server') {
+                                            $allowedOnlyOnSpells = PluginSettings::getSetting($plugin, 'plugin-sidebar-server-allowedOnlyOnSpells');
+                                            if ($allowedOnlyOnSpells !== null && $allowedOnlyOnSpells !== '') {
+                                                $decoded = json_decode($allowedOnlyOnSpells, true);
+                                                if (is_array($decoded) && !empty($decoded)) {
+                                                    $spellRestrictions = array_map('intval', $decoded);
+                                                }
+                                            }
+                                        }
+
                                         $sidebarData[$section][$pluginKey] = array_merge($item, [
                                             'plugin' => $plugin,
                                             'pluginName' => ucfirst($plugin),
+                                            'allowedOnlyOnSpells' => $spellRestrictions, // null if no restrictions, array of spell IDs if restricted
                                         ]);
                                     }
                                 }
@@ -170,9 +183,22 @@ class PluginSidebarController
                                             $item['component'] = $this->addComponentParameters($item['component'], $section, $request);
                                         }
 
+                                        // Add spell restrictions info for frontend filtering (only for server section)
+                                        $spellRestrictions = null;
+                                        if ($section === 'server') {
+                                            $allowedOnlyOnSpells = PluginSettings::getSetting($plugin, 'plugin-sidebar-server-allowedOnlyOnSpells');
+                                            if ($allowedOnlyOnSpells !== null && $allowedOnlyOnSpells !== '') {
+                                                $decoded = json_decode($allowedOnlyOnSpells, true);
+                                                if (is_array($decoded) && !empty($decoded)) {
+                                                    $spellRestrictions = array_map('intval', $decoded);
+                                                }
+                                            }
+                                        }
+
                                         $sidebarData[$section][$pluginKey] = array_merge($item, [
                                             'plugin' => $plugin,
                                             'pluginName' => ucfirst($plugin),
+                                            'allowedOnlyOnSpells' => $spellRestrictions, // null if no restrictions, array of spell IDs if restricted
                                         ]);
                                     }
                                 }

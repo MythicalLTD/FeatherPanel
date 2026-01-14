@@ -60,14 +60,43 @@ export function useNavigation() {
     // Use shared plugin routes hook
     const pluginRoutes = usePluginRoutes();
 
+    const isServer = pathname.startsWith('/server/');
+    const serverUuid = isServer ? pathname.split('/')[2] : null;
+
+    // Call hook at top level - valid usage
+    const { hasPermission: hasServerPermission, server } = useServerPermissions(serverUuid || '');
+    
+    // Get server's spell_id for filtering plugin sidebar items
+    const serverSpellId = server?.spell_id || null;
+
     // Helper to convert plugin items to navigation items
     const convertPluginItems = useCallback(
         (
             pluginItems: Record<string, PluginSidebarItem>,
             category: 'main' | 'admin' | 'server',
             serverUuid?: string,
+            serverSpellId?: number | null,
         ): NavigationItem[] => {
-            return Object.entries(pluginItems).map(([url, item]) => {
+            return Object.entries(pluginItems)
+                .filter(([, item]) => {
+                    // Filter based on spell restrictions for server sidebar items
+                    if (category === 'server') {
+                        // If plugin has spell restrictions defined
+                        if (item.allowedOnlyOnSpells && Array.isArray(item.allowedOnlyOnSpells) && item.allowedOnlyOnSpells.length > 0) {
+                            // Only show if we have a server spell_id and it's in the allowed list
+                            if (serverSpellId !== null && serverSpellId !== undefined) {
+                                return item.allowedOnlyOnSpells.includes(serverSpellId);
+                            }
+                            // If plugin has restrictions but no server spell_id, don't show
+                            return false;
+                        }
+                        // If no restrictions, show on all servers
+                        return true;
+                    }
+                    // For non-server categories, show all
+                    return true;
+                })
+                .map(([url, item]) => {
                 // Build full URL based on category
                 let prefix = '';
                 if (category === 'admin') prefix = '/admin';
@@ -147,14 +176,8 @@ export function useNavigation() {
                 };
             });
         },
-        [pathname],
+        [pathname, serverSpellId],
     );
-
-    const isServer = pathname.startsWith('/server/');
-    const serverUuid = isServer ? pathname.split('/')[2] : null;
-
-    // Call hook at top level - valid usage
-    const { hasPermission: hasServerPermission } = useServerPermissions(serverUuid || '');
 
     const navigationItems = useMemo(() => {
         const isAdmin = pathname.startsWith('/admin');
@@ -203,7 +226,7 @@ export function useNavigation() {
 
             // Add Server Plugin Items
             if (pluginRoutes?.server) {
-                const serverPlugins = convertPluginItems(pluginRoutes.server, 'server', serverUuid);
+                const serverPlugins = convertPluginItems(pluginRoutes.server, 'server', serverUuid, serverSpellId);
                 items.push(...serverPlugins);
             }
 
@@ -235,6 +258,7 @@ export function useNavigation() {
         hasServerPermission,
         isServer,
         serverUuid,
+        serverSpellId,
         isDeveloperModeEnabled,
     ]);
 

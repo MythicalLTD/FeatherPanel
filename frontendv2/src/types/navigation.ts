@@ -80,6 +80,7 @@ export interface PluginSidebarItem {
     permission?: string;
     showBadge?: boolean;
     group?: string;
+    allowedOnlyOnSpells?: number[] | null; // Array of spell IDs if restricted, null if no restrictions
 }
 
 export interface PluginSidebarResponse {

@@ -42,13 +42,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { cn, isEnabled } from '@/lib/utils';
 import type { PluginSidebarItem } from '@/types/navigation';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
+import { useServerPermissions } from '@/hooks/useServerPermissions';
 
 interface PluginPageProps {
     context: 'admin' | 'client' | 'server';
@@ -59,10 +60,15 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const pathname = usePathname();
+    const router = useRouter();
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
     // Use shared plugin routes hook
     const pluginData = usePluginRoutes();
+    
+    // Get server context for spell_id checking (only for server context)
+    const { server } = useServerPermissions(serverUuid || '');
+    const serverSpellId = server?.spell_id || null;
 
     const [loading, setLoading] = useState(true);
     const [iframeLoading, setIframeLoading] = useState(true);
@@ -133,6 +139,23 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                 }
 
                 if (matchingItem && matchingItem.component) {
+                    // Check spell restrictions for server context
+                    if (context === 'server' && serverSpellId !== null && serverSpellId !== undefined) {
+                        // If plugin has spell restrictions
+                        if (
+                            matchingItem.allowedOnlyOnSpells &&
+                            Array.isArray(matchingItem.allowedOnlyOnSpells) &&
+                            matchingItem.allowedOnlyOnSpells.length > 0
+                        ) {
+                            // Check if server's spell_id is in the allowed list
+                            if (!matchingItem.allowedOnlyOnSpells.includes(serverSpellId)) {
+                                setError('This plugin is not available for this server type');
+                                setLoading(false);
+                                return;
+                            }
+                        }
+                    }
+
                     let componentUrl = `/components/${matchingItem.plugin}/${matchingItem.component}`;
 
                     // The backend might return serverUuid=notFound if cookie wasn't set yet
@@ -159,7 +182,7 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
         };
 
         processPluginData();
-    }, [pathname, context, serverUuid, t, pluginData]);
+    }, [pathname, context, serverUuid, t, pluginData, serverSpellId]);
 
     const injectScrollbarStyles = () => {
         if (!iframeRef.current) return;
@@ -233,11 +256,24 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
     }
 
     if (error) {
+        const isSpellRestriction = error.includes('not available for this server type');
         return (
             <div className='flex flex-col items-center justify-center h-[50vh] text-center p-4'>
                 <AlertTriangle className='h-12 w-12 text-destructive mb-4' />
                 <h3 className='text-xl font-bold mb-2'>{error}</h3>
-                <p className='text-muted-foreground'>This page could not be loaded or doesn&apos;t exist.</p>
+                <p className='text-muted-foreground mb-4'>
+                    {isSpellRestriction
+                        ? 'This plugin is restricted to specific server types and cannot be accessed on this server.'
+                        : 'This page could not be loaded or doesn&apos;t exist.'}
+                </p>
+                {isSpellRestriction && serverUuid && (
+                    <button
+                        onClick={() => router.push(`/server/${serverUuid}`)}
+                        className='px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors'
+                    >
+                        Return to Server Console
+                    </button>
+                )}
             </div>
         );
     }
