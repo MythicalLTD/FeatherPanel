@@ -539,6 +539,27 @@ setup_qemu_emulation() {
     log_info "Note: Container startup may be slower due to emulation overhead."
 }
 
+# Function to stop all FeatherPanel containers (including old v1 containers that might not be in docker-compose.yml)
+stop_all_featherpanel_containers() {
+    # First, try docker compose down if docker-compose.yml exists (stops containers defined in compose file)
+    if [ -f /var/www/featherpanel/docker-compose.yml ]; then
+        cd /var/www/featherpanel || true
+        sudo docker compose down >> "$LOG_FILE" 2>&1 || true
+    fi
+    
+    # Then stop any remaining FeatherPanel containers by name (catches old v1 containers not in compose file)
+    RUNNING_CONTAINERS=$(sudo docker ps --format '{{.Names}}' 2>/dev/null | grep '^featherpanel_' || true)
+    
+    if [ -n "$RUNNING_CONTAINERS" ]; then
+        while IFS= read -r container; do
+            if [ -n "$container" ]; then
+                log_info "Stopping container: $container"
+                sudo docker stop "$container" >> "$LOG_FILE" 2>&1 || true
+            fi
+        done <<< "$RUNNING_CONTAINERS"
+    fi
+}
+
 # Prompt helpers that work even when the script is piped (stdin not a TTY)
 prompt() {
     local message="$1"; local __varname="$2"
@@ -3771,6 +3792,9 @@ CF_HOSTNAME=""
                 fi
             fi
             
+            # Stop all existing FeatherPanel containers (including old v1 containers) before starting
+            stop_all_featherpanel_containers
+            
             if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." sudo docker compose up -d; then
                 log_error "Failed to start FeatherPanel stack"
                 echo ""
@@ -4347,12 +4371,12 @@ CF_HOSTNAME=""
                 modify_compose_for_dev "/var/www/featherpanel/docker-compose.yml" "latest" "latest"
             fi
 
-            if ! run_with_spinner "Pulling FeatherPanel Docker images" "Docker images updated." bash -c "cd /var/www/featherpanel && sudo docker compose pull"; then
-                upload_logs_on_fail
-                exit 1
+            # Stop all existing FeatherPanel containers first (including old v1 containers)
+            if ! run_with_spinner "Stopping all FeatherPanel containers" "All containers stopped." stop_all_featherpanel_containers; then
+                log_warn "Some containers may not have stopped cleanly, continuing..."
             fi
 
-            if ! run_with_spinner "Stopping existing FeatherPanel containers" "Existing containers stopped." bash -c "cd /var/www/featherpanel && sudo docker compose down"; then
+            if ! run_with_spinner "Pulling FeatherPanel Docker images" "Docker images updated." bash -c "cd /var/www/featherpanel && sudo docker compose pull"; then
                 upload_logs_on_fail
                 exit 1
             fi
