@@ -47,6 +47,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 const gradient = gradientMap[backgroundImage] || gradientMap['purple-dream'];
                 return <div className='pointer-events-none absolute inset-0' style={{ background: gradient }} />;
             case 'solid':
+                // Check if backgroundImage is a hex color (starts with #)
+                if (backgroundImage && backgroundImage.startsWith('#')) {
+                    return <div className='pointer-events-none absolute inset-0' style={{ backgroundColor: backgroundImage }} />;
+                }
                 return null;
             case 'pattern':
                 return (

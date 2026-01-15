@@ -71,8 +71,16 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
     const { hasPermission } = useServerPermissions(uuidShort);
 
-    // Plugin Widgets
+    // Plugin Widgets - delay fetching to improve initial load
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-files');
+    
+    // Delay widget fetching to improve initial page load
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchWidgets();
+        }, 100); // Small delay to prioritize file loading
+        return () => clearTimeout(timer);
+    }, [fetchWidgets]);
 
     // Permissions
     const canRead = hasPermission('file.read');
@@ -106,9 +114,11 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         setActionFile(file);
         switch (action) {
             case 'edit':
-                router.push(
-                    `/server/${uuidShort}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory)}`,
-                );
+                // Prefetch the file content immediately for better UX
+                const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory)}`;
+                // Use router.push with prefetch for faster navigation
+                router.prefetch(editPath);
+                router.push(editPath);
                 break;
             case 'preview':
                 setPreviewOpen(true);
@@ -189,10 +199,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
-
-    useEffect(() => {
-        fetchWidgets();
-    }, [fetchWidgets]);
 
     const handleUploadClick = () => {
         fileInputRef.current?.click();

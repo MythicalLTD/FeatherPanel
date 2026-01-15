@@ -60,22 +60,40 @@ export function useFileManager(serverUuid: string) {
         setLoading(true);
         setError(null);
         try {
-            const data = await filesApi.getFiles(serverUuid, currentDirectory);
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+            
+            const data = await Promise.race([
+                filesApi.getFiles(serverUuid, currentDirectory),
+                new Promise<never>((_, reject) => 
+                    setTimeout(() => reject(new Error('Request timeout')), 15000)
+                )
+            ]);
+            
+            clearTimeout(timeoutId);
             const sorted = sortFiles(data);
             setFiles(sorted);
             setSelectedFiles([]);
         } catch (err) {
             console.error(err);
-            setError('Failed to load files');
-            toast.error('Failed to load files');
+            if (err instanceof Error && err.message === 'Request timeout') {
+                setError('Request timed out');
+                toast.error('File loading timed out. Please try again.');
+            } else {
+                setError('Failed to load files');
+                toast.error('Failed to load files');
+            }
         } finally {
             setLoading(false);
         }
     }, [serverUuid, currentDirectory]);
 
+    // Only refresh when serverUuid or currentDirectory actually changes
     useEffect(() => {
         refresh();
-    }, [refresh]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [serverUuid, currentDirectory]);
 
     // Filtering logic
     const filteredFiles = useMemo(() => {

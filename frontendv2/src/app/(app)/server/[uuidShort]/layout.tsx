@@ -43,7 +43,7 @@ async function getServer(uuidShort: string): Promise<Server | null> {
                 Cookie: cookieHeader,
                 Accept: 'application/json',
             },
-            next: { revalidate: 0 },
+            next: { revalidate: 10 }, // Cache for 10 seconds to improve performance
         });
 
         if (!res.ok) {

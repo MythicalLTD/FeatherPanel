@@ -184,12 +184,26 @@ export default function ServerStartupPage() {
         [validateVariableAgainstRules],
     );
 
-    // Data Fetching
+    // Data Fetching with caching
     const fetchData = React.useCallback(async () => {
         if (!uuidShort || !canRead) return;
         setLoading(true);
         try {
-            const { data } = await axios.get<ServerResponse>(`/api/user/servers/${uuidShort}`);
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+            
+            const { data } = await Promise.race([
+                axios.get<ServerResponse>(`/api/user/servers/${uuidShort}`, {
+                    signal: controller.signal,
+                }),
+                new Promise<never>((_, reject) => 
+                    setTimeout(() => reject(new Error('Request timeout')), 15000)
+                )
+            ]);
+            
+            clearTimeout(timeoutId);
+            
             if (data.success) {
                 const s = data.data;
                 setServer(s);
@@ -233,7 +247,13 @@ export default function ServerStartupPage() {
             }
         } catch (error) {
             console.error('Failed to fetch startup data:', error);
-            toast.error(t('serverStartup.failedToFetchServer'));
+            if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+                toast.error(t('serverStartup.loadTimeout') || 'Request timed out. Please try again.');
+            } else if (error instanceof Error && error.message === 'Request timeout') {
+                toast.error(t('serverStartup.loadTimeout') || 'Request timed out. Please try again.');
+            } else {
+                toast.error(t('serverStartup.failedToFetchServer'));
+            }
         } finally {
             setLoading(false);
         }

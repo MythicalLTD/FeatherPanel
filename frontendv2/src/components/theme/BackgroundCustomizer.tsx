@@ -230,15 +230,16 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                 </div>
                                             </TabPanel>
 
-                                            {/* Solid/Pattern */}
+                                            {/* Solid/Pattern/Custom Color */}
                                             <TabPanel>
-                                                <div className='grid grid-cols-2 gap-3'>
-                                                    <button
-                                                        onClick={() => {
-                                                            setBackgroundType('solid');
-                                                            setIsOpen(false);
-                                                        }}
-                                                        className={`
+                                                <div className='space-y-4'>
+                                                    <div className='grid grid-cols-2 gap-3'>
+                                                        <button
+                                                            onClick={() => {
+                                                                setBackgroundType('solid');
+                                                                setIsOpen(false);
+                                                            }}
+                                                            className={`
                               relative p-4 rounded-xl border-2 transition-all
                               ${
                                   backgroundType === 'solid'
@@ -246,18 +247,18 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                       : 'border-border hover:border-primary/50'
                               }
                             `}
-                                                    >
-                                                        <div className='h-20 rounded-lg mb-2 bg-background' />
-                                                        <p className='text-sm font-medium'>
-                                                            {t('appearance.background.solidColor')}
-                                                        </p>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setBackgroundType('pattern');
-                                                            setIsOpen(false);
-                                                        }}
-                                                        className={`
+                                                        >
+                                                            <div className='h-20 rounded-lg mb-2 bg-background' />
+                                                            <p className='text-sm font-medium'>
+                                                                {t('appearance.background.solidColor')}
+                                                            </p>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setBackgroundType('pattern');
+                                                                setIsOpen(false);
+                                                            }}
+                                                            className={`
                               relative p-4 rounded-xl border-2 transition-all
                               ${
                                   backgroundType === 'pattern'
@@ -265,19 +266,54 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                       : 'border-border hover:border-primary/50'
                               }
                             `}
-                                                    >
-                                                        <div
-                                                            className='h-20 rounded-lg mb-2 bg-background opacity-50'
-                                                            style={{
-                                                                backgroundImage:
-                                                                    'radial-gradient(circle, currentColor 1px, transparent 1px)',
-                                                                backgroundSize: '16px 16px',
-                                                            }}
-                                                        />
-                                                        <p className='text-sm font-medium'>
-                                                            {t('appearance.background.dotPattern')}
+                                                        >
+                                                            <div
+                                                                className='h-20 rounded-lg mb-2 bg-background opacity-50'
+                                                                style={{
+                                                                    backgroundImage:
+                                                                        'radial-gradient(circle, currentColor 1px, transparent 1px)',
+                                                                    backgroundSize: '16px 16px',
+                                                                }}
+                                                            />
+                                                            <p className='text-sm font-medium'>
+                                                                {t('appearance.background.dotPattern')}
+                                                            </p>
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    {/* Custom Color Picker */}
+                                                    <div>
+                                                        <label className='block text-sm font-medium mb-2'>
+                                                            {t('appearance.background.customColor') || 'Custom Background Color'}
+                                                        </label>
+                                                        <div className='flex items-center gap-3'>
+                                                            <input
+                                                                type='color'
+                                                                value={backgroundType === 'solid' && backgroundImage.startsWith('#') ? backgroundImage : '#000000'}
+                                                                onChange={(e) => {
+                                                                    setBackgroundImage(e.target.value);
+                                                                    setBackgroundType('solid');
+                                                                }}
+                                                                className='h-12 w-20 rounded-lg border border-border cursor-pointer'
+                                                            />
+                                                            <input
+                                                                type='text'
+                                                                value={backgroundType === 'solid' && backgroundImage.startsWith('#') ? backgroundImage : '#000000'}
+                                                                onChange={(e) => {
+                                                                    const color = e.target.value;
+                                                                    if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+                                                                        setBackgroundImage(color);
+                                                                        setBackgroundType('solid');
+                                                                    }
+                                                                }}
+                                                                placeholder='#000000'
+                                                                className='flex-1 px-4 py-2 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm'
+                                                            />
+                                                        </div>
+                                                        <p className='text-xs text-muted-foreground mt-2'>
+                                                            {t('appearance.background.customColorHelp') || 'Enter a hex color code (e.g., #1a1a1a)'}
                                                         </p>
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </TabPanel>
 

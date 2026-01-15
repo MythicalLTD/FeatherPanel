@@ -52,6 +52,8 @@ import {
     AlertTriangle,
     Network,
 } from 'lucide-react';
+import { StatusBadge } from '@/components/servers/StatusBadge';
+import { displayStatus } from '@/lib/server-utils';
 import { ApiServer, Pagination, ApiNode, ApiAllocation } from '@/types/adminServerTypes';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import {
@@ -375,6 +377,7 @@ export default function ServersPage() {
                             },
                         ];
 
+                        const serverStatus = displayStatus(server as any);
                         return (
                             <ResourceCard
                                 key={server.id}
@@ -383,7 +386,8 @@ export default function ServersPage() {
                                 icon={Server}
                                 badges={badges}
                                 description={
-                                    <div className='flex items-center gap-4 mt-2'>
+                                    <div className='flex items-center gap-4 mt-2 flex-wrap'>
+                                        <StatusBadge status={serverStatus} t={t} />
                                         <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
                                             <Database className='h-3.5 w-3.5' />
                                             <span>{formatMemory(server.memory)}</span>

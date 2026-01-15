@@ -145,7 +145,8 @@ class ServerService
     public function killServer(string $serverUuid): WingsResponse
     {
         try {
-            $response = $this->connection->post("/api/servers/{$serverUuid}/power", ['action' => 'kill', 'wait_seconds' => 30]);
+            // Increase timeout for kill action as it may take longer
+            $response = $this->connection->post("/api/servers/{$serverUuid}/power", ['action' => 'kill', 'wait_seconds' => 60]);
 
             return new WingsResponse($response, 200);
         } catch (\Exception $e) {

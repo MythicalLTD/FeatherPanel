@@ -197,7 +197,7 @@ function SidebarContent({
     return (
         <div className='flex h-full flex-col'>
             {/* Logo */}
-            <Link href='/dashboard'>
+            <Link href='/dashboard' prefetch={true}>
                 <div
                     className={cn(
                         'flex items-center border-b border-border/50 transition-all',
@@ -313,6 +313,7 @@ function SidebarContent({
                                                             <Link
                                                                 key={child.id}
                                                                 href={child.url}
+                                                                prefetch={true}
                                                                 onClick={() => {
                                                                     if (mobile) setMobileOpen(false);
                                                                 }}
@@ -376,6 +377,7 @@ function SidebarContent({
                                         <Link
                                             key={item.id}
                                             href={targetUrl}
+                                            prefetch={true}
                                             onClick={() => {
                                                 if (mobile) setMobileOpen(false);
                                             }}

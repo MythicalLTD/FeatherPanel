@@ -86,6 +86,7 @@ export function FileRow({
                 if (!file.isFile) {
                     onNavigate(file.name);
                 } else if (isEditable(file.size, file.name) && canEdit) {
+                    // Show loading state immediately and navigate
                     onAction('edit', file);
                 } else if (isImage(file.name)) {
                     onAction('preview', file);

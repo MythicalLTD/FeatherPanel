@@ -65,6 +65,15 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
             };
         }
 
+        if (backgroundType === 'solid' && backgroundImage) {
+            // Check if backgroundImage is a hex color (starts with #)
+            if (backgroundImage.startsWith('#')) {
+                return {
+                    backgroundColor: backgroundImage,
+                };
+            }
+        }
+
         return {};
     };
 

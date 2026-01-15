@@ -130,7 +130,8 @@ class ServerPowerController
         $port = $node['daemonListen'];
         $token = $node['daemon_token'];
 
-        $timeout = (int) 30;
+        // Increase timeout for kill action as it may take longer
+        $timeout = (int) ($action === 'kill' ? 60 : 30);
         try {
             $wings = new Wings(
                 $host,
