@@ -62,14 +62,12 @@ export default function FileEditorPage({
             // Add timeout to prevent hanging
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-            
+
             const data = await Promise.race([
                 filesApi.getFileContent(uuidShort, fullPath),
-                new Promise<never>((_, reject) => 
-                    setTimeout(() => reject(new Error('Request timeout')), 30000)
-                )
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 30000)),
             ]);
-            
+
             clearTimeout(timeoutId);
             setContent(data);
             setOriginalContent(data);

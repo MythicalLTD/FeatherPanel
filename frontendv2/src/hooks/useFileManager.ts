@@ -63,14 +63,12 @@ export function useFileManager(serverUuid: string) {
             // Add timeout to prevent hanging
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-            
+
             const data = await Promise.race([
                 filesApi.getFiles(serverUuid, currentDirectory),
-                new Promise<never>((_, reject) => 
-                    setTimeout(() => reject(new Error('Request timeout')), 15000)
-                )
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 15000)),
             ]);
-            
+
             clearTimeout(timeoutId);
             const sorted = sortFiles(data);
             setFiles(sorted);

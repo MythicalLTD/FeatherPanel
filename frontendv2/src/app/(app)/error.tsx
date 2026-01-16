@@ -57,7 +57,12 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
             case 'solid':
                 // Check if backgroundImage is a hex color (starts with #)
                 if (backgroundImage && backgroundImage.startsWith('#')) {
-                    return <div className='pointer-events-none absolute inset-0' style={{ backgroundColor: backgroundImage }} />;
+                    return (
+                        <div
+                            className='pointer-events-none absolute inset-0'
+                            style={{ backgroundColor: backgroundImage }}
+                        />
+                    );
                 }
                 return null;
             case 'pattern':

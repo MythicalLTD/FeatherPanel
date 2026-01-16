@@ -280,16 +280,22 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                             </p>
                                                         </button>
                                                     </div>
-                                                    
+
                                                     {/* Custom Color Picker */}
                                                     <div>
                                                         <label className='block text-sm font-medium mb-2'>
-                                                            {t('appearance.background.customColor') || 'Custom Background Color'}
+                                                            {t('appearance.background.customColor') ||
+                                                                'Custom Background Color'}
                                                         </label>
                                                         <div className='flex items-center gap-3'>
                                                             <input
                                                                 type='color'
-                                                                value={backgroundType === 'solid' && backgroundImage.startsWith('#') ? backgroundImage : '#000000'}
+                                                                value={
+                                                                    backgroundType === 'solid' &&
+                                                                    backgroundImage.startsWith('#')
+                                                                        ? backgroundImage
+                                                                        : '#000000'
+                                                                }
                                                                 onChange={(e) => {
                                                                     setBackgroundImage(e.target.value);
                                                                     setBackgroundType('solid');
@@ -298,7 +304,12 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                             />
                                                             <input
                                                                 type='text'
-                                                                value={backgroundType === 'solid' && backgroundImage.startsWith('#') ? backgroundImage : '#000000'}
+                                                                value={
+                                                                    backgroundType === 'solid' &&
+                                                                    backgroundImage.startsWith('#')
+                                                                        ? backgroundImage
+                                                                        : '#000000'
+                                                                }
                                                                 onChange={(e) => {
                                                                     const color = e.target.value;
                                                                     if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
@@ -311,7 +322,8 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                             />
                                                         </div>
                                                         <p className='text-xs text-muted-foreground mt-2'>
-                                                            {t('appearance.background.customColorHelp') || 'Enter a hex color code (e.g., #1a1a1a)'}
+                                                            {t('appearance.background.customColorHelp') ||
+                                                                'Enter a hex color code (e.g., #1a1a1a)'}
                                                         </p>
                                                     </div>
                                                 </div>

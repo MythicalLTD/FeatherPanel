@@ -55,6 +55,7 @@ import {
 import { StatusBadge } from '@/components/servers/StatusBadge';
 import { displayStatus } from '@/lib/server-utils';
 import { ApiServer, Pagination, ApiNode, ApiAllocation } from '@/types/adminServerTypes';
+import type { Server as ServerType } from '@/types/server';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import {
     AlertDialog,
@@ -377,7 +378,7 @@ export default function ServersPage() {
                             },
                         ];
 
-                        const serverStatus = displayStatus(server as any);
+                        const serverStatus = displayStatus(server as unknown as ServerType);
                         return (
                             <ResourceCard
                                 key={server.id}

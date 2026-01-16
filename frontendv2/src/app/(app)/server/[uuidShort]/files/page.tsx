@@ -73,7 +73,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
     // Plugin Widgets - delay fetching to improve initial load
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-files');
-    
+
     // Delay widget fetching to improve initial page load
     useEffect(() => {
         const timer = setTimeout(() => {
