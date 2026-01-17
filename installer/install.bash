@@ -811,13 +811,11 @@ setup_cloudflare_tunnel_full_auto() {
         
         if [ -n "$HOSTNAME_EXISTS" ] && [ "$HOSTNAME_EXISTS" != "null" ] && [ "$HOSTNAME_EXISTS" != "" ]; then
             # Update existing ingress rule for this hostname
-            # Use container name instead of localhost since cloudflared runs in bridge mode
-            NEW_INGRESS=$(echo "$EXISTING_INGRESS" | jq --arg hostname "$CF_HOSTNAME" 'map(if .hostname == $hostname then {hostname: $hostname, service: "http://featherpanel_frontendv2:80"} else . end)')
+            NEW_INGRESS=$(echo "$EXISTING_INGRESS" | jq --arg hostname "$CF_HOSTNAME" 'map(if .hostname == $hostname then {hostname: $hostname, service: "http://localhost:4831"} else . end)')
         else
             # Remove catch-all if it exists, add new rule, then re-add catch-all
-            # Use container name instead of localhost since cloudflared runs in bridge mode
             INGRESS_WITHOUT_CATCHALL=$(echo "$EXISTING_INGRESS" | jq 'map(select(.service != "http_status:404"))')
-            NEW_INGRESS=$(echo "$INGRESS_WITHOUT_CATCHALL" | jq --arg hostname "$CF_HOSTNAME" '. + [{hostname: $hostname, service: "http://featherpanel_frontendv2:80"}] + [{service: "http_status:404"}]')
+            NEW_INGRESS=$(echo "$INGRESS_WITHOUT_CATCHALL" | jq --arg hostname "$CF_HOSTNAME" '. + [{hostname: $hostname, service: "http://localhost:4831"}] + [{service: "http_status:404"}]')
         fi
         
         curl -s -X PUT "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/configurations" \
@@ -828,12 +826,11 @@ setup_cloudflare_tunnel_full_auto() {
     else
         # No existing config, create new one
         log_info "Creating tunnel configuration..."
-        # Use container name instead of localhost since cloudflared runs in bridge mode
         curl -s -X PUT "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/configurations" \
             -H "X-Auth-Email: $CF_EMAIL" \
             -H "X-Auth-Key: $CF_API_KEY" \
             -H "Content-Type: application/json" \
-            --data "$(jq -n --arg hostname "$CF_HOSTNAME" '{config:{ingress:[{hostname:$hostname,service:"http://featherpanel_frontendv2:80"},{service:"http_status:404"}]}}')" > /dev/null
+            --data "$(jq -n --arg hostname "$CF_HOSTNAME" '{config:{ingress:[{hostname:$hostname,service:"http://localhost:4831"},{service:"http_status:404"}]}}')" > /dev/null
     fi
 
     log_info "Full-automatic Cloudflare Tunnel setup complete."
@@ -868,26 +865,15 @@ setup_cloudflare_tunnel_client() {
             sudo usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
             log_success "Docker installed. You may need to re-login for group changes to take effect."
             fi
-        
-        # Ensure the FeatherPanel network exists (created by docker-compose)
-        # If network doesn't exist yet, create it
-        if ! docker network inspect featherpanel_network >/dev/null 2>&1; then
-            log_info "Creating FeatherPanel Docker network..."
-            docker network create featherpanel_network >/dev/null 2>&1 || true
-        fi
-        
-        # Connect cloudflared to the same network as FeatherPanel containers
-        # Using bridge mode instead of host to prevent intercepting traffic meant for other containers (like Wings)
-        # This allows Wings and other services to bind ports directly without interference
         if ! run_with_spinner "Starting Cloudflare Tunnel container" "Cloudflare Tunnel container running." \
-			docker run -d --network host --restart always cloudflare/cloudflared:latest tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN"; then
+            docker run -d --network host --restart always cloudflare/cloudflared:latest tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN"; then
             return 1
         fi
         log_info "Cloudflare Tunnel setup complete."
         if [ "$CF_TUNNEL_MODE" == "2" ]; then
             echo -e "\033[0;33mYou have chosen Semi-Automatic Cloudflare Tunnel setup.\033[0m"
             echo -e "\033[0;33mPlease manually create a DNS record for your hostname pointing to the tunnel in your Cloudflare dashboard.\033[0m"
-            echo -e "\033[0;33mThe ingress rule should point to http://featherpanel_frontendv2:80 (container name) since cloudflared is on bridge network.\033[0m"
+            echo -e "\033[0;33mThe ingress rule should point to http://localhost:4831.\033[0m"
             echo -e "\033[0;33mMore information: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/create-remote-tunnel-api/\033[0m"
         fi
     else
