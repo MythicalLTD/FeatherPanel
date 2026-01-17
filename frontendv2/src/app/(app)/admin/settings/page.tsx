@@ -114,7 +114,7 @@ export default function SettingsPage() {
             });
 
             if (Object.keys(payload).length === 0) {
-                toast.info(t('admin.settings.messages.no_changes') || 'No changes to save.');
+                toast.info(t('admin.settings.messages.no_changes'));
                 setSaving(false);
                 return;
             }

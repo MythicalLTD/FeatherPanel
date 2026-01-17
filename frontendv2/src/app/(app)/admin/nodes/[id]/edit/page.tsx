@@ -380,29 +380,28 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
 
     const validate = useCallback(() => {
         const newErrors: Record<string, string> = {};
-        if (!form.name) newErrors.name = t('admin.node.form.name_required') || 'Name is required';
+        if (!form.name) newErrors.name = t('admin.node.form.name_required');
         if (!form.fqdn) {
-            newErrors.fqdn = t('admin.node.form.fqdn_required') || 'FQDN is required';
+            newErrors.fqdn = t('admin.node.form.fqdn_required');
         } else {
             const fqdnRegex =
                 /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
             if (!fqdnRegex.test(form.fqdn)) {
-                newErrors.fqdn = t('admin.node.form.fqdn_invalid') || 'Invalid FQDN format';
+                newErrors.fqdn = t('admin.node.form.fqdn_invalid');
             }
         }
-        if (!form.location_id) newErrors.location_id = t('admin.node.form.location_required') || 'Location is required';
-        if (!form.daemonBase)
-            newErrors.daemonBase = t('admin.node.form.daemon_base_required') || 'Daemon base path is required';
+        if (!form.location_id) newErrors.location_id = t('admin.node.form.location_required');
+        if (!form.daemonBase) newErrors.daemonBase = t('admin.node.form.daemon_base_required');
 
         const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
         if (form.public_ip_v4 && !ipv4Regex.test(form.public_ip_v4)) {
-            newErrors.public_ip_v4 = t('admin.node.form.ipv4_invalid') || 'Invalid IPv4 address';
+            newErrors.public_ip_v4 = t('admin.node.form.ipv4_invalid');
         }
 
         const ipv6Regex =
             /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
         if (form.public_ip_v6 && !ipv6Regex.test(form.public_ip_v6)) {
-            newErrors.public_ip_v6 = t('admin.node.form.ipv6_invalid') || 'Invalid IPv6 address';
+            newErrors.public_ip_v6 = t('admin.node.form.ipv6_invalid');
         }
 
         setErrors(newErrors);

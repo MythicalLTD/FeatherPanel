@@ -30,6 +30,10 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { MinecraftServerPropertiesEditor } from '@/components/server/files/editors/MinecraftServerPropertiesEditor';
 import { SpigotConfigurationEditor } from '@/components/server/files/editors/SpigotConfigurationEditor';
+import { OpsEditor } from '@/components/server/files/editors/OpsEditor';
+import { BannedPlayersEditor } from '@/components/server/files/editors/BannedPlayersEditor';
+import { BannedIpsEditor } from '@/components/server/files/editors/BannedIpsEditor';
+import { WhitelistEditor } from '@/components/server/files/editors/WhitelistEditor';
 
 export default function FileEditorPage({
     params,
@@ -51,6 +55,10 @@ export default function FileEditorPage({
     const [saving, setSaving] = useState(false);
     const [useMinecraftEditor, setUseMinecraftEditor] = useState(false);
     const [useSpigotEditor, setUseSpigotEditor] = useState(false);
+    const [useOpsEditor, setUseOpsEditor] = useState(false);
+    const [useBannedPlayersEditor, setUseBannedPlayersEditor] = useState(false);
+    const [useBannedIpsEditor, setUseBannedIpsEditor] = useState(false);
+    const [useWhitelistEditor, setUseWhitelistEditor] = useState(false);
     const [useRawEditor, setUseRawEditor] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
@@ -89,6 +97,67 @@ export default function FileEditorPage({
         [isSpigotConfiguration, looksLikeSpigotConfiguration],
     );
 
+    // Detect Ops, Banned Players, Banned IPs, and Whitelist files
+    const isOpsFile = useMemo(() => fileName.trim().toLowerCase() === 'ops.json', [fileName]);
+    const isBannedPlayersFile = useMemo(() => fileName.trim().toLowerCase() === 'banned-players.json', [fileName]);
+    const isBannedIpsFile = useMemo(() => fileName.trim().toLowerCase() === 'banned-ips.json', [fileName]);
+    const isWhitelistFile = useMemo(() => fileName.trim().toLowerCase() === 'whitelist.json', [fileName]);
+
+    const looksLikeOpsFile = useMemo(() => {
+        if (!isOpsFile || !content) return false;
+        try {
+            const parsed = JSON.parse(content);
+            return Array.isArray(parsed) && parsed.every((item) => item && typeof item === 'object' && 'uuid' in item);
+        } catch {
+            return false;
+        }
+    }, [isOpsFile, content]);
+
+    const looksLikeBannedPlayersFile = useMemo(() => {
+        if (!isBannedPlayersFile || !content) return false;
+        try {
+            const parsed = JSON.parse(content);
+            return Array.isArray(parsed) && parsed.every((item) => item && typeof item === 'object' && 'uuid' in item);
+        } catch {
+            return false;
+        }
+    }, [isBannedPlayersFile, content]);
+
+    const looksLikeBannedIpsFile = useMemo(() => {
+        if (!isBannedIpsFile || !content) return false;
+        try {
+            const parsed = JSON.parse(content);
+            return Array.isArray(parsed) && parsed.every((item) => item && typeof item === 'object' && 'ip' in item);
+        } catch {
+            return false;
+        }
+    }, [isBannedIpsFile, content]);
+
+    const shouldOfferOpsEditor = useMemo(() => isOpsFile && looksLikeOpsFile, [isOpsFile, looksLikeOpsFile]);
+    const shouldOfferBannedPlayersEditor = useMemo(
+        () => isBannedPlayersFile && looksLikeBannedPlayersFile,
+        [isBannedPlayersFile, looksLikeBannedPlayersFile],
+    );
+    const shouldOfferBannedIpsEditor = useMemo(
+        () => isBannedIpsFile && looksLikeBannedIpsFile,
+        [isBannedIpsFile, looksLikeBannedIpsFile],
+    );
+
+    const looksLikeWhitelistFile = useMemo(() => {
+        if (!isWhitelistFile || !content) return false;
+        try {
+            const parsed = JSON.parse(content);
+            return Array.isArray(parsed) && parsed.every((item) => typeof item === 'string');
+        } catch {
+            return false;
+        }
+    }, [isWhitelistFile, content]);
+
+    const shouldOfferWhitelistEditor = useMemo(
+        () => isWhitelistFile && looksLikeWhitelistFile,
+        [isWhitelistFile, looksLikeWhitelistFile],
+    );
+
     // Auto-enable visual editor when content is loaded and it's a supported file
     useEffect(() => {
         if (!loading && content && !useRawEditor) {
@@ -96,9 +165,27 @@ export default function FileEditorPage({
                 setUseMinecraftEditor(true);
             } else if (shouldOfferSpigotEditor) {
                 setUseSpigotEditor(true);
+            } else if (shouldOfferOpsEditor) {
+                setUseOpsEditor(true);
+            } else if (shouldOfferBannedPlayersEditor) {
+                setUseBannedPlayersEditor(true);
+            } else if (shouldOfferBannedIpsEditor) {
+                setUseBannedIpsEditor(true);
+            } else if (shouldOfferWhitelistEditor) {
+                setUseWhitelistEditor(true);
             }
         }
-    }, [loading, content, shouldOfferMinecraftEditor, shouldOfferSpigotEditor, useRawEditor]);
+    }, [
+        loading,
+        content,
+        shouldOfferMinecraftEditor,
+        shouldOfferSpigotEditor,
+        shouldOfferOpsEditor,
+        shouldOfferBannedPlayersEditor,
+        shouldOfferBannedIpsEditor,
+        shouldOfferWhitelistEditor,
+        useRawEditor,
+    ]);
 
     const fetchContent = useCallback(async () => {
         setLoading(true);
@@ -159,6 +246,10 @@ export default function FileEditorPage({
     const handleSwitchToRawEditor = () => {
         setUseMinecraftEditor(false);
         setUseSpigotEditor(false);
+        setUseOpsEditor(false);
+        setUseBannedPlayersEditor(false);
+        setUseBannedIpsEditor(false);
+        setUseWhitelistEditor(false);
         setUseRawEditor(true);
     };
 
@@ -168,6 +259,14 @@ export default function FileEditorPage({
             setUseMinecraftEditor(true);
         } else if (shouldOfferSpigotEditor) {
             setUseSpigotEditor(true);
+        } else if (shouldOfferOpsEditor) {
+            setUseOpsEditor(true);
+        } else if (shouldOfferBannedPlayersEditor) {
+            setUseBannedPlayersEditor(true);
+        } else if (shouldOfferBannedIpsEditor) {
+            setUseBannedIpsEditor(true);
+        } else if (shouldOfferWhitelistEditor) {
+            setUseWhitelistEditor(true);
         }
     };
 
@@ -245,7 +344,7 @@ export default function FileEditorPage({
             />
             <WidgetRenderer widgets={getWidgets('server-file-editor', 'after-header')} />
 
-            {/* Minecraft server.properties editor */}
+            {/* Visual Editors */}
             {!loading && content && useMinecraftEditor && shouldOfferMinecraftEditor ? (
                 <MinecraftServerPropertiesEditor
                     content={content}
@@ -256,6 +355,38 @@ export default function FileEditorPage({
                 />
             ) : !loading && content && useSpigotEditor && shouldOfferSpigotEditor ? (
                 <SpigotConfigurationEditor
+                    content={content}
+                    readonly={!canEdit}
+                    saving={saving}
+                    onSave={handleSave}
+                    onSwitchToRaw={handleSwitchToRawEditor}
+                />
+            ) : !loading && content && useOpsEditor && shouldOfferOpsEditor ? (
+                <OpsEditor
+                    content={content}
+                    readonly={!canEdit}
+                    saving={saving}
+                    onSave={handleSave}
+                    onSwitchToRaw={handleSwitchToRawEditor}
+                />
+            ) : !loading && content && useBannedPlayersEditor && shouldOfferBannedPlayersEditor ? (
+                <BannedPlayersEditor
+                    content={content}
+                    readonly={!canEdit}
+                    saving={saving}
+                    onSave={handleSave}
+                    onSwitchToRaw={handleSwitchToRawEditor}
+                />
+            ) : !loading && content && useBannedIpsEditor && shouldOfferBannedIpsEditor ? (
+                <BannedIpsEditor
+                    content={content}
+                    readonly={!canEdit}
+                    saving={saving}
+                    onSave={handleSave}
+                    onSwitchToRaw={handleSwitchToRawEditor}
+                />
+            ) : !loading && content && useWhitelistEditor && shouldOfferWhitelistEditor ? (
+                <WhitelistEditor
                     content={content}
                     readonly={!canEdit}
                     saving={saving}

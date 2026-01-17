@@ -34,7 +34,7 @@ export function useFileManager(serverUuid: string) {
     const [searchQuery, setSearchQuery] = useState('');
 
     // Current directory from URL or default to /
-    const currentDirectory = searchParams?.get('path') || '/';
+    const currentDirectory = searchParams?.get('path');
 
     // Load ignored patterns
     const refreshIgnored = useCallback(() => {
@@ -65,7 +65,7 @@ export function useFileManager(serverUuid: string) {
             const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
             const data = await Promise.race([
-                filesApi.getFiles(serverUuid, currentDirectory),
+                filesApi.getFiles(serverUuid, currentDirectory || undefined),
                 new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 15000)),
             ]);
 

@@ -136,7 +136,7 @@ export default function LogViewerPage() {
             });
             if (response.data.success) {
                 setLogs('');
-                toast.success(t('admin.dev.logs.messages.cleared') || 'Logs cleared successfully');
+                toast.success(t('admin.dev.logs.messages.cleared'));
             } else {
                 toast.error(response.data.message || t('admin.dev.logs.messages.clear_failed'));
             }
@@ -197,7 +197,7 @@ export default function LogViewerPage() {
         return (
             <div className='space-y-6'>
                 <EmptyState
-                    title={t('admin.dev.developerModeRequired') || 'Developer Mode Required'}
+                    title={t('admin.dev.developerModeRequired')}
                     description={
                         t('admin.dev.developerModeDescription') ||
                         'Developer mode must be enabled in settings to access developer tools.'
@@ -205,7 +205,7 @@ export default function LogViewerPage() {
                     icon={Lock}
                     action={
                         <Button variant='outline' onClick={() => router.push('/admin/settings')}>
-                            {t('admin.dev.goToSettings') || 'Go to Settings'}
+                            {t('admin.dev.goToSettings')}
                         </Button>
                     }
                 />
@@ -216,14 +216,14 @@ export default function LogViewerPage() {
     return (
         <div className='space-y-6'>
             <PageHeader
-                title={t('admin.dev.logs.title') || 'Log Viewer'}
-                description={t('admin.dev.logs.description') || 'View and manage application logs'}
+                title={t('admin.dev.logs.title')}
+                description={t('admin.dev.logs.description')}
                 icon={FileText}
                 actions={
                     <div className='flex gap-2'>
                         <Button variant='outline' onClick={fetchLogs} disabled={loading}>
                             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                            {t('admin.dev.logs.actions.refresh') || 'Refresh'}
+                            {t('admin.dev.logs.actions.refresh')}
                         </Button>
                         <Button
                             variant={autoRefresh ? 'default' : 'outline'}
@@ -233,18 +233,18 @@ export default function LogViewerPage() {
                             {autoRefresh ? (
                                 <>
                                     <Square className='w-4 h-4 mr-2' />
-                                    {t('admin.dev.logs.actions.stop_auto') || 'Stop Auto'}
+                                    {t('admin.dev.logs.actions.stop_auto')}
                                 </>
                             ) : (
                                 <>
                                     <Play className='w-4 h-4 mr-2' />
-                                    {t('admin.dev.logs.actions.auto_refresh') || 'Auto Refresh'}
+                                    {t('admin.dev.logs.actions.auto_refresh')}
                                 </>
                             )}
                         </Button>
                         <Button variant='destructive' onClick={clearLogs} disabled={loading}>
                             <Trash2 className='w-4 h-4 mr-2' />
-                            {t('admin.dev.logs.actions.clear_logs') || 'Clear Logs'}
+                            {t('admin.dev.logs.actions.clear_logs')}
                         </Button>
                     </div>
                 }
@@ -254,18 +254,18 @@ export default function LogViewerPage() {
             <PageCard>
                 <div className='flex flex-col md:flex-row gap-4 items-start md:items-center'>
                     <div className='flex items-center gap-2'>
-                        <label className='text-sm font-medium'>{t('admin.dev.logs.log_type') || 'Log Type:'}</label>
+                        <label className='text-sm font-medium'>{t('admin.dev.logs.log_type')}</label>
                         <Select
                             value={currentLogType}
                             onChange={(e) => setCurrentLogType(e.target.value as 'app' | 'web')}
                             className='w-32'
                         >
-                            <option value='app'>{t('admin.dev.logs.log_type_app') || 'App Logs'}</option>
-                            <option value='web'>{t('admin.dev.logs.log_type_web') || 'Web Logs'}</option>
+                            <option value='app'>{t('admin.dev.logs.log_type_app')}</option>
+                            <option value='web'>{t('admin.dev.logs.log_type_web')}</option>
                         </Select>
                     </div>
                     <div className='flex items-center gap-2'>
-                        <label className='text-sm font-medium'>{t('admin.dev.logs.lines') || 'Lines:'}</label>
+                        <label className='text-sm font-medium'>{t('admin.dev.logs.lines')}</label>
                         <Select
                             value={lines.toString()}
                             onChange={(e) => setLines(parseInt(e.target.value))}
@@ -285,9 +285,7 @@ export default function LogViewerPage() {
                 <div className='flex items-center justify-center py-12'>
                     <div className='flex items-center gap-3'>
                         <Loader2 className='w-6 h-6 animate-spin text-primary' />
-                        <span className='text-muted-foreground'>
-                            {t('admin.dev.logs.loading') || 'Loading logs...'}
-                        </span>
+                        <span className='text-muted-foreground'>{t('admin.dev.logs.loading')}</span>
                     </div>
                 </div>
             )}
@@ -304,7 +302,7 @@ export default function LogViewerPage() {
                             <div className='text-xs text-muted-foreground space-y-1'>
                                 <div>{file.name}</div>
                                 <div>
-                                    {t('admin.dev.logs.modified') || 'Modified:'} {formatDate(file.modified)}
+                                    {t('admin.dev.logs.modified')} {formatDate(file.modified)}
                                 </div>
                             </div>
                         </PageCard>
@@ -315,13 +313,13 @@ export default function LogViewerPage() {
             {/* Logs Output */}
             <PageCard>
                 <div className='p-4 flex items-center justify-between border-b border-border/50'>
-                    <div className='font-semibold'>{t('admin.dev.logs.logs_output') || 'Logs Output'}</div>
+                    <div className='font-semibold'>{t('admin.dev.logs.logs_output')}</div>
                     <div className='flex items-center gap-2'>
                         <span className='text-sm text-muted-foreground'>
-                            {logs.split('\n').length} {t('admin.dev.logs.lines_count') || 'lines'}
+                            {logs.split('\n').length} {t('admin.dev.logs.lines_count')}
                         </span>
                         <Button variant='outline' size='sm' onClick={() => setLogs('')}>
-                            {t('admin.dev.logs.clear') || 'Clear'}
+                            {t('admin.dev.logs.clear')}
                         </Button>
                     </div>
                 </div>
@@ -330,7 +328,7 @@ export default function LogViewerPage() {
                     className='text-xs whitespace-pre-wrap bg-black text-green-300 p-4 min-h-[400px] max-h-[600px] overflow-auto font-mono rounded-b-xl'
                     style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace" }}
                 >
-                    {logs || t('admin.dev.logs.no_logs') || 'No logs available'}
+                    {logs || t('admin.dev.logs.no_logs')}
                 </pre>
             </PageCard>
         </div>

@@ -604,7 +604,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
             <div
                 className={`${sizeClasses[size]} rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold`}
             >
-                {user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
+                {user?.first_name?.charAt(0) || user?.username?.charAt(0)}
             </div>
         );
     };

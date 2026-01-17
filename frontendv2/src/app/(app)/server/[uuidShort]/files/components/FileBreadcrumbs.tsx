@@ -27,7 +27,7 @@ interface FileBreadcrumbsProps {
 
 export function FileBreadcrumbs({ currentDirectory, onNavigate, searchQuery, onSearchChange }: FileBreadcrumbsProps) {
     const { t } = useTranslation();
-    const segments = currentDirectory.split('/').filter(Boolean); // Remove empty strings
+    const segments = (currentDirectory || '').split('/').filter(Boolean); // Remove empty strings
 
     const getPath = (index: number) => {
         return '/' + segments.slice(0, index + 1).join('/');

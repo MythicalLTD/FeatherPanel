@@ -76,7 +76,7 @@ export function TicketSidebar({
                                     <Avatar className='h-20 w-20 mx-auto border-4 border-background shadow-xl transition-all duration-500 group-hover/avatar:scale-105'>
                                         <AvatarImage src={userDetails.avatar} />
                                         <AvatarFallback className='text-xl font-black bg-primary/10 text-primary'>
-                                            {userDetails.username?.charAt(0) || '?'}
+                                            {userDetails.username?.charAt(0)}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className='absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-background border border-border/50 flex items-center justify-center shadow-md'>

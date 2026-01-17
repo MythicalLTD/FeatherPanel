@@ -1990,6 +1990,80 @@
 						"restart": "Restart message"
 					}
 				}
+			},
+			"opsConfig": {
+				"title": "Server Operators",
+				"description": "Manage server operators (OPs)",
+				"notice": "Operators have elevated permissions on the server. Be careful when adding operators.",
+				"emptyState": "No operators configured",
+				"actions": {
+					"save": "Save",
+					"saving": "Saving...",
+					"switchToRaw": "Switch to Raw Editor",
+					"add": "Add Operator"
+				},
+				"fields": {
+					"uuid": "UUID",
+					"name": "Name",
+					"level": "Level",
+					"bypassesPlayerLimit": "Bypass Player Limit",
+					"enabled": "Enabled",
+					"disabled": "Disabled"
+				}
+			},
+			"bannedPlayersConfig": {
+				"title": "Banned Players",
+				"description": "Manage banned players",
+				"notice": "Banned players cannot join the server. Be careful when managing bans.",
+				"emptyState": "No banned players",
+				"actions": {
+					"save": "Save",
+					"saving": "Saving...",
+					"switchToRaw": "Switch to Raw Editor",
+					"add": "Add Banned Player"
+				},
+				"fields": {
+					"uuid": "UUID",
+					"name": "Name",
+					"created": "Created",
+					"source": "Source",
+					"expires": "Expires",
+					"reason": "Reason"
+				}
+			},
+			"bannedIpsConfig": {
+				"title": "Banned IPs",
+				"description": "Manage banned IP addresses",
+				"notice": "Banned IPs cannot connect to the server. Be careful when managing IP bans.",
+				"emptyState": "No banned IPs",
+				"actions": {
+					"save": "Save",
+					"saving": "Saving...",
+					"switchToRaw": "Switch to Raw Editor",
+					"add": "Add Banned IP"
+				},
+				"fields": {
+					"ip": "IP Address",
+					"created": "Created",
+					"source": "Source",
+					"expires": "Expires",
+					"reason": "Reason"
+				}
+			},
+			"whitelistConfig": {
+				"title": "Whitelist",
+				"description": "Manage whitelisted players",
+				"notice": "Only whitelisted players can join the server when whitelist is enabled.",
+				"emptyState": "No whitelisted players",
+				"actions": {
+					"save": "Save",
+					"saving": "Saving...",
+					"switchToRaw": "Switch to Raw Editor",
+					"add": "Add Player"
+				},
+				"fields": {
+					"playerName": "Player Name"
+				}
 			}
 		},
 		"row": {

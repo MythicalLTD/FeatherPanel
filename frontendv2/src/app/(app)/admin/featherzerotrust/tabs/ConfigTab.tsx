@@ -79,17 +79,17 @@ const ConfigTab = () => {
             setConfig(fetchedConfig);
 
             // Map arrays to text
-            setIgnoredExtensionsText(fetchedConfig.ignored_extensions?.join(', ') || '');
-            setIgnoredFilesText(fetchedConfig.ignored_files?.join(', ') || '');
-            setIgnoredPathsText(fetchedConfig.ignored_paths?.join(', ') || '');
-            setSuspiciousExtensionsText(fetchedConfig.suspicious_extensions?.join(', ') || '');
-            setSuspiciousNamesText(fetchedConfig.suspicious_names?.join(', ') || '');
-            setSuspiciousPatternsText(fetchedConfig.suspicious_patterns?.join('\n') || '');
-            setMaliciousProcessesText(fetchedConfig.malicious_processes?.join(', ') || '');
-            setWhatsappIndicatorsText(fetchedConfig.whatsapp_indicators?.join(', ') || '');
-            setMinerIndicatorsText(fetchedConfig.miner_indicators?.join(', ') || '');
-            setSuspiciousWordsText(fetchedConfig.suspicious_words?.join(', ') || '');
-            setSuspiciousContentText(fetchedConfig.suspicious_content?.join(', ') || '');
+            setIgnoredExtensionsText(fetchedConfig.ignored_extensions?.join(', '));
+            setIgnoredFilesText(fetchedConfig.ignored_files?.join(', '));
+            setIgnoredPathsText(fetchedConfig.ignored_paths?.join(', '));
+            setSuspiciousExtensionsText(fetchedConfig.suspicious_extensions?.join(', '));
+            setSuspiciousNamesText(fetchedConfig.suspicious_names?.join(', '));
+            setSuspiciousPatternsText(fetchedConfig.suspicious_patterns?.join('\n'));
+            setMaliciousProcessesText(fetchedConfig.malicious_processes?.join(', '));
+            setWhatsappIndicatorsText(fetchedConfig.whatsapp_indicators?.join(', '));
+            setMinerIndicatorsText(fetchedConfig.miner_indicators?.join(', '));
+            setSuspiciousWordsText(fetchedConfig.suspicious_words?.join(', '));
+            setSuspiciousContentText(fetchedConfig.suspicious_content?.join(', '));
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
             toast.error(err.response?.data?.message || t('admin.featherzerotrust.config.messages.loadFailed'));

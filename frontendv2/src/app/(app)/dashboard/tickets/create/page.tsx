@@ -328,7 +328,7 @@ export default function CreateTicketPage() {
                         <div className='space-y-2.5'>
                             <HeadlessSelect
                                 label={t('tickets.priorityLabel')}
-                                description={t('tickets.priorityDescription') || 'Choose the urgency of your request.'}
+                                description={t('tickets.priorityDescription')}
                                 value={priorityId}
                                 onChange={setPriorityId}
                                 options={priorityOptions}
@@ -393,7 +393,7 @@ export default function CreateTicketPage() {
                                         size='icon'
                                         className='h-auto w-12 rounded-xl border border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30'
                                         onClick={() => setServerId('')}
-                                        title={t('tickets.clearServerSelection') || 'Clear server selection'}
+                                        title={t('tickets.clearServerSelection')}
                                     >
                                         <Trash2 className='h-5 w-5' />
                                     </Button>

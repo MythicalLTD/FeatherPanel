@@ -115,7 +115,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         switch (action) {
             case 'edit':
                 // Prefetch the file content immediately for better UX
-                const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory)}`;
+                const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory || '/')}`;
                 // Use router.push with prefetch for faster navigation
                 router.prefetch(editPath);
                 router.push(editPath);
@@ -155,9 +155,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const handleDownload = async (filename: string) => {
         try {
             // Ensure path starts with / and has no double slashes
-            const path = currentDirectory.endsWith('/')
-                ? `${currentDirectory}${filename}`
-                : `${currentDirectory}/${filename}`;
+            const path = (currentDirectory || '/').endsWith('/')
+                ? `${currentDirectory || '/'}${filename}`
+                : `${currentDirectory || '/'}/${filename}`;
 
             const url = `/api/user/servers/${uuidShort}/download-file?path=${encodeURIComponent(path)}`;
             window.open(url, '_blank');
@@ -174,7 +174,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const handleDecompress = async (filename: string) => {
         const toastId = toast.loading(t('files.messages.extracting'));
         try {
-            await filesApi.decompressFile(uuidShort, currentDirectory, filename);
+            await filesApi.decompressFile(uuidShort, currentDirectory || '/', filename);
             toast.success(t('files.messages.extracted'), { id: toastId });
             refresh();
         } catch (error) {
@@ -210,7 +210,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             const toastId = toast.loading(t('files.messages.uploading', { file: file.name }));
 
             try {
-                await filesApi.uploadFile(uuidShort, currentDirectory, file);
+                await filesApi.uploadFile(uuidShort, currentDirectory || '/', file);
                 toast.success(t('files.messages.upload_complete'), { id: toastId });
                 refresh();
             } catch (error) {
@@ -269,14 +269,14 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             <WidgetRenderer widgets={getWidgets('server-files', 'top-of-page')} />
             <PageHeader
                 title={t('files.title')}
-                description={t('files.manage_description', { directory: currentDirectory })}
+                description={t('files.manage_description', { directory: currentDirectory || '/' })}
             />
             <WidgetRenderer widgets={getWidgets('server-files', 'after-header')} />
 
             <div className='flex flex-col gap-4'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-white/5 bg-white/10 p-4 backdrop-blur-sm shadow-xl shadow-black/20'>
                     <FileBreadcrumbs
-                        currentDirectory={currentDirectory}
+                        currentDirectory={currentDirectory || '/'}
                         onNavigate={navigate}
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
@@ -310,7 +310,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     onPermissionsSelected={() => setPermissionsOpen(true)}
                     canCreate={canCreate}
                     canDelete={canDelete}
-                    currentDirectory={currentDirectory}
+                    currentDirectory={currentDirectory || '/'}
                 />
 
                 {activePulls.length > 0 && (
@@ -372,14 +372,14 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     onSelect={toggleSelect}
                     onSelectAll={selectAll}
                     onNavigate={(name) =>
-                        navigate(currentDirectory === '/' ? `/${name}` : `${currentDirectory}/${name}`)
+                        navigate((currentDirectory || '/') === '/' ? `/${name}` : `${currentDirectory || '/'}/${name}`)
                     }
                     onAction={handleAction}
                     canEdit={canUpdate}
                     canDelete={canDelete}
                     canDownload={canRead}
                     serverUuid={uuidShort}
-                    currentDirectory={currentDirectory}
+                    currentDirectory={currentDirectory || '/'}
                 />
 
                 <WidgetRenderer widgets={getWidgets('server-files', 'after-files-list')} />
@@ -399,7 +399,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             <h2 className='text-3xl font-bold mb-2'>{t('files.messages.drop_to_upload')}</h2>
                             <p className='text-muted-foreground'>
                                 {t('files.messages.drop_description')}{' '}
-                                <span className='text-primary font-mono'>{currentDirectory}</span>
+                                <span className='text-primary font-mono'>{currentDirectory || '/'}</span>
                             </p>
                         </div>
                     </div>
@@ -411,21 +411,21 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 open={createFolderOpen}
                 onOpenChange={setCreateFolderOpen}
                 uuid={uuidShort}
-                root={currentDirectory}
+                root={currentDirectory || '/'}
                 onSuccess={refresh}
             />
             <CreateFileDialog
                 open={createFileOpen}
                 onOpenChange={setCreateFileOpen}
                 uuid={uuidShort}
-                root={currentDirectory}
+                root={currentDirectory || '/'}
                 onSuccess={refresh}
             />
             <RenameDialog
                 open={renameOpen}
                 onOpenChange={setRenameOpen}
                 uuid={uuidShort}
-                root={currentDirectory}
+                root={currentDirectory || '/'}
                 fileName={actionFile?.name || ''}
                 onSuccess={refresh}
             />
@@ -433,7 +433,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 open={deleteOpen}
                 onOpenChange={setDeleteOpen}
                 uuid={uuidShort}
-                root={currentDirectory}
+                root={currentDirectory || '/'}
                 files={actionFile ? [actionFile.name] : selectedFiles}
                 onSuccess={() => {
                     refresh();
@@ -444,7 +444,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 open={pullFileOpen}
                 onOpenChange={setPullFileOpen}
                 uuid={uuidShort}
-                root={currentDirectory}
+                root={currentDirectory || '/'}
                 onSuccess={refresh}
             />
             <WipeAllDialog open={wipeAllOpen} onOpenChange={setWipeAllOpen} uuid={uuidShort} onSuccess={refresh} />
@@ -462,14 +462,14 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 onOpenChange={setPreviewOpen}
                 uuid={uuidShort}
                 file={actionFile}
-                currentDirectory={currentDirectory}
+                currentDirectory={currentDirectory || '/'}
                 onDownload={handleDownload}
             />
             <MoveCopyDialog
                 open={moveCopyOpen}
                 onOpenChange={setMoveCopyOpen}
                 uuid={uuidShort}
-                root={currentDirectory}
+                root={currentDirectory || '/'}
                 files={actionFile ? [actionFile.name] : selectedFiles}
                 action={moveCopyAction}
                 onSuccess={() => {
@@ -481,7 +481,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 open={permissionsOpen}
                 onOpenChange={setPermissionsOpen}
                 uuid={uuidShort}
-                root={currentDirectory}
+                root={currentDirectory || '/'}
                 files={actionFile ? [actionFile.name] : selectedFiles}
                 onSuccess={() => {
                     refresh();
@@ -492,7 +492,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 open={compressOpen}
                 onOpenChange={setCompressOpen}
                 serverUuid={uuidShort}
-                directory={currentDirectory}
+                directory={currentDirectory || '/'}
                 files={filesToCompress}
                 onSuccess={() => {
                     refresh();

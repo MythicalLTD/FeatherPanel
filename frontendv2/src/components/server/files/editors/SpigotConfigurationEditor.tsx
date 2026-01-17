@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/featherui/Button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Save, Command, ListChecks, Map, MessageSquare, Settings2, Users } from 'lucide-react';
+import { ArrowLeft, Save, MessageSquare, Settings2 } from 'lucide-react';
 import yaml from 'js-yaml';
 
 type Primitive = string | number | boolean | null;
@@ -78,11 +78,6 @@ function toNumber(value: unknown, fallback: number): number {
 function toString(value: unknown, fallback: string): string {
     if (value === undefined || value === null) return fallback;
     return String(value);
-}
-
-function toTypedString(value: unknown, fallback: string): string {
-    if (value === undefined || value === null) return fallback;
-    return typeof value === 'string' ? value : String(value);
 }
 
 // Simplified form interface - we'll expand as needed
@@ -205,15 +200,21 @@ export function SpigotConfigurationEditor({
     onSwitchToRaw,
 }: SpigotConfigurationEditorProps) {
     const { t } = useTranslation();
-    const [form, setForm] = useState<SpigotForm>(() => {
+
+    // Derive form from content using useMemo - this recomputes when content changes
+    const form = useMemo(() => {
         const config = parseSpigotConfiguration(content);
         return createForm(config);
-    });
-
-    useEffect(() => {
-        const config = parseSpigotConfiguration(content);
-        setForm(createForm(config));
     }, [content]);
+
+    // Use local state for user edits, initialized from the derived form
+    const [localForm, setLocalForm] = useState<SpigotForm>(form);
+
+    // Sync local form when the derived form changes (content prop changed)
+    useEffect(() => {
+        setLocalForm(form);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [content]); // Only depend on content, not form, to avoid unnecessary updates
 
     // Inject dark theme styles
     useEffect(() => {
@@ -246,13 +247,13 @@ export function SpigotConfigurationEditor({
 
     const handleSave = () => {
         const config = parseSpigotConfiguration(content);
-        const updated = applyFormToConfig(config, form);
+        const updated = applyFormToConfig(config, localForm);
         const yamlOutput = yaml.dump(updated, { lineWidth: 0 });
         onSave(yamlOutput);
     };
 
     const updateForm = (path: string[], value: unknown) => {
-        setForm((prev) => {
+        setLocalForm((prev) => {
             const newForm = { ...prev };
             let current: Record<string, unknown> = newForm;
             for (let i = 0; i < path.length - 1; i++) {
@@ -268,9 +269,7 @@ export function SpigotConfigurationEditor({
             <CardHeader className='border-b border-border/40'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
-                        <CardTitle className='text-2xl font-bold'>
-                            {t('files.editors.spigotConfig.title') || 'Spigot Configuration'}
-                        </CardTitle>
+                        <CardTitle className='text-2xl font-bold'>{t('files.editors.spigotConfig.title')}</CardTitle>
                         <CardDescription className='text-sm text-muted-foreground'>
                             {t('files.editors.spigotConfig.description') ||
                                 'Configure your Spigot server settings visually'}
@@ -279,13 +278,13 @@ export function SpigotConfigurationEditor({
                     <div className='flex items-center gap-2'>
                         <Button variant='ghost' size='sm' onClick={onSwitchToRaw}>
                             <ArrowLeft className='mr-2 h-4 w-4' />
-                            {t('files.editors.spigotConfig.actions.switchToRaw') || 'Switch to Raw Editor'}
+                            {t('files.editors.spigotConfig.actions.switchToRaw')}
                         </Button>
                         <Button size='sm' disabled={readonly || saving} onClick={handleSave}>
                             <Save className='mr-2 h-4 w-4' />
                             {saving
-                                ? t('files.editors.spigotConfig.actions.saving') || 'Saving...'
-                                : t('files.editors.spigotConfig.actions.save') || 'Save'}
+                                ? t('files.editors.spigotConfig.actions.saving')
+                                : t('files.editors.spigotConfig.actions.save')}
                         </Button>
                     </div>
                 </div>
@@ -299,7 +298,7 @@ export function SpigotConfigurationEditor({
                         </div>
                         <div>
                             <h3 className='text-lg font-semibold'>
-                                {t('files.editors.spigotConfig.sections.settings') || 'Settings'}
+                                {t('files.editors.spigotConfig.sections.settings')}
                             </h3>
                             <p className='text-sm text-muted-foreground'>
                                 {t('files.editors.spigotConfig.sectionsDescriptions.settings') ||
@@ -323,10 +322,10 @@ export function SpigotConfigurationEditor({
                                         <Label className='text-sm font-semibold'>{field.label}</Label>
                                     </div>
                                     <Checkbox
-                                        checked={form.settings[field.key as keyof typeof form.settings] as boolean}
-                                        onCheckedChange={(checked) =>
-                                            updateForm(['settings', field.key], checked)
+                                        checked={
+                                            localForm.settings[field.key as keyof typeof localForm.settings] as boolean
                                         }
+                                        onCheckedChange={(checked) => updateForm(['settings', field.key], checked)}
                                         disabled={readonly}
                                     />
                                 </div>
@@ -348,7 +347,7 @@ export function SpigotConfigurationEditor({
                                 <Label className='text-sm font-semibold'>{field.label}</Label>
                                 <Input
                                     type='number'
-                                    value={form.settings[field.key as keyof typeof form.settings] as number}
+                                    value={localForm.settings[field.key as keyof typeof localForm.settings] as number}
                                     onChange={(e) =>
                                         updateForm(['settings', field.key], Number.parseFloat(e.target.value) || 0)
                                     }
@@ -362,7 +361,7 @@ export function SpigotConfigurationEditor({
 
                     <div className='space-y-4 rounded-lg bg-muted/20 p-4 border-0'>
                         <h4 className='text-sm font-semibold'>
-                            {t('files.editors.spigotConfig.sections.attributeLimits') || 'Attribute Limits'}
+                            {t('files.editors.spigotConfig.sections.attributeLimits')}
                         </h4>
                         <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                             {[
@@ -375,7 +374,11 @@ export function SpigotConfigurationEditor({
                                     <Label className='text-sm font-semibold'>{field.label}</Label>
                                     <Input
                                         type='number'
-                                        value={form.settings.attribute[field.key as keyof typeof form.settings.attribute]}
+                                        value={
+                                            localForm.settings.attribute[
+                                                field.key as keyof typeof localForm.settings.attribute
+                                            ]
+                                        }
                                         onChange={(e) =>
                                             updateForm(
                                                 ['settings', 'attribute', field.key],
@@ -400,7 +403,7 @@ export function SpigotConfigurationEditor({
                         </div>
                         <div>
                             <h3 className='text-lg font-semibold'>
-                                {t('files.editors.spigotConfig.sections.messages') || 'Messages'}
+                                {t('files.editors.spigotConfig.sections.messages')}
                             </h3>
                             <p className='text-sm text-muted-foreground'>
                                 {t('files.editors.spigotConfig.sectionsDescriptions.messages') ||
@@ -420,7 +423,7 @@ export function SpigotConfigurationEditor({
                             <div key={field.key} className='space-y-2'>
                                 <Label className='text-sm font-semibold'>{field.label}</Label>
                                 <Textarea
-                                    value={form.messages[field.key as keyof typeof form.messages] as string}
+                                    value={localForm.messages[field.key as keyof typeof localForm.messages] as string}
                                     onChange={(e) => updateForm(['messages', field.key], e.target.value)}
                                     readOnly={readonly}
                                     rows={2}

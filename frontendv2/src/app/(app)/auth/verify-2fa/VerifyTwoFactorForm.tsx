@@ -38,7 +38,7 @@ export default function VerifyTwoFactorForm() {
     }, [fetchWidgets]);
 
     // Support both legacy 'email' and new 'username_or_email' query params
-    const email = searchParams.get('email') || searchParams.get('username_or_email') || '';
+    const email = searchParams.get('email') || searchParams.get('username_or_email');
 
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);

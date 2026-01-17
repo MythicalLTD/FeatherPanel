@@ -486,7 +486,7 @@ export default function TicketViewPage() {
                             <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50'>
                                 <AvatarImage src={ticket.user.avatar} />
                                 <AvatarFallback className='bg-primary/10 text-primary font-bold'>
-                                    {ticket.user.username?.charAt(0) || '?'}
+                                    {ticket.user.username?.charAt(0)}
                                 </AvatarFallback>
                             </Avatar>
                             <div className='flex-1 space-y-1 max-w-[85%]'>
@@ -535,7 +535,7 @@ export default function TicketViewPage() {
                                                     : 'bg-muted text-muted-foreground',
                                             )}
                                         >
-                                            {msg.user?.username?.charAt(0) || '?'}
+                                            {msg.user?.username?.charAt(0)}
                                         </AvatarFallback>
                                     </Avatar>
 

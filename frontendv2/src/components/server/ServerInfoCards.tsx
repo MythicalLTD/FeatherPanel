@@ -107,7 +107,7 @@ export default function ServerInfoCards({
             <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
                 <h3 className='text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2'>
                     <Wifi className='h-4 w-4' />
-                    {t('servers.console.info_cards.network_title') || 'Network'}
+                    {t('servers.console.info_cards.network_title')}
                 </h3>
 
                 <div className='space-y-4'>

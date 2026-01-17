@@ -91,7 +91,7 @@ export default function TicketCategoriesPage() {
                 if (uploadRes.data.success) {
                     iconUrl = uploadRes.data.data.url;
                 } else {
-                    toast.error(t('admin.tickets.categories.upload_error') || 'Failed to upload icon');
+                    toast.error(t('admin.tickets.categories.upload_error'));
                     return;
                 }
             }
@@ -122,7 +122,7 @@ export default function TicketCategoriesPage() {
                 if (uploadRes.data.success) {
                     iconUrl = uploadRes.data.data.url;
                 } else {
-                    toast.error(t('admin.tickets.categories.upload_error') || 'Failed to upload icon');
+                    toast.error(t('admin.tickets.categories.upload_error'));
                     return;
                 }
             }

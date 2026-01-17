@@ -155,10 +155,8 @@ export function ModulesTab({ node }: ModulesTabProps) {
     return (
         <>
             <PageCard
-                title={t('admin.node.view.modules.title') || 'Wings Modules'}
-                description={
-                    t('admin.node.view.modules.description') || 'Manage extension modules for the Wings daemon.'
-                }
+                title={t('admin.node.view.modules.title')}
+                description={t('admin.node.view.modules.description')}
                 icon={LayoutGrid}
             >
                 <div className='space-y-6'>

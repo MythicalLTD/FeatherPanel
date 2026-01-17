@@ -246,9 +246,9 @@ export default function ServerStartupPage() {
         } catch (error) {
             console.error('Failed to fetch startup data:', error);
             if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
-                toast.error(t('serverStartup.loadTimeout') || 'Request timed out. Please try again.');
+                toast.error(t('serverStartup.loadTimeout'));
             } else if (error instanceof Error && error.message === 'Request timeout') {
-                toast.error(t('serverStartup.loadTimeout') || 'Request timed out. Please try again.');
+                toast.error(t('serverStartup.loadTimeout'));
             } else {
                 toast.error(t('serverStartup.failedToFetchServer'));
             }

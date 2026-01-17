@@ -239,7 +239,7 @@ export default function EditPluginPage() {
         return (
             <div className='max-w-4xl mx-auto py-8 px-4'>
                 <EmptyState
-                    title={t('admin.dev.developerModeRequired') || 'Developer Mode Required'}
+                    title={t('admin.dev.developerModeRequired')}
                     description={
                         t('admin.dev.developerModeDescription') ||
                         'Developer mode must be enabled in settings to access developer tools.'
@@ -247,7 +247,7 @@ export default function EditPluginPage() {
                     icon={Lock}
                     action={
                         <Button variant='outline' onClick={() => router.push('/admin/settings')}>
-                            {t('admin.dev.goToSettings') || 'Go to Settings'}
+                            {t('admin.dev.goToSettings')}
                         </Button>
                     }
                 />

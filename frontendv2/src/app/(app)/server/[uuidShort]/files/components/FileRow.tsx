@@ -143,7 +143,7 @@ export function FileRow({
                         } else if (isEditable(file.size, file.name) && canEdit) {
                             return (
                                 <Link
-                                    href={`/server/${serverUuid}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory)}`}
+                                    href={`/server/${serverUuid}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory || '/')}`}
                                     className='truncate text-sm font-semibold text-primary block'
                                 >
                                     {file.name}

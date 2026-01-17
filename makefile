@@ -103,6 +103,7 @@ release:
 	
 	@echo -e "${PURPLE}${INFO} Updating dependencies...${NC}"
 	@cd $(FRONTENDV2_DIR) && npx --yes npm-check-updates -u
+	cd $(FRONTENDV2_DIR) && pnpm export:docs
 	@cd $(FRONTENDV2_DIR) && $(PNPM) install
 	@cd $(BACKEND_DIR) && $(COMPOSER) update
 	@echo -e "${GREEN}${CHECK} Dependencies updated${NC}\n"

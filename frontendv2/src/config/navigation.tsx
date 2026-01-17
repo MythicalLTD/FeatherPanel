@@ -68,7 +68,7 @@ export const getAdminNavigationItems = (
         {
             id: 'admin-dashboard',
             name: t('navigation.items.dashboard'),
-            title: t('landing.hero.title') || 'Dashboard',
+            title: t('landing.hero.title'),
             url: '/admin',
             icon: Home,
             isActive: false, // Active state handled by hook
@@ -386,8 +386,8 @@ export const getAdminNavigationItems = (
                   },
                   {
                       id: 'admin-dev-logs',
-                      name: t('navigation.items.logViewer') || 'Log Viewer',
-                      title: t('navigation.items.logViewer') || 'Log Viewer',
+                      name: t('navigation.items.logViewer'),
+                      title: t('navigation.items.logViewer'),
                       url: '/admin/dev/logs',
                       icon: FileText,
                       isActive: false,
@@ -697,7 +697,7 @@ export const getMainNavigationItems = (
         {
             id: 'dashboard',
             name: t('navigation.items.dashboard'),
-            title: t('landing.hero.title') || 'Dashboard',
+            title: t('landing.hero.title'),
             url: '/dashboard',
             icon: Home,
             isActive: false,

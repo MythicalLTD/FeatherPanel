@@ -286,7 +286,7 @@ export default function ConsolePage() {
         return (
             <div className='space-y-6'>
                 <EmptyState
-                    title={t('admin.dev.developerModeRequired') || 'Developer Mode Required'}
+                    title={t('admin.dev.developerModeRequired')}
                     description={
                         t('admin.dev.developerModeDescription') ||
                         'Developer mode must be enabled in settings to access developer tools.'
@@ -294,7 +294,7 @@ export default function ConsolePage() {
                     icon={Lock}
                     action={
                         <Button variant='outline' onClick={() => router.push('/admin/settings')}>
-                            {t('admin.dev.goToSettings') || 'Go to Settings'}
+                            {t('admin.dev.goToSettings')}
                         </Button>
                     }
                 />
@@ -320,8 +320,8 @@ export default function ConsolePage() {
     return (
         <div className='space-y-6'>
             <PageHeader
-                title={t('admin.dev.console.title') || 'Console'}
-                description={t('admin.dev.console.description') || 'Execute commands on the server'}
+                title={t('admin.dev.console.title')}
+                description={t('admin.dev.console.description')}
                 icon={Terminal}
                 actions={
                     <div className='flex gap-2'>
@@ -329,22 +329,22 @@ export default function ConsolePage() {
                             {showSystemInfo ? (
                                 <>
                                     <EyeOff className='w-4 h-4 mr-2' />
-                                    {t('admin.dev.console.hide_system_info') || 'Hide System Info'}
+                                    {t('admin.dev.console.hide_system_info')}
                                 </>
                             ) : (
                                 <>
                                     <Eye className='w-4 h-4 mr-2' />
-                                    {t('admin.dev.console.show_system_info') || 'Show System Info'}
+                                    {t('admin.dev.console.show_system_info')}
                                 </>
                             )}
                         </Button>
                         <Button variant='outline' onClick={clearTerminal}>
                             <Trash2 className='w-4 h-4 mr-2' />
-                            {t('admin.dev.console.clear_terminal') || 'Clear Terminal'}
+                            {t('admin.dev.console.clear_terminal')}
                         </Button>
                         <Button variant='outline' onClick={fetchSystemInfo} disabled={isLoading}>
                             <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                            {t('admin.dev.console.refresh') || 'Refresh'}
+                            {t('admin.dev.console.refresh')}
                         </Button>
                     </div>
                 }
@@ -352,10 +352,10 @@ export default function ConsolePage() {
 
             {/* System Info Panel */}
             {showSystemInfo && systemInfo && (
-                <PageCard title={t('admin.dev.console.system_info') || 'System Information'}>
+                <PageCard title={t('admin.dev.console.system_info')}>
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                         <div>
-                            <h3 className='font-semibold mb-2'>{t('admin.dev.console.system') || 'System'}</h3>
+                            <h3 className='font-semibold mb-2'>{t('admin.dev.console.system')}</h3>
                             <div className='text-sm space-y-1'>
                                 <div>
                                     <span className='text-muted-foreground'>OS:</span> {systemInfo.os}
@@ -369,7 +369,7 @@ export default function ConsolePage() {
                             </div>
                         </div>
                         <div>
-                            <h3 className='font-semibold mb-2'>{t('admin.dev.console.runtime') || 'Runtime'}</h3>
+                            <h3 className='font-semibold mb-2'>{t('admin.dev.console.runtime')}</h3>
                             <div className='text-sm space-y-1'>
                                 <div>
                                     <span className='text-muted-foreground'>PHP:</span> {systemInfo.php_version}
@@ -380,7 +380,7 @@ export default function ConsolePage() {
                             </div>
                         </div>
                         <div>
-                            <h3 className='font-semibold mb-2'>{t('admin.dev.console.disk_usage') || 'Disk Usage'}</h3>
+                            <h3 className='font-semibold mb-2'>{t('admin.dev.console.disk_usage')}</h3>
                             <div className='text-sm space-y-1'>
                                 <div>
                                     <span className='text-muted-foreground'>Used:</span>{' '}
@@ -401,7 +401,7 @@ export default function ConsolePage() {
             )}
 
             {/* Terminal */}
-            <PageCard title={t('admin.dev.console.terminal') || 'Terminal'}>
+            <PageCard title={t('admin.dev.console.terminal')}>
                 <div className='space-y-4'>
                     <p className='text-xs text-muted-foreground'>
                         {t('admin.dev.console.terminal_help') ||
@@ -433,7 +433,7 @@ export default function ConsolePage() {
                         {isLoading && (
                             <div className='flex items-center gap-2 text-yellow-400'>
                                 <div className='animate-pulse'>●</div>
-                                <span>{t('admin.dev.console.executing') || 'Executing command...'}</span>
+                                <span>{t('admin.dev.console.executing')}</span>
                             </div>
                         )}
                     </div>
@@ -447,7 +447,7 @@ export default function ConsolePage() {
                                 value={commandInput}
                                 onChange={(e) => setCommandInput(e.target.value)}
                                 className='bg-transparent border-none text-green-400 font-mono text-sm focus:ring-0 focus:border-none flex-1'
-                                placeholder={t('admin.dev.console.enter_command') || 'Enter command...'}
+                                placeholder={t('admin.dev.console.enter_command')}
                                 disabled={isLoading}
                                 autoComplete='off'
                                 spellCheck={false}
@@ -459,7 +459,7 @@ export default function ConsolePage() {
             </PageCard>
 
             {/* Quick Commands */}
-            <PageCard title={t('admin.dev.console.quick_commands') || 'Quick Commands'}>
+            <PageCard title={t('admin.dev.console.quick_commands')}>
                 <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2'>
                     {quickCommands.map((cmd) => (
                         <Button

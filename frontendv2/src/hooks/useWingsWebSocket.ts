@@ -288,7 +288,7 @@ export function useWingsWebSocket({
 
                         // Handle console output
                         if (data.event === 'console output' && onConsoleOutputRef.current) {
-                            onConsoleOutputRef.current((data.args?.[0] as string) || '');
+                            onConsoleOutputRef.current(data.args?.[0] as string);
                             return;
                         }
 
@@ -325,13 +325,13 @@ export function useWingsWebSocket({
 
                         // Handle status
                         if (data.event === 'status' && onStatusRef.current) {
-                            onStatusRef.current((data.args?.[0] as string) || 'offline');
+                            onStatusRef.current(data.args?.[0] as string);
                             return;
                         }
 
                         // Handle install output
                         if (data.event === 'install output' && onInstallOutputRef.current) {
-                            onInstallOutputRef.current((data.args?.[0] as string) || '');
+                            onInstallOutputRef.current(data.args?.[0] as string);
                             return;
                         }
 
@@ -355,13 +355,13 @@ export function useWingsWebSocket({
 
                         // Handle transfer logs
                         if (data.event === 'transfer logs' && onTransferLogsRef.current) {
-                            onTransferLogsRef.current((data.args?.[0] as string) || '');
+                            onTransferLogsRef.current(data.args?.[0] as string);
                             return;
                         }
 
                         // Handle transfer status
                         if (data.event === 'transfer status' && onTransferStatusRef.current) {
-                            onTransferStatusRef.current((data.args?.[0] as string) || '');
+                            onTransferStatusRef.current(data.args?.[0] as string);
                             return;
                         }
 

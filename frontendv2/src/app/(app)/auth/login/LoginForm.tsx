@@ -153,7 +153,7 @@ export default function LoginForm() {
         if (isSsoLogin) return;
 
         setIsSsoLogin(true);
-        setSsoStatus(t('auth.ssoLoggingIn') || 'Logging in via SSO...');
+        setSsoStatus(t('auth.ssoLoggingIn'));
         setLoading(true);
         setError('');
         setSuccess('');
@@ -216,9 +216,7 @@ export default function LoginForm() {
                         <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent'></div>
                         <span className='text-muted-foreground'>{ssoStatus}</span>
                     </div>
-                    <p className='text-xs text-muted-foreground text-center'>
-                        {t('auth.ssoPleaseWait') || 'Please wait while we verify your credentials...'}
-                    </p>
+                    <p className='text-xs text-muted-foreground text-center'>{t('auth.ssoPleaseWait')}</p>
                     {error && (
                         <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in w-full text-center'>
                             {error}
@@ -232,7 +230,7 @@ export default function LoginForm() {
                         <Input
                             label={t('auth.login.username')}
                             type='text'
-                            value={form.username_or_email}
+                            value={form.username_or_email || ''}
                             onChange={(e) => setForm({ ...form, username_or_email: e.target.value })}
                             required
                             autoComplete='username'
