@@ -15,20 +15,17 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/featherui/Button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select-native';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/featherui/Input';
+import { Textarea } from '@/components/featherui/Textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select } from '@/components/ui/select-native';
 import {
     ArrowLeft,
     Save,
-    Plus,
-    Minus,
     Users,
     Shield,
     Eye,
@@ -37,6 +34,9 @@ import {
     Sliders,
     FileArchive,
     Hash,
+    Settings2,
+    Gamepad2,
+    Network,
 } from 'lucide-react';
 
 interface MinecraftServerPropertiesForm {
@@ -112,18 +112,61 @@ function parseProperties(content: string): Map<string, string> {
     return map;
 }
 
-function getInitialForm(content: string): MinecraftServerPropertiesForm {
+function getDefaultForm(): MinecraftServerPropertiesForm {
+    return {
+        motd: 'A Minecraft Server',
+        difficulty: 'easy',
+        gamemode: 'survival',
+        levelType: 'minecraft:normal',
+        maxPlayers: 20,
+        whiteList: false,
+        enforceWhitelist: false,
+        onlineMode: true,
+        pvp: true,
+        enableCommandBlock: false,
+        allowFlight: false,
+        spawnMonsters: true,
+        allowNether: true,
+        forceGamemode: false,
+        broadcastConsoleToOps: true,
+        spawnProtection: 16,
+        viewDistance: 10,
+        simulationDistance: 10,
+        levelName: 'world',
+        levelSeed: '',
+        generatorSettings: '',
+        generateStructures: true,
+        hardcore: false,
+        requireResourcePack: false,
+        hideOnlinePlayers: false,
+        enforceSecureProfile: true,
+        previewsChat: true,
+        useNativeTransport: true,
+        resourcePack: '',
+        resourcePackSha1: '',
+        resourcePackId: '',
+        resourcePackPrompt: '',
+        opPermissionLevel: 4,
+        functionPermissionLevel: 2,
+        entityBroadcastRangePercentage: 100,
+        maxChainedNeighborUpdates: 1000000,
+        maxWorldSize: 29999984,
+    };
+}
+
+function parseForm(content: string): MinecraftServerPropertiesForm {
     const parsed = parseProperties(content);
+    const form = getDefaultForm();
 
     return {
-        motd: parsed.get('motd') ?? 'A Minecraft Server',
-        difficulty: parsed.get('difficulty') ?? 'easy',
-        gamemode: parsed.get('gamemode') ?? 'survival',
-        levelType: parsed.get('level-type') ?? 'minecraft:normal',
-        maxPlayers: Number.parseInt(parsed.get('max-players') ?? '20', 10) || 20,
+        motd: parsed.get('motd') ?? form.motd,
+        difficulty: parsed.get('difficulty') ?? form.difficulty,
+        gamemode: parsed.get('gamemode') ?? form.gamemode,
+        levelType: parsed.get('level-type') ?? form.levelType,
+        maxPlayers: Number.parseInt(parsed.get('max-players') ?? String(form.maxPlayers), 10) || form.maxPlayers,
         whiteList: (parsed.get('white-list') ?? 'false') === 'true',
         enforceWhitelist: (parsed.get('enforce-whitelist') ?? 'false') === 'true',
-        onlineMode: (parsed.get('online-mode') ?? 'false') === 'true',
+        onlineMode: (parsed.get('online-mode') ?? 'true') === 'true',
         pvp: (parsed.get('pvp') ?? 'true') === 'true',
         enableCommandBlock: (parsed.get('enable-command-block') ?? 'false') === 'true',
         allowFlight: (parsed.get('allow-flight') ?? 'false') === 'true',
@@ -131,30 +174,28 @@ function getInitialForm(content: string): MinecraftServerPropertiesForm {
         allowNether: (parsed.get('allow-nether') ?? 'true') === 'true',
         forceGamemode: (parsed.get('force-gamemode') ?? 'false') === 'true',
         broadcastConsoleToOps: (parsed.get('broadcast-console-to-ops') ?? 'true') === 'true',
-        spawnProtection: Number.parseInt(parsed.get('spawn-protection') ?? '16', 10) || 16,
-        viewDistance: Number.parseInt(parsed.get('view-distance') ?? '10', 10) || 10,
-        simulationDistance: Number.parseInt(parsed.get('simulation-distance') ?? '10', 10) || 10,
-        levelName: parsed.get('level-name') ?? 'world',
-        levelSeed: parsed.get('level-seed') ?? '',
-        generatorSettings: parsed.get('generator-settings') ?? '',
+        spawnProtection: Number.parseInt(parsed.get('spawn-protection') ?? String(form.spawnProtection), 10) || form.spawnProtection,
+        viewDistance: Number.parseInt(parsed.get('view-distance') ?? String(form.viewDistance), 10) || form.viewDistance,
+        simulationDistance: Number.parseInt(parsed.get('simulation-distance') ?? String(form.simulationDistance), 10) || form.simulationDistance,
+        levelName: parsed.get('level-name') ?? form.levelName,
+        levelSeed: parsed.get('level-seed') ?? form.levelSeed,
+        generatorSettings: parsed.get('generator-settings') ?? form.generatorSettings,
         generateStructures: (parsed.get('generate-structures') ?? 'true') === 'true',
         hardcore: (parsed.get('hardcore') ?? 'false') === 'true',
         requireResourcePack: (parsed.get('require-resource-pack') ?? 'false') === 'true',
         hideOnlinePlayers: (parsed.get('hide-online-players') ?? 'false') === 'true',
         enforceSecureProfile: (parsed.get('enforce-secure-profile') ?? 'true') === 'true',
-        previewsChat: (parsed.get('previews-chat') ?? 'false') === 'true',
+        previewsChat: (parsed.get('previews-chat') ?? 'true') === 'true',
         useNativeTransport: (parsed.get('use-native-transport') ?? 'true') === 'true',
-        resourcePack: parsed.get('resource-pack') ?? '',
-        resourcePackSha1: parsed.get('resource-pack-sha1') ?? '',
-        resourcePackId: parsed.get('resource-pack-id') ?? '',
-        resourcePackPrompt: parsed.get('resource-pack-prompt') ?? '',
-        opPermissionLevel: Number.parseInt(parsed.get('op-permission-level') ?? '4', 10) || 4,
-        functionPermissionLevel: Number.parseInt(parsed.get('function-permission-level') ?? '2', 10) || 2,
-        entityBroadcastRangePercentage:
-            Number.parseInt(parsed.get('entity-broadcast-range-percentage') ?? '100', 10) || 100,
-        maxChainedNeighborUpdates:
-            Number.parseInt(parsed.get('max-chained-neighbor-updates') ?? '1000000', 10) || 1000000,
-        maxWorldSize: Number.parseInt(parsed.get('max-world-size') ?? '29999984', 10) || 29999984,
+        resourcePack: parsed.get('resource-pack') ?? form.resourcePack,
+        resourcePackSha1: parsed.get('resource-pack-sha1') ?? form.resourcePackSha1,
+        resourcePackId: parsed.get('resource-pack-id') ?? form.resourcePackId,
+        resourcePackPrompt: parsed.get('resource-pack-prompt') ?? form.resourcePackPrompt,
+        opPermissionLevel: Number.parseInt(parsed.get('op-permission-level') ?? String(form.opPermissionLevel), 10) || form.opPermissionLevel,
+        functionPermissionLevel: Number.parseInt(parsed.get('function-permission-level') ?? String(form.functionPermissionLevel), 10) || form.functionPermissionLevel,
+        entityBroadcastRangePercentage: Number.parseInt(parsed.get('entity-broadcast-range-percentage') ?? String(form.entityBroadcastRangePercentage), 10) || form.entityBroadcastRangePercentage,
+        maxChainedNeighborUpdates: Number.parseInt(parsed.get('max-chained-neighbor-updates') ?? String(form.maxChainedNeighborUpdates), 10) || form.maxChainedNeighborUpdates,
+        maxWorldSize: Number.parseInt(parsed.get('max-world-size') ?? String(form.maxWorldSize), 10) || form.maxWorldSize,
     };
 }
 
@@ -244,118 +285,51 @@ export function MinecraftServerPropertiesEditor({
     onSwitchToRaw,
 }: MinecraftServerPropertiesEditorProps) {
     const { t } = useTranslation();
-    const [form, setForm] = useState<MinecraftServerPropertiesForm>(() => getInitialForm(content));
 
-    // Update form when content changes
-    useEffect(() => {
-        setForm(getInitialForm(content));
+    // Derive form from content using useMemo
+    const form = useMemo(() => {
+        return parseForm(content);
     }, [content]);
 
-    // Inject dark theme styles
+    // Use local state for user edits, initialized from the derived form
+    const [localForm, setLocalForm] = useState<MinecraftServerPropertiesForm>(form);
+
+    // Sync local form when the derived form changes (content prop changed)
     useEffect(() => {
-        const styleId = 'minecraft-properties-editor-styles';
-        if (!document.getElementById(styleId)) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.textContent = `
-                /* Override ALL input, textarea, and select elements */
-                .minecraft-properties-editor input,
-                .minecraft-properties-editor input[type="text"],
-                .minecraft-properties-editor input[type="number"],
-                .minecraft-properties-editor textarea,
-                .minecraft-properties-editor select,
-                .minecraft-properties-editor input:focus,
-                .minecraft-properties-editor input[type="text"]:focus,
-                .minecraft-properties-editor input[type="number"]:focus,
-                .minecraft-properties-editor textarea:focus,
-                .minecraft-properties-editor select:focus,
-                .minecraft-properties-editor input:hover,
-                .minecraft-properties-editor input[type="text"]:hover,
-                .minecraft-properties-editor input[type="number"]:hover,
-                .minecraft-properties-editor textarea:hover,
-                .minecraft-properties-editor select:hover,
-                .minecraft-properties-editor input:active,
-                .minecraft-properties-editor textarea:active,
-                .minecraft-properties-editor select:active {
-                    background-color: hsl(var(--background)) !important;
-                    background: hsl(var(--background)) !important;
-                    border-color: hsl(var(--border) / 0.5) !important;
-                    color: hsl(var(--foreground)) !important;
-                }
-                .minecraft-properties-editor input:focus,
-                .minecraft-properties-editor textarea:focus,
-                .minecraft-properties-editor select:focus {
-                    border-color: hsl(var(--primary)) !important;
-                }
-                .minecraft-properties-editor select option {
-                    background-color: hsl(var(--background)) !important;
-                    background: hsl(var(--background)) !important;
-                    color: hsl(var(--foreground)) !important;
-                }
-                /* Override Headless UI Input - target the actual input element */
-                .minecraft-properties-editor [data-headlessui-state],
-                .minecraft-properties-editor [data-headlessui-state] input {
-                    background-color: hsl(var(--background)) !important;
-                    background: hsl(var(--background)) !important;
-                }
-                /* Force override any bg-muted classes */
-                .minecraft-properties-editor .bg-muted\\/30,
-                .minecraft-properties-editor [class*="bg-muted"] {
-                    background-color: hsl(var(--background)) !important;
-                    background: hsl(var(--background)) !important;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-    }, []);
+        setLocalForm(form);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [content]);
 
     const handleSave = () => {
-        const updates = serializeForm(form);
+        const updates = serializeForm(localForm);
         const newContent = mergeProperties(content, updates);
         onSave(newContent);
     };
 
-    const incrementNumber = (field: keyof MinecraftServerPropertiesForm) => {
-        setForm((prev) => {
-            const value = prev[field] as number;
-            return { ...prev, [field]: value + 1 };
-        });
-    };
-
-    const decrementNumber = (field: keyof MinecraftServerPropertiesForm) => {
-        setForm((prev) => {
-            const value = prev[field] as number;
-            if (value > 0) {
-                return { ...prev, [field]: value - 1 };
-            }
-            return prev;
-        });
-    };
-
     const updateForm = (field: keyof MinecraftServerPropertiesForm, value: unknown) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
+        setLocalForm((prev) => ({ ...prev, [field]: value }));
     };
 
     return (
-        <Card className='border-primary/20 minecraft-properties-editor'>
-            <CardHeader className='border-b border-border/40'>
-                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
-                    <div>
+        <Card className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl shadow-sm'>
+            <CardHeader className='border-b border-border/10 pb-6'>
+                <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+                    <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>
                             {t('files.editors.minecraftProperties.title')}
                         </CardTitle>
-                        <CardDescription className='text-sm mt-1'>
+                        <CardDescription className='text-sm text-muted-foreground'>
                             {t('files.editors.minecraftProperties.description') ||
                                 'Configure your Minecraft server properties visually'}
                         </CardDescription>
                     </div>
                     <div className='flex items-center gap-2'>
                         <Button variant='ghost' size='sm' onClick={onSwitchToRaw}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('files.editors.minecraftProperties.actions.switchToRaw')}
                         </Button>
                         <Button size='sm' disabled={readonly || saving} onClick={handleSave}>
-                            <Save className='h-4 w-4 mr-2' />
+                            <Save className='mr-2 h-4 w-4' />
                             {saving
                                 ? t('files.editors.minecraftProperties.actions.saving')
                                 : t('files.editors.minecraftProperties.actions.save')}
@@ -363,1004 +337,852 @@ export function MinecraftServerPropertiesEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='p-6'>
-                <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
-                    {/* MOTD (Full width with textarea) */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors md:col-span-2 xl:col-span-3 border-0'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.motd.label')}
-                            </Label>
+            <div className='p-8 space-y-10'>
+                {/* Server Information Section */}
+                <section className='space-y-6'>
+                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
+                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
+                            <Settings2 className='h-5 w-5 text-primary' />
+                        </div>
+                        <div className='space-y-0.5'>
+                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                                {t('files.editors.minecraftProperties.sections.serverInfo') || 'Server Information'}
+                            </h3>
+                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                {t('files.editors.minecraftProperties.sectionsDescriptions.serverInfo') ||
+                                    'Basic server configuration'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6 xl:col-span-2'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                {t('files.editors.minecraftProperties.fields.motd.label') || 'Message of the Day'}
+                            </label>
                             <Textarea
-                                value={form.motd}
+                                value={localForm.motd}
                                 onChange={(e) => updateForm('motd', e.target.value)}
                                 readOnly={readonly}
                                 rows={3}
-                                className='font-mono text-sm !bg-background !border-border/50 !text-foreground'
                             />
-                            <p className='text-xs text-muted-foreground'>
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.motd.description') ||
                                     'The message shown to players when they join'}
                             </p>
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>motd</span>=<span>{form.motd}</span>
-                        </div>
-                    </div>
 
-                    {/* Max Players */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold flex items-center gap-2'>
-                                <Users className='h-4 w-4 text-primary' />
-                                {t('files.editors.minecraftProperties.fields.maxPlayers.label')}
-                            </Label>
-                            <div className='relative'>
-                                <Input
-                                    type='number'
-                                    value={form.maxPlayers}
-                                    onChange={(e) => updateForm('maxPlayers', Number.parseInt(e.target.value, 10) || 0)}
-                                    readOnly={readonly}
-                                    className='pr-16 !bg-background !border-border/50 !text-foreground'
-                                    min={1}
-                                    max={2147483647}
-                                />
-                                <div className='absolute right-0 top-0 bottom-0 flex flex-col border-l border-border rounded-r-md overflow-hidden'>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors border-b border-border flex items-center justify-center'
-                                        onClick={() => incrementNumber('maxPlayers')}
-                                        disabled={readonly}
-                                    >
-                                        <Plus className='h-3 w-3' />
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center'
-                                        onClick={() => decrementNumber('maxPlayers')}
-                                        disabled={readonly}
-                                    >
-                                        <Minus className='h-3 w-3' />
-                                    </button>
-                                </div>
-                            </div>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
+                                <Users className='h-3 w-3 text-primary' />
+                                {t('files.editors.minecraftProperties.fields.maxPlayers.label') || 'Max Players'}
+                            </label>
+                            <Input
+                                type='number'
+                                value={localForm.maxPlayers}
+                                onChange={(e) => updateForm('maxPlayers', Number.parseInt(e.target.value, 10) || 0)}
+                                readOnly={readonly}
+                                min={1}
+                                max={2147483647}
+                            />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.maxPlayers.description') ||
+                                    'Maximum number of players allowed on the server'}
+                            </p>
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>max-players</span>=
-                            <span>{form.maxPlayers}</span>
-                        </div>
-                    </div>
 
-                    {/* Gamemode */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.gamemode.label')}
-                            </Label>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                {t('files.editors.minecraftProperties.fields.gamemode.label') || 'Default Gamemode'}
+                            </label>
                             <Select
                                 disabled={readonly}
-                                value={form.gamemode}
+                                value={localForm.gamemode}
                                 onChange={(e) => updateForm('gamemode', e.target.value)}
-                                className='!bg-background !border-border/50 !text-foreground [&>option]:!bg-background [&>option]:!text-foreground'
                             >
                                 <option value='survival'>
-                                    {t('files.editors.minecraftProperties.options.gamemode.survival')}
+                                    {t('files.editors.minecraftProperties.options.gamemode.survival') || 'Survival'}
                                 </option>
                                 <option value='creative'>
-                                    {t('files.editors.minecraftProperties.options.gamemode.creative')}
+                                    {t('files.editors.minecraftProperties.options.gamemode.creative') || 'Creative'}
                                 </option>
                                 <option value='adventure'>
-                                    {t('files.editors.minecraftProperties.options.gamemode.adventure')}
+                                    {t('files.editors.minecraftProperties.options.gamemode.adventure') || 'Adventure'}
                                 </option>
                                 <option value='spectator'>
-                                    {t('files.editors.minecraftProperties.options.gamemode.spectator')}
+                                    {t('files.editors.minecraftProperties.options.gamemode.spectator') || 'Spectator'}
                                 </option>
                             </Select>
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.gamemode.description') ||
+                                    'Default gamemode for new players'}
+                            </p>
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>gamemode</span>=<span>{form.gamemode}</span>
-                        </div>
-                    </div>
 
-                    {/* Difficulty */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.difficulty.label')}
-                            </Label>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                {t('files.editors.minecraftProperties.fields.difficulty.label') || 'Difficulty'}
+                            </label>
                             <Select
                                 disabled={readonly}
-                                value={form.difficulty}
+                                value={localForm.difficulty}
                                 onChange={(e) => updateForm('difficulty', e.target.value)}
-                                className='!bg-background !border-border/50 !text-foreground [&>option]:!bg-background [&>option]:!text-foreground'
                             >
                                 <option value='peaceful'>
-                                    {t('files.editors.minecraftProperties.options.difficulty.peaceful')}
+                                    {t('files.editors.minecraftProperties.options.difficulty.peaceful') || 'Peaceful'}
                                 </option>
                                 <option value='easy'>
-                                    {t('files.editors.minecraftProperties.options.difficulty.easy')}
+                                    {t('files.editors.minecraftProperties.options.difficulty.easy') || 'Easy'}
                                 </option>
                                 <option value='normal'>
-                                    {t('files.editors.minecraftProperties.options.difficulty.normal')}
+                                    {t('files.editors.minecraftProperties.options.difficulty.normal') || 'Normal'}
                                 </option>
                                 <option value='hard'>
-                                    {t('files.editors.minecraftProperties.options.difficulty.hard')}
+                                    {t('files.editors.minecraftProperties.options.difficulty.hard') || 'Hard'}
                                 </option>
                             </Select>
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>difficulty</span>=
-                            <span>{form.difficulty}</span>
-                        </div>
-                    </div>
-
-                    {/* Whitelist */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold cursor-pointer'>
-                                {t('files.editors.minecraftProperties.fields.whiteList.label')}
-                            </Label>
-                            <Checkbox
-                                checked={form.whiteList}
-                                onCheckedChange={(checked) => updateForm('whiteList', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>white-list</span>=
-                            <span>{formatBoolean(form.whiteList)}</span>
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.difficulty.description') ||
+                                    'Server difficulty level'}
+                            </p>
                         </div>
                     </div>
+                </section>
 
-                    {/* Enforce Whitelist */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold cursor-pointer'>
-                                {t('files.editors.minecraftProperties.fields.enforceWhitelist.label') ||
-                                    'Enforce Whitelist'}
-                            </Label>
-                            <Checkbox
-                                checked={form.enforceWhitelist}
-                                onCheckedChange={(checked) => updateForm('enforceWhitelist', checked)}
-                                disabled={readonly}
-                            />
+                {/* World Settings Section */}
+                <section className='space-y-6'>
+                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
+                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
+                            <Globe className='h-5 w-5 text-primary' />
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>enforce-whitelist</span>=
-                            <span>{formatBoolean(form.enforceWhitelist)}</span>
+                        <div className='space-y-0.5'>
+                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                                {t('files.editors.minecraftProperties.sections.worldSettings') || 'World Settings'}
+                            </h3>
+                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                {t('files.editors.minecraftProperties.sectionsDescriptions.worldSettings') ||
+                                    'World generation and configuration'}
+                            </p>
                         </div>
                     </div>
-
-                    {/* Online Mode (Cracked) */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold cursor-pointer'>
-                                {t('files.editors.minecraftProperties.fields.onlineMode.label')}
-                            </Label>
-                            <Checkbox
-                                checked={form.onlineMode}
-                                onCheckedChange={(checked) => updateForm('onlineMode', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>online-mode</span>=
-                            <span>{formatBoolean(form.onlineMode)}</span>
-                        </div>
-                    </div>
-
-                    {/* PVP */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.pvp.label')}
-                            </Label>
-                            <Checkbox
-                                checked={form.pvp}
-                                onCheckedChange={(checked) => updateForm('pvp', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>pvp</span>=
-                            <span>{formatBoolean(form.pvp)}</span>
-                        </div>
-                    </div>
-
-                    {/* Command Blocks */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.enableCommandBlock.label') ||
-                                    'Enable Command Blocks'}
-                            </Label>
-                            <Checkbox
-                                checked={form.enableCommandBlock}
-                                onCheckedChange={(checked) => updateForm('enableCommandBlock', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>enable-command-block</span>=
-                            <span>{formatBoolean(form.enableCommandBlock)}</span>
-                        </div>
-                    </div>
-
-                    {/* Allow Flight */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.allowFlight.label')}
-                            </Label>
-                            <Checkbox
-                                checked={form.allowFlight}
-                                onCheckedChange={(checked) => updateForm('allowFlight', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>allow-flight</span>=
-                            <span>{formatBoolean(form.allowFlight)}</span>
-                        </div>
-                    </div>
-
-                    {/* Spawn Monsters */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.spawnMonsters.label')}
-                            </Label>
-                            <Checkbox
-                                checked={form.spawnMonsters}
-                                onCheckedChange={(checked) => updateForm('spawnMonsters', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>spawn-monsters</span>=
-                            <span>{formatBoolean(form.spawnMonsters)}</span>
-                        </div>
-                    </div>
-
-                    {/* Allow Nether */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.allowNether.label')}
-                            </Label>
-                            <Checkbox
-                                checked={form.allowNether}
-                                onCheckedChange={(checked) => updateForm('allowNether', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>allow-nether</span>=
-                            <span>{formatBoolean(form.allowNether)}</span>
-                        </div>
-                    </div>
-
-                    {/* Force Gamemode */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.forceGamemode.label')}
-                            </Label>
-                            <Checkbox
-                                checked={form.forceGamemode}
-                                onCheckedChange={(checked) => updateForm('forceGamemode', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>force-gamemode</span>=
-                            <span>{formatBoolean(form.forceGamemode)}</span>
-                        </div>
-                    </div>
-
-                    {/* Broadcast Console to OPs */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.broadcastConsoleToOps.label') ||
-                                    'Broadcast Console to OPs'}
-                            </Label>
-                            <Checkbox
-                                checked={form.broadcastConsoleToOps}
-                                onCheckedChange={(checked) => updateForm('broadcastConsoleToOps', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>broadcast-console-to-ops</span>=
-                            <span>{formatBoolean(form.broadcastConsoleToOps)}</span>
-                        </div>
-                    </div>
-
-                    {/* Spawn Protection */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold flex items-center gap-2'>
-                                <Shield className='h-4 w-4 text-primary' />
-                                {t('files.editors.minecraftProperties.fields.spawnProtection.label') ||
-                                    'Spawn Protection'}
-                            </Label>
-                            <div className='relative'>
-                                <Input
-                                    type='number'
-                                    value={form.spawnProtection}
-                                    onChange={(e) =>
-                                        updateForm('spawnProtection', Number.parseInt(e.target.value, 10) || 0)
-                                    }
-                                    readOnly={readonly}
-                                    className='pr-16 !bg-background !border-border/50 !text-foreground'
-                                    min={0}
-                                    max={30000000}
-                                />
-                                <div className='absolute right-0 top-0 bottom-0 flex flex-col border-l border-border rounded-r-md overflow-hidden'>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors border-b border-border flex items-center justify-center'
-                                        onClick={() => incrementNumber('spawnProtection')}
-                                        disabled={readonly}
-                                    >
-                                        <Plus className='h-3 w-3' />
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center'
-                                        onClick={() => decrementNumber('spawnProtection')}
-                                        disabled={readonly}
-                                    >
-                                        <Minus className='h-3 w-3' />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>spawn-protection</span>=
-                            <span>{form.spawnProtection}</span>
-                        </div>
-                    </div>
-
-                    {/* View Distance */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold flex items-center gap-2'>
-                                <Eye className='h-4 w-4 text-primary' />
-                                {t('files.editors.minecraftProperties.fields.viewDistance.label')}
-                            </Label>
-                            <div className='relative'>
-                                <Input
-                                    type='number'
-                                    value={form.viewDistance}
-                                    onChange={(e) =>
-                                        updateForm('viewDistance', Number.parseInt(e.target.value, 10) || 0)
-                                    }
-                                    readOnly={readonly}
-                                    className='pr-16 !bg-background !border-border/50 !text-foreground'
-                                    min={3}
-                                    max={32}
-                                />
-                                <div className='absolute right-0 top-0 bottom-0 flex flex-col border-l border-border rounded-r-md overflow-hidden'>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors border-b border-border flex items-center justify-center'
-                                        onClick={() => incrementNumber('viewDistance')}
-                                        disabled={readonly}
-                                    >
-                                        <Plus className='h-3 w-3' />
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center'
-                                        onClick={() => decrementNumber('viewDistance')}
-                                        disabled={readonly}
-                                    >
-                                        <Minus className='h-3 w-3' />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>view-distance</span>=
-                            <span>{form.viewDistance}</span>
-                        </div>
-                    </div>
-
-                    {/* Simulation Distance */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.simulationDistance.label') ||
-                                    'Simulation Distance'}
-                            </Label>
-                            <div className='relative'>
-                                <Input
-                                    type='number'
-                                    value={form.simulationDistance}
-                                    onChange={(e) =>
-                                        updateForm('simulationDistance', Number.parseInt(e.target.value, 10) || 0)
-                                    }
-                                    readOnly={readonly}
-                                    className='pr-16 !bg-background !border-border/50 !text-foreground'
-                                    min={3}
-                                    max={32}
-                                />
-                                <div className='absolute right-0 top-0 bottom-0 flex flex-col border-l border-border rounded-r-md overflow-hidden'>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors border-b border-border flex items-center justify-center'
-                                        onClick={() => incrementNumber('simulationDistance')}
-                                        disabled={readonly}
-                                    >
-                                        <Plus className='h-3 w-3' />
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center'
-                                        onClick={() => decrementNumber('simulationDistance')}
-                                        disabled={readonly}
-                                    >
-                                        <Minus className='h-3 w-3' />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>simulation-distance</span>=
-                            <span>{form.simulationDistance}</span>
-                        </div>
-                    </div>
-
-                    {/* Level Name (Full width) */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0 md:col-span-2 xl:col-span-3'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold flex items-center gap-2'>
-                                <Globe className='h-4 w-4 text-primary' />
-                                {t('files.editors.minecraftProperties.fields.levelName.label')}
-                            </Label>
+                    <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6 xl:col-span-2'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
+                                <Globe className='h-3 w-3 text-primary' />
+                                {t('files.editors.minecraftProperties.fields.levelName.label') || 'Level Name'}
+                            </label>
                             <Input
                                 type='text'
-                                value={form.levelName}
+                                value={localForm.levelName}
                                 onChange={(e) => updateForm('levelName', e.target.value)}
                                 readOnly={readonly}
-                                className='!bg-background !border-border/50 !text-foreground'
                             />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.levelName.description') ||
+                                    'Name of the world folder'}
+                            </p>
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>level-name</span>=<span>{form.levelName}</span>
-                        </div>
-                    </div>
 
-                    {/* Level Seed (Full width) */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0 md:col-span-2 xl:col-span-3'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold flex items-center gap-2'>
-                                <MountainSnow className='h-4 w-4 text-primary' />
-                                {t('files.editors.minecraftProperties.fields.levelSeed.label')}
-                            </Label>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6 xl:col-span-2'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
+                                <MountainSnow className='h-3 w-3 text-primary' />
+                                {t('files.editors.minecraftProperties.fields.levelSeed.label') || 'Level Seed'}
+                            </label>
                             <Input
                                 type='text'
-                                value={form.levelSeed}
+                                value={localForm.levelSeed}
                                 onChange={(e) => updateForm('levelSeed', e.target.value)}
                                 readOnly={readonly}
                                 placeholder='Random'
-                                className='!bg-background !border-border/50 !text-foreground'
                             />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.levelSeed.description') ||
+                                    'Seed for world generation (leave empty for random)'}
+                            </p>
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>level-seed</span>=<span>{form.levelSeed}</span>
-                        </div>
-                    </div>
 
-                    {/* Generator Settings (Full width) */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0 md:col-span-2 xl:col-span-3'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold flex items-center gap-2'>
-                                <Sliders className='h-4 w-4 text-primary' />
-                                {t('files.editors.minecraftProperties.fields.generatorSettings.label') ||
-                                    'Generator Settings'}
-                            </Label>
-                            <Input
-                                type='text'
-                                value={form.generatorSettings}
-                                onChange={(e) => updateForm('generatorSettings', e.target.value)}
-                                readOnly={readonly}
-                                className='!bg-background !border-border/50 !text-foreground'
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>generator-settings</span>=
-                            <span>{form.generatorSettings}</span>
-                        </div>
-                    </div>
-
-                    {/* Level Type */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.levelType.label')}
-                            </Label>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                {t('files.editors.minecraftProperties.fields.levelType.label') || 'Level Type'}
+                            </label>
                             <Select
                                 disabled={readonly}
-                                value={form.levelType}
+                                value={localForm.levelType}
                                 onChange={(e) => updateForm('levelType', e.target.value)}
-                                className='!bg-background !border-border/50 !text-foreground [&>option]:!bg-background [&>option]:!text-foreground'
                             >
                                 <option value='minecraft:normal'>
-                                    {t('files.editors.minecraftProperties.options.levelType.default')}
+                                    {t('files.editors.minecraftProperties.options.levelType.default') || 'Default'}
                                 </option>
                                 <option value='minecraft:flat'>
-                                    {t('files.editors.minecraftProperties.options.levelType.flat')}
+                                    {t('files.editors.minecraftProperties.options.levelType.flat') || 'Flat'}
                                 </option>
                                 <option value='minecraft:amplified'>
-                                    {t('files.editors.minecraftProperties.options.levelType.amplified')}
+                                    {t('files.editors.minecraftProperties.options.levelType.amplified') || 'Amplified'}
                                 </option>
                                 <option value='minecraft:large_biomes'>
-                                    {t('files.editors.minecraftProperties.options.levelType.largeBiomes') ||
-                                        'Large Biomes'}
+                                    {t('files.editors.minecraftProperties.options.levelType.largeBiomes') || 'Large Biomes'}
                                 </option>
                                 <option value='minecraft:single_biome_surface'>
-                                    {t('files.editors.minecraftProperties.options.levelType.singleBiome') ||
-                                        'Single Biome'}
+                                    {t('files.editors.minecraftProperties.options.levelType.singleBiome') || 'Single Biome'}
                                 </option>
                             </Select>
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.levelType.description') ||
+                                    'World generation type'}
+                            </p>
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>level-type</span>=<span>{form.levelType}</span>
-                        </div>
-                    </div>
 
-                    {/* Generate Structures */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.generateStructures.label') ||
-                                    'Generate Structures'}
-                            </Label>
-                            <Checkbox
-                                checked={form.generateStructures}
-                                onCheckedChange={(checked) => updateForm('generateStructures', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>generate-structures</span>=
-                            <span>{formatBoolean(form.generateStructures)}</span>
-                        </div>
-                    </div>
-
-                    {/* Hardcore */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.hardcore.label')}
-                            </Label>
-                            <Checkbox
-                                checked={form.hardcore}
-                                onCheckedChange={(checked) => updateForm('hardcore', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>hardcore</span>=
-                            <span>{formatBoolean(form.hardcore)}</span>
-                        </div>
-                    </div>
-
-                    {/* Require Resource Pack */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.requireResourcePack.label') ||
-                                    'Require Resource Pack'}
-                            </Label>
-                            <Checkbox
-                                checked={form.requireResourcePack}
-                                onCheckedChange={(checked) => updateForm('requireResourcePack', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>require-resource-pack</span>=
-                            <span>{formatBoolean(form.requireResourcePack)}</span>
-                        </div>
-                    </div>
-
-                    {/* Hide Online Players */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.hideOnlinePlayers.label') ||
-                                    'Hide Online Players'}
-                            </Label>
-                            <Checkbox
-                                checked={form.hideOnlinePlayers}
-                                onCheckedChange={(checked) => updateForm('hideOnlinePlayers', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>hide-online-players</span>=
-                            <span>{formatBoolean(form.hideOnlinePlayers)}</span>
-                        </div>
-                    </div>
-
-                    {/* Enforce Secure Profile */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.enforceSecureProfile.label') ||
-                                    'Enforce Secure Profile'}
-                            </Label>
-                            <Checkbox
-                                checked={form.enforceSecureProfile}
-                                onCheckedChange={(checked) => updateForm('enforceSecureProfile', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>enforce-secure-profile</span>=
-                            <span>{formatBoolean(form.enforceSecureProfile)}</span>
-                        </div>
-                    </div>
-
-                    {/* Previews Chat */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.previewsChat.label')}
-                            </Label>
-                            <Checkbox
-                                checked={form.previewsChat}
-                                onCheckedChange={(checked) => updateForm('previewsChat', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>previews-chat</span>=
-                            <span>{formatBoolean(form.previewsChat)}</span>
-                        </div>
-                    </div>
-
-                    {/* Use Native Transport */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex items-center justify-between'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.useNativeTransport.label') ||
-                                    'Use Native Transport'}
-                            </Label>
-                            <Checkbox
-                                checked={form.useNativeTransport}
-                                onCheckedChange={(checked) => updateForm('useNativeTransport', checked)}
-                                disabled={readonly}
-                            />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>use-native-transport</span>=
-                            <span>{formatBoolean(form.useNativeTransport)}</span>
-                        </div>
-                    </div>
-
-                    {/* Resource Pack (Full width) */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0 md:col-span-2 xl:col-span-3'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold flex items-center gap-2'>
-                                <FileArchive className='h-4 w-4 text-primary' />
-                                {t('files.editors.minecraftProperties.fields.resourcePack.label')}
-                            </Label>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
+                                <Sliders className='h-3 w-3 text-primary' />
+                                {t('files.editors.minecraftProperties.fields.generatorSettings.label') || 'Generator Settings'}
+                            </label>
                             <Input
                                 type='text'
-                                value={form.resourcePack}
+                                value={localForm.generatorSettings}
+                                onChange={(e) => updateForm('generatorSettings', e.target.value)}
+                                readOnly={readonly}
+                            />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.generatorSettings.description') ||
+                                    'Custom generator settings (JSON format)'}
+                            </p>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.generateStructures.label') || 'Generate Structures'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.generateStructures.description') ||
+                                            'Generate structures like villages and temples'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.generateStructures}
+                                    onCheckedChange={(checked) => updateForm('generateStructures', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.hardcore.label') || 'Hardcore Mode'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.hardcore.description') ||
+                                            'Enable hardcore mode (permanent death)'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.hardcore}
+                                    onCheckedChange={(checked) => updateForm('hardcore', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Gameplay Settings Section */}
+                <section className='space-y-6'>
+                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
+                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
+                            <Gamepad2 className='h-5 w-5 text-primary' />
+                        </div>
+                        <div className='space-y-0.5'>
+                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                                {t('files.editors.minecraftProperties.sections.gameplay') || 'Gameplay Settings'}
+                            </h3>
+                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                {t('files.editors.minecraftProperties.sectionsDescriptions.gameplay') ||
+                                    'Gameplay and player behavior settings'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'>
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.pvp.label') || 'PvP'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.pvp.description') ||
+                                            'Allow player vs player combat'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.pvp}
+                                    onCheckedChange={(checked) => updateForm('pvp', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.allowFlight.label') || 'Allow Flight'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.allowFlight.description') ||
+                                            'Allow players to fly'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.allowFlight}
+                                    onCheckedChange={(checked) => updateForm('allowFlight', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.spawnMonsters.label') || 'Spawn Monsters'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.spawnMonsters.description') ||
+                                            'Allow monsters to spawn'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.spawnMonsters}
+                                    onCheckedChange={(checked) => updateForm('spawnMonsters', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.allowNether.label') || 'Allow Nether'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.allowNether.description') ||
+                                            'Allow players to travel to the Nether'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.allowNether}
+                                    onCheckedChange={(checked) => updateForm('allowNether', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.forceGamemode.label') || 'Force Gamemode'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.forceGamemode.description') ||
+                                            'Force players to default gamemode'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.forceGamemode}
+                                    onCheckedChange={(checked) => updateForm('forceGamemode', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.enableCommandBlock.label') || 'Enable Command Blocks'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.enableCommandBlock.description') ||
+                                            'Enable command blocks in the world'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.enableCommandBlock}
+                                    onCheckedChange={(checked) => updateForm('enableCommandBlock', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Network & Security Section */}
+                <section className='space-y-6'>
+                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
+                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
+                            <Network className='h-5 w-5 text-primary' />
+                        </div>
+                        <div className='space-y-0.5'>
+                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                                {t('files.editors.minecraftProperties.sections.network') || 'Network & Security'}
+                            </h3>
+                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                {t('files.editors.minecraftProperties.sectionsDescriptions.network') ||
+                                    'Network and security settings'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'>
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.onlineMode.label') || 'Online Mode'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.onlineMode.description') ||
+                                            'Verify players with Mojang (set to false for cracked servers)'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.onlineMode}
+                                    onCheckedChange={(checked) => updateForm('onlineMode', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.whiteList.label') || 'Whitelist'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.whiteList.description') ||
+                                            'Enable whitelist to restrict access'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.whiteList}
+                                    onCheckedChange={(checked) => updateForm('whiteList', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.enforceWhitelist.label') || 'Enforce Whitelist'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.enforceWhitelist.description') ||
+                                            'Automatically kick non-whitelisted players'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.enforceWhitelist}
+                                    onCheckedChange={(checked) => updateForm('enforceWhitelist', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.enforceSecureProfile.label') || 'Enforce Secure Profile'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.enforceSecureProfile.description') ||
+                                            'Require secure profile signatures'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.enforceSecureProfile}
+                                    onCheckedChange={(checked) => updateForm('enforceSecureProfile', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.hideOnlinePlayers.label') || 'Hide Online Players'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.hideOnlinePlayers.description') ||
+                                            'Hide player count from server list'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.hideOnlinePlayers}
+                                    onCheckedChange={(checked) => updateForm('hideOnlinePlayers', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.useNativeTransport.label') || 'Use Native Transport'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.useNativeTransport.description') ||
+                                            'Use native network transport for better performance'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.useNativeTransport}
+                                    onCheckedChange={(checked) => updateForm('useNativeTransport', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Performance Settings Section */}
+                <section className='space-y-6'>
+                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
+                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
+                            <Eye className='h-5 w-5 text-primary' />
+                        </div>
+                        <div className='space-y-0.5'>
+                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                                {t('files.editors.minecraftProperties.sections.performance') || 'Performance Settings'}
+                            </h3>
+                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                {t('files.editors.minecraftProperties.sectionsDescriptions.performance') ||
+                                    'Server performance and rendering settings'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
+                                <Shield className='h-3 w-3 text-primary' />
+                                {t('files.editors.minecraftProperties.fields.spawnProtection.label') || 'Spawn Protection'}
+                            </label>
+                            <Input
+                                type='number'
+                                value={localForm.spawnProtection}
+                                onChange={(e) => updateForm('spawnProtection', Number.parseInt(e.target.value, 10) || 0)}
+                                readOnly={readonly}
+                                min={0}
+                                max={30000000}
+                            />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.spawnProtection.description') ||
+                                    'Radius of spawn protection (0 to disable)'}
+                            </p>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
+                                <Eye className='h-3 w-3 text-primary' />
+                                {t('files.editors.minecraftProperties.fields.viewDistance.label') || 'View Distance'}
+                            </label>
+                            <Input
+                                type='number'
+                                value={localForm.viewDistance}
+                                onChange={(e) => updateForm('viewDistance', Number.parseInt(e.target.value, 10) || 0)}
+                                readOnly={readonly}
+                                min={3}
+                                max={32}
+                            />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.viewDistance.description') ||
+                                    'Maximum chunk render distance (3-32)'}
+                            </p>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                {t('files.editors.minecraftProperties.fields.simulationDistance.label') || 'Simulation Distance'}
+                            </label>
+                            <Input
+                                type='number'
+                                value={localForm.simulationDistance}
+                                onChange={(e) => updateForm('simulationDistance', Number.parseInt(e.target.value, 10) || 0)}
+                                readOnly={readonly}
+                                min={3}
+                                max={32}
+                            />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.simulationDistance.description') ||
+                                    'Maximum chunk simulation distance (3-32)'}
+                            </p>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                {t('files.editors.minecraftProperties.fields.maxWorldSize.label') || 'Max World Size'}
+                            </label>
+                            <Input
+                                type='number'
+                                value={localForm.maxWorldSize}
+                                onChange={(e) => updateForm('maxWorldSize', Number.parseInt(e.target.value, 10) || 0)}
+                                readOnly={readonly}
+                                min={1}
+                                max={29999984}
+                            />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.maxWorldSize.description') ||
+                                    'Maximum world size in blocks'}
+                            </p>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                {t('files.editors.minecraftProperties.fields.maxChainedNeighborUpdates.label') || 'Max Chained Neighbor Updates'}
+                            </label>
+                            <Input
+                                type='number'
+                                value={localForm.maxChainedNeighborUpdates}
+                                onChange={(e) => updateForm('maxChainedNeighborUpdates', Number.parseInt(e.target.value, 10) || 0)}
+                                readOnly={readonly}
+                                min={-1}
+                                max={16777215}
+                            />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.maxChainedNeighborUpdates.description') ||
+                                    'Maximum chained block updates (-1 for unlimited)'}
+                            </p>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                {t('files.editors.minecraftProperties.fields.entityBroadcastRangePercentage.label') || 'Entity Broadcast Range %'}
+                            </label>
+                            <Input
+                                type='number'
+                                value={localForm.entityBroadcastRangePercentage}
+                                onChange={(e) => updateForm('entityBroadcastRangePercentage', Number.parseInt(e.target.value, 10) || 0)}
+                                readOnly={readonly}
+                                min={0}
+                                max={500}
+                            />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.entityBroadcastRangePercentage.description') ||
+                                    'Entity broadcast range percentage (0-500)'}
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Resource Pack Section */}
+                <section className='space-y-6'>
+                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
+                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
+                            <FileArchive className='h-5 w-5 text-primary' />
+                        </div>
+                        <div className='space-y-0.5'>
+                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                                {t('files.editors.minecraftProperties.sections.resourcePack') || 'Resource Pack'}
+                            </h3>
+                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                {t('files.editors.minecraftProperties.sectionsDescriptions.resourcePack') ||
+                                    'Resource pack configuration'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.requireResourcePack.label') || 'Require Resource Pack'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.requireResourcePack.description') ||
+                                            'Force players to use the resource pack'}
+                                    </p>
+                                </div>
+                                <Checkbox
+                                    checked={localForm.requireResourcePack}
+                                    onCheckedChange={(checked) => updateForm('requireResourcePack', checked)}
+                                    disabled={readonly}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6 xl:col-span-2'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
+                                <FileArchive className='h-3 w-3 text-primary' />
+                                {t('files.editors.minecraftProperties.fields.resourcePack.label') || 'Resource Pack URL'}
+                            </label>
+                            <Input
+                                type='text'
+                                value={localForm.resourcePack}
                                 onChange={(e) => updateForm('resourcePack', e.target.value)}
                                 readOnly={readonly}
                                 placeholder='https://example.com/resource-pack.zip'
-                                className='!bg-background !border-border/50 !text-foreground'
                             />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.resourcePack.description') ||
+                                    'URL to the resource pack file'}
+                            </p>
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>resource-pack</span>=
-                            <span>{form.resourcePack}</span>
-                        </div>
-                    </div>
 
-                    {/* Resource Pack SHA1 (Full width) */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0 md:col-span-2 xl:col-span-3'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.resourcePackSha1.label') ||
-                                    'Resource Pack SHA1'}
-                            </Label>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
+                                <Hash className='h-3 w-3 text-primary' />
+                                {t('files.editors.minecraftProperties.fields.resourcePackSha1.label') || 'Resource Pack SHA1'}
+                            </label>
                             <Input
                                 type='text'
-                                value={form.resourcePackSha1}
+                                value={localForm.resourcePackSha1}
                                 onChange={(e) => updateForm('resourcePackSha1', e.target.value)}
                                 readOnly={readonly}
                                 placeholder='0f1412443d23a48f1a74d661c45bc9a904269db2'
-                                className='!bg-background !border-border/50 !text-foreground'
                             />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.resourcePackSha1.description') ||
+                                    'SHA1 hash of the resource pack'}
+                            </p>
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>resource-pack-sha1</span>=
-                            <span>{form.resourcePackSha1}</span>
-                        </div>
-                    </div>
 
-                    {/* Resource Pack ID (Full width) */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0 md:col-span-2 xl:col-span-3'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold flex items-center gap-2'>
-                                <Hash className='h-4 w-4 text-primary' />
-                                {t('files.editors.minecraftProperties.fields.resourcePackId.label') ||
-                                    'Resource Pack ID'}
-                            </Label>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
+                                <Hash className='h-3 w-3 text-primary' />
+                                {t('files.editors.minecraftProperties.fields.resourcePackId.label') || 'Resource Pack ID'}
+                            </label>
                             <Input
                                 type='text'
-                                value={form.resourcePackId}
+                                value={localForm.resourcePackId}
                                 onChange={(e) => updateForm('resourcePackId', e.target.value)}
                                 readOnly={readonly}
                                 placeholder='119e9b1e-d244-5ba3-e070-bb226e6753d1'
-                                className='!bg-background !border-border/50 !text-foreground'
                             />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.resourcePackId.description') ||
+                                    'Unique identifier for the resource pack'}
+                            </p>
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>resource-pack-id</span>=
-                            <span>{form.resourcePackId}</span>
-                        </div>
-                    </div>
 
-                    {/* Resource Pack Prompt (Full width) */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0 md:col-span-2 xl:col-span-3'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.resourcePackPrompt.label') ||
-                                    'Resource Pack Prompt'}
-                            </Label>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6 xl:col-span-2'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                {t('files.editors.minecraftProperties.fields.resourcePackPrompt.label') || 'Resource Pack Prompt'}
+                            </label>
                             <Textarea
-                                value={form.resourcePackPrompt}
+                                value={localForm.resourcePackPrompt}
                                 onChange={(e) => updateForm('resourcePackPrompt', e.target.value)}
                                 readOnly={readonly}
                                 rows={2}
-                                className='!bg-background !border-border/50 !text-foreground'
                             />
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>resource-pack-prompt</span>=
-                            <span>{form.resourcePackPrompt}</span>
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.resourcePackPrompt.description') ||
+                                    'Message shown when prompting players to download the resource pack'}
+                            </p>
                         </div>
                     </div>
+                </section>
 
-                    {/* OP Permission Level */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0 md:col-span-2 xl:col-span-3'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.opPermissionLevel.label') ||
-                                    'OP Permission Level'}
-                            </Label>
-                            <div className='relative'>
-                                <Input
-                                    type='number'
-                                    value={form.opPermissionLevel}
-                                    onChange={(e) =>
-                                        updateForm('opPermissionLevel', Number.parseInt(e.target.value, 10) || 0)
-                                    }
-                                    readOnly={readonly}
-                                    className='pr-16 !bg-background !border-border/50 !text-foreground'
-                                    min={1}
-                                    max={4}
-                                />
-                                <div className='absolute right-0 top-0 bottom-0 flex flex-col border-l border-border rounded-r-md overflow-hidden'>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors border-b border-border flex items-center justify-center'
-                                        onClick={() => incrementNumber('opPermissionLevel')}
-                                        disabled={readonly}
-                                    >
-                                        <Plus className='h-3 w-3' />
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center'
-                                        onClick={() => decrementNumber('opPermissionLevel')}
-                                        disabled={readonly}
-                                    >
-                                        <Minus className='h-3 w-3' />
-                                    </button>
+                {/* Advanced Settings Section */}
+                <section className='space-y-6'>
+                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
+                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
+                            <Sliders className='h-5 w-5 text-primary' />
+                        </div>
+                        <div className='space-y-0.5'>
+                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                                {t('files.editors.minecraftProperties.sections.advanced') || 'Advanced Settings'}
+                            </h3>
+                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                {t('files.editors.minecraftProperties.sectionsDescriptions.advanced') ||
+                                    'Advanced server configuration'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'>
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                {t('files.editors.minecraftProperties.fields.opPermissionLevel.label') || 'OP Permission Level'}
+                            </label>
+                            <Input
+                                type='number'
+                                value={localForm.opPermissionLevel}
+                                onChange={(e) => updateForm('opPermissionLevel', Number.parseInt(e.target.value, 10) || 0)}
+                                readOnly={readonly}
+                                min={1}
+                                max={4}
+                            />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.opPermissionLevel.description') ||
+                                    'Permission level for server operators (1-4)'}
+                            </p>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                {t('files.editors.minecraftProperties.fields.functionPermissionLevel.label') || 'Function Permission Level'}
+                            </label>
+                            <Input
+                                type='number'
+                                value={localForm.functionPermissionLevel}
+                                onChange={(e) => updateForm('functionPermissionLevel', Number.parseInt(e.target.value, 10) || 0)}
+                                readOnly={readonly}
+                                min={1}
+                                max={4}
+                            />
+                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                {t('files.editors.minecraftProperties.fields.functionPermissionLevel.description') ||
+                                    'Permission level required to use functions (1-4)'}
+                            </p>
+                        </div>
+
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.broadcastConsoleToOps.label') || 'Broadcast Console to OPs'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.broadcastConsoleToOps.description') ||
+                                            'Send console messages to operators'}
+                                    </p>
                                 </div>
+                                <Checkbox
+                                    checked={localForm.broadcastConsoleToOps}
+                                    onCheckedChange={(checked) => updateForm('broadcastConsoleToOps', checked)}
+                                    disabled={readonly}
+                                />
                             </div>
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>op-permission-level</span>=
-                            <span>{form.opPermissionLevel}</span>
-                        </div>
-                    </div>
 
-                    {/* Function Permission Level */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0 md:col-span-2 xl:col-span-3'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.functionPermissionLevel.label') ||
-                                    'Function Permission Level'}
-                            </Label>
-                            <div className='relative'>
-                                <Input
-                                    type='number'
-                                    value={form.functionPermissionLevel}
-                                    onChange={(e) =>
-                                        updateForm('functionPermissionLevel', Number.parseInt(e.target.value, 10) || 0)
-                                    }
-                                    readOnly={readonly}
-                                    className='pr-16 !bg-background !border-border/50 !text-foreground'
-                                    min={1}
-                                    max={4}
-                                />
-                                <div className='absolute right-0 top-0 bottom-0 flex flex-col border-l border-border rounded-r-md overflow-hidden'>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors border-b border-border flex items-center justify-center'
-                                        onClick={() => incrementNumber('functionPermissionLevel')}
-                                        disabled={readonly}
-                                    >
-                                        <Plus className='h-3 w-3' />
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center'
-                                        onClick={() => decrementNumber('functionPermissionLevel')}
-                                        disabled={readonly}
-                                    >
-                                        <Minus className='h-3 w-3' />
-                                    </button>
+                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div className='space-y-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.minecraftProperties.fields.previewsChat.label') || 'Previews Chat'}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.minecraftProperties.fields.previewsChat.description') ||
+                                            'Enable chat message previews'}
+                                    </p>
                                 </div>
+                                <Checkbox
+                                    checked={localForm.previewsChat}
+                                    onCheckedChange={(checked) => updateForm('previewsChat', checked)}
+                                    disabled={readonly}
+                                />
                             </div>
                         </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>function-permission-level</span>=
-                            <span>{form.functionPermissionLevel}</span>
-                        </div>
                     </div>
-
-                    {/* Entity Broadcast Range */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0 md:col-span-2 xl:col-span-3'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.entityBroadcastRangePercentage.label') ||
-                                    'Entity Broadcast Range Percentage'}
-                            </Label>
-                            <div className='relative'>
-                                <Input
-                                    type='number'
-                                    value={form.entityBroadcastRangePercentage}
-                                    onChange={(e) =>
-                                        updateForm(
-                                            'entityBroadcastRangePercentage',
-                                            Number.parseInt(e.target.value, 10) || 0,
-                                        )
-                                    }
-                                    readOnly={readonly}
-                                    className='pr-16 !bg-background !border-border/50 !text-foreground'
-                                    min={0}
-                                    max={500}
-                                />
-                                <div className='absolute right-0 top-0 bottom-0 flex flex-col border-l border-border rounded-r-md overflow-hidden'>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors border-b border-border flex items-center justify-center'
-                                        onClick={() => incrementNumber('entityBroadcastRangePercentage')}
-                                        disabled={readonly}
-                                    >
-                                        <Plus className='h-3 w-3' />
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center'
-                                        onClick={() => decrementNumber('entityBroadcastRangePercentage')}
-                                        disabled={readonly}
-                                    >
-                                        <Minus className='h-3 w-3' />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>entity-broadcast-range-percentage</span>=
-                            <span>{form.entityBroadcastRangePercentage}</span>
-                        </div>
-                    </div>
-
-                    {/* Max Chained Neighbor Updates */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.maxChainedNeighborUpdates.label') ||
-                                    'Max Chained Neighbor Updates'}
-                            </Label>
-                            <div className='relative'>
-                                <Input
-                                    type='number'
-                                    value={form.maxChainedNeighborUpdates}
-                                    onChange={(e) =>
-                                        updateForm(
-                                            'maxChainedNeighborUpdates',
-                                            Number.parseInt(e.target.value, 10) || 0,
-                                        )
-                                    }
-                                    readOnly={readonly}
-                                    className='pr-16 !bg-background !border-border/50 !text-foreground'
-                                    min={-1}
-                                    max={16777215}
-                                />
-                                <div className='absolute right-0 top-0 bottom-0 flex flex-col border-l border-border rounded-r-md overflow-hidden'>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors border-b border-border flex items-center justify-center'
-                                        onClick={() => incrementNumber('maxChainedNeighborUpdates')}
-                                        disabled={readonly}
-                                    >
-                                        <Plus className='h-3 w-3' />
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center'
-                                        onClick={() => decrementNumber('maxChainedNeighborUpdates')}
-                                        disabled={readonly}
-                                    >
-                                        <Minus className='h-3 w-3' />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>max-chained-neighbor-updates</span>=
-                            <span>{form.maxChainedNeighborUpdates}</span>
-                        </div>
-                    </div>
-
-                    {/* Max World Size */}
-                    <div className='flex flex-col gap-2 p-4 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors border-0'>
-                        <div className='flex flex-col gap-2'>
-                            <Label className='text-sm font-semibold'>
-                                {t('files.editors.minecraftProperties.fields.maxWorldSize.label')}
-                            </Label>
-                            <div className='relative'>
-                                <Input
-                                    type='number'
-                                    value={form.maxWorldSize}
-                                    onChange={(e) =>
-                                        updateForm('maxWorldSize', Number.parseInt(e.target.value, 10) || 0)
-                                    }
-                                    readOnly={readonly}
-                                    className='pr-16 !bg-background !border-border/50 !text-foreground'
-                                    min={1}
-                                    max={29999984}
-                                />
-                                <div className='absolute right-0 top-0 bottom-0 flex flex-col border-l border-border rounded-r-md overflow-hidden'>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors border-b border-border flex items-center justify-center'
-                                        onClick={() => incrementNumber('maxWorldSize')}
-                                        disabled={readonly}
-                                    >
-                                        <Plus className='h-3 w-3' />
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className='flex-1 px-3 hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center'
-                                        onClick={() => decrementNumber('maxWorldSize')}
-                                        disabled={readonly}
-                                    >
-                                        <Minus className='h-3 w-3' />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className='text-xs font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded'>
-                            <span className='text-primary font-semibold'>max-world-size</span>=
-                            <span>{form.maxWorldSize}</span>
-                        </div>
-                    </div>
-                </div>
+                </section>
             </div>
         </Card>
     );

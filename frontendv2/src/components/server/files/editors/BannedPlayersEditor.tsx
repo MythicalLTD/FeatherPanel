@@ -74,29 +74,6 @@ export function BannedPlayersEditor({
         setEntries(parseContent(content));
     }, [content]);
 
-    // Inject dark theme styles
-    useEffect(() => {
-        const styleId = 'banned-players-editor-styles';
-        if (!document.getElementById(styleId)) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.textContent = `
-                .banned-players-editor input,
-                .banned-players-editor input[type="text"],
-                .banned-players-editor textarea {
-                    background-color: hsl(var(--background)) !important;
-                    background: hsl(var(--background)) !important;
-                    border-color: hsl(var(--border) / 0.5) !important;
-                    color: hsl(var(--foreground)) !important;
-                }
-                .banned-players-editor [class*="bg-muted"] {
-                    background-color: hsl(var(--background)) !important;
-                    background: hsl(var(--background)) !important;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-    }, []);
 
     const handleAdd = () => {
         setEntries((prev) => [
@@ -137,8 +114,8 @@ export function BannedPlayersEditor({
     };
 
     return (
-        <Card className='border-primary/20 banned-players-editor'>
-            <CardHeader className='border-b border-border/40'>
+        <Card className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl shadow-sm'>
+            <CardHeader className='border-b border-border/10 pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>
@@ -180,10 +157,7 @@ export function BannedPlayersEditor({
                         </div>
                     )}
                     {entries.map((entry, index) => (
-                        <div
-                            key={`banned-player-${index}`}
-                            className='space-y-4 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'
-                        >
+                        <div key={`banned-player-${index}`} className='space-y-4 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-2 flex-1'>
                                     <Label className='text-sm font-semibold'>
@@ -207,11 +181,11 @@ export function BannedPlayersEditor({
                                     <Trash2 className='h-4 w-4' />
                                 </Button>
                             </div>
-                            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
+                            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                                <div className='space-y-3'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                         {t('files.editors.bannedPlayersConfig.fields.name')}
-                                    </Label>
+                                    </label>
                                     <Input
                                         type='text'
                                         value={entry.name}
@@ -220,10 +194,10 @@ export function BannedPlayersEditor({
                                         placeholder='PlayerName'
                                     />
                                 </div>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
+                                <div className='space-y-3'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                         {t('files.editors.bannedPlayersConfig.fields.source')}
-                                    </Label>
+                                    </label>
                                     <Input
                                         type='text'
                                         value={entry.source}
@@ -233,11 +207,11 @@ export function BannedPlayersEditor({
                                     />
                                 </div>
                             </div>
-                            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
+                            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                                <div className='space-y-3'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                         {t('files.editors.bannedPlayersConfig.fields.created')}
-                                    </Label>
+                                    </label>
                                     <Input
                                         type='text'
                                         value={entry.created}
@@ -246,10 +220,10 @@ export function BannedPlayersEditor({
                                         placeholder='2025-01-01 12:00:00 +0000'
                                     />
                                 </div>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
+                                <div className='space-y-3'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                         {t('files.editors.bannedPlayersConfig.fields.expires')}
-                                    </Label>
+                                    </label>
                                     <Input
                                         type='text'
                                         value={entry.expires}
@@ -259,10 +233,10 @@ export function BannedPlayersEditor({
                                     />
                                 </div>
                             </div>
-                            <div className='space-y-2'>
-                                <Label className='text-sm font-semibold'>
+                            <div className='space-y-3'>
+                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                     {t('files.editors.bannedPlayersConfig.fields.reason')}
-                                </Label>
+                                </label>
                                 <Textarea
                                     value={entry.reason}
                                     onChange={(e) => updateEntry(index, 'reason', e.target.value)}

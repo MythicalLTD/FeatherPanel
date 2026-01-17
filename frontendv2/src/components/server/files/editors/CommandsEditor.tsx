@@ -20,7 +20,6 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/featherui/Button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/featherui/Input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, ListChecks, Plus, Save, Trash2 } from 'lucide-react';
@@ -156,29 +155,6 @@ export function CommandsEditor({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [content]);
 
-    // Inject dark theme styles
-    useEffect(() => {
-        const styleId = 'commands-editor-styles';
-        if (!document.getElementById(styleId)) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.textContent = `
-                .commands-editor input,
-                .commands-editor input[type="text"],
-                .commands-editor textarea {
-                    background-color: hsl(var(--background)) !important;
-                    background: hsl(var(--background)) !important;
-                    border-color: hsl(var(--border) / 0.5) !important;
-                    color: hsl(var(--foreground)) !important;
-                }
-                .commands-editor [class*="bg-muted"] {
-                    background-color: hsl(var(--muted)) !important;
-                    background: hsl(var(--muted)) !important;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-    }, []);
 
     const handleSave = () => {
         try {
@@ -224,8 +200,8 @@ export function CommandsEditor({
     };
 
     return (
-        <Card className='border-primary/20 commands-editor'>
-            <CardHeader className='border-b border-border/40'>
+        <Card className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl shadow-sm'>
+            <CardHeader className='border-b border-border/10 pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>{t('files.editors.commandsConfig.title')}</CardTitle>
@@ -247,29 +223,29 @@ export function CommandsEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='space-y-10 p-6'>
-                <section className='space-y-4'>
-                    <div className='flex items-center gap-3'>
-                        <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
-                            <ListChecks className='h-5 w-5' />
+            <div className='p-8 space-y-10'>
+                <section className='space-y-6'>
+                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
+                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
+                            <ListChecks className='h-5 w-5 text-primary' />
                         </div>
-                        <div>
-                            <h3 className='text-lg font-semibold'>
+                        <div className='space-y-0.5'>
+                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
                                 {t('files.editors.commandsConfig.sections.general')}
                             </h3>
-                            <p className='text-sm text-muted-foreground'>
+                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
                                 {t('files.editors.commandsConfig.sectionsDescriptions.general')}
                             </p>
                         </div>
                     </div>
 
-                    <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                    <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
                         <div className='flex items-start justify-between gap-4'>
                             <div className='space-y-1'>
-                                <Label className='text-sm font-semibold'>
+                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                     {t('files.editors.commandsConfig.fields.ignoreVanillaPermissions.label')}
-                                </Label>
-                                <p className='text-xs text-muted-foreground'>
+                                </label>
+                                <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
                                     {t('files.editors.commandsConfig.fields.ignoreVanillaPermissions.description')}
                                 </p>
                             </div>
@@ -281,33 +257,33 @@ export function CommandsEditor({
                         </div>
                     </div>
 
-                    <div className='space-y-2 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
-                        <Label className='text-sm font-semibold'>
+                    <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                        <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                             {t('files.editors.commandsConfig.fields.commandBlockOverrides.label')}
-                        </Label>
+                        </label>
                         <Textarea
                             value={localForm.overridesText}
                             onChange={(e) => updateForm('overridesText', e.target.value)}
                             readOnly={readonly}
                             rows={4}
                         />
-                        <p className='text-xs text-muted-foreground'>
+                        <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
                             {t('files.editors.commandsConfig.fields.commandBlockOverrides.description')}
                         </p>
                     </div>
                 </section>
 
-                <section className='space-y-4'>
-                    <div className='flex items-center justify-between'>
-                        <div className='flex items-center gap-3'>
-                            <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
-                                <ListChecks className='h-5 w-5' />
+                <section className='space-y-6'>
+                    <div className='flex items-center justify-between border-b border-border/10 pb-6'>
+                        <div className='flex items-center gap-4'>
+                            <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
+                                <ListChecks className='h-5 w-5 text-primary' />
                             </div>
-                            <div>
-                                <h3 className='text-lg font-semibold'>
+                            <div className='space-y-0.5'>
+                                <h3 className='text-xl font-black uppercase tracking-tight italic'>
                                     {t('files.editors.commandsConfig.sections.aliases')}
                                 </h3>
-                                <p className='text-sm text-muted-foreground'>
+                                <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
                                     {t('files.editors.commandsConfig.sectionsDescriptions.aliases')}
                                 </p>
                             </div>
@@ -331,15 +307,12 @@ export function CommandsEditor({
                     )}
 
                     {localForm.aliases.map((alias, index) => (
-                        <div
-                            key={`alias-${index}`}
-                            className='space-y-4 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'
-                        >
+                        <div key={`alias-${index}`} className='space-y-6 rounded-xl bg-card/30 border border-border/30 p-6'>
                             <div className='flex items-start gap-4'>
-                                <div className='flex-1 space-y-2'>
-                                    <Label className='text-sm font-semibold'>
+                                <div className='flex-1 space-y-3'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                         {t('files.editors.commandsConfig.fields.aliases.aliasName')}
-                                    </Label>
+                                    </label>
                                     <Input
                                         type='text'
                                         value={alias.name}
@@ -358,10 +331,10 @@ export function CommandsEditor({
                                     <Trash2 className='h-4 w-4' />
                                 </Button>
                             </div>
-                            <div className='space-y-2'>
-                                <Label className='text-sm font-semibold'>
+                            <div className='space-y-3'>
+                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                     {t('files.editors.commandsConfig.fields.aliases.aliasCommands')}
-                                </Label>
+                                </label>
                                 <Textarea
                                     value={alias.commandsText}
                                     onChange={(e) => updateAlias(index, 'commandsText', e.target.value)}
@@ -369,7 +342,7 @@ export function CommandsEditor({
                                     rows={3}
                                     placeholder='say Hello world'
                                 />
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
                                     {t('files.editors.commandsConfig.fields.aliases.aliasCommandsHint')}
                                 </p>
                             </div>

@@ -1753,113 +1753,167 @@
 						"description": "The message shown to players when they join"
 					},
 					"maxPlayers": {
-						"label": "Max Players"
+						"label": "Max Players",
+						"description": "Maximum number of players allowed on the server"
 					},
 					"gamemode": {
-						"label": "Gamemode"
+						"label": "Gamemode",
+						"description": "Default gamemode for new players"
 					},
 					"difficulty": {
-						"label": "Difficulty"
+						"label": "Difficulty",
+						"description": "Server difficulty level"
 					},
 					"whiteList": {
-						"label": "Whitelist"
+						"label": "Whitelist",
+						"description": "Enable whitelist to restrict access"
 					},
 					"enforceWhitelist": {
-						"label": "Enforce Whitelist"
+						"label": "Enforce Whitelist",
+						"description": "Automatically kick non-whitelisted players"
 					},
 					"onlineMode": {
-						"label": "Online Mode"
+						"label": "Online Mode",
+						"description": "Verify players with Mojang (set to false for cracked servers)"
 					},
 					"pvp": {
-						"label": "PVP"
+						"label": "PVP",
+						"description": "Allow player vs player combat"
 					},
 					"enableCommandBlock": {
-						"label": "Enable Command Blocks"
+						"label": "Enable Command Blocks",
+						"description": "Enable command blocks in the world"
 					},
 					"allowFlight": {
-						"label": "Allow Flight"
+						"label": "Allow Flight",
+						"description": "Allow players to fly"
 					},
 					"spawnMonsters": {
-						"label": "Spawn Monsters"
+						"label": "Spawn Monsters",
+						"description": "Allow monsters to spawn"
 					},
 					"allowNether": {
-						"label": "Allow Nether"
+						"label": "Allow Nether",
+						"description": "Allow players to travel to the Nether"
 					},
 					"forceGamemode": {
-						"label": "Force Gamemode"
+						"label": "Force Gamemode",
+						"description": "Force players to default gamemode"
 					},
 					"broadcastConsoleToOps": {
-						"label": "Broadcast Console to OPs"
+						"label": "Broadcast Console to OPs",
+						"description": "Send console messages to operators"
 					},
 					"spawnProtection": {
-						"label": "Spawn Protection"
+						"label": "Spawn Protection",
+						"description": "Radius of spawn protection (0 to disable)"
 					},
 					"viewDistance": {
-						"label": "View Distance"
+						"label": "View Distance",
+						"description": "Maximum chunk render distance (3-32)"
 					},
 					"simulationDistance": {
-						"label": "Simulation Distance"
+						"label": "Simulation Distance",
+						"description": "Maximum chunk simulation distance (3-32)"
 					},
 					"levelName": {
-						"label": "Level Name"
+						"label": "Level Name",
+						"description": "Name of the world folder"
 					},
 					"levelSeed": {
-						"label": "Level Seed"
+						"label": "Level Seed",
+						"description": "Seed for world generation (leave empty for random)"
 					},
 					"generatorSettings": {
-						"label": "Generator Settings"
+						"label": "Generator Settings",
+						"description": "Custom generator settings (JSON format)"
 					},
 					"levelType": {
-						"label": "Level Type"
+						"label": "Level Type",
+						"description": "World generation type"
 					},
 					"generateStructures": {
-						"label": "Generate Structures"
+						"label": "Generate Structures",
+						"description": "Generate structures like villages and temples"
 					},
 					"hardcore": {
-						"label": "Hardcore"
+						"label": "Hardcore",
+						"description": "Enable hardcore mode (permanent death)"
 					},
 					"requireResourcePack": {
-						"label": "Require Resource Pack"
+						"label": "Require Resource Pack",
+						"description": "Force players to use the resource pack"
 					},
 					"hideOnlinePlayers": {
-						"label": "Hide Online Players"
+						"label": "Hide Online Players",
+						"description": "Hide player count from server list"
 					},
 					"enforceSecureProfile": {
-						"label": "Enforce Secure Profile"
+						"label": "Enforce Secure Profile",
+						"description": "Require secure profile signatures"
 					},
 					"previewsChat": {
-						"label": "Previews Chat"
+						"label": "Previews Chat",
+						"description": "Enable chat message previews"
 					},
 					"useNativeTransport": {
-						"label": "Use Native Transport"
+						"label": "Use Native Transport",
+						"description": "Use native network transport for better performance"
 					},
 					"resourcePack": {
-						"label": "Resource Pack"
+						"label": "Resource Pack",
+						"description": "URL to the resource pack file"
 					},
 					"resourcePackSha1": {
-						"label": "Resource Pack SHA1"
+						"label": "Resource Pack SHA1",
+						"description": "SHA1 hash of the resource pack"
 					},
 					"resourcePackId": {
-						"label": "Resource Pack ID"
+						"label": "Resource Pack ID",
+						"description": "Unique identifier for the resource pack"
 					},
 					"resourcePackPrompt": {
-						"label": "Resource Pack Prompt"
+						"label": "Resource Pack Prompt",
+						"description": "Message shown when prompting players to download the resource pack"
 					},
 					"opPermissionLevel": {
-						"label": "OP Permission Level"
+						"label": "OP Permission Level",
+						"description": "Permission level for server operators (1-4)"
 					},
 					"functionPermissionLevel": {
-						"label": "Function Permission Level"
+						"label": "Function Permission Level",
+						"description": "Permission level required to use functions (1-4)"
 					},
 					"entityBroadcastRangePercentage": {
-						"label": "Entity Broadcast Range Percentage"
+						"label": "Entity Broadcast Range Percentage",
+						"description": "Entity broadcast range percentage (0-500)"
 					},
 					"maxChainedNeighborUpdates": {
-						"label": "Max Chained Neighbor Updates"
+						"label": "Max Chained Neighbor Updates",
+						"description": "Maximum chained block updates (-1 for unlimited)"
 					},
 					"maxWorldSize": {
-						"label": "Max World Size"
+						"label": "Max World Size",
+						"description": "Maximum world size in blocks"
 					}
+				},
+				"sections": {
+					"serverInfo": "Server Information",
+					"worldSettings": "World Settings",
+					"gameplay": "Gameplay Settings",
+					"network": "Network & Security",
+					"performance": "Performance Settings",
+					"resourcePack": "Resource Pack",
+					"advanced": "Advanced Settings"
+				},
+				"sectionsDescriptions": {
+					"serverInfo": "Basic server configuration",
+					"worldSettings": "World generation and configuration",
+					"gameplay": "Gameplay and player behavior settings",
+					"network": "Network and security settings",
+					"performance": "Server performance and rendering settings",
+					"resourcePack": "Resource pack configuration",
+					"advanced": "Advanced server configuration"
 				},
 				"options": {
 					"gamemode": {

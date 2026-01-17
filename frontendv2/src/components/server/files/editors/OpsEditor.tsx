@@ -20,7 +20,6 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/featherui/Button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/featherui/Input';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Plus, Save, Trash2 } from 'lucide-react';
 
@@ -64,30 +63,6 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
         setEntries(parseContent(content));
     }, [content]);
 
-    // Inject dark theme styles
-    useEffect(() => {
-        const styleId = 'ops-editor-styles';
-        if (!document.getElementById(styleId)) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.textContent = `
-                .ops-editor input,
-                .ops-editor input[type="text"],
-                .ops-editor input[type="number"],
-                .ops-editor textarea {
-                    background-color: hsl(var(--background)) !important;
-                    background: hsl(var(--background)) !important;
-                    border-color: hsl(var(--border) / 0.5) !important;
-                    color: hsl(var(--foreground)) !important;
-                }
-                .ops-editor [class*="bg-muted"] {
-                    background-color: hsl(var(--background)) !important;
-                    background: hsl(var(--background)) !important;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-    }, []);
 
     const handleAdd = () => {
         setEntries((prev) => [
@@ -124,8 +99,8 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
     };
 
     return (
-        <Card className='border-primary/20 ops-editor'>
-            <CardHeader className='border-b border-border/40'>
+        <Card className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl shadow-sm'>
+            <CardHeader className='border-b border-border/10 pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>{t('files.editors.opsConfig.title')}</CardTitle>
@@ -147,8 +122,8 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
                     </div>
                 </div>
             </CardHeader>
-            <div className='space-y-6 p-6'>
-                <section className='space-y-3'>
+            <div className='p-8 space-y-8'>
+                <section className='space-y-6'>
                     <div className='rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground'>
                         {t('files.editors.opsConfig.notice') ||
                             'Operators have elevated permissions on the server. Be careful when adding operators.'}
@@ -165,15 +140,12 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
                         </div>
                     )}
                     {entries.map((entry, index) => (
-                        <div
-                            key={`op-${index}`}
-                            className='space-y-4 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'
-                        >
+                        <div key={`op-${index}`} className='space-y-6 rounded-xl bg-card/30 border border-border/30 p-6'>
                             <div className='flex items-start justify-between gap-4'>
-                                <div className='space-y-2 flex-1'>
-                                    <Label className='text-sm font-semibold'>
+                                <div className='space-y-3 flex-1'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                         {t('files.editors.opsConfig.fields.uuid')}
-                                    </Label>
+                                    </label>
                                     <Input
                                         type='text'
                                         value={entry.uuid}
@@ -192,11 +164,11 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
                                     <Trash2 className='h-4 w-4' />
                                 </Button>
                             </div>
-                            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
+                            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                                <div className='space-y-3'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                         {t('files.editors.opsConfig.fields.name')}
-                                    </Label>
+                                    </label>
                                     <Input
                                         type='text'
                                         value={entry.name}
@@ -205,10 +177,10 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
                                         placeholder='PlayerName'
                                     />
                                 </div>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
+                                <div className='space-y-3'>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                         {t('files.editors.opsConfig.fields.level')}
-                                    </Label>
+                                    </label>
                                     <Input
                                         type='number'
                                         value={entry.level}
@@ -221,10 +193,10 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
                                     />
                                 </div>
                             </div>
-                            <div className='space-y-2'>
-                                <Label className='text-sm font-semibold'>
+                            <div className='space-y-3'>
+                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                     {t('files.editors.opsConfig.fields.bypassesPlayerLimit')}
-                                </Label>
+                                </label>
                                 <div className='flex items-center gap-3'>
                                     <Checkbox
                                         checked={entry.bypassesPlayerLimit}

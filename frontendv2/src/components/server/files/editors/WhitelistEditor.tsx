@@ -56,27 +56,6 @@ export function WhitelistEditor({
         setEntries(parseContent(content));
     }, [content]);
 
-    // Inject dark theme styles
-    useEffect(() => {
-        const styleId = 'whitelist-editor-styles';
-        if (!document.getElementById(styleId)) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.textContent = `
-                .whitelist-editor input {
-                    background-color: hsl(var(--background)) !important;
-                    background: hsl(var(--background)) !important;
-                    border-color: hsl(var(--border) / 0.5) !important;
-                    color: hsl(var(--foreground)) !important;
-                }
-                .whitelist-editor [class*="bg-muted"] {
-                    background-color: hsl(var(--muted)) !important;
-                    background: hsl(var(--muted)) !important;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-    }, []);
 
     const handleAdd = () => {
         setEntries((prev) => [...prev, '']);
@@ -100,8 +79,8 @@ export function WhitelistEditor({
     };
 
     return (
-        <Card className='border-primary/20 whitelist-editor'>
-            <CardHeader className='border-b border-border/40'>
+        <Card className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl shadow-sm'>
+            <CardHeader className='border-b border-border/10 pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>{t('files.editors.whitelistConfig.title')}</CardTitle>

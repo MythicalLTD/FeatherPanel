@@ -880,7 +880,7 @@ setup_cloudflare_tunnel_client() {
         # Using bridge mode instead of host to prevent intercepting traffic meant for other containers (like Wings)
         # This allows Wings and other services to bind ports directly without interference
         if ! run_with_spinner "Starting Cloudflare Tunnel container" "Cloudflare Tunnel container running." \
-            docker run -d --network featherpanel_network --restart always --name cloudflared cloudflare/cloudflared:latest tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN"; then
+			docker run -d --network host --restart always cloudflare/cloudflared:latest tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN"; then
             return 1
         fi
         log_info "Cloudflare Tunnel setup complete."
