@@ -29,14 +29,17 @@ class Subdomain
     /**
      * Fetch all subdomains for a server.
      */
-    public static function getByServerId(int $serverId): array
+    public static function getByServerId(int $serverId, int $limit = 999): array
     {
         if ($serverId <= 0) {
             return [];
         }
 
+        // Validate and sanitize limit
+        $limit = max(1, (int) $limit);
+
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE server_id = :server_id ORDER BY created_at DESC');
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE server_id = :server_id ORDER BY created_at DESC LIMIT ' . $limit);
         $stmt->execute(['server_id' => $serverId]);
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -75,6 +78,19 @@ class Subdomain
 
         return $result ?: null;
     }
+
+	public static function existsByServerId(int $serverId): bool
+	{
+		if ($serverId <= 0) {
+			return false;
+		}
+
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE server_id = :server_id LIMIT 1');
+		$stmt->execute(['server_id' => $serverId]);
+
+		return (int) $stmt->fetchColumn() > 0;
+	}
 
     /**
      * Find subdomain by UUID within a server scope.

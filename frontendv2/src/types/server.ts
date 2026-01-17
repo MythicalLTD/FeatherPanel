@@ -158,6 +158,10 @@ export interface Server {
     spell?: ServerSpell;
     stats?: ServerStats;
     allocation?: ServerAllocation;
+    subdomain?: {
+        domain: string;
+        subdomain: string;
+    };
 
     // Access control
     is_subuser: boolean;

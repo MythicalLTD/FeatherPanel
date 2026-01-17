@@ -419,7 +419,11 @@ export default function ServerConsolePage() {
                     {/* Server Info Cards */}
                     {canConnect && (
                         <ServerInfoCards
-                            serverIp={server.allocation?.ip || server.allocation?.ip_alias || ''}
+                            serverIp={
+                                server.subdomain && server.subdomain.domain && server.subdomain.subdomain
+                                    ? `${server.subdomain.subdomain}.${server.subdomain.domain}`
+                                    : server.allocation?.ip_alias || server.allocation?.ip || ''
+                            }
                             serverPort={server.allocation?.port || 0}
                             cpuLimit={server.cpu || 0}
                             memoryLimit={server.memory || 0}
