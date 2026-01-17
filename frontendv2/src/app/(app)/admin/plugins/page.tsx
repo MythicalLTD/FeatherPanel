@@ -1455,7 +1455,16 @@ export default function PluginsPage() {
             </Dialog>
 
             {/* Reinstall Dialog */}
-            <Dialog open={reinstallDialogOpen} onOpenChange={setReinstallDialogOpen}>
+            <Dialog
+                open={reinstallDialogOpen}
+                onOpenChange={(open) => {
+                    setReinstallDialogOpen(open);
+                    if (!open) {
+                        // Reset selection when dialog closes
+                        setSelectedPluginsToReinstall(new Set());
+                    }
+                }}
+            >
                 <DialogContent className='max-h-[80vh] overflow-y-auto'>
                     <DialogHeader>
                         <DialogTitle>{t('admin.plugins.dialogs.reinstall.title')}</DialogTitle>
@@ -1499,11 +1508,16 @@ export default function PluginsPage() {
                                             else newSet.delete(plugin.identifier);
                                             setSelectedPluginsToReinstall(newSet);
                                         }}
-                                        className='mt-1 h-4 w-4'
+                                        className='mt-1 h-4 w-4 rounded border-2 border-border cursor-pointer checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/30 transition-all appearance-none bg-background/50 checked:before:content-["✓"] checked:before:text-white checked:before:text-xs checked:before:flex checked:before:items-center checked:before:justify-center'
                                     />
-                                    <div>
+                                    <div className='flex-1 min-w-0'>
                                         <div className='font-medium'>{plugin.name}</div>
                                         <div className='text-sm text-muted-foreground'>{plugin.identifier}</div>
+                                        {plugin.version && (
+                                            <div className='text-xs text-muted-foreground mt-1'>
+                                                Version: {plugin.version}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -1517,10 +1531,16 @@ export default function PluginsPage() {
                             onClick={reinstallSelected}
                             disabled={reinstallingPlugins || selectedPluginsToReinstall.size === 0}
                         >
-                            {reinstallingPlugins ? <RefreshCw className='h-4 w-4 animate-spin mr-2' /> : null}
-                            {t('admin.plugins.dialogs.reinstall.button_label', {
-                                count: String(selectedPluginsToReinstall.size),
-                            })}
+                            {reinstallingPlugins ? (
+                                <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                            ) : (
+                                <CloudDownload className='h-4 w-4 mr-2' />
+                            )}
+                            {reinstallingPlugins
+                                ? t('admin.plugins.dialogs.reinstall.reinstalling')
+                                : t('admin.plugins.dialogs.reinstall.button_label', {
+                                      count: String(selectedPluginsToReinstall.size),
+                                  })}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
