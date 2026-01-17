@@ -99,7 +99,7 @@ export function ServerCard({
                     <div className='flex items-center gap-3 mb-2'>
                         <h3 className='text-lg font-semibold truncate'>{server.name}</h3>
                         <StatusBadge status={status} t={t} />
-                        {isConnected && (
+                        {isConnected && status === 'running' && (
                             <span
                                 className='h-2 w-2 bg-green-500 rounded-full animate-pulse'
                                 title={t('servers.liveConnected')}
@@ -222,7 +222,7 @@ export function ServerCard({
                         <div className='absolute inset-0 bg-linear-to-t from-card via-card/60 to-transparent' />
                     </div>
                 )}
-                {isConnected && (
+                {isConnected && status === 'running' && (
                     <div className='absolute top-3 left-3'>
                         <span className='px-2 py-1 bg-green-500/20 backdrop-blur-sm text-green-100 text-xs rounded-lg font-medium flex items-center gap-1.5'>
                             <span className='h-1.5 w-1.5 bg-green-400 rounded-full animate-pulse' />

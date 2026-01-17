@@ -130,11 +130,15 @@ export default function ServersPage() {
 
     // Fetch servers and folders
     const fetchServers = useCallback(
-        async (page = 1) => {
+        async (page = 1, forceViewAll = false) => {
             try {
                 setLoading(true);
                 setError(null);
-                const response = await serversApi.getServers(false, page, pagination.per_page);
+                
+                // When in folder view, fetch all servers to enable proper folder filtering
+                // Otherwise use pagination
+                const shouldViewAll = forceViewAll;
+                const response = await serversApi.getServers(shouldViewAll, page, shouldViewAll ? 1000 : pagination.per_page);
 
                 // Ensure serversData is an array
                 const serversArray = Array.isArray(response.servers) ? response.servers : [];
@@ -158,14 +162,19 @@ export default function ServersPage() {
         [pagination.per_page, t, connectServers],
     );
 
-    // Initial fetch
+    // Initial fetch and refetch when switching views
+    // Load all servers in both views to ensure consistency
     useEffect(() => {
-        fetchServers();
+        fetchServers(1, true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewMode]);
+
+    // Cleanup WebSocket connections on unmount
+    useEffect(() => {
         return () => {
             disconnectAll();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fetchServers]);
+    }, [disconnectAll]);
 
     // Apply usage of client-side folder assignments
     const serversWithFolders = servers.map((server) => ({
@@ -221,8 +230,10 @@ export default function ServersPage() {
     };
 
     const changePage = (newPage: number) => {
+        // Pagination only works in 'all' view, not in folder view
+        if (viewMode === 'folders') return;
         if (newPage >= 1 && newPage <= pagination.total_pages) {
-            fetchServers(newPage);
+            fetchServers(newPage, false);
         }
     };
 
@@ -523,6 +534,18 @@ export default function ServersPage() {
                         {/* By Folder Tab */}
                         <TabPanel>
                             <div className='space-y-4'>
+                                {/* Info message about folder view - shows when all servers are loaded for folder organization */}
+                                {pagination.total_records > 10 && (
+                                    <div className='p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl'>
+                                        <p className='text-sm text-blue-600 dark:text-blue-400'>
+                                            {t('servers.folderViewAllLoaded', {
+                                                total: String(pagination.total_records),
+                                                defaultValue: `All ${pagination.total_records} servers are loaded for folder organization.`,
+                                            })}
+                                        </p>
+                                    </div>
+                                )}
+
                                 {/* Create Folder Button */}
                                 <button
                                     onClick={openCreateFolder}
