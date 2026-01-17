@@ -77,6 +77,7 @@ class PluginManager
                 if (in_array($file, ['.', '..', '', '.gitignore', '.gitkeep'])) {
                     return false;
                 }
+
                 // Only return directories (plugins are directories)
                 return is_dir($pluginsDir . '/' . $file);
             }));
@@ -139,6 +140,7 @@ class PluginManager
             if (in_array($file, ['.', '..', '', '.gitignore', '.gitkeep'])) {
                 return false;
             }
+
             // Only return directories (plugins are directories)
             return is_dir($pluginsDir . '/' . $file);
         });

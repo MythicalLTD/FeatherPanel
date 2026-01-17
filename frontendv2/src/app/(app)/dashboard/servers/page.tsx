@@ -134,11 +134,15 @@ export default function ServersPage() {
             try {
                 setLoading(true);
                 setError(null);
-                
+
                 // When in folder view, fetch all servers to enable proper folder filtering
                 // Otherwise use pagination
                 const shouldViewAll = forceViewAll;
-                const response = await serversApi.getServers(shouldViewAll, page, shouldViewAll ? 1000 : pagination.per_page);
+                const response = await serversApi.getServers(
+                    shouldViewAll,
+                    page,
+                    shouldViewAll ? 1000 : pagination.per_page,
+                );
 
                 // Ensure serversData is an array
                 const serversArray = Array.isArray(response.servers) ? response.servers : [];

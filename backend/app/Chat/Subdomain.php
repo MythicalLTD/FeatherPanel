@@ -79,18 +79,18 @@ class Subdomain
         return $result ?: null;
     }
 
-	public static function existsByServerId(int $serverId): bool
-	{
-		if ($serverId <= 0) {
-			return false;
-		}
+    public static function existsByServerId(int $serverId): bool
+    {
+        if ($serverId <= 0) {
+            return false;
+        }
 
-		$pdo = Database::getPdoConnection();
-		$stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE server_id = :server_id LIMIT 1');
-		$stmt->execute(['server_id' => $serverId]);
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE server_id = :server_id LIMIT 1');
+        $stmt->execute(['server_id' => $serverId]);
 
-		return (int) $stmt->fetchColumn() > 0;
-	}
+        return (int) $stmt->fetchColumn() > 0;
+    }
 
     /**
      * Find subdomain by UUID within a server scope.

@@ -18,11 +18,11 @@
 namespace App\Controllers\System;
 
 use App\App;
-use App\Chat\Server;
 use App\Chat\User;
-use App\Plugins\PluginSettings;
+use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Plugins\PluginSettings;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 

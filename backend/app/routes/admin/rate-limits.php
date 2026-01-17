@@ -17,10 +17,10 @@
 
 use App\App;
 use App\Permissions;
+use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\Admin\RateLimitController;
 use Symfony\Component\Routing\RouteCollection;
-use App\Helpers\ApiResponse;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
@@ -43,6 +43,7 @@ return function (RouteCollection $routes): void {
             if (!$routeName || !is_string($routeName)) {
                 return ApiResponse::error('Missing or invalid route name', 'INVALID_ROUTE_NAME', 400);
             }
+
             return (new RateLimitController())->show($request, $routeName);
         },
         Permissions::ADMIN_SETTINGS_VIEW,
@@ -58,6 +59,7 @@ return function (RouteCollection $routes): void {
             if (!$routeName || !is_string($routeName)) {
                 return ApiResponse::error('Missing or invalid route name', 'INVALID_ROUTE_NAME', 400);
             }
+
             return (new RateLimitController())->update($request, $routeName);
         },
         Permissions::ADMIN_SETTINGS_EDIT,
@@ -73,6 +75,7 @@ return function (RouteCollection $routes): void {
             if (!$routeName || !is_string($routeName)) {
                 return ApiResponse::error('Missing or invalid route name', 'INVALID_ROUTE_NAME', 400);
             }
+
             return (new RateLimitController())->delete($request, $routeName);
         },
         Permissions::ADMIN_SETTINGS_EDIT,

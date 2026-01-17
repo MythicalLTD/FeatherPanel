@@ -21,11 +21,11 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Spell;
 use App\Chat\Server;
-use App\Chat\SubdomainDomain;
 use App\Permissions;
 use App\Chat\Subuser;
 use App\Chat\Activity;
 use App\Chat\Location;
+use App\Chat\Subdomain;
 use App\Chat\Allocation;
 use App\Chat\SpellVariable;
 use App\SubuserPermissions;
@@ -33,13 +33,13 @@ use App\Chat\ServerActivity;
 use App\Chat\ServerDatabase;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
+use App\Chat\SubdomainDomain;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
 use App\Helpers\PermissionHelper;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ServerDeleted;
-use App\Chat\Subdomain;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Wings\Services\JwtService;
 use Symfony\Component\HttpFoundation\Request;
@@ -500,7 +500,7 @@ class ServerUserController
     {
         // Get authenticated user
         $user = $request->get('user');
-		$config = App::getInstance(true)->getConfig();
+        $config = App::getInstance(true)->getConfig();
 
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
@@ -643,29 +643,29 @@ class ServerUserController
             }
         }
         // End flatten
-		$domain = Subdomain::existsByServerId($server['id']);
-		if ($domain) {
-			$subdomains = Subdomain::getByServerId($server['id'], 1);
-			if (!empty($subdomains) && isset($subdomains[0]['domain_id'])) {
-				$subdomain = $subdomains[0];
-				$domain = SubdomainDomain::getDomainById((int) $subdomain['domain_id']);
+        $domain = Subdomain::existsByServerId($server['id']);
+        if ($domain) {
+            $subdomains = Subdomain::getByServerId($server['id'], 1);
+            if (!empty($subdomains) && isset($subdomains[0]['domain_id'])) {
+                $subdomain = $subdomains[0];
+                $domain = SubdomainDomain::getDomainById((int) $subdomain['domain_id']);
 
-				$server['subdomain'] = [
-					'domain' => $domain['domain'] ?? null,
-					'subdomain' => $subdomain['subdomain'] ?? null,
-				];
-			} else {
-				$server['subdomain'] = [
-					'domain' => null,
-					'subdomain' => null,
-				];
-			}
-		} else {
-			$server['subdomain'] = [
-				'domain' => null,
-				'subdomain' => null,
-			];
-		}
+                $server['subdomain'] = [
+                    'domain' => $domain['domain'] ?? null,
+                    'subdomain' => $subdomain['subdomain'] ?? null,
+                ];
+            } else {
+                $server['subdomain'] = [
+                    'domain' => null,
+                    'subdomain' => null,
+                ];
+            }
+        } else {
+            $server['subdomain'] = [
+                'domain' => null,
+                'subdomain' => null,
+            ];
+        }
 
         unset(
             $server['node']['memory'],

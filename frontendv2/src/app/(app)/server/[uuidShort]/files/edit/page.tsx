@@ -15,12 +15,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useEffect, useState, useRef, useCallback, use } from 'react';
+import { useEffect, useState, useRef, useCallback, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Editor, OnMount } from '@monaco-editor/react';
 import { filesApi } from '@/lib/files-api';
 import { toast } from 'sonner';
-import { Save, Loader2, FileCode, Lock } from 'lucide-react';
+import { Save, Loader2, FileCode, Lock, CheckCircle2 } from 'lucide-react';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -28,6 +28,7 @@ import { Button } from '@/components/featherui/Button';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { MinecraftServerPropertiesEditor } from '@/components/server/files/editors/MinecraftServerPropertiesEditor';
 
 export default function FileEditorPage({
     params,
@@ -47,6 +48,8 @@ export default function FileEditorPage({
     const [originalContent, setOriginalContent] = useState('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [useMinecraftEditor, setUseMinecraftEditor] = useState(false);
+    const [useRawEditor, setUseRawEditor] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
 
@@ -55,6 +58,27 @@ export default function FileEditorPage({
 
     // Plugin Widgets
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-file-editor');
+
+    // Detect if this is a Minecraft server.properties file
+    const isMinecraftProperties = useMemo(() => fileName.trim().toLowerCase() === 'server.properties', [fileName]);
+
+    const looksLikeMinecraftProperties = useMemo(() => {
+        if (!content) return false;
+        const signatureKeys = ['motd=', 'gamemode=', 'difficulty=', 'level-name=', 'online-mode='];
+        return signatureKeys.every((signature) => content.includes(signature));
+    }, [content]);
+
+    const shouldOfferMinecraftEditor = useMemo(
+        () => isMinecraftProperties && looksLikeMinecraftProperties,
+        [isMinecraftProperties, looksLikeMinecraftProperties],
+    );
+
+    // Auto-enable visual editor when content is loaded and it's a supported file
+    useEffect(() => {
+        if (!loading && content && shouldOfferMinecraftEditor && !useRawEditor) {
+            setUseMinecraftEditor(true);
+        }
+    }, [loading, content, shouldOfferMinecraftEditor, useRawEditor]);
 
     const fetchContent = useCallback(async () => {
         setLoading(true);
@@ -74,7 +98,7 @@ export default function FileEditorPage({
         } catch (error) {
             console.error(error);
             if (error instanceof Error && error.message === 'Request timeout') {
-                toast.error(t('files.editor.load_timeout') || 'File loading timed out. Please try again.');
+                toast.error(t('files.editor.load_timeout'));
             } else {
                 toast.error(t('files.editor.load_error'));
             }
@@ -93,14 +117,16 @@ export default function FileEditorPage({
         fetchWidgets();
     }, [fetchWidgets]);
 
-    const handleSave = async () => {
+    const handleSave = async (newContent?: string) => {
         if (!canEdit) return;
 
+        const contentToSave = newContent ?? content;
         setSaving(true);
         const toastId = toast.loading(t('files.editor.saving'));
         try {
-            await filesApi.saveFileContent(uuidShort, fullPath, content);
-            setOriginalContent(content);
+            await filesApi.saveFileContent(uuidShort, fullPath, contentToSave);
+            setContent(contentToSave);
+            setOriginalContent(contentToSave);
             toast.success(t('files.editor.save_success'), { id: toastId });
         } catch (error) {
             console.error(error);
@@ -108,6 +134,16 @@ export default function FileEditorPage({
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleSwitchToRawEditor = () => {
+        setUseMinecraftEditor(false);
+        setUseRawEditor(true);
+    };
+
+    const handleSwitchToVisualEditor = () => {
+        setUseRawEditor(false);
+        setUseMinecraftEditor(true);
     };
 
     const handleEditorMount: OnMount = (editor) => {
@@ -184,83 +220,109 @@ export default function FileEditorPage({
             />
             <WidgetRenderer widgets={getWidgets('server-file-editor', 'after-header')} />
 
-            <div className='flex-1 rounded-4xl border border-border/50 bg-card/50 shadow-2xl backdrop-blur-3xl overflow-hidden p-1 flex flex-col group transition-all hover:border-border/80 relative min-h-0'>
-                <div className='flex items-center justify-between p-3 border-b border-border/10 bg-muted/30 shrink-0'>
-                    <div className='flex items-center gap-3'>
-                        <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5'>
-                            <FileCode className='h-5 w-5' />
-                        </div>
-                        <div className='flex flex-col'>
-                            <span className='text-xs font-bold uppercase tracking-widest text-foreground/80'>
-                                {fileName}
-                            </span>
-                            <span className='text-[10px] text-muted-foreground font-medium uppercase tracking-tighter'>
-                                Monaco Editor Engine v0.34.1
-                            </span>
-                        </div>
-                    </div>
-                    <div className='flex items-center gap-3'>
-                        {!canEdit && (
-                            <div className='bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-lg border border-yellow-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-2'>
-                                <Lock className='h-3 w-3' />
-                                {t('files.editor.read_only')}
+            {/* Minecraft server.properties editor */}
+            {!loading && content && useMinecraftEditor && shouldOfferMinecraftEditor ? (
+                <MinecraftServerPropertiesEditor
+                    content={content}
+                    readonly={!canEdit}
+                    saving={saving}
+                    onSave={handleSave}
+                    onSwitchToRaw={handleSwitchToRawEditor}
+                />
+            ) : (
+                <div className='flex-1 rounded-4xl border border-border/50 bg-card/50 shadow-2xl backdrop-blur-3xl overflow-hidden p-1 flex flex-col group transition-all hover:border-border/80 relative min-h-0'>
+                    <div className='flex items-center justify-between p-3 border-b border-border/10 bg-muted/30 shrink-0'>
+                        <div className='flex items-center gap-3'>
+                            <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5'>
+                                <FileCode className='h-5 w-5' />
                             </div>
-                        )}
-                        <Button
-                            variant='ghost'
-                            size='sm'
-                            onClick={() => router.back()}
-                            className='text-muted-foreground hover:text-foreground'
-                        >
-                            {t('files.editor.cancel')}
-                        </Button>
-                        <Button
-                            className='bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 active:scale-95 transition-all'
-                            size='sm'
-                            onClick={handleSave}
-                            disabled={saving || content === originalContent}
-                        >
-                            {saving ? (
-                                <>
-                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                    {t('files.editor.encrypting')}
-                                </>
-                            ) : (
-                                <>
-                                    <Save className='mr-2 h-4 w-4' />
-                                    {t('files.editor.save_changes')}
-                                </>
+                            <div className='flex flex-col'>
+                                <span className='text-xs font-bold uppercase tracking-widest text-foreground/80'>
+                                    {fileName}
+                                </span>
+                                <span className='text-[10px] text-muted-foreground font-medium uppercase tracking-tighter'>
+                                    Monaco Editor Engine v0.34.1
+                                </span>
+                            </div>
+                        </div>
+                        <div className='flex items-center gap-3'>
+                            {shouldOfferMinecraftEditor && useRawEditor && (
+                                <Button
+                                    size='sm'
+                                    className='gap-2'
+                                    variant='outline'
+                                    onClick={handleSwitchToVisualEditor}
+                                >
+                                    <CheckCircle2 className='h-4 w-4' />
+                                    {t('files.editors.minecraftProperties.prompt.useGui')}
+                                </Button>
                             )}
-                        </Button>
+                            {!canEdit && (
+                                <div className='bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-lg border border-yellow-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-2'>
+                                    <Lock className='h-3 w-3' />
+                                    {t('files.editor.read_only')}
+                                </div>
+                            )}
+                            <Button
+                                variant='ghost'
+                                size='sm'
+                                onClick={() => router.back()}
+                                className='text-muted-foreground hover:text-foreground'
+                            >
+                                {t('files.editor.cancel')}
+                            </Button>
+                            <Button
+                                className='bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 active:scale-95 transition-all'
+                                size='sm'
+                                onClick={() => handleSave()}
+                                disabled={saving || content === originalContent}
+                            >
+                                {saving ? (
+                                    <>
+                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                        {t('files.editor.encrypting')}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className='mr-2 h-4 w-4' />
+                                        {t('files.editor.save_changes')}
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                    <div className='flex-1 relative w-full h-full min-h-0'>
+                        <div className='absolute inset-0'>
+                            <Editor
+                                height='100%'
+                                defaultLanguage={getLanguage(fileName)}
+                                value={content}
+                                theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                                onMount={handleEditorMount}
+                                onChange={(value) => {
+                                    if (value !== undefined) {
+                                        setContent(value);
+                                    }
+                                }}
+                                options={{
+                                    minimap: { enabled: true },
+                                    fontSize: 14,
+                                    lineNumbers: 'on',
+                                    readOnly: !canEdit,
+                                    scrollBeyondLastLine: false,
+                                    automaticLayout: true,
+                                    padding: { top: 20 },
+                                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                    fontLigatures: true,
+                                    cursorSmoothCaretAnimation: 'on',
+                                    cursorBlinking: 'expand',
+                                    smoothScrolling: true,
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
-                <div className='flex-1 relative w-full h-full min-h-0'>
-                    <div className='absolute inset-0'>
-                        <Editor
-                            height='100%'
-                            defaultLanguage={getLanguage(fileName)}
-                            value={content}
-                            theme={theme === 'dark' ? 'vs-dark' : 'light'}
-                            onMount={handleEditorMount}
-                            onChange={(value) => setContent(value || '')}
-                            options={{
-                                minimap: { enabled: true },
-                                fontSize: 14,
-                                lineNumbers: 'on',
-                                readOnly: !canEdit,
-                                scrollBeyondLastLine: false,
-                                automaticLayout: true,
-                                padding: { top: 20 },
-                                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                                fontLigatures: true,
-                                cursorSmoothCaretAnimation: 'on',
-                                cursorBlinking: 'expand',
-                                smoothScrolling: true,
-                            }}
-                        />
-                    </div>
-                </div>
-            </div>
+            )}
             <WidgetRenderer widgets={getWidgets('server-file-editor', 'bottom-of-page')} />
         </div>
     );
