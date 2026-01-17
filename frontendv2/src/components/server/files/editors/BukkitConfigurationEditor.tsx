@@ -284,7 +284,6 @@ export function BukkitConfigurationEditor({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [content]);
 
-
     const handleSave = () => {
         try {
             const config = (yaml.load(content) as Record<string, unknown>) || {};
@@ -356,12 +355,12 @@ export function BukkitConfigurationEditor({
                         <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
-                                    {t('files.editors.bukkitConfig.fields.allowEnd.label')}
-                                </label>
-                                <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
-                                    {t('files.editors.bukkitConfig.fields.allowEnd.description')}
-                                </p>
+                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        {t('files.editors.bukkitConfig.fields.allowEnd.label')}
+                                    </label>
+                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                        {t('files.editors.bukkitConfig.fields.allowEnd.description')}
+                                    </p>
                                 </div>
                                 <Checkbox
                                     checked={localForm.allowEnd}
@@ -937,9 +936,9 @@ export function BukkitConfigurationEditor({
                         </div>
                     </div>
                     <div className='space-y-2 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
-                                {t('files.editors.bukkitConfig.fields.aliases.label')}
-                            </label>
+                        <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                            {t('files.editors.bukkitConfig.fields.aliases.label')}
+                        </label>
                         <Input
                             type='text'
                             value={localForm.aliases}
@@ -947,9 +946,9 @@ export function BukkitConfigurationEditor({
                             readOnly={readonly}
                             placeholder={t('files.editors.bukkitConfig.fields.aliases.placeholder')}
                         />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
-                                {t('files.editors.bukkitConfig.fields.aliases.description')}
-                            </p>
+                        <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            {t('files.editors.bukkitConfig.fields.aliases.description')}
+                        </p>
                     </div>
                 </section>
             </div>

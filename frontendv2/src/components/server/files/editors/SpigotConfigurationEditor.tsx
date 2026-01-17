@@ -216,7 +216,6 @@ export function SpigotConfigurationEditor({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [content]); // Only depend on content, not form, to avoid unnecessary updates
 
-
     const handleSave = () => {
         const config = parseSpigotConfiguration(content);
         const updated = applyFormToConfig(config, localForm);
@@ -392,8 +391,10 @@ export function SpigotConfigurationEditor({
                             { key: 'outdatedServer', label: 'Outdated server message' },
                             { key: 'restart', label: 'Restart message' },
                         ].map((field) => (
-                                <div key={field.key} className='space-y-3'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>{field.label}</label>
+                            <div key={field.key} className='space-y-3'>
+                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    {field.label}
+                                </label>
                                 <Textarea
                                     value={localForm.messages[field.key as keyof typeof localForm.messages] as string}
                                     onChange={(e) => updateForm(['messages', field.key], e.target.value)}

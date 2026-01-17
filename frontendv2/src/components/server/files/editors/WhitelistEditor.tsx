@@ -56,7 +56,6 @@ export function WhitelistEditor({
         setEntries(parseContent(content));
     }, [content]);
 
-
     const handleAdd = () => {
         setEntries((prev) => [...prev, '']);
     };

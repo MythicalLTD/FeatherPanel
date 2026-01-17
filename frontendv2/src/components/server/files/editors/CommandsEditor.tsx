@@ -155,7 +155,6 @@ export function CommandsEditor({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [content]);
 
-
     const handleSave = () => {
         try {
             const config = parseCommandsConfiguration(content);
@@ -307,7 +306,10 @@ export function CommandsEditor({
                     )}
 
                     {localForm.aliases.map((alias, index) => (
-                        <div key={`alias-${index}`} className='space-y-6 rounded-xl bg-card/30 border border-border/30 p-6'>
+                        <div
+                            key={`alias-${index}`}
+                            className='space-y-6 rounded-xl bg-card/30 border border-border/30 p-6'
+                        >
                             <div className='flex items-start gap-4'>
                                 <div className='flex-1 space-y-3'>
                                     <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>

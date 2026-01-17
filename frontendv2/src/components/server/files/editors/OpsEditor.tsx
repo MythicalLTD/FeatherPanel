@@ -63,7 +63,6 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
         setEntries(parseContent(content));
     }, [content]);
 
-
     const handleAdd = () => {
         setEntries((prev) => [
             ...prev,
@@ -140,7 +139,10 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
                         </div>
                     )}
                     {entries.map((entry, index) => (
-                        <div key={`op-${index}`} className='space-y-6 rounded-xl bg-card/30 border border-border/30 p-6'>
+                        <div
+                            key={`op-${index}`}
+                            className='space-y-6 rounded-xl bg-card/30 border border-border/30 p-6'
+                        >
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-3 flex-1'>
                                     <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
