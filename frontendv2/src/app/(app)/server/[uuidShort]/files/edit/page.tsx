@@ -34,6 +34,8 @@ import { OpsEditor } from '@/components/server/files/editors/OpsEditor';
 import { BannedPlayersEditor } from '@/components/server/files/editors/BannedPlayersEditor';
 import { BannedIpsEditor } from '@/components/server/files/editors/BannedIpsEditor';
 import { WhitelistEditor } from '@/components/server/files/editors/WhitelistEditor';
+import { BukkitConfigurationEditor } from '@/components/server/files/editors/BukkitConfigurationEditor';
+import { CommandsEditor } from '@/components/server/files/editors/CommandsEditor';
 
 export default function FileEditorPage({
     params,
@@ -59,6 +61,8 @@ export default function FileEditorPage({
     const [useBannedPlayersEditor, setUseBannedPlayersEditor] = useState(false);
     const [useBannedIpsEditor, setUseBannedIpsEditor] = useState(false);
     const [useWhitelistEditor, setUseWhitelistEditor] = useState(false);
+    const [useBukkitEditor, setUseBukkitEditor] = useState(false);
+    const [useCommandsEditor, setUseCommandsEditor] = useState(false);
     const [useRawEditor, setUseRawEditor] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
@@ -97,11 +101,13 @@ export default function FileEditorPage({
         [isSpigotConfiguration, looksLikeSpigotConfiguration],
     );
 
-    // Detect Ops, Banned Players, Banned IPs, and Whitelist files
+    // Detect Ops, Banned Players, Banned IPs, Whitelist, and Bukkit files
     const isOpsFile = useMemo(() => fileName.trim().toLowerCase() === 'ops.json', [fileName]);
     const isBannedPlayersFile = useMemo(() => fileName.trim().toLowerCase() === 'banned-players.json', [fileName]);
     const isBannedIpsFile = useMemo(() => fileName.trim().toLowerCase() === 'banned-ips.json', [fileName]);
     const isWhitelistFile = useMemo(() => fileName.trim().toLowerCase() === 'whitelist.json', [fileName]);
+    const isBukkitFile = useMemo(() => fileName.trim().toLowerCase() === 'bukkit.yml', [fileName]);
+    const isCommandsFile = useMemo(() => fileName.trim().toLowerCase() === 'commands.yml', [fileName]);
 
     const looksLikeOpsFile = useMemo(() => {
         if (!isOpsFile || !content) return false;
@@ -158,6 +164,28 @@ export default function FileEditorPage({
         [isWhitelistFile, looksLikeWhitelistFile],
     );
 
+    const looksLikeBukkitFile = useMemo(() => {
+        if (!isBukkitFile || !content) return false;
+        const signatureKeys = ['settings:', 'spawn-limits:', 'chunk-gc:', 'ticks-per:'];
+        return signatureKeys.some((signature) => content.includes(signature));
+    }, [isBukkitFile, content]);
+
+    const shouldOfferBukkitEditor = useMemo(
+        () => isBukkitFile && looksLikeBukkitFile,
+        [isBukkitFile, looksLikeBukkitFile],
+    );
+
+    const looksLikeCommandsFile = useMemo(() => {
+        if (!isCommandsFile || !content) return false;
+        const signatureKeys = ['command-block-overrides:', 'ignore-vanilla-permissions:', 'aliases:'];
+        return signatureKeys.some((signature) => content.includes(signature));
+    }, [isCommandsFile, content]);
+
+    const shouldOfferCommandsEditor = useMemo(
+        () => isCommandsFile && looksLikeCommandsFile,
+        [isCommandsFile, looksLikeCommandsFile],
+    );
+
     // Auto-enable visual editor when content is loaded and it's a supported file
     useEffect(() => {
         if (!loading && content && !useRawEditor) {
@@ -173,6 +201,10 @@ export default function FileEditorPage({
                 setUseBannedIpsEditor(true);
             } else if (shouldOfferWhitelistEditor) {
                 setUseWhitelistEditor(true);
+            } else if (shouldOfferBukkitEditor) {
+                setUseBukkitEditor(true);
+            } else if (shouldOfferCommandsEditor) {
+                setUseCommandsEditor(true);
             }
         }
     }, [
@@ -184,6 +216,8 @@ export default function FileEditorPage({
         shouldOfferBannedPlayersEditor,
         shouldOfferBannedIpsEditor,
         shouldOfferWhitelistEditor,
+        shouldOfferBukkitEditor,
+        shouldOfferCommandsEditor,
         useRawEditor,
     ]);
 
@@ -250,6 +284,8 @@ export default function FileEditorPage({
         setUseBannedPlayersEditor(false);
         setUseBannedIpsEditor(false);
         setUseWhitelistEditor(false);
+        setUseBukkitEditor(false);
+        setUseCommandsEditor(false);
         setUseRawEditor(true);
     };
 
@@ -267,6 +303,10 @@ export default function FileEditorPage({
             setUseBannedIpsEditor(true);
         } else if (shouldOfferWhitelistEditor) {
             setUseWhitelistEditor(true);
+        } else if (shouldOfferBukkitEditor) {
+            setUseBukkitEditor(true);
+        } else if (shouldOfferCommandsEditor) {
+            setUseCommandsEditor(true);
         }
     };
 
@@ -387,6 +427,22 @@ export default function FileEditorPage({
                 />
             ) : !loading && content && useWhitelistEditor && shouldOfferWhitelistEditor ? (
                 <WhitelistEditor
+                    content={content}
+                    readonly={!canEdit}
+                    saving={saving}
+                    onSave={handleSave}
+                    onSwitchToRaw={handleSwitchToRawEditor}
+                />
+            ) : !loading && content && useBukkitEditor && shouldOfferBukkitEditor ? (
+                <BukkitConfigurationEditor
+                    content={content}
+                    readonly={!canEdit}
+                    saving={saving}
+                    onSave={handleSave}
+                    onSwitchToRaw={handleSwitchToRawEditor}
+                />
+            ) : !loading && content && useCommandsEditor && shouldOfferCommandsEditor ? (
+                <CommandsEditor
                     content={content}
                     readonly={!canEdit}
                     saving={saving}

@@ -2064,6 +2064,195 @@
 				"fields": {
 					"playerName": "Player Name"
 				}
+			},
+			"bukkitConfig": {
+				"title": "Bukkit Configuration",
+				"description": "Configure your Bukkit server settings visually",
+				"actions": {
+					"save": "Save",
+					"saving": "Saving...",
+					"switchToRaw": "Switch to Raw Editor"
+				},
+				"sections": {
+					"settings": "Settings",
+					"spawnLimits": "Spawn Limits",
+					"ticksPer": "Ticks Per",
+					"chunkGc": "Chunk Garbage Collection",
+					"aliases": "Aliases"
+				},
+				"sectionsDescriptions": {
+					"settings": "General server settings and configuration",
+					"spawnLimits": "Maximum number of entities that can spawn",
+					"ticksPer": "Ticks between various spawn events",
+					"chunkGc": "Chunk garbage collection settings",
+					"aliases": "Command alias configuration"
+				},
+				"fields": {
+					"allowEnd": {
+						"label": "Allow End",
+						"description": "Allow players to travel to the End dimension"
+					},
+					"warnOnOverload": {
+						"label": "Warn on Overload",
+						"description": "Show warnings when the server is overloaded"
+					},
+					"permissionsFile": {
+						"label": "Permissions File",
+						"description": "Path to the permissions configuration file",
+						"placeholder": "permissions.yml"
+					},
+					"updateFolder": {
+						"label": "Update Folder",
+						"description": "Folder where plugin updates are stored",
+						"placeholder": "update"
+					},
+					"pluginProfiling": {
+						"label": "Plugin Profiling",
+						"description": "Enable profiling for plugin performance analysis"
+					},
+					"connectionThrottle": {
+						"label": "Connection Throttle",
+						"description": "Milliseconds to throttle connections (-1 to disable)"
+					},
+					"queryPlugins": {
+						"label": "Query Plugins",
+						"description": "Include plugin information in server queries"
+					},
+					"deprecatedVerbose": {
+						"label": "Deprecated Verbose",
+						"description": "Control verbose output for deprecated features",
+						"placeholder": "Select option"
+					},
+					"shutdownMessage": {
+						"label": "Shutdown Message",
+						"description": "Message shown to players when the server shuts down"
+					},
+					"minimumApi": {
+						"label": "Minimum API",
+						"description": "Minimum API version required for plugins",
+						"placeholder": "none"
+					},
+					"useMapColorCache": {
+						"label": "Use Map Color Cache",
+						"description": "Cache map colors for better performance"
+					},
+					"spawnLimits": {
+						"monsters": {
+							"label": "Monsters",
+							"description": "Maximum number of monsters"
+						},
+						"animals": {
+							"label": "Animals",
+							"description": "Maximum number of animals"
+						},
+						"waterAnimals": {
+							"label": "Water Animals",
+							"description": "Maximum number of water animals"
+						},
+						"waterAmbient": {
+							"label": "Water Ambient",
+							"description": "Maximum number of ambient water creatures"
+						},
+						"waterUndergroundCreature": {
+							"label": "Water Underground Creature",
+							"description": "Maximum number of underground water creatures"
+						},
+						"axolotls": {
+							"label": "Axolotls",
+							"description": "Maximum number of axolotls"
+						},
+						"ambient": {
+							"label": "Ambient",
+							"description": "Maximum number of ambient creatures"
+						}
+					},
+					"ticksPer": {
+						"animalSpawns": {
+							"label": "Animal Spawns",
+							"description": "Ticks between animal spawn attempts"
+						},
+						"monsterSpawns": {
+							"label": "Monster Spawns",
+							"description": "Ticks between monster spawn attempts"
+						},
+						"waterSpawns": {
+							"label": "Water Spawns",
+							"description": "Ticks between water creature spawn attempts"
+						},
+						"waterAmbientSpawns": {
+							"label": "Water Ambient Spawns",
+							"description": "Ticks between ambient water creature spawn attempts"
+						},
+						"waterUndergroundCreatureSpawns": {
+							"label": "Water Underground Creature Spawns",
+							"description": "Ticks between underground water creature spawn attempts"
+						},
+						"axolotlSpawns": {
+							"label": "Axolotl Spawns",
+							"description": "Ticks between axolotl spawn attempts"
+						},
+						"ambientSpawns": {
+							"label": "Ambient Spawns",
+							"description": "Ticks between ambient creature spawn attempts"
+						},
+						"autosave": {
+							"label": "Autosave",
+							"description": "Ticks between automatic world saves"
+						}
+					},
+					"chunkGc": {
+						"periodInTicks": {
+							"label": "Period in Ticks",
+							"description": "Ticks between chunk garbage collection runs"
+						}
+					},
+					"aliases": {
+						"label": "Aliases",
+						"description": "Command alias configuration (usually 'now-in-commands.yml')",
+						"placeholder": "now-in-commands.yml"
+					}
+				},
+				"options": {
+					"deprecatedVerbose": {
+						"default": "Default",
+						"true": "True",
+						"false": "False"
+					}
+				}
+			},
+			"commandsConfig": {
+				"title": "Commands Configuration",
+				"description": "Configure command aliases and overrides",
+				"actions": {
+					"save": "Save",
+					"saving": "Saving...",
+					"switchToRaw": "Switch to Raw Editor"
+				},
+				"sections": {
+					"general": "General Settings",
+					"aliases": "Command Aliases"
+				},
+				"sectionsDescriptions": {
+					"general": "General command configuration settings",
+					"aliases": "Create custom command aliases"
+				},
+				"fields": {
+					"ignoreVanillaPermissions": {
+						"label": "Ignore Vanilla Permissions",
+						"description": "Ignore vanilla Minecraft permission checks"
+					},
+					"commandBlockOverrides": {
+						"label": "Command Block Overrides",
+						"description": "Commands that can be executed by command blocks (one per line)"
+					},
+					"aliases": {
+						"addAlias": "Add Alias",
+						"emptyState": "No aliases configured",
+						"aliasName": "Alias Name",
+						"aliasCommands": "Commands",
+						"aliasCommandsHint": "One command per line. These commands will execute when the alias is used."
+					}
+				}
 			}
 		},
 		"row": {

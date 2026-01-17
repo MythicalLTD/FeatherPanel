@@ -165,7 +165,10 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
                         </div>
                     )}
                     {entries.map((entry, index) => (
-                        <div key={`op-${index}`} className='space-y-4 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div
+                            key={`op-${index}`}
+                            className='space-y-4 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'
+                        >
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-2 flex-1'>
                                     <Label className='text-sm font-semibold'>

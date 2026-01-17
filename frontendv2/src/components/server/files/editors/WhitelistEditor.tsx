@@ -140,7 +140,10 @@ export function WhitelistEditor({
                         </div>
                     )}
                     {entries.map((entry, index) => (
-                        <div key={`whitelist-${index}`} className='space-y-4 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div
+                            key={`whitelist-${index}`}
+                            className='space-y-4 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'
+                        >
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-2 flex-1'>
                                     <Input
@@ -148,7 +151,9 @@ export function WhitelistEditor({
                                         value={entry}
                                         onChange={(e) => updateEntry(index, e.target.value)}
                                         readOnly={readonly}
-                                        placeholder={t('files.editors.whitelistConfig.fields.playerName') || 'PlayerName'}
+                                        placeholder={
+                                            t('files.editors.whitelistConfig.fields.playerName') || 'PlayerName'
+                                        }
                                     />
                                 </div>
                                 <Button
