@@ -87,7 +87,7 @@ export function SystemHealthWidget() {
             name: t('admin.system_health.nodes'),
             status: stats ? (stats.unhealthy_nodes === 0 ? 'Healthy' : 'Degraded') : 'Unknown',
             icon: Zap,
-            color: stats?.unhealthy_nodes === 0 ? 'text-green-500' : 'text-amber-500',
+            color: stats?.unhealthy_nodes === 0 ? 'text-primary' : 'text-amber-500',
             detail: stats
                 ? t('admin.system_health.status.online', {
                       healthy: String(stats.healthy_nodes),
@@ -100,7 +100,7 @@ export function SystemHealthWidget() {
             name: t('admin.system_health.memory'),
             status: 'Usage',
             icon: HardDrive,
-            color: 'text-blue-500',
+            color: 'text-primary',
             detail: stats
                 ? `${formatFileSize(stats.used_memory)} / ${formatFileSize(stats.total_memory)}`
                 : t('admin.system_health.status.unavailable'),
@@ -110,7 +110,7 @@ export function SystemHealthWidget() {
             name: t('admin.system_health.cpu_load'),
             status: 'Average',
             icon: Activity,
-            color: 'text-purple-500',
+            color: 'text-primary',
             detail: stats
                 ? `${stats.avg_cpu_percent}% ${t('admin.system_health.avg')}`
                 : t('admin.system_health.status.unavailable'),
@@ -120,7 +120,7 @@ export function SystemHealthWidget() {
             name: t('admin.system_health.startup'),
             status: 'Latency',
             icon: Clock,
-            color: 'text-pink-500',
+            color: 'text-primary',
             detail: `${latency}ms`,
             loading: loading,
         },
@@ -128,7 +128,7 @@ export function SystemHealthWidget() {
             name: t('admin.system_health.database'),
             status: selftest?.checks.mysql.status ? 'Healthy' : 'Error',
             icon: Database,
-            color: selftest?.checks.mysql.status ? 'text-emerald-500' : 'text-red-500',
+            color: selftest?.checks.mysql.status ? 'text-primary' : 'text-red-500',
             detail:
                 selftest?.checks.mysql.message === 'Successful'
                     ? t('admin.system_health.status.successful')
@@ -141,7 +141,7 @@ export function SystemHealthWidget() {
             name: t('admin.system_health.cache'),
             status: selftest?.checks.redis.status ? 'Healthy' : 'Error',
             icon: Server,
-            color: selftest?.checks.redis.status ? 'text-orange-500' : 'text-red-500',
+            color: selftest?.checks.redis.status ? 'text-primary' : 'text-red-500',
             detail:
                 selftest?.checks.redis.message === 'Successful'
                     ? t('admin.system_health.status.successful')
