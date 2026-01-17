@@ -1882,6 +1882,114 @@
 						"singleBiome": "Single Biome"
 					}
 				}
+			},
+			"spigotConfig": {
+				"title": "Spigot Configuration",
+				"description": "Configure your Spigot server settings visually",
+				"prompt": {
+					"title": "Visual Editor Available",
+					"description": "This file can be edited using a visual editor with a user-friendly interface.",
+					"useGui": "Use Visual Editor",
+					"stayRaw": "Stay in Raw Editor"
+				},
+				"actions": {
+					"save": "Save",
+					"saving": "Saving...",
+					"switchToRaw": "Switch to Raw Editor"
+				},
+				"sections": {
+					"settings": "Settings",
+					"messages": "Messages",
+					"advancements": "Advancements",
+					"worldSettings": "World Settings",
+					"playersStats": "Players & Stats",
+					"commands": "Commands",
+					"attributeLimits": "Attribute Limits",
+					"mergeRadius": "Merge Radius",
+					"growthRates": "Growth Rates",
+					"entityActivationRange": "Entity Activation Range",
+					"entityTrackingRange": "Entity Tracking Range",
+					"seeds": "Seeds",
+					"hunger": "Hunger"
+				},
+				"sectionsDescriptions": {
+					"settings": "General server settings and configuration",
+					"messages": "Customize server messages",
+					"advancements": "Manage advancement settings",
+					"worldSettings": "Configure world-specific settings",
+					"playersStats": "Player and statistics configuration",
+					"commands": "Command-related settings"
+				},
+				"fields": {
+					"settings": {
+						"bungeecord": {
+							"label": "Enable BungeeCord support",
+							"description": "Forward IPs and UUIDs from a BungeeCord proxy."
+						},
+						"saveUserCacheOnStopOnly": {
+							"label": "Save user cache on stop only",
+							"description": "Write UUID cache only when the server stops to improve performance."
+						},
+						"sampleCount": {
+							"label": "Sample count",
+							"description": "Number of players sampled for TPS calculations."
+						},
+						"playerShuffle": {
+							"label": "Player shuffle interval",
+							"description": "How often the player list is shuffled to balance ticking."
+						},
+						"userCacheSize": {
+							"label": "User cache size",
+							"description": "Maximum number of player UUIDs cached locally."
+						},
+						"movedWronglyThreshold": {
+							"label": "Moved wrongly threshold",
+							"description": "Distance before players are flagged for incorrect movement."
+						},
+						"movedTooQuicklyMultiplier": {
+							"label": "Moved too quickly multiplier",
+							"description": "Multiplier applied when checking fast movement."
+						},
+						"timeoutTime": {
+							"label": "Timeout time",
+							"description": "Minutes before a connection is considered timed out."
+						},
+						"restartOnCrash": {
+							"label": "Restart on crash",
+							"description": "Automatically run the restart script if the server crashes."
+						},
+						"nettyThreads": {
+							"label": "Netty threads",
+							"description": "Number of Netty IO threads used by the server."
+						},
+						"logVillagerDeaths": {
+							"label": "Log villager deaths",
+							"description": "Write villager death events to the console for debugging."
+						},
+						"logNamedDeaths": {
+							"label": "Log named entity deaths",
+							"description": "Log deaths of named entities to help track important mobs."
+						},
+						"debug": {
+							"label": "Enable debug logging",
+							"description": "Enable extra debug output for troubleshooting."
+						},
+						"attribute": {
+							"maxAbsorption": "Max absorption",
+							"maxHealth": "Max health",
+							"movementSpeed": "Max movement speed",
+							"attackDamage": "Max attack damage"
+						}
+					},
+					"messages": {
+						"whitelist": "Whitelist message",
+						"unknownCommand": "Unknown command message",
+						"serverFull": "Server full message",
+						"outdatedClient": "Outdated client message",
+						"outdatedServer": "Outdated server message",
+						"restart": "Restart message"
+					}
+				}
 			}
 		},
 		"row": {

@@ -29,6 +29,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { MinecraftServerPropertiesEditor } from '@/components/server/files/editors/MinecraftServerPropertiesEditor';
+import { SpigotConfigurationEditor } from '@/components/server/files/editors/SpigotConfigurationEditor';
 
 export default function FileEditorPage({
     params,
@@ -49,6 +50,7 @@ export default function FileEditorPage({
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [useMinecraftEditor, setUseMinecraftEditor] = useState(false);
+    const [useSpigotEditor, setUseSpigotEditor] = useState(false);
     const [useRawEditor, setUseRawEditor] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
@@ -73,12 +75,30 @@ export default function FileEditorPage({
         [isMinecraftProperties, looksLikeMinecraftProperties],
     );
 
+    // Detect if this is a Spigot spigot.yml file
+    const isSpigotConfiguration = useMemo(() => fileName.trim().toLowerCase() === 'spigot.yml', [fileName]);
+
+    const looksLikeSpigotConfiguration = useMemo(() => {
+        if (!content) return false;
+        const signatureKeys = ['settings:', 'messages:', 'world-settings:', 'commands:'];
+        return signatureKeys.some((signature) => content.includes(signature));
+    }, [content]);
+
+    const shouldOfferSpigotEditor = useMemo(
+        () => isSpigotConfiguration && looksLikeSpigotConfiguration,
+        [isSpigotConfiguration, looksLikeSpigotConfiguration],
+    );
+
     // Auto-enable visual editor when content is loaded and it's a supported file
     useEffect(() => {
-        if (!loading && content && shouldOfferMinecraftEditor && !useRawEditor) {
-            setUseMinecraftEditor(true);
+        if (!loading && content && !useRawEditor) {
+            if (shouldOfferMinecraftEditor) {
+                setUseMinecraftEditor(true);
+            } else if (shouldOfferSpigotEditor) {
+                setUseSpigotEditor(true);
+            }
         }
-    }, [loading, content, shouldOfferMinecraftEditor, useRawEditor]);
+    }, [loading, content, shouldOfferMinecraftEditor, shouldOfferSpigotEditor, useRawEditor]);
 
     const fetchContent = useCallback(async () => {
         setLoading(true);
@@ -138,12 +158,17 @@ export default function FileEditorPage({
 
     const handleSwitchToRawEditor = () => {
         setUseMinecraftEditor(false);
+        setUseSpigotEditor(false);
         setUseRawEditor(true);
     };
 
     const handleSwitchToVisualEditor = () => {
         setUseRawEditor(false);
-        setUseMinecraftEditor(true);
+        if (shouldOfferMinecraftEditor) {
+            setUseMinecraftEditor(true);
+        } else if (shouldOfferSpigotEditor) {
+            setUseSpigotEditor(true);
+        }
     };
 
     const handleEditorMount: OnMount = (editor) => {
@@ -223,6 +248,14 @@ export default function FileEditorPage({
             {/* Minecraft server.properties editor */}
             {!loading && content && useMinecraftEditor && shouldOfferMinecraftEditor ? (
                 <MinecraftServerPropertiesEditor
+                    content={content}
+                    readonly={!canEdit}
+                    saving={saving}
+                    onSave={handleSave}
+                    onSwitchToRaw={handleSwitchToRawEditor}
+                />
+            ) : !loading && content && useSpigotEditor && shouldOfferSpigotEditor ? (
+                <SpigotConfigurationEditor
                     content={content}
                     readonly={!canEdit}
                     saving={saving}
