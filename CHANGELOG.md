@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.1.3 STABLE
+## v1.2.0 STABLE
 
 ### Security
 
@@ -15,6 +15,8 @@
 
 - Implement route name validation in admin rate limits API, enhancing error handling for invalid requests. Enable debug mode across various files for improved troubleshooting during development. by @nayskutzu
 - Improve plugin directory handling in PluginManager by adding checks for empty directories and ensuring only directories are returned, enhancing plugin management reliability.
+- Ollama integration is now fully functional—issues preventing it from working have been resolved!  by @nayskutzu
+- Resolved several issues affecting the reliable saving and persistence of rate limits. by @nayskutzu
 
 ### Updated
 
