@@ -12,9 +12,18 @@ by the Free Software Foundation, either version 3 of the License, or
 
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
+'use client';
 
-import { redirect } from 'next/navigation';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
-    redirect('/dashboard');
+    const router = useRouter();
+
+    useEffect(() => {
+        router.replace('/dashboard');
+    }, [router]);
+
+    // Return null or a loading state while redirecting
+    return null;
 }

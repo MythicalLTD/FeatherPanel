@@ -59,6 +59,7 @@ export default function TicketCategoriesPage() {
     });
     const [iconFile, setIconFile] = useState<File | null>(null);
     const [iconPreview, setIconPreview] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchCategories = useCallback(async () => {
         setLoading(true);
@@ -79,6 +80,7 @@ export default function TicketCategoriesPage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
         try {
             let iconUrl = formData.icon;
 
@@ -104,12 +106,15 @@ export default function TicketCategoriesPage() {
         } catch (error) {
             console.error('Error creating category:', error);
             toast.error(t('admin.tickets.categories.create_error'));
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedCategory) return;
+        setIsSubmitting(true);
         try {
             let iconUrl = formData.icon;
 
@@ -135,6 +140,8 @@ export default function TicketCategoriesPage() {
         } catch (error) {
             console.error('Error updating category:', error);
             toast.error(t('admin.tickets.categories.update_error'));
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -195,33 +202,32 @@ export default function TicketCategoriesPage() {
     );
 
     return (
-        <div className='p-6 space-y-8 max-w-[1600px] mx-auto '>
+        <div className='space-y-6'>
             <PageHeader
                 title={t('admin.tickets.categories.title')}
                 description={t('admin.tickets.categories.description')}
-                icon={Plus}
+                icon={Tags}
                 actions={
                     <Button
                         onClick={() => {
                             resetForm();
                             setCreateOpen(true);
                         }}
-                        className='rounded-2xl h-14 px-8 shadow-2xl shadow-primary/20 gap-3 text-lg font-black uppercase tracking-tighter transition-all hover:scale-[1.02] active:scale-[0.98]'
                     >
-                        <Plus className='h-6 w-6' />
+                        <Plus className='h-4 w-4 mr-2' />
                         {t('admin.tickets.categories.create')}
                     </Button>
                 }
             />
 
-            <div className='flex flex-col md:flex-row gap-4 items-center justify-between bg-card/40 backdrop-blur-md p-4 rounded-4xl border border-border/5 shadow-xl shadow-primary/5'>
-                <div className='relative w-full md:w-96 group'>
-                    <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
+                <div className='relative flex-1 group w-full'>
+                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                     <Input
                         placeholder={t('admin.tickets.categories.search_placeholder')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className='pl-11 h-12 bg-background/50 border-border/10 rounded-2xl focus:ring-primary/20 transition-all'
+                        className='pl-10 h-11 w-full'
                     />
                 </div>
             </div>
@@ -230,9 +236,19 @@ export default function TicketCategoriesPage() {
                 <TableSkeleton count={5} />
             ) : filteredCategories.length === 0 ? (
                 <EmptyState
-                    title={t('admin.tickets.no_results')}
-                    description={t('admin.tickets.search_placeholder')}
-                    icon={Search}
+                    icon={Tags}
+                    title={t('admin.tickets.categories.no_results') || t('admin.tickets.no_results')}
+                    description={t('admin.tickets.categories.search_placeholder') || t('admin.tickets.search_placeholder')}
+                    action={
+                        <Button
+                            onClick={() => {
+                                resetForm();
+                                setCreateOpen(true);
+                            }}
+                        >
+                            {t('admin.tickets.categories.create')}
+                        </Button>
+                    }
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
@@ -285,31 +301,19 @@ export default function TicketCategoriesPage() {
                 </div>
             )}
 
-            {/* Create/Edit Sheet */}
-            <Sheet
-                open={createOpen || editOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setCreateOpen(false);
-                        setEditOpen(false);
-                    }
-                }}
-            >
+            {/* Create Sheet */}
+            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
-                        <SheetTitle>
-                            {createOpen ? t('admin.tickets.categories.create') : t('admin.tickets.categories.edit')}
-                        </SheetTitle>
+                        <SheetTitle>{t('admin.tickets.categories.create')}</SheetTitle>
                         <SheetDescription>{t('admin.tickets.categories.description')}</SheetDescription>
                     </SheetHeader>
-
-                    <form onSubmit={createOpen ? handleCreate : handleUpdate} className='space-y-6'>
+                    <form onSubmit={handleCreate} className='space-y-4'>
                         <div className='space-y-2'>
                             <Label>{t('admin.tickets.categories.form.name')}</Label>
                             <Input
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className='bg-background/50'
                                 required
                             />
                         </div>
@@ -319,7 +323,6 @@ export default function TicketCategoriesPage() {
                                 type='file'
                                 accept='image/*'
                                 onChange={handleFileSelect}
-                                className='bg-background/50 file:text-foreground'
                             />
                             {iconPreview && (
                                 <div className='mt-2'>
@@ -342,12 +345,12 @@ export default function TicketCategoriesPage() {
                                     type='color'
                                     value={formData.color}
                                     onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                                    className='w-12 h-10 p-1 bg-background/50'
+                                    className='w-12 p-1 h-11'
                                 />
                                 <Input
                                     value={formData.color}
                                     onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                                    className='bg-background/50'
+                                    className='flex-1'
                                 />
                             </div>
                         </div>
@@ -357,7 +360,6 @@ export default function TicketCategoriesPage() {
                                 type='email'
                                 value={formData.support_email}
                                 onChange={(e) => setFormData({ ...formData, support_email: e.target.value })}
-                                className='bg-background/50'
                                 required
                             />
                         </div>
@@ -366,25 +368,91 @@ export default function TicketCategoriesPage() {
                             <Input
                                 value={formData.open_hours}
                                 onChange={(e) => setFormData({ ...formData, open_hours: e.target.value })}
-                                className='bg-background/50'
                                 placeholder='Mon-Fri 9AM-5PM'
                             />
                         </div>
-
-                        <SheetFooter className='gap-2 sm:gap-0'>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                onClick={() => {
-                                    setCreateOpen(false);
-                                    setEditOpen(false);
-                                }}
-                                className='flex-1 rounded-xl h-12'
-                            >
-                                {t('common.cancel')}
+                        <SheetFooter>
+                            <Button type='submit' loading={isSubmitting}>
+                                {t('common.create')}
                             </Button>
-                            <Button type='submit' className='flex-1 rounded-xl h-12 shadow-xl shadow-primary/20'>
-                                {createOpen ? t('common.create') : t('common.save')}
+                        </SheetFooter>
+                    </form>
+                </div>
+            </Sheet>
+
+            {/* Edit Sheet */}
+            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+                <div className='space-y-6'>
+                    <SheetHeader>
+                        <SheetTitle>{t('admin.tickets.categories.edit')}</SheetTitle>
+                        <SheetDescription>{t('admin.tickets.categories.description')}</SheetDescription>
+                    </SheetHeader>
+                    <form onSubmit={handleUpdate} className='space-y-4'>
+                        <div className='space-y-2'>
+                            <Label>{t('admin.tickets.categories.form.name')}</Label>
+                            <Input
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className='space-y-2'>
+                            <Label>{t('admin.tickets.categories.form.icon')}</Label>
+                            <Input
+                                type='file'
+                                accept='image/*'
+                                onChange={handleFileSelect}
+                            />
+                            {iconPreview && (
+                                <div className='mt-2'>
+                                    <Label className='text-xs text-muted-foreground'>{t('common.preview')}</Label>
+                                    <div className='relative h-16 w-16 rounded-lg overflow-hidden border border-border/10'>
+                                        <Image
+                                            src={iconPreview}
+                                            alt={t('common.preview')}
+                                            fill
+                                            className='object-cover'
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className='space-y-2'>
+                            <Label>{t('admin.tickets.categories.form.color')}</Label>
+                            <div className='flex gap-2'>
+                                <Input
+                                    type='color'
+                                    value={formData.color}
+                                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                    className='w-12 p-1 h-11'
+                                />
+                                <Input
+                                    value={formData.color}
+                                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                    className='flex-1'
+                                />
+                            </div>
+                        </div>
+                        <div className='space-y-2'>
+                            <Label>{t('admin.tickets.categories.form.support_email')}</Label>
+                            <Input
+                                type='email'
+                                value={formData.support_email}
+                                onChange={(e) => setFormData({ ...formData, support_email: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className='space-y-2'>
+                            <Label>{t('admin.tickets.categories.form.open_hours')}</Label>
+                            <Input
+                                value={formData.open_hours}
+                                onChange={(e) => setFormData({ ...formData, open_hours: e.target.value })}
+                                placeholder='Mon-Fri 9AM-5PM'
+                            />
+                        </div>
+                        <SheetFooter>
+                            <Button type='submit' loading={isSubmitting}>
+                                {t('common.save')}
                             </Button>
                         </SheetFooter>
                     </form>
@@ -392,7 +460,7 @@ export default function TicketCategoriesPage() {
             </Sheet>
 
             {/* Help Cards */}
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6 pt-8'>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.tickets.categories.help.managing.title')} icon={Tags}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
                         {t('admin.tickets.categories.help.managing.description')}

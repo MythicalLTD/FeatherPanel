@@ -77,13 +77,13 @@ export default function TicketStatusesPage() {
         setIsSubmitting(true);
         try {
             await axios.put('/api/admin/tickets/statuses', form);
-            toast.success(t('common.success'));
+            toast.success(t('admin.tickets.statuses.create_success') || t('common.success'));
             setCreateOpen(false);
-            setForm({ name: '', color: '#5B8DEF' });
+            resetForm();
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error creating status:', error);
-            toast.error(t('common.error'));
+            toast.error(t('admin.tickets.statuses.create_error') || t('common.error'));
         } finally {
             setIsSubmitting(false);
         }
@@ -96,28 +96,28 @@ export default function TicketStatusesPage() {
         setIsSubmitting(true);
         try {
             await axios.patch(`/api/admin/tickets/statuses/${editingStatus.id}`, form);
-            toast.success(t('common.success'));
+            toast.success(t('admin.tickets.statuses.update_success') || t('common.success'));
             setEditOpen(false);
-            setEditingStatus(null);
+            resetForm();
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error updating status:', error);
-            toast.error(t('common.error'));
+            toast.error(t('admin.tickets.statuses.update_error') || t('common.error'));
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm(t('admin.tickets.messages.delete_confirm'))) return;
+        if (!confirm(t('admin.tickets.statuses.delete_confirm') || t('admin.tickets.messages.delete_confirm'))) return;
 
         try {
             await axios.delete(`/api/admin/tickets/statuses/${id}`);
-            toast.success(t('common.success'));
+            toast.success(t('admin.tickets.statuses.delete_success') || t('common.success'));
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting status:', error);
-            toast.error(t('common.error'));
+            toast.error(t('admin.tickets.statuses.delete_error') || t('common.error'));
         }
     };
 
@@ -130,6 +130,11 @@ export default function TicketStatusesPage() {
         setEditOpen(true);
     };
 
+    const resetForm = () => {
+        setForm({ name: '', color: '#5B8DEF' });
+        setEditingStatus(null);
+    };
+
     return (
         <div className='space-y-6'>
             <PageHeader
@@ -139,7 +144,7 @@ export default function TicketStatusesPage() {
                 actions={
                     <Button
                         onClick={() => {
-                            setForm({ name: '', color: '#5B8DEF' });
+                            resetForm();
                             setCreateOpen(true);
                         }}
                     >
@@ -156,7 +161,7 @@ export default function TicketStatusesPage() {
                         placeholder={t('admin.tickets.statuses.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11'
+                        className='pl-10 h-11 w-full'
                     />
                 </div>
             </div>
@@ -166,8 +171,18 @@ export default function TicketStatusesPage() {
             ) : filteredStatuses.length === 0 ? (
                 <EmptyState
                     icon={Activity}
-                    title={t('admin.tickets.no_results')}
+                    title={t('admin.tickets.statuses.no_results') || t('admin.tickets.no_results')}
                     description={t('admin.tickets.statuses.search_placeholder')}
+                    action={
+                        <Button
+                            onClick={() => {
+                                resetForm();
+                                setCreateOpen(true);
+                            }}
+                        >
+                            {t('admin.tickets.statuses.create')}
+                        </Button>
+                    }
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
@@ -199,28 +214,18 @@ export default function TicketStatusesPage() {
                 </div>
             )}
 
-            <Sheet
-                open={createOpen || editOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setCreateOpen(false);
-                        setEditOpen(false);
-                    }
-                }}
-            >
+            {/* Create Sheet */}
+            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
-                        <SheetTitle>
-                            {editOpen ? t('admin.tickets.statuses.create') : t('admin.tickets.statuses.create')}
-                        </SheetTitle>
+                        <SheetTitle>{t('admin.tickets.statuses.create')}</SheetTitle>
                         <SheetDescription>{t('admin.tickets.statuses.subtitle')}</SheetDescription>
                     </SheetHeader>
-
-                    <form onSubmit={editOpen ? handleUpdate : handleCreate} className='space-y-4'>
+                    <form onSubmit={handleCreate} className='space-y-4'>
                         <div className='space-y-2'>
-                            <Label htmlFor='name'>{t('admin.tickets.statuses.form.name')}</Label>
+                            <Label htmlFor='create-name'>{t('admin.tickets.statuses.form.name')}</Label>
                             <Input
-                                id='name'
+                                id='create-name'
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                                 required
@@ -228,10 +233,11 @@ export default function TicketStatusesPage() {
                         </div>
 
                         <div className='space-y-2'>
-                            <Label htmlFor='color'>{t('admin.tickets.statuses.form.color')}</Label>
+                            <Label htmlFor='create-color'>{t('admin.tickets.statuses.form.color')}</Label>
                             <div className='flex gap-2'>
                                 <Input
                                     type='color'
+                                    id='create-color'
                                     value={form.color}
                                     onChange={(e) => setForm({ ...form, color: e.target.value })}
                                     className='w-12 p-1 h-11'
@@ -246,12 +252,60 @@ export default function TicketStatusesPage() {
 
                         <SheetFooter>
                             <Button type='submit' loading={isSubmitting}>
-                                {editOpen ? t('common.save') : t('common.create')}
+                                {t('common.create')}
                             </Button>
                         </SheetFooter>
                     </form>
                 </div>
             </Sheet>
+
+            {/* Edit Sheet */}
+            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+                <div className='space-y-6'>
+                    <SheetHeader>
+                        <SheetTitle>{t('admin.tickets.statuses.edit')}</SheetTitle>
+                        <SheetDescription>{t('admin.tickets.statuses.subtitle')}</SheetDescription>
+                    </SheetHeader>
+                    {editingStatus && (
+                        <form onSubmit={handleUpdate} className='space-y-4'>
+                            <div className='space-y-2'>
+                                <Label htmlFor='edit-name'>{t('admin.tickets.statuses.form.name')}</Label>
+                                <Input
+                                    id='edit-name'
+                                    value={form.name}
+                                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <div className='space-y-2'>
+                                <Label htmlFor='edit-color'>{t('admin.tickets.statuses.form.color')}</Label>
+                                <div className='flex gap-2'>
+                                    <Input
+                                        type='color'
+                                        id='edit-color'
+                                        value={form.color}
+                                        onChange={(e) => setForm({ ...form, color: e.target.value })}
+                                        className='w-12 p-1 h-11'
+                                    />
+                                    <Input
+                                        value={form.color}
+                                        onChange={(e) => setForm({ ...form, color: e.target.value })}
+                                        className='flex-1'
+                                    />
+                                </div>
+                            </div>
+
+                            <SheetFooter>
+                                <Button type='submit' loading={isSubmitting}>
+                                    {t('common.save')}
+                                </Button>
+                            </SheetFooter>
+                        </form>
+                    )}
+                </div>
+            </Sheet>
+            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.tickets.statuses.help.workflow.title')} icon={GitBranch}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
