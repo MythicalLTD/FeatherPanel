@@ -50,44 +50,39 @@ class OllamaProvider implements ProviderInterface
     public function processMessage(string $message, array $history, string $systemPrompt = ''): array
     {
         try {
-            $url = "{$this->baseUrl}/api/chat";
+            $url = "{$this->baseUrl}/api/generate";
 
-            // Build conversation messages
-            $messages = [];
-
-            // Add system prompt if provided
-            if (!empty($systemPrompt)) {
-                $messages[] = [
-                    'role' => 'system',
-                    'content' => $systemPrompt,
-                ];
-            }
+            // Build conversation prompt from history
+            $promptParts = [];
 
             // Add history messages (only last 10 to avoid token limits)
             $recentHistory = array_slice($history, -10);
             foreach ($recentHistory as $msg) {
-                $role = $msg['role'] === 'user' ? 'user' : 'assistant';
-                $messages[] = [
-                    'role' => $role,
-                    'content' => $msg['content'],
-                ];
+                $role = $msg['role'] === 'user' ? 'User' : 'Assistant';
+                $promptParts[] = "{$role}: {$msg['content']}";
             }
 
             // Add current message
-            $messages[] = [
-                'role' => 'user',
-                'content' => $message,
-            ];
+            $promptParts[] = "User: {$message}";
+            $promptParts[] = "Assistant:";
+
+            // Combine into single prompt
+            $prompt = implode("\n\n", $promptParts);
 
             $payload = [
                 'model' => $this->model,
-                'messages' => $messages,
+                'prompt' => $prompt,
                 'stream' => false,
                 'options' => [
                     'temperature' => $this->temperature,
                     'num_predict' => $this->maxTokens,
                 ],
             ];
+
+            // Add system prompt if provided
+            if (!empty($systemPrompt)) {
+                $payload['system'] = $systemPrompt;
+            }
 
             $client = new Client([
                 'timeout' => 60, // Ollama can be slower, especially for large models
@@ -129,7 +124,7 @@ class OllamaProvider implements ProviderInterface
             }
 
             $data = json_decode($responseBody, true);
-            if (!isset($data['message']['content'])) {
+            if (!isset($data['response'])) {
                 $this->app->getLogger()->error("Ollama API unexpected response: {$responseBody}");
 
                 return [
@@ -138,7 +133,7 @@ class OllamaProvider implements ProviderInterface
                 ];
             }
 
-            $responseText = $data['message']['content'];
+            $responseText = $data['response'];
 
             return [
                 'response' => $responseText,
