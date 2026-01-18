@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.1 STABLE
+
+### Fixed
+
+- Resolved an issue affecting the database host selection modal on the server's databases page for a smoother, more reliable user experience. by @nayskutzu
+
 ## v1.2.0 STABLE
 
 ### Security

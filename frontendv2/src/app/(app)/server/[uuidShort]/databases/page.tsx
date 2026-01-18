@@ -203,10 +203,21 @@ export default function ServerDatabasesPage() {
 
         try {
             setCreating(true);
-            const { data } = await axios.post(`/api/user/servers/${uuidShort}/databases`, createForm);
+            const submitData = {
+                ...createForm,
+                database_host_id: Number(createForm.database_host_id),
+                max_connections: Number(createForm.max_connections),
+            };
+            const { data } = await axios.post(`/api/user/servers/${uuidShort}/databases`, submitData);
             if (data.success) {
                 toast.success(t('serverDatabases.createSuccess'));
                 setCreateDialogOpen(false);
+                setCreateForm({
+                    database_host_id: '',
+                    database_name: '',
+                    remote: '%',
+                    max_connections: 0,
+                });
                 fetchDatabases(1);
             } else {
                 toast.error(data.message || t('serverDatabases.createFailed'));
@@ -527,7 +538,19 @@ export default function ServerDatabasesPage() {
             </div>
 
             {/* CREATE DIALOG */}
-            <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} className='max-w-xl'>
+            <Dialog
+                open={createDialogOpen}
+                onClose={() => {
+                    setCreateDialogOpen(false);
+                    setCreateForm({
+                        database_host_id: '',
+                        database_name: '',
+                        remote: '%',
+                        max_connections: 0,
+                    });
+                }}
+                className='max-w-xl'
+            >
                 <div className='space-y-6 p-2'>
                     <DialogHeader>
                         <div className='flex items-center gap-4'>
@@ -552,10 +575,12 @@ export default function ServerDatabasesPage() {
                                     {t('serverDatabases.databaseHost')}
                                 </label>
                                 <HeadlessSelect
-                                    value={String(createForm.database_host_id)}
-                                    onChange={(val) => setCreateForm({ ...createForm, database_host_id: String(val) })}
+                                    value={createForm.database_host_id}
+                                    onChange={(val) => {
+                                        setCreateForm({ ...createForm, database_host_id: String(val) });
+                                    }}
                                     options={availableHosts.map((h) => ({
-                                        id: h.id,
+                                        id: String(h.id),
                                         name: `${h.name} (${h.database_type})`,
                                     }))}
                                     placeholder={
