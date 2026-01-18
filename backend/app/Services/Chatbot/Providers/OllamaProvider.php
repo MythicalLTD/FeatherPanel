@@ -64,7 +64,7 @@ class OllamaProvider implements ProviderInterface
 
             // Add current message
             $promptParts[] = "User: {$message}";
-            $promptParts[] = "Assistant:";
+            $promptParts[] = 'Assistant:';
 
             // Combine into single prompt
             $prompt = implode("\n\n", $promptParts);

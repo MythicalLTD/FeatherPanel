@@ -110,7 +110,8 @@ export default function TicketPrioritiesPage() {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm(t('admin.tickets.priorities.delete_confirm') || t('admin.tickets.messages.delete_confirm'))) return;
+        if (!confirm(t('admin.tickets.priorities.delete_confirm') || t('admin.tickets.messages.delete_confirm')))
+            return;
 
         try {
             await axios.delete(`/api/admin/tickets/priorities/${id}`);
@@ -173,7 +174,9 @@ export default function TicketPrioritiesPage() {
                 <EmptyState
                     icon={Flag}
                     title={t('admin.tickets.priorities.no_results') || t('admin.tickets.no_results')}
-                    description={t('admin.tickets.priorities.search_placeholder') || t('admin.tickets.search_placeholder')}
+                    description={
+                        t('admin.tickets.priorities.search_placeholder') || t('admin.tickets.search_placeholder')
+                    }
                     action={
                         <Button
                             onClick={() => {

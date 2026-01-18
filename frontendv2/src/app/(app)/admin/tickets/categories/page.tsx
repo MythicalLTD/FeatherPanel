@@ -238,7 +238,9 @@ export default function TicketCategoriesPage() {
                 <EmptyState
                     icon={Tags}
                     title={t('admin.tickets.categories.no_results') || t('admin.tickets.no_results')}
-                    description={t('admin.tickets.categories.search_placeholder') || t('admin.tickets.search_placeholder')}
+                    description={
+                        t('admin.tickets.categories.search_placeholder') || t('admin.tickets.search_placeholder')
+                    }
                     action={
                         <Button
                             onClick={() => {
@@ -319,11 +321,7 @@ export default function TicketCategoriesPage() {
                         </div>
                         <div className='space-y-2'>
                             <Label>{t('admin.tickets.categories.form.icon')}</Label>
-                            <Input
-                                type='file'
-                                accept='image/*'
-                                onChange={handleFileSelect}
-                            />
+                            <Input type='file' accept='image/*' onChange={handleFileSelect} />
                             {iconPreview && (
                                 <div className='mt-2'>
                                     <Label className='text-xs text-muted-foreground'>{t('common.preview')}</Label>
@@ -398,11 +396,7 @@ export default function TicketCategoriesPage() {
                         </div>
                         <div className='space-y-2'>
                             <Label>{t('admin.tickets.categories.form.icon')}</Label>
-                            <Input
-                                type='file'
-                                accept='image/*'
-                                onChange={handleFileSelect}
-                            />
+                            <Input type='file' accept='image/*' onChange={handleFileSelect} />
                             {iconPreview && (
                                 <div className='mt-2'>
                                     <Label className='text-xs text-muted-foreground'>{t('common.preview')}</Label>

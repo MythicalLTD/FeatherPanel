@@ -72,10 +72,12 @@ services:
     networks:
       - featherpanel_network
 
-  frontend:
-    image: ghcr.io/mythicalltd/featherpanel-frontend:latest
-    container_name: featherpanel_frontend
+  frontendv2:
+    image: ghcr.io/mythicalltd/featherpanel-frontendv2:latest
+    container_name: featherpanel_frontendv2
     restart: unless-stopped
+    environment:
+      - INTERNAL_API_URL=http://backend:80
     volumes: []
     depends_on:
       mysql:
