@@ -26,7 +26,7 @@ import {
 } from '@/components/admin/analytics/ServerCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { Server, HardDrive, Cpu, Archive } from 'lucide-react';
+import { Server, HardDrive, Cpu, Archive, Users, Clock } from 'lucide-react';
 
 interface ServerOverview {
     total_servers: number;
@@ -54,6 +54,33 @@ interface DistributionData {
     value: number;
 }
 
+interface BackupStats {
+    total_backups: number;
+    servers_with_backups: number;
+    servers_without_backups: number;
+    avg_backups_per_server: number;
+}
+
+interface ScheduleStats {
+    total_schedules: number;
+    total_tasks: number;
+    servers_with_schedules: number;
+    avg_schedules_per_server: number;
+}
+
+interface SubuserStats {
+    total_subusers: number;
+    servers_with_subusers: number;
+    avg_subusers_per_server: number;
+}
+
+interface InstallationStats {
+    installed: number;
+    not_installed: number;
+    with_errors: number;
+    avg_installation_time_minutes: number;
+}
+
 export default function ServerAnalyticsPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
@@ -67,6 +94,10 @@ export default function ServerAnalyticsPage() {
     const [memoryDistribution, setMemoryDistribution] = useState<DistributionData[]>([]);
     const [diskDistribution, setDiskDistribution] = useState<DistributionData[]>([]);
     const [serverAgeDistribution, setServerAgeDistribution] = useState<DistributionData[]>([]);
+    const [backupStats, setBackupStats] = useState<BackupStats | null>(null);
+    const [scheduleStats, setScheduleStats] = useState<ScheduleStats | null>(null);
+    const [subuserStats, setSubuserStats] = useState<SubuserStats | null>(null);
+    const [installationStats, setInstallationStats] = useState<InstallationStats | null>(null);
 
     const fetchData = React.useCallback(async () => {
         setLoading(true);
@@ -80,6 +111,10 @@ export default function ServerAnalyticsPage() {
                 statusDistributionRes,
                 resourceDistRes,
                 ageDistRes,
+                backupUsageRes,
+                scheduleUsageRes,
+                subuserStatsRes,
+                installationStatsRes,
             ] = await Promise.all([
                 api.get('/admin/analytics/servers/overview'),
                 api.get('/admin/analytics/servers/creation-trend'),
@@ -88,6 +123,10 @@ export default function ServerAnalyticsPage() {
                 api.get('/admin/analytics/servers/status'),
                 api.get('/admin/analytics/servers/resource-distribution'),
                 api.get('/admin/analytics/servers/age-distribution'),
+                api.get('/admin/analytics/servers/backups'),
+                api.get('/admin/analytics/servers/schedules'),
+                api.get('/admin/analytics/servers/subusers'),
+                api.get('/admin/analytics/servers/installation'),
             ]);
 
             setOverview(overviewRes.data.data);
@@ -153,6 +192,11 @@ export default function ServerAnalyticsPage() {
                     }),
                 ),
             );
+
+            setBackupStats(backupUsageRes.data.data);
+            setScheduleStats(scheduleUsageRes.data.data);
+            setSubuserStats(subuserStatsRes.data.data);
+            setInstallationStats(installationStatsRes.data.data);
         } catch (err) {
             console.error('Failed to fetch server analytics:', err);
             setError(t('admin.analytics.servers.error'));
@@ -230,6 +274,55 @@ export default function ServerAnalyticsPage() {
                         icon={HardDrive}
                         className='shadow-none! bg-card/50 backdrop-blur-sm'
                     />
+                </div>
+            )}
+
+            {(backupStats || scheduleStats || subuserStats || installationStats) && (
+                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                    {backupStats && (
+                        <ResourceCard
+                            title={backupStats.total_backups.toString()}
+                            subtitle={t('admin.analytics.servers.total_backups')}
+                            description={t('admin.analytics.servers.avg_backups', {
+                                count: String(backupStats.avg_backups_per_server),
+                            })}
+                            icon={Archive}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    )}
+                    {scheduleStats && (
+                        <ResourceCard
+                            title={scheduleStats.total_schedules.toString()}
+                            subtitle={t('admin.analytics.servers.total_schedules')}
+                            description={t('admin.analytics.servers.avg_schedules', {
+                                count: String(scheduleStats.avg_schedules_per_server),
+                            })}
+                            icon={Clock}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    )}
+                    {subuserStats && (
+                        <ResourceCard
+                            title={subuserStats.total_subusers.toString()}
+                            subtitle={t('admin.analytics.servers.total_subusers')}
+                            description={t('admin.analytics.servers.avg_subusers', {
+                                count: String(subuserStats.avg_subusers_per_server),
+                            })}
+                            icon={Users}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    )}
+                    {installationStats && (
+                        <ResourceCard
+                            title={installationStats.installed.toString()}
+                            subtitle={t('admin.analytics.servers.installed_servers')}
+                            description={t('admin.analytics.servers.avg_install_time', {
+                                minutes: String(installationStats.avg_installation_time_minutes),
+                            })}
+                            icon={Clock}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    )}
                 </div>
             )}
 
