@@ -16,11 +16,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useWingsWebSocket } from '@/hooks/useWingsWebSocket';
 import ServerHeader from '@/components/server/ServerHeader';
 import ServerInfoCards from '@/components/server/ServerInfoCards';
-import ServerTerminal, { ServerTerminalRef } from '@/components/server/ServerTerminal';
+import ServerTerminal, { ServerTerminalRef, ConsoleFilterRule } from '@/components/server/ServerTerminal';
 import ServerPerformance from '@/components/server/ServerPerformance';
 import { Card, CardContent } from '@/components/ui/card';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
@@ -68,6 +68,7 @@ const formatUptime = (uptimeMs: number): string => {
 export default function ServerConsolePage() {
     const { t } = useTranslation();
     const params = useParams();
+    const searchParams = useSearchParams();
     const serverUuid = params.uuidShort as string;
     const terminalRef = useRef<ServerTerminalRef>(null);
 
@@ -107,6 +108,41 @@ export default function ServerConsolePage() {
     const [currentNetworkRx, setCurrentNetworkRx] = useState(0);
     const [currentNetworkTx, setCurrentNetworkTx] = useState(0);
 
+    // Console customization: regex-based filters (per server, persisted in localStorage)
+    const [consoleFilters, setConsoleFilters] = useState<ConsoleFilterRule[]>([]);
+
+    const isPopout = searchParams?.get('consolePopout') === '1';
+
+    // Load filters when server UUID changes
+    useEffect(() => {
+        if (!serverUuid) return;
+        try {
+            const stored = localStorage.getItem(`featherpanel_console_filters_${serverUuid}`);
+            if (stored) {
+                const parsed = JSON.parse(stored) as ConsoleFilterRule[];
+                // Defer to next tick to avoid synchronous state update warning
+                setTimeout(() => {
+                    setConsoleFilters(parsed);
+                }, 0);
+            }
+        } catch {
+            // ignore parse errors
+        }
+    }, [serverUuid]);
+
+    // Persist filters
+    useEffect(() => {
+        if (!serverUuid) return;
+        try {
+            localStorage.setItem(
+                `featherpanel_console_filters_${serverUuid}`,
+                JSON.stringify(consoleFilters),
+            );
+        } catch {
+            // ignore storage errors
+        }
+    }, [serverUuid, consoleFilters]);
+
     // Feature Detector
     const {
         processLog,
@@ -133,12 +169,73 @@ export default function ServerConsolePage() {
     // Handler for console output
     const handleConsoleOutput = useCallback(
         (output: string) => {
-            processLog(output);
+            const applyFilters = (text: string): string => {
+                if (!consoleFilters.length) return text;
+
+                const colorToAnsi: Record<NonNullable<ConsoleFilterRule['color']>, string> = {
+                    red: '\u001b[31m',
+                    green: '\u001b[32m',
+                    yellow: '\u001b[33m',
+                    blue: '\u001b[34m',
+                    magenta: '\u001b[35m',
+                    cyan: '\u001b[36m',
+                    gray: '\u001b[90m',
+                };
+
+                const resetAnsi = '\u001b[0m';
+
+                return text
+                    .split('\n')
+                    .map((line) => {
+                        let currentLine: string | null = line;
+
+                        for (const rule of consoleFilters) {
+                            if (!rule.enabled || !rule.pattern || currentLine === null) continue;
+
+                            let regex: RegExp | null = null;
+                            try {
+                                regex = new RegExp(rule.pattern, rule.flags || 'g');
+                            } catch {
+                                // Invalid regex, skip rule
+                                continue;
+                            }
+
+                            if (rule.type === 'hide') {
+                                if (regex.test(currentLine)) {
+                                    currentLine = null;
+                                    break;
+                                }
+                            } else if (rule.type === 'replace') {
+                                currentLine = currentLine.replace(
+                                    regex,
+                                    rule.replacement !== undefined ? rule.replacement : '',
+                                );
+                            } else if (rule.type === 'color') {
+                                const color = rule.color || 'yellow';
+                                const ansiColor = colorToAnsi[color];
+                                currentLine = currentLine.replace(regex, (match) => {
+                                    return `${ansiColor}${match}${resetAnsi}`;
+                                });
+                            }
+                        }
+
+                        return currentLine;
+                    })
+                    .filter((line) => line !== null)
+                    .join('\n');
+            };
+
+            const filtered = applyFilters(output);
+            if (!filtered) {
+                return;
+            }
+
+            processLog(filtered);
             if (terminalRef.current) {
-                terminalRef.current.writeln(output);
+                terminalRef.current.writeln(filtered);
             }
         },
-        [processLog],
+        [processLog, consoleFilters],
     );
 
     // Handler for server status updates
@@ -321,6 +418,43 @@ export default function ServerConsolePage() {
 
     const connectionInfo = getConnectionStatusInfo();
 
+    // Popout layout: full-screen console + command bar only
+    if (isPopout) {
+        return (
+            <div className='min-h-screen bg-background p-4'>
+                <div className='max-w-6xl mx-auto h-full flex flex-col'>
+                    {canConnect ? (
+                        <ServerTerminal
+                            ref={terminalRef}
+                            onSendCommand={sendCommand}
+                            canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
+                            serverStatus={serverStatus}
+                            filters={consoleFilters}
+                            onFiltersChange={setConsoleFilters}
+                            fullHeight
+                            showPopoutButton={false}
+                        />
+                    ) : (
+                        <Card className='border-2 border-yellow-500/20 bg-yellow-500/10 self-center mt-24 max-w-lg w-full'>
+                            <CardContent className='p-4'>
+                                <div className='flex items-center gap-4'>
+                                    <div className='h-12 w-12 rounded-lg flex items-center justify-center bg-yellow-500/10 border-yellow-500/20'>
+                                        <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                                    </div>
+                                    <div className='flex-1'>
+                                        <p className='font-semibold text-yellow-500'>
+                                            {t('serverConsole.subuserNoAccess')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className='space-y-6 pb-8'>
             {/* Plugin Widgets: Top Of Page */}
@@ -406,6 +540,8 @@ export default function ServerConsolePage() {
                             onSendCommand={sendCommand}
                             canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
                             serverStatus={serverStatus}
+                            filters={consoleFilters}
+                            onFiltersChange={setConsoleFilters}
                         />
                     )}
 

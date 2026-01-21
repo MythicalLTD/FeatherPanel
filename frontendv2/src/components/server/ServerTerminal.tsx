@@ -22,7 +22,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import '@xterm/xterm/css/xterm.css';
-import { Terminal as TerminalIcon, Trash2, Send, ChevronDown, History, Clock } from 'lucide-react';
+import { Terminal as TerminalIcon, Trash2, Send, ChevronDown, History, Clock, Settings2, ExternalLink } from 'lucide-react';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -33,14 +33,39 @@ export interface ServerTerminalRef {
     clear: () => void;
 }
 
+export interface ConsoleFilterRule {
+    id: string;
+    pattern: string;
+    flags?: string;
+    type: 'replace' | 'hide' | 'color';
+    replacement?: string;
+    color?: 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'gray';
+    enabled: boolean;
+}
+
 interface ServerTerminalProps {
     onSendCommand?: (command: string) => void;
     canSendCommands?: boolean;
     serverStatus?: string;
+    filters?: ConsoleFilterRule[];
+    onFiltersChange?: (rules: ConsoleFilterRule[]) => void;
+    fullHeight?: boolean;
+    showPopoutButton?: boolean;
 }
 
 const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
-    ({ onSendCommand, canSendCommands = false, serverStatus = 'offline' }, ref) => {
+    (
+        {
+            onSendCommand,
+            canSendCommands = false,
+            serverStatus = 'offline',
+            filters = [],
+            onFiltersChange,
+            fullHeight = false,
+            showPopoutButton = true,
+        },
+        ref,
+    ) => {
         const terminalRef = useRef<HTMLDivElement>(null);
         const terminalInstanceRef = useRef<Terminal | null>(null);
         const fitAddonRef = useRef<FitAddon | null>(null);
@@ -50,6 +75,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const [autoScroll, setAutoScroll] = useState(true);
         const [commandHistory, setCommandHistory] = useState<string[]>([]);
         const [historyIndex, setHistoryIndex] = useState(-1);
+        const [showSettings, setShowSettings] = useState(false);
 
         // Load history from localStorage
         useEffect(() => {
@@ -218,6 +244,37 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             setCommandInput(cmd);
         };
 
+        const handleAddFilter = () => {
+            if (!onFiltersChange) return;
+            const newRule: ConsoleFilterRule = {
+                id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                pattern: '',
+                type: 'replace',
+                replacement: '',
+                enabled: true,
+            };
+            onFiltersChange([newRule, ...filters]);
+        };
+
+        const handleUpdateFilter = (id: string, partial: Partial<ConsoleFilterRule>) => {
+            if (!onFiltersChange) return;
+            onFiltersChange(
+                filters.map((rule) => (rule.id === id ? { ...rule, ...partial } : rule)),
+            );
+        };
+
+        const handleDeleteFilter = (id: string) => {
+            if (!onFiltersChange) return;
+            onFiltersChange(filters.filter((rule) => rule.id !== id));
+        };
+
+        const handlePopoutWindow = () => {
+            if (typeof window === 'undefined') return;
+            const url = new URL(window.location.href);
+            url.searchParams.set('consolePopout', '1');
+            window.open(url.toString(), '_blank', 'noopener,noreferrer,width=1200,height=800');
+        };
+
         const canSend = canSendCommands && (serverStatus === 'running' || serverStatus === 'starting');
 
         return (
@@ -242,6 +299,24 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                     {t('servers.console.terminal.auto_scroll')}
                                 </span>
                             </label>
+                            <button
+                                onClick={() => setShowSettings((prev) => !prev)}
+                                className='h-9 w-9 rounded-lg border border-border bg-background hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground'
+                                aria-label={t('servers.console.terminal.customize')}
+                                type='button'
+                            >
+                                <Settings2 className='h-4 w-4' />
+                            </button>
+                            {showPopoutButton && (
+                                <button
+                                    onClick={handlePopoutWindow}
+                                    className='h-9 w-9 rounded-lg border border-border bg-background hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground'
+                                    aria-label={t('servers.console.terminal.popout')}
+                                    type='button'
+                                >
+                                    <ExternalLink className='h-4 w-4' />
+                                </button>
+                            )}
                             <Menu as='div' className='relative'>
                                 <Menu.Button
                                     className='h-9 w-9 rounded-lg border border-border bg-background hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground'
@@ -303,8 +378,184 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         </div>
                     </div>
                 </div>
+                {showSettings && (
+                    <div className='border-b border-border bg-muted/30 px-4 py-3 sm:px-6'>
+                        <div className='flex items-center justify-between mb-3'>
+                            <p className='text-xs font-semibold text-muted-foreground'>
+                                {t('servers.console.terminal.customize')}
+                            </p>
+                            <button
+                                onClick={handleAddFilter}
+                                type='button'
+                                className='text-xs px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors'
+                                disabled={!onFiltersChange}
+                            >
+                                {t('servers.console.terminal.add_rule')}
+                            </button>
+                        </div>
+                        {filters.length === 0 ? (
+                            <p className='text-xs text-muted-foreground'>
+                                {t('servers.console.terminal.no_rules')}
+                            </p>
+                        ) : (
+                            <div className='space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-1'>
+                                {filters.map((rule) => (
+                                    <div
+                                        key={rule.id}
+                                        className='rounded-lg border border-border/60 bg-background/60 px-3 py-2 space-y-2'
+                                    >
+                                        <div className='flex items-center justify-between gap-2'>
+                                            <div className='flex items-center gap-2'>
+                                                <input
+                                                    type='checkbox'
+                                                    checked={rule.enabled}
+                                                    onChange={(e) =>
+                                                        handleUpdateFilter(rule.id, {
+                                                            enabled: e.target.checked,
+                                                        })
+                                                    }
+                                                    className='w-3.5 h-3.5 rounded border-input'
+                                                    disabled={!onFiltersChange}
+                                                />
+                                                <select
+                                                    value={rule.type}
+                                                    onChange={(e) =>
+                                                        handleUpdateFilter(rule.id, {
+                                                            type: e.target.value as ConsoleFilterRule['type'],
+                                                        })
+                                                    }
+                                                    className='text-xs rounded-md border border-border bg-background px-2 py-1'
+                                                    disabled={!onFiltersChange}
+                                                >
+                                                    <option value='replace'>
+                                                        {t('servers.console.terminal.rule_type_replace')}
+                                                    </option>
+                                                    <option value='hide'>
+                                                        {t('servers.console.terminal.rule_type_hide')}
+                                                    </option>
+                                                    <option value='color'>
+                                                        {t('servers.console.terminal.rule_type_color')}
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteFilter(rule.id)}
+                                                type='button'
+                                                className='text-[11px] text-muted-foreground hover:text-destructive'
+                                                disabled={!onFiltersChange}
+                                            >
+                                                {t('servers.console.terminal.delete_rule')}
+                                            </button>
+                                        </div>
+                                        <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
+                                            <div className='sm:col-span-2 space-y-1'>
+                                                <label className='text-[11px] text-muted-foreground'>
+                                                    {t('servers.console.terminal.pattern')}
+                                                </label>
+                                                <input
+                                                    type='text'
+                                                    value={rule.pattern}
+                                                    onChange={(e) =>
+                                                        handleUpdateFilter(rule.id, {
+                                                            pattern: e.target.value,
+                                                        })
+                                                    }
+                                                    className='w-full text-xs font-mono px-2 py-1 rounded-md border border-border bg-background'
+                                                    placeholder='^\\[INFO\\]'
+                                                    disabled={!onFiltersChange}
+                                                />
+                                            </div>
+                                            <div className='space-y-1'>
+                                                <label className='text-[11px] text-muted-foreground'>
+                                                    {t('servers.console.terminal.flags')}
+                                                </label>
+                                                <input
+                                                    type='text'
+                                                    value={rule.flags || ''}
+                                                    onChange={(e) =>
+                                                        handleUpdateFilter(rule.id, {
+                                                            flags: e.target.value,
+                                                        })
+                                                    }
+                                                    className='w-full text-xs px-2 py-1 rounded-md border border-border bg-background'
+                                                    placeholder='gmi'
+                                                    disabled={!onFiltersChange}
+                                                />
+                                            </div>
+                                        </div>
+                                        {rule.type === 'replace' && (
+                                            <div className='space-y-1'>
+                                                <label className='text-[11px] text-muted-foreground'>
+                                                    {t('servers.console.terminal.replacement')}
+                                                </label>
+                                                <input
+                                                    type='text'
+                                                    value={rule.replacement || ''}
+                                                    onChange={(e) =>
+                                                        handleUpdateFilter(rule.id, {
+                                                            replacement: e.target.value,
+                                                        })
+                                                    }
+                                                    className='w-full text-xs px-2 py-1 rounded-md border border-border bg-background'
+                                                    placeholder='[RENAMED]'
+                                                    disabled={!onFiltersChange}
+                                                />
+                                            </div>
+                                        )}
+                                        {rule.type === 'color' && (
+                                            <div className='space-y-1'>
+                                                <label className='text-[11px] text-muted-foreground'>
+                                                    {t('servers.console.terminal.color')}
+                                                </label>
+                                                <select
+                                                    value={rule.color || 'yellow'}
+                                                    onChange={(e) =>
+                                                        handleUpdateFilter(rule.id, {
+                                                            color: e.target.value as ConsoleFilterRule['color'],
+                                                        })
+                                                    }
+                                                    className='text-xs rounded-md border border-border bg-background px-2 py-1'
+                                                    disabled={!onFiltersChange}
+                                                >
+                                                    <option value='red'>
+                                                        {t('servers.console.terminal.color_red')}
+                                                    </option>
+                                                    <option value='yellow'>
+                                                        {t('servers.console.terminal.color_yellow')}
+                                                    </option>
+                                                    <option value='green'>
+                                                        {t('servers.console.terminal.color_green')}
+                                                    </option>
+                                                    <option value='blue'>
+                                                        {t('servers.console.terminal.color_blue')}
+                                                    </option>
+                                                    <option value='magenta'>
+                                                        {t('servers.console.terminal.color_magenta')}
+                                                    </option>
+                                                    <option value='cyan'>
+                                                        {t('servers.console.terminal.color_cyan')}
+                                                    </option>
+                                                    <option value='gray'>
+                                                        {t('servers.console.terminal.color_gray')}
+                                                    </option>
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
                 <div className='relative p-0.5'>
-                    <div ref={terminalRef} className='w-full h-[500px] sm:h-[600px]' />
+                    <div
+                        ref={terminalRef}
+                        className={
+                            fullHeight
+                                ? 'w-full h-[calc(100vh-160px)] sm:h-[calc(100vh-160px)]'
+                                : 'w-full h-[500px] sm:h-[600px]'
+                        }
+                    />
 
                     {showScrollButton && (
                         <button
