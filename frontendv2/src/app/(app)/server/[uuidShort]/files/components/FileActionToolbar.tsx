@@ -108,15 +108,6 @@ export function FileActionToolbar({
                         </div>
                         <div className='flex items-center gap-1.5 overflow-x-auto no-scrollbar pl-2'>
                             <Button
-                                variant='default'
-                                size='sm'
-                                onClick={onDownloadSelected}
-                                className='h-9 px-4 shadow-sm'
-                            >
-                                <Download className='mr-2 h-4 w-4' />
-                                {t('files.toolbar.download')}
-                            </Button>
-                            <Button
                                 variant='secondary'
                                 size='sm'
                                 onClick={onArchiveSelected}

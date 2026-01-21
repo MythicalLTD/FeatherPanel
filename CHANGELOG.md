@@ -8,6 +8,7 @@
 - Fixed the API documentation button so it now functions correctly and directs users to the intended icanhasfeatherpanel endpoint. by @nayskutzu
 - Resolved an issue where interacting with the file manager's context menu would unintentionally open files—context menu actions now work as intended. by @nayskutzu
 - Fixed an issue where Control + C and copying server console output did not work as expected. You can now reliably copy from the console! by @nayskutzu
+- Fixed an issue where selecting multiple files or folders incorrectly showed a download button that hasn’t worked since the Wings migration—this button now functions as expected, ensuring a smoother file management experience. by @nayskutzu
 
 ## v1.2.0 STABLE
 
