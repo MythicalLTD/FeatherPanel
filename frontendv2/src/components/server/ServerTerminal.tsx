@@ -201,14 +201,17 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             if (commandHistory.length === 0) return;
 
             let newIndex = historyIndex;
+
             if (direction === 'up') {
+                // Move towards more recent commands (index 0 is most recent)
                 newIndex = historyIndex < commandHistory.length - 1 ? historyIndex + 1 : historyIndex;
             } else {
-                newIndex = historyIndex > -1 ? historyIndex - 1 : -1;
+                // Move towards newer input (reset to -1 when going past the most recent)
+                newIndex = historyIndex > 0 ? historyIndex - 1 : -1;
             }
 
             setHistoryIndex(newIndex);
-            setCommandInput(newIndex === -1 ? '' : commandHistory[commandHistory.length - 1 - newIndex]);
+            setCommandInput(newIndex === -1 ? '' : commandHistory[newIndex]);
         };
 
         const loadHistoryCommand = (cmd: string) => {

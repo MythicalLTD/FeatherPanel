@@ -25,7 +25,6 @@ import ServerPerformance from '@/components/server/ServerPerformance';
 import { Card, CardContent } from '@/components/ui/card';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { AlertTriangle, Wifi, WifiOff, Loader2 } from 'lucide-react';
-
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useFeatureDetector } from '@/hooks/useFeatureDetector';
 import { EulaDialog } from '@/components/server/features/EulaDialog';
