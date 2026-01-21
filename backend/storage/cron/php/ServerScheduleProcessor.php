@@ -49,12 +49,13 @@ class ServerScheduleProcessor implements TimeTask
     public function run()
     {
         $cron = new Cron('server-schedule-processor', '1M');
+        $force = getenv('FP_CRON_FORCE') === '1';
         try {
             $cron->runIfDue(function () {
                 $this->processSchedules();
                 // Report cron heartbeat
                 TimedTask::markRun('server-schedule-processor', true, 'Processed schedules heartbeat');
-            });
+            }, $force);
         } catch (\Exception $e) {
             $app = App::getInstance(false, true);
             $app->getLogger()->error('Failed to process server schedules: ' . $e->getMessage());

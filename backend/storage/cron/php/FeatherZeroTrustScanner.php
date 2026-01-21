@@ -53,11 +53,12 @@ class FeatherZeroTrustScanner implements TimeTask
 
         $scanInterval = $configData['scan_interval'] . 'M';
         $cron = new Cron('featherzerotrust-scanner', $scanInterval);
+        $force = getenv('FP_CRON_FORCE') === '1';
         try {
             $cron->runIfDue(function () {
                 $this->performScan();
                 TimedTask::markRun('featherzerotrust-scanner', true, 'FeatherZeroTrust scanner heartbeat');
-            });
+            }, $force);
         } catch (\Exception $e) {
             $app = App::getInstance(false, true);
             $app->getLogger()->error('Failed to run FeatherZeroTrust scanner cron job: ' . $e->getMessage());

@@ -38,10 +38,11 @@ class DeleteOldData implements TimeTask
     public function run()
     {
         $cron = new Cron('delete-old-data', '1M');
+        $force = getenv('FP_CRON_FORCE') === '1';
         try {
             $cron->runIfDue(function () {
                 $this->processTask();
-            });
+            }, $force);
         } catch (\Exception $e) {
             $app = App::getInstance(false, true);
             $app->getLogger()->error('Failed to process DeleteOldData: ' . $e->getMessage());

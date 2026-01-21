@@ -14,6 +14,7 @@
 ### Improved
 
 - Synchronize admin settings active tab with URL search parameters for persistent navigation. by @nayskutzu
+- Cron runner is now using multithreaded processing to process cronjobs. by @nayskutzu
 
 ## v1.2.0 STABLE
 

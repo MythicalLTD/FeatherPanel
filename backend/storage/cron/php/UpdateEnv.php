@@ -22,13 +22,14 @@ use App\Chat\TimedTask;
 class UpdateEnv implements TimeTask
 {
     public function run()
-    {
+    {	
         $cron = new Cron('update-env', '1H');
+        $force = getenv('FP_CRON_FORCE') === '1';
         try {
             $cron->runIfDue(function () {
                 // Heartbeat
                 TimedTask::markRun('update-env', true, 'UpdateEnv heartbeat');
-            });
+            }, $force);
         } catch (\Exception $e) {
             $app = \App\App::getInstance(false, true);
             $app->getLogger()->error('Failed to update env values: ' . $e->getMessage());

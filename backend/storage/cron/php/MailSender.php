@@ -33,11 +33,12 @@ class MailSender implements TimeTask
     public function run()
     {
         $cron = new Cron('mail-sender', '1M');
+        $force = getenv('FP_CRON_FORCE') === '1';
         try {
             $cron->runIfDue(function () {
                 $this->sendMails();
                 TimedTask::markRun('mail-sender', true, 'Mail sender heartbeat');
-            });
+            }, $force);
         } catch (\Exception $e) {
             $app = \App\App::getInstance(false, true);
             $app->getLogger()->error('Failed to send mail: ' . $e->getMessage());
@@ -175,7 +176,7 @@ class MailSender implements TimeTask
                 $mailObj->setFrom($config->getSetting(ConfigInterface::SMTP_FROM, null), $config->getSetting(ConfigInterface::APP_NAME, null));
                 $mailObj->addReplyTo($config->getSetting(ConfigInterface::SMTP_FROM, null), $config->getSetting(ConfigInterface::APP_NAME, null));
                 $mailObj->isHTML(true);
-                $mailObj->Name = $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
+                $mailObj->FromName = $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
                 $mailObj->Subject = $mail['subject'];
                 $mailObj->Body = $mail['body'];
                 $mailObj->Encoding = 'base64';

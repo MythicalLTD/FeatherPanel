@@ -73,7 +73,7 @@ class App
             return;
         }
 
-        if ($isCron) {
+        if ($isCron && !defined('CRON_MODE')) {
             define('CRON_MODE', true);
         }
 
@@ -89,10 +89,14 @@ class App
          */
         $redis = new FastChat\Redis();
         if (!$redis->testConnection()) {
-            define('REDIS_ENABLED', false);
+            if (!defined('REDIS_ENABLED')) {
+                define('REDIS_ENABLED', false);
+            }
             $this->redisConnection = null;
         } else {
-            define('REDIS_ENABLED', true);
+            if (!defined('REDIS_ENABLED')) {
+                define('REDIS_ENABLED', true);
+            }
             // Initialize Redis connection for rate limiting
             try {
                 $this->redisConnection = new \Redis();
