@@ -43,6 +43,52 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
     const [error, setError] = useState<Error | null>(null);
     const { user: sessionUser, hasPermission: hasGlobalPermission } = useSession();
 
+    // Track recently visited servers in localStorage for a better dashboard "recent servers" experience
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (!uuidShort) return;
+
+        // Only record once we actually have server metadata
+        if (!server) return;
+
+        try {
+            const STORAGE_KEY = 'featherpanel_recent_servers_v1';
+            type RecentEntry = {
+                uuidShort: string;
+                lastViewedAt: string;
+            };
+
+            const existingRaw = window.localStorage.getItem(STORAGE_KEY);
+            let existing: RecentEntry[] = [];
+
+            if (existingRaw) {
+                try {
+                    existing = JSON.parse(existingRaw) as RecentEntry[];
+                    if (!Array.isArray(existing)) existing = [];
+                } catch {
+                    existing = [];
+                }
+            }
+
+            // Remove any previous occurrence for this server
+            const filtered = existing.filter((entry) => entry.uuidShort !== uuidShort);
+
+            const updated: RecentEntry[] = [
+                {
+                    uuidShort,
+                    lastViewedAt: new Date().toISOString(),
+                },
+                ...filtered,
+            ].slice(0, 10); // keep last 10
+
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        } catch (e) {
+            // Non-fatal – just log and continue
+
+            console.error('Failed to update recent servers list', e);
+        }
+    }, [uuidShort, server]);
+
     const fetchServer = useCallback(async () => {
         if (!uuidShort) return;
 

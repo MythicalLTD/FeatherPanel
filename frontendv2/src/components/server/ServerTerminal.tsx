@@ -22,7 +22,16 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import '@xterm/xterm/css/xterm.css';
-import { Terminal as TerminalIcon, Trash2, Send, ChevronDown, History, Clock, Settings2, ExternalLink } from 'lucide-react';
+import {
+    Terminal as TerminalIcon,
+    Trash2,
+    Send,
+    ChevronDown,
+    History,
+    Clock,
+    Settings2,
+    ExternalLink,
+} from 'lucide-react';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -258,9 +267,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
         const handleUpdateFilter = (id: string, partial: Partial<ConsoleFilterRule>) => {
             if (!onFiltersChange) return;
-            onFiltersChange(
-                filters.map((rule) => (rule.id === id ? { ...rule, ...partial } : rule)),
-            );
+            onFiltersChange(filters.map((rule) => (rule.id === id ? { ...rule, ...partial } : rule)));
         };
 
         const handleDeleteFilter = (id: string) => {
@@ -394,9 +401,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                             </button>
                         </div>
                         {filters.length === 0 ? (
-                            <p className='text-xs text-muted-foreground'>
-                                {t('servers.console.terminal.no_rules')}
-                            </p>
+                            <p className='text-xs text-muted-foreground'>{t('servers.console.terminal.no_rules')}</p>
                         ) : (
                             <div className='space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-1'>
                                 {filters.map((rule) => (

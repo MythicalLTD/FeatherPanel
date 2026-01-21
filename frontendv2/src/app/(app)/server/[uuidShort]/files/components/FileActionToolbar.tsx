@@ -45,7 +45,6 @@ interface FileActionToolbarProps {
     onCreateFolder: () => void;
     onUpload: () => void;
     onDeleteSelected: () => void;
-    onDownloadSelected: () => void;
     onArchiveSelected: () => void;
     onClearSelection: () => void;
     onPullFile: () => void;
@@ -67,7 +66,6 @@ export function FileActionToolbar({
     onCreateFolder,
     onUpload,
     onDeleteSelected,
-    onDownloadSelected,
     onArchiveSelected,
     onClearSelection,
     onPullFile,

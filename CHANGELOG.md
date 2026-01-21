@@ -17,6 +17,9 @@
 
 - Synchronize admin settings active tab with URL search parameters for persistent navigation. by @nayskutzu
 - Cron runner is now using multithreaded processing to process cronjobs. by @nayskutzu
+- Implement recently visited server ordering on the dashboard. by @nayskutzu
+- Add console filtering rules management and a popout window option to the server terminal. by @nayskutzu
+- Change default administrator role color to purple. by @nayskutzu
 
 ## v1.2.0 STABLE
 

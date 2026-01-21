@@ -134,10 +134,7 @@ export default function ServerConsolePage() {
     useEffect(() => {
         if (!serverUuid) return;
         try {
-            localStorage.setItem(
-                `featherpanel_console_filters_${serverUuid}`,
-                JSON.stringify(consoleFilters),
-            );
+            localStorage.setItem(`featherpanel_console_filters_${serverUuid}`, JSON.stringify(consoleFilters));
         } catch {
             // ignore storage errors
         }

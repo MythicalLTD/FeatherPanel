@@ -1,0 +1,1 @@
+UPDATE `featherpanel_roles` SET `color` = '#8c00ff' WHERE `id` = 4;

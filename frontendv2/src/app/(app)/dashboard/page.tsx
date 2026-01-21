@@ -64,9 +64,51 @@ export default function DashboardPage() {
             try {
                 const response = await serversApi.getServers();
                 const serversArray = Array.isArray(response.servers) ? response.servers : [];
-                // We only want top 3, but let's fetch all and slice for now (or backend pagination if available)
-                // Assuming recently created is better, or just first 3
-                setServers(serversArray.slice(0, 3));
+
+                // Prefer servers the user actually visited recently (tracked via ServerProvider)
+                let orderedServers: ServerData[] = [];
+
+                try {
+                    if (typeof window !== 'undefined') {
+                        const STORAGE_KEY = 'featherpanel_recent_servers_v1';
+                        type RecentEntry = {
+                            uuidShort: string;
+                            lastViewedAt: string;
+                        };
+
+                        const raw = window.localStorage.getItem(STORAGE_KEY);
+                        if (raw) {
+                            const recent = JSON.parse(raw) as RecentEntry[];
+
+                            if (Array.isArray(recent) && recent.length > 0) {
+                                // Map by uuidShort for quick lookup
+                                const byUuid = new Map<string, ServerData>();
+                                for (const s of serversArray) {
+                                    if (s?.uuidShort) {
+                                        byUuid.set(s.uuidShort, s);
+                                    }
+                                }
+
+                                // Keep only those that still exist in the current API response,
+                                // in the order of most recently viewed
+                                orderedServers = recent
+                                    .map((entry) => byUuid.get(entry.uuidShort))
+                                    .filter((s): s is ServerData => Boolean(s));
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Non-fatal: if anything goes wrong, fall back to default ordering
+                    console.error('Failed to load recent servers ordering', e);
+                }
+
+                // Fallback: if we have no recent ordering, just use the original list
+                if (orderedServers.length === 0) {
+                    orderedServers = serversArray;
+                }
+
+                // Only show up to 3 in the dashboard card
+                setServers(orderedServers.slice(0, 3));
 
                 // Connect to websockets for these 3 servers
                 if (serversArray.length > 0) {

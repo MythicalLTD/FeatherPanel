@@ -80,7 +80,7 @@ export default function SettingsPage() {
             params.set('category', newTab);
             router.push(`${pathname}?${params.toString()}`);
         },
-        [pathname, router, searchParams]
+        [pathname, router, searchParams],
     );
 
     useEffect(() => {
