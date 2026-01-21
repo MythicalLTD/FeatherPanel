@@ -185,7 +185,7 @@ class RegisterController
             return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS');
         }
 
-		$tempPassword = $data['password'];
+        $tempPassword = $data['password'];
         // Create user
         $userInfo = [
             'username' => $data['username'],

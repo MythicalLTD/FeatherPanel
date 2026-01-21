@@ -22,7 +22,7 @@ use App\Chat\TimedTask;
 class UpdateEnv implements TimeTask
 {
     public function run()
-    {	
+    {
         $cron = new Cron('update-env', '1H');
         $force = getenv('FP_CRON_FORCE') === '1';
         try {

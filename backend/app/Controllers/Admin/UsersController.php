@@ -513,7 +513,7 @@ class UsersController
             return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
         }
         // Hash password
-		$tempPassword = $data['password'];
+        $tempPassword = $data['password'];
         $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
         // Generate UUID
         $data['uuid'] = UUIDUtils::generateV4();

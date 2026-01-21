@@ -293,7 +293,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     onCreateFolder={() => setCreateFolderOpen(true)}
                     onUpload={handleUploadClick}
                     onDeleteSelected={() => setDeleteOpen(true)}
-                    onDownloadSelected={() => selectedFiles.forEach((f) => handleDownload(f))}
                     onArchiveSelected={() => handleCompress(selectedFiles)}
                     onClearSelection={() => setSelectedFiles([])}
                     onPullFile={() => setPullFileOpen(true)}

@@ -35,7 +35,7 @@ define('APP_LOGS_DIR', APP_STORAGE_DIR . 'logs');
 define('APP_ADDONS_DIR', APP_STORAGE_DIR . 'addons');
 define('APP_SOURCECODE_DIR', APP_DIR . 'app');
 define('APP_ROUTES_DIR', APP_SOURCECODE_DIR . '/Api');
-define('APP_DEBUG', true);
+define('APP_DEBUG', false);
 define('SYSTEM_OS_NAME', gethostname() . '/' . PHP_OS_FAMILY);
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
@@ -134,7 +134,7 @@ foreach ($jobs as $job) {
             ob_end_flush();
         }
         ob_implicit_flush(true);
-        
+
         try {
             // Re-initialize the app for the child process
             // This will automatically set self::$instance in the constructor
