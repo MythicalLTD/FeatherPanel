@@ -79,15 +79,18 @@ export default function CreateUserPage() {
             const { data } = await axios.get('/api/admin/roles');
             console.log('Roles API response:', data);
             if (data.data.roles) {
-                const rolesArray = Object.entries(data.data.roles).map(([id, role]) => {
-                    const r = role as { name: string; display_name: string; color: string };
-                    return {
-                        id: String(id),
+                const rolesObj = data.data.roles;
+                // Handle both array and object responses for roles
+                const rolesList = Array.isArray(rolesObj) ? rolesObj : Object.values(rolesObj);
+
+                const rolesArray = rolesList.map(
+                    (r: { id: string | number; name: string; display_name: string; color: string }) => ({
+                        id: String(r.id),
                         name: r.name,
                         display_name: r.display_name,
                         color: r.color,
-                    };
-                });
+                    }),
+                );
                 console.log('Parsed roles:', rolesArray);
                 setAvailableRoles(rolesArray);
             } else {

@@ -124,6 +124,7 @@ export default function CreateServerPage() {
     const [ownerSearch, setOwnerSearch] = useState('');
     const [locationSearch, setLocationSearch] = useState('');
     const [nodeSearch, setNodeSearch] = useState('');
+    const [allocationSearch, setAllocationSearch] = useState('');
     const [realmSearch, setRealmSearch] = useState('');
     const [spellSearch, setSpellSearch] = useState('');
 
@@ -131,6 +132,7 @@ export default function CreateServerPage() {
     const [debouncedOwnerSearch, setDebouncedOwnerSearch] = useState('');
     const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
     const [debouncedNodeSearch, setDebouncedNodeSearch] = useState('');
+    const [debouncedAllocationSearch, setDebouncedAllocationSearch] = useState('');
     const [debouncedRealmSearch, setDebouncedRealmSearch] = useState('');
     const [debouncedSpellSearch, setDebouncedSpellSearch] = useState('');
 
@@ -154,6 +156,14 @@ export default function CreateServerPage() {
     const [nodePagination, setNodePagination] = useState({
         current_page: 1,
         per_page: 10,
+        total_records: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false,
+    });
+    const [allocationPagination, setAllocationPagination] = useState({
+        current_page: 1,
+        per_page: 20,
         total_records: 0,
         total_pages: 0,
         has_next: false,
@@ -272,6 +282,14 @@ export default function CreateServerPage() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
+            setDebouncedAllocationSearch(allocationSearch);
+            setAllocationPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [allocationSearch]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
             setDebouncedRealmSearch(realmSearch);
             setRealmPagination((prev) => ({ ...prev, current_page: 1 }));
         }, 500);
@@ -356,14 +374,30 @@ export default function CreateServerPage() {
         if (!formData.nodeId) return;
         try {
             const { data } = await axios.get('/api/admin/allocations', {
-                params: { not_used: true },
+                params: {
+                    node_id: formData.nodeId,
+                    not_used: true,
+                    search: debouncedAllocationSearch || undefined,
+                    page: allocationPagination.current_page,
+                    limit: allocationPagination.per_page,
+                },
             });
-            const allAllocations: Allocation[] = data.data.allocations || [];
-            setAllocations(allAllocations.filter((a) => a.node_id === formData.nodeId && !a.server_id));
+            setAllocations(data.data.allocations || []);
+            if (data.data.pagination) {
+                setAllocationPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
         } catch (error) {
             console.error('Error fetching allocations:', error);
         }
-    }, [formData.nodeId]);
+    }, [
+        formData.nodeId,
+        debouncedAllocationSearch,
+        allocationPagination.current_page,
+        allocationPagination.per_page,
+    ]);
 
     const fetchRealms = useCallback(async () => {
         try {
@@ -429,10 +463,10 @@ export default function CreateServerPage() {
     }, [nodeModalOpen, fetchNodes]);
 
     useEffect(() => {
-        if (allocationModalOpen) {
+        if (allocationModalOpen && formData.nodeId) {
             fetchAllocations();
         }
-    }, [allocationModalOpen, fetchAllocations]);
+    }, [allocationModalOpen, formData.nodeId, fetchAllocations]);
 
     useEffect(() => {
         if (realmModalOpen) {
@@ -755,10 +789,10 @@ export default function CreateServerPage() {
                 title={t('admin.servers.form.select_allocation')}
                 items={allocations}
                 onSelect={handleSelectAllocation}
-                search=''
-                onSearchChange={() => {}}
-                pagination={null}
-                onPaginationChange={() => {}}
+                search={allocationSearch}
+                onSearchChange={setAllocationSearch}
+                pagination={allocationPagination}
+                onPaginationChange={setAllocationPagination}
                 renderItem={(allocation) => (
                     <span className='font-semibold font-mono'>
                         {allocation.ip}:{allocation.port}

@@ -65,17 +65,19 @@ export default function AdminDashboardPage() {
                 console.error('Failed to parse hidden widgets', e);
             }
         }
+    }, [fetchWidgets]);
 
-        // APP_URL Warning Logic
+    // APP_URL Warning Logic - separate effect to avoid dependency issues
+    useEffect(() => {
         const defaultUrl = 'https://featherpanel.mythical.systems';
         const isDefault = settings?.app_url === defaultUrl;
         const isDismissed = localStorage.getItem('app-url-warning-dismissed');
 
-        if (isDefault && !isDismissed && !showAppUrlWarning) {
+        if (isDefault && !isDismissed) {
             const timer = setTimeout(() => setShowAppUrlWarning(true), 100);
             return () => clearTimeout(timer);
         }
-    }, [fetchWidgets, settings, showAppUrlWarning]);
+    }, [settings?.app_url]);
 
     const clearCache = async () => {
         if (isClearingCache) return;

@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.2 STABLE
+
+### Fixed
+
+- Fixed an issue where creating an admin user would incorrectly assign them the moderator role due to array length handling errors. by @nayskutzu
+- Resolved an issue where server allocation would fail during the creation of a new server, ensuring allocations now work reliably as intended. by @nayskutzu
+- Addressed an issue with incorrect profile picture rendering on the users list page, ensuring avatars now display consistently and as intended. by @nayskutzu
+
 ## v1.2.1 STABLE
 
 ### Fixed
