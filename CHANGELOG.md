@@ -6,6 +6,7 @@
 
 - Resolved an issue affecting the database host selection modal on the server's databases page for a smoother, more reliable user experience. by @nayskutzu
 - Fixed the API documentation button so it now functions correctly and directs users to the intended icanhasfeatherpanel endpoint. by @nayskutzu
+- Resolved an issue where interacting with the file manager's context menu would unintentionally open files—context menu actions now work as intended. by @nayskutzu
 
 ## v1.2.0 STABLE
 

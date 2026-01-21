@@ -61,7 +61,7 @@ export function DropdownMenuItem({
     disabled,
 }: {
     children: React.ReactNode;
-    onClick?: () => void;
+    onClick?: (e: React.MouseEvent) => void;
     className?: string;
     disabled?: boolean;
 }) {

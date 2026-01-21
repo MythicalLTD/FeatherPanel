@@ -212,55 +212,100 @@ export function FileRow({
 
                     <DropdownMenuContent align='end' className='w-48'>
                         {file.isFile && isImage(file.name) && (
-                            <DropdownMenuItem onClick={() => onAction('preview', file)}>
+                            <DropdownMenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAction('preview', file);
+                                }}
+                            >
                                 <Eye className='mr-2 h-4 w-4' />
                                 {t('files.row.preview')}
                             </DropdownMenuItem>
                         )}
                         {file.isFile && isEditable(file.size, file.name) && canEdit && (
-                            <DropdownMenuItem onClick={() => onAction('edit', file)}>
+                            <DropdownMenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAction('edit', file);
+                                }}
+                            >
                                 <Code className='mr-2 h-4 w-4' />
                                 {t('files.row.edit')}
                             </DropdownMenuItem>
                         )}
                         {canEdit && (
-                            <DropdownMenuItem onClick={() => onAction('rename', file)}>
+                            <DropdownMenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAction('rename', file);
+                                }}
+                            >
                                 <FileEdit className='mr-2 h-4 w-4' />
                                 {t('files.row.rename')}
                             </DropdownMenuItem>
                         )}
                         {file.isFile && canDownload && (
-                            <DropdownMenuItem onClick={() => onAction('download', file)}>
+                            <DropdownMenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAction('download', file);
+                                }}
+                            >
                                 <Download className='mr-2 h-4 w-4' />
                                 {t('files.row.download')}
                             </DropdownMenuItem>
                         )}
                         {canEdit && (
                             <>
-                                <DropdownMenuItem onClick={() => onAction('copy', file)}>
+                                <DropdownMenuItem
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onAction('copy', file);
+                                    }}
+                                >
                                     <Copy className='mr-2 h-4 w-4' />
                                     {t('files.row.copy')}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onAction('move', file)}>
+                                <DropdownMenuItem
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onAction('move', file);
+                                    }}
+                                >
                                     <FileIcon className='mr-2 h-4 w-4' />
                                     {t('files.row.move')}
                                 </DropdownMenuItem>
                             </>
                         )}
                         {file.isFile && isArchive(file.name) && canEdit && (
-                            <DropdownMenuItem onClick={() => onAction('decompress', file)}>
+                            <DropdownMenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAction('decompress', file);
+                                }}
+                            >
                                 <Archive className='mr-2 h-4 w-4' />
                                 {t('files.row.extract')}
                             </DropdownMenuItem>
                         )}
                         {canEdit && (
-                            <DropdownMenuItem onClick={() => onAction('compress', file)}>
+                            <DropdownMenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAction('compress', file);
+                                }}
+                            >
                                 <Archive className='mr-2 h-4 w-4' />
                                 {t('files.row.compress')}
                             </DropdownMenuItem>
                         )}
                         {canEdit && (
-                            <DropdownMenuItem onClick={() => onAction('permissions', file)}>
+                            <DropdownMenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAction('permissions', file);
+                                }}
+                            >
                                 <Settings className='mr-2 h-4 w-4' />
                                 {t('files.row.permissions')}
                             </DropdownMenuItem>
@@ -271,7 +316,10 @@ export function FileRow({
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                     className='text-red-500 focus:text-red-500'
-                                    onClick={() => onAction('delete', file)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onAction('delete', file);
+                                    }}
                                 >
                                     <Trash2 className='mr-2 h-4 w-4' />
                                     {t('files.row.delete')}
