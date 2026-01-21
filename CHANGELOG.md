@@ -10,6 +10,7 @@
 - Fixed an issue where Control + C and copying server console output did not work as expected. You can now reliably copy from the console! by @nayskutzu
 - Fixed an issue where selecting multiple files or folders incorrectly showed a download button that hasn’t worked since the Wings migration—this button now functions as expected, ensuring a smoother file management experience. by @nayskutzu
 - Addressed occasional inaccuracies in server KPIs caused by Wings misconfigurations, ensuring analytics are now more reliable and reflective of actual server states. by @nayskutzu
+- Use unhashed password in email templates after hashing for storage. by @nayskutzu
 
 ### Improved
 

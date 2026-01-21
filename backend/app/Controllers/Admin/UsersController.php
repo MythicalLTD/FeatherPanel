@@ -513,6 +513,7 @@ class UsersController
             return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
         }
         // Hash password
+		$tempPassword = $data['password'];
         $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
         // Generate UUID
         $data['uuid'] = UUIDUtils::generateV4();
@@ -537,7 +538,7 @@ class UsersController
             'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
-            'password' => $data['password'],
+            'password' => $tempPassword,
             'username' => $data['username'],
             'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
             'uuid' => $data['uuid'],

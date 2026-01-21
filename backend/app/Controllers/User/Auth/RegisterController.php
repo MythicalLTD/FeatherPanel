@@ -185,6 +185,7 @@ class RegisterController
             return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS');
         }
 
+		$tempPassword = $data['password'];
         // Create user
         $userInfo = [
             'username' => $data['username'],
@@ -237,7 +238,7 @@ class RegisterController
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
             'username' => $data['username'],
-            'password' => $data['password'],
+            'password' => $tempPassword,
             'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
             'uuid' => $userInfo['uuid'],
             'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
