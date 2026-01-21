@@ -215,7 +215,7 @@
   "php-cs-fixer.config": "/var/www/featherpanel/backend/.php-cs-fixer.dist.php",
   "php-cs-fixer.onsave": true,
   "[shellscript]": {
-    "editor.defaultFormatter": "mads-hartmann.bash-ide-vscode"
+    "editor.defaultFormatter": "mkhl.shfmt"
   },
   "[sql]": {
     "editor.defaultFormatter": "inferrinizzard.prettier-sql-vscode"
