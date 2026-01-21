@@ -211,7 +211,11 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                     <p className='text-sm text-muted-foreground mt-1'>{t('account.apiKeys.description')}</p>
                 </div>
                 <div className='flex gap-2'>
-                    <Button onClick={() => window.open('/icanhasfeatherpanel/api', '_blank')} variant='outline' size='sm'>
+                    <Button
+                        onClick={() => window.open('/icanhasfeatherpanel/api', '_blank')}
+                        variant='outline'
+                        size='sm'
+                    >
                         {t('account.apiKeys.apiDocs')}
                     </Button>
                     <Button onClick={fetchClients} variant='outline' size='sm'>

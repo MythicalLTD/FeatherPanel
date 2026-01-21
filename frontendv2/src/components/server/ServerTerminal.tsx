@@ -144,6 +144,14 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             terminalInstanceRef.current = terminal;
             fitAddonRef.current = fitAddon;
 
+            // Handle Ctrl+C for copying
+            terminal.attachCustomKeyEventHandler((e) => {
+                if (e.ctrlKey && e.code === 'KeyC' && terminal.hasSelection()) {
+                    return false; // Let browser handle it
+                }
+                return true;
+            });
+
             // Handle scroll events
             terminal.onScroll(() => {
                 const isAtBottom = terminal.buffer.active.viewportY === terminal.buffer.active.baseY;
@@ -326,9 +334,17 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                         }
                                         if (e.ctrlKey && e.code === 'KeyC') {
                                             const termHasSelection = terminalInstanceRef.current?.hasSelection();
-                                            const windowSelection = window.getSelection()?.toString();
+                                            const target = e.target as HTMLInputElement;
+                                            const inputHasSelection = target.selectionStart !== target.selectionEnd;
 
-                                            if (!termHasSelection && !windowSelection && onSendCommand) {
+                                            if (termHasSelection && !inputHasSelection) {
+                                                const selection = terminalInstanceRef.current?.getSelection();
+                                                if (selection) {
+                                                    navigator.clipboard.writeText(selection);
+                                                }
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                            } else if (!termHasSelection && !inputHasSelection && onSendCommand) {
                                                 e.preventDefault();
                                                 e.stopPropagation();
                                                 onSendCommand('\x03');
