@@ -15,7 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { adminSettingsApi, OrganizedSettings, Setting } from '@/lib/admin-settings-api';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -49,7 +50,11 @@ export default function SettingsPage() {
     const [organizedSettings, setOrganizedSettings] = useState<OrganizedSettings | null>(null);
     const [settings, setSettings] = useState<Record<string, Setting>>({});
     const [initialSettings, setInitialSettings] = useState<Record<string, Setting>>({});
-    const [activeTab, setActiveTab] = useState<string>('general');
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const urlCategory = searchParams.get('category');
+    const [activeTab, setActiveTab] = useState<string>(urlCategory || 'general');
 
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [uploadedLogs, setUploadedLogs] = useState<{ web: LogData; app: LogData } | null>(null);
@@ -61,6 +66,23 @@ export default function SettingsPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
+    // Update active tab when URL changes
+    useEffect(() => {
+        if (urlCategory && urlCategory !== activeTab) {
+            setActiveTab(urlCategory);
+        }
+    }, [urlCategory, activeTab]);
+
+    const handleCategoryChange = useCallback(
+        (newTab: string) => {
+            setActiveTab(newTab);
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('category', newTab);
+            router.push(`${pathname}?${params.toString()}`);
+        },
+        [pathname, router, searchParams]
+    );
+
     useEffect(() => {
         const fetchSettings = async () => {
             setLoading(true);
@@ -71,12 +93,6 @@ export default function SettingsPage() {
                     setSettings(response.data.settings);
                     // Store initial settings deep copy to compare later
                     setInitialSettings(JSON.parse(JSON.stringify(response.data.settings)));
-
-                    // Set first tab as active if available
-                    const categories = Object.keys(response.data.organized_settings);
-                    if (categories.length > 0) {
-                        setActiveTab(categories[0]);
-                    }
                 } else {
                     toast.error(response.message || t('admin.settings.messages.load_failed'));
                 }
@@ -89,6 +105,19 @@ export default function SettingsPage() {
 
         fetchSettings();
     }, [t]);
+
+    // Validate and set default category when settings load or URL changes
+    useEffect(() => {
+        if (organizedSettings) {
+            const categories = Object.keys(organizedSettings);
+            if (categories.length > 0) {
+                if (!urlCategory || !categories.includes(urlCategory)) {
+                    // Update to the first category if none or invalid
+                    handleCategoryChange(categories[0]);
+                }
+            }
+        }
+    }, [organizedSettings, urlCategory, handleCategoryChange]);
 
     const handleSettingChange = (key: string, value: string | number | boolean) => {
         setSettings((prev) => ({
@@ -229,7 +258,7 @@ export default function SettingsPage() {
             <div className='block'>
                 <Tabs
                     value={activeTab}
-                    onValueChange={setActiveTab}
+                    onValueChange={handleCategoryChange}
                     orientation='vertical'
                     className='w-full flex flex-col md:flex-row gap-6'
                 >

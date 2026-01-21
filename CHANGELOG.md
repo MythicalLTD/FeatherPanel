@@ -11,6 +11,10 @@
 - Fixed an issue where selecting multiple files or folders incorrectly showed a download button that hasn’t worked since the Wings migration—this button now functions as expected, ensuring a smoother file management experience. by @nayskutzu
 - Addressed occasional inaccuracies in server KPIs caused by Wings misconfigurations, ensuring analytics are now more reliable and reflective of actual server states. by @nayskutzu
 
+### Improved
+
+- Synchronize admin settings active tab with URL search parameters for persistent navigation. by @nayskutzu
+
 ## v1.2.0 STABLE
 
 ### Security
