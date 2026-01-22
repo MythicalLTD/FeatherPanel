@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.3 STABLE
+
+### Fixed
+
+- Resolved an issue where scheduled cronjobs were not executing as expected, ensuring reliable automation. by @nayskutzu
+
 ## v1.2.2 STABLE
 
 ### Fixed

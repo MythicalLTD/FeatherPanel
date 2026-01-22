@@ -42,7 +42,7 @@ define('APP_START', microtime(true));
 define('APP_DIR', APP_PUBLIC . '/');
 define('APP_CRON_DIR', APP_PUBLIC . '/storage/cron/');
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
-define( 'APP_VERSION', 'v1.2.2');
+define( 'APP_VERSION', 'v1.2.3');
 define('APP_UPSTREAM', 'stable');
 define('TELEMETRY', true);
 define('IS_CLI', true);

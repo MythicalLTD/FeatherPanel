@@ -18,12 +18,6 @@
 use App\Plugins\PluginManager;
 use App\Config\ConfigInterface;
 
-// Disable output buffering to ensure immediate output visibility
-if (ob_get_level()) {
-    ob_end_flush();
-}
-ob_implicit_flush(true);
-
 define('APP_STARTUP', microtime(true));
 define('APP_START', microtime(true));
 define('APP_PUBLIC', __DIR__);
@@ -40,7 +34,7 @@ define('SYSTEM_OS_NAME', gethostname() . '/' . PHP_OS_FAMILY);
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
 define('REQUEST_ID', uniqid());
-define('APP_VERSION', 'v1.2.2');
+define('APP_VERSION', 'v1.1.2');
 define('APP_UPSTREAM', 'stable');
 
 if (APP_DEBUG) {
@@ -62,7 +56,6 @@ $pluginManager = new PluginManager();
 $app = new NormalApp(false, true);
 
 App::sendOutputWithNewLine('&7Starting App cron runner.');
-flush();
 
 /**
  * Ensure the correct timezone is set for the cron runner.
@@ -73,25 +66,27 @@ if (!@date_default_timezone_set($timezone)) {
     date_default_timezone_set('UTC');
 }
 
-// Collect all cronjobs
-$jobs = [];
-
-// Main cronjobs
+// Run main cronjobs
 foreach (glob(__DIR__ . '/php/*.php') as $file) {
+    App::sendOutputWithNewLine('');
+    App::sendOutputWithNewLine('|----');
     require_once $file;
     $className = 'App\Cron\\' . basename($file, '.php');
-    if (class_exists($className)) {
-        $jobs[] = [
-            'class' => $className,
-            'file' => $file,
-            'type' => 'main',
-        ];
-    } else {
-        App::sendOutputWithNewLine('&7Class &d' . $className . '&7 not found');
+    try {
+        if (class_exists($className)) {
+            $worker = new $className();
+            App::sendOutputWithNewLine('&7Running &d' . $className . '&7.');
+            $worker->run();
+            App::sendOutputWithNewLine('&7Finished running &d' . $className . '&7.');
+        } else {
+            App::sendOutputWithNewLine('&7Class &d' . $className . '&7 not found');
+        }
+    } catch (Exception $e) {
+        App::sendOutputWithNewLine('&7Error running &d' . $className . '&7: &c' . $e->getMessage());
     }
 }
 
-// Addon cronjobs
+// Run addon cronjobs
 $addonsDir = APP_ADDONS_DIR;
 if (is_dir($addonsDir)) {
     $plugins = array_diff(scandir($addonsDir), ['.', '..']);
@@ -102,68 +97,27 @@ if (is_dir($addonsDir)) {
         }
 
         foreach (glob($cronDir . '/*.php') as $file) {
+            App::sendOutputWithNewLine('');
+            App::sendOutputWithNewLine('|----');
             require_once $file;
             $className = 'App\Addons\\' . $plugin . '\Cron\\' . basename($file, '.php');
-            if (class_exists($className)) {
-                $jobs[] = [
-                    'class' => $className,
-                    'file' => $file,
-                    'type' => 'addon',
-                    'plugin' => $plugin,
-                ];
-            } else {
-                App::sendOutputWithNewLine('&7Class &d' . $className . '&7 not found');
+            try {
+                if (class_exists($className)) {
+                    $worker = new $className();
+                    App::sendOutputWithNewLine('&7Running &d' . $className . '&7.');
+                    $worker->run();
+                    App::sendOutputWithNewLine('&7Finished running &d' . $className . '&7.');
+                } else {
+                    App::sendOutputWithNewLine('&7Class &d' . $className . '&7 not found');
+                }
+            } catch (Exception $e) {
+                App::sendOutputWithNewLine('&7Error running &d' . $className . '&7: &c' . $e->getMessage());
             }
         }
     }
-}
-
-$childPids = [];
-foreach ($jobs as $job) {
-    $pid = pcntl_fork();
-
-    if ($pid == -1) {
-        App::sendOutputWithNewLine('&cCould not fork for job: ' . $job['class']);
-    } elseif ($pid) {
-        // Parent process
-        $childPids[] = $pid;
-    } else {
-        // Child process
-        // Ensure output buffering is disabled in child process too
-        if (ob_get_level()) {
-            ob_end_flush();
-        }
-        ob_implicit_flush(true);
-
-        try {
-            // Re-initialize the app for the child process
-            // This will automatically set self::$instance in the constructor
-            $childApp = new NormalApp(false, true);
-
-            $className = $job['class'];
-            $worker = new $className();
-            App::sendOutputWithNewLine('&7Running &d' . $className . '&7 (PID: ' . getmypid() . ')');
-            flush();
-            $worker->run();
-            flush();
-            App::sendOutputWithNewLine('&7Finished running &d' . $className . '&7.');
-            flush();
-        } catch (Exception $e) {
-            App::sendOutputWithNewLine('&7Error running &d' . $job['class'] . '&7: &c' . $e->getMessage());
-            flush();
-        }
-        exit(0);
-    }
-}
-
-// Wait for all children to complete
-foreach ($childPids as $pid) {
-    pcntl_waitpid($pid, $status);
-    flush();
 }
 
 App::sendOutputWithNewLine('|----');
 App::sendOutputWithNewLine('');
 App::sendOutputWithNewLine('&7Finished running all cron workers.');
 App::sendOutputWithNewLine('&7Total execution time: &d' . round(microtime(true) - APP_STARTUP, 2) . 's');
-flush();
