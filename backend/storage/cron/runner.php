@@ -40,7 +40,7 @@ define('SYSTEM_OS_NAME', gethostname() . '/' . PHP_OS_FAMILY);
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
 define('REQUEST_ID', uniqid());
-define('APP_VERSION', 'v1.2.1');
+define('APP_VERSION', 'v1.2.2,');
 define('APP_UPSTREAM', 'stable');
 
 if (APP_DEBUG) {
