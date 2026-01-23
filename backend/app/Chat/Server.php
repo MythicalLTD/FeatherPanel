@@ -591,11 +591,24 @@ class Server
         if ($id <= 0) {
             return false;
         }
+
+        // Unassign all allocations from this server before deletion
+        // This ensures we don't leave orphaned allocations pointing to a deleted server
+        Allocation::unassignAllByServerId($id);
+
         $pdo = Database::getPdoConnection();
         $sql = 'DELETE FROM ' . self::$table . ' WHERE id = :id';
         $stmt = $pdo->prepare($sql);
 
-        return $stmt->execute(['id' => $id]);
+        $result = $stmt->execute(['id' => $id]);
+
+        // Auto-heal: Run cleanup for any other orphans that might exist
+        // This fixes historical data issues where allocations pointed to non-existent servers
+        if ($result) {
+            Allocation::cleanupOrphans();
+        }
+
+        return $result;
     }
 
     /**

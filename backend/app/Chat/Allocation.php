@@ -629,4 +629,34 @@ class Allocation
 
         return $stmt->execute(['node_id' => $nodeId]);
     }
+
+    /**
+     * Unassign all allocations for a specific server (set server_id to NULL).
+     */
+    public static function unassignAllByServerId(int $serverId): bool
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = NULL WHERE server_id = :server_id');
+
+        return $stmt->execute(['server_id' => $serverId]);
+    }
+
+    /**
+     * Clean up orphaned allocations (allocations assigned to non-existent servers).
+     * Sets server_id to NULL for any allocation where the referenced server_id does not exist.
+     */
+    public static function cleanupOrphans(): int
+    {
+        $pdo = Database::getPdoConnection();
+        // Update allocations where server_id is set but the server does not exist
+        $sql = 'UPDATE ' . self::$table . ' a 
+                LEFT JOIN featherpanel_servers s ON a.server_id = s.id 
+                SET a.server_id = NULL 
+                WHERE a.server_id IS NOT NULL AND s.id IS NULL';
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+
+        return $stmt->rowCount();
+    }
 }

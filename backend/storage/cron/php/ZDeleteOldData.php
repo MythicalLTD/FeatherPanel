@@ -30,7 +30,7 @@ use App\Chat\SsoToken;
 use App\Chat\MailTemplate;
 use App\Cli\Utils\MinecraftColorCodeSupport;
 
-class DeleteOldData implements TimeTask
+class ZDeleteOldData implements TimeTask
 {
     /**
      * Entry point for the cron DeleteOldData.

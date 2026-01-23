@@ -11,6 +11,7 @@
 ### Improved
 
 - Enforce strict view_all handling in ServerUserController and dashboard to ensure only user-owned servers are displayed by @nayskutzu
+- Reimplement and re-organize cron jobs with new naming conventions, including data cleanup, zero trust scanning, and mail sending. by @nayskutzu
 
 ## v1.2.3 STABLE
 

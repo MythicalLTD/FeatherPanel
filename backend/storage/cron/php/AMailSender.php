@@ -25,7 +25,7 @@ use App\Config\ConfigFactory;
 use App\Config\ConfigInterface;
 use App\Cli\Utils\MinecraftColorCodeSupport;
 
-class MailSender implements TimeTask
+class AMailSender implements TimeTask
 {
     /**
      * Entry point for the cron mail sender.

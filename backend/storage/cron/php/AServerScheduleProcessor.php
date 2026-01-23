@@ -41,7 +41,7 @@ use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
 use App\Cli\Utils\MinecraftColorCodeSupport;
 
-class ServerScheduleProcessor implements TimeTask
+class AServerScheduleProcessor implements TimeTask
 {
     /**
      * Entry point for the cron server schedule processor.

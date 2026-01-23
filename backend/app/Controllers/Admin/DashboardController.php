@@ -129,7 +129,6 @@ class DashboardController
             $expectedMap = [
                 'server-schedule-processor' => 60, // seconds
                 'mail-sender' => 60,
-                'update-env' => 3600,
             ];
             $recentCrons = array_map(function ($row) use ($now, $expectedMap) {
                 $name = $row['task_name'] ?? '';

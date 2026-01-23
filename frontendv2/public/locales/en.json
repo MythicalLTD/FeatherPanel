@@ -469,6 +469,7 @@
 			"stopped": "Stopped",
 			"starting": "Starting",
 			"null": "Unknown",
+			"installed": "Installed",
 			"stopping": "Stopping",
 			"offline": "Offline",
 			"installing": "Installing",
