@@ -224,7 +224,9 @@
 			"failedToLoadStatus": "Critical Error",
 			"tryAgain": "Try Again",
 			"statusPageDisabled": "Status Page Disabled",
-			"statusPageDisabledDescription": "The public infrastructure status page has been disabled by the administrator."
+			"statusPageDisabledDescription": "The public infrastructure status page has been disabled by the administrator.",
+			"searchPlaceholder": "Search nodes...",
+			"noNodesFound": "No nodes found"
 		},
 		"stats": {},
 		"recent_servers": {
@@ -3037,6 +3039,8 @@
 				}
 			},
 			"messages": {
+				"delete_success": "Server deleted successfully",
+				"hard_delete_success": "Server hard deleted successfully",
 				"fetch_failed": "Failed to fetch servers",
 				"fetch_details_failed": "Failed to fetch server details",
 				"delete_failed": "Failed to delete server",
@@ -3373,6 +3377,7 @@
 				"edit": "Edit Category",
 				"description": "Create and manage ticket categories to organize support requests.",
 				"search_placeholder": "Search categories...",
+				"no_results": "No categories found",
 				"fetch_error": "Failed to fetch categories",
 				"create_success": "Category created successfully",
 				"create_error": "Failed to create category",
@@ -3401,6 +3406,16 @@
 				"title": "Ticket Priorities",
 				"subtitle": "Manage ticket priorities to define urgency levels",
 				"create": "Create Priority",
+				"search_placeholder": "Search priorities...",
+				"no_results": "No priorities found",
+				"edit": "Edit Priority",
+				"create_success": "Priority created successfully",
+				"create_error": "Failed to create priority",
+				"update_success": "Priority updated successfully",
+				"update_error": "Failed to update priority",
+				"delete_success": "Priority deleted successfully",
+				"delete_error": "Failed to delete priority",
+				"delete_confirm": "Are you sure you want to delete this priority?",
 				"form": {
 					"name": "Name",
 					"color": "Color"
@@ -3425,6 +3440,15 @@
 				"subtitle": "Manage ticket statuses to track progress",
 				"create": "Create Status",
 				"search_placeholder": "Search statuses...",
+				"no_results": "No statuses found",
+				"edit": "Edit Status",
+				"create_success": "Status created successfully",
+				"create_error": "Failed to create status",
+				"update_success": "Status updated successfully",
+				"update_error": "Failed to update status",
+				"delete_success": "Status deleted successfully",
+				"delete_error": "Failed to delete status",
+				"delete_confirm": "Are you sure you want to delete this status?",
 				"form": {
 					"name": "Name",
 					"color": "Color"
@@ -4915,7 +4939,12 @@
 						"saving": "Saving...",
 						"previous": "Previous",
 						"next": "Next",
-						"page_info": "Page {current} of {total}"
+						"page_info": "Page {current} of {total}",
+						"no_spells_search": "No spells found matching your search",
+						"search_placeholder": "Search spells...",
+						"selected_badge": "Selected",
+						"selected_count": "{count} selected",
+						"selected_spells": "Selected Spells"
 					}
 				},
 				"info": {

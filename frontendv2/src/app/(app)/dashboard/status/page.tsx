@@ -264,7 +264,7 @@ export default function StatusPage() {
                         <div className='flex-1'>
                             <div className='relative'>
                                 <Input
-                                    placeholder={t('tickets.searchTickets')}
+                                    placeholder={t('dashboard.status.searchPlaceholder')}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className='w-full bg-background/50 border-border/50 focus:border-primary/50 pr-10 h-10'
@@ -406,7 +406,7 @@ export default function StatusPage() {
                                 <div className='inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/5 mb-6 text-primary border border-primary/10'>
                                     <ServerIcon className='h-10 w-10 opacity-60' />
                                 </div>
-                                <h3 className='text-xl font-bold mb-2'>{t('tickets.noTicketsFound')}</h3>
+                                <h3 className='text-xl font-bold mb-2'>{t('dashboard.status.noNodesFound')}</h3>
                                 <p className='text-muted-foreground max-w-xs mx-auto opacity-70'>
                                     {t('dashboard.status.failedToLoadStatus')}
                                 </p>

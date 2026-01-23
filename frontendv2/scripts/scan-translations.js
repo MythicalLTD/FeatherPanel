@@ -1,4 +1,3 @@
-
 /*
 This file is part of FeatherPanel.
 
@@ -26,9 +25,6 @@ const __dirname = path.dirname(__filename);
 const SRC_DIR = path.join(__dirname, '../src');
 const LOCALE_FILE = path.join(__dirname, '../public/locales/en.json');
 
-// Regex to find t('key') or t("key") or t('key', ...)
-const TRANSLATION_REGEX = /[^a-zA-Z]t\s*\(\s*['"]([^'"]+)['"]/g;
-
 // Colors for console output
 const colors = {
     reset: '\x1b[0m',
@@ -36,7 +32,7 @@ const colors = {
     green: '\x1b[32m',
     yellow: '\x1b[33m',
     blue: '\x1b[34m',
-    bold: '\x1b[1m'
+    bold: '\x1b[1m',
 };
 
 function getAllFiles(dirPath, arrayOfFiles) {
@@ -44,7 +40,7 @@ function getAllFiles(dirPath, arrayOfFiles) {
 
     arrayOfFiles = arrayOfFiles || [];
 
-    files.forEach(function(file) {
+    files.forEach(function (file) {
         if (fs.statSync(dirPath + '/' + file).isDirectory()) {
             arrayOfFiles = getAllFiles(dirPath + '/' + file, arrayOfFiles);
         } else {
@@ -81,36 +77,48 @@ function scanTranslations() {
     const files = getAllFiles(SRC_DIR);
     console.log(`${colors.green}✓ Found ${files.length} source files to scan.${colors.reset}\n`);
 
+    // Regex to find t('key')
+    const SIMPLE_REGEX = /[^a-zA-Z]t\s*\(\s*['"]([^'"]+)['"]/g;
+    // Regex to find t(cond ? 'key1' : 'key2')
+    // Supports multiline matching because we scan file content, not just lines
+    const TERNARY_REGEX = /[^a-zA-Z]t\s*\(\s*[^,)]+\s*\?\s*['"]([^'"]+)['"]\s*:\s*['"]([^'"]+)['"]/g;
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let totalKeysFound = 0;
     let missingKeys = new Set();
     let usageLocations = {}; // Map key -> [file:line]
 
-    files.forEach(file => {
+    files.forEach((file) => {
         const content = fs.readFileSync(file, 'utf8');
-        const lines = content.split('\n');
+
+        // Helper to process a found key
+        const processKey = (key, index) => {
+            totalKeysFound++;
+            const value = getNestedValue(localeData, key);
+
+            if (value === undefined) {
+                missingKeys.add(key);
+                if (!usageLocations[key]) {
+                    usageLocations[key] = [];
+                }
+                const relativePath = path.relative(path.join(__dirname, '..'), file);
+                const lineNumber = content.substring(0, index).split('\n').length;
+                usageLocations[key].push(`${relativePath}:${lineNumber}`);
+            }
+        };
 
         let match;
-        
-        lines.forEach((line, index) => {
-             while ((match = TRANSLATION_REGEX.exec(line)) !== null) {
-                const key = match[1];
-                totalKeysFound++;
 
-                // Verify existence
-                const value = getNestedValue(localeData, key);
+        // Scan for simple usages
+        while ((match = SIMPLE_REGEX.exec(content)) !== null) {
+            processKey(match[1], match.index);
+        }
 
-                if (value === undefined) {
-                    missingKeys.add(key);
-                    if (!usageLocations[key]) {
-                        usageLocations[key] = [];
-                    }
-                    // Initial file path is absolute, make it relative
-                    const relativePath = path.relative(path.join(__dirname, '..'), file);
-                    usageLocations[key].push(`${relativePath}:${index + 1}`);
-                }
-            }
-        });
+        // Scan for ternary usages
+        while ((match = TERNARY_REGEX.exec(content)) !== null) {
+            processKey(match[1], match.index); // true case
+            processKey(match[2], match.index); // false case
+        }
     });
 
     // 3. Report Results
@@ -118,16 +126,18 @@ function scanTranslations() {
         console.log(`${colors.green}${colors.bold}Success! No missing translations found.${colors.reset}`);
     } else {
         console.log(`${colors.red}${colors.bold}Found ${missingKeys.size} missing translation keys:${colors.reset}\n`);
-        
-        Array.from(missingKeys).sort().forEach(key => {
-            console.log(`${colors.yellow}⚠ Key: "${key}"${colors.reset}`);
-            // console.log(`  ${colors.red}Missing in en.json${colors.reset}`);
-            console.log(`  Used in:`);
-            usageLocations[key].forEach(loc => {
-                console.log(`    - ${loc}`);
+
+        Array.from(missingKeys)
+            .sort()
+            .forEach((key) => {
+                console.log(`${colors.yellow}⚠ Key: "${key}"${colors.reset}`);
+                // console.log(`  ${colors.red}Missing in en.json${colors.reset}`);
+                console.log(`  Used in:`);
+                usageLocations[key].forEach((loc) => {
+                    console.log(`    - ${loc}`);
+                });
+                console.log('');
             });
-            console.log('');
-        });
 
         console.log(`${colors.red}${colors.bold}Validation Failed.${colors.reset}`);
         process.exit(1);

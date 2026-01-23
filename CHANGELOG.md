@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.4 STABLE
+
+### Fixed
+
+- Resolved an issue where several translation strings were missing, ensuring a more complete and consistent localized experience. by @nayskutzu
+
 ## v1.2.3 STABLE
 
 ### Fixed

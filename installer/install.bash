@@ -3512,12 +3512,6 @@ if [ -f /etc/os-release ]; then
 		fi
 	}
 
-	# Run Docker check before proceeding
-	check_existing_docker
-
-	# Note: Virtualization check will be called later when we know if Docker is needed
-	# (i.e., for Panel or Wings installations)
-
 	# Environment overrides for non-interactive mode
 	case "${FP_COMPONENT:-}" in
 	panel) COMPONENT_TYPE="1" ;;
