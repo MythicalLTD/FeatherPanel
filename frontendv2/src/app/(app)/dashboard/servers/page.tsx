@@ -130,18 +130,18 @@ export default function ServersPage() {
 
     // Fetch servers and folders
     const fetchServers = useCallback(
-        async (page = 1, forceViewAll = false) => {
+        async (page = 1, fetchAllForFolders = false) => {
             try {
                 setLoading(true);
                 setError(null);
 
-                // When in folder view, fetch all servers to enable proper folder filtering
+                // Always use view_all=false for dashboard - only show user's own servers and subuser servers
+                // When in folder view, fetch all user's servers (with high limit) to enable proper folder filtering
                 // Otherwise use pagination
-                const shouldViewAll = forceViewAll;
                 const response = await serversApi.getServers(
-                    shouldViewAll,
+                    false, // Never use view_all=true in dashboard - only for admin area
                     page,
-                    shouldViewAll ? 1000 : pagination.per_page,
+                    fetchAllForFolders ? 1000 : pagination.per_page,
                 );
 
                 // Ensure serversData is an array
@@ -167,9 +167,10 @@ export default function ServersPage() {
     );
 
     // Initial fetch and refetch when switching views
-    // Load all servers in both views to ensure consistency
+    // Load all user's servers in folder view to ensure proper folder organization
     useEffect(() => {
-        fetchServers(1, true);
+        // Always fetch with view_all=false - only show user's own servers and subuser servers
+        fetchServers(1, viewMode === 'folders');
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [viewMode]);
 
@@ -237,7 +238,7 @@ export default function ServersPage() {
         // Pagination only works in 'all' view, not in folder view
         if (viewMode === 'folders') return;
         if (newPage >= 1 && newPage <= pagination.total_pages) {
-            fetchServers(newPage, false);
+            fetchServers(newPage, false); // Always use view_all=false for dashboard
         }
     };
 

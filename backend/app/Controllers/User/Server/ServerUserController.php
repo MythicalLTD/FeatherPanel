@@ -261,7 +261,9 @@ class ServerUserController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
-        $viewAll = $request->query->get('view_all', 'false') === 'true';
+        // Explicitly check for 'true' string - dashboard should never pass this, only admin area
+        $viewAllParam = $request->query->get('view_all', 'false');
+        $viewAll = ($viewAllParam === 'true' || $viewAllParam === true || $viewAllParam === '1' || $viewAllParam === 1);
 
         if ($page < 1) {
             $page = 1;
@@ -273,7 +275,8 @@ class ServerUserController
             $limit = 100;
         }
 
-        // Check if admin wants to view all servers
+        // IMPORTANT: Only show all servers if explicitly requested via view_all=true AND user has admin permission
+        // Dashboard should always pass view_all=false to only show user's own servers and subuser servers
         if ($viewAll) {
             // Check if user has admin permission
             if (!PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SERVERS_VIEW)) {
@@ -302,6 +305,8 @@ class ServerUserController
             // No subuser map for admin view (all servers are shown as owned by their actual owners)
             $subuserMap = [];
         } else {
+            // Dashboard mode: Only return servers owned by this user OR where user is a subuser
+            // This applies to ALL users including admins - admins should use Admin Area to see all servers
             // Get ALL servers the user owns (without pagination)
             $ownedServers = Server::getServersByOwnerId((int) $user['id']);
 

@@ -7,6 +7,11 @@
 - Resolved an issue where several translation strings were missing, ensuring a more complete and consistent localized experience. by @nayskutzu
 -  Update progress bar rendering to conditionally display based on resource limits in ServerInfoCards component by @nayskutzu
 
+
+### Improved
+
+- Enforce strict view_all handling in ServerUserController and dashboard to ensure only user-owned servers are displayed by @nayskutzu
+
 ## v1.2.3 STABLE
 
 ### Fixed
