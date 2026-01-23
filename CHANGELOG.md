@@ -6,7 +6,7 @@
 
 - Resolved an issue where several translation strings were missing, ensuring a more complete and consistent localized experience. by @nayskutzu
 -  Update progress bar rendering to conditionally display based on resource limits in ServerInfoCards component by @nayskutzu
-
+- Update avatar URL generation in SessionController to use application base URL, ensuring correct path for user avatars by @nayskutzu
 
 ### Improved
 

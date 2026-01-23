@@ -92,7 +92,6 @@ class ZFeatherZeroTrustScanner implements TimeTask
         $totalDetections = 0;
         $totalErrors = 0;
         $nodeDetails = [];
-        $serverDetails = [];
 
         foreach ($nodes as $node) {
             try {
