@@ -176,7 +176,7 @@ export default function ServerInfoCards({
                             </span>
                             <span className='font-medium'>{cpuUsage.toFixed(1)}%</span>
                         </div>
-                        <Progress value={cpuLimit > 0 ? (cpuUsage / cpuLimit) * 100 : 0} className='h-1.5' />
+                        {cpuLimit > 0 && <Progress value={(cpuUsage / cpuLimit) * 100} className='h-1.5' />}
                         <p className='text-[10px] text-muted-foreground mt-1 text-right'>
                             {t('servers.console.info_cards.limit', { limit: formatCpu(cpuLimit) })}
                         </p>
@@ -191,7 +191,9 @@ export default function ServerInfoCards({
                             </span>
                             <span className='font-medium'>{formatMib(memoryUsage)}</span>
                         </div>
-                        <Progress value={memoryLimit > 0 ? (memoryUsage / memoryLimit) * 100 : 0} className='h-1.5' />
+                        {memoryLimit > 0 && (
+                            <Progress value={(memoryUsage / memoryLimit) * 100} className='h-1.5' />
+                        )}
                         <p className='text-[10px] text-muted-foreground mt-1 text-right'>
                             {t('servers.console.info_cards.limit', { limit: formatMemory(memoryLimit) })}
                         </p>
@@ -206,7 +208,9 @@ export default function ServerInfoCards({
                             </span>
                             <span className='font-medium'>{formatMib(diskUsage)}</span>
                         </div>
-                        <Progress value={diskLimit > 0 ? (diskUsage / diskLimit) * 100 : 0} className='h-1.5' />
+                        {diskLimit > 0 && (
+                            <Progress value={(diskUsage / diskLimit) * 100} className='h-1.5' />
+                        )}
                         <p className='text-[10px] text-muted-foreground mt-1 text-right'>
                             {t('servers.console.info_cards.limit', { limit: formatDisk(diskLimit) })}
                         </p>
