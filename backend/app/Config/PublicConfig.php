@@ -110,6 +110,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_USER_SERVER_DELETION => 'false',
             ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE => 'false',
             ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT => 'false',
+			ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL => 'false',
 
             // User related settings
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => 'true',

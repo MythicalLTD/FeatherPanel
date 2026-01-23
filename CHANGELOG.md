@@ -2,6 +2,10 @@
 
 ## v1.2.4 STABLE
 
+### Added
+
+- Added support for FastDL, enabling accelerated downloads for games utilizing the FastDL protocol. by @nayskutzu
+
 ### Fixed
 
 - Resolved an issue where several translation strings were missing, ensuring a more complete and consistent localized experience. by @nayskutzu

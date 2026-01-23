@@ -844,4 +844,68 @@ class ServerService
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
     }
+
+    // ========================================
+    // FastDL Management
+    // ========================================
+
+    /**
+     * Get FastDL configuration for a server.
+     */
+    public function getFastDl(string $serverUuid): WingsResponse
+    {
+        try {
+            $response = $this->connection->get("/api/servers/{$serverUuid}/fastdl");
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Enable FastDL for a server.
+     *
+     * @param array<string,mixed> $data FastDL configuration data (optional directory)
+     */
+    public function enableFastDl(string $serverUuid, array $data = []): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/fastdl/enable", $data);
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Disable FastDL for a server.
+     */
+    public function disableFastDl(string $serverUuid): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/fastdl/disable");
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update FastDL configuration for a server.
+     *
+     * @param array<string,mixed> $data FastDL configuration data
+     */
+    public function updateFastDl(string $serverUuid, array $data): WingsResponse
+    {
+        try {
+            $response = $this->connection->put("/api/servers/{$serverUuid}/fastdl", $data);
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
 }

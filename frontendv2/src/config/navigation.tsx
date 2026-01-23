@@ -673,6 +673,20 @@ export const getServerNavigationItems = (
         });
     }
 
+    if (isEnabled(settings?.server_allow_user_made_fastdl)) {
+        items.push({
+            id: 'server-fastdl',
+            name: t('navigation.items.fastdl'),
+            title: t('navigation.items.fastdl'),
+            url: `/server/${serverUuid}/fastdl`,
+            icon: Download,
+            isActive: false,
+            category: 'server',
+            group: 'networking',
+            permission: 'settings.reinstall',
+        });
+    }
+
     items.push({
         id: 'server-subdomains',
         name: t('navigation.items.subdomains'),
