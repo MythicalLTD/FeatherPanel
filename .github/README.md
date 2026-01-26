@@ -1,10 +1,8 @@
-![FeatherPanel Logo](https://cdn.mythical.systems/featherpanel/logo.png)
+# FeatherPanel
 
-# ⚡ FeatherPanel
+[![Frontend Build](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/frontend.yml?branch=main&label=Frontend&style=for-the-badge&logo=react&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/frontend.yml)
+[![Backend Build](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/backend.yml?branch=main&label=Backend&style=for-the-badge&logo=php&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/backend.yml)
 
-[![Frontend Build](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/frontend.yml?branch=main&label=Frontend&style=for-the-badge&logo=vue.js&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/frontend.yml)
-[![Backend Build](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/backend.yml?branch=main&label=Backend&style=for-the-badge&logo=go&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/backend.yml)
-[![Docker Build](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/docker.yml?branch=main&label=Docker&style=for-the-badge&logo=docker&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/docker.yml)
 
 [![License](https://img.shields.io/github/license/mythicalltd/featherpanel?style=for-the-badge&color=blue)](https://github.com/mythicalltd/featherpanel/blob/develop/LICENSE)
 [![Stars](https://img.shields.io/github/stars/mythicalltd/featherpanel?style=for-the-badge&color=yellow)](https://github.com/mythicalltd/featherpanel/stargazers)
@@ -30,9 +28,9 @@
 
 ## 📚 Documentation & Installation
 
-[![Read Documentation](https://img.shields.io/badge/📖_Read_Documentation-4A90E2?style=for-the-badge&logoColor=white)](https://docs.mythical.systems)
+[![Read Documentation](https://img.shields.io/badge/📖_Read_Documentation-4A90E2?style=for-the-badge&logoColor=white)](https://docs.mythical.systems/docs)
 
-For installation instructions, system requirements, and complete guides, please visit our **[Official Documentation](https://docs.mythical.systems)**
+For installation instructions, system requirements, and complete guides, please visit our **[Official Documentation](https://docs.mythical.systems/docs)**
 
 ---
 
@@ -40,7 +38,7 @@ For installation instructions, system requirements, and complete guides, please 
 
 |                                                 📘 Documentation                                                 |                                                                   💬 Discord Support                                                                   |                                                                             🔌 API Documentation                                                                             |
 | :--------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| [![Visit Docs](https://img.shields.io/badge/Visit_Docs-blue?style=for-the-badge)](https://docs.mythical.systems) | [![Join Discord](https://img.shields.io/badge/Join_Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.mythical.systems) | [![View API](https://img.shields.io/badge/View_API-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://www.postman.com/mythicalsystems/workspace/featherpanel) |
+| [![Visit Docs](https://img.shields.io/badge/Visit_Docs-blue?style=for-the-badge)](https://docs.mythical.systems/docs) | [![Join Discord](https://img.shields.io/badge/Join_Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.mythical.systems) | [![View API](https://img.shields.io/badge/View_API-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://www.postman.com/mythicalsystems/workspace/featherpanel) |
 |                         Installation guides, API reference, and configuration tutorials                          |                                                    Get help from the community and development team                                                    |                                                                    Complete API reference for developers                                                                     |
 
 ---
@@ -49,18 +47,18 @@ For installation instructions, system requirements, and complete guides, please 
 
 <!-- COUNT-STATS:START -->
 
-_Last updated: 2026-01-21T13:48:05.523Z_
+_Last updated: 2026-01-26T15:39:34.115Z_
 
 | Extension | Files | Lines |
 | --- | ---: | ---: |
-| `.tsx` | 410 | 100,998 |
-| `.php` | 403 | 96,071 |
+| `.tsx` | 412 | 101,149 |
+| `.php` | 404 | 96,577 |
 | `.yaml` | 3 | 5,461 |
-| `.ts` | 41 | 5,227 |
+| `.ts` | 41 | 5,228 |
 | `.sql` | 76 | 1,256 |
 | `.yml` | 14 | 1,126 |
 | `.css` | 1 | 147 |
-| **Total** | 948 | 210,286 |
+| **Total** | 951 | 210,944 |
 
 <!-- COUNT-STATS:END -->
 
@@ -96,28 +94,8 @@ powershell -ExecutionPolicy Bypass -Command "iwr https://get.featherpanel.com/st
 **⚡ After installation:**
 
 - Register a new admin account when prompted
-- Check the [documentation](https://docs.mythical.systems) for configuration
+- Check the [documentation](https://docs.mythical.systems/docs) for configuration
 - Report issues on [GitHub Issues](https://github.com/mythicalltd/featherpanel/issues)
-
----
-
-## ✨ Features
-
-### 🎯 Core Features
-
-- 🖥️ **Modern UI** - Beautiful Vue.js interface
-- 🔐 **Secure** - Enterprise-grade security
-- ⚡ **Fast** - Go-powered backend
-- 🐳 **Docker Ready** - Easy deployment
-- 🌍 **Multi-Node** - Distribute your servers
-
-### 🛠️ Advanced Features
-
-- 📊 **Resource Monitoring** - Real-time stats
-- 🔧 **Custom Configurations** - Full control
-- 👥 **User Management** - Granular permissions
-- 🎮 **Game Support** - Multiple game types
-- 🔄 **Automatic Backups** - Never lose data
 
 ---
 
@@ -131,12 +109,10 @@ We welcome contributions! Please check our [Contributing Guidelines](CONTRIBUTIN
 
 ## 📄 License
 
-FeatherPanel is open-source software licensed under the [MIT License](LICENSE).
+FeatherPanel is open-source software licensed under the [GNU License](LICENSE).
 
 ---
 
 **Made with ❤️ by the Mythical Systems Team**
 
-[Documentation](https://docs.mythical.systems) • [Discord](https://discord.mythical.systems) • [Issues](https://github.com/mythicalltd/featherpanel/issues) • [Releases](https://github.com/mythicalltd/featherpanel/releases)
-
-⭐ **Star us on GitHub — it helps!** ⭐
+[Documentation](https://docs.mythical.systems/docs) • [Discord](https://discord.mythical.systems) • [Issues](https://github.com/mythicalltd/featherpanel/issues) • [Releases](https://github.com/mythicalltd/featherpanel/releases)
