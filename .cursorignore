@@ -1,7 +1,0 @@
-# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
-!.cursor/rules
-!.cursor
-/backend/storage/caches/*
-/backend/storage/backups/*
-/backend/storage/packages/*
-/backend/storage/logs/*
