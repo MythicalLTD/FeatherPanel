@@ -254,7 +254,6 @@ const LogsTab = () => {
                         />
                     ))}
 
-                    {/* Pagination */}
                     {pagination.totalPages > 1 && (
                         <div className='flex items-center justify-center gap-2 mt-8'>
                             <Button
@@ -281,7 +280,6 @@ const LogsTab = () => {
                 </div>
             )}
 
-            {/* Log Details Sheet */}
             <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
                 <SheetContent side='right' className='sm:max-w-2xl overflow-y-auto'>
                     <SheetHeader>
@@ -298,7 +296,6 @@ const LogsTab = () => {
                     ) : (
                         executionLog && (
                             <div className='space-y-6 mt-6'>
-                                {/* Summary Stats */}
                                 <div className='grid grid-cols-2 gap-4'>
                                     <Card className='bg-muted/30 border-border/50'>
                                         <CardContent className='p-4'>
@@ -329,7 +326,6 @@ const LogsTab = () => {
                                     </Card>
                                 </div>
 
-                                {/* Server Scan Results */}
                                 <div className='space-y-4'>
                                     <h4 className='text-sm font-semibold flex items-center gap-2'>
                                         <Server className='h-4 w-4 text-primary' />

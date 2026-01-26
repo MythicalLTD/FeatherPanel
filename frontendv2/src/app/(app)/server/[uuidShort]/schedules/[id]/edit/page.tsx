@@ -155,7 +155,6 @@ export default function EditSchedulePage() {
 
     return (
         <div className='max-w-4xl mx-auto space-y-8 pb-16 '>
-            {/* Navigation Header */}
             <PageHeader
                 title={t('serverSchedules.editSchedule')}
                 description={t('serverSchedules.editScheduleDescription')}
@@ -179,11 +178,9 @@ export default function EditSchedulePage() {
             />
             <WidgetRenderer widgets={getWidgets('server-schedules-edit', 'after-header')} />
 
-            {/* Form */}
             <form onSubmit={handleUpdate} className='space-y-8'>
-                {/* Background Effect */}
                 <div className='fixed inset-0 bg-linear-to-br from-primary/5 via-transparent to-blue-500/5 pointer-events-none -z-10' />
-                {/* Schedule Name */}
+
                 <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -218,7 +215,6 @@ export default function EditSchedulePage() {
                     </div>
                 </div>
 
-                {/* Cron Expression */}
                 <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
                     <div className='flex items-center justify-between border-b border-border/10 pb-6'>
                         <div className='flex items-center gap-4'>
@@ -320,7 +316,6 @@ export default function EditSchedulePage() {
                     <p className='text-xs text-muted-foreground'>{t('serverSchedules.cronHelp')}</p>
                 </div>
 
-                {/* Options */}
                 <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -375,7 +370,6 @@ export default function EditSchedulePage() {
                     </div>
                 </div>
 
-                {/* Mobile Actions */}
                 <div className='md:hidden flex flex-col gap-3'>
                     <Button
                         type='submit'

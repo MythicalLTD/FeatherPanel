@@ -267,10 +267,8 @@ export default function UsersPage() {
 
     return (
         <div className='space-y-6'>
-            {/* Plugin Widgets: Top of Page */}
             <WidgetRenderer widgets={getWidgets('admin-users', 'top-of-page')} />
 
-            {/* Header */}
             <PageHeader
                 title={t('admin.users.title')}
                 description={t('admin.users.subtitle')}
@@ -283,10 +281,8 @@ export default function UsersPage() {
                 }
             />
 
-            {/* Plugin Widgets: After Header */}
             <WidgetRenderer widgets={getWidgets('admin-users', 'after-header')} />
 
-            {/* Search and Filters */}
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
                 <div className='relative flex-1 group'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -318,10 +314,8 @@ export default function UsersPage() {
                 </div>
             </div>
 
-            {/* Plugin Widgets: Before List */}
             <WidgetRenderer widgets={getWidgets('admin-users', 'before-list')} />
 
-            {/* Users Grid */}
             {loading ? (
                 <TableSkeleton count={5} />
             ) : users.length === 0 ? (
@@ -462,7 +456,6 @@ export default function UsersPage() {
 
             {renderPagination()}
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.users.help.managing.title')} icon={UsersIcon}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -483,7 +476,6 @@ export default function UsersPage() {
                 </PageCard>
             </div>
 
-            {/* Plugin Widgets: Bottom of Page */}
             <WidgetRenderer widgets={getWidgets('admin-users', 'bottom-of-page')} />
         </div>
     );

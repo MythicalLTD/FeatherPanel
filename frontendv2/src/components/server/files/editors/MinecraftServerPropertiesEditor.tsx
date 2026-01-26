@@ -353,7 +353,6 @@ export function MinecraftServerPropertiesEditor({
                 </div>
             </CardHeader>
             <div className='p-8 space-y-10'>
-                {/* Server Information Section */}
                 <section className='space-y-6'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -463,7 +462,6 @@ export function MinecraftServerPropertiesEditor({
                     </div>
                 </section>
 
-                {/* World Settings Section */}
                 <section className='space-y-6'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -608,7 +606,6 @@ export function MinecraftServerPropertiesEditor({
                     </div>
                 </section>
 
-                {/* Gameplay Settings Section */}
                 <section className='space-y-6'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -746,7 +743,6 @@ export function MinecraftServerPropertiesEditor({
                     </div>
                 </section>
 
-                {/* Network & Security Section */}
                 <section className='space-y-6'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -885,7 +881,6 @@ export function MinecraftServerPropertiesEditor({
                     </div>
                 </section>
 
-                {/* Performance Settings Section */}
                 <section className='space-y-6'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -1030,7 +1025,6 @@ export function MinecraftServerPropertiesEditor({
                     </div>
                 </section>
 
-                {/* Resource Pack Section */}
                 <section className='space-y-6'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -1144,7 +1138,6 @@ export function MinecraftServerPropertiesEditor({
                     </div>
                 </section>
 
-                {/* Advanced Settings Section */}
                 <section className='space-y-6'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>

@@ -166,7 +166,6 @@ export function UtilizationTab({ loading, data, error, onRefresh }: UtilizationT
                 )}
             </div>
 
-            {/* Disk Details Table */}
             {utilization.disk_details && utilization.disk_details.length > 0 && (
                 <PageCard title={t('admin.node.view.utilization.disk_details')} icon={HardDrive}>
                     <div className='overflow-x-auto'>

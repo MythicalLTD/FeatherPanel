@@ -163,7 +163,6 @@ export default function UserAnalyticsPage() {
                 icon={Users}
             />
 
-            {/* Overview Stats */}
             {overview && (
                 <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                     <ResourceCard
@@ -203,7 +202,6 @@ export default function UserAnalyticsPage() {
                 </div>
             )}
 
-            {/* Growth Cards */}
             {growth && (
                 <div className='grid gap-4 md:grid-cols-2'>
                     <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
@@ -253,7 +251,6 @@ export default function UserAnalyticsPage() {
                 </div>
             )}
 
-            {/* Charts Section */}
             <div className='grid gap-4 grid-cols-1 lg:grid-cols-3'>
                 <TrendChart
                     title={t('admin.analytics.users.reg_trend')}

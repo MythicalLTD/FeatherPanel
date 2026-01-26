@@ -81,7 +81,7 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
                     </div>
                     <div className='space-y-2'>
                         <label className='text-sm font-medium'>{t('files.dialogs.create_file.content_label')}</label>
-                        {/* Fallback to textarea usually implies standard HTML textarea styled with Tailwind */}
+
                         <Textarea
                             className='flex min-h-[150px] w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
                             placeholder={t('files.dialogs.create_file.content_placeholder')}

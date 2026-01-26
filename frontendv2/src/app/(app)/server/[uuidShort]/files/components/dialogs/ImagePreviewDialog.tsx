@@ -141,7 +141,6 @@ export function ImagePreviewDialog({
 
                     {!loading && !error && blobUrl && (
                         <div className='relative group max-h-full animate-in zoom-in-95 duration-500'>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={blobUrl}
                                 alt={file.name}

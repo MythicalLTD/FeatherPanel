@@ -202,7 +202,7 @@ export default function LoginForm() {
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-top')} />
-            {/* Header */}
+
             {!isSsoLogin && (
                 <div className='text-center space-y-2'>
                     <h2 className='text-2xl font-bold tracking-tight'>{t('auth.login.title')}</h2>
@@ -258,7 +258,6 @@ export default function LoginForm() {
                             </Link>
                         </div>
 
-                        {/* Turnstile Widget */}
                         {showTurnstile && (
                             <div className='flex justify-center'>
                                 <Turnstile
@@ -302,10 +301,8 @@ export default function LoginForm() {
                     </form>
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-after-form')} />
 
-                    {/* Discord Login - Only show if enabled */}
                     {discordEnabled && (
                         <>
-                            {/* Divider */}
                             <div className='relative'>
                                 <div className='absolute inset-0 flex items-center'>
                                     <div className='w-full border-t border-border' />
@@ -326,7 +323,6 @@ export default function LoginForm() {
                         </>
                     )}
 
-                    {/* Footer */}
                     <div className='text-center text-sm text-muted-foreground'>
                         {t('auth.login.no_account')}{' '}
                         <Link

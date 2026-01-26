@@ -196,7 +196,6 @@ function SidebarContent({
 
     return (
         <div className='flex h-full flex-col'>
-            {/* Logo */}
             <Link href='/dashboard' prefetch={true}>
                 <div
                     className={cn(
@@ -233,7 +232,6 @@ function SidebarContent({
                 </div>
             </Link>
 
-            {/* Navigation */}
             <nav className='flex-1 px-2 py-4 overflow-y-auto custom-scrollbar space-y-6'>
                 {sortedGroups.map((group) => {
                     const isCollapsed = collapsedGroups.includes(group);
@@ -297,7 +295,6 @@ function SidebarContent({
                                                     )}
                                                 </button>
 
-                                                {/* Render children */}
                                                 <div
                                                     className={cn(
                                                         'ml-4 space-y-1 transition-all duration-200 overflow-hidden',
@@ -408,7 +405,6 @@ function SidebarContent({
                 })}
             </nav>
 
-            {/* Collapse Button (Desktop only) */}
             {!mobile && (
                 <div className='border-t border-border/50 p-2'>
                     <button
@@ -464,7 +460,6 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
 
     return (
         <>
-            {/* Mobile sidebar */}
             <Transition.Root show={mobileOpen} as={Fragment}>
                 <Dialog as='div' className='relative z-50 lg:hidden' onClose={setMobileOpen}>
                     <Transition.Child
@@ -528,7 +523,6 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                 </Dialog>
             </Transition.Root>
 
-            {/* Desktop sidebar */}
             <div className='hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:flex-col'>
                 <div
                     className={cn(

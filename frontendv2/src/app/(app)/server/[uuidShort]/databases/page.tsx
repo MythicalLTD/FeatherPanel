@@ -302,7 +302,7 @@ export default function ServerDatabasesPage() {
     return (
         <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-databases', 'top-of-page')} />
-            {/* Header Section */}
+
             <PageHeader
                 title={t('serverDatabases.title')}
                 description={
@@ -358,7 +358,6 @@ export default function ServerDatabasesPage() {
 
             <WidgetRenderer widgets={getWidgets('server-databases', 'after-warning-banner')} />
 
-            {/* Main Content Area */}
             <div className='space-y-6'>
                 <div className='flex items-center gap-4'>
                     <div className='relative flex-1 group'>
@@ -494,7 +493,6 @@ export default function ServerDatabasesPage() {
 
                 <WidgetRenderer widgets={getWidgets('server-databases', 'after-databases-list')} />
 
-                {/* Pagination */}
                 {pagination.total > pagination.per_page && (
                     <div className='flex items-center justify-between py-8 border-t border-border/40 px-6'>
                         <p className='text-sm font-bold opacity-40 uppercase tracking-widest'>
@@ -537,7 +535,6 @@ export default function ServerDatabasesPage() {
                 )}
             </div>
 
-            {/* CREATE DIALOG */}
             <Dialog
                 open={createDialogOpen}
                 onClose={() => {
@@ -670,7 +667,6 @@ export default function ServerDatabasesPage() {
                 </div>
             </Dialog>
 
-            {/* SENSITIVE INFO WARNING */}
             <Dialog open={sensitiveWarningOpen} onClose={() => setSensitiveWarningOpen(false)} className='max-w-md'>
                 <div className='space-y-6 p-2'>
                     <DialogHeader className='text-center'>
@@ -726,7 +722,6 @@ export default function ServerDatabasesPage() {
                 </div>
             </Dialog>
 
-            {/* VIEW DATABASE DIALOG */}
             <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} className='max-w-2xl'>
                 {viewingDatabase && (
                     <div className='space-y-6 p-2'>
@@ -747,7 +742,6 @@ export default function ServerDatabasesPage() {
                         </DialogHeader>
 
                         <div className='space-y-6 px-1'>
-                            {/* Connection Details */}
                             <div className='rounded-3xl border border-primary/20 bg-primary/5 p-6 backdrop-blur-sm space-y-5'>
                                 <h3 className='text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 flex items-center gap-2'>
                                     <div className='w-1.5 h-4 bg-primary/30 rounded-full' />
@@ -786,7 +780,6 @@ export default function ServerDatabasesPage() {
                                 </div>
                             </div>
 
-                            {/* Login Credentials */}
                             <div className='rounded-3xl border border-primary/20 bg-primary/5 p-6 backdrop-blur-sm space-y-5'>
                                 <h3 className='text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 flex items-center gap-2'>
                                     <div className='w-1.5 h-4 bg-primary/30 rounded-full' />
@@ -869,7 +862,6 @@ export default function ServerDatabasesPage() {
                 )}
             </Dialog>
 
-            {/* CONFIRM DELETE DIALOG */}
             <Dialog
                 open={confirmDeleteDialogOpen}
                 onClose={() => setConfirmDeleteDialogOpen(false)}

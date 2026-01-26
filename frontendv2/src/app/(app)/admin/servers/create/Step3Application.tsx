@@ -64,14 +64,12 @@ export function Step3Application({
 
     return (
         <div className='space-y-8'>
-            {/* Application Configuration */}
             <PageCard
                 title={t('admin.servers.form.wizard.step3_title')}
                 icon={Sparkles}
                 className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
             >
                 <div className='space-y-6'>
-                    {/* Realm */}
                     <div className='space-y-3'>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.realm')}
@@ -105,7 +103,6 @@ export function Step3Application({
                         </div>
                     </div>
 
-                    {/* Spell */}
                     <div className={cn('space-y-3', !formData.realmId && 'opacity-50 pointer-events-none')}>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.spell')}
@@ -140,7 +137,6 @@ export function Step3Application({
                         </div>
                     </div>
 
-                    {/* Docker Image */}
                     {dockerImages.length > 0 && (
                         <div className='space-y-3'>
                             <Label className='flex items-center gap-1.5'>
@@ -159,7 +155,6 @@ export function Step3Application({
                 </div>
             </PageCard>
 
-            {/* Spell Variables */}
             {spellVariablesData.length > 0 && (
                 <PageCard
                     title={t('admin.servers.form.spell_configuration')}

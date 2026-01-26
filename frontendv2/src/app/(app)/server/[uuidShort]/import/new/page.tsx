@@ -172,7 +172,7 @@ export default function CreateServerImportPage() {
     return (
         <div className='space-y-8 pb-16 '>
             <WidgetRenderer widgets={getWidgets('server-import-new', 'top-of-page')} />
-            {/* Header */}
+
             <PageHeader
                 title={t('serverImport.createImport')}
                 description={t('serverImport.drawerDescription')}
@@ -204,10 +204,8 @@ export default function CreateServerImportPage() {
             <WidgetRenderer widgets={getWidgets('server-import-new', 'after-header')} />
 
             <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                {/* Left Side: Forms */}
                 <div className='lg:col-span-8 space-y-8'>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-                        {/* Connection Section */}
                         <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
                             <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                                 <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -284,7 +282,6 @@ export default function CreateServerImportPage() {
                             </div>
                         </div>
 
-                        {/* Authentication Section */}
                         <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
                             <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                                 <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20'>
@@ -341,7 +338,6 @@ export default function CreateServerImportPage() {
                         </div>
                     </div>
 
-                    {/* Paths Section */}
                     <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-8 shadow-sm relative overflow-hidden'>
                         <div className='absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-[80px] pointer-events-none' />
                         <div className='flex items-center gap-5 border-b border-border/10 pb-8'>
@@ -424,9 +420,7 @@ export default function CreateServerImportPage() {
                     </div>
                 </div>
 
-                {/* Right Side: Options & Actions */}
                 <div className='lg:col-span-4 space-y-8'>
-                    {/* Options Panel */}
                     <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm relative overflow-hidden group'>
                         <div className='absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl pointer-events-none group-hover:bg-primary/10 transition-all duration-700' />
                         <div className='flex items-center gap-4 border-b border-border/10 pb-6 relative z-10'>
@@ -444,7 +438,6 @@ export default function CreateServerImportPage() {
                         </div>
 
                         <div className='space-y-4 relative z-10'>
-                            {/* Wipe Destination Toggle */}
                             <div
                                 onClick={() => !saving && setForm((prev) => ({ ...prev, wipe: !prev.wipe }))}
                                 className={cn(
@@ -486,7 +479,6 @@ export default function CreateServerImportPage() {
                                 </div>
                             </div>
 
-                            {/* Wipe All Toggle (Danger) */}
                             <div
                                 onClick={() =>
                                     !saving && setForm((prev) => ({ ...prev, wipeAllFiles: !prev.wipeAllFiles }))
@@ -531,7 +523,6 @@ export default function CreateServerImportPage() {
                             </div>
                         </div>
 
-                        {/* Caution Alert */}
                         {form.wipeAllFiles && (
                             <div className='mt-4 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 animate-in zoom-in-95 duration-500 relative z-10'>
                                 <div className='flex gap-3'>
@@ -551,7 +542,6 @@ export default function CreateServerImportPage() {
                         )}
                     </div>
 
-                    {/* Information Summary */}
                     <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-sm relative overflow-hidden group'>
                         <div className='absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000' />
                         <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10'>
@@ -569,7 +559,6 @@ export default function CreateServerImportPage() {
                 </div>
             </div>
 
-            {/* Background Effect */}
             <div className='fixed inset-0 bg-linear-to-br from-primary/5 via-transparent to-blue-500/5 pointer-events-none -z-10' />
             <WidgetRenderer widgets={getWidgets('server-import-new', 'bottom-of-page')} />
         </div>

@@ -648,7 +648,6 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 </Tabs>
             </div>
 
-            {/* Location Selection Sheet */}
             <Sheet open={locationModalOpen} onOpenChange={setLocationModalOpen}>
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
@@ -661,7 +660,6 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                     </SheetHeader>
 
                     <div className='mt-6 space-y-4'>
-                        {/* Search */}
                         <div className='relative'>
                             <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
@@ -672,7 +670,6 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                             />
                         </div>
 
-                        {/* Locations List */}
                         <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                             {locations.length === 0 ? (
                                 <div className='text-center py-8 text-muted-foreground'>
@@ -707,7 +704,6 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                             )}
                         </div>
 
-                        {/* Pagination */}
                         {locationPagination.total_pages > 1 && (
                             <div className='flex items-center justify-between pt-4 border-t'>
                                 <div className='text-sm text-muted-foreground'>

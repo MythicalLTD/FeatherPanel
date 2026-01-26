@@ -103,23 +103,18 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
         <html lang='en' suppressHydrationWarning>
             <body className='bg-background text-foreground'>
                 <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-4'>
-                    {/* Dynamic background */}
                     {renderBackground()}
 
-                    {/* Theme customizer */}
                     <div className='pointer-events-auto absolute top-4 right-4 z-50'>
                         <ThemeCustomizer />
                     </div>
 
-                    {/* Error content */}
                     <div className='relative z-10 w-full max-w-2xl'>
                         <div className='relative group'>
-                            {/* Glow effect */}
                             <div className='absolute -inset-0.5 bg-linear-to-r from-destructive/50 to-destructive/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000' />
 
                             <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 md:p-12 shadow-2xl shadow-black/20'>
                                 <div className='text-center space-y-6'>
-                                    {/* 500 Number */}
                                     <div className='relative'>
                                         <h1 className='text-9xl md:text-[12rem] font-black bg-linear-to-br from-destructive via-destructive/80 to-destructive/60 bg-clip-text text-transparent leading-none'>
                                             500
@@ -129,7 +124,6 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                                         </div>
                                     </div>
 
-                                    {/* Message */}
                                     <div className='space-y-3'>
                                         <h2 className='text-2xl md:text-3xl font-bold tracking-tight'>
                                             Critical Error
@@ -145,7 +139,6 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                                         )}
                                     </div>
 
-                                    {/* Actions */}
                                     <div className='flex flex-col sm:flex-row gap-3 justify-center pt-4'>
                                         <Button onClick={reset} variant='outline' className='group'>
                                             <RefreshCw className='h-4 w-4 mr-2 group-hover:rotate-180 transition-transform duration-500' />
@@ -163,7 +156,6 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                         </div>
                     </div>
 
-                    {/* Footer */}
                     <div className='relative z-10 mt-8 text-center text-xs text-muted-foreground'>
                         <p className='mb-2 font-medium'>Running on FeatherPanel {version ? `v${version}` : ''}</p>
                         <a

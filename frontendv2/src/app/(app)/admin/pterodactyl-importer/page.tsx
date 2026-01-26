@@ -275,11 +275,10 @@ export default function PterodactylImporterPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'after-header')} />
 
-            {/* Prerequisites Section */}
             <div className='grid gap-6 md:grid-cols-3'>
                 <div className='md:col-span-2 space-y-6'>
                     <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'before-content')} />
-                    {/* System Requirements */}
+
                     <PageCard
                         title={t('admin.pterodactyl_importer.prerequisites.title')}
                         description={t('admin.pterodactyl_importer.prerequisites.description')}
@@ -303,7 +302,6 @@ export default function PterodactylImporterPage() {
                             </div>
                         ) : prerequisites ? (
                             <div className='space-y-4'>
-                                {/* Overall Status Banner */}
                                 <div
                                     className={`rounded-xl border p-4 flex items-center gap-4 ${
                                         prerequisitesPassed
@@ -340,7 +338,6 @@ export default function PterodactylImporterPage() {
                                     </div>
                                 </div>
 
-                                {/* Status Grid */}
                                 <div className='grid gap-4 sm:grid-cols-2'>
                                     {[
                                         {
@@ -412,7 +409,6 @@ export default function PterodactylImporterPage() {
                                         </div>
                                     ))}
 
-                                    {/* Panel Clean Check */}
                                     <div className='flex items-center justify-between rounded-lg border border-white/5 bg-card/50 p-3 box-decoration-clone transition-all hover:bg-card/80 sm:col-span-2'>
                                         <span className='text-sm font-medium'>
                                             {t('admin.pterodactyl_importer.prerequisites.items.panel_status')}
@@ -440,7 +436,6 @@ export default function PterodactylImporterPage() {
                         )}
                     </PageCard>
 
-                    {/* CLI Instructions (Only if passed) */}
                     {prerequisitesPassed && (
                         <div className='space-y-6'>
                             <div className='flex items-center gap-2'>
@@ -451,7 +446,6 @@ export default function PterodactylImporterPage() {
                                 <div className='h-px flex-1 bg-border/50' />
                             </div>
 
-                            {/* Step 1: Install */}
                             <PageCard
                                 title={t('admin.pterodactyl_importer.cli.step1.title')}
                                 description={t('admin.pterodactyl_importer.cli.step1.description')}
@@ -463,7 +457,6 @@ export default function PterodactylImporterPage() {
                                 </div>
                             </PageCard>
 
-                            {/* Step 2: Auth */}
                             <PageCard
                                 title={t('admin.pterodactyl_importer.cli.step2.title')}
                                 description={t('admin.pterodactyl_importer.cli.step2.description')}
@@ -506,7 +499,6 @@ export default function PterodactylImporterPage() {
                                 </div>
                             </PageCard>
 
-                            {/* Step 3 & 4 (Combined for flow if key selected) */}
                             {selectedApiKey && (
                                 <div className='animate-in fade-in slide-in-from-bottom-2'>
                                     <PageCard
@@ -559,9 +551,7 @@ export default function PterodactylImporterPage() {
                     )}
                 </div>
 
-                {/* Sidebar */}
                 <div className='space-y-6'>
-                    {/* Help & Support */}
                     <PageCard
                         title={t('admin.pterodactyl_importer.help.title')}
                         description={t('admin.pterodactyl_importer.help.description')}
@@ -608,7 +598,6 @@ export default function PterodactylImporterPage() {
                         </div>
                     </PageCard>
 
-                    {/* Excluded Data Info */}
                     <PageCard
                         title={t('admin.pterodactyl_importer.info.title')}
                         description={t('admin.pterodactyl_importer.info.description')}
@@ -631,7 +620,6 @@ export default function PterodactylImporterPage() {
                 </div>
             </div>
 
-            {/* Create API Key Modal */}
             <Dialog open={showCreateApiKeyModal} onOpenChange={setShowCreateApiKeyModal}>
                 <DialogContent className='sm:max-w-[500px]'>
                     <DialogHeader>

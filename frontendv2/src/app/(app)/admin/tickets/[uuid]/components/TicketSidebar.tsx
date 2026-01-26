@@ -65,7 +65,6 @@ export function TicketSidebar({
 
     return (
         <div className='space-y-6 h-full overflow-y-auto pr-1 pb-20'>
-            {/* User Info Card */}
             {userDetails ? (
                 <>
                     <Card className='overflow-hidden bg-card/30 backdrop-blur-md border-border/10 shadow-sm'>
@@ -342,7 +341,6 @@ export function TicketSidebar({
                         </Tabs>
                     </Card>
 
-                    {/* Admin Utilities */}
                     <Card className='p-5 space-y-3 bg-card/30 backdrop-blur-md border-border/10 shadow-sm'>
                         <div className='flex items-center gap-2 pb-2 border-b border-border/5'>
                             <Settings className='h-4 w-4 text-primary' />
@@ -380,7 +378,6 @@ export function TicketSidebar({
                 </Card>
             )}
 
-            {/* Ticket Meta */}
             <Card className='p-4 space-y-3 bg-card/50 backdrop-blur-sm border-border/10 shadow-sm'>
                 <div className='flex items-center gap-2 pb-2 border-b border-border/5'>
                     <Info className='h-3.5 w-3.5 text-primary' />

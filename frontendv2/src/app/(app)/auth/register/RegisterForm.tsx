@@ -185,7 +185,7 @@ export default function RegisterForm() {
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-top')} />
-            {/* Header */}
+
             <div className='text-center space-y-2'>
                 <h2 className='text-2xl font-bold tracking-tight'>{t('auth.register.title')}</h2>
                 <p className='text-sm text-muted-foreground'>{t('auth.register.subtitle')}</p>
@@ -249,7 +249,6 @@ export default function RegisterForm() {
                     placeholder={t('auth.register.password_placeholder')}
                 />
 
-                {/* Turnstile Widget */}
                 {showTurnstile && (
                     <div className='flex justify-center'>
                         <Turnstile
@@ -291,7 +290,6 @@ export default function RegisterForm() {
             </form>
             <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-after-form')} />
 
-            {/* Footer */}
             <div className='text-center text-sm text-muted-foreground'>
                 {t('auth.register.have_account')}{' '}
                 <Link href='/auth/login' className='font-semibold text-primary hover:text-primary/80 transition-colors'>

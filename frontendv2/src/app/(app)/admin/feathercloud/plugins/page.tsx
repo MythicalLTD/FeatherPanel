@@ -266,7 +266,7 @@ export default function PluginsPage() {
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-plugins', 'top-of-page')} />
-            {/* Header */}
+
             <PageHeader
                 title={t('admin.marketplace.plugins.title')}
                 description={t('admin.marketplace.plugins.subtitle')}
@@ -281,7 +281,6 @@ export default function PluginsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-plugins', 'after-header')} />
 
-            {/* Banner Notifications */}
             {!cloudAccountConfigured && (
                 <PageCard
                     title={t('admin.marketplace.plugins.cloud_missing.title')}
@@ -337,7 +336,6 @@ export default function PluginsPage() {
                 </PageCard>
             )}
 
-            {/* Top Plugins Section */}
             {!onlineSearch && popularAddons.length > 0 && (
                 <div className='space-y-6'>
                     <div className='flex items-center justify-between'>
@@ -410,7 +408,6 @@ export default function PluginsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-plugins', 'before-content')} />
 
-            {/* Search and Filters */}
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
                 <div className='relative flex-1 group'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -464,7 +461,6 @@ export default function PluginsPage() {
                 </div>
             )}
 
-            {/* Online Addons Grid */}
             {onlineLoading ? (
                 <EmptyState
                     title={t('admin.marketplace.plugins.loading')}
@@ -642,7 +638,6 @@ export default function PluginsPage() {
 
             {renderPagination()}
 
-            {/* Help Sections */}
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.marketplace.spells.help.repo_title')} icon={Globe}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -661,7 +656,6 @@ export default function PluginsPage() {
                 </PageCard>
             </div>
 
-            {/* Details Side Panel */}
             <Sheet open={packageDetailsOpen} onOpenChange={setPackageDetailsOpen}>
                 <div className='h-full flex flex-col'>
                     <SheetHeader>

@@ -195,9 +195,7 @@ const ScannerTab = () => {
 
     return (
         <div className='space-y-6'>
-            {/* Scan Setup */}
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-                {/* Mode and Config */}
                 <Card className='lg:col-span-2 border-border/50 bg-card/30 backdrop-blur-sm'>
                     <CardHeader>
                         <CardTitle className='text-lg flex items-center gap-2'>
@@ -206,7 +204,6 @@ const ScannerTab = () => {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className='space-y-6'>
-                        {/* Mode Selector */}
                         <div className='grid grid-cols-2 gap-4'>
                             {[
                                 {
@@ -252,7 +249,6 @@ const ScannerTab = () => {
                             ))}
                         </div>
 
-                        {/* Options */}
                         <div className='grid grid-cols-2 gap-4 pt-2'>
                             <div className='space-y-2'>
                                 <Label className='text-xs'>{t('admin.featherzerotrust.scanner.directory')}</Label>
@@ -290,7 +286,6 @@ const ScannerTab = () => {
                     </CardContent>
                 </Card>
 
-                {/* Server Selection */}
                 <Card className='border-border/50 bg-card/30 backdrop-blur-sm'>
                     <CardHeader>
                         <CardTitle className='text-sm font-medium uppercase tracking-wider text-muted-foreground flex items-center justify-between'>
@@ -351,7 +346,6 @@ const ScannerTab = () => {
                 </Card>
             </div>
 
-            {/* Live Progress / Terminal */}
             {scanning && (
                 <Card className='border-primary/30 bg-black/40 backdrop-blur-xl overflow-hidden animate-in fade-in zoom-in duration-500'>
                     <div className='bg-primary/10 px-4 py-2 border-b border-primary/20 flex items-center justify-between'>
@@ -393,7 +387,6 @@ const ScannerTab = () => {
                 </Card>
             )}
 
-            {/* Results Visualization */}
             {(scanResults || batchResults.length > 0) && (
                 <div className='space-y-6 animate-in slide-in-from-bottom-6 duration-700'>
                     <div className='flex items-center gap-3'>

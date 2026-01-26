@@ -226,7 +226,7 @@ export default function ServerSchedulesPage() {
     return (
         <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-schedules', 'top-of-page')} />
-            {/* Header Section */}
+
             <PageHeader
                 title={t('serverSchedules.title')}
                 description={t('serverSchedules.description')}
@@ -257,7 +257,6 @@ export default function ServerSchedulesPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-schedules', 'after-header')} />
 
-            {/* List */}
             {schedules.length === 0 ? (
                 <EmptyState
                     title={t('serverSchedules.noSchedules')}
@@ -369,7 +368,7 @@ export default function ServerSchedulesPage() {
                             }
                         />
                     ))}
-                    {/* Pagination */}
+
                     {pagination.total > pagination.per_page && (
                         <div className='flex items-center justify-between gap-3 pt-4 border-t border-white/5'>
                             <div className='text-xs text-muted-foreground'>
@@ -403,7 +402,7 @@ export default function ServerSchedulesPage() {
 
             <WidgetRenderer widgets={getWidgets('server-schedules', 'after-schedules-list')} />
             <WidgetRenderer widgets={getWidgets('server-schedules', 'bottom-of-page')} />
-            {/* Delete Modal */}
+
             <HeadlessModal
                 isOpen={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}

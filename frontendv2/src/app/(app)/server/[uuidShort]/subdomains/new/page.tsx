@@ -193,7 +193,6 @@ export default function CreateSubdomainPage() {
             <WidgetRenderer widgets={getWidgets('server-subdomains-new', 'after-header')} />
 
             <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                {/* Left Side: Forms */}
                 <div className='lg:col-span-8 space-y-8'>
                     {limitReached && (
                         <div className='rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-5 flex items-start gap-4'>
@@ -213,7 +212,6 @@ export default function CreateSubdomainPage() {
                         </div>
                     )}
 
-                    {/* Subdomain Configuration */}
                     <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
                         <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                             <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -230,7 +228,6 @@ export default function CreateSubdomainPage() {
                         </div>
 
                         <div className='space-y-6'>
-                            {/* Domain Select */}
                             <div className='space-y-2.5'>
                                 <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                     {t('serverSubdomains.domainLabel')} <span className='text-primary'>*</span>
@@ -250,7 +247,6 @@ export default function CreateSubdomainPage() {
                                 />
                             </div>
 
-                            {/* Subdomain Input */}
                             <div className='space-y-2.5'>
                                 <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
                                     {t('serverSubdomains.subdomainLabel')} <span className='text-primary'>*</span>
@@ -270,7 +266,6 @@ export default function CreateSubdomainPage() {
                     </div>
                 </div>
 
-                {/* Right Side: Info Panel */}
                 <div className='lg:col-span-4 space-y-8'>
                     <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-sm relative overflow-hidden group'>
                         <div className='absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000' />
@@ -316,7 +311,6 @@ export default function CreateSubdomainPage() {
                         </ul>
                     </div>
 
-                    {/* Mobile Only: Action Button */}
                     <div className='md:hidden pt-2'>
                         <Button
                             size='default'

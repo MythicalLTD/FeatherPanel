@@ -317,7 +317,6 @@ export default function ServersPage() {
 
     return (
         <div className='space-y-6'>
-            {/* Plugin Widgets: Top of Page */}
             <WidgetRenderer widgets={getWidgets('admin-servers', 'top-of-page')} />
 
             <PageHeader
@@ -332,7 +331,6 @@ export default function ServersPage() {
                 }
             />
 
-            {/* Plugin Widgets: After Header */}
             <WidgetRenderer widgets={getWidgets('admin-servers', 'after-header')} />
 
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
@@ -347,7 +345,6 @@ export default function ServersPage() {
                 </div>
             </div>
 
-            {/* Plugin Widgets: Before List */}
             <WidgetRenderer widgets={getWidgets('admin-servers', 'before-list')} />
 
             {loading ? (
@@ -484,7 +481,6 @@ export default function ServersPage() {
                 </div>
             )}
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
                 <PageCard title={t('admin.servers.help.managing.title')} icon={Server}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -514,7 +510,6 @@ export default function ServersPage() {
                 </PageCard>
             </div>
 
-            {/* View Sheet */}
             <Sheet open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
                 <SheetContent side='right' className='sm:max-w-2xl overflow-y-auto custom-scrollbar'>
                     {selectedServer && (
@@ -729,7 +724,6 @@ export default function ServersPage() {
                 </SheetContent>
             </Sheet>
 
-            {/* Delete Confirmation */}
             <AlertDialog
                 open={confirmDeleteId !== null}
                 onOpenChange={(open) => !open && !deleting && setConfirmDeleteId(null)}
@@ -792,7 +786,6 @@ export default function ServersPage() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Transfer Dialog */}
             <AlertDialog
                 open={isTransferDialogOpen}
                 onOpenChange={(open) => !open && !isInitiatingTransfer && setIsTransferDialogOpen(false)}
@@ -806,11 +799,9 @@ export default function ServersPage() {
                         <AlertDialogDescription>{t('admin.servers.transfer.description')}</AlertDialogDescription>
                     </AlertDialogHeader>
 
-                    {/* Plugin Widgets: Bottom of Page */}
                     <WidgetRenderer widgets={getWidgets('admin-servers', 'bottom-of-page')} />
 
                     <div className='space-y-6 pt-4'>
-                        {/* Server Info Summary */}
                         {transferServer && (
                             <div className='grid grid-cols-2 gap-4 p-4 rounded-2xl bg-muted/30 border border-border/50 text-sm'>
                                 <div>
@@ -828,7 +819,6 @@ export default function ServersPage() {
                             </div>
                         )}
 
-                        {/* Node & Allocation Selection */}
                         <div className='space-y-4'>
                             <div className='space-y-2'>
                                 <label className='text-sm font-bold'>
@@ -887,7 +877,6 @@ export default function ServersPage() {
                             </div>
                         </div>
 
-                        {/* Warnings */}
                         <div className='space-y-4'>
                             <div className='p-4 bg-red-500/10 border border-red-500/20 rounded-2xl'>
                                 <p className='text-sm font-black text-red-500 text-center mb-2'>
@@ -935,7 +924,6 @@ export default function ServersPage() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Selection Modals */}
             <HeadlessModal
                 isOpen={isNodeModalOpen}
                 onClose={() => setIsNodeModalOpen(false)}

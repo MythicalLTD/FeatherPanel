@@ -274,7 +274,7 @@ export default function TicketViewPage() {
     return (
         <div className='max-w-[1600px] mx-auto h-[calc(100vh-6rem)] flex flex-col pt-2 pb-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'top-of-page')} />
-            {/* Header */}
+
             <div className='flex items-center justify-between mb-4 shrink-0 px-1'>
                 <div className='flex items-center gap-3'>
                     <Link href='/dashboard/tickets'>
@@ -291,16 +291,13 @@ export default function TicketViewPage() {
                         </div>
                     </div>
                 </div>
-                <div className='flex items-center gap-2'>{/* Actions if needed, e.g. Close Ticket Button */}</div>
+                <div className='flex items-center gap-2'></div>
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'after-header')} />
 
             <div className='flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6'>
-                {/* Chat Area (Left) */}
                 <div className='lg:col-span-8 flex flex-col bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden h-full'>
-                    {/* Messages Scroll Area */}
                     <div className='flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar space-y-8'>
-                        {/* Original Ticket Description as first message */}
                         <div className='flex gap-4 group'>
                             <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50'>
                                 <AvatarFallback>OP</AvatarFallback>
@@ -318,7 +315,6 @@ export default function TicketViewPage() {
                             </div>
                         </div>
 
-                        {/* Divider */}
                         {messages.length > 0 && (
                             <div className='relative flex items-center py-2'>
                                 <div className='grow border-t border-border/50'></div>
@@ -329,7 +325,6 @@ export default function TicketViewPage() {
                             </div>
                         )}
 
-                        {/* Messages List */}
                         {messages.map((msg) => {
                             const isMe = currentUser?.uuid === msg.user?.uuid;
                             const isInternal = msg.is_internal === 1 || msg.is_internal === true; // Handle both number and boolean safely
@@ -433,7 +428,6 @@ export default function TicketViewPage() {
                                                 </ReactMarkdown>
                                             </div>
 
-                                            {/* Message Footer: Timestamp & Attachments */}
                                             <div
                                                 className={clsx(
                                                     'flex items-center gap-2 mt-1 select-none justify-end text-muted-foreground/70',
@@ -447,7 +441,6 @@ export default function TicketViewPage() {
                                                 </span>
                                             </div>
 
-                                            {/* Options Dropdown could go here, putting delete button for now */}
                                             {canDeleteMessage(msg) && (
                                                 <button
                                                     onClick={() => deleteMessage(msg.id)}
@@ -462,7 +455,6 @@ export default function TicketViewPage() {
                                             )}
                                         </div>
 
-                                        {/* Attachments outside bubble for cleaner look, or inside? Screenshot shows signature inside. Attachments usually look good as separate bubbles or cards. Let's keep them below for now but right aligned. */}
                                         {msg.attachments && msg.attachments.length > 0 && (
                                             <div className='flex flex-wrap justify-end gap-2 mt-1'>
                                                 {msg.attachments.map((att) => (
@@ -495,7 +487,6 @@ export default function TicketViewPage() {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Reply Area (Sticky Bottom) */}
                     <div className='p-4 bg-background/50 backdrop-blur-sm border-t border-border/50'>
                         {ticket.closed_at ? (
                             <div className='flex items-center justify-center p-4 rounded-xl bg-muted/50 border border-dashed text-muted-foreground gap-2'>
@@ -597,10 +588,9 @@ export default function TicketViewPage() {
                     <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'after-messages')} />
                 </div>
 
-                {/* Sidebar (Right) */}
                 <div className='lg:col-span-4 space-y-4 h-full overflow-y-auto custom-scrollbar pb-6'>
                     <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'sidebar-top')} />
-                    {/* Status Card */}
+
                     <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
                         <CardHeader className='pb-2'>
                             <CardTitle className='text-sm font-medium text-muted-foreground uppercase tracking-wider'>
@@ -650,7 +640,6 @@ export default function TicketViewPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Server Info Card */}
                     {ticket.server && (
                         <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
                             <CardHeader className='pb-2'>

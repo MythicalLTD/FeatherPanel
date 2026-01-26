@@ -241,7 +241,6 @@ export default function TicketsPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'after-header')} />
 
-            {/* Filters */}
             <div className='bg-card/50 backdrop-blur-sm rounded-xl border border-border/50 p-1'>
                 <div className='flex flex-col md:flex-row gap-4 p-4'>
                     <div className='flex-1 flex flex-col md:flex-row gap-4 w-full'>
@@ -277,7 +276,6 @@ export default function TicketsPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'after-filters')} />
 
-            {/* List */}
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'before-tickets-list')} />
             {loading ? (
                 <div className='space-y-4'>
@@ -374,7 +372,7 @@ export default function TicketsPage() {
                             </div>
                         ))}
                     </div>
-                    {/* Pagination */}
+
                     {pagination.total > 0 && (
                         <div className='p-4 border-t border-border flex items-center justify-between'>
                             <p className='text-sm text-muted-foreground'>
@@ -409,7 +407,6 @@ export default function TicketsPage() {
             )}
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'after-tickets-list')} />
 
-            {/* Headless UI Modal for Delete */}
             <HeadlessModal
                 isOpen={showDeleteDialog}
                 onClose={() => setShowDeleteDialog(false)}

@@ -192,7 +192,7 @@ export default function SetupTwoFactorForm() {
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-top')} />
-            {/* Header */}
+
             <div className='text-center space-y-3'>
                 <div className='inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2'>
                     <ShieldCheck className='h-8 w-8 text-primary' />
@@ -203,12 +203,10 @@ export default function SetupTwoFactorForm() {
 
             <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-before-form')} />
             <form onSubmit={handleSubmit} className='space-y-6'>
-                {/* QR Code */}
                 <div className='flex justify-center p-6 bg-white dark:bg-muted/20 rounded-2xl border border-border/50'>
                     <QRCode value={qrCodeUrl} size={200} level='M' />
                 </div>
 
-                {/* Manual Entry */}
                 <div className='space-y-3'>
                     <p className='text-sm text-center text-muted-foreground'>{t('auth.setup_2fa.manual_entry')}</p>
                     <div className='flex items-center gap-2'>
@@ -232,7 +230,6 @@ export default function SetupTwoFactorForm() {
                     )}
                 </div>
 
-                {/* Verification */}
                 <div className='space-y-4 pt-4 border-t border-border'>
                     <Input
                         label={t('auth.setup_2fa.code')}
@@ -248,7 +245,6 @@ export default function SetupTwoFactorForm() {
                         className='text-center text-2xl tracking-widest font-mono'
                     />
 
-                    {/* Turnstile Widget */}
                     {showTurnstile && (
                         <div className='flex justify-center'>
                             <Turnstile

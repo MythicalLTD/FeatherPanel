@@ -205,7 +205,7 @@ export default function CreateProxyPage() {
     return (
         <div className='max-w-6xl mx-auto space-y-8 pb-16 '>
             <WidgetRenderer widgets={getWidgets('server-proxy-new', 'top-of-page')} />
-            {/* Navigation Header */}
+
             <PageHeader
                 title={t('serverProxy.createProxy')}
                 description={t('serverProxy.createModalDescription')}
@@ -233,9 +233,7 @@ export default function CreateProxyPage() {
             <WidgetRenderer widgets={getWidgets('server-proxy-new', 'after-header')} />
 
             <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                {/* Left Side: Forms */}
                 <div className='lg:col-span-8 space-y-8'>
-                    {/* Domain & Port Configuration */}
                     <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
                         <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                             <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -292,7 +290,6 @@ export default function CreateProxyPage() {
                                 />
                             </div>
 
-                            {/* DNS Verification Block inside the form for logical flow */}
                             <div className='rounded-2xl border border-primary/20 bg-primary/5 p-5 space-y-4'>
                                 <div className='flex items-start gap-4'>
                                     <div className='h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30'>
@@ -358,7 +355,6 @@ export default function CreateProxyPage() {
                         </div>
                     </div>
 
-                    {/* SSL Configuration */}
                     <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
                         <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                             <div className='h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20'>
@@ -390,7 +386,6 @@ export default function CreateProxyPage() {
 
                         {formData.ssl && (
                             <div className='space-y-6 animate-in fade-in slide-in-from-top-4 duration-500'>
-                                {/* Let's Encrypt Toggle */}
                                 <div className='flex items-center justify-between p-4 rounded-2xl bg-secondary/30 border border-border/20'>
                                     <div className='space-y-0.5'>
                                         <h4 className='font-bold text-sm text-foreground'>
@@ -471,7 +466,6 @@ export default function CreateProxyPage() {
                     </div>
                 </div>
 
-                {/* Right Side: Info Panel */}
                 <div className='lg:col-span-4 space-y-8'>
                     <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-sm relative overflow-hidden group'>
                         <div className='absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000' />
@@ -518,7 +512,6 @@ export default function CreateProxyPage() {
                         </ul>
                     </div>
 
-                    {/* Mobile Only: Action Button */}
                     <div className='md:hidden pt-2'>
                         <Button size='default' onClick={handleCreate} disabled={saving || !dnsVerified}>
                             {saving ? (

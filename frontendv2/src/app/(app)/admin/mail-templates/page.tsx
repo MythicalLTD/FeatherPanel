@@ -403,7 +403,6 @@ export default function MailTemplatesPage() {
                 </PageCard>
             </div>
 
-            {/* Create Sheet */}
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -449,7 +448,6 @@ export default function MailTemplatesPage() {
                 </div>
             </Sheet>
 
-            {/* Edit Sheet */}
             <Sheet open={editOpen} onOpenChange={setEditOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -501,7 +499,6 @@ export default function MailTemplatesPage() {
                 </div>
             </Sheet>
 
-            {/* Preview Sheet */}
             <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -545,7 +542,6 @@ export default function MailTemplatesPage() {
                 </div>
             </Sheet>
 
-            {/* Mass Email Sheet */}
             <Sheet open={massEmailOpen} onOpenChange={setMassEmailOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>

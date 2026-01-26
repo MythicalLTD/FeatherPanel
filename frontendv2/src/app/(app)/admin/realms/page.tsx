@@ -297,7 +297,6 @@ export default function RealmsPage() {
                 </div>
             )}
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6 pt-6'>
                 <PageCard title={t('admin.realms.help.what_are_realms.title')} icon={Sparkles}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -311,7 +310,6 @@ export default function RealmsPage() {
                 </PageCard>
             </div>
 
-            {/* Create Sheet */}
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -344,7 +342,6 @@ export default function RealmsPage() {
                 </div>
             </Sheet>
 
-            {/* Edit Sheet */}
             <Sheet open={editOpen} onOpenChange={setEditOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>

@@ -24,18 +24,15 @@ interface ActivityFeedProps {
 export function ActivityFeed({ activities, formatDate }: ActivityFeedProps) {
     return (
         <div className='relative'>
-            {/* Timeline line */}
             <div className='absolute left-6 top-0 bottom-0 w-0.5 bg-border'></div>
 
             <div className='space-y-4'>
                 {activities.map((activity) => (
                     <div key={activity.id} className='relative flex gap-4'>
-                        {/* Timeline dot */}
                         <div className='relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 border-2 border-primary/20'>
                             <div className='h-3 w-3 rounded-full bg-primary'></div>
                         </div>
 
-                        {/* Activity content */}
                         <div className='flex-1 space-y-2 pb-4 min-w-0'>
                             <div className='flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-2'>
                                 <div className='flex-1 min-w-0'>

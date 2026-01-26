@@ -384,7 +384,7 @@ export default function ServerStartupPage() {
     return (
         <div key={pathname} className='max-w-6xl mx-auto space-y-8 pb-16 font-sans'>
             <WidgetRenderer widgets={getWidgets('server-startup', 'top-of-page')} />
-            {/* Header Section */}
+
             <PageHeader
                 title={t('serverStartup.title')}
                 description={t('serverStartup.description')}
@@ -422,9 +422,7 @@ export default function ServerStartupPage() {
             <WidgetRenderer widgets={getWidgets('server-startup', 'after-header')} />
 
             <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                {/* Left Side: Main Content */}
                 <div className='lg:col-span-8 space-y-8'>
-                    {/* Startup Command */}
                     <PageCard
                         title={t('serverStartup.startupCommand')}
                         description={t('serverStartup.startupHelp')}
@@ -448,7 +446,6 @@ export default function ServerStartupPage() {
                     </PageCard>
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-startup-command')} />
 
-                    {/* Variables */}
                     <PageCard
                         title={t('serverStartup.variables')}
                         description={t('serverStartup.variablesHelp')}
@@ -531,9 +528,7 @@ export default function ServerStartupPage() {
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-variables')} />
                 </div>
 
-                {/* Right Side: Configuration & Actions */}
                 <div className='lg:col-span-4 space-y-8'>
-                    {/* Docker Image Panel */}
                     <PageCard title={t('serverStartup.dockerImage')} description='Containerization' icon={Container}>
                         <div className='space-y-6'>
                             <div className='space-y-2.5'>
@@ -592,7 +587,6 @@ export default function ServerStartupPage() {
                     </PageCard>
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-docker-image')} />
 
-                    {/* Software Transfer Section */}
                     {canChangeSpell && (
                         <div className='bg-primary/5 border border-primary/10 backdrop-blur-3xl rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden group'>
                             <div className='absolute -bottom-12 -right-12 w-48 h-48 bg-primary/10 blur-3xl pointer-events-none group-hover:bg-primary/20 transition-all duration-1000' />
@@ -627,7 +621,6 @@ export default function ServerStartupPage() {
                     )}
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-spell-selection')} />
 
-                    {/* Information Summary */}
                     <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-sm relative overflow-hidden group'>
                         <div className='absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000' />
                         <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10'>

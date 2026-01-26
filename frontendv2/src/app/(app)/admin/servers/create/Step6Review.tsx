@@ -65,7 +65,6 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                 className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
             >
                 <div className='space-y-8'>
-                    {/* Core Details Section */}
                     <div className='space-y-4'>
                         <h3 className='text-lg font-semibold flex items-center gap-2'>
                             <ServerIcon className='h-5 w-5 text-primary' />
@@ -105,7 +104,6 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                         </div>
                     </div>
 
-                    {/* Allocation Section */}
                     <div className='space-y-4'>
                         <h3 className='text-lg font-semibold flex items-center gap-2'>
                             <Plug className='h-5 w-5 text-blue-500' />
@@ -140,7 +138,6 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                         </div>
                     </div>
 
-                    {/* Application Section */}
                     <div className='space-y-4'>
                         <h3 className='text-lg font-semibold flex items-center gap-2'>
                             <Wand2 className='h-5 w-5 text-purple-500' />
@@ -171,7 +168,6 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                         </div>
                     </div>
 
-                    {/* Resources Section */}
                     <div className='space-y-4'>
                         <h3 className='text-lg font-semibold flex items-center gap-2'>
                             <Cpu className='h-5 w-5 text-orange-500' />
@@ -213,7 +209,6 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                         </div>
                     </div>
 
-                    {/* Feature Limits Section */}
                     <div className='space-y-4'>
                         <h3 className='text-lg font-semibold flex items-center gap-2'>
                             <Database className='h-5 w-5 text-emerald-500' />
@@ -242,7 +237,6 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                         </div>
                     </div>
 
-                    {/* Startup Command */}
                     <div className='space-y-4'>
                         <h3 className='text-lg font-semibold flex items-center gap-2'>
                             <Terminal className='h-5 w-5 text-cyan-500' />

@@ -382,7 +382,6 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
     return (
         <div className='space-y-6'>
-            {/* Header */}
             <PageHeader
                 title={t('admin.users.edit.title', { username: user.username })}
                 description={t('admin.users.edit.description')}
@@ -396,7 +395,6 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             />
 
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-                {/* Left Column: Edit Form */}
                 <div className='lg:col-span-2 space-y-6'>
                     <PageCard title={t('admin.users.edit.form.title')} icon={User} className='h-full'>
                         <form onSubmit={handleSubmit} className='space-y-6'>
@@ -520,9 +518,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                     </PageCard>
                 </div>
 
-                {/* Right Column: User Profile & Actions */}
                 <div className='space-y-6'>
-                    {/* Overview Card */}
                     <PageCard title={t('admin.users.edit.account_info.title')} icon={User}>
                         <div className='flex flex-col items-center mb-6'>
                             <Avatar className='h-24 w-24 mb-4 ring-4 ring-background shadow-lg'>
@@ -621,7 +617,6 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         </div>
                     </PageCard>
 
-                    {/* Danger Zone / Actions */}
                     <PageCard title={t('admin.users.edit.actions.title')} icon={Shield} variant='default'>
                         <div className='space-y-3'>
                             <Button
@@ -686,7 +681,6 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 </div>
             </div>
 
-            {/* Tabs Section */}
             <Tabs defaultValue='servers' className='w-full'>
                 <div className='flex items-center justify-between mb-4'>
                     <TabsList>
@@ -892,7 +886,6 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 </TabsContent>
             </Tabs>
 
-            {/* Mail Preview Dialog */}
             <Dialog open={mailPreviewOpen} onOpenChange={setMailPreviewOpen}>
                 <DialogContent className='max-w-2xl'>
                     <DialogHeader>

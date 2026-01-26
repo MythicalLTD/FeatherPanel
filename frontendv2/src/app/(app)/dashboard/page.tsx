@@ -183,10 +183,8 @@ export default function DashboardPage() {
 
     return (
         <div className='space-y-8'>
-            {/* Plugin Widgets: Top of Page */}
             <WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} />
 
-            {/* Welcome Section */}
             <div className='relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 sm:p-6 md:p-8'>
                 <div className='relative z-10'>
                     <h1 className='text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2'>
@@ -195,21 +193,17 @@ export default function DashboardPage() {
                     </h1>
                     <p className='text-sm sm:text-base md:text-lg text-muted-foreground'>{t('dashboard.subtitle')}</p>
                 </div>
-                {/* Decorative elements */}
+
                 <div className='absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl z-0' />
                 <div className='absolute bottom-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl z-0' />
             </div>
 
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8'>
-                {/* Main Content (Servers, Announcements, Tickets) */}
                 <div className='lg:col-span-2 space-y-6 md:space-y-8'>
-                    {/* Announcements */}
                     <AnnouncementBanner />
 
-                    {/* Plugin Widgets: Before Server List */}
                     <WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} />
 
-                    {/* Servers List */}
                     <div className='space-y-6'>
                         <div className='flex items-center justify-between'>
                             <h2 className='text-xl font-bold'>{t('dashboard.recent_servers.title')}</h2>
@@ -254,24 +248,19 @@ export default function DashboardPage() {
                             </div>
                         )}
 
-                        {/* Plugin Widgets: After Server List */}
                         <WidgetRenderer widgets={getWidgets('dashboard', 'after-server-list')} />
                     </div>
 
-                    {/* Support Tickets */}
                     <div className='space-y-6'>
                         {isEnabled(settings?.ticket_system_enabled) && <TicketList t={t} />}
                     </div>
 
-                    {/* Knowledge Base */}
                     <div className='space-y-6'>
                         {isEnabled(settings?.knowledgebase_enabled) && <KnowledgeBaseList t={t} />}
                     </div>
                 </div>
 
-                {/* Sidebar (Activity & Profile) */}
                 <div className='space-y-8'>
-                    {/* User Profile Card */}
                     {user && (
                         <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
                             <div className='flex items-center gap-4'>
@@ -315,7 +304,6 @@ export default function DashboardPage() {
                         </div>
                     )}
 
-                    {/* Activity Feed */}
                     <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
                         <div className='flex items-center justify-between mb-6'>
                             <h2 className='text-lg font-bold'>{t('dashboard.activity.title')}</h2>
@@ -343,7 +331,6 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* Plugin Widgets: Bottom of Page */}
             <WidgetRenderer widgets={getWidgets('dashboard', 'bottom-of-page')} />
         </div>
     );

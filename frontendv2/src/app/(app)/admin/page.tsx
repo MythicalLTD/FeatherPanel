@@ -129,7 +129,6 @@ export default function AdminDashboardPage() {
 
     return (
         <div className='space-y-6 md:space-y-8'>
-            {/* Plugin Widgets: Top of Page */}
             <WidgetRenderer widgets={getWidgets('admin-home', 'top-of-page')} />
 
             <PageHeader
@@ -176,10 +175,8 @@ export default function AdminDashboardPage() {
                 }
             />
 
-            {/* Plugin Widgets: After Header */}
             <WidgetRenderer widgets={getWidgets('admin-home', 'after-header')} />
 
-            {/* APP_URL Warning */}
             {showAppUrlWarning && (
                 <div className='p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] bg-red-500/10 border border-red-500/20 backdrop-blur-3xl animate-in slide-in-from-top-4 duration-500 relative group overflow-hidden'>
                     <div className='absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-3xl -mr-16 -mt-16 rounded-full group-hover:bg-red-500/20 transition-all duration-700' />
@@ -216,7 +213,6 @@ export default function AdminDashboardPage() {
                 </div>
             )}
 
-            {/* Welcome Banner */}
             <div className={cn('transition-all duration-500', !isVisible('welcome') && 'hidden')}>
                 <div className='relative'>
                     {isCustomizing && (
@@ -237,7 +233,6 @@ export default function AdminDashboardPage() {
                 </div>
             </div>
 
-            {/* Statistics */}
             <div className={cn('transition-all duration-500', !isVisible('stats') && 'hidden')}>
                 <div className='relative'>
                     {isCustomizing && (
@@ -258,10 +253,8 @@ export default function AdminDashboardPage() {
                 </div>
             </div>
 
-            {/* Plugin Widgets: Before Grid */}
             <WidgetRenderer widgets={getWidgets('admin-home', 'before-widgets-grid')} />
 
-            {/* Main Content Grid */}
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-start'>
                 <div className='space-y-6 md:space-y-8'>
                     <div className={cn('transition-all duration-500', !isVisible('health') && 'hidden')}>
@@ -347,10 +340,8 @@ export default function AdminDashboardPage() {
                 </div>
             </div>
 
-            {/* Plugin Widgets: After Grid */}
             <WidgetRenderer widgets={getWidgets('admin-home', 'after-widgets-grid')} />
 
-            {/* Plugin Widgets: Bottom of Page */}
             <WidgetRenderer widgets={getWidgets('admin-home', 'bottom-of-page')} />
         </div>
     );

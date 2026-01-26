@@ -83,7 +83,6 @@ export default function CloudManagementFinishPage() {
     return (
         <div className='min-h-screen flex items-center justify-center p-6'>
             <div className='w-full max-w-md space-y-8 text-center'>
-                {/* Icon */}
                 <div className='flex justify-center'>
                     {isLoading || isSaving ? (
                         <div className='relative'>
@@ -109,7 +108,6 @@ export default function CloudManagementFinishPage() {
                     ) : null}
                 </div>
 
-                {/* Title */}
                 <div className='space-y-2'>
                     <h1 className='text-3xl font-bold text-foreground'>
                         {isLoading || isSaving
@@ -132,7 +130,6 @@ export default function CloudManagementFinishPage() {
                     </p>
                 </div>
 
-                {/* Success Info */}
                 {isSuccess && (
                     <div className='rounded-lg border border-green-500/30 bg-green-500/10 p-6 text-left space-y-3'>
                         <p className='text-sm font-semibold text-green-800 dark:text-green-300'>
@@ -155,7 +152,6 @@ export default function CloudManagementFinishPage() {
                     </div>
                 )}
 
-                {/* Error Info */}
                 {error && (
                     <div className='rounded-lg border border-red-500/30 bg-red-500/10 p-6'>
                         <p className='text-sm text-red-700 dark:text-red-400'>
@@ -164,7 +160,6 @@ export default function CloudManagementFinishPage() {
                     </div>
                 )}
 
-                {/* Actions */}
                 <div className='flex justify-center gap-3'>
                     {isSuccess ? (
                         <Button size='lg' onClick={() => router.push('/admin/cloud-management')} className='gap-2'>
@@ -178,7 +173,6 @@ export default function CloudManagementFinishPage() {
                     ) : null}
                 </div>
 
-                {/* Auto-redirect notice */}
                 {isSuccess && (
                     <p className='text-xs text-muted-foreground'>{t('admin.cloud_management.finish.redirecting')}</p>
                 )}

@@ -152,7 +152,6 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                 icon={Settings2}
             >
                 <div className='space-y-8'>
-                    {/* Source Selection */}
                     <div className='space-y-4'>
                         <Label className='text-xs font-bold uppercase tracking-widest text-muted-foreground'>
                             {t('admin.node.view.self_update.source')}

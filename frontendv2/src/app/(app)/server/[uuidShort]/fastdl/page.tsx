@@ -28,17 +28,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-    Download,
-    Info,
-    Loader2,
-    Copy,
-    ExternalLink,
-    Save,
-    AlertCircle,
-    CheckCircle2,
-    Globe,
-} from 'lucide-react';
+import { Download, Info, Loader2, Copy, ExternalLink, Save, AlertCircle, CheckCircle2, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -262,9 +252,7 @@ export default function ServerFastDlPage() {
             <WidgetRenderer widgets={getWidgets('server-fastdl', 'after-header')} />
 
             <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                {/* Left Side: Configuration */}
                 <div className='lg:col-span-8 space-y-8'>
-                    {/* FastDL Status */}
                     <PageCard
                         title={t('serverFastDl.status')}
                         description={t('serverFastDl.statusDescription')}
@@ -286,7 +274,11 @@ export default function ServerFastDlPage() {
                                     </div>
                                 </div>
                                 {canManage && (
-                                    <Switch checked={enabled} onCheckedChange={setEnabled} disabled={saving || enabling || disabling} />
+                                    <Switch
+                                        checked={enabled}
+                                        onCheckedChange={setEnabled}
+                                        disabled={saving || enabling || disabling}
+                                    />
                                 )}
                             </div>
 
@@ -296,7 +288,9 @@ export default function ServerFastDlPage() {
                                         {t('serverFastDl.fastDlUrl')}
                                     </Label>
                                     <div className='flex items-center gap-2 p-1 pl-4 pr-1 bg-white/5 border border-white/5 rounded-xl hover:border-blue-500/30 transition-colors group/input'>
-                                        <code className='text-xs font-mono flex-1 truncate text-foreground/80'>{config.url}</code>
+                                        <code className='text-xs font-mono flex-1 truncate text-foreground/80'>
+                                            {config.url}
+                                        </code>
                                         <Button
                                             variant='ghost'
                                             size='sm'
@@ -324,7 +318,6 @@ export default function ServerFastDlPage() {
                     </PageCard>
                     <WidgetRenderer widgets={getWidgets('server-fastdl', 'after-status')} />
 
-                    {/* FastDL Configuration */}
                     {canManage && (
                         <>
                             <PageCard
@@ -344,7 +337,9 @@ export default function ServerFastDlPage() {
                                             placeholder={t('serverFastDl.directoryPlaceholder')}
                                             className='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 font-medium text-base rounded-xl'
                                         />
-                                        <p className='text-xs text-muted-foreground'>{t('serverFastDl.directoryHelp')}</p>
+                                        <p className='text-xs text-muted-foreground'>
+                                            {t('serverFastDl.directoryHelp')}
+                                        </p>
                                     </div>
 
                                     <div className='flex gap-3 pt-2'>
@@ -398,24 +393,28 @@ export default function ServerFastDlPage() {
                         </>
                     )}
 
-                    {/* Info Box */}
                     <div className='p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl shadow-sm'>
                         <div className='flex items-start gap-3'>
                             <Info className='h-5 w-5 text-blue-500 mt-0.5 shrink-0' />
                             <div className='space-y-2'>
-                                <h4 className='text-sm font-bold text-blue-500 uppercase tracking-wide'>{t('serverFastDl.infoTitle')}</h4>
-                                <p className='text-xs text-muted-foreground leading-relaxed'>{t('serverFastDl.infoDescription')}</p>
+                                <h4 className='text-sm font-bold text-blue-500 uppercase tracking-wide'>
+                                    {t('serverFastDl.infoTitle')}
+                                </h4>
+                                <p className='text-xs text-muted-foreground leading-relaxed'>
+                                    {t('serverFastDl.infoDescription')}
+                                </p>
                             </div>
                         </div>
                     </div>
                     <WidgetRenderer widgets={getWidgets('server-fastdl', 'after-info')} />
                 </div>
 
-                {/* Right Side: Quick Actions */}
                 <div className='lg:col-span-4 space-y-8'>
                     <PageCard title={t('serverFastDl.quickActions')} icon={Download} variant='default'>
                         <div className='space-y-4'>
-                            <p className='text-xs text-muted-foreground leading-relaxed'>{t('serverFastDl.quickActionsDescription')}</p>
+                            <p className='text-xs text-muted-foreground leading-relaxed'>
+                                {t('serverFastDl.quickActionsDescription')}
+                            </p>
                             {enabled && config?.url && (
                                 <div className='space-y-2'>
                                     <Button

@@ -103,7 +103,6 @@ export default function ServerInfoCards({
 
     return (
         <div className={cn('grid gap-6', className)}>
-            {/* Network Widget */}
             <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
                 <h3 className='text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2'>
                     <Wifi className='h-4 w-4' />
@@ -159,7 +158,6 @@ export default function ServerInfoCards({
                 </div>
             </div>
 
-            {/* Resources Widget */}
             <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
                 <h3 className='text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2'>
                     <Activity className='h-4 w-4' />
@@ -167,7 +165,6 @@ export default function ServerInfoCards({
                 </h3>
 
                 <div className='space-y-5'>
-                    {/* CPU */}
                     <div>
                         <div className='flex justify-between text-sm mb-1.5'>
                             <span className='text-muted-foreground flex gap-2 items-center'>
@@ -182,7 +179,6 @@ export default function ServerInfoCards({
                         </p>
                     </div>
 
-                    {/* Memory */}
                     <div>
                         <div className='flex justify-between text-sm mb-1.5'>
                             <span className='text-muted-foreground flex gap-2 items-center'>
@@ -191,15 +187,12 @@ export default function ServerInfoCards({
                             </span>
                             <span className='font-medium'>{formatMib(memoryUsage)}</span>
                         </div>
-                        {memoryLimit > 0 && (
-                            <Progress value={(memoryUsage / memoryLimit) * 100} className='h-1.5' />
-                        )}
+                        {memoryLimit > 0 && <Progress value={(memoryUsage / memoryLimit) * 100} className='h-1.5' />}
                         <p className='text-[10px] text-muted-foreground mt-1 text-right'>
                             {t('servers.console.info_cards.limit', { limit: formatMemory(memoryLimit) })}
                         </p>
                     </div>
 
-                    {/* Disk */}
                     <div>
                         <div className='flex justify-between text-sm mb-1.5'>
                             <span className='text-muted-foreground flex gap-2 items-center'>
@@ -208,9 +201,7 @@ export default function ServerInfoCards({
                             </span>
                             <span className='font-medium'>{formatMib(diskUsage)}</span>
                         </div>
-                        {diskLimit > 0 && (
-                            <Progress value={(diskUsage / diskLimit) * 100} className='h-1.5' />
-                        )}
+                        {diskLimit > 0 && <Progress value={(diskUsage / diskLimit) * 100} className='h-1.5' />}
                         <p className='text-[10px] text-muted-foreground mt-1 text-right'>
                             {t('servers.console.info_cards.limit', { limit: formatDisk(diskLimit) })}
                         </p>
@@ -218,7 +209,6 @@ export default function ServerInfoCards({
                 </div>
             </div>
 
-            {/* Networking Widget */}
             <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
                 <h3 className='text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2'>
                     <Activity className='h-4 w-4' />
@@ -226,7 +216,6 @@ export default function ServerInfoCards({
                 </h3>
 
                 <div className='space-y-4'>
-                    {/* Inbound */}
                     <div>
                         <div className='flex justify-between text-sm mb-1.5 align-middle'>
                             <span className='text-muted-foreground flex gap-2 items-center'>
@@ -237,7 +226,6 @@ export default function ServerInfoCards({
                         </div>
                     </div>
 
-                    {/* Outbound */}
                     <div>
                         <div className='flex justify-between text-sm mb-1.5 align-middle'>
                             <span className='text-muted-foreground flex gap-2 items-center'>

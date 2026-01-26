@@ -89,7 +89,6 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                 icon={Activity}
             >
                 <div className='space-y-8'>
-                    {/* Format Selection */}
                     <div className='space-y-3'>
                         <Label className='text-sm font-semibold'>{t('admin.node.view.diagnostics.format_label')}</Label>
                         <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
@@ -142,7 +141,6 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                         </div>
                     </div>
 
-                    {/* Options */}
                     <div className='space-y-4'>
                         <div className='flex items-center gap-2 mb-2'>
                             <Settings2 className='h-4 w-4 text-primary' />
@@ -254,7 +252,6 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                 </div>
             </PageCard>
 
-            {/* Results */}
             {result && (
                 <PageCard
                     title={t('admin.node.view.diagnostics.result_title')}
@@ -306,7 +303,6 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                 </PageCard>
             )}
 
-            {/* Error State */}
             {error && (
                 <div className='p-6 rounded-2xl bg-destructive/10 border border-destructive/20 text-center animate-in fade-in zoom-in-95'>
                     <AlertTriangle className='h-8 w-8 text-destructive mx-auto mb-4' />

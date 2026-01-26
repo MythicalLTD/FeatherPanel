@@ -81,7 +81,6 @@ export default function LogoutPage() {
     return (
         <div className='flex flex-col items-center justify-center gap-6'>
             <div className='flex flex-col items-center gap-4 text-center'>
-                {/* Logout Icon */}
                 <div className='relative'>
                     <div className='absolute inset-0 bg-primary/20 rounded-full blur-xl' />
                     <div className='relative bg-primary/10 rounded-full p-4'>
@@ -89,7 +88,6 @@ export default function LogoutPage() {
                     </div>
                 </div>
 
-                {/* Logout Message */}
                 <div className='space-y-2'>
                     <h1 className='text-2xl font-bold text-foreground'>Logging out...</h1>
                     <p className='text-muted-foreground max-w-sm'>
@@ -97,7 +95,6 @@ export default function LogoutPage() {
                     </p>
                 </div>
 
-                {/* Loading Animation */}
                 <div className='flex items-center gap-2 mt-4'>
                     <div className='flex space-x-1'>
                         {[1, 2, 3].map((i) => (
@@ -112,7 +109,6 @@ export default function LogoutPage() {
                 </div>
             </div>
 
-            {/* Progress Bar */}
             <div className='w-full max-w-xs'>
                 <div className='w-full bg-muted rounded-full h-1.5'>
                     <div
@@ -122,7 +118,6 @@ export default function LogoutPage() {
                 </div>
             </div>
 
-            {/* Manual Redirect Button (fallback) */}
             {showManualRedirect && (
                 <div className='text-center animate-fade-in'>
                     <p className='text-sm text-muted-foreground mb-3'>Taking longer than expected?</p>

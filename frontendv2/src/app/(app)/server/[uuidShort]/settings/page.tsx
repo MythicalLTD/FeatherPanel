@@ -261,9 +261,7 @@ export default function ServerSettingsPage() {
             <WidgetRenderer widgets={getWidgets('server-settings', 'after-header')} />
 
             <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                {/* Left Side: Settings & SFTP */}
                 <div className='lg:col-span-8 space-y-8'>
-                    {/* Server Information */}
                     <PageCard
                         title={t('serverSettings.serverInformation')}
                         description={t('serverSettings.serverInformationDescription')}
@@ -326,14 +324,12 @@ export default function ServerSettingsPage() {
                     </PageCard>
                     <WidgetRenderer widgets={getWidgets('server-settings', 'after-server-info')} />
 
-                    {/* SFTP Details */}
                     <PageCard
                         title={t('serverSettings.sftpDetails')}
                         description={t('serverSettings.sftpDetailsDescription')}
                         icon={FolderOpen}
                     >
                         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                            {/* Host */}
                             <div className='space-y-2'>
                                 <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1'>
                                     <ServerIcon className='h-3 w-3' />
@@ -355,7 +351,7 @@ export default function ServerSettingsPage() {
                                     </Button>
                                 </div>
                             </div>
-                            {/* Port */}
+
                             <div className='space-y-2'>
                                 <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1'>
                                     <Hash className='h-3 w-3' />
@@ -375,7 +371,7 @@ export default function ServerSettingsPage() {
                                     </Button>
                                 </div>
                             </div>
-                            {/* Username */}
+
                             <div className='space-y-2'>
                                 <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1'>
                                     <User className='h-3 w-3' />
@@ -395,7 +391,7 @@ export default function ServerSettingsPage() {
                                     </Button>
                                 </div>
                             </div>
-                            {/* Password */}
+
                             <div className='space-y-2'>
                                 <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1'>
                                     <KeyRound className='h-3 w-3' />
@@ -409,7 +405,6 @@ export default function ServerSettingsPage() {
                             </div>
                         </div>
 
-                        {/* Full SFTP URL */}
                         <div className='space-y-2 pt-6'>
                             <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1'>
                                 <LinkIcon className='h-3 w-3' />
@@ -442,7 +437,6 @@ export default function ServerSettingsPage() {
                             </div>
                         </div>
 
-                        {/* Info Box */}
                         <div className='mt-6 p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl shadow-sm'>
                             <div className='flex items-start gap-3'>
                                 <Info className='h-5 w-5 text-blue-500 mt-0.5 shrink-0' />
@@ -460,9 +454,7 @@ export default function ServerSettingsPage() {
                     <WidgetRenderer widgets={getWidgets('server-settings', 'after-sftp-details')} />
                 </div>
 
-                {/* Right Side: Danger Zone */}
                 <div className='lg:col-span-4 space-y-8'>
-                    {/* Reinstall */}
                     {canReinstall && (
                         <>
                             <PageCard title={t('serverSettings.reinstallServer')} icon={Settings} variant='warning'>
@@ -482,7 +474,6 @@ export default function ServerSettingsPage() {
                         </>
                     )}
 
-                    {/* Delete */}
                     {canDeleteServer && (
                         <PageCard title={t('serverSettings.deleteServer')} icon={AlertTriangle} variant='danger'>
                             <p className='text-xs text-red-200/60 font-medium leading-relaxed'>
@@ -510,7 +501,6 @@ export default function ServerSettingsPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('server-settings', 'bottom-of-page')} />
 
-            {/* Reinstall Dialog */}
             <Dialog open={showReinstallDialog} onOpenChange={setShowReinstallDialog}>
                 <DialogContent>
                     <DialogHeader>
@@ -559,7 +549,6 @@ export default function ServerSettingsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Dialog - Multi Step */}
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogContent className='sm:max-w-md'>
                     <DialogHeader>

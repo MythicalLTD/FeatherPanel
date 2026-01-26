@@ -405,6 +405,20 @@ const widgets = [
         ],
     },
     {
+        slug: 'server-fastdl',
+        sanitizedSlug: 'server-fastdl',
+        files: ['src/app/(app)/server/[uuidShort]/fastdl/page.tsx'],
+        injectionPoints: [
+            'after-configuration',
+            'after-header',
+            'after-info',
+            'after-quick-actions',
+            'after-status',
+            'bottom-of-page',
+            'top-of-page',
+        ],
+    },
+    {
         slug: 'server-file-editor',
         sanitizedSlug: 'server-file-editor',
         files: ['src/app/(app)/server/[uuidShort]/files/edit/page.tsx'],

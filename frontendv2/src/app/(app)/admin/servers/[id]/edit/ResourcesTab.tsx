@@ -32,7 +32,6 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
         >
             <div className='space-y-6'>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                    {/* Memory */}
                     <div className='space-y-3'>
                         <Label>{t('admin.servers.form.memory')}</Label>
                         <div className='flex items-center gap-2 mb-2'>
@@ -69,7 +68,6 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.memory_help')}</p>
                     </div>
 
-                    {/* Swap */}
                     <div className='space-y-3'>
                         <Label>{t('admin.servers.form.swap')}</Label>
                         <div className='flex items-center gap-2 mb-2'>
@@ -120,7 +118,6 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.swap_help')}</p>
                     </div>
 
-                    {/* Disk */}
                     <div className='space-y-3'>
                         <Label>{t('admin.servers.form.disk')}</Label>
                         <div className='flex items-center gap-2 mb-2'>
@@ -157,7 +154,6 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.disk_help')}</p>
                     </div>
 
-                    {/* CPU */}
                     <div className='space-y-3'>
                         <Label>{t('admin.servers.form.cpu')}</Label>
                         <div className='flex items-center gap-2 mb-2'>
@@ -194,7 +190,6 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.cpu_help')}</p>
                     </div>
 
-                    {/* IO */}
                     <div className='space-y-3'>
                         <Label>{t('admin.servers.form.io')}</Label>
                         <Input
@@ -208,7 +203,6 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.io_help')}</p>
                     </div>
 
-                    {/* OOM Killer */}
                     <div className='space-y-3'>
                         <Label>{t('admin.servers.form.oom_killer')}</Label>
                         <div className='flex items-center gap-2'>
@@ -235,7 +229,6 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                     </div>
                 </div>
 
-                {/* CPU Threads */}
                 <div className='space-y-3'>
                     <Label>{t('admin.servers.form.threads')}</Label>
                     <Input

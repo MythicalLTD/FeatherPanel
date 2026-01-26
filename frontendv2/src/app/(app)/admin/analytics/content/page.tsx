@@ -142,7 +142,6 @@ export default function ContentAnalyticsPage() {
                 icon={Box}
             />
 
-            {/* Overview Stats */}
             {overview && (
                 <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                     <ResourceCard
@@ -180,7 +179,6 @@ export default function ContentAnalyticsPage() {
                 </div>
             )}
 
-            {/* Charts Section */}
             <div className='grid gap-4 md:grid-cols-2'>
                 <SimplePieChart
                     title={t('admin.analytics.content.spells_by_realm')}

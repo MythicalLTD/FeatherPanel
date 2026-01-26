@@ -89,7 +89,6 @@ export function AllocationsTab({
             description={t('admin.servers.edit.allocations.description')}
         >
             <div className='space-y-6'>
-                {/* Default Allocation */}
                 <div className='space-y-3'>
                     <div className='flex items-center justify-between'>
                         <label className='font-medium'>{t('admin.servers.edit.allocations.default')}</label>
@@ -132,7 +131,6 @@ export function AllocationsTab({
                     </div>
                 </div>
 
-                {/* Allocation Status */}
                 {serverAllocations.server && (
                     <div className='p-4 bg-muted/20 rounded-xl border border-border/50 flex items-center justify-between'>
                         <div className='text-sm'>
@@ -150,7 +148,6 @@ export function AllocationsTab({
                     </div>
                 )}
 
-                {/* Allocations List */}
                 {serverAllocations.allocations.length > 0 && (
                     <div className='space-y-2'>
                         {serverAllocations.allocations.map((allocation) => (
@@ -186,7 +183,6 @@ export function AllocationsTab({
                     </div>
                 )}
 
-                {/* Add Allocation Button */}
                 {serverAllocations.server?.can_add_more && (
                     <Button
                         type='button'

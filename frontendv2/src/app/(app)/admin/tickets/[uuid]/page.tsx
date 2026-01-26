@@ -383,7 +383,7 @@ export default function TicketViewPage() {
     return (
         <div className='max-w-[1600px] mx-auto h-[calc(100vh-6rem)] flex flex-col pt-2 pb-6'>
             <WidgetRenderer widgets={getWidgets('admin-tickets-view', 'top-of-page')} />
-            {/* Header */}
+
             <div className='flex items-center justify-between mb-4 shrink-0 px-1'>
                 <div className='flex items-center gap-3'>
                     <Link href='/admin/tickets'>
@@ -404,7 +404,6 @@ export default function TicketViewPage() {
                 </div>
 
                 <div className='flex items-center gap-2'>
-                    {/* Mobile Details Toggle */}
                     <div className='lg:hidden'>
                         <Button
                             variant='ghost'
@@ -441,7 +440,6 @@ export default function TicketViewPage() {
                         </Sheet>
                     </div>
 
-                    {/* Actions */}
                     <div className='flex items-center gap-2'>
                         <Button
                             variant='outline'
@@ -477,11 +475,8 @@ export default function TicketViewPage() {
             <WidgetRenderer widgets={getWidgets('admin-tickets-view', 'after-header')} />
 
             <div className='flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6'>
-                {/* Chat Area (Left) */}
                 <div className='lg:col-span-8 flex flex-col bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden h-full'>
-                    {/* Messages */}
                     <div className='flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar' ref={scrollRef}>
-                        {/* Original Ticket Description as first message */}
                         <div className='flex gap-4 group'>
                             <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50'>
                                 <AvatarImage src={ticket.user.avatar} />
@@ -504,7 +499,6 @@ export default function TicketViewPage() {
                             </div>
                         </div>
 
-                        {/* Divider */}
                         {ticket.messages.length > 0 && (
                             <div className='relative flex items-center py-2'>
                                 <div className='grow border-t border-border/50'></div>
@@ -515,7 +509,6 @@ export default function TicketViewPage() {
                             </div>
                         )}
 
-                        {/* Messages List */}
                         {ticket.messages.map((msg) => {
                             const isStaff = msg.admin_reply;
                             const isInternal = Boolean(msg.is_internal);
@@ -665,7 +658,6 @@ export default function TicketViewPage() {
                         <div ref={scrollRef} />
                     </div>
 
-                    {/* Input Area (Sticky Bottom) */}
                     <div className='p-4 bg-background/50 backdrop-blur-sm border-t border-border/50'>
                         <form onSubmit={handleReply} className='flex flex-col gap-2'>
                             {files.length > 0 && (
@@ -793,7 +785,6 @@ export default function TicketViewPage() {
                     <WidgetRenderer widgets={getWidgets('admin-tickets-view', 'after-messages')} />
                 </div>
 
-                {/* Desktop Sidebar (Right) */}
                 <div className='hidden lg:block lg:col-span-4 h-full overflow-hidden'>
                     <TicketSidebar
                         ticket={ticket}
@@ -811,7 +802,6 @@ export default function TicketViewPage() {
                 </div>
             </div>
 
-            {/* Edit Drawer */}
             <Sheet open={editOpen} onOpenChange={setEditOpen}>
                 <SheetHeader>
                     <SheetTitle>{t('admin.tickets.view.edit')}</SheetTitle>
@@ -892,7 +882,6 @@ export default function TicketViewPage() {
                 </form>
             </Sheet>
 
-            {/* Mail Preview Dialog */}
             <Sheet
                 open={mailPreviewOpen}
                 onOpenChange={(v) => {
@@ -909,7 +898,6 @@ export default function TicketViewPage() {
                         </SheetDescription>
                     </SheetHeader>
                     <div className='mt-6 border rounded-xl p-0 overflow-hidden h-[calc(100vh-140px)]'>
-                        {/* Using iframe to safely display HTML email content */}
                         <iframe
                             srcDoc={mailPreview?.body || 'No content'}
                             className='w-full h-full bg-white text-black'

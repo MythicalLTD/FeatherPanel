@@ -303,7 +303,6 @@ export default function TicketCategoriesPage() {
                 </div>
             )}
 
-            {/* Create Sheet */}
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -378,7 +377,6 @@ export default function TicketCategoriesPage() {
                 </div>
             </Sheet>
 
-            {/* Edit Sheet */}
             <Sheet open={editOpen} onOpenChange={setEditOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -453,7 +451,6 @@ export default function TicketCategoriesPage() {
                 </div>
             </Sheet>
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.tickets.categories.help.managing.title')} icon={Tags}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>

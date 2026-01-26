@@ -118,7 +118,6 @@ export default function CreateSchedulePage() {
 
     return (
         <div className='max-w-4xl mx-auto space-y-8 pb-16 '>
-            {/* Navigation Header */}
             <PageHeader
                 title={t('serverSchedules.createSchedule')}
                 description={t('serverSchedules.createScheduleDescription')}
@@ -142,9 +141,7 @@ export default function CreateSchedulePage() {
             />
             <WidgetRenderer widgets={getWidgets('server-schedules-new', 'after-header')} />
 
-            {/* Form */}
             <form onSubmit={handleCreate} className='space-y-8'>
-                {/* Schedule Name */}
                 <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -179,7 +176,6 @@ export default function CreateSchedulePage() {
                     </div>
                 </div>
 
-                {/* Cron Expression */}
                 <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
                     <div className='flex items-center justify-between border-b border-border/10 pb-6'>
                         <div className='flex items-center gap-4'>
@@ -281,7 +277,6 @@ export default function CreateSchedulePage() {
                     <p className='text-xs text-muted-foreground'>{t('serverSchedules.cronHelp')}</p>
                 </div>
 
-                {/* Options */}
                 <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -336,7 +331,6 @@ export default function CreateSchedulePage() {
                     </div>
                 </div>
 
-                {/* Mobile Actions */}
                 <div className='md:hidden flex flex-col gap-3'>
                     <Button
                         type='submit'

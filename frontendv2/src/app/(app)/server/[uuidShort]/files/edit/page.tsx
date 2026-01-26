@@ -384,7 +384,6 @@ export default function FileEditorPage({
             />
             <WidgetRenderer widgets={getWidgets('server-file-editor', 'after-header')} />
 
-            {/* Visual Editors */}
             {!loading && content && useMinecraftEditor && shouldOfferMinecraftEditor ? (
                 <MinecraftServerPropertiesEditor
                     content={content}

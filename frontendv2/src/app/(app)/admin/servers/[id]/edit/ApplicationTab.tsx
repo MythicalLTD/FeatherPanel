@@ -56,9 +56,7 @@ export function ApplicationTab({
                 description={t('admin.servers.edit.application.description')}
             >
                 <div className='space-y-6'>
-                    {/* Realm & Spell Selection */}
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                        {/* Realm */}
                         <div className='space-y-3'>
                             <Label className='flex items-center gap-1.5'>
                                 {t('admin.servers.form.realm')}
@@ -93,7 +91,6 @@ export function ApplicationTab({
                             {errors.realms_id && <p className='text-xs text-red-500'>{errors.realms_id}</p>}
                         </div>
 
-                        {/* Spell */}
                         <div className='space-y-3'>
                             <Label className='flex items-center gap-1.5'>
                                 {t('admin.servers.form.spell')}
@@ -130,7 +127,6 @@ export function ApplicationTab({
                         </div>
                     </div>
 
-                    {/* Docker Image */}
                     {dockerImages.length > 0 && (
                         <div className='space-y-3'>
                             <Label className='flex items-center gap-1.5'>
@@ -149,7 +145,6 @@ export function ApplicationTab({
                 </div>
             </PageCard>
 
-            {/* Spell Variables */}
             {spellVariables.length > 0 && (
                 <PageCard
                     title={t('admin.servers.edit.application.variables_title')}

@@ -46,7 +46,6 @@ export default function AppPreloader() {
 
     return (
         <div className='fixed inset-0 z-9999 flex items-center justify-center bg-background animate-fade-in overflow-hidden'>
-            {/* Animated background gradient */}
             <div
                 className='absolute inset-0 opacity-5 animate-pulse'
                 style={{
@@ -55,9 +54,7 @@ export default function AppPreloader() {
                 }}
             />
 
-            {/* Loading content */}
             <div className='relative z-10 flex flex-col items-center gap-6'>
-                {/* Logo */}
                 <div className='relative animate-fade-in' style={{ animationDelay: '0.1s' }}>
                     <div
                         className='h-20 w-20 flex items-center justify-center animate-bounce'
@@ -66,7 +63,6 @@ export default function AppPreloader() {
                         <Image src={logoUrl} alt={appName} fill className='object-contain' sizes='80px' priority />
                     </div>
 
-                    {/* Pulsing glow */}
                     <div
                         className='absolute inset-0 rounded-2xl blur-2xl animate-pulse bg-primary/20'
                         style={{
@@ -75,7 +71,6 @@ export default function AppPreloader() {
                     />
                 </div>
 
-                {/* Spinner */}
                 <div className='relative animate-fade-in' style={{ animationDelay: '0.2s' }}>
                     <div
                         className='h-12 w-12 rounded-full border-3 border-transparent animate-spin'
@@ -87,7 +82,6 @@ export default function AppPreloader() {
                     />
                 </div>
 
-                {/* Loading text */}
                 <div className='text-center space-y-2 animate-fade-in' style={{ animationDelay: '0.3s' }}>
                     <p className='text-lg font-semibold text-foreground'>Loading {appName}</p>
                     <p className='text-sm text-muted-foreground animate-pulse'>Initializing application...</p>

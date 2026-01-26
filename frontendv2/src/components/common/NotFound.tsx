@@ -79,23 +79,18 @@ export default function NotFound() {
 
     return (
         <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-4'>
-            {/* Dynamic background */}
             {renderBackground()}
 
-            {/* Theme customizer */}
             <div className='pointer-events-auto absolute top-4 right-4 z-50'>
                 <ThemeCustomizer />
             </div>
 
-            {/* Error content */}
             <div className='relative z-10 w-full max-w-2xl'>
                 <div className='relative group'>
-                    {/* Glow effect */}
                     <div className='absolute -inset-0.5 bg-linear-to-r from-primary/50 to-primary/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000' />
 
                     <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 md:p-12 shadow-2xl shadow-black/20'>
                         <div className='text-center space-y-6'>
-                            {/* 404 Number */}
                             <div className='relative'>
                                 <h1 className='text-9xl md:text-[12rem] font-black bg-linear-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent leading-none'>
                                     404
@@ -105,7 +100,6 @@ export default function NotFound() {
                                 </div>
                             </div>
 
-                            {/* Message */}
                             <div className='space-y-3'>
                                 <h2 className='text-2xl md:text-3xl font-bold tracking-tight'>
                                     {t('errors.404.title')}
@@ -113,7 +107,6 @@ export default function NotFound() {
                                 <p className='text-muted-foreground max-w-md mx-auto'>{t('errors.404.message')}</p>
                             </div>
 
-                            {/* Actions */}
                             <div className='flex flex-col sm:flex-row gap-3 justify-center pt-4'>
                                 <Button onClick={() => router.back()} variant='outline' className='group'>
                                     <ArrowLeft className='h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform' />
@@ -127,7 +120,6 @@ export default function NotFound() {
                                 </Link>
                             </div>
 
-                            {/* Helpful links */}
                             <div className='pt-6 border-t border-border/50'>
                                 <p className='text-sm text-muted-foreground mb-3'>{t('errors.404.looking_for')}</p>
                                 <div className='flex flex-wrap gap-2 justify-center'>
@@ -148,7 +140,6 @@ export default function NotFound() {
                 </div>
             </div>
 
-            {/* Footer */}
             <div className='relative z-10 mt-8 text-center text-xs text-muted-foreground'>
                 <p className='mb-2 font-medium'>
                     {t('branding.running_on', { name: 'FeatherPanel', version: core?.version || '' }).trim()}

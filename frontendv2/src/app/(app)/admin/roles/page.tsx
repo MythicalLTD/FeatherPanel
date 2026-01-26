@@ -475,7 +475,6 @@ export default function RolesPage() {
                 </div>
             )}
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.roles.help.managing.title')} icon={Shield}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -496,7 +495,6 @@ export default function RolesPage() {
                 </PageCard>
             </div>
 
-            {/* Create Sheet */}
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -565,7 +563,6 @@ export default function RolesPage() {
                 </div>
             </Sheet>
 
-            {/* Edit Sheet */}
             <Sheet open={editOpen} onOpenChange={setEditOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -625,7 +622,6 @@ export default function RolesPage() {
                 </div>
             </Sheet>
 
-            {/* Permissions Sheet */}
             <Sheet open={permissionsOpen} onOpenChange={setPermissionsOpen}>
                 <div className='h-full flex flex-col'>
                     <SheetHeader>

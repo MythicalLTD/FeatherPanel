@@ -215,7 +215,6 @@ export default function MailTab() {
                 </Button>
             </div>
 
-            {/* Search */}
             <div className='relative'>
                 <Input
                     type='text'
@@ -239,7 +238,6 @@ export default function MailTab() {
                 )}
             </div>
 
-            {/* Mail List */}
             {mails.length > 0 ? (
                 <div className='space-y-4'>
                     {mails.map((mail) => (
@@ -283,7 +281,6 @@ export default function MailTab() {
                 </div>
             )}
 
-            {/* Pagination */}
             {pagination && pagination.total_pages > 1 && (
                 <div className='flex items-center justify-between gap-4 pt-4'>
                     <div className='text-sm text-muted-foreground'>
@@ -323,7 +320,6 @@ export default function MailTab() {
                 </div>
             )}
 
-            {/* Mail Modal */}
             <Dialog open={mailModalOpen} onClose={() => setMailModalOpen(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>

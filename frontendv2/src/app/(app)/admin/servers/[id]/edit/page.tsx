@@ -856,7 +856,6 @@ export default function EditServerPage() {
                 </div>
             </Tabs>
 
-            {/* Owner Selection Sheet */}
             <Sheet open={ownerModalOpen} onOpenChange={setOwnerModalOpen}>
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
@@ -869,7 +868,6 @@ export default function EditServerPage() {
                     </SheetHeader>
 
                     <div className='mt-6 space-y-4'>
-                        {/* Search */}
                         <div className='relative'>
                             <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
@@ -880,7 +878,6 @@ export default function EditServerPage() {
                             />
                         </div>
 
-                        {/* Users List */}
                         <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                             {owners.length === 0 ? (
                                 <div className='text-center py-8 text-muted-foreground'>
@@ -930,7 +927,6 @@ export default function EditServerPage() {
                             )}
                         </div>
 
-                        {/* Pagination */}
                         {ownerPagination.total_pages > 1 && (
                             <div className='flex items-center justify-between pt-4 border-t'>
                                 <div className='text-sm text-muted-foreground'>
@@ -983,7 +979,6 @@ export default function EditServerPage() {
                 </SheetContent>
             </Sheet>
 
-            {/* Realm Selection Sheet */}
             <Sheet open={realmModalOpen} onOpenChange={setRealmModalOpen}>
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
@@ -996,7 +991,6 @@ export default function EditServerPage() {
                     </SheetHeader>
 
                     <div className='mt-6 space-y-4'>
-                        {/* Search */}
                         <div className='relative'>
                             <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
@@ -1007,7 +1001,6 @@ export default function EditServerPage() {
                             />
                         </div>
 
-                        {/* Realms List */}
                         <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                             {realms.length === 0 ? (
                                 <div className='text-center py-8 text-muted-foreground'>
@@ -1038,7 +1031,6 @@ export default function EditServerPage() {
                             )}
                         </div>
 
-                        {/* Pagination */}
                         {realmPagination.total_pages > 1 && (
                             <div className='flex items-center justify-between pt-4 border-t'>
                                 <div className='text-sm text-muted-foreground'>
@@ -1091,7 +1083,6 @@ export default function EditServerPage() {
                 </SheetContent>
             </Sheet>
 
-            {/* Spell Selection Sheet */}
             <Sheet open={spellModalOpen} onOpenChange={setSpellModalOpen}>
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
@@ -1104,7 +1095,6 @@ export default function EditServerPage() {
                     </SheetHeader>
 
                     <div className='mt-6 space-y-4'>
-                        {/* Search */}
                         <div className='relative'>
                             <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
@@ -1115,7 +1105,6 @@ export default function EditServerPage() {
                             />
                         </div>
 
-                        {/* Spells List */}
                         <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                             {spells.length === 0 ? (
                                 <div className='text-center py-8 text-muted-foreground'>
@@ -1146,7 +1135,6 @@ export default function EditServerPage() {
                             )}
                         </div>
 
-                        {/* Pagination */}
                         {spellPagination.total_pages > 1 && (
                             <div className='flex items-center justify-between pt-4 border-t'>
                                 <div className='text-sm text-muted-foreground'>

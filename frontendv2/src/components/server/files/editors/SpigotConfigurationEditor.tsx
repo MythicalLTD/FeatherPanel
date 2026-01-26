@@ -261,7 +261,6 @@ export function SpigotConfigurationEditor({
                 </div>
             </CardHeader>
             <div className='space-y-10 p-6'>
-                {/* Settings Section */}
                 <section className='space-y-4'>
                     <div className='flex items-center gap-3'>
                         <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
@@ -366,7 +365,6 @@ export function SpigotConfigurationEditor({
                     </div>
                 </section>
 
-                {/* Messages Section */}
                 <section className='space-y-6'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>

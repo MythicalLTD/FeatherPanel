@@ -325,7 +325,7 @@ export default function ServerSubusersPage() {
     return (
         <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-users', 'top-of-page')} />
-            {/* Header Section */}
+
             <PageHeader
                 title={t('serverSubusers.title')}
                 description={t('serverSubusers.description')}
@@ -356,7 +356,6 @@ export default function ServerSubusersPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-users', 'after-header')} />
 
-            {/* List */}
             {subusers.length === 0 && !searchQuery ? (
                 <EmptyState
                     title={t('serverSubusers.noSubusers')}
@@ -378,7 +377,7 @@ export default function ServerSubusersPage() {
             ) : (
                 <div className='flex flex-col gap-6'>
                     <WidgetRenderer widgets={getWidgets('server-users', 'before-subusers-list')} />
-                    {/* Search Bar */}
+
                     <div className='flex gap-2'>
                         <div className='relative flex-1'>
                             <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10' />
@@ -464,7 +463,6 @@ export default function ServerSubusersPage() {
                         </div>
                     )}
 
-                    {/* Pagination */}
                     {pagination.total > pagination.per_page && (
                         <div className='flex items-center justify-between gap-3 pt-6 border-t border-border/5'>
                             <div className='text-sm font-medium text-muted-foreground'>
@@ -500,7 +498,6 @@ export default function ServerSubusersPage() {
                 </div>
             )}
 
-            {/* Add Subuser Modal */}
             <HeadlessModal
                 isOpen={isAddOpen}
                 onClose={() => setIsAddOpen(false)}
@@ -551,7 +548,6 @@ export default function ServerSubusersPage() {
                 </div>
             </HeadlessModal>
 
-            {/* Delete Modal */}
             <HeadlessModal
                 isOpen={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
@@ -585,7 +581,6 @@ export default function ServerSubusersPage() {
                 </div>
             </HeadlessModal>
 
-            {/* Permissions Modal */}
             <HeadlessModal
                 isOpen={isPermissionsOpen}
                 onClose={() => setIsPermissionsOpen(false)}

@@ -54,11 +54,9 @@ export default function ChatbotWidget() {
 
     return (
         <>
-            {/* Floating Widget Button */}
             {!isOpen && (
                 <div className='fixed bottom-6 right-6 z-50'>
                     <div className='relative'>
-                        {/* Pulse animation ring */}
                         <div className='absolute inset-0 rounded-full bg-primary/20 animate-ping' />
                         <div className='absolute inset-0 rounded-full bg-primary/10 animate-pulse' />
 
@@ -74,7 +72,6 @@ export default function ChatbotWidget() {
                 </div>
             )}
 
-            {/* Chatbot Container (Headless UI Dialog) */}
             <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} />
         </>
     );

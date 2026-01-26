@@ -261,7 +261,7 @@ export default function ServersPage() {
     return (
         <div className='space-y-10 pb-12'>
             <WidgetRenderer widgets={getWidgets('dashboard-servers', 'top-of-page')} />
-            {/* Page Header */}
+
             <div className='flex items-start justify-between'>
                 <div>
                     <h1 className='text-2xl sm:text-4xl font-bold tracking-tight'>{t('servers.title')}</h1>
@@ -270,9 +270,7 @@ export default function ServersPage() {
                 <WidgetRenderer widgets={getWidgets('dashboard-servers', 'after-header')} />
             </div>
 
-            {/* Toolbar */}
             <div className='flex flex-col gap-4 p-4 bg-card rounded-2xl border border-border'>
-                {/* Search Field - Full Width */}
                 <div className='flex-1 w-full'>
                     <input
                         type='text'
@@ -285,11 +283,8 @@ export default function ServersPage() {
 
                 <WidgetRenderer widgets={getWidgets('dashboard-servers', 'before-server-list')} />
 
-                {/* Controls Grid */}
                 <div className='flex flex-col sm:flex-row gap-4'>
-                    {/* Actions Group (Sort & Layout) */}
                     <div className='grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-4 flex-1'>
-                        {/* Sort Listbox */}
                         <Listbox value={selectedSortOption} onChange={(option) => setSelectedSort(option.id)}>
                             <div className='relative w-full sm:w-auto min-w-[140px]'>
                                 <ListboxButton className='relative w-full cursor-pointer rounded-xl bg-background py-2.5 pl-3 pr-8 text-left border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm'>
@@ -343,7 +338,6 @@ export default function ServersPage() {
                             </div>
                         </Listbox>
 
-                        {/* Layout RadioGroup */}
                         <RadioGroup
                             value={selectedLayoutOption}
                             onChange={(option) => setSelectedLayout(option.id as 'grid' | 'list')}
@@ -376,9 +370,7 @@ export default function ServersPage() {
                         </RadioGroup>
                     </div>
 
-                    {/* Toggles Group (Running Only & Refresh) */}
                     <div className='flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-4 sm:pt-0 border-border'>
-                        {/* Running Only Switch */}
                         <div
                             className='flex items-center gap-2 cursor-pointer'
                             onClick={() => setShowOnlyRunning(!showOnlyRunning)}
@@ -393,7 +385,6 @@ export default function ServersPage() {
                             <span className='text-sm font-medium whitespace-nowrap'>{t('servers.runningOnly')}</span>
                         </div>
 
-                        {/* Refresh Button */}
                         <button
                             onClick={() => fetchServers()}
                             disabled={loading}
@@ -408,7 +399,6 @@ export default function ServersPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-servers', 'bottom-of-page')} />
 
-            {/* Loading State */}
             {loading && (
                 <div className='flex items-center justify-center py-24'>
                     <div className='flex flex-col items-center gap-4'>
@@ -418,7 +408,6 @@ export default function ServersPage() {
                 </div>
             )}
 
-            {/* Error State */}
             {error && !loading && (
                 <div className='flex items-center justify-center py-24'>
                     <div className='text-center max-w-md'>
@@ -435,7 +424,6 @@ export default function ServersPage() {
                 </div>
             )}
 
-            {/* Tabs for different views */}
             {!loading && !error && (
                 <TabGroup
                     selectedIndex={viewMode === 'all' ? 0 : 1}
@@ -469,7 +457,6 @@ export default function ServersPage() {
                     </TabList>
 
                     <TabPanels className='mt-6'>
-                        {/* All Servers Tab */}
                         <TabPanel>
                             {filteredServers.length === 0 ? (
                                 <EmptyState searchQuery={searchQuery} t={t} />
@@ -500,7 +487,6 @@ export default function ServersPage() {
                                 </div>
                             )}
 
-                            {/* Pagination Controls */}
                             {pagination.total_pages > 1 && (
                                 <div className='flex items-center justify-between py-6 px-4 mt-6 border-t border-border'>
                                     <p className='text-sm text-muted-foreground'>
@@ -536,10 +522,8 @@ export default function ServersPage() {
                             )}
                         </TabPanel>
 
-                        {/* By Folder Tab */}
                         <TabPanel>
                             <div className='space-y-4'>
-                                {/* Info message about folder view - shows when all servers are loaded for folder organization */}
                                 {pagination.total_records > 10 && (
                                     <div className='p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl'>
                                         <p className='text-sm text-blue-600 dark:text-blue-400'>
@@ -551,7 +535,6 @@ export default function ServersPage() {
                                     </div>
                                 )}
 
-                                {/* Create Folder Button */}
                                 <button
                                     onClick={openCreateFolder}
                                     className='flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors'
@@ -662,7 +645,6 @@ export default function ServersPage() {
                 </TabGroup>
             )}
 
-            {/* Folder Create/Edit Dialog */}
             <FolderDialog
                 isOpen={isFolderDialogOpen}
                 onClose={() => setIsFolderDialogOpen(false)}

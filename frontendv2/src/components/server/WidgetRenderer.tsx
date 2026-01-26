@@ -175,7 +175,6 @@ export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProp
                                     className='relative w-full h-full'
                                     style={{ minHeight: widget.iframe?.minHeight || height }}
                                 >
-                                    {/* Loading State */}
                                     {loadingStates[widget.id] !== false && (
                                         <div className='absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-sm transition-all duration-300'>
                                             <div className='flex flex-col items-center space-y-4'>
@@ -190,7 +189,6 @@ export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProp
                                         </div>
                                     )}
 
-                                    {/* Error State */}
                                     {errorStates[widget.id] && (
                                         <div className='absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-md p-6 animate-fade-in'>
                                             <div className='max-w-[80%] text-center'>
@@ -239,7 +237,6 @@ export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProp
                                 </div>
                             </CardContent>
 
-                            {/* Footer logic if needed */}
                             {widget.card?.footer?.show && widget.card.footer.text && (
                                 <CardFooter className={cn('text-sm text-muted-foreground', widget.classes?.footer)}>
                                     {widget.card.footer.text}

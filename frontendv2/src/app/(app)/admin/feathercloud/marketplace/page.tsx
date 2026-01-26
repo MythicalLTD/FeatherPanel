@@ -38,7 +38,7 @@ export default function MarketplacePage() {
     return (
         <div className='space-y-8 '>
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'top-of-page')} />
-            {/* Header section */}
+
             <PageHeader
                 title={t('admin.marketplace.title')}
                 description={t('admin.marketplace.subtitle')}
@@ -49,9 +49,7 @@ export default function MarketplacePage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'before-content')} />
 
-            {/* Marketplace Grid */}
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {/* Plugins */}
                 <ResourceCard
                     title={t('admin.marketplace.index.plugins.title')}
                     description={t('admin.marketplace.index.plugins.description')}
@@ -69,7 +67,6 @@ export default function MarketplacePage() {
                     iconWrapperClassName='bg-blue-500/10 border-blue-500/20'
                 />
 
-                {/* Spells */}
                 <ResourceCard
                     title={t('admin.marketplace.index.spells.title')}
                     description={t('admin.marketplace.index.spells.description')}
@@ -87,7 +84,6 @@ export default function MarketplacePage() {
                     iconWrapperClassName='bg-purple-500/10 border-purple-500/20'
                 />
 
-                {/* Translations */}
                 <ResourceCard
                     title={t('admin.marketplace.index.translations.title')}
                     description={t('admin.marketplace.index.translations.description')}
@@ -106,7 +102,6 @@ export default function MarketplacePage() {
                 />
             </div>
 
-            {/* Info Section */}
             <div className='pt-4'>
                 <PageCard title={t('admin.marketplace.index.about.title')} icon={Info}>
                     <p className='text-base text-muted-foreground leading-relaxed'>

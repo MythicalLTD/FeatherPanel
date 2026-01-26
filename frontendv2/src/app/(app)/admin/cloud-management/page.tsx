@@ -223,7 +223,6 @@ export default function CloudManagementPage() {
                 }
             />
 
-            {/* Connection Status */}
             <ResourceCard
                 title={
                     isConnected
@@ -252,7 +251,6 @@ export default function CloudManagementPage() {
                 )}
             />
 
-            {/* Credentials Info */}
             {isConnected && (
                 <PageCard
                     title={t('admin.cloud_management.credentials.title')}
@@ -284,7 +282,6 @@ export default function CloudManagementPage() {
                 </PageCard>
             )}
 
-            {/* Feature Showcase */}
             <div className='space-y-4'>
                 <h2 className='text-xl font-semibold text-foreground'>{t('admin.cloud_management.features.title')}</h2>
                 <div className='grid gap-6 md:grid-cols-3'>
@@ -329,7 +326,6 @@ export default function CloudManagementPage() {
                 </div>
             </div>
 
-            {/* Cloud Statistics */}
             {isConnected && (cloudSummary || cloudCredits || cloudTeam) && (
                 <div className='space-y-4'>
                     <div className='flex items-center justify-between'>
@@ -399,7 +395,6 @@ export default function CloudManagementPage() {
                 </div>
             )}
 
-            {/* Security Benefits */}
             <div className='space-y-4'>
                 <h2 className='text-xl font-semibold text-foreground'>{t('admin.cloud_management.security.title')}</h2>
                 <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
@@ -430,7 +425,6 @@ export default function CloudManagementPage() {
                 </div>
             </div>
 
-            {/* OAuth2 Integration Info */}
             <PageCard
                 title={t('admin.cloud_management.oauth2.title')}
                 description={t('admin.cloud_management.oauth2.description')}
@@ -451,7 +445,6 @@ export default function CloudManagementPage() {
                 </div>
             </PageCard>
 
-            {/* Rotate Keys Confirmation Dialog */}
             <AlertDialog open={showRotateConfirmDialog} onOpenChange={setShowRotateConfirmDialog}>
                 <AlertDialogContent className='max-w-lg'>
                     <AlertDialogHeader>

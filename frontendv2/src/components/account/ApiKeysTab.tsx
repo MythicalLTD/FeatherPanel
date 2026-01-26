@@ -233,7 +233,6 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
 
             <WidgetRenderer widgets={getWidgets(slug, 'after-header')} />
 
-            {/* Info Banner */}
             <div className='bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4'>
                 <div className='flex items-start gap-3'>
                     <Info className='h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0' />
@@ -250,7 +249,6 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                 </div>
             </div>
 
-            {/* Search */}
             <div className='relative'>
                 <Input
                     type='text'
@@ -331,7 +329,6 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                 </div>
             )}
 
-            {/* Create/Edit Modal */}
             <Dialog
                 open={isOpen || editModal}
                 onClose={() => {
@@ -387,7 +384,6 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                 </div>
             </Dialog>
 
-            {/* View Modal */}
             <Dialog open={viewModal} onClose={() => setViewModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
@@ -446,7 +442,6 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                 </div>
             </Dialog>
 
-            {/* Delete Modal */}
             <Dialog open={deleteModal} onClose={() => setDeleteModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
@@ -469,7 +464,6 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                 </div>
             </Dialog>
 
-            {/* Regenerate Modal */}
             <Dialog open={regenerateModal} onClose={() => setRegenerateModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>

@@ -83,7 +83,6 @@ export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: Syste
 
     return (
         <div className='space-y-6'>
-            {/* Wings Information */}
             <PageCard title={t('admin.node.view.system.wings_info')} icon={Shield}>
                 <div className='space-y-6'>
                     <div>
@@ -142,7 +141,6 @@ export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: Syste
             </PageCard>
 
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                {/* Docker Information */}
                 <PageCard title={t('admin.node.view.system.docker_info')} icon={LayoutGrid}>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                         <div>
@@ -207,7 +205,6 @@ export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: Syste
                     </div>
                 </PageCard>
 
-                {/* Host System Information */}
                 <PageCard title={t('admin.node.view.system.host_info')} icon={Cpu}>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                         <div>

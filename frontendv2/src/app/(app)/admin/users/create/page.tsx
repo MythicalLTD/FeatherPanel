@@ -135,7 +135,6 @@ export default function CreateUserPage() {
 
     return (
         <div className='space-y-6'>
-            {/* Header */}
             <PageHeader
                 title={t('admin.users.create.title')}
                 description={t('admin.users.create.description')}
@@ -149,7 +148,6 @@ export default function CreateUserPage() {
             />
 
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-                {/* Main Form */}
                 <div className='lg:col-span-2'>
                     <PageCard title={t('admin.users.create.form.title')} icon={UserPlus}>
                         <form onSubmit={handleCreateUser} className='space-y-6'>
@@ -257,7 +255,6 @@ export default function CreateUserPage() {
                     </PageCard>
                 </div>
 
-                {/* Help Cards */}
                 <div className='space-y-6'>
                     <PageCard title={t('admin.users.create.help.tips_title')} icon={Info} variant='default'>
                         <ul className='space-y-3 text-sm text-muted-foreground'>

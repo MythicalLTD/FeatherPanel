@@ -331,7 +331,6 @@ export default function ServerBackupsPage() {
 
     return (
         <div className='space-y-8 pb-12 '>
-            {/* Header Section */}
             <PageHeader
                 title={t('serverBackups.title')}
                 description={
@@ -391,7 +390,6 @@ export default function ServerBackupsPage() {
                 </div>
             )}
 
-            {/* Main Content Area */}
             <div className='space-y-6'>
                 <div className='flex items-center gap-4'>
                     <div className='relative flex-1 group'>
@@ -574,7 +572,6 @@ export default function ServerBackupsPage() {
                     </div>
                 )}
 
-                {/* Pagination */}
                 {pagination.total > pagination.per_page && (
                     <div className='flex items-center justify-between py-8 border-t border-border/40 px-6'>
                         <p className='text-sm font-bold opacity-40 uppercase tracking-widest'>
@@ -619,7 +616,6 @@ export default function ServerBackupsPage() {
 
             <WidgetRenderer widgets={getWidgets('server-backups', 'backup-bottom')} />
 
-            {/* CREATE DIALOG */}
             <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} className='max-w-xl'>
                 <div className='space-y-6 p-2'>
                     <DialogHeader>
@@ -727,7 +723,6 @@ export default function ServerBackupsPage() {
                 </div>
             </Dialog>
 
-            {/* RESTORE DIALOG */}
             <Dialog open={restoreDialogOpen} onClose={() => setRestoreDialogOpen(false)} className='max-w-xl'>
                 <div className='space-y-6 p-2'>
                     <DialogHeader>
@@ -806,7 +801,6 @@ export default function ServerBackupsPage() {
                 </div>
             </Dialog>
 
-            {/* CONFIRM ACTION DIALOG */}
             <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)} className='max-w-lg'>
                 <div className='space-y-6 p-2'>
                     <DialogHeader>

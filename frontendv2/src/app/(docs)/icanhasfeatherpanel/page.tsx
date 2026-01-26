@@ -44,7 +44,7 @@ export default function DocsPage() {
                                 </div>
                                 <div className='mt-4'>
                                     <Badge variant='secondary' className='text-xs bg-muted/50 border-border/50'>
-                                        68 Widget Slugs Available
+                                        69 Widget Slugs Available
                                     </Badge>
                                 </div>
                             </CardContent>

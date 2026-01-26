@@ -182,7 +182,7 @@ export default function StatusPage() {
     return (
         <div className='space-y-6 '>
             <WidgetRenderer widgets={getWidgets('dashboard-status', 'top-of-page')} />
-            {/* Standard Header Layout */}
+
             <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
                 <div>
                     <h1 className='text-3xl font-bold tracking-tight mb-2'>{t('dashboard.status.title')}</h1>
@@ -199,7 +199,6 @@ export default function StatusPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-status', 'after-header')} />
 
-            {/* Global Stats bar - Standardized with List Container Background */}
             {statusData?.data?.global && (
                 <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
                     <div className='bg-card border border-border/50 rounded-xl p-5 flex items-center justify-between shadow-sm'>
@@ -252,13 +251,11 @@ export default function StatusPage() {
             )}
             <WidgetRenderer widgets={getWidgets('dashboard-status', 'after-global-stats')} />
 
-            {/* Content Section */}
             <div className='space-y-4'>
                 <div className='flex items-center justify-between pt-4'>
                     <h2 className='text-xl font-bold tracking-tight'>{t('dashboard.status.individualNodes')}</h2>
                 </div>
 
-                {/* Filter/Search Bar - EXACTLY Matching Tickets/KB Pattern (bg-card/50) */}
                 <div className='bg-card/50 backdrop-blur-sm rounded-xl border border-border/50 p-1'>
                     <div className='flex flex-col md:flex-row gap-4 p-4'>
                         <div className='flex-1'>
@@ -277,7 +274,6 @@ export default function StatusPage() {
 
                 <WidgetRenderer widgets={getWidgets('dashboard-status', 'before-node-list')} />
 
-                {/* Unified Nodes List - Standardized bg-card (Solid) */}
                 <div className='bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden'>
                     <div className='divide-y divide-border/50'>
                         {filteredNodes.length > 0 ? (
@@ -417,7 +413,6 @@ export default function StatusPage() {
                 <WidgetRenderer widgets={getWidgets('dashboard-status', 'after-node-list')} />
             </div>
 
-            {/* Global Resource Integrated Bar Section (Matching bg-card solid) */}
             {statusData?.data?.global && (
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
                     <div className='bg-card rounded-xl border border-border/50 p-6 shadow-sm'>

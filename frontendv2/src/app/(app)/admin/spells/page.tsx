@@ -429,14 +429,12 @@ export default function SpellsPage() {
                 </div>
             )}
 
-            {/* Cross-compatibility Card */}
             <PageCard title={t('admin.spells.help.cross_compatible.title')} icon={Sparkles} variant='default'>
                 <p className='text-sm text-muted-foreground leading-relaxed'>
                     {t('admin.spells.help.cross_compatible.description')}
                 </p>
             </PageCard>
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
                 <PageCard title={t('admin.spells.help.what_are_spells.title')} icon={BookOpen}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -460,7 +458,6 @@ export default function SpellsPage() {
                 </PageCard>
             </div>
 
-            {/* Import Dialog */}
             <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
                 <DialogContent>
                     <DialogHeader>

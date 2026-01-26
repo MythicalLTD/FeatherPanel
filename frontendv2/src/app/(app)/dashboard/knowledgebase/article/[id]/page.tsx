@@ -105,7 +105,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
     return (
         <div className='max-w-4xl mx-auto space-y-6 flex flex-col pt-2 pb-12'>
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'top-of-page')} />
-            {/* Header */}
+
             <div className='flex items-center gap-4 px-1'>
                 <Link href={`/dashboard/knowledgebase/category/${article.category_id}`}>
                     <Button
@@ -127,7 +127,6 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                 <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'after-header')} />
             </div>
 
-            {/* Article Content */}
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'before-article-content')} />
             <div className='bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden'>
                 <div className='p-8'>
@@ -173,7 +172,6 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                         </ReactMarkdown>
                     </div>
 
-                    {/* Tags */}
                     {article.tags && article.tags.length > 0 && (
                         <div className='mt-12 pt-8 border-t border-border/50 flex flex-wrap gap-2'>
                             {article.tags.map((tag) => (
@@ -191,7 +189,6 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'after-article-content')} />
 
-            {/* Attachments */}
             {article.attachments && article.attachments.length > 0 && (
                 <>
                     <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'before-attachments')} />

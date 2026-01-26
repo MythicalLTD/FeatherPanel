@@ -438,7 +438,6 @@ export default function TranslationsPage() {
                 </div>
             )}
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6 pt-6'>
                 <PageCard title={t('admin.translations.help.what_is.title')} icon={Globe}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -452,7 +451,6 @@ export default function TranslationsPage() {
                 </PageCard>
             </div>
 
-            {/* Edit Sheet */}
             <Sheet open={editOpen} onOpenChange={setEditOpen} className='max-w-6xl'>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -493,7 +491,6 @@ export default function TranslationsPage() {
                 </div>
             </Sheet>
 
-            {/* Create Sheet */}
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>

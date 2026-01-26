@@ -111,7 +111,6 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'top-of-page')} />
 
-            {/* Header */}
             <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
                 <div className='flex items-center gap-4'>
                     <Link href='/dashboard/knowledgebase'>
@@ -131,7 +130,6 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'after-header')} />
             </div>
 
-            {/* Article List Container */}
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'before-articles-list')} />
             <div className='bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden'>
                 {articles.length === 0 ? (
@@ -198,7 +196,6 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                     </div>
                 )}
 
-                {/* Pagination */}
                 {pagination && pagination.total_pages > 1 && (
                     <div className='p-4 border-t border-border/50 flex items-center justify-between bg-white/1'>
                         <p className='text-sm text-muted-foreground'>

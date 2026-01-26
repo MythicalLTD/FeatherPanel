@@ -84,7 +84,6 @@ export default function KnowledgeBasePage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'after-header')} />
 
-            {/* Categories List */}
             {loading ? (
                 <div className='space-y-4'>
                     {[1, 2, 3].map((i) => (

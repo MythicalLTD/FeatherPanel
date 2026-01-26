@@ -717,7 +717,6 @@ export default function AdminSubdomainsPage() {
                 </div>
             </div>
 
-            {/* Manage Domain Sheet */}
             <Sheet open={manageOpen} onOpenChange={setManageOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -940,7 +939,6 @@ export default function AdminSubdomainsPage() {
                 </div>
             </Sheet>
 
-            {/* Details Sheet */}
             <Sheet open={detailsOpen} onOpenChange={setDetailsOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>

@@ -235,7 +235,7 @@ export default function SpellsPage() {
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'top-of-page')} />
-            {/* Header */}
+
             <PageHeader
                 title={t('admin.marketplace.spells.title')}
                 description={t('admin.marketplace.spells.subtitle')}
@@ -250,7 +250,6 @@ export default function SpellsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'after-header')} />
 
-            {/* Online Publish Banner */}
             <PageCard
                 title={t('admin.marketplace.spells.online_banner.title')}
                 icon={Sparkles}
@@ -287,7 +286,6 @@ export default function SpellsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'before-content')} />
 
-            {/* Search and Filters */}
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
                 <div className='relative flex-1 group'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -301,7 +299,6 @@ export default function SpellsPage() {
                 </div>
             </div>
 
-            {/* Spells Grid */}
             {onlineLoading ? (
                 <EmptyState
                     title={t('admin.marketplace.spells.loading')}
@@ -429,7 +426,6 @@ export default function SpellsPage() {
 
             {renderPagination()}
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10 pb-12'>
                 <PageCard title={t('admin.marketplace.spells.help.repo_title')} icon={Globe}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -448,7 +444,6 @@ export default function SpellsPage() {
                 </PageCard>
             </div>
 
-            {/* Install Side Panel */}
             <Sheet open={confirmInstallOpen} onOpenChange={setConfirmInstallOpen}>
                 <div className='h-full flex flex-col'>
                     <SheetHeader>

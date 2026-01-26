@@ -155,7 +155,7 @@ export default function ServerProxyPage() {
     return (
         <div key={pathname} className='space-y-8 pb-12 '>
             <WidgetRenderer widgets={getWidgets('server-proxy', 'top-of-page')} />
-            {/* Header */}
+
             <PageHeader
                 title={t('serverProxy.title')}
                 description={
@@ -187,7 +187,6 @@ export default function ServerProxyPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-proxy', 'after-header')} />
 
-            {/* Info Banner */}
             <div className='relative overflow-hidden p-6 rounded-3xl bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500 shadow-sm'>
                 <div className='relative z-10 flex items-start gap-5'>
                     <div className='h-12 w-12 rounded-2xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shrink-0'>
@@ -206,7 +205,6 @@ export default function ServerProxyPage() {
 
             <WidgetRenderer widgets={getWidgets('server-proxy', 'before-proxies-list')} />
 
-            {/* Content */}
             {proxies.length === 0 ? (
                 <EmptyState
                     title={t('serverProxy.noProxiesTitle')}
@@ -289,7 +287,6 @@ export default function ServerProxyPage() {
             <WidgetRenderer widgets={getWidgets('server-proxy', 'after-proxies-list')} />
             <WidgetRenderer widgets={getWidgets('server-proxy', 'bottom-of-page')} />
 
-            {/* Delete Modal */}
             <HeadlessModal
                 isOpen={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}

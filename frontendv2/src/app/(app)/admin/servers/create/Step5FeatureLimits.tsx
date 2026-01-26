@@ -33,7 +33,6 @@ export function Step5FeatureLimits({ formData, setFormData }: StepProps) {
                 className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
             >
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
-                    {/* Database Limit */}
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
                             <div className='p-2 bg-primary/10 rounded-lg'>
@@ -54,7 +53,6 @@ export function Step5FeatureLimits({ formData, setFormData }: StepProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.database_limit_help')}</p>
                     </div>
 
-                    {/* Allocation Limit */}
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
                             <div className='p-2 bg-blue-500/10 rounded-lg'>
@@ -77,7 +75,6 @@ export function Step5FeatureLimits({ formData, setFormData }: StepProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.allocation_limit_help')}</p>
                     </div>
 
-                    {/* Backup Limit */}
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
                             <div className='p-2 bg-emerald-500/10 rounded-lg'>

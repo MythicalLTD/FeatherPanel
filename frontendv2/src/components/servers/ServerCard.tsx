@@ -74,7 +74,6 @@ export function ServerCard({
                     accessible ? 'hover:border-primary hover:shadow-lg' : 'opacity-60',
                 )}
             >
-                {/* Banner Thumbnail */}
                 {server.spell?.banner && (
                     <Link
                         href={accessible ? serverUrl : '#'}
@@ -125,7 +124,6 @@ export function ServerCard({
                         </div>
                     </Link>
 
-                    {/* Manage Menu */}
                     <Menu as='div' className='relative'>
                         <MenuButton
                             className='p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none'
@@ -207,7 +205,6 @@ export function ServerCard({
                 accessible ? 'hover:border-primary hover:shadow-2xl hover:shadow-primary/10' : 'opacity-60',
             )}
         >
-            {/* Banner Image */}
             <Link
                 href={accessible ? serverUrl : '#'}
                 className={cn('relative block', accessible && 'cursor-pointer')}
@@ -245,7 +242,6 @@ export function ServerCard({
                         </p>
                     </Link>
 
-                    {/* Manage Menu */}
                     <Menu as='div' className='relative shrink-0'>
                         <MenuButton
                             className='p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none'

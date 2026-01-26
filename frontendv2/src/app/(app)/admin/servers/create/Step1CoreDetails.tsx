@@ -50,7 +50,6 @@ export function Step1CoreDetails({
                 className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
             >
                 <div className='space-y-6'>
-                    {/* Server Name */}
                     <div className='space-y-3'>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.name')}
@@ -65,7 +64,6 @@ export function Step1CoreDetails({
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.name_help')}</p>
                     </div>
 
-                    {/* Server Description */}
                     <div className='space-y-3'>
                         <Label className='flex items-center gap-1.5'>{t('admin.servers.form.description')}</Label>
                         <Input
@@ -77,7 +75,6 @@ export function Step1CoreDetails({
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.description_help')}</p>
                     </div>
 
-                    {/* Server Owner */}
                     <div className='space-y-3'>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.owner')}
@@ -113,7 +110,6 @@ export function Step1CoreDetails({
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.owner_help')}</p>
                     </div>
 
-                    {/* Skip Scripts */}
                     <div className='flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50'>
                         <div className='space-y-0.5'>
                             <Label>{t('admin.servers.form.skip_scripts')}</Label>

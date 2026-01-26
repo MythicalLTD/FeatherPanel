@@ -67,7 +67,7 @@ export function FileList({
                     <div className='flex h-24 w-24 items-center justify-center rounded-3xl bg-white/5 text-white/20 border border-white/10 shadow-2xl relative z-10'>
                         <FolderOpen className='h-10 w-10 opacity-40 group-hover:scale-110 transition-transform duration-500' />
                     </div>
-                    {/* Decorative elements */}
+
                     <div className='absolute -top-2 -right-2 h-8 w-8 rounded-full bg-primary/20 blur-xl animate-pulse' />
                     <div className='absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-primary/10 blur-2xl animate-pulse delay-700' />
                     <Sparkles className='absolute -top-6 -left-6 h-6 w-6 text-primary/40 animate-bounce delay-300' />
@@ -89,7 +89,6 @@ export function FileList({
 
     return (
         <div className='overflow-hidden rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/10 dark:shadow-black/40'>
-            {/* Header */}
             <div
                 className='flex items-center gap-3 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 px-4 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/60 dark:text-white/40'
                 style={{ color: 'hsl(var(--foreground))', opacity: 0.6 }}
@@ -107,7 +106,6 @@ export function FileList({
                 <div className='w-10'></div>
             </div>
 
-            {/* Rows */}
             <div className='divide-y divide-gray-200 dark:divide-white/5'>
                 {files.map((file) => (
                     <FileRow

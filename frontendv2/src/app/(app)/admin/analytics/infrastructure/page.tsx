@@ -146,7 +146,6 @@ export default function InfrastructureAnalyticsPage() {
                 icon={Server}
             />
 
-            {/* Overview Stats */}
             {overview && (
                 <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                     <ResourceCard
@@ -186,7 +185,6 @@ export default function InfrastructureAnalyticsPage() {
                 </div>
             )}
 
-            {/* Charts Section */}
             <div className='grid gap-4 md:grid-cols-2'>
                 <SimplePieChart
                     title={t('admin.analytics.infrastructure.nodes_by_location')}

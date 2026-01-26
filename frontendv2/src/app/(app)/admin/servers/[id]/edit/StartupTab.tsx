@@ -43,7 +43,6 @@ export function StartupTab({ form, setForm, errors }: TabProps) {
                 {errors.startup && <p className='text-xs text-red-500'>{errors.startup}</p>}
                 <p className='text-xs text-muted-foreground'>{t('admin.servers.form.startup_help')}</p>
 
-                {/* Available Variables Info */}
                 <div className='mt-4 p-4 bg-muted/20 rounded-xl border border-border/50'>
                     <p className='text-sm font-medium mb-2'>{t('admin.servers.edit.startup.available_variables')}</p>
                     <div className='flex flex-wrap gap-2'>

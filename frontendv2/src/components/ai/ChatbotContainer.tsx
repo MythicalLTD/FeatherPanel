@@ -608,7 +608,6 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
 
     return (
         <>
-            {/* Main Chat Dialog */}
             <Transition appear show={open} as={Fragment}>
                 <Dialog as='div' className='relative z-50' onClose={onClose}>
                     <Transition.Child
@@ -637,7 +636,6 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                                 >
                                     <Dialog.Panel className='pointer-events-auto w-screen max-w-full md:max-w-2xl lg:max-w-3xl'>
                                         <div className='flex h-full flex-col bg-background shadow-xl'>
-                                            {/* Header */}
                                             <div className='px-4 py-3 border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 flex items-center justify-between'>
                                                 <div className='flex items-center gap-3 min-w-0 flex-1'>
                                                     <Button
@@ -672,17 +670,14 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                                                 </Button>
                                             </div>
 
-                                            {/* Main Content Area */}
                                             <div className='flex flex-1 overflow-hidden'>
-                                                {/* Sidebar */}
                                                 {showSidebar && (
                                                     <>
-                                                        {/* Mobile backdrop */}
                                                         <div
                                                             className='fixed inset-0 bg-black/50 z-40 md:hidden'
                                                             onClick={() => setShowSidebar(false)}
                                                         />
-                                                        {/* Sidebar content */}
+
                                                         <div className='fixed md:relative inset-y-0 left-0 z-50 w-72 md:w-64 border-r border-border bg-background flex flex-col shrink-0 md:z-0'>
                                                             <div className='px-3 py-3 border-b border-border flex items-center justify-between'>
                                                                 <h3 className='font-semibold text-sm'>
@@ -787,11 +782,8 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                                                     </>
                                                 )}
 
-                                                {/* Messages Area */}
                                                 <div className='flex-1 flex flex-col min-w-0'>
-                                                    {/* Messages Container */}
                                                     <div className='flex-1 overflow-y-auto px-4 py-4 space-y-4'>
-                                                        {/* Action Notifications */}
                                                         {pendingActions.length > 0 && (
                                                             <div className='space-y-2'>
                                                                 {pendingActions.map((action) => (
@@ -828,7 +820,6 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                                                             </div>
                                                         )}
 
-                                                        {/* Messages */}
                                                         {messages.length === 0 && !isLoading ? (
                                                             <div className='flex flex-col items-center justify-center h-full py-12'>
                                                                 <div className='text-center max-w-md px-4'>
@@ -850,7 +841,6 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                                                                         key={message.id}
                                                                         className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                                                                     >
-                                                                        {/* Avatar */}
                                                                         {message.role === 'assistant' ? (
                                                                             <div className='h-9 w-9 rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center shrink-0'>
                                                                                 <Bot className='h-5 w-5 text-primary-foreground' />
@@ -859,7 +849,6 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                                                                             <UserAvatar size='md' />
                                                                         )}
 
-                                                                        {/* Message Bubble */}
                                                                         <div className='flex-1 min-w-0 max-w-[85%] md:max-w-[75%]'>
                                                                             <div className='flex items-center gap-2 mb-1'>
                                                                                 <span className='text-xs font-medium text-foreground'>
@@ -900,7 +889,6 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                                                         <div ref={messagesEndRef} />
                                                     </div>
 
-                                                    {/* Input Container */}
                                                     <div className='border-t border-border bg-background p-4'>
                                                         <div className='flex gap-2 items-end max-w-4xl mx-auto'>
                                                             <textarea
@@ -955,7 +943,6 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                 </Dialog>
             </Transition>
 
-            {/* Confirmation Dialog */}
             <Transition appear show={confirmDialog.open} as={Fragment}>
                 <Dialog
                     as='div'

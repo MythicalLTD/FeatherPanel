@@ -360,7 +360,6 @@ export default function ServerFirewallPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-firewall', 'after-header')} />
 
-            {/* Info Alert */}
             <div className='relative overflow-hidden p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10 backdrop-blur-xl animate-in slide-in-from-top duration-500 shadow-sm'>
                 <div className='relative z-10 flex items-start gap-5'>
                     <div className='h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shrink-0'>
@@ -454,7 +453,6 @@ export default function ServerFirewallPage() {
 
             <WidgetRenderer widgets={getWidgets('server-firewall', 'after-rules-list')} />
 
-            {/* Create / Edit Modal */}
             <HeadlessModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -533,7 +531,6 @@ export default function ServerFirewallPage() {
                 </div>
             </HeadlessModal>
 
-            {/* Delete Confirmation Modal */}
             <HeadlessModal
                 isOpen={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}

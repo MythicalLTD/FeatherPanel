@@ -239,7 +239,6 @@ export default function ServerAnalyticsPage() {
                 icon={Server}
             />
 
-            {/* Overview Stats */}
             {overview && (
                 <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                     <ResourceCard
@@ -326,7 +325,6 @@ export default function ServerAnalyticsPage() {
                 </div>
             )}
 
-            {/* Charts Section */}
             <div className='grid gap-4 md:grid-cols-2'>
                 <TrendChart
                     title={t('admin.analytics.servers.creation_trend')}

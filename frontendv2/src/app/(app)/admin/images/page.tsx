@@ -403,7 +403,6 @@ export default function ImagesPage() {
                 </PageCard>
             </div>
 
-            {/* Create Sheet */}
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -429,7 +428,6 @@ export default function ImagesPage() {
                                 <div className='space-y-2'>
                                     <Label>{t('admin.images.form.preview')}</Label>
                                     <div className='w-full h-48 rounded-xl overflow-hidden border bg-card/50'>
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img src={filePreview} alt='Preview' className='w-full h-full object-contain' />
                                     </div>
                                 </div>
@@ -444,7 +442,6 @@ export default function ImagesPage() {
                 </div>
             </Sheet>
 
-            {/* Edit Sheet */}
             <Sheet open={editOpen} onOpenChange={setEditOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -481,7 +478,6 @@ export default function ImagesPage() {
                 </div>
             </Sheet>
 
-            {/* View Sheet */}
             <Sheet open={viewOpen} onOpenChange={setViewOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -492,7 +488,6 @@ export default function ImagesPage() {
                     </SheetHeader>
                     <div className='space-y-8'>
                         <div className='w-full h-80 rounded-2xl overflow-hidden border bg-black/20 flex items-center justify-center p-4'>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={selectedImage?.url}
                                 alt={selectedImage?.name}

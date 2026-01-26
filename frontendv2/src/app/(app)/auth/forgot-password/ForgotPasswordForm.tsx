@@ -123,7 +123,7 @@ export default function ForgotPasswordForm() {
         <>
             <div className='space-y-6'>
                 <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-top')} />
-                {/* Header */}
+
                 <div className='text-center space-y-2'>
                     <h2 className='text-2xl font-bold tracking-tight'>{t('auth.forgot_password.title')}</h2>
                     <p className='text-sm text-muted-foreground'>{t('auth.forgot_password.subtitle')}</p>
@@ -142,7 +142,6 @@ export default function ForgotPasswordForm() {
                         placeholder={t('auth.register.email_placeholder')}
                     />
 
-                    {/* Turnstile Widget */}
                     {showTurnstile && (
                         <div className='flex justify-center'>
                             <Turnstile
@@ -179,7 +178,6 @@ export default function ForgotPasswordForm() {
                 </form>
                 <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-after-form')} />
 
-                {/* Footer */}
                 <div className='text-center text-sm text-muted-foreground'>
                     {t('auth.forgot_password.remember')}{' '}
                     <Link
@@ -192,7 +190,6 @@ export default function ForgotPasswordForm() {
                 <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-bottom')} />
             </div>
 
-            {/* Success Dialog */}
             <Dialog open={showSuccessDialog} onClose={handleDialogClose}>
                 <DialogHeader>
                     <DialogTitleCustom className='flex items-center gap-2'>

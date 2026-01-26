@@ -202,7 +202,6 @@ export default function CreateNodePage() {
 
             <form onSubmit={handleSubmit} className='space-y-8 mt-8'>
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-                    {/* Basic Details */}
                     <div className='space-y-8'>
                         <PageCard title={t('admin.node.form.basic_details')} icon={Server}>
                             <div className='space-y-6'>
@@ -274,7 +273,6 @@ export default function CreateNodePage() {
                             </div>
                         </PageCard>
 
-                        {/* Configuration */}
                         <PageCard title={t('admin.node.form.configuration')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='grid grid-cols-2 gap-4'>
@@ -368,7 +366,6 @@ export default function CreateNodePage() {
                     </div>
 
                     <div className='space-y-8'>
-                        {/* Network */}
                         <PageCard title={t('admin.node.form.network')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
@@ -414,7 +411,6 @@ export default function CreateNodePage() {
                             </div>
                         </PageCard>
 
-                        {/* Advanced */}
                         <PageCard title={t('admin.node.form.advanced')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='grid grid-cols-2 gap-4'>
@@ -511,7 +507,6 @@ export default function CreateNodePage() {
                 </div>
             </form>
 
-            {/* Location Selection Sheet */}
             <Sheet open={locationModalOpen} onOpenChange={setLocationModalOpen}>
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
@@ -524,7 +519,6 @@ export default function CreateNodePage() {
                     </SheetHeader>
 
                     <div className='mt-6 space-y-4'>
-                        {/* Search */}
                         <div className='relative'>
                             <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
@@ -535,7 +529,6 @@ export default function CreateNodePage() {
                             />
                         </div>
 
-                        {/* Locations List */}
                         <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                             {locations.length === 0 ? (
                                 <div className='text-center py-8 text-muted-foreground'>
@@ -570,7 +563,6 @@ export default function CreateNodePage() {
                             )}
                         </div>
 
-                        {/* Pagination */}
                         {locationPagination.total_pages > 1 && (
                             <div className='flex items-center justify-between pt-4 border-t'>
                                 <div className='text-sm text-muted-foreground'>

@@ -442,7 +442,6 @@ export default function NotificationsPage() {
                 </div>
             )}
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.notifications.help.alerts.title')} icon={Bell}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -463,7 +462,6 @@ export default function NotificationsPage() {
                 </PageCard>
             </div>
 
-            {/* Create Sheet */}
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -548,7 +546,6 @@ export default function NotificationsPage() {
                 </div>
             </Sheet>
 
-            {/* Edit Sheet */}
             <Sheet open={editOpen} onOpenChange={setEditOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>
@@ -644,7 +641,6 @@ export default function NotificationsPage() {
                 </div>
             </Sheet>
 
-            {/* View Sheet */}
             <Sheet open={viewOpen} onOpenChange={setViewOpen}>
                 <div className='space-y-6'>
                     <SheetHeader>

@@ -391,7 +391,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
 
     return (
         <div key={pathname} className='space-y-8 pb-12 '>
-            {/* Header Section */}
             <PageHeader
                 title={t('serverActivities.title')}
                 description={
@@ -414,7 +413,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
 
             <WidgetRenderer widgets={getWidgets('server-activities', 'activity-top')} />
 
-            {/* Filter Bar */}
             <div className='flex flex-col md:flex-row gap-4'>
                 <div className='relative flex-1 group'>
                     <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors' />
@@ -453,7 +451,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                 </div>
             </div>
 
-            {/* Activities List */}
             {activities.length === 0 ? (
                 <EmptyState
                     title={t('serverActivities.noActivitiesFound')}
@@ -540,7 +537,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                 </div>
             )}
 
-            {/* Pagination */}
             {pagination.total_records > pagination.per_page && (
                 <div className='flex items-center justify-between py-8 border-t border-border/40 px-6'>
                     <p className='text-sm font-bold opacity-40 uppercase tracking-widest'>
@@ -578,7 +574,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
 
             <WidgetRenderer widgets={getWidgets('server-activities', 'activity-bottom')} />
 
-            {/* DETAILS DIALOG */}
             <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} className='max-w-[1200px]'>
                 {selectedItem && (
                     <div className='space-y-8 p-2 w-full'>
@@ -609,7 +604,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                         </DialogHeader>
 
                         <div className='grid grid-cols-1 xl:grid-cols-2 gap-8'>
-                            {/* Metadata Table */}
                             <div className='space-y-6'>
                                 <div className='flex items-center justify-between border-b border-white/5 pb-4'>
                                     <h3 className='text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3'>
@@ -664,7 +658,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                                 </div>
                             </div>
 
-                            {/* Raw Logs */}
                             <div className='space-y-6'>
                                 <div className='flex items-center justify-between border-b border-white/5 pb-4'>
                                     <h3 className='text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3'>

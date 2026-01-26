@@ -763,7 +763,7 @@ class SettingsController
                 'options' => ['true', 'false'],
                 'category' => 'servers',
             ],
-			ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL => [
+            ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL => [
                 'name' => ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL,
                 'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL, 'false'),
                 'description' => 'Allow users to create and manage their own FastDL configurations',

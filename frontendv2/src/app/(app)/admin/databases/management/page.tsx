@@ -205,7 +205,6 @@ export default function DatabaseManagementPage() {
 
     return (
         <div className='space-y-6 p-6'>
-            {/* Plugin Widgets: Top of Page */}
             <WidgetRenderer widgets={getWidgets('admin-databases-management', 'top-of-page')} />
 
             <PageHeader
@@ -250,10 +249,8 @@ export default function DatabaseManagementPage() {
                 }
             />
 
-            {/* Plugin Widgets: After Header */}
             <WidgetRenderer widgets={getWidgets('admin-databases-management', 'after-header')} />
 
-            {/* Status Grid */}
             {status && (
                 <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in-up'>
                     <PageCard title={t('admin.database_management.stats.overview')} icon={Server}>
@@ -317,7 +314,6 @@ export default function DatabaseManagementPage() {
                 </div>
             )}
 
-            {/* Loading State */}
             {loading && !status && (
                 <div className='flex h-64 items-center justify-center rounded-xl border border-dashed text-muted-foreground'>
                     <RefreshCw className='mr-2 h-5 w-5 animate-spin' />
@@ -325,7 +321,6 @@ export default function DatabaseManagementPage() {
                 </div>
             )}
 
-            {/* Migrations Output Console */}
             <div className='space-y-4'>
                 <div className='flex items-center justify-between'>
                     <h2 className='text-lg font-semibold flex items-center gap-2'>
@@ -354,7 +349,6 @@ export default function DatabaseManagementPage() {
                 </div>
             </div>
 
-            {/* Help Cards Grid */}
             <div className='grid gap-6 md:grid-cols-3'>
                 <PageCard title={t('admin.database_management.help.what_is.title')} icon={Info} className='h-full'>
                     <p className='text-sm text-muted-foreground'>
@@ -385,7 +379,6 @@ export default function DatabaseManagementPage() {
                 </div>
             </div>
 
-            {/* Plugin Widgets: Bottom of Page */}
             <WidgetRenderer widgets={getWidgets('admin-databases-management', 'bottom-of-page')} />
         </div>
     );

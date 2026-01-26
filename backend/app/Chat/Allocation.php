@@ -653,7 +653,7 @@ class Allocation
                 LEFT JOIN featherpanel_servers s ON a.server_id = s.id 
                 SET a.server_id = NULL 
                 WHERE a.server_id IS NOT NULL AND s.id IS NULL';
-        
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
 

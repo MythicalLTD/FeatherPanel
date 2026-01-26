@@ -85,7 +85,7 @@ export default function AccountPage() {
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'top-of-page')} />
-            {/* Profile Card */}
+
             <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
                 <div className='flex flex-col items-center text-center gap-4'>
                     {user?.avatar ? (
@@ -112,10 +112,8 @@ export default function AccountPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'after-profile-card')} />
 
-            {/* Tabs */}
             <div className='rounded-xl border border-border bg-card shadow-sm'>
                 <Tab.Group selectedIndex={selectedIndex} onChange={handleTabChange}>
-                    {/* Mobile: Dropdown */}
                     <div className='block sm:hidden p-4 border-b border-border'>
                         <select
                             value={selectedIndex}
@@ -130,7 +128,6 @@ export default function AccountPage() {
                         </select>
                     </div>
 
-                    {/* Desktop: Tabs */}
                     <div className='hidden sm:block border-b border-border'>
                         <Tab.List className='flex overflow-x-auto custom-scrollbar'>
                             {tabs.map((tab) => (

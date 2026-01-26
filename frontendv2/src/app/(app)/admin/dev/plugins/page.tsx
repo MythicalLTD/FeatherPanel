@@ -477,7 +477,6 @@ export default function PluginManagerPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-dev-plugins', 'before-list')} />
 
-            {/* Search */}
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -700,7 +699,6 @@ export default function PluginManagerPage() {
                 </div>
             )}
 
-            {/* Plugin Details Sheet */}
             <Sheet open={showDetailsSheet} onOpenChange={setShowDetailsSheet}>
                 <div className='h-full flex flex-col'>
                     <SheetHeader>
@@ -921,7 +919,6 @@ export default function PluginManagerPage() {
                 </div>
             </Sheet>
 
-            {/* Create Action Sheet */}
             <Sheet open={isCreateActionDialogOpen} onOpenChange={setIsCreateActionDialogOpen}>
                 <div className='h-full flex flex-col'>
                     <SheetHeader>
@@ -1030,7 +1027,6 @@ export default function PluginManagerPage() {
                 </div>
             </Sheet>
 
-            {/* Confirm Uninstall Sheet */}
             <Sheet open={confirmUninstallOpen} onOpenChange={setConfirmUninstallOpen}>
                 <div className='h-full flex flex-col'>
                     <SheetHeader>

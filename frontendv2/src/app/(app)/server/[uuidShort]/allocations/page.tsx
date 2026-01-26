@@ -308,7 +308,6 @@ export default function ServerAllocationsPage() {
 
     return (
         <div key={pathname} className='space-y-8 pb-12 '>
-            {/* Header Section */}
             <PageHeader
                 title={t('serverAllocations.title')}
                 description={
@@ -363,7 +362,6 @@ export default function ServerAllocationsPage() {
 
             <WidgetRenderer widgets={getWidgets('server-allocations', 'allocation-header')} />
 
-            {/* Limit Reached Warning */}
             {limitReached && (
                 <div className='relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500'>
                     <div className='relative z-10 flex items-start gap-5'>
@@ -385,7 +383,6 @@ export default function ServerAllocationsPage() {
                 </div>
             )}
 
-            {/* Main Content Area */}
             <div className='space-y-6'>
                 <div className='flex items-center gap-4'>
                     <div className='relative flex-1 group'>
@@ -538,7 +535,6 @@ export default function ServerAllocationsPage() {
 
                 <WidgetRenderer widgets={getWidgets('server-allocations', 'allocation-bottom')} />
 
-                {/* Delete Dialog */}
                 <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                     <DialogContent className='max-w-md p-0 overflow-hidden bg-card/90 backdrop-blur-2xl border-white/10 sm:rounded-3xl'>
                         <div className='p-6 space-y-6'>
@@ -588,7 +584,6 @@ export default function ServerAllocationsPage() {
                     </DialogContent>
                 </Dialog>
 
-                {/* Set Primary Dialog */}
                 <Dialog open={primaryDialogOpen} onOpenChange={setPrimaryDialogOpen}>
                     <DialogContent className='max-w-md p-0 overflow-hidden bg-card/90 backdrop-blur-2xl border-white/10 sm:rounded-3xl'>
                         <div className='p-6 space-y-6'>
@@ -638,7 +633,6 @@ export default function ServerAllocationsPage() {
                     </DialogContent>
                 </Dialog>
 
-                {/* Assign Allocation Dialog/Drawer */}
                 <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
                     <DialogContent className='max-w-lg p-0 overflow-hidden bg-card/90 backdrop-blur-2xl border-white/10 sm:rounded-3xl'>
                         <div className='p-6 space-y-6'>

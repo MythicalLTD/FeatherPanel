@@ -248,7 +248,6 @@ export default function NodesPage() {
 
     return (
         <div className='space-y-6'>
-            {/* Plugin Widgets: Top of Page */}
             <WidgetRenderer widgets={getWidgets('admin-nodes', 'top-of-page')} />
 
             <PageHeader
@@ -278,7 +277,6 @@ export default function NodesPage() {
                 }
             />
 
-            {/* Plugin Widgets: After Header */}
             <WidgetRenderer widgets={getWidgets('admin-nodes', 'after-header')} />
 
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
@@ -293,7 +291,6 @@ export default function NodesPage() {
                 </div>
             </div>
 
-            {/* Plugin Widgets: Before List */}
             <WidgetRenderer widgets={getWidgets('admin-nodes', 'before-list')} />
 
             {loading ? (
@@ -429,7 +426,6 @@ export default function NodesPage() {
                 </div>
             )}
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
                 <PageCard title={t('admin.node.help.what.title')} icon={Server}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -451,7 +447,6 @@ export default function NodesPage() {
                 </PageCard>
             </div>
 
-            {/* Wings Info Card */}
             <PageCard title={t('admin.node.help.wings.title')} icon={Shield} className='mt-6'>
                 <div className='text-sm text-muted-foreground space-y-4'>
                     <p>{t('admin.node.help.wings.p1')}</p>
@@ -459,7 +454,6 @@ export default function NodesPage() {
                 </div>
             </PageCard>
 
-            {/* Plugin Widgets: Bottom of Page */}
             <WidgetRenderer widgets={getWidgets('admin-nodes', 'bottom-of-page')} />
         </div>
     );

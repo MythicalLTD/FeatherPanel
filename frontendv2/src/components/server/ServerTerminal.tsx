@@ -574,7 +574,6 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         </button>
                     )}
 
-                    {/* Command Input Bar */}
                     {onSendCommand && (
                         <div className='border-t border-border p-3 bg-muted/30'>
                             <div className='flex gap-2'>

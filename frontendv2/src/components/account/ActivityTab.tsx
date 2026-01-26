@@ -145,7 +145,6 @@ export default function ActivityTab() {
                 <p className='text-sm text-muted-foreground mt-1'>{t('account.activity.description')}</p>
             </div>
 
-            {/* Search */}
             <div className='relative'>
                 <Input
                     type='text'
@@ -155,7 +154,6 @@ export default function ActivityTab() {
                 />
             </div>
 
-            {/* Stats */}
             <div className='flex items-center justify-between'>
                 <p className='text-sm text-muted-foreground'>
                     {pagination ? (
@@ -172,7 +170,6 @@ export default function ActivityTab() {
                 </Button>
             </div>
 
-            {/* Timeline */}
             {activities.length > 0 ? (
                 <ActivityFeed activities={activities} formatDate={formatDate} />
             ) : (
@@ -187,7 +184,6 @@ export default function ActivityTab() {
                 </div>
             )}
 
-            {/* Pagination */}
             {pagination && pagination.total_pages > 1 && (
                 <div className='flex items-center justify-between gap-4 pt-4'>
                     <div className='text-sm text-muted-foreground'>

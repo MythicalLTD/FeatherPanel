@@ -369,7 +369,6 @@ export default function EditSpellPage() {
                     <TabsTrigger value='variables'>{t('admin.spells.tabs.variables')}</TabsTrigger>
                 </TabsList>
 
-                {/* General Tab */}
                 <TabsContent value='general' className='space-y-4'>
                     <PageCard title='Basic Information' icon={Sparkles}>
                         <div className='space-y-4'>
@@ -428,7 +427,6 @@ export default function EditSpellPage() {
                     </PageCard>
                 </TabsContent>
 
-                {/* Docker Tab */}
                 <TabsContent value='docker' className='space-y-4'>
                     <PageCard title='Docker Configuration' icon={Container}>
                         <div className='space-y-4'>
@@ -498,7 +496,6 @@ export default function EditSpellPage() {
                     </PageCard>
                 </TabsContent>
 
-                {/* Features Tab */}
                 <TabsContent value='features' className='space-y-4'>
                     <PageCard title='Server Features' icon={Zap}>
                         <div className='space-y-2'>
@@ -530,7 +527,6 @@ export default function EditSpellPage() {
                     </PageCard>
                 </TabsContent>
 
-                {/* Config Tab */}
                 <TabsContent value='config' className='space-y-4'>
                     <PageCard title='Server Configuration' icon={FileCode}>
                         <div className='space-y-4'>
@@ -584,7 +580,6 @@ export default function EditSpellPage() {
                     </PageCard>
                 </TabsContent>
 
-                {/* Script Tab */}
                 <TabsContent value='script' className='space-y-4'>
                     <PageCard title='Installation & Startup Scripts' icon={Terminal}>
                         <div className='space-y-4'>
@@ -626,9 +621,7 @@ export default function EditSpellPage() {
                     </PageCard>
                 </TabsContent>
 
-                {/* Variables Tab */}
                 <TabsContent value='variables' className='space-y-6'>
-                    {/* Header Card */}
                     <PageCard
                         title={t('admin.spells.variables.title')}
                         description={t('admin.spells.variables.description')}
@@ -658,7 +651,6 @@ export default function EditSpellPage() {
                         </div>
                     </PageCard>
 
-                    {/* Add Variable Card */}
                     {addingVariable && (
                         <PageCard
                             title={t('admin.spells.variables.new')}
@@ -788,7 +780,6 @@ export default function EditSpellPage() {
                         </PageCard>
                     )}
 
-                    {/* Variables List */}
                     <div className='space-y-3'>
                         {variables.map((variable) => (
                             <PageCard
@@ -857,7 +848,6 @@ export default function EditSpellPage() {
                                 {editingVariable?.id === variable.id ? (
                                     // Edit Mode - Similar to Add Variable
                                     <div className='space-y-4'>
-                                        {/* Same form fields as add variable */}
                                         <div className='grid grid-cols-2 gap-3'>
                                             <div className='space-y-2'>
                                                 <Label>{t('admin.spells.variables.name')} *</Label>
@@ -1045,7 +1035,6 @@ export default function EditSpellPage() {
                         ))}
                     </div>
 
-                    {/* Empty State */}
                     {!addingVariable && variables.length === 0 && (
                         <div className='text-center py-8'>
                             <Settings className='h-12 w-12 mx-auto text-muted-foreground mb-3' />

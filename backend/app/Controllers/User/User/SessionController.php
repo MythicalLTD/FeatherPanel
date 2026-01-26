@@ -467,11 +467,11 @@ class SessionController
             @chmod($filePath, 0644);
 
             // Generate URL for the avatar
-			$appUrl = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, App::getInstance(true)->getBaseUrl());
-			if ($appUrl == null || $appUrl == '') {
-				$appUrl = "https://featherpanel.mythical.systems";
-			}
-			$avatarUrl = $appUrl . '/attachments/avatars/' . $filename;
+            $appUrl = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, App::getInstance(true)->getBaseUrl());
+            if ($appUrl == null || $appUrl == '') {
+                $appUrl = 'https://featherpanel.mythical.systems';
+            }
+            $avatarUrl = $appUrl . '/attachments/avatars/' . $filename;
 
             return ApiResponse::success([
                 'avatar_url' => $avatarUrl,

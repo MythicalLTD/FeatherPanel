@@ -277,7 +277,6 @@ export default function LocationsPage() {
 
     return (
         <div className='space-y-6'>
-            {/* Plugin Widgets: Top of Page */}
             <WidgetRenderer widgets={getWidgets('admin-locations', 'top-of-page')} />
 
             <PageHeader
@@ -292,7 +291,6 @@ export default function LocationsPage() {
                 }
             />
 
-            {/* Plugin Widgets: After Header */}
             <WidgetRenderer widgets={getWidgets('admin-locations', 'after-header')} />
 
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
@@ -307,7 +305,6 @@ export default function LocationsPage() {
                 </div>
             </div>
 
-            {/* Plugin Widgets: Before List */}
             <WidgetRenderer widgets={getWidgets('admin-locations', 'before-list')} />
 
             {loading ? (
@@ -428,7 +425,6 @@ export default function LocationsPage() {
                 </div>
             )}
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
                 <PageCard title={t('admin.locations.help.what.title')} icon={MapPin}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -461,7 +457,6 @@ export default function LocationsPage() {
                 </PageCard>
             </div>
 
-            {/* Edit Sheet */}
             <Sheet open={editOpen} onOpenChange={setEditOpen}>
                 <SheetContent>
                     <SheetHeader>
@@ -517,7 +512,6 @@ export default function LocationsPage() {
                 </SheetContent>
             </Sheet>
 
-            {/* Create Sheet */}
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <SheetContent>
                     <SheetHeader>
@@ -569,7 +563,6 @@ export default function LocationsPage() {
                 </SheetContent>
             </Sheet>
 
-            {/* Plugin Widgets: Bottom of Page */}
             <WidgetRenderer widgets={getWidgets('admin-locations', 'bottom-of-page')} />
         </div>
     );

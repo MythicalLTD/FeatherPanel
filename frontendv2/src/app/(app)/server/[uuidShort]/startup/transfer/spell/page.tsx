@@ -465,7 +465,7 @@ export default function ServerTransferSpellPage() {
     return (
         <div key={pathname} className='max-w-6xl mx-auto space-y-8 pb-16  font-sans'>
             <WidgetRenderer widgets={getWidgets('server-startup-transfer-spell', 'top-of-page')} />
-            {/* Header Section */}
+
             <PageHeader
                 title={t('navigation.items.transferSpell')}
                 description={t('serverStartup.spellSelectionHelp')}
@@ -501,7 +501,6 @@ export default function ServerTransferSpellPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-startup-transfer-spell', 'after-header')} />
 
-            {/* Step Indicator */}
             <div className='grid grid-cols-3 gap-4'>
                 {[
                     {
@@ -558,9 +557,7 @@ export default function ServerTransferSpellPage() {
                 ))}
             </div>
 
-            {/* Content Area */}
             <div className='relative min-h-[400px]'>
-                {/* Step 1: Realm Selection */}
                 {currentStep === 1 && (
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 '>
                         {loadingRealms ? (
@@ -600,7 +597,6 @@ export default function ServerTransferSpellPage() {
                     </div>
                 )}
 
-                {/* Step 2: Spell Selection */}
                 {currentStep === 2 && (
                     <div className='space-y-8 '>
                         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -652,7 +648,6 @@ export default function ServerTransferSpellPage() {
                     </div>
                 )}
 
-                {/* Step 3: Variable Configuration */}
                 {currentStep === 3 && targetSpell && (
                     <div className='space-y-8 '>
                         <div className='bg-orange-500/5 border border-orange-500/10 rounded-3xl p-8 shadow-xl'>

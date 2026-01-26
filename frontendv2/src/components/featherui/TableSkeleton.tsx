@@ -30,22 +30,17 @@ export function TableSkeleton({ count = 5, className }: TableSkeletonProps) {
                     key={i}
                     className='group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-sm border border-border/50 p-6 flex flex-col md:flex-row md:items-center gap-6'
                 >
-                    {/* Icon Skeleton */}
                     <div className='h-16 w-16 rounded-2xl bg-secondary/50 animate-pulse shrink-0' />
 
-                    {/* Content Skeleton */}
                     <div className='flex-1 space-y-3 min-w-0'>
                         <div className='flex flex-wrap items-center gap-3'>
-                            {/* Title */}
                             <div className='h-6 w-48 bg-secondary/50 rounded-lg animate-pulse' />
-                            {/* Badge */}
+
                             <div className='h-5 w-20 bg-secondary/30 rounded-md animate-pulse' />
                         </div>
 
-                        {/* Subtitle */}
                         <div className='h-4 w-32 bg-secondary/30 rounded-lg animate-pulse' />
 
-                        {/* Description Lines */}
                         <div className='flex gap-4 pt-1'>
                             <div className='h-3 w-24 bg-secondary/20 rounded-md animate-pulse' />
                             <div className='h-3 w-32 bg-secondary/20 rounded-md animate-pulse' />
@@ -53,7 +48,6 @@ export function TableSkeleton({ count = 5, className }: TableSkeletonProps) {
                         </div>
                     </div>
 
-                    {/* Actions Skeleton */}
                     <div className='flex items-center gap-2 md:self-center'>
                         <div className='h-9 w-9 bg-secondary/40 rounded-lg animate-pulse' />
                         <div className='h-9 w-9 bg-secondary/40 rounded-lg animate-pulse' />

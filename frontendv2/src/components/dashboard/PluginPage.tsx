@@ -290,7 +290,6 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
 
     return (
         <div className='relative w-full h-full overflow-hidden'>
-            {/* Developer Mode Reload Button */}
             {isEnabled(settings?.app_developer_mode) && (
                 <div className='absolute bottom-6 right-6 z-30'>
                     <button
@@ -304,7 +303,6 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                 </div>
             )}
 
-            {/* Loading Overlay */}
             {iframeLoading && (
                 <div className='absolute inset-0 flex flex-col items-center justify-center bg-background/20 backdrop-blur-sm z-20'>
                     <div className='relative mb-6'>
@@ -315,7 +313,6 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                 </div>
             )}
 
-            {/* Error Overlay */}
             {iframeError && (
                 <div className='absolute inset-0 flex flex-col items-center justify-center bg-background/50 backdrop-blur-md z-20 p-8 text-center'>
                     <div className='w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6'>
@@ -332,7 +329,6 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                 </div>
             )}
 
-            {/* Iframe */}
             {iframeSrc && (
                 <iframe
                     ref={iframeRef}

@@ -312,7 +312,7 @@ export default function ServerTasksPage() {
     return (
         <div className='space-y-6 '>
             <WidgetRenderer widgets={getWidgets('server-tasks', 'top-of-page')} />
-            {/* Header */}
+
             <PageHeader
                 title={t('serverTasks.title')}
                 description={t('serverTasks.description', { scheduleName: schedule?.name || '' })}
@@ -339,7 +339,6 @@ export default function ServerTasksPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-tasks', 'after-header')} />
 
-            {/* Warning if disabled */}
             {!schedulesEnabled && (
                 <div className='p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-3'>
                     <AlertTriangle className='h-5 w-5 text-yellow-500' />
@@ -349,7 +348,6 @@ export default function ServerTasksPage() {
 
             <WidgetRenderer widgets={getWidgets('server-tasks', 'before-tasks-list')} />
 
-            {/* Task List */}
             {tasks.length === 0 ? (
                 <EmptyState
                     title={t('serverTasks.noTasks')}
@@ -485,7 +483,6 @@ export default function ServerTasksPage() {
             <WidgetRenderer widgets={getWidgets('server-tasks', 'after-tasks-list')} />
             <WidgetRenderer widgets={getWidgets('server-tasks', 'bottom-of-page')} />
 
-            {/* Create Modal */}
             <HeadlessModal
                 isOpen={isCreateOpen}
                 onClose={() => setIsCreateOpen(false)}
@@ -569,7 +566,6 @@ export default function ServerTasksPage() {
                 </form>
             </HeadlessModal>
 
-            {/* Edit Modal */}
             <HeadlessModal
                 isOpen={isEditOpen}
                 onClose={() => setIsEditOpen(false)}
@@ -658,7 +654,6 @@ export default function ServerTasksPage() {
                 </form>
             </HeadlessModal>
 
-            {/* Delete Modal */}
             <HeadlessModal
                 isOpen={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}

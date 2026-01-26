@@ -680,7 +680,6 @@ export default function PluginsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-plugins', 'after-header')} />
 
-            {/* Updates Banner */}
             {pluginsWithUpdates.length > 0 && (
                 <div className='rounded-md border border-blue-500/30 bg-blue-500/10 p-4 text-blue-700 dark:text-blue-400'>
                     <div className='flex items-start gap-3'>
@@ -706,7 +705,6 @@ export default function PluginsPage() {
                 </div>
             )}
 
-            {/* Previously Installed Banner */}
             {showPreviouslyInstalledBanner && previouslyInstalledPlugins.length > 0 && (
                 <div className='rounded-xl border border-blue-500/30 bg-blue-500/10 p-5'>
                     <div className='flex items-start gap-3'>
@@ -757,7 +755,6 @@ export default function PluginsPage() {
                 </div>
             )}
 
-            {/* Plugin Grid */}
             {plugins.length > 0 ? (
                 <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
                     {plugins.map((plugin) => (
@@ -900,7 +897,6 @@ export default function PluginsPage() {
                 </div>
             )}
 
-            {/* Help Cards */}
             <div className='mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.plugins.help.install.title')} icon={Upload}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -919,7 +915,6 @@ export default function PluginsPage() {
                 </PageCard>
             </div>
 
-            {/* Config Drawer */}
             <Sheet open={configDrawerOpen} onOpenChange={setConfigDrawerOpen} className='max-w-2xl'>
                 <SheetHeader>
                     <SheetTitle>{t('admin.plugins.drawers.config.title')}</SheetTitle>
@@ -939,9 +934,6 @@ export default function PluginsPage() {
                         <div className='text-center py-8 text-destructive'>{configError}</div>
                     ) : pluginConfig ? (
                         <div className='space-y-6'>
-                            {/* Info Card included in config drawer */}
-                            {/* Config Fields */}
-                            {/* Config Fields */}
                             <div className='rounded-xl bg-secondary/20 p-6 space-y-6'>
                                 <div className='flex items-center justify-between border-b pb-4'>
                                     <h3 className='font-semibold text-lg'>
@@ -1057,7 +1049,6 @@ export default function PluginsPage() {
                                 )}
                             </div>
 
-                            {/* Spell Restrictions Section */}
                             <div className='rounded-lg border border-border bg-muted/30 p-6 space-y-5'>
                                 <div className='space-y-1.5'>
                                     <h3 className='text-base font-semibold text-foreground'>
@@ -1069,7 +1060,6 @@ export default function PluginsPage() {
                                 </div>
 
                                 <div className='space-y-4'>
-                                    {/* Search */}
                                     <div className='relative'>
                                         <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none' />
                                         <Input
@@ -1090,7 +1080,6 @@ export default function PluginsPage() {
                                         )}
                                     </div>
 
-                                    {/* Selected Spells */}
                                     {selectedSpellIds.size > 0 && (
                                         <div className='space-y-2.5'>
                                             <div className='flex items-center justify-between'>
@@ -1139,7 +1128,6 @@ export default function PluginsPage() {
                                         </div>
                                     )}
 
-                                    {/* Spell List */}
                                     <div className='border border-border rounded-md bg-background/50 overflow-hidden'>
                                         <div className='max-h-[320px] overflow-y-auto'>
                                             {spellsLoading && spellSearchQuery === '' && spellPage === 1 ? (
@@ -1276,7 +1264,6 @@ export default function PluginsPage() {
                                         </div>
                                     </div>
 
-                                    {/* Pagination */}
                                     {spellsTotalPages > 1 && (
                                         <div className='flex items-center justify-between pt-2 border-t border-border'>
                                             <Button
@@ -1308,7 +1295,6 @@ export default function PluginsPage() {
                                         </div>
                                     )}
 
-                                    {/* Save Button */}
                                     <div className='pt-1'>
                                         <Button
                                             className='w-full h-10 font-medium bg-primary hover:bg-primary/90'
@@ -1340,7 +1326,6 @@ export default function PluginsPage() {
                 </div>
             </Sheet>
 
-            {/* Uninstall Dialog */}
             <Dialog open={confirmUninstallOpen} onOpenChange={setConfirmUninstallOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -1363,7 +1348,6 @@ export default function PluginsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Install from URL Dialog */}
             <Dialog open={confirmUrlOpen} onOpenChange={setConfirmUrlOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -1403,7 +1387,6 @@ export default function PluginsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Upload Dialog */}
             <Dialog open={confirmUploadOpen} onOpenChange={setConfirmUploadOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -1420,7 +1403,6 @@ export default function PluginsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Update Dialog */}
             <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -1454,7 +1436,6 @@ export default function PluginsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Reinstall Dialog */}
             <Dialog
                 open={reinstallDialogOpen}
                 onOpenChange={(open) => {

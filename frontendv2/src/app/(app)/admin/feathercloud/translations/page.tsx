@@ -140,7 +140,6 @@ export default function CommunityTranslationsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-translations', 'before-content')} />
 
-            {/* Search Bar */}
             <div className='backdrop-blur-3xl border border-border/50 rounded-3xl p-6 bg-card/50'>
                 <div className='flex gap-4 items-center'>
                     <div className='relative flex-1'>
@@ -159,7 +158,6 @@ export default function CommunityTranslationsPage() {
                 </div>
             </div>
 
-            {/* Translations List */}
             {loading ? (
                 <TableSkeleton count={5} />
             ) : filteredTranslations.length === 0 ? (
@@ -191,7 +189,6 @@ export default function CommunityTranslationsPage() {
                             className='backdrop-blur-3xl border border-border/50 rounded-3xl p-6 bg-card/50 hover:shadow-lg transition-shadow'
                         >
                             <div className='space-y-4'>
-                                {/* Header */}
                                 <div className='flex items-start justify-between'>
                                     <div className='flex items-center gap-3'>
                                         <div className='p-2 bg-primary/10 rounded-lg'>
@@ -212,14 +209,12 @@ export default function CommunityTranslationsPage() {
                                     )}
                                 </div>
 
-                                {/* Description */}
                                 {translation.description && (
                                     <p className='text-sm text-muted-foreground line-clamp-2'>
                                         {translation.description}
                                     </p>
                                 )}
 
-                                {/* Metadata */}
                                 <div className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
                                     <div className='flex items-center gap-1'>
                                         <Users className='h-3 w-3' />
@@ -239,7 +234,6 @@ export default function CommunityTranslationsPage() {
                                     </div>
                                 </div>
 
-                                {/* Actions */}
                                 <div className='flex gap-2 pt-2 border-t'>
                                     <Button variant='outline' size='sm' className='flex-1' onClick={handleDownload}>
                                         <Download className='h-4 w-4 mr-2' />

@@ -38,7 +38,6 @@ export default function AuthLoading() {
     return (
         <div className='flex min-h-screen items-center justify-center'>
             <div className='relative'>
-                {/* Spinning ring */}
                 <div
                     className='h-12 w-12 rounded-full border-3 border-transparent animate-spin'
                     style={{
@@ -48,7 +47,6 @@ export default function AuthLoading() {
                     }}
                 />
 
-                {/* Pulsing center dot */}
                 <div className='absolute inset-0 flex items-center justify-center'>
                     <div
                         className='h-2 w-2 rounded-full animate-pulse'

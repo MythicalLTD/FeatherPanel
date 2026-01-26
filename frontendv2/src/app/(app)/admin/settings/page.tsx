@@ -227,7 +227,6 @@ export default function SettingsPage() {
 
     return (
         <div className='space-y-6'>
-            {/* Plugin Widgets: Top of Page */}
             <WidgetRenderer widgets={getWidgets('admin-settings', 'top-of-page')} />
 
             <PageHeader
@@ -252,7 +251,6 @@ export default function SettingsPage() {
                 }
             />
 
-            {/* Plugin Widgets: After Header */}
             <WidgetRenderer widgets={getWidgets('admin-settings', 'after-header')} />
 
             <div className='block'>
@@ -492,7 +490,6 @@ export default function SettingsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Plugin Widgets: Bottom of Page */}
             <WidgetRenderer widgets={getWidgets('admin-settings', 'bottom-of-page')} />
         </div>
     );

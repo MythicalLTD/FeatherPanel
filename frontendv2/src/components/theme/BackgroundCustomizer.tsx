@@ -204,7 +204,6 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                         </TabList>
 
                                         <TabPanels>
-                                            {/* Gradient Presets */}
                                             <TabPanel>
                                                 <div className='grid grid-cols-2 gap-3'>
                                                     {gradientPresets.map((preset) => (
@@ -230,7 +229,6 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                 </div>
                                             </TabPanel>
 
-                                            {/* Solid/Pattern/Custom Color */}
                                             <TabPanel>
                                                 <div className='space-y-4'>
                                                     <div className='grid grid-cols-2 gap-3'>
@@ -281,7 +279,6 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                         </button>
                                                     </div>
 
-                                                    {/* Custom Color Picker */}
                                                     <div>
                                                         <label className='block text-sm font-medium mb-2'>
                                                             {t('appearance.background.customColor') ||
@@ -329,10 +326,8 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                 </div>
                                             </TabPanel>
 
-                                            {/* Custom Image */}
                                             <TabPanel>
                                                 <div className='space-y-4'>
-                                                    {/* File Upload */}
                                                     <div>
                                                         <label className='block text-sm font-medium mb-2'>
                                                             {t('appearance.background.uploadLocal')}
@@ -365,7 +360,6 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                         </div>
                                                     </div>
 
-                                                    {/* URL Input */}
                                                     <div>
                                                         <label className='block text-sm font-medium mb-2'>
                                                             {t('appearance.background.imageUrl')}

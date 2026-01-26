@@ -59,7 +59,6 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
     return (
         <div className='sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/60 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8'>
-            {/* Mobile menu button */}
             <button
                 type='button'
                 className='-m-2.5 p-2.5 text-muted-foreground lg:hidden hover:text-foreground transition-colors'
@@ -69,17 +68,14 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                 <MenuIcon className='h-6 w-6' aria-hidden='true' />
             </button>
 
-            {/* Separator */}
             <div className='h-6 w-px bg-border lg:hidden' aria-hidden='true' />
 
             <div className='flex flex-1 gap-x-4 self-stretch lg:gap-x-6'>
                 <div className='flex flex-1 items-center'>
-                    {/* Breadcrumbs or page title can go here */}
                     <h1 className='text-lg font-semibold text-foreground'>{t('dashboard.title')}</h1>
                 </div>
 
                 <div className='flex items-center gap-x-2 sm:gap-x-4 lg:gap-x-6'>
-                    {/* Admin Panel Button */}
                     {canAccessAdmin && (
                         <button
                             onClick={() => router.push('/admin')}
@@ -91,13 +87,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                         </button>
                     )}
 
-                    {/* Theme Customizer (includes language, background, theme, accent color) */}
                     <ThemeCustomizer />
 
-                    {/* Separator */}
                     <div className='hidden lg:block lg:h-6 lg:w-px lg:bg-border' aria-hidden='true' />
 
-                    {/* Profile dropdown */}
                     <Menu as='div' className='relative'>
                         <Menu.Button className='flex items-center gap-x-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all'>
                             <span className='sr-only'>{t('navbar.openUserMenu')}</span>
@@ -131,7 +124,6 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                             leaveTo='transform opacity-0 scale-95'
                         >
                             <Menu.Items className='absolute right-0 z-10 mt-2.5 w-64 origin-top-right rounded-xl bg-card border border-border shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden'>
-                                {/* User Info Header */}
                                 <div className='px-4 py-3 border-b border-border'>
                                     <div className='flex items-center gap-3 mb-2'>
                                         {user?.avatar ? (
@@ -178,7 +170,6 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                                     </p>
                                 </div>
 
-                                {/* Navigation Items */}
                                 <div className='py-1'>
                                     {userNavigation.map((item) => {
                                         const Icon = item.icon;
@@ -201,7 +192,6 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                                     })}
                                 </div>
 
-                                {/* Logout */}
                                 <div className='border-t border-border py-1'>
                                     <Menu.Item>
                                         {({ active }) => (

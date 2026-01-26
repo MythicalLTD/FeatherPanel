@@ -200,7 +200,6 @@ export default function FeatherAiAgentPage() {
                             saveSettings();
                         }}
                     >
-                        {/* Enable/Disable Toggle */}
                         <div className='rounded-2xl border border-primary/20 bg-primary/5 p-6'>
                             <div className='flex items-center justify-between gap-4'>
                                 <div className='space-y-1'>
@@ -223,7 +222,6 @@ export default function FeatherAiAgentPage() {
                             </div>
                         </div>
 
-                        {/* General Settings */}
                         <div className='space-y-8'>
                             <div className='flex items-center gap-3 border-b pb-4'>
                                 <div className='p-2 bg-primary/10 rounded-lg'>
@@ -324,7 +322,6 @@ export default function FeatherAiAgentPage() {
                             </div>
                         </div>
 
-                        {/* Provider Specific Settings */}
                         {providerValue !== 'basic' && providerValue !== '' && (
                             <div className='rounded-3xl border border-primary/20 bg-muted/20 p-8 space-y-8 animate-in slide-in-from-left-4 duration-500'>
                                 <div className='flex items-center gap-3'>
@@ -334,7 +331,6 @@ export default function FeatherAiAgentPage() {
                                 </div>
 
                                 <div className='grid gap-8 md:grid-cols-2'>
-                                    {/* Google Gemini */}
                                     {providerValue === 'google_gemini' && (
                                         <>
                                             <div className='space-y-3'>
@@ -363,7 +359,6 @@ export default function FeatherAiAgentPage() {
                                         </>
                                     )}
 
-                                    {/* OpenAI */}
                                     {providerValue === 'openai' && (
                                         <>
                                             <div className='space-y-3'>
@@ -403,7 +398,6 @@ export default function FeatherAiAgentPage() {
                                         </>
                                     )}
 
-                                    {/* OpenRouter */}
                                     {providerValue === 'openrouter' && (
                                         <>
                                             <div className='space-y-3'>
@@ -432,7 +426,6 @@ export default function FeatherAiAgentPage() {
                                         </>
                                     )}
 
-                                    {/* Ollama */}
                                     {providerValue === 'ollama' && (
                                         <>
                                             <div className='space-y-3'>
@@ -460,7 +453,6 @@ export default function FeatherAiAgentPage() {
                                         </>
                                     )}
 
-                                    {/* Grok */}
                                     {providerValue === 'grok' && (
                                         <>
                                             <div className='space-y-3'>
@@ -488,7 +480,6 @@ export default function FeatherAiAgentPage() {
                                         </>
                                     )}
 
-                                    {/* Perplexity */}
                                     {providerValue === 'perplexity' && (
                                         <>
                                             <div className='space-y-3'>
@@ -534,7 +525,6 @@ export default function FeatherAiAgentPage() {
                             </div>
                         )}
 
-                        {/* System Prompts */}
                         <div className='space-y-10'>
                             <div className='space-y-8'>
                                 <div className='flex items-center justify-between border-b pb-4'>
@@ -629,7 +619,6 @@ export default function FeatherAiAgentPage() {
                             </div>
                         </div>
 
-                        {/* Form Actions */}
                         <div className='flex items-center justify-end gap-3 pt-8 border-t'>
                             <Button variant='outline' className='h-12 px-8' onClick={resetSettings}>
                                 Reset

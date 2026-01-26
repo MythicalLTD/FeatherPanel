@@ -455,7 +455,6 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 </div>
             )}
 
-            {/* Help Cards */}
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
@@ -474,7 +473,6 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 </PageCard>
             </div>
 
-            {/* Create Sheet */}
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='p-6 h-full flex flex-col'>
                     <SheetHeader>
@@ -569,7 +567,6 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 </div>
             </Sheet>
 
-            {/* View Modal */}
             <Sheet open={viewOpen} onOpenChange={setViewOpen}>
                 <div className='p-6 h-full flex flex-col'>
                     <SheetHeader>

@@ -52,15 +52,11 @@ export default function ThemeCustomizer() {
 
     return (
         <div className='flex items-center gap-2'>
-            {/* Desktop View */}
             <div className='hidden sm:flex items-center gap-2'>
-                {/* Language Selector */}
                 <LanguageSelector />
 
-                {/* Background Customizer */}
                 <BackgroundCustomizer />
 
-                {/* Theme Toggle */}
                 <button
                     onClick={toggleTheme}
                     className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-110 hover:shadow-lg transition-all duration-200 flex items-center justify-center'
@@ -69,7 +65,6 @@ export default function ThemeCustomizer() {
                     {theme === 'dark' ? <Sun className='h-4 w-4' /> : <Moon className='h-4 w-4' />}
                 </button>
 
-                {/* Accent Color Picker */}
                 <Menu as='div' className='relative'>
                     <MenuButton className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-110 hover:shadow-lg transition-all duration-200 flex items-center justify-center'>
                         <div
@@ -115,7 +110,6 @@ export default function ThemeCustomizer() {
                 </Menu>
             </div>
 
-            {/* Mobile View - Consolidated Menu */}
             <div className='sm:hidden'>
                 <Menu as='div' className='relative'>
                     <MenuButton className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md flex items-center justify-center'>
@@ -132,7 +126,6 @@ export default function ThemeCustomizer() {
                         leaveTo='transform opacity-0 scale-95'
                     >
                         <MenuItems className='absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-card border border-border/50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none backdrop-blur-xl p-2 z-50 max-h-[80vh] overflow-y-auto'>
-                            {/* Theme Toggle */}
                             <MenuItem>
                                 {({ focus }) => (
                                     <button
@@ -149,7 +142,6 @@ export default function ThemeCustomizer() {
                                 )}
                             </MenuItem>
 
-                            {/* Background */}
                             <MenuItem>
                                 {({ focus }) => (
                                     <BackgroundCustomizer>
@@ -165,7 +157,6 @@ export default function ThemeCustomizer() {
 
                             <div className='my-2 border-t border-border/50' />
 
-                            {/* Accent Colors Grid */}
                             <div className='px-3 py-2'>
                                 <div className='text-xs font-semibold text-muted-foreground mb-2'>
                                     {t('appearance.accentColor')}
@@ -186,7 +177,6 @@ export default function ThemeCustomizer() {
 
                             <div className='my-2 border-t border-border/50' />
 
-                            {/* Language List */}
                             <div className='px-3 py-1'>
                                 <div className='text-xs font-semibold text-muted-foreground mb-2'>
                                     {t('appearance.language')}

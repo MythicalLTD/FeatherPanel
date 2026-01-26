@@ -84,17 +84,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
     return (
         <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-4 sm:p-6 md:p-10'>
-            {/* Dynamic background */}
             {renderBackground()}
 
-            {/* Theme customizer */}
             <div className='pointer-events-auto absolute top-4 right-4 z-50'>
                 <ThemeCustomizer />
             </div>
 
-            {/* Main content */}
             <div className='pointer-events-auto relative z-10 w-full max-w-md'>
-                {/* Logo and title section */}
                 <div className='mb-6 flex flex-col items-center gap-4'>
                     <Link
                         href='/'
@@ -102,9 +98,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                     ></Link>
                 </div>
 
-                {/* Auth form with card styling */}
                 <div className='relative group'>
-                    {/* Glow effect */}
                     <div className='absolute -inset-0.5 bg-linear-to-r from-primary/50 to-primary/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000' />
 
                     <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 shadow-2xl shadow-black/20 transition-all duration-300'>
@@ -112,7 +106,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                     </div>
                 </div>
 
-                {/* Footer */}
                 <div className='mt-8 text-center text-xs text-muted-foreground transition-all duration-200'>
                     <p className='mb-2 font-medium'>
                         {t('branding.running_on', { name: 'FeatherPanel', version: core?.version || '' }).trim()}

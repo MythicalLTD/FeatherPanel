@@ -292,7 +292,6 @@ export default function CreateTicketPage() {
             <div className='bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden'>
                 <form onSubmit={handleSubmit} className='p-8 space-y-8'>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                        {/* Title */}
                         <div className='md:col-span-2'>
                             <Input
                                 id='title'
@@ -309,7 +308,6 @@ export default function CreateTicketPage() {
                             />
                         </div>
 
-                        {/* Category */}
                         <div className='space-y-2.5'>
                             <HeadlessSelect
                                 label={t('tickets.categoryLabel')}
@@ -324,7 +322,6 @@ export default function CreateTicketPage() {
                             />
                         </div>
 
-                        {/* Priority */}
                         <div className='space-y-2.5'>
                             <HeadlessSelect
                                 label={t('tickets.priorityLabel')}
@@ -336,7 +333,6 @@ export default function CreateTicketPage() {
                             />
                         </div>
 
-                        {/* Description */}
                         <div className='md:col-span-2'>
                             <Textarea
                                 id='description'
@@ -354,7 +350,6 @@ export default function CreateTicketPage() {
                             />
                         </div>
 
-                        {/* Server (Optional) */}
                         <div className='md:col-span-2 space-y-2.5'>
                             <div className='flex justify-between items-center'>
                                 <Label className='text-sm font-medium'>{t('tickets.serverLabel')}</Label>
@@ -403,7 +398,6 @@ export default function CreateTicketPage() {
                             <p className='text-xs text-muted-foreground'>{t('tickets.serverHint')}</p>
                         </div>
 
-                        {/* Attachments */}
                         <div className='md:col-span-2 space-y-4'>
                             <Label className='text-sm font-medium'>{t('tickets.attachmentsOptional')}</Label>
                             <div
@@ -438,7 +432,6 @@ export default function CreateTicketPage() {
                                 </div>
                             </div>
 
-                            {/* File List */}
                             {files.length > 0 && (
                                 <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
                                     {files.map((file, idx) => (

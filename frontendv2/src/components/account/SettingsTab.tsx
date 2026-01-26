@@ -148,7 +148,6 @@ export default function SettingsTab() {
                 <p className='text-sm text-muted-foreground mt-1'>{t('account.securitySettingsDescription')}</p>
             </div>
 
-            {/* Two-Factor Authentication */}
             <div className='rounded-lg border border-border bg-card p-6'>
                 <div className='flex items-start gap-4'>
                     <div className='shrink-0'>
@@ -209,7 +208,6 @@ export default function SettingsTab() {
                 </div>
             </div>
 
-            {/* Discord OAuth */}
             {isEnabled(settings?.discord_oauth_enabled) && (
                 <div className='rounded-lg border border-border bg-card p-6'>
                     <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
@@ -245,7 +243,6 @@ export default function SettingsTab() {
                 </div>
             )}
 
-            {/* Session Management */}
             <div className='rounded-lg border border-border bg-card p-6'>
                 <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
                     <div className='flex-1'>

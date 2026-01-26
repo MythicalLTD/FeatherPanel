@@ -36,7 +36,6 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                 className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
             >
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-                    {/* Memory */}
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
                             <div className='p-2 bg-primary/10 rounded-lg'>
@@ -87,7 +86,6 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.memory_help')}</p>
                     </div>
 
-                    {/* Swap */}
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
                             <div className='p-2 bg-orange-500/10 rounded-lg'>
@@ -147,7 +145,6 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.swap_help')}</p>
                     </div>
 
-                    {/* Disk */}
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
                             <div className='p-2 bg-blue-500/10 rounded-lg'>
@@ -196,7 +193,6 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.disk_help')}</p>
                     </div>
 
-                    {/* CPU */}
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
                             <div className='p-2 bg-purple-500/10 rounded-lg'>
@@ -245,7 +241,6 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.cpu_help')}</p>
                     </div>
 
-                    {/* I/O */}
                     <div className='space-y-4'>
                         <Label className='text-base font-semibold'>{t('admin.servers.form.io')}</Label>
                         <Input
@@ -260,7 +255,6 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.io_help')}</p>
                     </div>
 
-                    {/* CPU Threads */}
                     <div className='space-y-4'>
                         <Label className='text-base font-semibold'>{t('admin.servers.form.threads')}</Label>
                         <Input
@@ -273,7 +267,6 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                     </div>
                 </div>
 
-                {/* OOM Killer */}
                 <div className='flex items-center justify-between mt-8 p-4 bg-muted/20 rounded-xl border border-border/50'>
                     <div className='space-y-0.5'>
                         <Label>{t('admin.servers.form.oom_killer')}</Label>

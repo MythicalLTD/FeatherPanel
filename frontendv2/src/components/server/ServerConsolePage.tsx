@@ -454,10 +454,8 @@ export default function ServerConsolePage() {
 
     return (
         <div className='space-y-6 pb-8'>
-            {/* Plugin Widgets: Top Of Page */}
             <WidgetRenderer widgets={getWidgets('server-console', 'top-of-page')} />
 
-            {/* Server Header */}
             <ServerHeader
                 serverName={server.name}
                 serverStatus={serverStatus}
@@ -475,13 +473,10 @@ export default function ServerConsolePage() {
                 onKill={() => sendPowerAction('kill')}
             />
 
-            {/* Plugin Widgets: After Header */}
             <WidgetRenderer widgets={getWidgets('server-console', 'after-header')} />
 
             <div className='grid grid-cols-1 xl:grid-cols-12 gap-6 items-start'>
-                {/* Main Column: Terminal & Status Messages */}
                 <div className='xl:col-span-9 flex flex-col gap-6'>
-                    {/* Wings Connection Status (only show if not connected and has permission) */}
                     {canConnect && connectionStatus !== 'connected' && (
                         <Card className={`border-2 ${connectionInfo.bgColor}`}>
                             <CardContent className='p-4'>
@@ -506,10 +501,8 @@ export default function ServerConsolePage() {
                         </Card>
                     )}
 
-                    {/* Plugin Widgets: After Wings Status */}
                     <WidgetRenderer widgets={getWidgets('server-console', 'after-wings-status')} />
 
-                    {/* Permission Error */}
                     {!canConnect && (
                         <Card className='border-2 border-yellow-500/20 bg-yellow-500/10'>
                             <CardContent className='p-4'>
@@ -527,10 +520,8 @@ export default function ServerConsolePage() {
                         </Card>
                     )}
 
-                    {/* Plugin Widgets: Before Terminal */}
                     <WidgetRenderer widgets={getWidgets('server-console', 'before-terminal')} />
 
-                    {/* Terminal Console */}
                     {canConnect && (
                         <ServerTerminal
                             ref={terminalRef}
@@ -542,13 +533,10 @@ export default function ServerConsolePage() {
                         />
                     )}
 
-                    {/* Plugin Widgets: After Terminal */}
                     <WidgetRenderer widgets={getWidgets('server-console', 'after-terminal')} />
                 </div>
 
-                {/* Sidebar Column: Info Cards */}
                 <div className='xl:col-span-3 space-y-6'>
-                    {/* Server Info Cards */}
                     {canConnect && (
                         <ServerInfoCards
                             serverIp={
@@ -571,15 +559,12 @@ export default function ServerConsolePage() {
                         />
                     )}
 
-                    {/* Plugin Widgets: Under Server Info Cards */}
                     <WidgetRenderer widgets={getWidgets('server-console', 'under-server-info-cards')} />
                 </div>
             </div>
 
-            {/* Plugin Widgets: Before Performance */}
             <WidgetRenderer widgets={getWidgets('server-console', 'before-performance')} />
 
-            {/* Performance Monitoring */}
             {server && canConnect && (
                 <ServerPerformance
                     cpuData={cpuData}
@@ -592,13 +577,10 @@ export default function ServerConsolePage() {
                 />
             )}
 
-            {/* Plugin Widgets: After Performance */}
             <WidgetRenderer widgets={getWidgets('server-console', 'after-performance')} />
 
-            {/* Plugin Widgets: Bottom Of Page */}
             <WidgetRenderer widgets={getWidgets('server-console', 'bottom-of-page')} />
 
-            {/* Feature Detection Dialogs */}
             {server && (
                 <>
                     <EulaDialog

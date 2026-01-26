@@ -250,7 +250,6 @@ export default function LogViewerPage() {
                 }
             />
 
-            {/* Controls */}
             <PageCard>
                 <div className='flex flex-col md:flex-row gap-4 items-start md:items-center'>
                     <div className='flex items-center gap-2'>
@@ -280,7 +279,6 @@ export default function LogViewerPage() {
                 </div>
             </PageCard>
 
-            {/* Loading */}
             {loading && (
                 <div className='flex items-center justify-center py-12'>
                     <div className='flex items-center gap-3'>
@@ -290,7 +288,6 @@ export default function LogViewerPage() {
                 </div>
             )}
 
-            {/* Log Files Info */}
             {logFiles.length > 0 && (
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                     {logFiles.map((file) => (
@@ -310,7 +307,6 @@ export default function LogViewerPage() {
                 </div>
             )}
 
-            {/* Logs Output */}
             <PageCard>
                 <div className='p-4 flex items-center justify-between border-b border-border/50'>
                     <div className='font-semibold'>{t('admin.dev.logs.logs_output')}</div>

@@ -350,7 +350,6 @@ export default function ConsolePage() {
                 }
             />
 
-            {/* System Info Panel */}
             {showSystemInfo && systemInfo && (
                 <PageCard title={t('admin.dev.console.system_info')}>
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
@@ -400,7 +399,6 @@ export default function ConsolePage() {
                 </PageCard>
             )}
 
-            {/* Terminal */}
             <PageCard title={t('admin.dev.console.terminal')}>
                 <div className='space-y-4'>
                     <p className='text-xs text-muted-foreground'>
@@ -408,7 +406,6 @@ export default function ConsolePage() {
                             'Use Arrow Up/Down for command history, Ctrl+L to clear'}
                     </p>
 
-                    {/* Terminal Output */}
                     <div
                         ref={terminalRef}
                         className='h-96 bg-black text-green-400 p-4 overflow-auto font-mono text-sm rounded-xl border border-border/50'
@@ -429,7 +426,6 @@ export default function ConsolePage() {
                             </div>
                         ))}
 
-                        {/* Loading indicator */}
                         {isLoading && (
                             <div className='flex items-center gap-2 text-yellow-400'>
                                 <div className='animate-pulse'>●</div>
@@ -438,7 +434,6 @@ export default function ConsolePage() {
                         )}
                     </div>
 
-                    {/* Command Input */}
                     <div className='p-4 border border-border/50 bg-muted/30 rounded-xl'>
                         <div className='flex items-center gap-2'>
                             <span className='text-green-400 font-mono text-sm shrink-0'>{getPrompt()}</span>
@@ -458,7 +453,6 @@ export default function ConsolePage() {
                 </div>
             </PageCard>
 
-            {/* Quick Commands */}
             <PageCard title={t('admin.dev.console.quick_commands')}>
                 <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2'>
                     {quickCommands.map((cmd) => (

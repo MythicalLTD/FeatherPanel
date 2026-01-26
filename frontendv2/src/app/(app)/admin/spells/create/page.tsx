@@ -182,7 +182,6 @@ export default function CreateSpellPage() {
                     <TabsTrigger value='script'>{t('admin.spells.tabs.script')}</TabsTrigger>
                 </TabsList>
 
-                {/* General Tab */}
                 <TabsContent value='general' className='space-y-4'>
                     <PageCard title='Basic Information' icon={Sparkles}>
                         <div className='space-y-4'>
@@ -255,7 +254,6 @@ export default function CreateSpellPage() {
                     </PageCard>
                 </TabsContent>
 
-                {/* Docker Tab */}
                 <TabsContent value='docker' className='space-y-4'>
                     <PageCard title='Docker Configuration' icon={Container}>
                         <div className='space-y-4'>
@@ -326,7 +324,6 @@ export default function CreateSpellPage() {
                     </PageCard>
                 </TabsContent>
 
-                {/* Features Tab */}
                 <TabsContent value='features' className='space-y-4'>
                     <PageCard title='Server Features' icon={Zap}>
                         <div className='space-y-2'>
@@ -359,7 +356,6 @@ export default function CreateSpellPage() {
                     </PageCard>
                 </TabsContent>
 
-                {/* Config Tab */}
                 <TabsContent value='config' className='space-y-4'>
                     <PageCard title='Server Configuration' icon={FileCode}>
                         <div className='space-y-4'>
@@ -413,7 +409,6 @@ export default function CreateSpellPage() {
                     </PageCard>
                 </TabsContent>
 
-                {/* Script Tab */}
                 <TabsContent value='script' className='space-y-4'>
                     <PageCard title='Installation & Startup Scripts' icon={Terminal}>
                         <div className='space-y-4'>

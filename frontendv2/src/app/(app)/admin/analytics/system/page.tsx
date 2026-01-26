@@ -97,7 +97,6 @@ export default function SystemAnalyticsPage() {
 
             {stats && (
                 <>
-                    {/* Overview Stats */}
                     <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                         <ResourceCard
                             title={stats.total_queued.toString()}

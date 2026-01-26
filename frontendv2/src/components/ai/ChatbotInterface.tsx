@@ -611,15 +611,13 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
 
     const content = (
         <div className='flex h-full flex-col md:flex-row'>
-            {/* Conversations Sidebar - Mobile Overlay / Desktop Sidebar */}
             {showConversationsSidebar && (
                 <>
-                    {/* Mobile backdrop */}
                     <div
                         className='fixed inset-0 bg-black/50 z-40 md:hidden'
                         onClick={() => setShowConversationsSidebar(false)}
                     />
-                    {/* Sidebar */}
+
                     <div className='fixed md:relative inset-y-0 left-0 z-50 w-72 md:w-64 border-r border-border bg-background flex flex-col shrink-0 md:z-0'>
                         <div className='px-3 py-3 border-b border-border flex items-center justify-between'>
                             <h3 className='font-semibold text-sm'>{t('chatbot.conversations')}</h3>
@@ -700,9 +698,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                 </>
             )}
 
-            {/* Main Chat Area */}
             <div className='flex-1 flex flex-col min-w-0'>
-                {/* Header */}
                 <div className='px-4 py-3 border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 flex items-center justify-between sticky top-0 z-10'>
                     <div className='flex items-center gap-3 min-w-0 flex-1'>
                         <Button
@@ -733,9 +729,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                     )}
                 </div>
 
-                {/* Messages Container */}
                 <div className='flex-1 overflow-y-auto px-4 py-4 space-y-4'>
-                    {/* Action Notifications */}
                     {pendingActions.length > 0 && (
                         <div className='space-y-2'>
                             {pendingActions.map((action) => (
@@ -762,7 +756,6 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                         </div>
                     )}
 
-                    {/* Messages */}
                     {messages.length === 0 && !isLoading ? (
                         <div className='flex flex-col items-center justify-center h-full py-12'>
                             <div className='text-center max-w-md px-4'>
@@ -780,7 +773,6 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                                     key={message.id}
                                     className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                                 >
-                                    {/* Avatar */}
                                     {message.role === 'assistant' ? (
                                         <div className='h-8 w-8 md:h-10 md:w-10 rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center shrink-0'>
                                             <Bot className='h-4 w-4 md:h-5 md:w-5 text-primary-foreground' />
@@ -789,7 +781,6 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                                         <UserAvatar size='md' />
                                     )}
 
-                                    {/* Message Bubble */}
                                     <div className='flex-1 min-w-0 max-w-[85%] md:max-w-[75%]'>
                                         <div className='flex items-center gap-2 mb-1'>
                                             <span className='text-xs font-medium text-foreground'>
@@ -824,7 +815,6 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Container */}
                 <div className='border-t border-border bg-background p-4 sticky bottom-0'>
                     <div className='flex gap-2 items-end max-w-4xl mx-auto'>
                         <textarea

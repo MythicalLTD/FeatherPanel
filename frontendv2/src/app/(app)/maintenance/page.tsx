@@ -21,13 +21,11 @@ import { Button } from '@/components/ui/button';
 export default function MaintenancePage() {
     return (
         <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4 text-center selection:bg-primary/20'>
-            {/* Background Effects */}
             <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,var(--tw-gradient-stops))] from-primary/10 via-background to-background' />
             <div className='absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/20 blur-[100px]' />
             <div className='absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-primary/10 blur-[100px]' />
 
             <div className='relative z-10 mx-auto w-full max-w-lg space-y-8 p-6'>
-                {/* Icon */}
                 <div className='relative mx-auto flex h-32 w-32 items-center justify-center rounded-3xl bg-primary/5 shadow-2xl shadow-primary/20 ring-1 ring-white/10 backdrop-blur-3xl'>
                     <div className='absolute inset-0 rounded-3xl bg-linear-to-tr from-white/10 to-transparent' />
                     <svg
@@ -44,7 +42,6 @@ export default function MaintenancePage() {
                     </svg>
                 </div>
 
-                {/* Text Content */}
                 <div className='space-y-4'>
                     <h1 className='bg-linear-to-br from-foreground to-foreground/60 bg-clip-text text-4xl font-bold tracking-tighter text-transparent sm:text-5xl md:text-6xl'>
                         System Maintenance
@@ -55,7 +52,6 @@ export default function MaintenancePage() {
                     </p>
                 </div>
 
-                {/* Status Badge */}
                 <div className='inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 backdrop-blur-md'>
                     <span className='relative flex h-2.5 w-2.5'>
                         <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75'></span>
@@ -64,7 +60,6 @@ export default function MaintenancePage() {
                     <span className='text-sm font-semibold text-primary'>In Progress</span>
                 </div>
 
-                {/* Action Button */}
                 <div className='pt-4'>
                     <Button
                         variant='outline'
@@ -97,7 +92,6 @@ export default function MaintenancePage() {
                 </div>
             </div>
 
-            {/* Footer */}
             <div className='absolute bottom-6 left-0 right-0 text-center'>
                 <p className='text-sm font-medium text-muted-foreground/50'>
                     &copy; {new Date().getFullYear()} FeatherPanel

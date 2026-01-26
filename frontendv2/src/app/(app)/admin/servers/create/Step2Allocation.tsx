@@ -58,7 +58,6 @@ export function Step2Allocation({
                 className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
             >
                 <div className='space-y-6'>
-                    {/* Location */}
                     <div className='space-y-3'>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.location')}
@@ -93,7 +92,6 @@ export function Step2Allocation({
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.location_help')}</p>
                     </div>
 
-                    {/* Node */}
                     <div className={cn('space-y-3', !formData.locationId && 'opacity-50 pointer-events-none')}>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.node')}
@@ -130,7 +128,6 @@ export function Step2Allocation({
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.node_help')}</p>
                     </div>
 
-                    {/* Allocation */}
                     <div className={cn('space-y-3', !formData.nodeId && 'opacity-50 pointer-events-none')}>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.allocation')}

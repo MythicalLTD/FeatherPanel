@@ -193,7 +193,7 @@ export default function ResetPasswordForm() {
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-top')} />
-            {/* Header */}
+
             <div className='text-center space-y-2'>
                 <h2 className='text-2xl font-bold tracking-tight'>{t('auth.reset_password.title')}</h2>
                 <p className='text-sm text-muted-foreground'>{t('auth.reset_password.subtitle')}</p>
@@ -223,7 +223,6 @@ export default function ResetPasswordForm() {
                     placeholder={t('auth.register.password_placeholder')}
                 />
 
-                {/* Turnstile Widget */}
                 {showTurnstile && (
                     <div className='flex justify-center'>
                         <Turnstile
@@ -265,7 +264,6 @@ export default function ResetPasswordForm() {
             </form>
             <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-after-form')} />
 
-            {/* Footer */}
             <div className='text-center text-sm text-muted-foreground'>
                 {t('auth.reset_password.remember')}{' '}
                 <button

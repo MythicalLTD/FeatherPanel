@@ -112,7 +112,6 @@ export default function ActivityAnalyticsPage() {
                 icon={Activity}
             />
 
-            {/* Overview Stats */}
             {stats && (
                 <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                     <ResourceCard
@@ -148,7 +147,6 @@ export default function ActivityAnalyticsPage() {
                 </div>
             )}
 
-            {/* Charts Section 1 */}
             <div className='grid gap-4 md:grid-cols-1 lg:grid-cols-3'>
                 <ActivityTrendChart data={trend} />
                 <ActivityBreakdownChart data={breakdown} />

@@ -571,7 +571,6 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                 </div>
             </div>
 
-            {/* View Modal */}
             <Sheet open={!!viewingAllocation} onOpenChange={(open) => !open && setViewingAllocation(null)}>
                 <SheetHeader>
                     <SheetTitle>{t('common.details')}</SheetTitle>
@@ -633,7 +632,6 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                 </SheetFooter>
             </Sheet>
 
-            {/* Edit Modal */}
             <Sheet open={!!editingAllocation} onOpenChange={(open) => !open && setEditingAllocation(null)}>
                 <SheetHeader>
                     <SheetTitle>{t('admin.node.allocations.edit.title')}</SheetTitle>
@@ -725,7 +723,6 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                 </SheetFooter>
             </Sheet>
 
-            {/* Create Modal */}
             <Sheet open={creatingAllocation} onOpenChange={(open) => !open && setCreatingAllocation(false)}>
                 <SheetHeader>
                     <SheetTitle>{t('admin.node.allocations.create.title')}</SheetTitle>
@@ -906,7 +903,6 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                 </SheetFooter>
             </Sheet>
 
-            {/* Bulk Delete Alert */}
             <AlertDialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -931,7 +927,6 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Delete Unused Alert */}
             <AlertDialog open={deleteUnusedConfirm} onOpenChange={setDeleteUnusedConfirm}>
                 <AlertDialogContent className='max-w-lg'>
                     <AlertDialogHeader>

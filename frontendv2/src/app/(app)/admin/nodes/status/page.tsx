@@ -151,7 +151,6 @@ export default function NodeStatusPage() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'top-of-page')} />
 
-            {/* Header */}
             <PageHeader
                 title={t('admin.nodes.title')}
                 description={t('admin.nodes.subtitle')}
@@ -170,7 +169,6 @@ export default function NodeStatusPage() {
                 <>
                     <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'before-global-stats')} />
 
-                    {/* Global Stats Cards */}
                     <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                         <ResourceCard
                             title={globalStats.total_nodes.toString()}
@@ -204,7 +202,6 @@ export default function NodeStatusPage() {
 
                     <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'after-global-stats')} />
 
-                    {/* Global Resource Usage */}
                     <div className='grid gap-6 lg:grid-cols-2'>
                         <PageCard
                             title={t('admin.nodes.memory_usage')}
@@ -268,7 +265,6 @@ export default function NodeStatusPage() {
 
                     <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'after-resource-usage')} />
 
-                    {/* Individual Nodes */}
                     <div className='space-y-4'>
                         <h2 className='text-2xl font-bold tracking-tight'>{t('admin.nodes.individual_nodes')}</h2>
                         <div className='grid gap-6 xl:grid-cols-2'>
@@ -300,7 +296,6 @@ export default function NodeStatusPage() {
                                         <div className='pt-2'>
                                             {node.status === 'healthy' && node.utilization ? (
                                                 <div className='space-y-6'>
-                                                    {/* CPU */}
                                                     <div className='space-y-2'>
                                                         <div className='flex justify-between items-center text-sm'>
                                                             <span className='font-medium'>
@@ -328,7 +323,6 @@ export default function NodeStatusPage() {
                                                         </div>
                                                     </div>
 
-                                                    {/* Memory */}
                                                     <div className='space-y-2'>
                                                         <div className='flex justify-between items-center text-sm'>
                                                             <span className='font-medium'>
@@ -349,7 +343,6 @@ export default function NodeStatusPage() {
                                                         </div>
                                                     </div>
 
-                                                    {/* Disk */}
                                                     <div className='space-y-2'>
                                                         <div className='flex justify-between items-center text-sm'>
                                                             <span className='font-medium'>{t('admin.nodes.disk')}</span>
@@ -368,7 +361,6 @@ export default function NodeStatusPage() {
                                                         </div>
                                                     </div>
 
-                                                    {/* Swap */}
                                                     {node.utilization.swap_total > 0 && (
                                                         <div className='space-y-2'>
                                                             <div className='flex justify-between items-center text-sm'>

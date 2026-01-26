@@ -336,7 +336,6 @@ const HashesTab = () => {
 
     return (
         <div className='space-y-6'>
-            {/* Action Bar */}
             <div className='flex flex-col sm:flex-row items-center justify-between gap-4 bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border/50 shadow-lg'>
                 <div className='flex items-center gap-3'>
                     <Button onClick={() => setAddHashDialogOpen(true)}>
@@ -363,7 +362,6 @@ const HashesTab = () => {
                 </div>
             </div>
 
-            {/* Statistics */}
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
                 {[
                     {
@@ -414,7 +412,6 @@ const HashesTab = () => {
                 ))}
             </div>
 
-            {/* Search and Bulk Actions */}
             <div className='flex flex-col sm:flex-row gap-4 items-center'>
                 <div className='relative flex-1 group'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -451,7 +448,6 @@ const HashesTab = () => {
                 )}
             </div>
 
-            {/* Hashes List */}
             {loading ? (
                 <TableSkeleton count={5} />
             ) : filteredHashes.length === 0 ? (
@@ -565,7 +561,6 @@ const HashesTab = () => {
                 </div>
             )}
 
-            {/* Add Hash Dialog */}
             <Dialog open={addHashDialogOpen} onOpenChange={setAddHashDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -645,7 +640,6 @@ const HashesTab = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Check Hashes Dialog */}
             <Dialog open={checkHashesDialogOpen} onOpenChange={setCheckHashesDialogOpen}>
                 <DialogContent className='sm:max-w-xl'>
                     <DialogHeader>

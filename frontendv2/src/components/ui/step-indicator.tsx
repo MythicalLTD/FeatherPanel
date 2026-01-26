@@ -38,7 +38,6 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
 
                     return (
                         <div key={index} className='flex items-center flex-1'>
-                            {/* Step Circle */}
                             <div className='flex flex-col items-center'>
                                 <div
                                     className={cn(
@@ -55,7 +54,6 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                                     )}
                                 </div>
 
-                                {/* Step Title - Only on larger screens */}
                                 <div className='hidden lg:flex flex-col items-center mt-2 text-center max-w-[120px]'>
                                     <span
                                         className={cn(
@@ -69,7 +67,6 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                                 </div>
                             </div>
 
-                            {/* Connector Line */}
                             {!isLast && (
                                 <div
                                     className={cn(
@@ -83,7 +80,6 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                 })}
             </div>
 
-            {/* Mobile Step Title */}
             <div className='lg:hidden mt-4 text-center'>
                 <h3 className='text-base font-semibold text-primary'>{steps[currentStep - 1].title}</h3>
                 <p className='text-sm text-muted-foreground mt-1'>{steps[currentStep - 1].subtitle}</p>

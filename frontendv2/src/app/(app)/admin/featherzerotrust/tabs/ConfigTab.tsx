@@ -202,7 +202,6 @@ const ConfigTab = () => {
                     <CardDescription>{t('admin.featherzerotrust.config.description')}</CardDescription>
                 </CardHeader>
                 <CardContent className='space-y-8'>
-                    {/* Basic Settings */}
                     <div className='space-y-6'>
                         <div className='flex items-center justify-between'>
                             <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
@@ -314,7 +313,6 @@ const ConfigTab = () => {
                         </div>
                     </div>
 
-                    {/* Webhook Notifications */}
                     <div className='space-y-6 pt-6 border-t'>
                         <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
                             {t('admin.featherzerotrust.config.notifications')}
@@ -347,7 +345,6 @@ const ConfigTab = () => {
                         </div>
                     </div>
 
-                    {/* File Pattern Matching */}
                     <div className='space-y-6 pt-6 border-t'>
                         <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
                             {t('admin.featherzerotrust.config.exclusionRules')}
@@ -386,7 +383,6 @@ const ConfigTab = () => {
                         </div>
                     </div>
 
-                    {/* Detection Patterns */}
                     <div className='space-y-6 pt-6 border-t'>
                         <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
                             {t('admin.featherzerotrust.config.threatIndicators')}
@@ -434,7 +430,6 @@ const ConfigTab = () => {
                         </div>
                     </div>
 
-                    {/* Thresholds */}
                     <div className='space-y-6 pt-6 border-t'>
                         <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
                             {t('admin.featherzerotrust.config.monitoringThresholds')}

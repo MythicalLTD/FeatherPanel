@@ -135,7 +135,7 @@ export default function ServerSubdomainsPage() {
     return (
         <div key={pathname} className='space-y-8 pb-12 '>
             <WidgetRenderer widgets={getWidgets('server-subdomains', 'top-of-page')} />
-            {/* Header Section */}
+
             <PageHeader
                 title={t('serverSubdomains.title')}
                 description={t('serverSubdomains.description')}
@@ -160,7 +160,6 @@ export default function ServerSubdomainsPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-subdomains', 'after-header')} />
 
-            {/* Limit Warning */}
             {limitReached && (
                 <div className='relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500 shadow-sm'>
                     <div className='relative z-10 flex items-start gap-5'>
@@ -183,7 +182,6 @@ export default function ServerSubdomainsPage() {
 
             <WidgetRenderer widgets={getWidgets('server-subdomains', 'before-subdomains-list')} />
 
-            {/* List */}
             {subdomains.length === 0 ? (
                 <EmptyState
                     title={t('serverSubdomains.noSubdomains')}
@@ -252,7 +250,6 @@ export default function ServerSubdomainsPage() {
             )}
             <WidgetRenderer widgets={getWidgets('server-subdomains', 'after-subdomains-list')} />
 
-            {/* Delete Modal */}
             <HeadlessModal
                 isOpen={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}

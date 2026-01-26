@@ -392,12 +392,7 @@ export default function CreateServerPage() {
         } catch (error) {
             console.error('Error fetching allocations:', error);
         }
-    }, [
-        formData.nodeId,
-        debouncedAllocationSearch,
-        allocationPagination.current_page,
-        allocationPagination.per_page,
-    ]);
+    }, [formData.nodeId, debouncedAllocationSearch, allocationPagination.current_page, allocationPagination.per_page]);
 
     const fetchRealms = useCallback(async () => {
         try {
@@ -647,12 +642,10 @@ export default function CreateServerPage() {
                 }
             />
 
-            {/* Step Indicator */}
             <div className='mt-8 mb-12 p-6 bg-card rounded-2xl border border-border/50'>
                 <StepIndicator steps={wizardSteps} currentStep={currentStep} />
             </div>
 
-            {/* Step Content */}
             <div className='min-h-[400px]'>
                 {currentStep === 1 && (
                     <Step1CoreDetails
@@ -700,7 +693,6 @@ export default function CreateServerPage() {
                 {currentStep === 6 && <Step6Review {...stepProps} />}
             </div>
 
-            {/* Navigation */}
             <div className='flex items-center justify-between mt-8 p-6 bg-card rounded-2xl border border-border/50'>
                 <Button variant='outline' onClick={handlePrevious} disabled={currentStep === 1} className='gap-2'>
                     <ChevronLeft className='h-4 w-4' />
@@ -733,7 +725,6 @@ export default function CreateServerPage() {
                 )}
             </div>
 
-            {/* Selection Sheets */}
             <SelectionSheet
                 open={ownerModalOpen}
                 onOpenChange={setOwnerModalOpen}
@@ -889,7 +880,6 @@ function SelectionSheet<T extends { id: number | string }>({
                 </SheetHeader>
 
                 <div className='mt-6 space-y-4'>
-                    {/* Search */}
                     <div className='relative group'>
                         <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                         <Input
@@ -900,7 +890,6 @@ function SelectionSheet<T extends { id: number | string }>({
                         />
                     </div>
 
-                    {/* Items List */}
                     <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar'>
                         {items.length === 0 ? (
                             <div className='text-center py-8 text-muted-foreground'>{t('common.no_results')}</div>
@@ -917,7 +906,6 @@ function SelectionSheet<T extends { id: number | string }>({
                         )}
                     </div>
 
-                    {/* Pagination */}
                     {pagination && pagination.total_pages > 1 && (
                         <div className='flex items-center justify-between pt-4 border-t border-border/50'>
                             <div className='text-sm text-muted-foreground'>

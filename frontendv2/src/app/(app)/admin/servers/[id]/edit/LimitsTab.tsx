@@ -27,7 +27,6 @@ export function LimitsTab({ form, setForm }: TabProps) {
     return (
         <PageCard title={t('admin.servers.edit.limits.title')} description={t('admin.servers.edit.limits.description')}>
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-                {/* Database Limit */}
                 <div className='space-y-3'>
                     <Label>{t('admin.servers.form.database_limit')}</Label>
                     <Input
@@ -40,7 +39,6 @@ export function LimitsTab({ form, setForm }: TabProps) {
                     <p className='text-xs text-muted-foreground'>{t('admin.servers.form.database_limit_help')}</p>
                 </div>
 
-                {/* Allocation Limit */}
                 <div className='space-y-3'>
                     <Label>{t('admin.servers.form.allocation_limit')}</Label>
                     <Input
@@ -53,7 +51,6 @@ export function LimitsTab({ form, setForm }: TabProps) {
                     <p className='text-xs text-muted-foreground'>{t('admin.servers.form.allocation_limit_help')}</p>
                 </div>
 
-                {/* Backup Limit */}
                 <div className='space-y-3'>
                     <Label>{t('admin.servers.form.backup_limit')}</Label>
                     <Input

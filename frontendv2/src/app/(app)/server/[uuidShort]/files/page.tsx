@@ -384,10 +384,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 <WidgetRenderer widgets={getWidgets('server-files', 'after-files-list')} />
             </div>
 
-            {/* Hidden Input for Upload */}
             <input type='file' ref={fileInputRef} className='hidden' onChange={handleFileChange} />
 
-            {/* Drag and Drop Overlay */}
             {isDragging && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-primary/20 backdrop-blur-md border-4 border-dashed border-primary animate-in fade-in zoom-in duration-300 pointer-events-none'>
                     <div className='flex flex-col items-center gap-6 bg-background/80 p-12 rounded-3xl shadow-2xl border border-primary/20 scale-110'>
@@ -405,7 +403,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 </div>
             )}
 
-            {/* Dialogs */}
             <CreateFolderDialog
                 open={createFolderOpen}
                 onOpenChange={setCreateFolderOpen}

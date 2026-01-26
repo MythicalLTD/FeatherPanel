@@ -51,7 +51,6 @@ export function DetailsTab({
                 description={t('admin.servers.edit.details.description')}
             >
                 <div className='space-y-6'>
-                    {/* Server Name */}
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                         <div className='space-y-3'>
                             <Label className='flex items-center gap-1.5'>
@@ -80,7 +79,6 @@ export function DetailsTab({
                         </div>
                     </div>
 
-                    {/* Server Owner */}
                     <div className='space-y-3'>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.owner')}
@@ -117,7 +115,6 @@ export function DetailsTab({
                         <p className='text-xs text-muted-foreground'>{t('admin.servers.form.owner_help')}</p>
                     </div>
 
-                    {/* External ID */}
                     <div className='space-y-3'>
                         <Label>{t('admin.servers.edit.details.external_id')}</Label>
                         <Input
@@ -131,7 +128,6 @@ export function DetailsTab({
                         </p>
                     </div>
 
-                    {/* Toggle Switches */}
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                         <div className='flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50'>
                             <div className='space-y-0.5'>
@@ -162,7 +158,6 @@ export function DetailsTab({
                 </div>
             </PageCard>
 
-            {/* Node & Location Info (Read-only) */}
             <PageCard
                 title={t('admin.servers.edit.details.location_node')}
                 description={t('admin.servers.edit.details.location_node_help')}

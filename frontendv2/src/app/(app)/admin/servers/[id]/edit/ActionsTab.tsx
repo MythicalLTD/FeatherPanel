@@ -94,7 +94,6 @@ export function ActionsTab({ serverId, serverName, isSuspended, onRefresh }: Act
 
     return (
         <div className='space-y-6'>
-            {/* Suspension Status */}
             <PageCard
                 title={t('admin.servers.edit.actions.suspension_title')}
                 description={t('admin.servers.edit.actions.suspension_description')}
@@ -122,7 +121,6 @@ export function ActionsTab({ serverId, serverName, isSuspended, onRefresh }: Act
                 </div>
             </PageCard>
 
-            {/* Delete Server */}
             <PageCard
                 title={t('admin.servers.edit.actions.delete_title')}
                 description={t('admin.servers.edit.actions.delete_description')}
