@@ -43,12 +43,10 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
     const [error, setError] = useState<Error | null>(null);
     const { user: sessionUser, hasPermission: hasGlobalPermission } = useSession();
 
-    // Track recently visited servers in localStorage for a better dashboard "recent servers" experience
     useEffect(() => {
         if (typeof window === 'undefined') return;
         if (!uuidShort) return;
 
-        // Only record once we actually have server metadata
         if (!server) return;
 
         try {
@@ -70,7 +68,6 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
                 }
             }
 
-            // Remove any previous occurrence for this server
             const filtered = existing.filter((entry) => entry.uuidShort !== uuidShort);
 
             const updated: RecentEntry[] = [
@@ -79,12 +76,10 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
                     lastViewedAt: new Date().toISOString(),
                 },
                 ...filtered,
-            ].slice(0, 10); // keep last 10
+            ].slice(0, 10);
 
             window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
         } catch (e) {
-            // Non-fatal – just log and continue
-
             console.error('Failed to update recent servers list', e);
         }
     }, [uuidShort, server]);
@@ -92,8 +87,6 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
     const fetchServer = useCallback(async () => {
         if (!uuidShort) return;
 
-        // If we already have data and this is just a re-validation, don't set loading to true effectively
-        // But if we have no data, we must show loading
         if (!server) {
             setLoading(true);
         }
@@ -113,13 +106,10 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
         }
     }, [uuidShort, server]);
 
-    // Initial fetch if no initial data provided or if uuidShort changes
     useEffect(() => {
         if (!initialServer) {
             fetchServer();
         } else {
-            // If initialServer provided (e.g. from SSR), ensure we set it
-            // This handles if uuidShort changes and we get new initialServer from parent
             setServer(initialServer);
             setLoading(false);
         }
@@ -127,15 +117,12 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
 
     const hasPermission = useCallback(
         (permission: string): boolean => {
-            // 1. Global Admin gets everything
             if (hasGlobalPermission(PermissionsClass.ADMIN_ROOT)) return true;
 
             if (!server || !sessionUser) return false;
 
-            // 2. Server Owner gets everything
             if (String(server.owner_id) === String(sessionUser.id)) return true;
 
-            // 3. Subuser Permissions (including wildcard check)
             if (server.is_subuser && server.subuser_permissions) {
                 return server.subuser_permissions.includes('*') || server.subuser_permissions.includes(permission);
             }

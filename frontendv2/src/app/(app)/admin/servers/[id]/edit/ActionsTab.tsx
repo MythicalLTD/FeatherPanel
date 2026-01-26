@@ -48,7 +48,6 @@ export function ActionsTab({ serverId, serverName, isSuspended, onRefresh }: Act
     const [suspending, setSuspending] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
-    // Dialog states
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const handleSuspend = async () => {

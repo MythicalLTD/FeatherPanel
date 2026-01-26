@@ -61,7 +61,6 @@ export function ServerCard({
     const accessible = isServerAccessible(server);
     const status = liveStats?.status || displayStatus(server);
 
-    // Use live stats if available, otherwise fall back to server stats
     const memory = liveStats?.memory ?? getServerMemory(server);
     const disk = liveStats?.disk ?? getServerDisk(server);
     const cpu = liveStats?.cpu ?? getServerCpu(server);

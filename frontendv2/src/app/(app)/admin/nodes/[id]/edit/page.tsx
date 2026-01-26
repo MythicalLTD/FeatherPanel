@@ -94,7 +94,6 @@ export default function EditNodePage() {
     const [activeTab, setActiveTab] = useState('details');
     const [locationModalOpen, setLocationModalOpen] = useState(false);
 
-    // Location Pagination States
     const [locationPagination, setLocationPagination] = useState({
         current_page: 1,
         per_page: 10,
@@ -163,7 +162,6 @@ export default function EditNodePage() {
 
             setNodeData(node as NodeData);
 
-            // Fetch the current location name if location_id exists
             if (node.location_id) {
                 try {
                     const locationRes = await axios.get(`/api/admin/locations/${node.location_id}`);
@@ -269,7 +267,6 @@ export default function EditNodePage() {
         }
     }, [nodeId]);
 
-    // Debounce location search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedLocationSearch(locationSearch);
@@ -278,7 +275,6 @@ export default function EditNodePage() {
         return () => clearTimeout(timer);
     }, [locationSearch]);
 
-    // Fetch locations with pagination
     const fetchLocations = useCallback(async () => {
         try {
             const currentPage = locationPagination.current_page;
@@ -309,10 +305,8 @@ export default function EditNodePage() {
         }
     }, [locationModalOpen, locationPagination.current_page, debouncedLocationSearch, fetchLocations]);
 
-    // Also fetch locations when form has location_id but selectedLocationName is empty
     useEffect(() => {
         if (form.location_id && !selectedLocationName && locations.length === 0) {
-            // Try to fetch the specific location
             const fetchCurrentLocation = async () => {
                 try {
                     const locationRes = await axios.get(`/api/admin/locations/${form.location_id}`);

@@ -60,7 +60,7 @@ export default function ContentAnalyticsPage() {
         setError(null);
         try {
             const [overviewRes, spellsByRealmRes, variableTypesRes, realmDetailsRes] = await Promise.all([
-                api.get('/admin/analytics/content/dashboard'), // Was overview
+                api.get('/admin/analytics/content/dashboard'),
                 api.get('/admin/analytics/spells/by-realm'),
                 api.get('/admin/analytics/spells/variables'),
                 api.get('/admin/analytics/realms/overview'),
@@ -74,8 +74,8 @@ export default function ContentAnalyticsPage() {
                     in_use: d.spells.in_use,
                     percentage_in_use: d.spells.percentage_in_use,
                 },
-                images: { total: d.images.total_images, in_use: 0 }, // API doesn't return in_use
-                redirects: { total: d.redirect_links.total_links, active: 0 }, // API doesn't return active
+                images: { total: d.images.total_images, in_use: 0 },
+                redirects: { total: d.redirect_links.total_links, active: 0 },
             });
 
             setSpellsByRealm(
@@ -92,7 +92,6 @@ export default function ContentAnalyticsPage() {
                 })),
             );
 
-            // Map realm summary stats to chart data
             const rStats = realmDetailsRes.data.data;
             setRealmDetails([
                 { name: t('admin.analytics.content.total_realms'), value: rStats.total_realms },

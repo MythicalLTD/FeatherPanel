@@ -172,7 +172,6 @@ export default function ConsolePage() {
             if (response.data.success) {
                 const result = response.data.data;
 
-                // Update current directory if cd command was used
                 if (command.startsWith('cd ')) {
                     const newDir = command.substring(3).trim();
                     if (newDir === '~' || newDir === '') {
@@ -184,7 +183,6 @@ export default function ConsolePage() {
                     }
                 }
 
-                // Display output
                 if (result.stdout) {
                     addTerminalLine('output', result.stdout);
                 }
@@ -192,7 +190,6 @@ export default function ConsolePage() {
                     addTerminalLine('error', result.stderr);
                 }
 
-                // Show command result info
                 addTerminalLine('info', `[${result.return_code}] ${result.execution_time}ms`);
 
                 if (result.return_code !== 0 && !result.stderr) {
@@ -273,7 +270,6 @@ export default function ConsolePage() {
         }
     }, [isDeveloperModeEnabled, fetchSystemInfo, addTerminalLine]);
 
-    // Developer Mode Check
     if (developerModeLoading) {
         return (
             <div className='flex items-center justify-center p-12'>

@@ -73,7 +73,6 @@ export default function NodeStatusPage() {
     const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
     const [nodes, setNodes] = useState<NodeStatus[]>([]);
 
-    // Plugin Widgets
     const { getWidgets } = usePluginWidgets('admin-nodes-status');
 
     const fetchData = useCallback(
@@ -90,9 +89,11 @@ export default function NodeStatusPage() {
                 }
             } catch (err) {
                 console.error('Failed to fetch node status:', err);
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const errorMessage = (err as any).response?.data?.message || t('admin.nodes.error');
-                setError(errorMessage);
+
+                const errorMessage =
+                    (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+                    t('admin.nodes.error');
+                setError(errorMessage as string);
             } finally {
                 setLoading(false);
             }
@@ -101,10 +102,8 @@ export default function NodeStatusPage() {
     );
 
     useEffect(() => {
-        // Initial fetch
         fetchData(false);
 
-        // Background refresh
         const interval = setInterval(() => {
             fetchData(true);
         }, 10000);

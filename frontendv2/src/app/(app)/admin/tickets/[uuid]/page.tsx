@@ -70,7 +70,7 @@ export interface UserMail {
 export interface Message {
     id: number;
     message: string;
-    user_uuid: string; // Changed from user_id: number | null
+    user_uuid: string;
     admin_reply: boolean;
     is_internal: boolean;
     created_at: string;
@@ -88,10 +88,10 @@ export interface Message {
 
 export interface Attachment {
     id: number;
-    file_name: string; // Changed from name
-    file_path: string; // Changed from path
-    file_size: number; // Changed from size
-    url: string; // Added url
+    file_name: string;
+    file_path: string;
+    file_size: number;
+    url: string;
 }
 
 export interface Meta {
@@ -105,7 +105,7 @@ export interface Ticket {
     uuid: string;
     title: string;
     description?: string;
-    user_uuid: string; // Changed from user_id: number
+    user_uuid: string;
     category_id: number;
     priority_id: number;
     status_id: number;
@@ -137,16 +137,16 @@ export default function TicketViewPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [mobileDetailsOpen, setMobileDetailsOpen] = useState(false); // Mobile drawer state
+    const [mobileDetailsOpen, setMobileDetailsOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Sidebar data
-    const [userServers, setUserServers] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
-    const [userTickets, setUserTickets] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [userServers, setUserServers] = useState<any[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [userTickets, setUserTickets] = useState<any[]>([]);
     const [userDetails, setUserDetails] = useState<UserData | null>(null);
     const [loadingSidebar, setLoadingSidebar] = useState(false);
 
-    // Edit Drawer
     const [editOpen, setEditOpen] = useState(false);
     const [editForm, setEditForm] = useState({
         title: '',
@@ -159,7 +159,6 @@ export default function TicketViewPage() {
     const [priorities, setPriorities] = useState<Meta[]>([]);
     const [statuses, setStatuses] = useState<Meta[]>([]);
 
-    // Mail Preview
     const [mailPreviewOpen, setMailPreviewOpen] = useState(false);
     const [mailPreview, setMailPreview] = useState<UserMail | null>(null);
 
@@ -170,11 +169,9 @@ export default function TicketViewPage() {
             const { data } = await axios.get<{ data: { ticket: Ticket; messages: Message[] } }>(
                 `/api/admin/tickets/${uuid}`,
             );
-            // The API structure returns ticket and messages separately or nested depending on the endpoint variant
-            // Based on Vue code: ticket.value = data.data.ticket; messages.value = data.data.messages;
+
             const ticketData = { ...data.data.ticket, messages: data.data.messages || [] };
 
-            // Sort messages OLD -> NEW
             if (ticketData.messages && Array.isArray(ticketData.messages)) {
                 ticketData.messages.sort((a, b) => a.created_at.localeCompare(b.created_at));
             }
@@ -204,13 +201,11 @@ export default function TicketViewPage() {
     const fetchUserData = async (userUuid: string) => {
         setLoadingSidebar(true);
         try {
-            // Fetch User Details (includes mails)
             const userRes = await axios.get(`/api/admin/users/${userUuid}`);
             if (userRes.data?.data?.user) {
                 setUserDetails(userRes.data.data.user);
             }
 
-            // Fetch Servers
             try {
                 const serversRes = await axios.get(`/api/admin/users/${userUuid}/servers`);
                 setUserServers(serversRes.data.data.servers || []);
@@ -218,7 +213,6 @@ export default function TicketViewPage() {
                 console.error('Error fetching user servers:', e);
             }
 
-            // Fetch Tickets
             try {
                 const ticketsRes = await axios.get('/api/admin/tickets', {
                     params: { user_uuid: userUuid, limit: 10 },
@@ -253,7 +247,6 @@ export default function TicketViewPage() {
         fetchTicket();
         fetchDependencies();
         fetchWidgets();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [uuid]);
 
     useEffect(() => {
@@ -269,7 +262,7 @@ export default function TicketViewPage() {
     }, [ticket?.messages]);
 
     const addFiles = (newFiles: File[]) => {
-        const maxSize = 50 * 1024 * 1024; // 50MB
+        const maxSize = 50 * 1024 * 1024;
         const validFiles = newFiles.filter((file) => {
             if (file.size > maxSize) {
                 toast.error(t('tickets.fileTooLarge').replace('{name}', file.name));
@@ -292,7 +285,6 @@ export default function TicketViewPage() {
         try {
             let finalMessage = reply;
 
-            // 1. Upload Attachments (if any) first to get URLs
             if (files.length > 0) {
                 const uploadedLinks: string[] = [];
 
@@ -316,7 +308,6 @@ export default function TicketViewPage() {
                 }
             }
 
-            // 2. Send Reply with appended links
             await axios.post(`/api/admin/tickets/${uuid}/reply`, {
                 message: finalMessage,
                 is_internal: isInternal,

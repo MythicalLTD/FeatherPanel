@@ -34,7 +34,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useTranslation } from '@/contexts/TranslationContext';
 
-// Colors for charts
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1'];
 
 interface ActivityTrendChartProps {
@@ -116,7 +115,6 @@ export function ActivityBreakdownChart({ data }: ActivityBreakdownChartProps) {
                         <Legend
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             formatter={(value, entry: any) => {
-                                // Return the actual name (activity_type) instead of the dataKey name ("count")
                                 return entry.payload?.activity_type || value;
                             }}
                         />

@@ -88,7 +88,6 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [refreshKey, setRefreshKey] = useState(0);
 
-    // Pagination
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
         pageSize: 10,
@@ -98,16 +97,13 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
         hasPrev: false,
     });
 
-    // Drawer states
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [viewOpen, setViewOpen] = useState(false);
 
-    // Selected items
     const [selectedDatabase, setSelectedDatabase] = useState<Database | null>(null);
     const [editingDatabase, setEditingDatabase] = useState<Database | null>(null);
 
-    // Form states
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -118,7 +114,6 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
         database_password: '',
     });
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -146,18 +141,16 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             const { data } = await axios.get('/api/admin/databases', {
                 params: {
                     page: 1,
-                    limit: 1000, // Fetch all to filter client-side as in Vue
+                    limit: 1000,
                 },
             });
 
             let allDbs = data.data.databases || [];
 
-            // Filter by nodeId if provided
             if (nodeId) {
                 allDbs = allDbs.filter((db: Database) => db.node_id === nodeId || db.node_id === null);
             }
 
-            // Client side search and pagination
             const filteredDbs = allDbs.filter(
                 (db: Database) =>
                     db.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
@@ -431,7 +424,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                                 database_host: db.database_host,
                                                 database_port: db.database_port,
                                                 database_username: db.database_username,
-                                                database_password: '', // Don't populate password
+                                                database_password: '',
                                             });
                                             setEditOpen(true);
                                         }}

@@ -133,7 +133,6 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                 textareaRef.current?.focus();
             }, 100);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     const loadConversationsList = async () => {
@@ -580,7 +579,6 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
         }
     };
 
-    // User avatar component
     const UserAvatar = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
         const sizeClasses = {
             sm: 'h-8 w-8 text-xs',

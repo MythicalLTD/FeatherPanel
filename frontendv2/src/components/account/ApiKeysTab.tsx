@@ -102,7 +102,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                 toast.success(t('account.apiKeys.keyCreated'));
                 setIsOpen(false);
                 setClientName('');
-                // Show the created client with keys
+
                 setSelectedClient(data.data);
                 setViewModal(true);
                 await fetchClients();
@@ -180,7 +180,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             if (data.success) {
                 toast.success(t('account.apiKeys.keysRegenerated'));
                 setRegenerateModal(false);
-                // Show the updated client with new keys
+
                 setSelectedClient(data.data);
                 setViewModal(true);
                 await fetchClients();

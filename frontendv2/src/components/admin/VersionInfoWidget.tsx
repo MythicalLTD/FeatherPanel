@@ -64,8 +64,6 @@ interface VersionInfoWidgetProps {
 
 import { useTranslation } from '@/contexts/TranslationContext';
 
-// ... imports
-
 export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
     const { t } = useTranslation();
     const [showChangelog, setShowChangelog] = useState(version?.update_available ?? false);

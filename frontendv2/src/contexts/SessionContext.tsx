@@ -67,7 +67,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
     const fetchSession = useCallback(
         async (force = false): Promise<boolean> => {
-            // Prevent multiple simultaneous fetches (unless forced)
             if (!force && isSessionChecked && user) {
                 return true;
             }
@@ -75,7 +74,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             try {
                 const res = await axios.get('/api/user/session');
 
-                // Validate response structure: must have success: true, data, and user_info
                 if (
                     res.data &&
                     res.data.success === true &&
@@ -90,7 +88,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                     setIsLoading(false);
                     return true;
                 } else {
-                    // Session fetch failed - invalid response structure or success: false
                     console.error('Invalid session response:', res.data);
                     clearSession();
                     if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
@@ -101,11 +98,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                     return false;
                 }
             } catch (error) {
-                // Check if it's an invalid token error
                 const axiosError = error as AxiosError<{ error_code?: string; error_message?: string }>;
                 const errorCode = axiosError?.response?.data?.error_code;
                 if (errorCode === 'INVALID_ACCOUNT_TOKEN' || axiosError?.response?.status === 401) {
-                    // Invalid token - force logout
                     clearSession();
                     if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
                         router.push('/auth/login');
@@ -132,11 +127,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
     const logout = async () => {
         try {
-            // Try to call backend logout endpoint
             try {
                 await axios.delete('/api/user/auth/logout');
             } catch (error) {
-                // Ignore errors during logout call - we'll still clear local session
                 console.error('Error calling logout endpoint:', error);
             }
             clearSession();
@@ -153,7 +146,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return permissions.includes(permission);
     };
 
-    // Auto-fetch session on mount
     useEffect(() => {
         fetchSession();
     }, [fetchSession]);

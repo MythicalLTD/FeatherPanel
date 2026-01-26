@@ -64,16 +64,15 @@ export default function FileEditorPage({
     const [useBukkitEditor, setUseBukkitEditor] = useState(false);
     const [useCommandsEditor, setUseCommandsEditor] = useState(false);
     const [useRawEditor, setUseRawEditor] = useState(false);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
 
     const { hasPermission } = useServerPermissions(uuidShort);
     const canEdit = hasPermission('file.update');
 
-    // Plugin Widgets
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-file-editor');
 
-    // Detect if this is a Minecraft server.properties file
     const isMinecraftProperties = useMemo(() => fileName.trim().toLowerCase() === 'server.properties', [fileName]);
 
     const looksLikeMinecraftProperties = useMemo(() => {
@@ -87,7 +86,6 @@ export default function FileEditorPage({
         [isMinecraftProperties, looksLikeMinecraftProperties],
     );
 
-    // Detect if this is a Spigot spigot.yml file
     const isSpigotConfiguration = useMemo(() => fileName.trim().toLowerCase() === 'spigot.yml', [fileName]);
 
     const looksLikeSpigotConfiguration = useMemo(() => {
@@ -101,7 +99,6 @@ export default function FileEditorPage({
         [isSpigotConfiguration, looksLikeSpigotConfiguration],
     );
 
-    // Detect Ops, Banned Players, Banned IPs, Whitelist, and Bukkit files
     const isOpsFile = useMemo(() => fileName.trim().toLowerCase() === 'ops.json', [fileName]);
     const isBannedPlayersFile = useMemo(() => fileName.trim().toLowerCase() === 'banned-players.json', [fileName]);
     const isBannedIpsFile = useMemo(() => fileName.trim().toLowerCase() === 'banned-ips.json', [fileName]);
@@ -186,7 +183,6 @@ export default function FileEditorPage({
         [isCommandsFile, looksLikeCommandsFile],
     );
 
-    // Auto-enable visual editor when content is loaded and it's a supported file
     useEffect(() => {
         if (!loading && content && !useRawEditor) {
             if (shouldOfferMinecraftEditor) {
@@ -224,9 +220,8 @@ export default function FileEditorPage({
     const fetchContent = useCallback(async () => {
         setLoading(true);
         try {
-            // Add timeout to prevent hanging
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
 
             const data = await Promise.race([
                 filesApi.getFileContent(uuidShort, fullPath),

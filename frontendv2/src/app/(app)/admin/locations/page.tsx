@@ -73,7 +73,6 @@ export default function LocationsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
-    // Pagination
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
         pageSize: 10,
@@ -83,14 +82,11 @@ export default function LocationsPage() {
         hasPrev: false,
     });
 
-    // Sheets
     const [editOpen, setEditOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
 
-    // Selected items
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
 
-    // Form states
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editForm, setEditForm] = useState({ name: '', description: '', flag_code: '' });
     const [createForm, setCreateForm] = useState({ name: '', description: '', flag_code: '' });
@@ -98,17 +94,14 @@ export default function LocationsPage() {
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
 
-    // Country codes
     const [countryCodes, setCountryCodes] = useState<Record<string, string>>({});
 
-    // Plugin Widgets
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-locations');
 
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -119,7 +112,6 @@ export default function LocationsPage() {
         return () => clearTimeout(timer);
     }, [searchQuery, debouncedSearchQuery]);
 
-    // Fetch country codes
     useEffect(() => {
         const fetchCountryCodes = async () => {
             try {
@@ -138,7 +130,6 @@ export default function LocationsPage() {
         fetchCountryCodes();
     }, [t]);
 
-    // Fetch locations
     useEffect(() => {
         const fetchLocations = async () => {
             setLoading(true);
@@ -172,7 +163,6 @@ export default function LocationsPage() {
         fetchLocations();
     }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t]);
 
-    // CRUD Operations
     const handleEdit = async (location: Location) => {
         try {
             const { data } = await axios.get(`/api/admin/locations/${location.id}`);

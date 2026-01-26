@@ -95,7 +95,6 @@ export default function TicketsPage() {
     const [refreshKey, setRefreshKey] = useState(0);
     const [isDeleting, setIsDeleting] = useState<number | null>(null);
 
-    // Debounce search query
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -107,7 +106,6 @@ export default function TicketsPage() {
         return () => clearTimeout(timer);
     }, [searchQuery, debouncedSearchQuery]);
 
-    // Fetch dependencies
     useEffect(() => {
         const fetchDependencies = async () => {
             try {
@@ -124,7 +122,6 @@ export default function TicketsPage() {
         fetchDependencies();
     }, []);
 
-    // Fetch tickets
     useEffect(() => {
         const controller = new AbortController();
         const fetchTickets = async () => {

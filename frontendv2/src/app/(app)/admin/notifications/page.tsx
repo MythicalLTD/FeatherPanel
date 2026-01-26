@@ -79,7 +79,6 @@ export default function NotificationsPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Pagination state
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
         pageSize: 10,
@@ -89,16 +88,13 @@ export default function NotificationsPage() {
         hasPrev: false,
     });
 
-    // Drawer states
     const [viewOpen, setViewOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
 
-    // Selected items
     const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
     const [editingNotification, setEditingNotification] = useState<Notification | null>(null);
 
-    // Form states
     const [newNotification, setNewNotification] = useState({
         title: '',
         message_markdown: '',
@@ -112,7 +108,6 @@ export default function NotificationsPage() {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [refreshKey, setRefreshKey] = useState(0);
 
-    // Debounce search query
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -124,7 +119,6 @@ export default function NotificationsPage() {
         return () => clearTimeout(timer);
     }, [debouncedSearchQuery, searchQuery]);
 
-    // Fetch notifications
     useEffect(() => {
         const controller = new AbortController();
         const fetchNotifications = async () => {
@@ -354,7 +348,6 @@ export default function NotificationsPage() {
                         const Icon = getTypeIcon(notification.type);
                         const badges: ResourceBadge[] = [];
 
-                        // Type Badge
                         badges.push({
                             label: t(`admin.notifications.types.${notification.type}`),
                             className: getTypeColor(notification.type),

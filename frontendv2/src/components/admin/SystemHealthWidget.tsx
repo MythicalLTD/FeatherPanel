@@ -51,10 +51,8 @@ export function SystemHealthWidget() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch Global Stats
                 const statsReq = axios.get('/api/admin/nodes/status/global');
 
-                // Fetch SelfTest & Measure Latency
                 const start = performance.now();
                 const selftestReq = axios.get('/api/selftest');
 

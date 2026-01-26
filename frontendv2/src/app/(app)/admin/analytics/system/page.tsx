@@ -51,7 +51,7 @@ export default function SystemAnalyticsPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await api.get('/admin/analytics/mail-queue/stats'); // Removed double /api and fixed path
+            const res = await api.get('/admin/analytics/mail-queue/stats');
             setStats(res.data.data);
         } catch (err) {
             console.error('Failed to fetch system analytics:', err);

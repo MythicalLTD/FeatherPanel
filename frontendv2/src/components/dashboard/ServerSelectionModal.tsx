@@ -49,7 +49,6 @@ export function ServerSelectionModal({
     const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             if (onSearch) {
@@ -58,8 +57,7 @@ export function ServerSelectionModal({
         }, 300);
 
         return () => clearTimeout(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery]); // Only depend on searchQuery, not onSearch
+    }, [searchQuery]);
 
     return (
         <HeadlessModal

@@ -49,7 +49,6 @@ export function Step3Application({
 }: Step3Props) {
     const { t } = useTranslation();
 
-    // Parse Docker images from JSON string
     const getDockerImages = (): string[] => {
         if (!spellDetails?.docker_images) return [];
         try {

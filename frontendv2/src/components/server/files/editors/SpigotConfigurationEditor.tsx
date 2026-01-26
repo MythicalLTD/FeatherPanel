@@ -80,7 +80,6 @@ function toString(value: unknown, fallback: string): string {
     return String(value);
 }
 
-// Simplified form interface - we'll expand as needed
 interface SpigotForm {
     settings: {
         bungeecord: boolean;
@@ -201,20 +200,17 @@ export function SpigotConfigurationEditor({
 }: SpigotConfigurationEditorProps) {
     const { t } = useTranslation();
 
-    // Derive form from content using useMemo - this recomputes when content changes
     const form = useMemo(() => {
         const config = parseSpigotConfiguration(content);
         return createForm(config);
     }, [content]);
 
-    // Use local state for user edits, initialized from the derived form
     const [localForm, setLocalForm] = useState<SpigotForm>(form);
 
-    // Sync local form when the derived form changes (content prop changed)
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalForm(form);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [content]); // Only depend on content, not form, to avoid unnecessary updates
+    }, [content]);
 
     const handleSave = () => {
         const config = parseSpigotConfiguration(content);

@@ -26,11 +26,9 @@ export default function ServerPluginPage({
 }) {
     const { uuidShort, pluginPath } = use(params);
 
-    // If no plugin path is provided, show the console (default server page)
     if (!pluginPath || pluginPath.length === 0) {
         return <ServerConsolePage />;
     }
 
-    // Otherwise, show the plugin page
     return <PluginPage context='server' serverUuid={uuidShort} />;
 }

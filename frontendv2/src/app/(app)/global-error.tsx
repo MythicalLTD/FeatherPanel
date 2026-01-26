@@ -15,7 +15,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-// global-error.tsx is a special Next.js error boundary that wraps the entire application
 import { useEffect, useState } from 'react';
 
 import Link from 'next/link';
@@ -29,7 +28,6 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
     const [version, setVersion] = useState<string>('');
 
     useEffect(() => {
-        // Safely read version from localStorage after mount
         try {
             const cached = localStorage.getItem('app_settings');
             if (cached) {
@@ -38,9 +36,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                     requestAnimationFrame(() => setVersion(data.core.version));
                 }
             }
-        } catch {
-            // Ignore error
-        }
+        } catch {}
     }, []);
 
     const renderBackground = () => {
@@ -64,7 +60,6 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                 const gradient = gradientMap[backgroundImage] || gradientMap['purple-dream'];
                 return <div className='pointer-events-none absolute inset-0' style={{ background: gradient }} />;
             case 'solid':
-                // Check if backgroundImage is a hex color (starts with #)
                 if (backgroundImage && backgroundImage.startsWith('#')) {
                     return (
                         <div

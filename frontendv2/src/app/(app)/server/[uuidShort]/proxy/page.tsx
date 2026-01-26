@@ -42,24 +42,20 @@ export default function ServerProxyPage() {
     const router = useRouter();
     const pathname = usePathname();
 
-    // State
     const [proxies, setProxies] = React.useState<Proxy[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
     const [selectedProxy, setSelectedProxy] = React.useState<Proxy | null>(null);
     const [saving, setSaving] = React.useState(false);
 
-    // Widgets
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-proxy');
 
-    // Permissions & Feature Flag
     const canManage = hasPermission('proxy.manage');
     const canRead = hasPermission('proxy.read');
     const proxyEnabled = isEnabled(settings?.server_allow_user_made_proxy);
     const maxProxies = parseInt(settings?.server_proxy_max_per_server || '0', 10);
     const isMaxReached = proxies.length >= maxProxies && maxProxies > 0;
 
-    // Fetch Data
     const fetchData = React.useCallback(async () => {
         if (!uuidShort || !proxyEnabled) return;
         setLoading(true);
@@ -110,7 +106,6 @@ export default function ServerProxyPage() {
 
     if (permissionsLoading) return null;
 
-    // Access Control Views
     if (!canRead) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>

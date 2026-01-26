@@ -57,16 +57,14 @@ export default function ServerSchedulesPage() {
     const { loading: settingsLoading } = useSettings();
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
-    // Permission checks
     const canRead = hasPermission('schedule.read');
     const canCreate = hasPermission('schedule.create');
     const canUpdate = hasPermission('schedule.update');
     const canDelete = hasPermission('schedule.delete');
 
-    // State
     const [schedules, setSchedules] = React.useState<Schedule[]>([]);
     const [loading, setLoading] = React.useState(true);
-    // Widgets
+
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-schedules');
     const [pagination, setPagination] = React.useState<SchedulePagination>({
         current_page: 1,
@@ -77,12 +75,10 @@ export default function ServerSchedulesPage() {
         to: 0,
     });
 
-    // Delete Modal State
     const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
     const [selectedSchedule, setSelectedSchedule] = React.useState<Schedule | null>(null);
     const [deleting, setDeleting] = React.useState(false);
 
-    // Fetch Data
     const fetchData = React.useCallback(
         async (page = 1) => {
             if (!uuidShort || !isEnabled(settings?.server_allow_schedules)) return;

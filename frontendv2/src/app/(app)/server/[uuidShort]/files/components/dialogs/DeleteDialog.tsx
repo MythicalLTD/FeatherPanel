@@ -31,7 +31,7 @@ interface DeleteDialogProps {
     onOpenChange: (open: boolean) => void;
     uuid: string;
     root: string;
-    files: string[]; // List of filenames to delete
+    files: string[];
     onSuccess: () => void;
 }
 

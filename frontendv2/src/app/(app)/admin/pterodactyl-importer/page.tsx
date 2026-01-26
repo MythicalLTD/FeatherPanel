@@ -108,7 +108,6 @@ export default function PterodactylImporterPage() {
         return (value as Record<string, string>) || {};
     };
 
-    // State
     const [isCheckingPrerequisites, setIsCheckingPrerequisites] = useState(false);
     const [prerequisites, setPrerequisites] = useState<PrerequisitesCheck | null>(null);
     const [apiClients, setApiClients] = useState<ApiClient[]>([]);
@@ -122,7 +121,6 @@ export default function PterodactylImporterPage() {
     const [newApiKeyName, setNewApiKeyName] = useState('');
     const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
 
-    // Panel URL
     const panelUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
     const prerequisitesPassed = useMemo(() => {
@@ -182,7 +180,6 @@ export default function PterodactylImporterPage() {
                 const clients = response.data.data.api_clients || [];
                 setApiClients(clients);
 
-                // Auto-select first if available
                 if (clients.length > 0 && !selectedApiKey) {
                     selectApiClient(clients[0].id);
                 }
@@ -212,7 +209,6 @@ export default function PterodactylImporterPage() {
                 toast.success(t('admin.pterodactyl_importer.toasts.key_created'));
                 await fetchApiClients();
 
-                // Select new key
                 await selectApiClient(newClient.id);
 
                 setShowCreateApiKeyModal(false);
@@ -233,13 +229,11 @@ export default function PterodactylImporterPage() {
         fetchApiClients();
     }, [fetchPrerequisites, fetchApiClients, fetchWidgets]);
 
-    // Cheat code listener
     useEffect(() => {
         const cheatCode = 'iknowwhatimdoing';
         let buffer = '';
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Ignore input in form fields
             if (
                 e.target instanceof HTMLInputElement ||
                 e.target instanceof HTMLTextAreaElement ||

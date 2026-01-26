@@ -28,7 +28,6 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 
-// Components
 import { WelcomeWidget } from '@/components/admin/WelcomeWidget';
 import { QuickStatsWidget } from '@/components/admin/QuickStatsWidget';
 import { CronStatusWidget } from '@/components/admin/CronStatusWidget';
@@ -43,20 +42,17 @@ export default function AdminDashboardPage() {
     const { data, loading, refresh } = useAdminDashboard();
     const { settings } = useSettings();
 
-    // Plugin Widgets
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-home');
 
     const [showAppUrlWarning, setShowAppUrlWarning] = useState(false);
     const [isClearingCache, setIsClearingCache] = useState(false);
     const [isCustomizing, setIsCustomizing] = useState(false);
 
-    // Widget Visibility State (Local Storage persistent)
     const [hiddenWidgets, setHiddenWidgets] = useState<string[]>([]);
 
     useEffect(() => {
         fetchWidgets();
 
-        // Load hidden widgets from localStorage
         const stored = localStorage.getItem('admin-hidden-widgets');
         if (stored) {
             try {
@@ -67,7 +63,6 @@ export default function AdminDashboardPage() {
         }
     }, [fetchWidgets]);
 
-    // APP_URL Warning Logic - separate effect to avoid dependency issues
     useEffect(() => {
         const defaultUrl = 'https://featherpanel.mythical.systems';
         const isDefault = settings?.app_url === defaultUrl;

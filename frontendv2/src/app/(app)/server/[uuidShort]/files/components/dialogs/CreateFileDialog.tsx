@@ -48,7 +48,6 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
 
         setLoading(true);
         try {
-            // Need to handle path join correctly
             const path = root === '/' ? name : `${root}/${name}`;
             await filesApi.saveFileContent(uuid, path, content);
             setName('');

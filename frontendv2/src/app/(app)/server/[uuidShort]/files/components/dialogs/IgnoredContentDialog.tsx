@@ -42,14 +42,13 @@ export function IgnoredContentDialog({ open, onOpenChange, uuid, onSuccess }: Ig
     const [patterns, setPatterns] = useState<string[]>([]);
     const [newPattern, setNewPattern] = useState('');
 
-    // Load from localStorage
     useEffect(() => {
         if (open) {
             const saved = localStorage.getItem(`feather_ignored_${uuid}`);
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
-                    // Use setTimeout to avoid cascading render lint error
+
                     setTimeout(() => setPatterns(parsed), 0);
                 } catch (e) {
                     console.error('Failed to parse ignored patterns', e);

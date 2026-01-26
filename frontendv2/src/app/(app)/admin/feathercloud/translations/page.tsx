@@ -57,7 +57,6 @@ export default function CommunityTranslationsPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -65,13 +64,10 @@ export default function CommunityTranslationsPage() {
         return () => clearTimeout(timer);
     }, [searchQuery]);
 
-    // Fetch community translations (mock data for now - replace with actual API)
     useEffect(() => {
         const fetchTranslations = async () => {
             setLoading(true);
             try {
-                // TODO: Replace with actual API endpoint when available
-                // For now, return empty array - this will be populated when the API is ready
                 const mockTranslations: CommunityTranslation[] = [];
 
                 setTranslations(mockTranslations);
@@ -87,7 +83,6 @@ export default function CommunityTranslationsPage() {
         fetchTranslations();
     }, []);
 
-    // Filter translations based on search
     useEffect(() => {
         if (!debouncedSearchQuery) {
             setFilteredTranslations(translations);
@@ -108,7 +103,6 @@ export default function CommunityTranslationsPage() {
 
     const handleDownload = async () => {
         try {
-            // TODO: Replace with actual download endpoint when available
             toast.info(t('admin.feathercloud.translations.download_coming_soon'));
         } catch (error) {
             console.error('Error downloading translation:', error);
@@ -118,7 +112,6 @@ export default function CommunityTranslationsPage() {
 
     const handleInstall = async () => {
         try {
-            // TODO: Replace with actual install endpoint when available
             toast.info(t('admin.marketplace.index.translations.install_coming_soon'));
         } catch (error) {
             console.error('Error installing translation:', error);

@@ -85,7 +85,6 @@ export function FileActionToolbar({
         <div className='sticky top-0 z-20 pb-4'>
             <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-black/5 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-xl p-2 shadow-sm transition-all duration-300'>
                 {hasSelection ? (
-                    // Selection Mode
                     <>
                         <div className='flex items-center gap-3 px-2'>
                             <div className='flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary animate-in zoom-in-50 duration-300'>
@@ -142,7 +141,6 @@ export function FileActionToolbar({
                         </div>
                     </>
                 ) : (
-                    // Default Mode
                     <>
                         <div className='flex flex-wrap items-center gap-1.5'>
                             <Button

@@ -54,16 +54,14 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-// UI Components
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
-import { ResourceCard } from '@/components/featherui/ResourceCard'; // Import ResourceCard
+import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 
-// Types
 type ActivityMetadata = {
     message?: string;
     command?: string;
@@ -129,7 +127,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
     const { t } = useTranslation();
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
-    // State
     const [loading, setLoading] = useState(true);
     const [activities, setActivities] = useState<ActivityItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -151,7 +148,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Details Dialog State
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ActivityItem | null>(null);
 
@@ -239,16 +235,13 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         [uuidShort, searchQuery, selectedEventFilter, t],
     );
 
-    // Debounce Search
     useEffect(() => {
         const timer = setTimeout(() => {
             fetchActivities(1);
         }, 500);
         return () => clearTimeout(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchQuery, selectedEventFilter]);
 
-    // Initial Load
     useEffect(() => {
         if (!permissionsLoading) {
             if (!hasPermission('activity.read')) {
@@ -258,7 +251,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             }
             fetchActivities(1);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [permissionsLoading]);
 
     function normalizeMetadata(m: unknown): ActivityMetadata | undefined {

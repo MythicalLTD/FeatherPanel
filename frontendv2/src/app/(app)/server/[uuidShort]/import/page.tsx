@@ -44,7 +44,6 @@ export default function ServerImportPage() {
     const [imports, setImports] = React.useState<ImportItem[]>([]);
     const [loading, setLoading] = React.useState(true);
 
-    // Widgets
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-import');
 
     const fetchImports = React.useCallback(async () => {

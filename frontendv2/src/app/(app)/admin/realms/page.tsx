@@ -60,7 +60,6 @@ export default function RealmsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
-    // Pagination
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
         pageSize: 10,
@@ -70,19 +69,15 @@ export default function RealmsPage() {
         hasPrev: false,
     });
 
-    // Drawer states
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
 
-    // Selected items
     const [editingRealm, setEditingRealm] = useState<Realm | null>(null);
 
-    // Form states
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [newRealm, setNewRealm] = useState({ name: '', description: '' });
     const [refreshKey, setRefreshKey] = useState(0);
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -93,7 +88,6 @@ export default function RealmsPage() {
         return () => clearTimeout(timer);
     }, [searchQuery, debouncedSearchQuery]);
 
-    // Fetch realms
     useEffect(() => {
         const fetchRealms = async () => {
             setLoading(true);
@@ -128,7 +122,6 @@ export default function RealmsPage() {
         fetchWidgets();
     }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets]);
 
-    // CRUD Operations
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);

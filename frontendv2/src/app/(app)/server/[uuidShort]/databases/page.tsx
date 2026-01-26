@@ -43,7 +43,6 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { cn, copyToClipboard as copyUtil } from '@/lib/utils';
 
-// UI Components
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -61,7 +60,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Types
 import { Database, DatabaseHost, DatabasesResponse, Server } from '@/types/server';
 
 export default function ServerDatabasesPage() {
@@ -71,25 +69,21 @@ export default function ServerDatabasesPage() {
     const pathname = usePathname();
     const uuidShort = params.uuidShort as string;
 
-    // Permissions
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const canRead = hasPermission('database.read');
     const canCreate = hasPermission('database.create');
     const canDelete = hasPermission('database.delete');
     const canViewPassword = hasPermission('database.view_password');
 
-    // State
     const [databases, setDatabases] = useState<Database[]>([]);
     const [availableHosts, setAvailableHosts] = useState<DatabaseHost[]>([]);
     const [loading, setLoading] = useState(true);
     const [server, setServer] = useState<Server | null>(null);
 
-    // Plugin Widgets
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-databases');
     const [searchQuery, setSearchQuery] = useState('');
     const [phpMyAdminInstalled, setPhpMyAdminInstalled] = useState(false);
 
-    // Pagination
     const [pagination, setPagination] = useState({
         current_page: 1,
         total: 0,
@@ -97,7 +91,6 @@ export default function ServerDatabasesPage() {
         per_page: 20,
     });
 
-    // Modal States
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
@@ -111,7 +104,6 @@ export default function ServerDatabasesPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [rememberSensitiveChoice, setRememberSensitiveChoice] = useState(false);
 
-    // Form data
     const [createForm, setCreateForm] = useState({
         database_host_id: '',
         database_name: '',

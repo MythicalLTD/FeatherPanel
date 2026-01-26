@@ -5,16 +5,14 @@ import Link from 'next/link';
 import { ArrowLeft, Code2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Helper function to get computed CSS variable value and convert to hex
 function getComputedColor(cssVar: string): string {
-    if (typeof window === 'undefined') return '#6366f1'; // Default fallback
+    if (typeof window === 'undefined') return '#6366f1';
 
     const root = document.documentElement;
     const value = getComputedStyle(root).getPropertyValue(cssVar).trim();
 
     if (!value) return '#6366f1';
 
-    // If it's already in HSL format like "262 83% 58%", convert to hex
     if (value.includes(' ')) {
         const hslMatch = value.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
         if (hslMatch) {
@@ -23,15 +21,13 @@ function getComputedColor(cssVar: string): string {
         }
     }
 
-    // If it's already a valid color, return it
     if (value.startsWith('#') || value.startsWith('rgb') || value.startsWith('hsl')) {
         return value;
     }
 
-    return '#6366f1'; // Fallback
+    return '#6366f1';
 }
 
-// Convert HSL to Hex
 function hslToHex(h: number, s: number, l: number): string {
     s /= 100;
     l /= 100;
@@ -86,7 +82,6 @@ export default function ApiDocs() {
     const [themeOptions, setThemeOptions] = useState<any>(null);
 
     useEffect(() => {
-        // Get computed colors from CSS variables
         const primaryColor = getComputedColor('--primary');
         const foregroundColor = getComputedColor('--foreground');
         const mutedForegroundColor = getComputedColor('--muted-foreground');
@@ -94,7 +89,6 @@ export default function ApiDocs() {
         const mutedColor = getComputedColor('--muted');
         const backgroundColor = getComputedColor('--background');
 
-        // Get font families
         const root = document.documentElement;
         const fontSans = getComputedStyle(root).getPropertyValue('--font-sans').trim() || 'system-ui, sans-serif';
         const fontMono = getComputedStyle(root).getPropertyValue('--font-mono').trim() || 'monospace';
@@ -152,7 +146,6 @@ export default function ApiDocs() {
             nativeScrollbars: true,
         });
 
-        // Inject custom CSS for better styling
         const style = document.createElement('style');
         style.textContent = `
             .redoc-wrap {

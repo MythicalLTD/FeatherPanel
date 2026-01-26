@@ -223,7 +223,6 @@ export default function CreatePluginPage() {
         }
     };
 
-    // Developer Mode Check
     if (developerModeLoading) {
         return (
             <div className='flex items-center justify-center p-12'>

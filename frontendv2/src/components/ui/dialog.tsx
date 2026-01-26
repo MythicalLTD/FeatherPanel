@@ -124,10 +124,6 @@ export function DialogFooter({ children, className }: DialogFooterProps) {
 }
 
 export function DialogContent({ className, children }: { className?: string; children: React.ReactNode }) {
-    // Since our Dialog component already renders the panel with standard styling,
-    // we treat DialogContent as a pass-through or additional wrapper if needed.
-    // We apply the className to the inner div to allow some customization,
-    // though main layout is controlled by Dialog.
     return <div className={className}>{children}</div>;
 }
 

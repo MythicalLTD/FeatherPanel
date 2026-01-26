@@ -43,21 +43,17 @@ export default function ServerSubdomainsPage() {
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-subdomains');
 
-    // Using generic manage permission or control.start as fallback
     const canManage = hasPermission('subdomains.manage') || hasPermission('control.start');
     const canDelete = hasPermission('subdomains.delete') || canManage;
 
-    // State
     const [overview, setOverview] = React.useState<SubdomainOverview | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [subdomains, setSubdomains] = React.useState<SubdomainEntry[]>([]);
 
-    // Delete Modal State
     const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
     const [selectedSubdomain, setSelectedSubdomain] = React.useState<SubdomainEntry | null>(null);
     const [deleting, setDeleting] = React.useState(false);
 
-    // Fetch Data
     const fetchData = React.useCallback(async () => {
         if (!uuidShort) return;
         setLoading(true);

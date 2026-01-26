@@ -39,10 +39,8 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
     const router = useRouter();
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
-    // Use shared plugin routes hook
     const pluginData = usePluginRoutes();
 
-    // Get server context for spell_id checking (only for server context)
     const { server } = useServerPermissions(serverUuid || '');
     const serverSpellId = server?.spell_id || null;
 
@@ -57,14 +55,12 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
             setLoading(true);
             setError(null);
 
-            // Set serverUuid cookie if in server context to help backend controller
             if (context === 'server' && serverUuid) {
                 document.cookie = `serverUuid=${serverUuid}; path=/; max-age=3600; SameSite=Lax`;
             }
 
             try {
                 if (!pluginData) {
-                    // Still loading from hook
                     return;
                 }
 
@@ -78,7 +74,6 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                     sidebarSection = pluginData.client || {};
                 }
 
-                // Determine plugin path from current pathname
                 let pluginPath = '';
                 if (context === 'admin') {
                     pluginPath = pathname.replace('/admin', '');
@@ -86,11 +81,9 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                     const serverPrefix = `/server/${serverUuid}`;
                     pluginPath = pathname.replace(serverPrefix, '');
                 } else if (context === 'client') {
-                    // Try to handle /dashboard/ and other dashboard nested paths
                     pluginPath = pathname.replace('/dashboard', '');
                 }
 
-                // Find matching item
                 let matchingItem = sidebarSection[pluginPath];
                 if (!matchingItem) {
                     for (const [key, value] of Object.entries(sidebarSection)) {
@@ -104,7 +97,6 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                     }
                 }
 
-                // Loose matching if still not found
                 if (!matchingItem && (context === 'client' || context === 'admin')) {
                     for (const value of Object.values(sidebarSection)) {
                         if (value.component && pathname.includes(value.plugin)) {
@@ -115,15 +107,12 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                 }
 
                 if (matchingItem && matchingItem.component) {
-                    // Check spell restrictions for server context
                     if (context === 'server' && serverSpellId !== null && serverSpellId !== undefined) {
-                        // If plugin has spell restrictions
                         if (
                             matchingItem.allowedOnlyOnSpells &&
                             Array.isArray(matchingItem.allowedOnlyOnSpells) &&
                             matchingItem.allowedOnlyOnSpells.length > 0
                         ) {
-                            // Check if server's spell_id is in the allowed list
                             if (!matchingItem.allowedOnlyOnSpells.includes(serverSpellId)) {
                                 setError(t('errors.plugin.spell_restriction'));
                                 setLoading(false);
@@ -134,8 +123,6 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
 
                     let componentUrl = `/components/${matchingItem.plugin}/${matchingItem.component}`;
 
-                    // The backend might return serverUuid=notFound if cookie wasn't set yet
-                    // or it might have other placeholders.
                     if (context === 'server' && serverUuid) {
                         if (componentUrl.includes('serverUuid=notFound')) {
                             componentUrl = componentUrl.replace('serverUuid=notFound', `serverUuid=${serverUuid}`);
@@ -236,7 +223,6 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
             error.includes('not available for this server type') || error === t('errors.plugin.spell_restriction');
         const isPluginNotFound = error === t('errors.plugin.not_found') || error === 'Plugin page not found';
 
-        // If plugin page not found, show inline 404 message
         if (isPluginNotFound) {
             return (
                 <div className='flex flex-col items-center justify-center min-h-[60vh] text-center p-8'>
@@ -268,7 +254,6 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
             );
         }
 
-        // For other errors (like spell restrictions), show custom error UI
         return (
             <div className='flex flex-col items-center justify-center h-[50vh] text-center p-4'>
                 <AlertTriangle className='h-12 w-12 text-destructive mb-4' />

@@ -46,7 +46,6 @@ export default function CreateSpellPage() {
     const [activeTab, setActiveTab] = useState('general');
     const [realms, setRealms] = useState<Realm[]>([]);
 
-    // Spell form data
     const [form, setForm] = useState({
         name: '',
         author: '',
@@ -69,11 +68,9 @@ export default function CreateSpellPage() {
         startup: '',
     });
 
-    // Docker images and features arrays
     const [dockerImages, setDockerImages] = useState<{ name: string; value: string }[]>([]);
     const [features, setFeatures] = useState<string[]>([]);
 
-    // Fetch realms
     useEffect(() => {
         const fetchRealms = async () => {
             try {
@@ -86,7 +83,6 @@ export default function CreateSpellPage() {
         fetchRealms();
     }, []);
 
-    // Handle save
     const handleCreate = async () => {
         if (!form.name || !form.realm_id) {
             toast.error('Name and Realm are required');
@@ -95,7 +91,6 @@ export default function CreateSpellPage() {
 
         setSaving(true);
         try {
-            // Convert docker images and features back to JSON
             const dockerImagesObj = dockerImages.reduce(
                 (acc, img) => {
                     acc[img.name] = img.value;
@@ -124,7 +119,6 @@ export default function CreateSpellPage() {
         }
     };
 
-    // Docker images management
     const addDockerImage = () => {
         setDockerImages([...dockerImages, { name: '', value: '' }]);
     };
@@ -139,7 +133,6 @@ export default function CreateSpellPage() {
         setDockerImages(updated);
     };
 
-    // Features management
     const addFeature = () => {
         setFeatures([...features, '']);
     };

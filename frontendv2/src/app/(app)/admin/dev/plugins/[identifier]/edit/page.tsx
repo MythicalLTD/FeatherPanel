@@ -179,7 +179,6 @@ export default function EditPluginPage() {
     }, [identifier, router, t]);
 
     useEffect(() => {
-        // Only load plugin if developer mode is enabled
         if (isDeveloperModeEnabled === true) {
             loadPlugin();
         }
@@ -226,7 +225,6 @@ export default function EditPluginPage() {
 
     const hasPhpVersionDependency = form.dependencies.some((dep) => dep.type === 'php');
 
-    // Developer Mode Check
     if (developerModeLoading) {
         return (
             <div className='flex items-center justify-center p-12'>

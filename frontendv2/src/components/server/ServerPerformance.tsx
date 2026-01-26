@@ -77,9 +77,9 @@ export default function ServerPerformance({
 
     const getDiskColor = (): string => {
         const usage = getDiskUsagePercentage();
-        if (usage > 95) return '#ef4444'; // red
-        if (usage > 80) return '#f59e0b'; // yellow
-        return '#10b981'; // green
+        if (usage > 95) return '#ef4444';
+        if (usage > 80) return '#f59e0b';
+        return '#10b981';
     };
 
     const charts = [

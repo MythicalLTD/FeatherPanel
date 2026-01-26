@@ -28,7 +28,6 @@ export default function AppPreloader() {
         return savedTheme || (prefersDark ? 'dark' : 'light');
     });
 
-    // Prevent body scroll while preloader is shown
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => {

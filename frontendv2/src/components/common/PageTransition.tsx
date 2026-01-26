@@ -15,8 +15,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-// Minimal page transition wrapper - just passes through children
-// All transition logic is handled by TopLoadingBar for better performance
 export default function PageTransition({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
 }

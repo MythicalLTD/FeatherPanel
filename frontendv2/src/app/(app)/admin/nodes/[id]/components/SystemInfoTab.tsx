@@ -13,7 +13,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -55,6 +55,7 @@ export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: Syste
         if (data && nodeId) {
             fetchVersionStatus();
         }
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, nodeId]);
 

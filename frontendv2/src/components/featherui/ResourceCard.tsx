@@ -59,7 +59,6 @@ export function ResourceCard({
     const renderBadges = () => {
         if (!badges) return null;
 
-        // Check if badges is an array of ResourceBadge objects (has label property)
         if (
             Array.isArray(badges) &&
             badges.length > 0 &&

@@ -213,7 +213,6 @@ function parseBukkitConfiguration(content: string): BukkitForm {
 }
 
 function applyFormToConfig(config: Record<string, unknown>, form: BukkitForm): Record<string, unknown> {
-    // Deep clone the config to avoid mutating the original
     const result = (yaml.load(yaml.dump(config || {})) as Record<string, unknown>) || {};
 
     result.settings = {
@@ -269,19 +268,16 @@ export function BukkitConfigurationEditor({
 }: BukkitConfigurationEditorProps) {
     const { t } = useTranslation();
 
-    // Derive form from content using useMemo
     const form = useMemo(() => {
         const config = parseBukkitConfiguration(content);
         return config;
     }, [content]);
 
-    // Use local state for user edits, initialized from the derived form
     const [localForm, setLocalForm] = useState<BukkitForm>(form);
 
-    // Sync local form when the derived form changes (content prop changed)
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalForm(form);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [content]);
 
     const handleSave = () => {
@@ -292,7 +288,7 @@ export function BukkitConfigurationEditor({
             onSave(yamlOutput);
         } catch (error) {
             console.error('Failed to save bukkit.yml:', error);
-            // Fallback: create new config from form
+
             const newConfig: Record<string, unknown> = {};
             applyFormToConfig(newConfig, localForm);
             const yamlOutput = yaml.dump(newConfig, { lineWidth: 0 });

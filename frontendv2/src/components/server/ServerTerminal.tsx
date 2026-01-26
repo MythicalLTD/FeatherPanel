@@ -86,7 +86,6 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const [historyIndex, setHistoryIndex] = useState(-1);
         const [showSettings, setShowSettings] = useState(false);
 
-        // Load history from localStorage
         useEffect(() => {
             const savedHistory = localStorage.getItem('featherpanel_terminal_history');
             if (savedHistory) {
@@ -105,7 +104,6 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             localStorage.setItem('featherpanel_terminal_history', JSON.stringify(newHistory));
         };
 
-        // Expose terminal methods via ref
         React.useImperativeHandle(
             ref,
             () => ({
@@ -137,13 +135,12 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         useEffect(() => {
             if (!terminalRef.current) return;
 
-            // Create terminal instance
             const terminal = new Terminal({
                 cursorBlink: false,
                 fontSize: 14,
                 fontFamily: 'Menlo, Monaco, "Courier New", monospace',
                 theme: {
-                    background: '#00000000', // Transparent
+                    background: '#00000000',
                     foreground: '#ffffff',
                     cursor: '#ffffff',
                     selectionBackground: 'rgba(255, 255, 255, 0.3)',
@@ -151,10 +148,9 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 scrollback: 10000,
                 allowProposedApi: true,
                 allowTransparency: true,
-                disableStdin: true, // Read-only
+                disableStdin: true,
             });
 
-            // Create and load addons
             const fitAddon = new FitAddon();
             const webLinksAddon = new WebLinksAddon();
             const clipboardAddon = new ClipboardAddon();
@@ -163,7 +159,6 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             terminal.loadAddon(webLinksAddon);
             terminal.loadAddon(clipboardAddon);
 
-            // Try to load WebGL addon
             try {
                 const webglAddon = new WebglAddon();
                 terminal.loadAddon(webglAddon);
@@ -171,35 +166,29 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 console.warn('WebGL addon failed to load, using canvas renderer');
             }
 
-            // Open terminal
             terminal.open(terminalRef.current);
             fitAddon.fit();
 
-            // Store references
             terminalInstanceRef.current = terminal;
             fitAddonRef.current = fitAddon;
 
-            // Handle Ctrl+C for copying
             terminal.attachCustomKeyEventHandler((e) => {
                 if (e.ctrlKey && e.code === 'KeyC' && terminal.hasSelection()) {
-                    return false; // Let browser handle it
+                    return false;
                 }
                 return true;
             });
 
-            // Handle scroll events
             terminal.onScroll(() => {
                 const isAtBottom = terminal.buffer.active.viewportY === terminal.buffer.active.baseY;
                 setShowScrollButton(!isAtBottom);
             });
 
-            // Handle resize
             const handleResize = () => {
                 fitAddon.fit();
             };
             window.addEventListener('resize', handleResize);
 
-            // Cleanup
             return () => {
                 window.removeEventListener('resize', handleResize);
                 terminal.dispose();
@@ -209,14 +198,11 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const sendCommand = () => {
             if (!commandInput.trim() || !onSendCommand) return;
 
-            // Add to history
             saveToHistory(commandInput);
             setHistoryIndex(-1);
 
-            // Send command
             onSendCommand(commandInput);
 
-            // Clear input
             setCommandInput('');
         };
 
@@ -238,10 +224,8 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             let newIndex = historyIndex;
 
             if (direction === 'up') {
-                // Move towards more recent commands (index 0 is most recent)
                 newIndex = historyIndex < commandHistory.length - 1 ? historyIndex + 1 : historyIndex;
             } else {
-                // Move towards newer input (reset to -1 when going past the most recent)
                 newIndex = historyIndex > 0 ? historyIndex - 1 : -1;
             }
 

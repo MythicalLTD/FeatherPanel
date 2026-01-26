@@ -129,7 +129,6 @@ export default function RateLimitsPage() {
         try {
             const config = rateLimits[routeName];
 
-            // Validate: if enabled, at least one limit must be set
             if (config._enabled !== false) {
                 const hasLimit =
                     (config.per_second && config.per_second > 0) ||
@@ -201,7 +200,7 @@ export default function RateLimitsPage() {
             changedRoutes.forEach((routeName) => {
                 const config = rateLimits[routeName];
                 const cleanConfig: Record<string, unknown> = {};
-                // ... (similar cleaning logic)
+
                 if (config._enabled !== undefined) cleanConfig._enabled = config._enabled;
                 if (config.per_second && Number(config.per_second) > 0)
                     cleanConfig.per_second = Number(config.per_second);

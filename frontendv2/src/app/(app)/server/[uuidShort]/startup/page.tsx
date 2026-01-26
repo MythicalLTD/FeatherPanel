@@ -38,7 +38,7 @@ interface ServerResponse {
     success: boolean;
     data: Server & {
         variables: Variable[];
-        image?: string; // Some API endpoints use image instead of docker_image
+        image?: string;
     };
 }
 
@@ -51,13 +51,11 @@ export default function ServerStartupPage() {
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-startup');
 
-    // Permission checks
     const canRead = hasPermission('startup.read');
     const canUpdateStartup = hasPermission('startup.update') && isEnabled(settings?.server_allow_startup_change);
     const canUpdateDockerImage = hasPermission('startup.docker-image');
     const canChangeSpell = isEnabled(settings?.server_allow_egg_change);
 
-    // State
     const [server, setServer] = React.useState<(Server & { variables: Variable[] }) | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
@@ -73,7 +71,6 @@ export default function ServerStartupPage() {
     const [variableValues, setVariableValues] = React.useState<Record<number, string>>({});
     const [variableErrors, setVariableErrors] = React.useState<Record<number, string>>({});
 
-    // Validation Logic Helpers
     const parseRules = React.useCallback((rules: string) => {
         if (!rules) return [];
         const parts = rules.split('|');
@@ -184,14 +181,12 @@ export default function ServerStartupPage() {
         [validateVariableAgainstRules],
     );
 
-    // Data Fetching with caching
     const fetchData = React.useCallback(async () => {
         if (!uuidShort || !canRead) return;
         setLoading(true);
         try {
-            // Add timeout to prevent hanging
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
 
             const { data } = await Promise.race([
                 axios.get<ServerResponse>(`/api/user/servers/${uuidShort}`, {
@@ -218,7 +213,6 @@ export default function ServerStartupPage() {
                 });
                 setVariableValues(values);
 
-                // Parse Docker Images
                 try {
                     const dockerImages = s.spell?.docker_images;
                     let images: string[] = [];
@@ -232,7 +226,6 @@ export default function ServerStartupPage() {
                     }
                     setAvailableDockerImages(images);
 
-                    // Auto-select image logic
                     const currentImage = s.image || s.docker_image;
                     if (currentImage && images.includes(currentImage)) {
                         setForm((prev) => ({ ...prev, image: currentImage }));
@@ -265,7 +258,6 @@ export default function ServerStartupPage() {
         }
     }, [canRead, permissionsLoading, settingsLoading, fetchData]);
 
-    // Interaction Handlers
     const handleRestoreDefault = () => {
         if (defaultStartupCommand) {
             setForm((prev) => ({ ...prev, startup: defaultStartupCommand }));
@@ -276,7 +268,6 @@ export default function ServerStartupPage() {
     const handleSave = async () => {
         setSaving(true);
 
-        // Final Page Validation
         let hasErrors = false;
         const errors: Record<number, string> = {};
         variables.forEach((v) => {
@@ -329,7 +320,6 @@ export default function ServerStartupPage() {
         }
     };
 
-    // View Computations
     const viewableVariables = variables.filter((v) => isEnabled(v.user_viewable) || canUpdateStartup);
     const hasChanges = () => {
         if (!server) return false;

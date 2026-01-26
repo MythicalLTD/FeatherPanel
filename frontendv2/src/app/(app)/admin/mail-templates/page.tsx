@@ -83,24 +83,20 @@ export default function MailTemplatesPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
-    // Sheet states
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [previewOpen, setPreviewOpen] = useState(false);
     const [massEmailOpen, setMassEmailOpen] = useState(false);
 
-    // Selected content
     const [selectedTemplate, setSelectedTemplate] = useState<MailTemplate | null>(null);
     const [formData, setFormData] = useState({ name: '', subject: '', body: '' });
     const [massEmailData, setMassEmailData] = useState({ subject: '', body: '' });
 
-    // Action states
     const [processing, setProcessing] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-mail-templates');
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);

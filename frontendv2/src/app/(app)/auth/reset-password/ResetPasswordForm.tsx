@@ -92,7 +92,6 @@ export default function ResetPasswordForm() {
         setError('');
         setSuccess('');
 
-        // Validation
         if (!form.password || !form.confirmPassword) {
             setError(t('validation.fill_all_fields'));
             return;
@@ -108,7 +107,6 @@ export default function ResetPasswordForm() {
             return;
         }
 
-        // Check Turnstile if enabled
         if (turnstileEnabled && !form.turnstile_token) {
             setError(t('validation.captcha_required'));
             return;
@@ -141,7 +139,7 @@ export default function ResetPasswordForm() {
                 }, 1000);
             } else {
                 setError(response.data?.message || t('common.error'));
-                // Reset Turnstile by forcing component re-render
+
                 if (showTurnstile) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
@@ -151,7 +149,6 @@ export default function ResetPasswordForm() {
             const error = err as { response?: { data?: { message?: string } } };
             setError(error.response?.data?.message || t('common.error'));
 
-            // Reset Turnstile by forcing component re-render
             if (showTurnstile) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);

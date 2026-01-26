@@ -29,7 +29,7 @@ import { Server } from '@/types/server';
 async function getServer(uuidShort: string): Promise<Server | null> {
     try {
         const cookieStore = await cookies();
-        // Forward all cookies to ensure authentication (including remember_token) works correctly
+
         const allCookies = cookieStore.getAll();
         const cookieHeader = allCookies.map((c) => `${c.name}=${c.value}`).join('; ');
 
@@ -43,7 +43,7 @@ async function getServer(uuidShort: string): Promise<Server | null> {
                 Cookie: cookieHeader,
                 Accept: 'application/json',
             },
-            next: { revalidate: 10 }, // Cache for 10 seconds to improve performance
+            next: { revalidate: 10 },
         });
 
         if (!res.ok) {
@@ -61,15 +61,12 @@ async function getServer(uuidShort: string): Promise<Server | null> {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    // read route params
     const { uuidShort } = await params;
 
     const server = await getServer(uuidShort);
 
-    // Use server name if available, otherwise fallback pattern
     const serverName = server?.name || `Server ${uuidShort}`;
 
-    // Root layout handles the "| AppName" suffix via title.template
     const title = serverName;
 
     return {

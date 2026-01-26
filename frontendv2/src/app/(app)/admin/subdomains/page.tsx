@@ -78,7 +78,6 @@ import axios, { isAxiosError } from 'axios';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
-// Types
 export interface SubdomainSpellMapping {
     spell_id: number;
     protocol_service: string | null;
@@ -187,17 +186,14 @@ export default function AdminSubdomainsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
-    // Sheet states
     const [manageOpen, setManageOpen] = useState(false);
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
 
-    // Selected content
     const [selectedDomain, setSelectedDomain] = useState<SubdomainDomain | null>(null);
     const [domainEntries, setDomainEntries] = useState<SubdomainEntry[]>([]);
     const [spells, setSpells] = useState<SubdomainSpell[]>([]);
 
-    // Form states
     const [domainForm, setDomainForm] = useState({
         domain: '',
         description: '',
@@ -221,12 +217,10 @@ export default function AdminSubdomainsPage() {
     });
     const [settingsKeySet, setSettingsKeySet] = useState(false);
 
-    // Action states
     const [processing, setProcessing] = useState(false);
     const [savingSettings, setSavingSettings] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);

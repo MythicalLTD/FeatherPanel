@@ -25,19 +25,19 @@ import { Ticket, UserData, UserMail } from '../page';
 import React from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 
-// Interfaces need to be shared. For now redefining or importing if exported.
-// Ideally, move interfaces to a types file.
 interface TicketSidebarProps {
     ticket: Ticket;
     userDetails: UserData | null;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     userServers: any[];
     userTickets: Ticket[];
     loadingSidebar: boolean;
     onOpenMailPreview: (mail: UserMail) => void;
-    // We pass dependencies or handling logic if needed
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     widgets?: any[];
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     WidgetRenderer?: React.ComponentType<any>;
 }

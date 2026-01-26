@@ -78,25 +78,21 @@ export default function ImagesPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
-    // Sheet states
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [viewOpen, setViewOpen] = useState(false);
 
-    // Selected content
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const [formData, setFormData] = useState({ name: '', url: '' });
     const [uploadData, setUploadData] = useState({ name: '' });
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [filePreview, setFilePreview] = useState<string>('');
 
-    // Action states
     const [processing, setProcessing] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-images');
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);

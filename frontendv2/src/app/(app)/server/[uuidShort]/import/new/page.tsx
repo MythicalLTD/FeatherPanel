@@ -64,7 +64,6 @@ export default function CreateServerImportPage() {
         wipeAllFiles: false,
     });
 
-    // Widgets
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-import-new');
 
     const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -117,7 +116,7 @@ export default function CreateServerImportPage() {
 
             if (data.success) {
                 toast.success(t('serverImport.importStarted'));
-                // Using standard query param pattern if needed, or just redirect
+
                 router.push(`/server/${uuidShort}/import?success=true`);
             } else {
                 toast.error(data.message || t('serverImport.importFailed'));

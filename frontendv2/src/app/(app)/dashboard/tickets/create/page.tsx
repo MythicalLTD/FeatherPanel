@@ -32,7 +32,6 @@ import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
-// Types
 interface Category {
     id: number;
     name: string;
@@ -67,7 +66,7 @@ interface ServerResponse {
     data: {
         servers: Server[];
     };
-    // Backward compatibility or alternative structure
+
     items?: Server[];
 }
 
@@ -75,21 +74,18 @@ export default function CreateTicketPage() {
     const { t } = useTranslation();
     const router = useRouter();
 
-    // State
     const [isLoading, setIsLoading] = useState(true);
     const [creating, setCreating] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
     const [priorities, setPriorities] = useState<Priority[]>([]);
     const [servers, setServers] = useState<Server[]>([]);
 
-    // Form
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [categoryId, setCategoryId] = useState<string | number>('');
     const [priorityId, setPriorityId] = useState<string | number>('');
     const [serverId, setServerId] = useState<string | number>('');
 
-    // Attachments
     const [files, setFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -101,10 +97,8 @@ export default function CreateTicketPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Initial Fetch
     const [serversLoading, setServersLoading] = useState(false);
 
-    // using useCallback to prevent infinite loops in the modal's useEffect
     const fetchServers = useCallback(async (query = '') => {
         setServersLoading(true);
         try {
@@ -127,13 +121,11 @@ export default function CreateTicketPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Using unknown cast for safety
                 const [catsRes, priosRes] = await Promise.all([
                     axios.get('/api/user/tickets/categories').catch(() => ({ data: { data: { categories: [] } } })),
                     axios.get('/api/user/tickets/priorities').catch(() => ({ data: { data: { priorities: [] } } })),
                 ]);
 
-                // Fetch servers initially
                 fetchServers();
 
                 const cats = (catsRes.data as { data: { categories: Category[] } })?.data?.categories || [];
@@ -151,7 +143,6 @@ export default function CreateTicketPage() {
         fetchData();
     }, [t, fetchServers]);
 
-    // File Handling
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             addFiles(Array.from(e.target.files));
@@ -159,7 +150,7 @@ export default function CreateTicketPage() {
     };
 
     const addFiles = (newFiles: File[]) => {
-        const maxSize = 50 * 1024 * 1024; // 50MB
+        const maxSize = 50 * 1024 * 1024;
         const validFiles = newFiles.filter((file) => {
             if (file.size > maxSize) {
                 toast.error(t('tickets.fileTooLarge').replace('{name}', file.name));
@@ -200,7 +191,6 @@ export default function CreateTicketPage() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
-    // Submit
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -225,7 +215,6 @@ export default function CreateTicketPage() {
                 const ticketUuid = data.data.ticket.uuid;
                 const messageId = data.data.message_id;
 
-                // Upload files
                 if (files.length > 0 && messageId) {
                     for (const file of files) {
                         const formData = new FormData();
@@ -257,7 +246,6 @@ export default function CreateTicketPage() {
         }
     };
 
-    // Prepare Options for Selects
     const categoryOptions = [
         { id: '', name: t('tickets.selectCategory') },
         ...categories.map((c) => ({ id: c.id, name: c.name, image: c.icon })),

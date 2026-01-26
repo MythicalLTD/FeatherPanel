@@ -139,7 +139,6 @@ export default function ServerAnalyticsPage() {
                 })),
             );
 
-            // Map status distribution if needed, assuming array of {status, count} based on typical pattern found
             const statusData = statusDistributionRes.data.data.statuses || statusDistributionRes.data.data || [];
             setStatusDistribution(
                 statusData.map((s: { status: string; count: number; name?: string; value?: number }) => ({
@@ -149,11 +148,7 @@ export default function ServerAnalyticsPage() {
             );
 
             const resDist = resourceDistRes.data.data;
-            // Likely histograms { range: string, count: number } or similar. Vue just passed `resourceDistRes.data.data.memory`
-            // Checking ServerCharts.tsx, SimpleBarChart used. So needs { name, value }.
-            // Assuming resourceDistRes.data.data.memory is { range_key: count } object or array of { range, count }.
-            // Vue passed it directly: setMemoryDistribution(resourceDistRes.data.data.memory)
-            // I'll assume for now it returns a list compatbile, or I map assuming generic { range/label, count }
+
             setMemoryDistribution(
                 (resDist.memory || []).map(
                     (m: {

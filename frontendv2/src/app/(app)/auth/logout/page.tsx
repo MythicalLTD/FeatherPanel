@@ -36,13 +36,11 @@ export default function LogoutPage() {
             }, 500);
         };
 
-        // Clean up storage
         const cleanupStorage = async () => {
             try {
                 localStorage.clear();
                 sessionStorage.clear();
 
-                // Clear cookies
                 document.cookie.split(';').forEach((cookie) => {
                     const eqPos = cookie.indexOf('=');
                     const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
@@ -55,7 +53,6 @@ export default function LogoutPage() {
 
         cleanupStorage();
 
-        // Simulate progress
         const interval = setInterval(() => {
             setLogoutProgress((prev) => {
                 if (prev >= 100) {
@@ -67,7 +64,6 @@ export default function LogoutPage() {
             });
         }, 200);
 
-        // Show manual redirect after 5 seconds
         const timeout = setTimeout(() => {
             setShowManualRedirect(true);
         }, 5000);

@@ -54,7 +54,6 @@ export default function EditSpellPage() {
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
 
-    // Spell form data
     const [form, setForm] = useState({
         name: '',
         author: '',
@@ -76,7 +75,6 @@ export default function EditSpellPage() {
         startup: '',
     });
 
-    // Variables management
     const [variables, setVariables] = useState<Variable[]>([]);
     const [addingVariable, setAddingVariable] = useState(false);
     const [editingVariable, setEditingVariable] = useState<Variable | null>(null);
@@ -93,11 +91,9 @@ export default function EditSpellPage() {
     const [confirmDeleteVariable, setConfirmDeleteVariable] = useState<number | null>(null);
     const [deletingVariable, setDeletingVariable] = useState(false);
 
-    // Docker images and features arrays
     const [dockerImages, setDockerImages] = useState<{ name: string; value: string }[]>([]);
     const [features, setFeatures] = useState<string[]>([]);
 
-    // Fetch spell data
     useEffect(() => {
         const fetchSpell = async () => {
             try {
@@ -125,18 +121,16 @@ export default function EditSpellPage() {
                     startup: spell.startup || '',
                 });
 
-                // Parse docker images as JSON
                 try {
                     const dockerImagesData = spell.docker_images || '{}';
                     const images = JSON.parse(dockerImagesData);
-                    // Convert object to array of {name, value} pairs
+
                     setDockerImages(Object.entries(images).map(([name, value]) => ({ name, value: value as string })));
                 } catch (e) {
                     console.error('Failed to parse docker images:', e);
                     setDockerImages([]);
                 }
 
-                // Parse features as JSON
                 try {
                     const featuresData = spell.features || '[]';
                     const parsedFeatures = JSON.parse(featuresData);
@@ -157,7 +151,6 @@ export default function EditSpellPage() {
         fetchSpell();
     }, [spellId, router, t]);
 
-    // Fetch variables
     useEffect(() => {
         const fetchVariables = async () => {
             try {
@@ -173,11 +166,9 @@ export default function EditSpellPage() {
         }
     }, [spellId, loading]);
 
-    // Handle save
     const handleSave = async () => {
         setSaving(true);
         try {
-            // Convert docker images and features back to JSON
             const dockerImagesObj = dockerImages.reduce(
                 (acc, img) => {
                     acc[img.name] = img.value;
@@ -206,7 +197,6 @@ export default function EditSpellPage() {
         }
     };
 
-    // Docker images management
     const addDockerImage = () => {
         setDockerImages([...dockerImages, { name: '', value: '' }]);
     };
@@ -221,7 +211,6 @@ export default function EditSpellPage() {
         setDockerImages(updated);
     };
 
-    // Features management
     const addFeature = () => {
         setFeatures([...features, '']);
     };
@@ -236,7 +225,6 @@ export default function EditSpellPage() {
         setFeatures(updated);
     };
 
-    // Variable CRUD
     const startAddVariable = () => {
         setVariableForm({
             name: '',
@@ -292,7 +280,6 @@ export default function EditSpellPage() {
                 toast.success(t('admin.spells.messages.variable_created'));
             }
 
-            // Refresh variables
             const { data } = await axios.get(`/api/admin/spells/${spellId}/variables`);
             setVariables(data.data.variables || []);
             cancelVariableEdit();
@@ -317,7 +304,6 @@ export default function EditSpellPage() {
             await axios.delete(`/api/admin/spell-variables/${variable.id}`);
             toast.success(t('admin.spells.messages.variable_deleted'));
 
-            // Refresh variables
             const { data } = await axios.get(`/api/admin/spells/${spellId}/variables`);
             setVariables(data.data.variables || []);
             setConfirmDeleteVariable(null);
@@ -846,7 +832,6 @@ export default function EditSpellPage() {
                                 }
                             >
                                 {editingVariable?.id === variable.id ? (
-                                    // Edit Mode - Similar to Add Variable
                                     <div className='space-y-4'>
                                         <div className='grid grid-cols-2 gap-3'>
                                             <div className='space-y-2'>
@@ -976,7 +961,6 @@ export default function EditSpellPage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    // View Mode
                                     <div className='space-y-3'>
                                         <p className='text-sm text-muted-foreground leading-relaxed'>
                                             {variable.description}

@@ -77,7 +77,6 @@ export default function SpellsPage() {
     const { t } = useTranslation();
     const router = useRouter();
 
-    // Online spells state
     const [onlineSpells, setOnlineSpells] = useState<OnlineSpell[]>([]);
     const [onlineLoading, setOnlineLoading] = useState(false);
     const [onlineError, setOnlineError] = useState<string | null>(null);
@@ -85,7 +84,6 @@ export default function SpellsPage() {
     const [currentOnlinePage, setCurrentOnlinePage] = useState(1);
     const [onlineSearch, setOnlineSearch] = useState('');
 
-    // Dialog state
     const [confirmInstallOpen, setConfirmInstallOpen] = useState(false);
     const [selectedSpell, setSelectedSpell] = useState<OnlineSpell | null>(null);
     const [selectedRealmId, setSelectedRealmId] = useState<string>('');
@@ -94,14 +92,12 @@ export default function SpellsPage() {
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-feathercloud-spells');
 
-    // Realm selection state
     const [realms, setRealms] = useState<Realm[]>([]);
     const [realmsLoading, setRealmsLoading] = useState(false);
     const [realmsSearch, setRealmsSearch] = useState('');
     const [realmsPage, setRealmsPage] = useState(1);
     const [realmsPagination, setRealmsPagination] = useState<OnlinePagination | null>(null);
 
-    // Fetch realms
     const fetchRealms = useCallback(async (page = 1, search = '') => {
         setRealmsLoading(true);
         try {
@@ -121,19 +117,17 @@ export default function SpellsPage() {
         }
     }, []);
 
-    // Fetch installed spells
     const fetchInstalledSpells = useCallback(async () => {
         try {
             const response = await axios.get('/api/admin/spells');
             const spells = response.data?.data?.spells || [];
-            // Using name for matching as identifier is not stored in DB for spells
+
             setInstalledSpellIds(spells.map((s: { name: string }) => s.name));
         } catch (error) {
             console.error('Failed to fetch installed spells:', error);
         }
     }, []);
 
-    // Fetch online spells
     const fetchOnlineSpells = useCallback(
         async (page = currentOnlinePage, search = onlineSearch) => {
             setOnlineLoading(true);
@@ -201,7 +195,6 @@ export default function SpellsPage() {
         }
     };
 
-    // Pagination helper
     const renderPagination = () => {
         if (!onlinePagination || onlinePagination.total_pages <= 1) return null;
 

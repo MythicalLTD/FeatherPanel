@@ -37,7 +37,6 @@ export default function VerifyTwoFactorForm() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Support both legacy 'email' and new 'username_or_email' query params
     const email = searchParams.get('email') || searchParams.get('username_or_email');
 
     const [code, setCode] = useState('');
@@ -50,7 +49,6 @@ export default function VerifyTwoFactorForm() {
         setError('');
         setSuccess('');
 
-        // Validation
         if (!code || code.trim() === '') {
             setError(t('validation.fill_all_fields'));
             return;
@@ -92,7 +90,6 @@ export default function VerifyTwoFactorForm() {
     };
 
     const handleCodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // Only allow numeric input
         const value = e.target.value.replace(/\D/g, '');
         setCode(value);
     };

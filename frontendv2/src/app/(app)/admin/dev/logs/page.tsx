@@ -152,7 +152,7 @@ export default function LogViewerPage() {
             if (newValue) {
                 refreshIntervalRef.current = setInterval(() => {
                     fetchLogs();
-                }, 10000); // 10 seconds
+                }, 10000);
             } else {
                 if (refreshIntervalRef.current) {
                     clearInterval(refreshIntervalRef.current);
@@ -184,7 +184,6 @@ export default function LogViewerPage() {
         };
     }, []);
 
-    // Developer Mode Check
     if (developerModeLoading) {
         return (
             <div className='flex items-center justify-center p-12'>

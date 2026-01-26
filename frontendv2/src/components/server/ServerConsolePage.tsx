@@ -49,7 +49,6 @@ interface WingsStats {
 }
 
 const formatUptime = (uptimeMs: number): string => {
-    // Wings sends uptime in milliseconds, convert to seconds
     const seconds = Math.floor(uptimeMs / 1000);
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
@@ -72,20 +71,16 @@ export default function ServerConsolePage() {
     const serverUuid = params.uuidShort as string;
     const terminalRef = useRef<ServerTerminalRef>(null);
 
-    // Ref to store previous network stats for rate calculation
     const prevNetworkRef = useRef({ rx: 0, tx: 0, timestamp: 0 });
-    // Ref to prevent server status overwriting WebSocket events
+
     const hasInitializedStatus = useRef(false);
 
-    // Permissions hook provides server data from context
     const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(serverUuid);
     const [serverStatus, setServerStatus] = useState('offline');
     const [wingsUptime, setWingsUptime] = useState<string>('');
 
-    // Initialize server status when server data is loaded
     useEffect(() => {
         if (server?.status && !hasInitializedStatus.current) {
-            // Defer state update to avoid synchronous render loop warning/linter error
             const timer = setTimeout(() => {
                 setServerStatus(server.status);
                 hasInitializedStatus.current = true;
@@ -94,53 +89,43 @@ export default function ServerConsolePage() {
         }
     }, [server?.status]);
 
-    // Performance data
     const [cpuData, setCpuData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [diskData, setDiskData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [networkData, setNetworkData] = useState<Array<{ timestamp: number; value: number }>>([]);
-    const maxDataPoints = 60; // Keep last 60 data points
+    const maxDataPoints = 60;
 
-    // Current resource usage
     const [currentCpu, setCurrentCpu] = useState(0);
     const [currentMemory, setCurrentMemory] = useState(0);
     const [currentDisk, setCurrentDisk] = useState(0);
     const [currentNetworkRx, setCurrentNetworkRx] = useState(0);
     const [currentNetworkTx, setCurrentNetworkTx] = useState(0);
 
-    // Console customization: regex-based filters (per server, persisted in localStorage)
     const [consoleFilters, setConsoleFilters] = useState<ConsoleFilterRule[]>([]);
 
     const isPopout = searchParams?.get('consolePopout') === '1';
 
-    // Load filters when server UUID changes
     useEffect(() => {
         if (!serverUuid) return;
         try {
             const stored = localStorage.getItem(`featherpanel_console_filters_${serverUuid}`);
             if (stored) {
                 const parsed = JSON.parse(stored) as ConsoleFilterRule[];
-                // Defer to next tick to avoid synchronous state update warning
+
                 setTimeout(() => {
                     setConsoleFilters(parsed);
                 }, 0);
             }
-        } catch {
-            // ignore parse errors
-        }
+        } catch {}
     }, [serverUuid]);
 
-    // Persist filters
     useEffect(() => {
         if (!serverUuid) return;
         try {
             localStorage.setItem(`featherpanel_console_filters_${serverUuid}`, JSON.stringify(consoleFilters));
-        } catch {
-            // ignore storage errors
-        }
+        } catch {}
     }, [serverUuid, consoleFilters]);
 
-    // Feature Detector
     const {
         processLog,
         eulaOpen,
@@ -152,18 +137,14 @@ export default function ServerConsolePage() {
         detectedData,
     } = useFeatureDetector();
 
-    // Permissions
     const canConnect = hasPermission('websocket.connect');
 
-    // Plugin Widgets
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-console');
 
-    // Fetch widgets on mount
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Handler for console output
     const handleConsoleOutput = useCallback(
         (output: string) => {
             const applyFilters = (text: string): string => {
@@ -193,7 +174,6 @@ export default function ServerConsolePage() {
                             try {
                                 regex = new RegExp(rule.pattern, rule.flags || 'g');
                             } catch {
-                                // Invalid regex, skip rule
                                 continue;
                             }
 
@@ -235,21 +215,17 @@ export default function ServerConsolePage() {
         [processLog, consoleFilters],
     );
 
-    // Handler for server status updates
     const handleStatusUpdate = useCallback((status: string) => {
         setServerStatus(status);
     }, []);
 
-    // Handler for stats updates
     const handleStatsUpdate = useCallback((stats: WingsStats) => {
         const timestamp = new Date().getTime();
 
-        // Update uptime
         if (stats.uptime) {
             setWingsUptime(formatUptime(stats.uptime));
         }
 
-        // Update CPU data
         if (stats.cpu_absolute !== undefined && stats.cpu_absolute !== null) {
             const cpuValue = Number(stats.cpu_absolute) || 0;
             setCurrentCpu(cpuValue);
@@ -259,7 +235,6 @@ export default function ServerConsolePage() {
             });
         }
 
-        // Update Memory data (convert bytes to MiB)
         if (stats.memory_bytes !== undefined && stats.memory_bytes !== null) {
             const memoryMiB = Number(stats.memory_bytes) / (1024 * 1024);
             setCurrentMemory(memoryMiB);
@@ -269,7 +244,6 @@ export default function ServerConsolePage() {
             });
         }
 
-        // Update Disk data (convert bytes to MiB)
         if (stats.disk_bytes !== undefined && stats.disk_bytes !== null) {
             const diskMiB = Number(stats.disk_bytes) / (1024 * 1024);
             setCurrentDisk(diskMiB);
@@ -279,15 +253,13 @@ export default function ServerConsolePage() {
             });
         }
 
-        // Update Network data (Calculate Rate)
         if (stats.network && stats.network.rx_bytes !== undefined && stats.network.tx_bytes !== undefined) {
             const currentRxBytes = Number(stats.network.rx_bytes);
             const currentTxBytes = Number(stats.network.tx_bytes);
             const now = new Date().getTime();
 
-            // Calculate rate if we have previous data
             if (prevNetworkRef.current.timestamp > 0) {
-                const timeDiff = (now - prevNetworkRef.current.timestamp) / 1000; // seconds
+                const timeDiff = (now - prevNetworkRef.current.timestamp) / 1000;
                 if (timeDiff > 0) {
                     const rxRate = Math.max(0, currentRxBytes - prevNetworkRef.current.rx) / timeDiff;
                     const txRate = Math.max(0, currentTxBytes - prevNetworkRef.current.tx) / timeDiff;
@@ -295,7 +267,6 @@ export default function ServerConsolePage() {
                     setCurrentNetworkRx(rxRate);
                     setCurrentNetworkTx(txRate);
 
-                    // For the chart, we can show total bandwidth or just RX+TX rate
                     const totalRate = rxRate + txRate;
                     setNetworkData((prev) => {
                         const newData = [...prev, { timestamp, value: totalRate }];
@@ -304,7 +275,6 @@ export default function ServerConsolePage() {
                 }
             }
 
-            // Update refs
             prevNetworkRef.current = {
                 rx: currentRxBytes,
                 tx: currentTxBytes,
@@ -313,7 +283,6 @@ export default function ServerConsolePage() {
         }
     }, []);
 
-    // Wings WebSocket connection
     const { connectionStatus, ping, sendCommand, sendPowerAction, requestStats, requestLogs } = useWingsWebSocket({
         serverUuid,
         connect: canConnect,
@@ -321,16 +290,14 @@ export default function ServerConsolePage() {
         onStatus: handleStatusUpdate,
         onStats: handleStatsUpdate,
     });
-    // Request stats periodically for ping measurement
+
     useEffect(() => {
         if (connectionStatus !== 'connected' || !requestStats) return;
 
-        // Request stats immediately on connect
         requestStats();
-        // Request logs history
+
         requestLogs();
 
-        // Then request every 5 seconds for ping measurement
         const interval = setInterval(() => {
             requestStats();
         }, 5000);
@@ -338,10 +305,8 @@ export default function ServerConsolePage() {
         return () => clearInterval(interval);
     }, [connectionStatus, requestStats, requestLogs]);
 
-    // Initialize charts with zero data point if empty
     useEffect(() => {
         if (cpuData.length === 0) {
-            // Defer to satisfy lint rule about synchronous updates in effect (which can cause loops)
             const timer = setTimeout(() => {
                 const timestamp = Date.now();
                 setCpuData([{ timestamp, value: 0 }]);
@@ -415,7 +380,6 @@ export default function ServerConsolePage() {
 
     const connectionInfo = getConnectionStatusInfo();
 
-    // Popout layout: full-screen console + command bar only
     if (isPopout) {
         return (
             <div className='min-h-screen bg-background p-4'>
@@ -587,9 +551,7 @@ export default function ServerConsolePage() {
                         isOpen={eulaOpen}
                         onClose={() => setEulaOpen(false)}
                         server={server}
-                        onAccepted={() => {
-                            // Optionally restart server or just close
-                        }}
+                        onAccepted={() => {}}
                     />
                     <JavaVersionDialog
                         isOpen={javaVersionOpen}

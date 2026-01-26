@@ -34,7 +34,6 @@ import {
     Globe,
 } from 'lucide-react';
 
-// UI Components
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -72,14 +71,12 @@ export default function ServerAllocationsPage() {
     const pathname = usePathname();
     const uuidShort = params.uuidShort as string;
 
-    // Permissions
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const canRead = hasPermission('allocation.read');
     const canCreate = hasPermission('allocation.create');
     const canUpdate = hasPermission('allocation.update');
     const canDelete = hasPermission('allocation.delete');
 
-    // State
     const [server, setServer] = useState<Server | null>(null);
     const [allocations, setAllocations] = useState<AllocationItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -92,7 +89,6 @@ export default function ServerAllocationsPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Dialog states
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedAllocation, setSelectedAllocation] = useState<AllocationItem | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -100,14 +96,12 @@ export default function ServerAllocationsPage() {
     const [primaryDialogOpen, setPrimaryDialogOpen] = useState(false);
     const [isSettingPrimary, setIsSettingPrimary] = useState(false);
 
-    // Advanced Assign DB/Drawer states
     const [assignDialogOpen, setAssignDialogOpen] = useState(false);
     const [availableAllocations, setAvailableAllocations] = useState<AllocationItem[]>([]);
     const [isLoadingAvailable, setIsLoadingAvailable] = useState(false);
     const [selectedAssignId, setSelectedAssignId] = useState<number | null>(null);
     const [isAssigning, setIsAssigning] = useState(false);
 
-    // Fetch allocations
     const fetchAllocations = useCallback(async () => {
         if (!uuidShort) return;
 
@@ -139,7 +133,6 @@ export default function ServerAllocationsPage() {
         }
     }, [canRead, permissionsLoading, fetchAllocations]);
 
-    // Fetch Available Allocations (for advanced assignment)
     const fetchAvailableAllocations = async () => {
         try {
             setIsLoadingAvailable(true);
@@ -148,7 +141,6 @@ export default function ServerAllocationsPage() {
             );
 
             if (data.success) {
-                // Handle different API response structures safely
                 const items = data.data.allocations ? data.data.allocations : Array.isArray(data.data) ? data.data : [];
 
                 setAvailableAllocations((items as AllocationItem[]) || []);
@@ -164,13 +156,11 @@ export default function ServerAllocationsPage() {
         }
     };
 
-    // Handle opening assign dialog
     const handleOpenAssign = () => {
         setAssignDialogOpen(true);
         fetchAvailableAllocations();
     };
 
-    // Actions
     const handleAutoAllocate = async () => {
         try {
             setIsAutoAllocating(true);
@@ -279,7 +269,6 @@ export default function ServerAllocationsPage() {
         toast.success(t('common.copiedToClipboard'));
     };
 
-    // Filtering
     const filteredAllocations = allocations.filter((alloc) => {
         const searchLower = searchQuery.toLowerCase();
         return (
@@ -290,7 +279,6 @@ export default function ServerAllocationsPage() {
         );
     });
 
-    // Permission check
     if (!permissionsLoading && !canRead) {
         return (
             <div className='flex flex-col items-center justify-center min-h-[400px] p-4 text-center'>

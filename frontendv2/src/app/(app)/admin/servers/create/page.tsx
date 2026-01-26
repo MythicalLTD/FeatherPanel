@@ -27,7 +27,6 @@ import { StepIndicator } from '@/components/ui/step-indicator';
 import { toast } from 'sonner';
 import { Server, X, ChevronRight, ChevronLeft, Plus, Search as SearchIcon, Loader2 } from 'lucide-react';
 
-// Types
 import {
     ServerFormData,
     SelectedEntities,
@@ -41,7 +40,6 @@ import {
     WizardStep,
 } from './types';
 
-// Step Components
 import { Step1CoreDetails } from './Step1CoreDetails';
 import { Step2Allocation } from './Step2Allocation';
 import { Step3Application } from './Step3Application';
@@ -49,7 +47,6 @@ import { Step4Resources } from './Step4Resources';
 import { Step5FeatureLimits } from './Step5FeatureLimits';
 import { Step6Review } from './Step6Review';
 
-// Initial Form Data
 const initialFormData: ServerFormData = {
     name: '',
     description: '',
@@ -92,19 +89,15 @@ export default function CreateServerPage() {
     const { t } = useTranslation();
     const router = useRouter();
 
-    // Wizard State
     const [currentStep, setCurrentStep] = useState(1);
     const totalSteps = 6;
 
-    // Form State
     const [formData, setFormData] = useState<ServerFormData>(initialFormData);
     const [selectedEntities, setSelectedEntities] = useState<SelectedEntities>(initialSelectedEntities);
 
-    // Spell Details
     const [spellDetails, setSpellDetails] = useState<Spell | null>(null);
     const [spellVariablesData, setSpellVariablesData] = useState<SpellVariable[]>([]);
 
-    // Modal States
     const [ownerModalOpen, setOwnerModalOpen] = useState(false);
     const [locationModalOpen, setLocationModalOpen] = useState(false);
     const [nodeModalOpen, setNodeModalOpen] = useState(false);
@@ -112,7 +105,6 @@ export default function CreateServerPage() {
     const [realmModalOpen, setRealmModalOpen] = useState(false);
     const [spellModalOpen, setSpellModalOpen] = useState(false);
 
-    // Data Lists
     const [owners, setOwners] = useState<User[]>([]);
     const [locations, setLocations] = useState<Location[]>([]);
     const [nodes, setNodes] = useState<Node[]>([]);
@@ -120,7 +112,6 @@ export default function CreateServerPage() {
     const [realms, setRealms] = useState<Realm[]>([]);
     const [spells, setSpells] = useState<Spell[]>([]);
 
-    // Search States
     const [ownerSearch, setOwnerSearch] = useState('');
     const [locationSearch, setLocationSearch] = useState('');
     const [nodeSearch, setNodeSearch] = useState('');
@@ -128,7 +119,6 @@ export default function CreateServerPage() {
     const [realmSearch, setRealmSearch] = useState('');
     const [spellSearch, setSpellSearch] = useState('');
 
-    // Debounced Search States
     const [debouncedOwnerSearch, setDebouncedOwnerSearch] = useState('');
     const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
     const [debouncedNodeSearch, setDebouncedNodeSearch] = useState('');
@@ -136,7 +126,6 @@ export default function CreateServerPage() {
     const [debouncedRealmSearch, setDebouncedRealmSearch] = useState('');
     const [debouncedSpellSearch, setDebouncedSpellSearch] = useState('');
 
-    // Pagination States
     const [ownerPagination, setOwnerPagination] = useState({
         current_page: 1,
         per_page: 10,
@@ -186,10 +175,8 @@ export default function CreateServerPage() {
         has_prev: false,
     });
 
-    // Submission State
     const [submitting, setSubmitting] = useState(false);
 
-    // Wizard Steps
     const wizardSteps: WizardStep[] = [
         { title: t('admin.servers.form.wizard.step1_title'), subtitle: t('admin.servers.form.wizard.step1_subtitle') },
         { title: t('admin.servers.form.wizard.step2_title'), subtitle: t('admin.servers.form.wizard.step2_subtitle') },
@@ -199,7 +186,6 @@ export default function CreateServerPage() {
         { title: t('admin.servers.form.wizard.step6_title'), subtitle: t('admin.servers.form.wizard.step6_subtitle') },
     ];
 
-    // Fetch Spell Details when spell changes
     useEffect(() => {
         if (!formData.spellId) {
             setSpellDetails(null);
@@ -219,7 +205,6 @@ export default function CreateServerPage() {
                     const spell: Spell = spellRes.data.data.spell;
                     setSpellDetails(spell);
 
-                    // Parse docker images
                     if (spell.docker_images) {
                         try {
                             const dockerImagesObj = JSON.parse(spell.docker_images);
@@ -255,7 +240,6 @@ export default function CreateServerPage() {
         fetchSpellDetails();
     }, [formData.spellId]);
 
-    // Debounce search effects
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedOwnerSearch(ownerSearch);
@@ -304,7 +288,6 @@ export default function CreateServerPage() {
         return () => clearTimeout(timer);
     }, [spellSearch]);
 
-    // Fetch Functions with Pagination
     const fetchOwners = useCallback(async () => {
         try {
             const { data } = await axios.get('/api/admin/users', {
@@ -438,7 +421,6 @@ export default function CreateServerPage() {
         }
     }, [formData.realmId, debouncedSpellSearch, spellPagination.current_page, spellPagination.per_page]);
 
-    // Fetch when modals open or pagination/search changes
     useEffect(() => {
         if (ownerModalOpen) {
             fetchOwners();
@@ -475,7 +457,6 @@ export default function CreateServerPage() {
         }
     }, [spellModalOpen, fetchSpells]);
 
-    // Step Validation
     const validateCurrentStep = () => {
         switch (currentStep) {
             case 1:
@@ -521,7 +502,6 @@ export default function CreateServerPage() {
         }
     };
 
-    // Navigation
     const handleNext = () => {
         if (validateCurrentStep()) {
             setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
@@ -532,7 +512,6 @@ export default function CreateServerPage() {
         setCurrentStep((prev) => Math.max(prev - 1, 1));
     };
 
-    // Submit
     const handleSubmit = async () => {
         if (!validateCurrentStep()) return;
         setSubmitting(true);
@@ -581,7 +560,6 @@ export default function CreateServerPage() {
         }
     };
 
-    // Selection Handlers
     const handleSelectOwner = (owner: User) => {
         setSelectedEntities((prev) => ({ ...prev, owner }));
         setFormData((prev) => ({ ...prev, ownerId: owner.id }));
@@ -618,7 +596,6 @@ export default function CreateServerPage() {
         setSpellModalOpen(false);
     };
 
-    // Common Step Props
     const stepProps = {
         formData,
         setFormData,
@@ -825,7 +802,6 @@ export default function CreateServerPage() {
     );
 }
 
-// Selection Sheet Component with Pagination
 interface PaginationState {
     current_page: number;
     per_page: number;

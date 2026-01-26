@@ -49,22 +49,18 @@ export default function ServerFirewallPage() {
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
 
-    // Permissions
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const canRead = hasPermission('allocation.read') || hasPermission('firewall.read');
     const canManage = hasPermission('allocation.update') || hasPermission('firewall.manage');
 
-    // State
     const [rules, setRules] = React.useState<FirewallRule[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [allocations, setAllocations] = React.useState<AllocationItem[]>([]);
 
-    // Modal State
     const [isModalOpen, setIsModalOpen] = React.useState(false);
     const [isEditing, setIsEditing] = React.useState(false);
     const [currentRule, setCurrentRule] = React.useState<FirewallRule | null>(null);
 
-    // Form State
     const [formData, setFormData] = React.useState<CreateFirewallRuleRequest>({
         remote_ip: '',
         server_port: 0,
@@ -75,15 +71,12 @@ export default function ServerFirewallPage() {
     const [selectedAllocationId, setSelectedAllocationId] = React.useState<string>('');
     const [saving, setSaving] = React.useState(false);
 
-    // Delete Dialog State
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [ruleToDelete, setRuleToDelete] = React.useState<FirewallRule | null>(null);
     const [deleting, setDeleting] = React.useState(false);
 
-    // Feature Flag
     const firewallEnabled = isEnabled(settings?.server_allow_user_made_firewall);
 
-    // Widgets
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-firewall');
 
     const fetchAllocations = React.useCallback(async () => {
@@ -130,7 +123,6 @@ export default function ServerFirewallPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Helpers
     const sortedRules = React.useMemo(() => {
         return [...rules].sort((a, b) => {
             if (a.priority !== b.priority) return a.priority - b.priority;
@@ -142,7 +134,6 @@ export default function ServerFirewallPage() {
         setIsEditing(false);
         setCurrentRule(null);
 
-        // Default to first allocation if available
         let defaultPort = 0;
         let defaultAllocId = '';
 
@@ -179,7 +170,6 @@ export default function ServerFirewallPage() {
             protocol: rule.protocol,
         });
 
-        // Find matching allocation for the port
         const matchingAlloc = allocations.find((a) => a.port === rule.server_port);
         setSelectedAllocationId(matchingAlloc ? matchingAlloc.id.toString() : '');
 
@@ -264,7 +254,6 @@ export default function ServerFirewallPage() {
         }
     };
 
-    // Options helpers
     const allocationOptions = React.useMemo(
         () =>
             allocations.map((a) => ({

@@ -30,7 +30,6 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
     const { t } = useTranslation();
 
     useEffect(() => {
-        // Log the error to an error reporting service
         console.error(error);
     }, [error]);
 
@@ -55,7 +54,6 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
                 const gradient = gradientMap[backgroundImage] || gradientMap['purple-dream'];
                 return <div className='pointer-events-none absolute inset-0' style={{ background: gradient }} />;
             case 'solid':
-                // Check if backgroundImage is a hex color (starts with #)
                 if (backgroundImage && backgroundImage.startsWith('#')) {
                     return (
                         <div

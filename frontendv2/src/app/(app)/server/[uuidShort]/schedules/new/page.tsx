@@ -43,10 +43,8 @@ export default function CreateSchedulePage() {
 
     const canCreate = hasPermission('schedule.create');
 
-    // State
     const [saving, setSaving] = React.useState(false);
 
-    // Form State
     const [formData, setFormData] = React.useState<ScheduleCreateRequest>({
         name: '',
         cron_minute: '*/5',
@@ -58,10 +56,8 @@ export default function CreateSchedulePage() {
         is_active: 1,
     });
 
-    // Widgets
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-schedules-new');
 
-    // Handlers
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
 

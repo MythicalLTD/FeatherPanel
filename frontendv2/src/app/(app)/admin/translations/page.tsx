@@ -52,14 +52,12 @@ export default function TranslationsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
-    // Sheet states
     const [editOpen, setEditOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
     const [selectedLang, setSelectedLang] = useState<string | null>(null);
     const [editingContent, setEditingContent] = useState('');
     const [, setOriginalContent] = useState('');
 
-    // Form states
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -68,7 +66,6 @@ export default function TranslationsPage() {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-translations');
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -76,12 +73,10 @@ export default function TranslationsPage() {
         return () => clearTimeout(timer);
     }, [searchQuery]);
 
-    // Fetch widgets on mount
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Fetch translation files
     useEffect(() => {
         const fetchFiles = async () => {
             setLoading(true);
@@ -89,7 +84,6 @@ export default function TranslationsPage() {
                 const { data } = await axios.get('/api/admin/translations');
                 let files = data.data || [];
 
-                // Filter by search query
                 if (debouncedSearchQuery) {
                     files = files.filter(
                         (file: TranslationFile) =>
@@ -110,7 +104,6 @@ export default function TranslationsPage() {
         fetchFiles();
     }, [debouncedSearchQuery, refreshKey, t]);
 
-    // Load translation content for editing
     const loadTranslationContent = async (lang: string) => {
         try {
             const { data } = await axios.get(`/api/admin/translations/${lang}`);
@@ -125,18 +118,15 @@ export default function TranslationsPage() {
         }
     };
 
-    // Import default English translations
     const handleImportDefault = async () => {
         setIsImporting(true);
         try {
-            // Fetch frontend en.json
             const response = await fetch('/locales/en.json');
             if (!response.ok) {
                 throw new Error('Failed to fetch frontend translations');
             }
             const frontendTranslations = await response.json();
 
-            // Upload to backend
             await axios.put('/api/admin/translations/en', frontendTranslations, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -153,7 +143,6 @@ export default function TranslationsPage() {
         }
     };
 
-    // Handle file upload
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -186,7 +175,6 @@ export default function TranslationsPage() {
         }
     };
 
-    // Create new translation file (copies English as base)
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -198,7 +186,6 @@ export default function TranslationsPage() {
                 return;
             }
 
-            // Create with empty body - backend will copy English translations
             await axios.post(`/api/admin/translations/${langCode}`, {});
             toast.success(t('admin.translations.messages.created'));
             setCreateOpen(false);
@@ -216,11 +203,9 @@ export default function TranslationsPage() {
         }
     };
 
-    // Update translation file
     const handleUpdate = async () => {
         if (!selectedLang) return;
 
-        // Validate JSON
         try {
             JSON.parse(editingContent);
         } catch {
@@ -254,7 +239,6 @@ export default function TranslationsPage() {
         }
     };
 
-    // Delete translation file
     const handleDelete = async (lang: string) => {
         if (!confirm(t('admin.translations.messages.delete_confirm'))) return;
         try {
@@ -267,7 +251,6 @@ export default function TranslationsPage() {
         }
     };
 
-    // Download translation file
     const handleDownload = async (lang: string) => {
         try {
             const response = await axios.get(`/api/admin/translations/${lang}/download`, {
@@ -287,7 +270,6 @@ export default function TranslationsPage() {
         }
     };
 
-    // Check if English translations exist
     const hasEnglishTranslations = translationFiles.some((file) => file.code === 'en');
 
     return (

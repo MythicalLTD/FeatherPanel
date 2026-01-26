@@ -77,7 +77,6 @@ export default function RolesPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Pagination state
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
         pageSize: 10,
@@ -87,18 +86,15 @@ export default function RolesPage() {
         hasPrev: false,
     });
 
-    // Drawer states
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [permissionsOpen, setPermissionsOpen] = useState(false);
 
-    // Selected items
     const [editingRole, setEditingRole] = useState<Role | null>(null);
     const [permissionsRole, setPermissionsRole] = useState<Role | null>(null);
     const [rolePermissions, setRolePermissions] = useState<Permission[]>([]);
     const [loadingPermissions, setLoadingPermissions] = useState(false);
 
-    // Form states
     const [newRole, setNewRole] = useState({
         name: '',
         display_name: '',
@@ -111,11 +107,9 @@ export default function RolesPage() {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [refreshKey, setRefreshKey] = useState(0);
 
-    // Permissions management state
     const [permissionSearch, setPermissionSearch] = useState('');
     const allPermissions = useMemo(() => Permissions.getAll(), []);
 
-    // Debounce search query
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -127,7 +121,6 @@ export default function RolesPage() {
         return () => clearTimeout(timer);
     }, [debouncedSearchQuery, searchQuery]);
 
-    // Fetch roles
     useEffect(() => {
         const controller = new AbortController();
         const fetchRoles = async () => {

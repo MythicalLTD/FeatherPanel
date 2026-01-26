@@ -23,11 +23,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import axios from 'axios';
 
-// Types
 import type { Server as ServerData } from '@/types/server';
 import type { Activity } from '@/types/activity';
 
-// Components
 import { ServerCard } from '@/components/servers/ServerCard';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner';
@@ -37,7 +35,6 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
-// API
 import { serversApi } from '@/lib/servers-api';
 import { useServersWebSocket } from '@/hooks/useServersWebSocket';
 
@@ -53,19 +50,16 @@ export default function DashboardPage() {
     const { settings } = useSettings();
     const { fetchWidgets, getWidgets } = usePluginWidgets('dashboard');
 
-    // WebSocket for live stats (dashboard only needs a few connection, but hooks are convenient)
     const { serverLiveData, isServerConnected, connectServers, disconnectAll } = useServersWebSocket();
 
     useEffect(() => {
         fetchWidgets();
 
         const fetchData = async () => {
-            // Fetch Servers
             try {
                 const response = await serversApi.getServers();
                 const serversArray = Array.isArray(response.servers) ? response.servers : [];
 
-                // Prefer servers the user actually visited recently (tracked via ServerProvider)
                 let orderedServers: ServerData[] = [];
 
                 try {
@@ -81,7 +75,6 @@ export default function DashboardPage() {
                             const recent = JSON.parse(raw) as RecentEntry[];
 
                             if (Array.isArray(recent) && recent.length > 0) {
-                                // Map by uuidShort for quick lookup
                                 const byUuid = new Map<string, ServerData>();
                                 for (const s of serversArray) {
                                     if (s?.uuidShort) {
@@ -89,8 +82,6 @@ export default function DashboardPage() {
                                     }
                                 }
 
-                                // Keep only those that still exist in the current API response,
-                                // in the order of most recently viewed
                                 orderedServers = recent
                                     .map((entry) => byUuid.get(entry.uuidShort))
                                     .filter((s): s is ServerData => Boolean(s));
@@ -98,19 +89,15 @@ export default function DashboardPage() {
                         }
                     }
                 } catch (e) {
-                    // Non-fatal: if anything goes wrong, fall back to default ordering
                     console.error('Failed to load recent servers ordering', e);
                 }
 
-                // Fallback: if we have no recent ordering, just use the original list
                 if (orderedServers.length === 0) {
                     orderedServers = serversArray;
                 }
 
-                // Only show up to 3 in the dashboard card
                 setServers(orderedServers.slice(0, 3));
 
-                // Connect to websockets for these 3 servers
                 if (serversArray.length > 0) {
                     const serverUuids = serversArray.slice(0, 3).map((s) => s.uuidShort);
                     connectServers(serverUuids);
@@ -121,7 +108,6 @@ export default function DashboardPage() {
                 setLoadingServers(false);
             }
 
-            // Fetch Activity
             try {
                 const { data } = await axios.get('/api/user/activities?limit=5');
                 if (data.success && data.data) {
@@ -139,7 +125,6 @@ export default function DashboardPage() {
         return () => {
             disconnectAll();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const getServerLiveStats = (server: ServerData) => {
@@ -165,7 +150,7 @@ export default function DashboardPage() {
                 return t('common.time.just_now');
             } else if (diffInHours < 24) {
                 const hours = Math.floor(diffInHours);
-                // Simplified pluralization handling for now, can be improved with i18next pluralization if fully configured
+
                 return t('common.time.hours_ago', { count: hours.toString(), s: hours > 1 ? 's' : '' });
             } else if (diffInHours < 48) {
                 return t('common.time.yesterday');

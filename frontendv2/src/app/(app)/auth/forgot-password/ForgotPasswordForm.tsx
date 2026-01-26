@@ -59,7 +59,6 @@ export default function ForgotPasswordForm() {
         e.preventDefault();
         setError('');
 
-        // Validation
         if (!form.email) {
             setError(t('validation.fill_all_fields'));
             return;
@@ -75,7 +74,6 @@ export default function ForgotPasswordForm() {
             return;
         }
 
-        // Check Turnstile if enabled
         if (turnstileEnabled && !form.turnstile_token) {
             setError(t('validation.captcha_required'));
             return;
@@ -90,7 +88,7 @@ export default function ForgotPasswordForm() {
                 setShowSuccessDialog(true);
             } else {
                 setError(response.message || t('common.error'));
-                // Reset Turnstile by forcing component re-render
+
                 if (showTurnstile) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
@@ -100,7 +98,6 @@ export default function ForgotPasswordForm() {
             const error = err as { response?: { data?: { message?: string } } };
             setError(error.response?.data?.message || t('common.error'));
 
-            // Reset Turnstile by forcing component re-render
             if (showTurnstile) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);

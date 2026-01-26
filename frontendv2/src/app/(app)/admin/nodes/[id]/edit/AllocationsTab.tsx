@@ -110,10 +110,9 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
 
     const [nodeIPs, setNodeIPs] = useState<string[]>([]);
     const [isCheckingHealth, setIsCheckingHealth] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [nodeHealthStatus, setNodeHealthStatus] = useState<'healthy' | 'unhealthy' | 'unknown'>('unknown');
 
-    // Drawer/Modal States
+    const [, setNodeHealthStatus] = useState<'healthy' | 'unhealthy' | 'unknown'>('unknown');
+
     const [viewingAllocation, setViewingAllocation] = useState<Allocation | null>(null);
     const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
     const [editForm, setEditForm] = useState({ ip: '', port: '', ip_alias: '', notes: '' });

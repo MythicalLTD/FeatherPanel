@@ -55,11 +55,10 @@ export default function TopLoadingBar() {
     });
 
     useEffect(() => {
-        // Use requestAnimationFrame to avoid synchronous setState in effect
         let timeoutId: NodeJS.Timeout;
         const rafId = requestAnimationFrame(() => {
             setLoading(true);
-            // Shorter timeout for snappier feel
+
             timeoutId = setTimeout(() => {
                 setLoading(false);
             }, 200);

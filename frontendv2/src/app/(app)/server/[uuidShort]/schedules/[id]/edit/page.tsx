@@ -42,12 +42,10 @@ export default function EditSchedulePage() {
 
     const canUpdate = hasPermission('schedule.update');
 
-    // State
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
     const [schedule, setSchedule] = React.useState<Schedule | null>(null);
 
-    // Form State
     const [formData, setFormData] = React.useState<ScheduleUpdateRequest>({
         name: '',
         cron_minute: '*/5',
@@ -59,10 +57,8 @@ export default function EditSchedulePage() {
         is_active: 1,
     });
 
-    // Widgets
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-schedules-edit');
 
-    // Fetch schedule data
     React.useEffect(() => {
         const fetchSchedule = async () => {
             if (!uuidShort || !id) return;
@@ -105,7 +101,6 @@ export default function EditSchedulePage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Handlers
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
 

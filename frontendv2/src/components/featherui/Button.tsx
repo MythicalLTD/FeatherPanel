@@ -20,7 +20,6 @@ import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { Slot } from '@radix-ui/react-slot';
 
-// Manual variant mapping instead of cva
 const variants = {
     default:
         'bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 hover:shadow-primary/30',

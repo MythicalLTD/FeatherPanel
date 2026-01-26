@@ -72,7 +72,6 @@ export default function SetupTwoFactorForm() {
                     response?: { data?: { message?: string; error_code?: string }; status?: number };
                 };
 
-                // Check if unauthorized (not logged in)
                 if (
                     error.response?.status === 401 ||
                     error.response?.status === 403 ||
@@ -82,7 +81,6 @@ export default function SetupTwoFactorForm() {
                     return;
                 }
 
-                // Check if 2FA is already enabled
                 if (error.response?.data?.error_code === 'TWO_FACTOR_AUTH_ENABLED') {
                     router.push('/dashboard');
                     return;
@@ -102,7 +100,6 @@ export default function SetupTwoFactorForm() {
         setError('');
         setSuccess('');
 
-        // Validation
         if (!code || code.trim() === '') {
             setError(t('validation.fill_all_fields'));
             return;
@@ -113,7 +110,6 @@ export default function SetupTwoFactorForm() {
             return;
         }
 
-        // Check Turnstile if enabled
         if (turnstileEnabled && !turnstileToken) {
             setError(t('validation.captcha_required'));
             return;
@@ -144,7 +140,7 @@ export default function SetupTwoFactorForm() {
                 }, 1500);
             } else {
                 setError(response.data?.message || t('common.error'));
-                // Reset Turnstile by forcing component re-render
+
                 if (showTurnstile) {
                     setTurnstileToken('');
                     setTurnstileKey((prev) => prev + 1);
@@ -154,7 +150,6 @@ export default function SetupTwoFactorForm() {
             const error = err as { response?: { data?: { message?: string } } };
             setError(error.response?.data?.message || t('common.error'));
 
-            // Reset Turnstile by forcing component re-render
             if (showTurnstile) {
                 setTurnstileToken('');
                 setTurnstileKey((prev) => prev + 1);
@@ -165,7 +160,6 @@ export default function SetupTwoFactorForm() {
     };
 
     const handleCodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // Only allow numeric input
         const value = e.target.value.replace(/\D/g, '');
         setCode(value);
     };

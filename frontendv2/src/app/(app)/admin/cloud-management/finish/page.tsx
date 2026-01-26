@@ -34,7 +34,6 @@ export default function CloudManagementFinishPage() {
     const [error, setError] = useState<string | null>(null);
 
     const saveCloudCredentials = useCallback(async () => {
-        // Get and decode URL parameters
         const cloudApiKey = searchParams.get('cloud_api_key');
         const cloudApiSecret = searchParams.get('cloud_api_secret');
 
@@ -55,7 +54,6 @@ export default function CloudManagementFinishPage() {
                 setIsSuccess(true);
                 toast.success('Your panel has been successfully linked with FeatherCloud!');
 
-                // Redirect to cloud management page after 3 seconds
                 setTimeout(() => {
                     router.push('/admin/cloud-management');
                 }, 3000);

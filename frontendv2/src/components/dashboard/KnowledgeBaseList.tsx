@@ -46,7 +46,7 @@ export function KnowledgeBaseList({ t }: KnowledgeBaseListProps) {
                         page: 1,
                     },
                 });
-                // Sort by position then name, similar to Vue implementation
+
                 const fetchedCategories = (data.data?.categories || []).sort((a: Category, b: Category) => {
                     if (a.position !== b.position) {
                         return a.position - b.position;

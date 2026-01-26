@@ -70,11 +70,9 @@ export function FileRow({
     const { t } = useTranslation();
     const isArchive = (name: string) => /\.(zip|tar|tar\.gz|tgz|rar)$/i.test(name);
 
-    // Check if image for preview
     const isImage = (name: string) => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(name);
 
-    // Check if editable
-    const isEditable = (size: number, name: string) => size < 1024 * 1024 * 5 && !isArchive(name) && !isImage(name); // Limit edit to 5MB
+    const isEditable = (size: number, name: string) => size < 1024 * 1024 * 5 && !isArchive(name) && !isImage(name);
 
     return (
         <div
@@ -86,7 +84,6 @@ export function FileRow({
                 if (!file.isFile) {
                     onNavigate(file.name);
                 } else if (isEditable(file.size, file.name) && canEdit) {
-                    // Show loading state immediately and navigate
                     onAction('edit', file);
                 } else if (isImage(file.name)) {
                     onAction('preview', file);

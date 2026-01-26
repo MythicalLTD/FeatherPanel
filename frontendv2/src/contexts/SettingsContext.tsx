@@ -40,7 +40,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     const fetchSettings = useCallback(async () => {
         try {
-            // Check cache first
             const cached = localStorage.getItem(CACHE_KEY);
             if (cached) {
                 const { data, version } = JSON.parse(cached);
@@ -51,7 +50,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 }
             }
 
-            // Fetch fresh data
             const data = await settingsApi.getPublicSettings();
 
             if (data) {
@@ -59,7 +57,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 setCore(data.core);
                 setError(null);
 
-                // Cache the data
                 localStorage.setItem(
                     CACHE_KEY,
                     JSON.stringify({

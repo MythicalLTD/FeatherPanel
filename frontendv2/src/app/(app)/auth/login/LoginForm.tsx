@@ -52,14 +52,13 @@ export default function LoginForm() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [turnstileKey, setTurnstileKey] = useState(0); // Key to force re-render
+    const [turnstileKey, setTurnstileKey] = useState(0);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccess('');
 
-        // Validation
         if (!form.username_or_email || !form.password) {
             setError(t('validation.fill_all_fields'));
             return;
@@ -70,7 +69,6 @@ export default function LoginForm() {
             return;
         }
 
-        // Check Turnstile if enabled (skip in development)
         if (turnstileEnabled && !form.turnstile_token) {
             setError(t('validation.captcha_required'));
             return;
@@ -86,7 +84,6 @@ export default function LoginForm() {
             });
 
             if (response.success) {
-                // Check if 2FA is required
                 if (response.data?.requires_2fa) {
                     router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(form.username_or_email)}`);
                     return;
@@ -94,7 +91,6 @@ export default function LoginForm() {
 
                 setSuccess(t('common.success'));
 
-                // Fetch session to load user data immediately
                 await fetchSession(true);
 
                 setTimeout(() => {
@@ -107,7 +103,7 @@ export default function LoginForm() {
                 }, 1000);
             } else {
                 setError(response.message || t('common.error'));
-                // Reset Turnstile by forcing component re-render
+
                 if (showTurnstile) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
@@ -118,7 +114,6 @@ export default function LoginForm() {
                 response?: { data?: { message?: string; error_code?: string; data?: { email?: string } } };
             };
 
-            // Check if 2FA is required
             if (error.response?.data?.error_code === 'TWO_FACTOR_REQUIRED') {
                 const email = error.response.data.data?.email || form.username_or_email;
                 router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(email)}`);
@@ -127,7 +122,6 @@ export default function LoginForm() {
 
             setError(error.response?.data?.message || t('common.error'));
 
-            // Reset Turnstile by forcing component re-render
             if (showTurnstile) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);
@@ -137,7 +131,6 @@ export default function LoginForm() {
         }
     };
 
-    // SSO Login Logic
     const [isSsoLogin, setIsSsoLogin] = useState(false);
     const [ssoStatus, setSsoStatus] = useState('');
 
@@ -149,7 +142,6 @@ export default function LoginForm() {
     });
 
     async function handleSsoLogin(token: string) {
-        // Avoid double calling if already running (strict mode duplicate calls)
         if (isSsoLogin) return;
 
         setIsSsoLogin(true);
@@ -268,11 +260,9 @@ export default function LoginForm() {
                                     refreshExpired='auto'
                                     onVerify={handleTurnstileSuccess}
                                     onError={() => {
-                                        // Widget errored, clear token
                                         setForm((prev) => ({ ...prev, turnstile_token: '' }));
                                     }}
                                     onExpire={() => {
-                                        // Token expired, clear it
                                         setForm((prev) => ({ ...prev, turnstile_token: '' }));
                                     }}
                                 />

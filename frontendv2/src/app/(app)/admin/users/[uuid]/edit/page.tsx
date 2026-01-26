@@ -1,27 +1,3 @@
-// MIT License
-//
-// Copyright (c) 2025 MythicalSystems
-// Copyright (c) 2025 Cassian Gherman (NaysKutzu)
-// Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
 /*
 This file is part of FeatherPanel.
 
@@ -172,12 +148,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             const apiUser: ApiUser = data.data.user;
             setUser(apiUser);
 
-            // Fetch roles
             try {
                 const rolesRes = await axios.get('/api/admin/roles');
                 if (rolesRes.data?.data?.roles) {
                     const rolesObj = rolesRes.data.data.roles;
-                    // Handle both array and object responses for roles
+
                     const rolesList = Array.isArray(rolesObj) ? rolesObj : Object.values(rolesObj);
 
                     setAvailableRoles(
@@ -208,7 +183,6 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 password: '',
             });
 
-            // Load owned servers
             try {
                 const serversRes = await axios.get(`/api/admin/users/${resolvedParams.uuid}/servers`);
                 setOwnedServers(serversRes.data?.data?.servers || []);
@@ -225,7 +199,6 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
     useEffect(() => {
         fetchUser();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [resolvedParams.uuid]);
 
     const handleSubmit = async (e: React.FormEvent) => {

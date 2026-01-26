@@ -411,7 +411,6 @@ const LogsTab = () => {
     );
 };
 
-// Internal component for spinning icon
 const RefreshCw = ({ className }: { className?: string }) => {
     return (
         <svg

@@ -47,8 +47,10 @@ class PluginEventsTest extends TestCase
         $events = new PluginEvents();
 
         $result = $events
-            ->on('event1', function () {})
-            ->on('event2', function () {});
+            ->on('event1', function () {
+            })
+            ->on('event2', function () {
+            });
 
         $this->assertInstanceOf(PluginEvents::class, $result);
     }

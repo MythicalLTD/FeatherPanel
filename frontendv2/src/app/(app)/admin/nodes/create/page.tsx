@@ -77,7 +77,6 @@ export default function CreateNodePage() {
 
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // Debounce location search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedLocationSearch(locationSearch);
@@ -86,7 +85,6 @@ export default function CreateNodePage() {
         return () => clearTimeout(timer);
     }, [locationSearch]);
 
-    // Fetch locations with pagination
     const fetchLocations = useCallback(async () => {
         try {
             const currentPage = locationPagination.current_page;
@@ -132,7 +130,6 @@ export default function CreateNodePage() {
         if (!form.location_id) newErrors.location_id = t('admin.node.form.location_required');
         if (!form.daemonBase) newErrors.daemonBase = t('admin.node.form.daemon_base_required');
 
-        // IP validation
         const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
         if (form.public_ip_v4 && !ipv4Regex.test(form.public_ip_v4)) {
             newErrors.public_ip_v4 = t('admin.node.form.ipv4_invalid');

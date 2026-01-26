@@ -301,18 +301,15 @@ export function MinecraftServerPropertiesEditor({
 }: MinecraftServerPropertiesEditorProps) {
     const { t } = useTranslation();
 
-    // Derive form from content using useMemo
     const form = useMemo(() => {
         return parseForm(content);
     }, [content]);
 
-    // Use local state for user edits, initialized from the derived form
     const [localForm, setLocalForm] = useState<MinecraftServerPropertiesForm>(form);
 
-    // Sync local form when the derived form changes (content prop changed)
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalForm(form);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [content]);
 
     const handleSave = () => {

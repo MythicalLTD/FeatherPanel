@@ -59,14 +59,12 @@ export default function SettingsPage() {
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [uploadedLogs, setUploadedLogs] = useState<{ web: LogData; app: LogData } | null>(null);
 
-    // Plugin Widgets
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-settings');
 
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Update active tab when URL changes
     useEffect(() => {
         if (urlCategory && urlCategory !== activeTab) {
             setActiveTab(urlCategory);
@@ -91,7 +89,7 @@ export default function SettingsPage() {
                 if (response.success) {
                     setOrganizedSettings(response.data.organized_settings);
                     setSettings(response.data.settings);
-                    // Store initial settings deep copy to compare later
+
                     setInitialSettings(JSON.parse(JSON.stringify(response.data.settings)));
                 } else {
                     toast.error(response.message || t('admin.settings.messages.load_failed'));
@@ -106,13 +104,11 @@ export default function SettingsPage() {
         fetchSettings();
     }, [t]);
 
-    // Validate and set default category when settings load or URL changes
     useEffect(() => {
         if (organizedSettings) {
             const categories = Object.keys(organizedSettings);
             if (categories.length > 0) {
                 if (!urlCategory || !categories.includes(urlCategory)) {
-                    // Update to the first category if none or invalid
                     handleCategoryChange(categories[0]);
                 }
             }
@@ -130,13 +126,11 @@ export default function SettingsPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            // Prepare payload: only send changed values
             const payload: Record<string, string | number | boolean> = {};
 
             Object.entries(settings).forEach(([key, setting]) => {
                 const initial = initialSettings[key];
-                // Compare as strings to handle potential type mismatches (e.g. "1" vs 1, "true" vs true)
-                // which can happen between backend response and form state
+
                 if (initial && String(initial.value) !== String(setting.value)) {
                     payload[key] = setting.value;
                 }
@@ -151,7 +145,7 @@ export default function SettingsPage() {
             const response = await adminSettingsApi.updateSettings(payload);
             if (response.success) {
                 toast.success(response.message || t('admin.settings.messages.save_success'));
-                // Update initial settings to current state after successful save
+
                 setInitialSettings(JSON.parse(JSON.stringify(settings)));
             } else {
                 toast.error(response.message || t('admin.settings.messages.save_failed'));
@@ -165,7 +159,6 @@ export default function SettingsPage() {
 
     const handleUploadLogs = async () => {
         const promise = adminSettingsApi.uploadLogs().then((data) => {
-            // If the API returns success: false, throw an error to trigger the error handler
             if (!data.success || !data.data) {
                 throw new Error(data.message || t('admin.settings.logs.upload_failed'));
             }
@@ -205,7 +198,6 @@ export default function SettingsPage() {
     };
 
     const formatSettingName = (name: string, key: string) => {
-        // If name looks like a key (snake_case), format it. Otherwise use name but ensure Title Case.
         const textToFormat = name || key;
         return textToFormat
             .split('_')
@@ -303,11 +295,9 @@ export default function SettingsPage() {
                                 >
                                     <div className='space-y-6'>
                                         {Object.entries(data.settings).map(([settingKey, setting]) => {
-                                            // Get the current value from state, fallback to initial if not found (should be there)
                                             const currentSetting = settings[settingKey] || setting;
                                             const formattedName = formatSettingName(currentSetting.name, settingKey);
 
-                                            // Render based on type
                                             if (
                                                 currentSetting.type === 'toggle' ||
                                                 (currentSetting.type as string) === 'boolean'
@@ -400,7 +390,6 @@ export default function SettingsPage() {
                                                 );
                                             }
 
-                                            // Default to Input (text, number, password, email)
                                             return (
                                                 <div key={settingKey} className='space-y-3'>
                                                     <Label htmlFor={settingKey} className='text-base font-medium'>

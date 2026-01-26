@@ -61,14 +61,12 @@ export default function ProfileTab() {
     const [turnstileToken, setTurnstileToken] = useState('');
     const [turnstileKey, setTurnstileKey] = useState(0);
 
-    // Permission checks from settings
     const allowAvatarChange = settings?.user_allow_avatar_change ?? true;
     const allowUsernameChange = settings?.user_allow_username_change ?? true;
     const allowEmailChange = settings?.user_allow_email_change ?? true;
     const allowFirstNameChange = settings?.user_allow_first_name_change ?? true;
     const allowLastNameChange = settings?.user_allow_last_name_change ?? true;
 
-    // Initialize form with user data
     useEffect(() => {
         if (user) {
             setFormData({
@@ -311,7 +309,7 @@ export default function ProfileTab() {
                                             width={80}
                                             height={80}
                                             className='h-20 w-20 rounded-full object-cover border-2 border-primary/20'
-                                            unoptimized // Since it's a data URL
+                                            unoptimized
                                         />
                                     </div>
                                 )}

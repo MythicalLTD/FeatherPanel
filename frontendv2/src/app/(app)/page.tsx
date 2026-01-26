@@ -24,6 +24,5 @@ export default function Home() {
         router.replace('/dashboard');
     }, [router]);
 
-    // Return null or a loading state while redirecting
     return null;
 }

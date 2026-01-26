@@ -98,7 +98,6 @@ export default function NodesPage() {
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
 
-    // Pagination
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
         pageSize: 10,
@@ -108,14 +107,12 @@ export default function NodesPage() {
         hasPrev: false,
     });
 
-    // Plugin Widgets
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-nodes');
 
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -126,7 +123,6 @@ export default function NodesPage() {
         return () => clearTimeout(timer);
     }, [searchQuery, debouncedSearchQuery]);
 
-    // Fetch locations for mapping
     useEffect(() => {
         const fetchLocations = async () => {
             try {
@@ -141,7 +137,6 @@ export default function NodesPage() {
         fetchLocations();
     }, []);
 
-    // Redirect to locations if no location_id
     useEffect(() => {
         if (!loading && nodes.length === 0 && !locationIdFilter && !debouncedSearchQuery) {
             router.replace('/admin/locations');
@@ -197,7 +192,6 @@ export default function NodesPage() {
                 hasPrev: apiPagination.has_prev,
             });
 
-            // Auto-check health after fetching nodes
             if (fetchedNodes.length > 0) {
                 checkAllNodesHealth(fetchedNodes);
             }

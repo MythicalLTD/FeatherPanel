@@ -85,7 +85,6 @@ export function TerminalTab({ node }: TerminalTabProps) {
         terminalInstanceRef.current = terminal;
         fitAddonRef.current = fitAddon;
 
-        // Welcome message
         terminal.writeln('\x1b[1;36m╔' + '═'.repeat(58) + '╗\x1b[0m');
         terminal.writeln('\x1b[1;36m║       Welcome to FeatherPanel Host Terminal            ║\x1b[0m');
         terminal.writeln('\x1b[1;36m╚' + '═'.repeat(58) + '╝\x1b[0m');

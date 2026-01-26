@@ -51,7 +51,7 @@ export function TicketList({ t }: TicketListProps) {
             try {
                 const { data } = await axios.get('/api/user/tickets', {
                     params: {
-                        limit: 5, // Limit for dashboard widget
+                        limit: 5,
                         page: 1,
                     },
                 });
@@ -84,7 +84,7 @@ export function TicketList({ t }: TicketListProps) {
     }
 
     if (error) {
-        return null; // Hide widget on error to avoid clutter
+        return null;
     }
 
     return (

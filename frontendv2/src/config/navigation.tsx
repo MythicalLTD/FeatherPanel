@@ -55,7 +55,6 @@ import {
 } from 'lucide-react';
 import { isEnabled } from '@/lib/utils';
 
-// Helper type for translation function
 type TFunction = (key: string) => string;
 
 export const getAdminNavigationItems = (
@@ -64,14 +63,13 @@ export const getAdminNavigationItems = (
     isDeveloperModeEnabled?: boolean | null,
 ): NavigationItem[] => {
     const items: NavigationItem[] = [
-        // Overview
         {
             id: 'admin-dashboard',
             name: t('navigation.items.dashboard'),
             title: t('landing.hero.title'),
             url: '/admin',
             icon: Home,
-            isActive: false, // Active state handled by hook
+            isActive: false,
             category: 'admin',
             permission: Permissions.ADMIN_DASHBOARD_VIEW,
             group: 'overview',
@@ -98,7 +96,7 @@ export const getAdminNavigationItems = (
             permission: Permissions.ADMIN_NODES_VIEW,
             group: 'overview',
         },
-        // User Management
+
         {
             id: 'admin-users',
             name: t('navigation.items.users'),
@@ -132,7 +130,7 @@ export const getAdminNavigationItems = (
             permission: Permissions.ADMIN_ROLES_VIEW,
             group: 'users',
         },
-        // Infrastructure
+
         {
             id: 'admin-servers',
             name: t('navigation.items.servers'),
@@ -247,7 +245,7 @@ export const getAdminNavigationItems = (
             permission: Permissions.ADMIN_FEATHERZEROTRUST_VIEW,
             group: 'infrastructure',
         },
-        // Content
+
         {
             id: 'admin-images',
             name: t('navigation.items.images'),
@@ -292,7 +290,7 @@ export const getAdminNavigationItems = (
             permission: Permissions.ADMIN_ROOT,
             group: 'content',
         },
-        // System
+
         {
             id: 'admin-api-keys',
             name: t('navigation.items.apiKeys'),
@@ -359,7 +357,7 @@ export const getAdminNavigationItems = (
             permission: Permissions.ADMIN_DATABASES_MANAGE,
             group: 'system',
         },
-        // Developer Tools (only show if developer mode is enabled)
+
         ...(isDeveloperModeEnabled === true
             ? [
                   {
@@ -397,7 +395,7 @@ export const getAdminNavigationItems = (
                   },
               ]
             : []),
-        // FeatherCloud
+
         {
             id: 'admin-feathercloud-marketplace',
             name: t('navigation.items.marketplace'),
@@ -507,7 +505,6 @@ export const getServerNavigationItems = (
     settings: AppSettings | null,
 ): NavigationItem[] => {
     const items: NavigationItem[] = [
-        // Management
         {
             id: 'server-overview',
             name: t('navigation.items.console'),
@@ -529,7 +526,7 @@ export const getServerNavigationItems = (
             group: 'management',
             permission: 'activity.read',
         },
-        // Files
+
         {
             id: 'server-files',
             name: t('navigation.items.files'),
@@ -593,7 +590,6 @@ export const getServerNavigationItems = (
         });
     }
 
-    // Configuration
     if (isEnabled(settings?.server_allow_subusers)) {
         items.push({
             id: 'server-users',
@@ -631,7 +627,7 @@ export const getServerNavigationItems = (
             group: 'configuration',
             permission: 'settings.rename',
         },
-        // Networking
+
         {
             id: 'server-allocations',
             name: t('navigation.items.allocations'),

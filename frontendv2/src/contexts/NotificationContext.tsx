@@ -33,13 +33,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     const [dismissedIds, setDismissedIds] = useState<number[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Helper function to check if we're on an auth page
     const checkIsAuthPage = useCallback(() => {
         if (typeof window === 'undefined') return false;
         return window.location.pathname.startsWith('/auth');
     }, []);
 
-    // Load dismissed IDs from localStorage on mount
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const stored = localStorage.getItem('featherpanel_dismissed_notifications');
@@ -53,7 +51,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    // Save dismissed IDs to localStorage whenever they change
     useEffect(() => {
         if (typeof window !== 'undefined' && dismissedIds.length > 0) {
             localStorage.setItem('featherpanel_dismissed_notifications', JSON.stringify(dismissedIds));
@@ -61,7 +58,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }, [dismissedIds]);
 
     const fetchNotifications = useCallback(async () => {
-        // Don't fetch notifications on auth pages
         if (typeof window === 'undefined' || checkIsAuthPage()) {
             setLoading(false);
             return;
@@ -73,13 +69,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
                 setNotifications(data.data.notifications);
             }
         } catch (error) {
-            // Silently fail on 401 errors (user not authenticated)
             const axiosError = error as { response?: { status?: number } };
             if (axiosError?.response?.status === 401) {
-                // User not authenticated - this is expected on auth pages
                 setNotifications([]);
             } else {
-                // Only log non-auth errors
                 if (!checkIsAuthPage()) {
                     console.error('Failed to fetch notifications', error);
                 }
@@ -90,13 +83,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }, [checkIsAuthPage]);
 
     useEffect(() => {
-        // Only fetch if not on auth page and window is available
         if (typeof window !== 'undefined' && !checkIsAuthPage()) {
             fetchNotifications();
-            // Poll every 5 minutes
+
             const interval = setInterval(
                 () => {
-                    // Re-check pathname before each fetch
                     if (!checkIsAuthPage()) {
                         fetchNotifications();
                     }
@@ -116,10 +107,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         });
     }, []);
 
-    // Filter out dismissed notifications (unless they are sticky, which shouldn't be dismissible anyway,
-    // but if a sticky one was somehow dismissed, we might want to respect it or ignore it.
-    // Logic: Sticky notifications usually cannot be dismissed by UI.
-    // If the UI allows dismissal of non-sticky only, we just filter by ID.
     const activeNotifications = notifications.filter((n) => !dismissedIds.includes(n.id));
 
     return (

@@ -56,7 +56,6 @@ export default function CreateProxyPage() {
     const canManage = hasPermission('proxy.manage');
     const proxyEnabled = isEnabled(settings?.server_allow_user_made_proxy);
 
-    // State
     const [allocations, setAllocations] = React.useState<AllocationItem[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
@@ -65,10 +64,8 @@ export default function CreateProxyPage() {
     const [dnsError, setDnsError] = React.useState<string | null>(null);
     const [targetIp, setTargetIp] = React.useState<string | null>(null);
 
-    // Widgets
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-proxy-new');
 
-    // Form State
     const [formData, setFormData] = React.useState<ProxyCreateRequest>({
         domain: '',
         port: '',
@@ -79,7 +76,6 @@ export default function CreateProxyPage() {
         ssl_key: '',
     });
 
-    // Fetch Data
     const fetchData = React.useCallback(async () => {
         if (!uuidShort || !proxyEnabled) return;
         setLoading(true);
@@ -98,7 +94,6 @@ export default function CreateProxyPage() {
         } finally {
             setLoading(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [uuidShort, proxyEnabled, t]);
 
     React.useEffect(() => {
@@ -110,7 +105,6 @@ export default function CreateProxyPage() {
         }
     }, [fetchData, fetchWidgets, proxyEnabled, canManage]);
 
-    // DNS Verification
     const handleVerifyDns = async () => {
         if (!formData.domain || !formData.port) return;
         setVerifyingDns(true);
@@ -143,7 +137,6 @@ export default function CreateProxyPage() {
         }
     };
 
-    // Handlers
     const handleCreate = async () => {
         if (!formData.domain || !formData.port) {
             toast.error(t('serverProxy.domainRequired'));

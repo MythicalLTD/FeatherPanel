@@ -25,7 +25,7 @@ interface RenameDialogProps {
     onOpenChange: (open: boolean) => void;
     uuid: string;
     root: string;
-    fileName: string; // The file being renamed
+    fileName: string;
     onSuccess: () => void;
 }
 

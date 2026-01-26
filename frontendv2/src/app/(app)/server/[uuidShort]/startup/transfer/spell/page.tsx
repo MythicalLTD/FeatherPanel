@@ -57,20 +57,16 @@ export default function ServerTransferSpellPage() {
     const { loading: permissionsLoading, hasPermission } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-startup-transfer-spell');
 
-    // Permission checks
     const canChangeSpell = isEnabled(settings?.server_allow_egg_change);
 
-    // State
     const [server, setServer] = React.useState<(Server & { variables: Variable[] }) | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
     const [variableValues, setVariableValues] = React.useState<Record<number, string>>({});
     const [variableErrors, setVariableErrors] = React.useState<Record<number, string>>({});
 
-    // Step state
     const [currentStep, setCurrentStep] = React.useState<1 | 2 | 3>(1);
 
-    // Selection state
     const [availableRealms, setAvailableRealms] = React.useState<ServerRealm[]>([]);
     const [loadingRealms, setLoadingRealms] = React.useState(false);
     const [selectedRealmId, setSelectedRealmId] = React.useState<string>('');
@@ -79,12 +75,10 @@ export default function ServerTransferSpellPage() {
     const [loadingSpells, setLoadingSpells] = React.useState(false);
     const [selectedSpellId, setSelectedSpellId] = React.useState<string>('');
 
-    // Changing spell details
     const [targetSpell, setTargetSpell] = React.useState<ServerSpell | null>(null);
     const [targetVariables, setTargetVariables] = React.useState<Variable[]>([]);
     const [wipeFiles, setWipeFiles] = React.useState(false);
 
-    // Validation Logic Helpers
     const parseRules = React.useCallback((rules: string) => {
         if (!rules) return [];
         const parts = rules.split('|');
@@ -195,7 +189,6 @@ export default function ServerTransferSpellPage() {
         [validateVariableAgainstRules],
     );
 
-    // Data Fetching
     const fetchAvailableSpells = React.useCallback(
         async (realmId?: string) => {
             if (!realmId) {
@@ -263,7 +256,7 @@ export default function ServerTransferSpellPage() {
                     await fetchAvailableRealms(s);
                     if (s.realm) {
                         await fetchAvailableSpells(String(s.realm.id));
-                        // If restricted, jump to Step 2
+
                         if (!isEnabled(settings?.server_allow_cross_realm_spell_change)) {
                             setCurrentStep(2);
                         }
@@ -291,9 +284,7 @@ export default function ServerTransferSpellPage() {
         }
     }, [permissionsLoading, settingsLoading, fetchData]);
 
-    // Interaction Handlers
     const handleRealmSelect = (realmId: string) => {
-        // Cross-realm check
         if (!isEnabled(settings?.server_allow_cross_realm_spell_change) && server) {
             const currentRealmId = Number(server.realm_id || server.realm?.id || 0);
             if (realmId && currentRealmId > 0 && String(currentRealmId) !== String(realmId)) {
@@ -347,7 +338,6 @@ export default function ServerTransferSpellPage() {
     };
 
     const handleBackToStep = (step: 1 | 2 | 3) => {
-        // Prevent going back to Step 1 if cross-realm is disabled
         if (step === 1 && !isEnabled(settings?.server_allow_cross_realm_spell_change)) {
             return;
         }
@@ -368,7 +358,6 @@ export default function ServerTransferSpellPage() {
 
         setSaving(true);
 
-        // Final Validation
         let hasErrors = false;
         const errors: Record<number, string> = {};
         targetVariables.forEach((v) => {
@@ -780,7 +769,7 @@ export default function ServerTransferSpellPage() {
                                 variant='default'
                                 onClick={handleSave}
                                 disabled={saving}
-                                className='h-14 px-16 text-lg' // Keeping large custom size but using component
+                                className='h-14 px-16 text-lg'
                                 loading={saving}
                             >
                                 {saving ? (

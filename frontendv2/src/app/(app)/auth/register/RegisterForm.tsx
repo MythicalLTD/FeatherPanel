@@ -62,13 +62,11 @@ export default function RegisterForm() {
         setError('');
         setSuccess('');
 
-        // Validation
         if (!form.first_name || !form.last_name || !form.email || !form.username || !form.password) {
             setError(t('validation.fill_all_fields'));
             return;
         }
 
-        // Length validations
         if (form.first_name.length < 3 || form.first_name.length > 64) {
             setError(t('validation.first_name_length', { min: '3', max: '64' }));
             return;
@@ -94,7 +92,6 @@ export default function RegisterForm() {
             return;
         }
 
-        // Format validations
         if (!/^[a-zA-Z0-9_]+$/.test(form.username)) {
             setError(t('validation.invalid_username'));
             return;
@@ -105,7 +102,6 @@ export default function RegisterForm() {
             return;
         }
 
-        // Check Turnstile if enabled
         if (turnstileEnabled && !form.turnstile_token) {
             setError(t('validation.captcha_required'));
             return;
@@ -131,7 +127,7 @@ export default function RegisterForm() {
                 }, 1000);
             } else {
                 setError(response.message || t('common.error'));
-                // Reset Turnstile by forcing component re-render
+
                 if (showTurnstile) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
@@ -141,7 +137,6 @@ export default function RegisterForm() {
             const error = err as { response?: { data?: { message?: string } } };
             setError(error.response?.data?.message || t('common.error'));
 
-            // Reset Turnstile by forcing component re-render
             if (showTurnstile) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);
@@ -155,7 +150,6 @@ export default function RegisterForm() {
         setForm((prev) => ({ ...prev, turnstile_token: token }));
     };
 
-    // Show disabled message if registration is not enabled
     if (!registrationEnabled) {
         return (
             <div className='space-y-6'>

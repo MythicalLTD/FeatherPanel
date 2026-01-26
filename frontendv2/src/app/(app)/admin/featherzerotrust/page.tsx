@@ -21,7 +21,6 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ShieldCheck, Database, Eye, Settings } from 'lucide-react';
 
-// Tabs
 import ScannerTab from './tabs/ScannerTab';
 import HashesTab from './tabs/HashesTab';
 import LogsTab from './tabs/LogsTab';

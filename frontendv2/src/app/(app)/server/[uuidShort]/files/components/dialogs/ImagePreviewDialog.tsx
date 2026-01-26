@@ -82,7 +82,6 @@ export function ImagePreviewDialog({
                 URL.revokeObjectURL(blobUrl);
             }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, file?.name, uuid]);
 
     if (!file) return null;

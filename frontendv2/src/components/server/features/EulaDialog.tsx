@@ -44,12 +44,10 @@ export function EulaDialog({ isOpen, onClose, server, onAccepted }: EulaDialogPr
             setAccepting(true);
             const eulaContent = `#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://www.minecraft.net/en-us/eula).\n#${new Date().toUTCString()}\neula=true\n`;
 
-            // Write eula.txt
             await axios.post(`/api/user/servers/${server.uuidShort}/write-file?path=/eula.txt`, eulaContent, {
                 headers: { 'Content-Type': 'application/octet-stream' },
             });
 
-            // Try to start server
             try {
                 await axios.post(`/api/user/servers/${server.uuidShort}/power/kill`);
                 await axios.post(`/api/user/servers/${server.uuidShort}/power/start`);

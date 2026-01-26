@@ -86,11 +86,9 @@ const HashesTab = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedHashes, setSelectedHashes] = useState<Set<string>>(new Set());
 
-    // Dialogs
     const [addHashDialogOpen, setAddHashDialogOpen] = useState(false);
     const [checkHashesDialogOpen, setCheckHashesDialogOpen] = useState(false);
 
-    // Form states
     const [addingHash, setAddingHash] = useState(false);
     const [newHash, setNewHash] = useState({
         hash: '',

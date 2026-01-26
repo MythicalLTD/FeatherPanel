@@ -63,7 +63,7 @@ export default function ActivityAnalyticsPage() {
 
             setStats(statsRes.data.data);
             setTrend(trendRes.data.data.data || []);
-            // Map API 'name' to 'activity_type' for the chart
+
             setBreakdown(
                 (breakdownRes.data.data.activities || []).map((a: { name: string; count: number }) => ({
                     activity_type: a.name,

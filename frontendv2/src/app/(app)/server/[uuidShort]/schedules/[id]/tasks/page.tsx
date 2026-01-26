@@ -44,12 +44,10 @@ export default function ServerTasksPage() {
     const { loading: settingsLoading, settings } = useSettings();
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
-    // Permission checks (tasks use schedule permissions)
     const canRead = hasPermission('schedule.read');
     const canUpdate = hasPermission('schedule.update');
     const canDelete = hasPermission('schedule.delete');
 
-    // State
     const [tasks, setTasks] = React.useState<Task[]>([]);
     const [schedule, setSchedule] = React.useState<Schedule | null>(null);
     const [loading, setLoading] = React.useState(true);
@@ -62,13 +60,10 @@ export default function ServerTasksPage() {
         to: 0,
     });
 
-    // Widgets
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-tasks');
 
-    // Feature flags
     const schedulesEnabled = isEnabled(settings?.server_allow_schedules);
 
-    // Modal States
     const [isCreateOpen, setIsCreateOpen] = React.useState(false);
     const [isEditOpen, setIsEditOpen] = React.useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
@@ -76,7 +71,6 @@ export default function ServerTasksPage() {
     const [saving, setSaving] = React.useState(false);
     const [deleting, setDeleting] = React.useState(false);
 
-    // Form States
     const [createForm, setCreateForm] = React.useState<TaskCreateRequest>({
         action: '',
         payload: '',
@@ -92,12 +86,10 @@ export default function ServerTasksPage() {
         sequence_id: 1,
     });
 
-    // Sorted tasks
     const sortedTasks = React.useMemo(() => {
         return [...tasks].sort((a, b) => a.sequence_id - b.sequence_id);
     }, [tasks]);
 
-    // Fetch schedule
     const fetchSchedule = React.useCallback(async () => {
         try {
             const { data } = await axios.get<{ success: boolean; data: Schedule }>(
@@ -111,7 +103,6 @@ export default function ServerTasksPage() {
         }
     }, [uuidShort, scheduleId]);
 
-    // Fetch tasks
     const fetchTasks = React.useCallback(
         async (page = 1) => {
             if (!uuidShort || !scheduleId) return;
@@ -150,7 +141,6 @@ export default function ServerTasksPage() {
         }
     }, [canRead, permissionsLoading, fetchTasks, fetchSchedule, router, uuidShort, t, schedulesEnabled, fetchWidgets]);
 
-    // Create task
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -174,7 +164,6 @@ export default function ServerTasksPage() {
         }
     };
 
-    // Update task
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedTask) return;
@@ -199,7 +188,6 @@ export default function ServerTasksPage() {
         }
     };
 
-    // Delete task
     const handleDelete = async () => {
         if (!selectedTask) return;
         setDeleting(true);
@@ -222,7 +210,6 @@ export default function ServerTasksPage() {
         }
     };
 
-    // Move task up
     const handleMoveUp = async (task: Task) => {
         if (task.sequence_id <= 1) return;
         try {
@@ -244,7 +231,6 @@ export default function ServerTasksPage() {
         }
     };
 
-    // Move task down
     const handleMoveDown = async (task: Task) => {
         if (task.sequence_id >= sortedTasks.length) return;
         try {
@@ -374,7 +360,7 @@ export default function ServerTasksPage() {
                     {sortedTasks.map((task) => (
                         <ResourceCard
                             key={task.id}
-                            icon={ListCheck} // Or dynamic based on action
+                            icon={ListCheck}
                             iconWrapperClassName={
                                 task.action === 'power'
                                     ? 'bg-red-500/10 border-red-500/20 text-red-500'

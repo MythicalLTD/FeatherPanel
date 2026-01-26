@@ -85,13 +85,11 @@ export default function ServersPage() {
     const [selectedServer, setSelectedServer] = useState<ApiServer | null>(null);
     const [isViewDrawerOpen, setIsViewDrawerOpen] = useState(false);
 
-    // Transfer state
     const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
     const [transferServer, setTransferServer] = useState<ApiServer | null>(null);
     const [isInitiatingTransfer, setIsInitiatingTransfer] = useState(false);
     const [cancellingTransferId, setCancellingTransferId] = useState<number | null>(null);
 
-    // Transfer selection state
     const [isNodeModalOpen, setIsNodeModalOpen] = useState(false);
     const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
     const [selectedNode, setSelectedNode] = useState<ApiNode | null>(null);
@@ -103,7 +101,6 @@ export default function ServersPage() {
     const [nodeSearch, setNodeSearch] = useState('');
     const [allocationSearch, setAllocationSearch] = useState('');
 
-    // Pagination
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
         pageSize: 10,
@@ -115,7 +112,6 @@ export default function ServersPage() {
         to: 0,
     });
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -157,7 +153,6 @@ export default function ServersPage() {
         }
     }, [pagination.page, pagination.pageSize, debouncedSearchQuery, t]);
 
-    // Plugin Widgets
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-servers');
 
     useEffect(() => {
@@ -229,7 +224,6 @@ export default function ServersPage() {
         }
     };
 
-    // Transfer Logic
     const openTransferDialog = (server: ApiServer) => {
         setTransferServer(server);
         setSelectedNode(null);
@@ -246,7 +240,7 @@ export default function ServersPage() {
                     search,
                 },
             });
-            // Exclude current node
+
             const filteredNodes = (data.data.nodes || []).filter(
                 (node: ApiNode) => String(node.id) !== String(transferServer?.node_id),
             );
@@ -297,7 +291,6 @@ export default function ServersPage() {
         }
     };
 
-    // Formatting utilities
     const formatMemory = (mb: number) => {
         if (mb === 0) return '∞';
         if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;

@@ -140,20 +140,17 @@ export function CommandsEditor({
 }: CommandsEditorProps) {
     const { t } = useTranslation();
 
-    // Derive form from content using useMemo
     const form = useMemo(() => {
         const config = parseCommandsConfiguration(content);
         return createForm(config);
     }, [content]);
 
-    // Use local state for user edits, initialized from the derived form
     const [localForm, setLocalForm] = useState<CommandsForm>(form);
 
-    // Sync local form when the derived form changes (content prop changed)
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalForm(form);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [content]);
+    }, [content, form]);
 
     const handleSave = () => {
         try {
@@ -163,7 +160,7 @@ export function CommandsEditor({
             onSave(yamlOutput);
         } catch (error) {
             console.error('Failed to save commands.yml:', error);
-            // Fallback: create new config from form
+
             const newConfig: CommandsYaml = {};
             const updated = applyFormToConfig(newConfig, localForm);
             const yamlOutput = yaml.dump(updated, { lineWidth: 0 });

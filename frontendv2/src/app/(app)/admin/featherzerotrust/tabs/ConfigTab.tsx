@@ -58,7 +58,6 @@ const ConfigTab = () => {
     const [saving, setSaving] = useState(false);
     const [config, setConfig] = useState<ZeroTrustConfig>({});
 
-    // Field text states for arrays
     const [ignoredExtensionsText, setIgnoredExtensionsText] = useState('');
     const [ignoredFilesText, setIgnoredFilesText] = useState('');
     const [ignoredPathsText, setIgnoredPathsText] = useState('');
@@ -78,7 +77,6 @@ const ConfigTab = () => {
             const fetchedConfig = data.data || {};
             setConfig(fetchedConfig);
 
-            // Map arrays to text
             setIgnoredExtensionsText(fetchedConfig.ignored_extensions?.join(', '));
             setIgnoredFilesText(fetchedConfig.ignored_files?.join(', '));
             setIgnoredPathsText(fetchedConfig.ignored_paths?.join(', '));
@@ -177,6 +175,7 @@ const ConfigTab = () => {
 
     useEffect(() => {
         void fetchConfig();
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

@@ -65,9 +65,9 @@ export default function InfrastructureAnalyticsPage() {
                 dbOverviewRes,
                 nodeResourcesRes,
             ] = await Promise.all([
-                api.get('/admin/analytics/infrastructure/dashboard'), // Use dashboard endpoint or combine overviews
+                api.get('/admin/analytics/infrastructure/dashboard'),
                 api.get('/admin/analytics/nodes/by-location'),
-                api.get('/admin/analytics/allocations/overview'), // Check if this gives usage
+                api.get('/admin/analytics/allocations/overview'),
                 api.get('/admin/analytics/servers/by-node'),
                 api.get('/admin/analytics/databases/overview'),
                 api.get('/admin/analytics/nodes/resources'),

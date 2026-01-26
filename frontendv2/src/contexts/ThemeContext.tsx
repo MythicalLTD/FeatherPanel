@@ -53,7 +53,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [backgroundType, setBackgroundTypeState] = useState<BackgroundType>('gradient');
     const [backgroundImage, setBackgroundImageState] = useState('');
 
-    // Only run on client side after mount - useLayoutEffect runs synchronously before paint
     useLayoutEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true);
@@ -72,13 +71,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!mounted) return;
 
-        // Apply theme to document
         const root = document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(theme);
         localStorage.setItem('theme', theme);
 
-        // Apply accent color
         const accentHSL = ACCENT_COLORS[accentColor as keyof typeof ACCENT_COLORS] || ACCENT_COLORS.purple;
         root.style.setProperty('--color-primary', `hsl(${accentHSL})`);
         root.style.setProperty('--primary', accentHSL);
@@ -107,7 +104,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
     };
 
-    // Prevent flash by rendering children immediately but with default values
     return (
         <ThemeContext.Provider
             value={{

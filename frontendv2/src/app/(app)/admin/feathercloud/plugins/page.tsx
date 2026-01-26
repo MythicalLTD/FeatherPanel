@@ -90,12 +90,10 @@ export default function PluginsPage() {
     const router = useRouter();
     const { fetchCredits, fetchTeam } = useFeatherCloud();
 
-    // Cloud status state
     const [cloudAccountConfigured, setCloudAccountConfigured] = useState(false);
     const [cloudCredits, setCloudCredits] = useState<CreditsData | null>(null);
     const [cloudTeam, setCloudTeam] = useState<TeamData | null>(null);
 
-    // Online plugins state
     const [onlineAddons, setOnlineAddons] = useState<OnlineAddon[]>([]);
     const [onlineLoading, setOnlineLoading] = useState(false);
     const [onlineError, setOnlineError] = useState<string | null>(null);
@@ -106,19 +104,16 @@ export default function PluginsPage() {
     const [sortBy, setSortBy] = useState('downloads');
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-    // Dialog state
     const [packageDetailsOpen, setPackageDetailsOpen] = useState(false);
     const [selectedPackage, setSelectedPackage] = useState<OnlineAddon | null>(null);
     const [packageDetailsLoading, setPackageDetailsLoading] = useState(false);
     const [popularAddons, setPopularAddons] = useState<OnlineAddon[]>([]);
 
-    // Install state
     const [installedPluginIds, setInstalledPluginIds] = useState<string[]>([]);
     const [installingOnlineId, setInstallingOnlineId] = useState<string | null>(null);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-feathercloud-plugins');
 
-    // Fetch cloud data
     const fetchCloudData = useCallback(async () => {
         try {
             const credsResponse = await axios.get('/api/admin/cloud/credentials');
@@ -136,7 +131,6 @@ export default function PluginsPage() {
         }
     }, [fetchCredits, fetchTeam]);
 
-    // Fetch installed plugins
     const fetchInstalledPlugins = useCallback(async () => {
         try {
             const response = await axios.get('/api/admin/plugins');
@@ -147,7 +141,6 @@ export default function PluginsPage() {
         }
     }, []);
 
-    // Fetch popular addons
     const fetchPopularAddons = useCallback(async () => {
         try {
             const response = await axios.get('/api/admin/plugins/online/popular');
@@ -157,7 +150,6 @@ export default function PluginsPage() {
         }
     }, []);
 
-    // Fetch online addons
     const fetchOnlineAddons = useCallback(
         async (page = currentOnlinePage, search = onlineSearch) => {
             setOnlineLoading(true);
@@ -232,7 +224,6 @@ export default function PluginsPage() {
         setCurrentOnlinePage(1);
     };
 
-    // Pagination helper
     const renderPagination = () => {
         if (!onlinePagination || onlinePagination.total_pages <= 1) return null;
 

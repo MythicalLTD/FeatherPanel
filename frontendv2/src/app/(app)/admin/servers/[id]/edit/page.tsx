@@ -43,7 +43,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { toast } from 'sonner';
 
-// Import Tabs
 import { DetailsTab } from './DetailsTab';
 import { ResourcesTab } from './ResourcesTab';
 import { ApplicationTab } from './ApplicationTab';
@@ -96,7 +95,6 @@ const initialSelectedEntities: SelectedEntities = {
     allocation: null,
 };
 
-// Local interface for server variable response
 interface ServerVariableResponse {
     variable_id: number;
     name: string;
@@ -116,39 +114,32 @@ export default function EditServerPage() {
     const params = useParams();
     const serverId = params.id as string;
 
-    // Core State
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('details');
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // Form State
     const [form, setForm] = useState<ServerFormData>(initialFormData);
     const [selectedEntities, setSelectedEntities] = useState<SelectedEntities>(initialSelectedEntities);
     const [isSuspended, setIsSuspended] = useState(false);
 
-    // Server Info (read-only)
     const [location, setLocation] = useState<Location | null>(null);
     const [node, setNode] = useState<Node | null>(null);
 
-    // Spell Details
     const [spellDetails, setSpellDetails] = useState<Spell | null>(null);
     const [spellVariables, setSpellVariables] = useState<SpellVariable[]>([]);
     const [dockerImages, setDockerImages] = useState<string[]>([]);
 
-    // Modal States
     const [ownerModalOpen, setOwnerModalOpen] = useState(false);
     const [realmModalOpen, setRealmModalOpen] = useState(false);
     const [spellModalOpen, setSpellModalOpen] = useState(false);
     const [allocationModalOpen, setAllocationModalOpen] = useState(false);
 
-    // Data Lists
     const [owners, setOwners] = useState<User[]>([]);
     const [realms, setRealms] = useState<Realm[]>([]);
     const [spells, setSpells] = useState<Spell[]>([]);
     const [allocations, setAllocations] = useState<Allocation[]>([]);
 
-    // Pagination States
     const [ownerPagination, setOwnerPagination] = useState({
         current_page: 1,
         per_page: 10,
@@ -160,7 +151,6 @@ export default function EditServerPage() {
     const [ownerSearch, setOwnerSearch] = useState('');
     const [debouncedOwnerSearch, setDebouncedOwnerSearch] = useState('');
 
-    // Realm Pagination States
     const [realmPagination, setRealmPagination] = useState({
         current_page: 1,
         per_page: 10,
@@ -172,7 +162,6 @@ export default function EditServerPage() {
     const [realmSearch, setRealmSearch] = useState('');
     const [debouncedRealmSearch, setDebouncedRealmSearch] = useState('');
 
-    // Spell Pagination States
     const [spellPagination, setSpellPagination] = useState({
         current_page: 1,
         per_page: 10,
@@ -184,10 +173,8 @@ export default function EditServerPage() {
     const [spellSearch, setSpellSearch] = useState('');
     const [debouncedSpellSearch, setDebouncedSpellSearch] = useState('');
 
-    // Search States
     const [allocationSearch, setAllocationSearch] = useState('');
 
-    // Filter allocations for Search
     const filteredAllocations = useMemo(() => {
         if (!allocationSearch) return allocations;
         const lowerSearch = allocationSearch.toLowerCase();
@@ -200,7 +187,6 @@ export default function EditServerPage() {
         });
     }, [allocations, allocationSearch]);
 
-    // Debounce owner search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedOwnerSearch(ownerSearch);
@@ -209,7 +195,6 @@ export default function EditServerPage() {
         return () => clearTimeout(timer);
     }, [ownerSearch]);
 
-    // Debounce realm search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedRealmSearch(realmSearch);
@@ -218,7 +203,6 @@ export default function EditServerPage() {
         return () => clearTimeout(timer);
     }, [realmSearch]);
 
-    // Debounce spell search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSpellSearch(spellSearch);
@@ -231,12 +215,10 @@ export default function EditServerPage() {
     const originalVariables = useRef<Record<string, string>>({});
     const hasInitialLoaded = useRef(false);
 
-    // Fetch Server Data
     const fetchServerData = useCallback(async () => {
         setLoading(true);
         hasInitialLoaded.current = false;
         try {
-            // Fetch server and locations in parallel
             const [serverRes, locationsRes] = await Promise.all([
                 axios.get(`/api/admin/servers/${serverId}`),
                 axios.get('/api/admin/locations'),
@@ -246,7 +228,6 @@ export default function EditServerPage() {
             const locationsData = locationsRes.data;
 
             if (data.success && data.data) {
-                // The API returns the server directly in data.data, with nested owner, node, etc.
                 const server = data.data;
                 const serverNode = server.node;
                 const serverOwner = server.owner;
@@ -254,14 +235,12 @@ export default function EditServerPage() {
                 const serverSpell = server.spell;
                 const serverAllocation = server.allocation;
 
-                // Find the location from the locations list using node.location_id
                 let serverLocation: Location | null = null;
                 if (locationsData.success && locationsData.data?.locations && serverNode?.location_id) {
                     serverLocation =
                         locationsData.data.locations.find((loc: Location) => loc.id === serverNode.location_id) || null;
                 }
 
-                // Parse server variables (array -> map for form, array for display)
                 const variablesList = (server.variables || []) as ServerVariableResponse[];
                 const mappedVariables: SpellVariable[] = variablesList.map((v) => ({
                     id: v.variable_id,
@@ -274,14 +253,12 @@ export default function EditServerPage() {
                     rules: v.rules,
                     field_type: v.field_type,
                 }));
-                // We set spellVariables immediately here
+
                 setSpellVariables(mappedVariables);
 
-                // Create values map for the form
                 const variablesMap: Record<string, string> = {};
                 variablesList.forEach((v) => {
                     if (v.env_variable) {
-                        // Use variable_value if it exists (including empty string), otherwise default
                         variablesMap[v.env_variable] =
                             v.variable_value !== undefined && v.variable_value !== null
                                 ? v.variable_value
@@ -289,7 +266,6 @@ export default function EditServerPage() {
                     }
                 });
 
-                // Set original spell ID to prevent overwriting variables
                 if (server.spell_id) {
                     originalSpellId.current = server.spell_id;
                     originalVariables.current = variablesMap;
@@ -311,7 +287,7 @@ export default function EditServerPage() {
                     disk: server.disk,
                     cpu: server.cpu,
                     io: server.io,
-                    oom_killer: !Boolean(server.oom_disabled), // Note: API uses oom_disabled, we invert it for oom_killer
+                    oom_killer: !Boolean(server.oom_disabled),
                     threads: server.threads || '',
                     database_limit: server.database_limit,
                     allocation_limit: server.allocation_limit,
@@ -331,7 +307,6 @@ export default function EditServerPage() {
                     allocation: serverAllocation || null,
                 });
 
-                // Set spell details if available
                 if (serverSpell) {
                     setSpellDetails(serverSpell);
                     try {
@@ -355,7 +330,6 @@ export default function EditServerPage() {
         fetchServerData();
     }, [fetchServerData]);
 
-    // Fetch Spell Details when spell changes
     useEffect(() => {
         if (!form.spell_id) {
             setSpellDetails(null);
@@ -368,9 +342,6 @@ export default function EditServerPage() {
             const isOriginal = originalSpellId.current && form.spell_id == originalSpellId.current;
 
             try {
-                // If original, skip fetching variables and restore from cache
-                // But we still need spell details for Sync (unless we cached that too, but easy to fetch)
-                // Always fetch variables to ensure we have the definitions from the API
                 const [spellRes, variablesRes] = await Promise.all([
                     axios.get(`/api/admin/spells/${form.spell_id}`),
                     axios.get(`/api/admin/spells/${form.spell_id}/variables`),
@@ -380,12 +351,11 @@ export default function EditServerPage() {
                     const spell = spellRes.data.data.spell;
                     setSpellDetails(spell);
 
-                    // Update docker images
                     try {
                         const images = JSON.parse(spell.docker_images);
                         const imageList = Object.values(images) as string[];
                         setDockerImages(imageList);
-                        // Reset image if not in new list
+
                         setForm((prev) => {
                             if (!imageList.includes(prev.image)) {
                                 return { ...prev, image: imageList[0] || '' };
@@ -396,23 +366,15 @@ export default function EditServerPage() {
                         setDockerImages([]);
                     }
 
-                    // Handle variables
                     if (variablesRes.data.success) {
                         const newVariables = variablesRes.data.data.variables;
 
                         if (Array.isArray(newVariables)) {
                             setSpellVariables(newVariables);
 
-                            // The user wants that each time we change realms and spell
-                            // they should use the spells ones instead of the old server ones.
-                            // However, we MUST keep the original ones on the first load of the page.
                             if (isOriginal && !hasInitialLoaded.current) {
                                 hasInitialLoaded.current = true;
-                                // Keep the variables already set in fetchServerData
-                                // No action needed here as form.variables is already populated
                             } else {
-                                // Either not original spell, or user manually changed back to original
-                                // Use defaults from the spell
                                 const newVariablesMap: Record<string, string> = {};
                                 newVariables.forEach((v: SpellVariable) => {
                                     newVariablesMap[v.env_variable] = v.default_value;
@@ -432,7 +394,6 @@ export default function EditServerPage() {
         fetchSpellDetails();
     }, [form.spell_id]);
 
-    // Fetch Functions
     const fetchOwners = useCallback(async () => {
         try {
             const currentPage = ownerPagination.current_page;
@@ -528,13 +489,11 @@ export default function EditServerPage() {
     const fetchAllocations = async () => {
         if (!node?.id) return;
         try {
-            // Fetch unused allocations for this node
             const { data } = await axios.get('/api/admin/allocations', { params: { not_used: true } });
             const allAllocations = data.data.allocations || [];
-            // Filter by current node and include the server's current allocation
+
             const filtered = allAllocations.filter((a: Allocation) => a.node_id === node.id);
 
-            // Ensure current allocation is in the list
             if (form.allocation_id && selectedEntities.allocation) {
                 if (!filtered.find((a: Allocation) => a.id === form.allocation_id)) {
                     filtered.push(selectedEntities.allocation);
@@ -547,10 +506,8 @@ export default function EditServerPage() {
         }
     };
 
-    // Refresh trigger for AllocationsTab
     const [allocationsRefreshTrigger, setAllocationsRefreshTrigger] = useState(0);
 
-    // Selection Handlers
     const handleSelectOwner = (owner: User) => {
         setSelectedEntities((prev) => ({ ...prev, owner }));
         setForm((prev) => ({ ...prev, owner_id: owner.id }));
@@ -579,15 +536,6 @@ export default function EditServerPage() {
                 if (data.success) {
                     toast.success(t('admin.servers.edit.allocations.assign_success'));
                     setAllocationsRefreshTrigger((prev) => prev + 1);
-                    // We need to refresh the allocations list in the AllocationsTab
-                    // Since we don't have direct access to its internal fetch, we can rely on it re-rendering
-                    // or trigger a refresh via a context/prop if needed.
-                    // However, looking at AllocationsTab, it has its own state.
-                    // We might need to force a refresh.
-                    // Actually, let's just close the modal. The user might need to hit refresh on the tab
-                    // or we can pass a callback?
-                    // Better approach: ensure AllocationsTab listens to something or we lift the state up?
-                    // For now, let's stick to the Vue logic pattern.
                 } else {
                     toast.error(data.message || t('admin.servers.edit.allocations.assign_failed'));
                 }
@@ -602,7 +550,6 @@ export default function EditServerPage() {
         setAllocationModalOpen(false);
     };
 
-    // Validation
     const validate = useCallback(() => {
         const newErrors: Record<string, string> = {};
         if (!form.name) newErrors.name = t('admin.servers.form.wizard.validation.name_required');
@@ -611,11 +558,9 @@ export default function EditServerPage() {
         if (!form.spell_id) newErrors.spell_id = t('admin.servers.form.wizard.validation.spell_required');
         if (!form.startup) newErrors.startup = t('admin.servers.form.wizard.validation.startup_required');
 
-        // Spell variables validation
         spellVariables.forEach((variable) => {
             const value = form.variables[variable.env_variable];
 
-            // Check if required - allow default values
             if (variable.rules.includes('required')) {
                 const effectiveValue = value ?? variable.default_value ?? '';
                 if (!effectiveValue || (typeof effectiveValue === 'string' && effectiveValue.trim() === '')) {
@@ -624,12 +569,10 @@ export default function EditServerPage() {
                 }
             }
 
-            // Skip validation if no value provided for optional fields
             if (!value || (typeof value === 'string' && value.trim() === '')) {
                 return;
             }
 
-            // Validate based on field type
             switch (variable.field_type) {
                 case 'numeric': {
                     if (!/^[0-9]+$/.test(value)) {
@@ -663,7 +606,6 @@ export default function EditServerPage() {
         return Object.keys(newErrors).length === 0;
     }, [form, t, spellVariables]);
 
-    // Submit
     const handleSubmit = async () => {
         if (!validate()) {
             toast.error(t('admin.servers.form.wizard.validation_error'));
@@ -1208,7 +1150,6 @@ export default function EditServerPage() {
     );
 }
 
-// Selection Modal Component
 interface SelectionModalProps<T> {
     isOpen: boolean;
     onClose: () => void;

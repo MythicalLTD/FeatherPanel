@@ -30,7 +30,7 @@ class PluginEvents
      */
     public static function getInstance(): PluginEvents
     {
-        if (!(self::$instance instanceof self)) {
+        if (!self::$instance instanceof self) {
             self::$instance = new self();
         }
 

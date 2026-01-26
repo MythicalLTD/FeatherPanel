@@ -70,7 +70,6 @@ const ScannerTab = () => {
     const [scanResults, setScanResults] = useState<ScanResult | null>(null);
     const [batchResults, setBatchResults] = useState<BatchScanResult[]>([]);
 
-    // Server Modal State
     const [serverModalOpen, setServerModalOpen] = useState(false);
     const [allServers, setAllServers] = useState<Server[]>([]);
     const [loadingServers, setLoadingServers] = useState(false);

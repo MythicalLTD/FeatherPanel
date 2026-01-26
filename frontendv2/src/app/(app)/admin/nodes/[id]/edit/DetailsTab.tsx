@@ -52,7 +52,6 @@ export function DetailsTab({
 }: DetailsTabProps) {
     const { t } = useTranslation();
 
-    // Get location name from selectedLocationName or find in locations array
     const displayLocationName = useMemo(() => {
         if (selectedLocationName) return selectedLocationName;
         if (form.location_id) {

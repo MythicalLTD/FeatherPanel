@@ -24,7 +24,6 @@ export default function LanguageSelector() {
     const { locale, availableLanguages, setLocale, t } = useTranslation();
     const [mounted] = useState(true);
 
-    // Don't render until mounted to avoid hydration mismatch
     if (!mounted) {
         return <div className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md' />;
     }

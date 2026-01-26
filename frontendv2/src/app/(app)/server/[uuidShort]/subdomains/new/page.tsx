@@ -40,21 +40,17 @@ export default function CreateSubdomainPage() {
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-subdomains-new');
 
-    // Using generic manage permission for now, similar to proxy
-    const canManage = hasPermission('subdomains.manage') || hasPermission('control.start'); // Fallback if specific perm doesn't exist
+    const canManage = hasPermission('subdomains.manage') || hasPermission('control.start');
 
-    // State
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
     const [overview, setOverview] = React.useState<SubdomainOverview | null>(null);
 
-    // Form State
     const [formData, setFormData] = React.useState<SubdomainCreateRequest>({
         domain_uuid: '',
         subdomain: '',
     });
 
-    // Fetch Data
     const fetchData = React.useCallback(async () => {
         if (!uuidShort) return;
         setLoading(true);
@@ -64,14 +60,13 @@ export default function CreateSubdomainPage() {
             );
             if (data?.data?.overview) {
                 setOverview(data.data.overview);
-                // Pre-select first domain if available
+
                 if (data.data.overview.domains && data.data.overview.domains.length > 0 && !formData.domain_uuid) {
                     setFormData((prev) => ({ ...prev, domain_uuid: data.data.overview.domains[0].uuid }));
                 }
             }
         } catch (error) {
             console.error('Failed to fetch data:', error);
-            // toast.error(t("serverSubdomains.loadFailed"))
         } finally {
             setLoading(false);
         }
@@ -85,7 +80,6 @@ export default function CreateSubdomainPage() {
         }
     }, [fetchData, canManage]);
 
-    // Handlers
     const handleCreate = async () => {
         if (!formData.domain_uuid || !formData.subdomain.trim()) {
             toast.error(t('serverSubdomains.subdomainRequired'));

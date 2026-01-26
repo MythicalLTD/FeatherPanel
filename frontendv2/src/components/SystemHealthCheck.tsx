@@ -28,19 +28,14 @@ interface SelfTestResponse {
 
 export default function SystemHealthCheck() {
     const pathname = usePathname();
-    // const [checked, setChecked] = useState(false); // Unused
 
     useEffect(() => {
-        // Skip check if already on maintenance page to avoid loops
         if (pathname === '/maintenance') {
             return;
         }
 
         const checkHealth = async () => {
             try {
-                // Use relative path for API call. Next.js rewrites should handle this in dev/prod
-                // or assume backend is on same domain/port configuration.
-                // Since this is a "SelfTest", we assume /api is proxied or available.
                 const res = await fetch('/api/selftest', {
                     headers: {
                         Accept: 'application/json',
@@ -56,25 +51,19 @@ export default function SystemHealthCheck() {
 
                 if (!data.success || data.data?.status !== 'ready') {
                     console.error('System health check failed:', data);
-                    // Use window.location.href to force a full page reload and escape potential React state loops
+
                     window.location.href = '/maintenance';
                 }
             } catch (error) {
                 console.error('System health check error:', error);
-                // Use window.location.href to force a full page reload and escape potential React state loops
+
                 window.location.href = '/maintenance';
             } finally {
-                // Check complete
             }
         };
 
         checkHealth();
-
-        // Optional: Check every 5 minutes?
-        // For now just check on mount/navigation implicitly via layout re-renders if any.
-        // Actually layout doesn't unmount on page change, so this runs once per hard load.
-        // That is acceptable for a "Startup" kind of check.
     }, [pathname]);
 
-    return null; // This component renders nothing
+    return null;
 }

@@ -77,7 +77,6 @@ export default function ServersPage() {
         { id: 'list', name: t('servers.layout.list'), icon: List },
     ];
 
-    // State management
     const {
         selectedLayout,
         selectedSort,
@@ -89,10 +88,8 @@ export default function ServersPage() {
         setViewMode,
     } = useServersState();
 
-    // WebSocket for live stats
     const { serverLiveData, isServerConnected, connectServers, disconnectAll } = useServersWebSocket();
 
-    // Folders from localStorage
     const {
         folders,
         serverAssignments,
@@ -103,7 +100,6 @@ export default function ServersPage() {
         unassignServer,
     } = useFolders();
 
-    // Local state
     const [servers, setServers] = useState<Server[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
@@ -128,30 +124,23 @@ export default function ServersPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Fetch servers and folders
     const fetchServers = useCallback(
         async (page = 1, fetchAllForFolders = false) => {
             try {
                 setLoading(true);
                 setError(null);
 
-                // Always use view_all=false for dashboard - only show user's own servers and subuser servers
-                // When in folder view, fetch all user's servers (with high limit) to enable proper folder filtering
-                // Otherwise use pagination
                 const response = await serversApi.getServers(
-                    false, // Never use view_all=true in dashboard - only for admin area
+                    false,
                     page,
                     fetchAllForFolders ? 1000 : pagination.per_page,
                 );
 
-                // Ensure serversData is an array
                 const serversArray = Array.isArray(response.servers) ? response.servers : [];
                 setServers(serversArray);
 
-                // Update pagination
                 setPagination(response.pagination);
 
-                // Connect to WebSockets for all servers
                 if (serversArray.length > 0) {
                     const serverUuids = serversArray.map((s) => s.uuidShort);
                     await connectServers(serverUuids);
@@ -166,28 +155,21 @@ export default function ServersPage() {
         [pagination.per_page, t, connectServers],
     );
 
-    // Initial fetch and refetch when switching views
-    // Load all user's servers in folder view to ensure proper folder organization
     useEffect(() => {
-        // Always fetch with view_all=false - only show user's own servers and subuser servers
         fetchServers(1, viewMode === 'folders');
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [viewMode]);
 
-    // Cleanup WebSocket connections on unmount
     useEffect(() => {
         return () => {
             disconnectAll();
         };
     }, [disconnectAll]);
 
-    // Apply usage of client-side folder assignments
     const serversWithFolders = servers.map((server) => ({
         ...server,
         folder_id: serverAssignments[server.uuidShort] || server.folder_id,
     }));
 
-    // Filter and sort servers
     const filteredServers = (Array.isArray(serversWithFolders) ? serversWithFolders : [])
         .filter(
             (server) =>
@@ -235,14 +217,12 @@ export default function ServersPage() {
     };
 
     const changePage = (newPage: number) => {
-        // Pagination only works in 'all' view, not in folder view
         if (viewMode === 'folders') return;
         if (newPage >= 1 && newPage <= pagination.total_pages) {
-            fetchServers(newPage, false); // Always use view_all=false for dashboard
+            fetchServers(newPage, false);
         }
     };
 
-    // Get live stats for a server
     const getServerLiveStats = (server: Server) => {
         const liveData = serverLiveData[server.uuidShort];
         if (!liveData?.stats) return null;

@@ -31,7 +31,6 @@ import {} from '@/components/ui/card';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
-// Types
 interface Category {
     id: number;
     name: string;
@@ -96,18 +95,15 @@ export default function TicketsPage() {
     const { t } = useTranslation();
     const router = useRouter();
 
-    // State
     const [loading, setLoading] = useState(true);
     const [tickets, setTickets] = useState<ApiTicket[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [statuses, setStatuses] = useState<Status[]>([]);
 
-    // Filters - Use specific types for Select values
     const [filterStatus, setFilterStatus] = useState<string | number>('all');
     const [filterCategory, setFilterCategory] = useState<string | number>('all');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Pagination
     const [pagination, setPagination] = useState<PaginationState>({
         page: 1,
         pageSize: 10,
@@ -118,23 +114,19 @@ export default function TicketsPage() {
         to: 0,
     });
 
-    // Delete Dialog
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [ticketToDelete, setTicketToDelete] = useState<ApiTicket | null>(null);
     const [deleting, setDeleting] = useState(false);
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-tickets-list');
 
-    // Initial Fetch
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Initial Fetch
     useEffect(() => {
         const fetchFilters = async () => {
             try {
-                // Using unknown cast for safety then verifying shape if needed, but for simple lists we trust API mostly
                 const [catsRes, statsRes] = await Promise.all([
                     axios.get('/api/user/tickets/categories').catch(() => ({ data: { data: { categories: [] } } })),
                     axios.get('/api/user/tickets/statuses').catch(() => ({ data: { data: { statuses: [] } } })),
@@ -152,10 +144,8 @@ export default function TicketsPage() {
         fetchFilters();
     }, []);
 
-    // Fetch Tickets on changes
     useEffect(() => {
         fetchTickets();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pagination.page, filterStatus, filterCategory]);
 
     const fetchTickets = async () => {
@@ -213,7 +203,6 @@ export default function TicketsPage() {
         }
     };
 
-    // Format options for HeadlessSelect
     const statusOptions = [
         { id: 'all', name: t('tickets.allStatuses') },
         ...statuses.map((s) => ({ id: s.id, name: s.name })),

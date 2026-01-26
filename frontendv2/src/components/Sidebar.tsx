@@ -36,13 +36,8 @@ interface SidebarProps {
     setMobileOpen: (open: boolean) => void;
 }
 
-// Helper function to render icon for navigation items
 function renderIcon(item: NavigationItem, className: string, sizeClass: string) {
-    // If lucideIcon is provided, use DynamicIcon (always prioritize lucideIcon over icon)
     if (item.lucideIcon) {
-        // DynamicIcon requires a specific icon name type, but we're loading dynamically from config
-        // The icon name is validated at runtime by lucide-react
-        // We use type assertion here since the icon name comes from plugin configuration
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const iconName: any = item.lucideIcon;
         return (
@@ -53,7 +48,6 @@ function renderIcon(item: NavigationItem, className: string, sizeClass: string) 
         );
     }
 
-    // Otherwise, use the regular icon (string emoji or LucideIcon component)
     const Icon = item.icon;
     if (typeof Icon === 'string') {
         return (
@@ -66,7 +60,6 @@ function renderIcon(item: NavigationItem, className: string, sizeClass: string) 
     return <Icon className={cn('shrink-0 transition-transform group-hover:scale-110', className, sizeClass)} />;
 }
 
-// Move SidebarContent outside to avoid creating component during render
 function SidebarContent({
     mobile = false,
     collapsed,
@@ -86,12 +79,10 @@ function SidebarContent({
     const { theme } = useTheme();
     const { t } = useTranslation();
 
-    // State for collapsed groups, initialized from localStorage
     const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
-    // State for collapsed submenu items
+
     const [collapsedSubmenus, setCollapsedSubmenus] = useState<string[]>([]);
 
-    // Load collapsed groups from localStorage on mount
     useEffect(() => {
         const saved = localStorage.getItem('featherpanel_collapsed_groups');
         if (saved) {
@@ -112,7 +103,6 @@ function SidebarContent({
         }
     }, []);
 
-    // Sync collapsed groups to localStorage
     const toggleGroup = (group: string) => {
         const newCollapsed = collapsedGroups.includes(group)
             ? collapsedGroups.filter((g) => g !== group)
@@ -122,7 +112,6 @@ function SidebarContent({
         localStorage.setItem('featherpanel_collapsed_groups', JSON.stringify(newCollapsed));
     };
 
-    // Toggle submenu collapsed state
     const toggleSubmenu = (itemId: string) => {
         const newCollapsed = collapsedSubmenus.includes(itemId)
             ? collapsedSubmenus.filter((id) => id !== itemId)
@@ -134,13 +123,11 @@ function SidebarContent({
 
     const isActive = (href: string) => {
         if (pathname === href) return true;
-        // Prevent /dashboard from matching /dashboard/tickets, /dashboard/servers etc.
+
         if (href === '/dashboard') return false;
         if (href === '/admin') return false;
         if (href === '/admin/tickets') return false;
 
-        // If it's the server root (/server/[uuid]), only match exact.
-        // This prevents the "Console" item from being highlighted on plugin pages like /server/[uuid]/[plugin]
         const serverRootRegex = /^\/server\/[^\/]+$/;
         if (serverRootRegex.test(href)) {
             return pathname === href;
@@ -153,9 +140,7 @@ function SidebarContent({
         const translationKey = `navigation.groups.${group}`;
         const translated = t(translationKey);
 
-        // If translation not found, t returns the key itself
         if (translated === translationKey) {
-            // Return capitalized group name as fallback
             return group.charAt(0).toUpperCase() + group.slice(1);
         }
 
@@ -164,7 +149,6 @@ function SidebarContent({
 
     const logoUrl = theme === 'dark' ? settings?.app_logo_dark || '/logo.png' : settings?.app_logo_white || '/logo.png';
 
-    // Define group order using keys from en.json
     const groupOrder = [
         'overview',
         'management',
@@ -182,7 +166,6 @@ function SidebarContent({
         'plugins',
     ];
 
-    // Sort groups: explicit order first, then others alphabetically
     const sortedGroups = Object.keys(groupedItems).sort((a, b) => {
         const indexA = groupOrder.indexOf(a.toLowerCase());
         const indexB = groupOrder.indexOf(b.toLowerCase());
@@ -266,7 +249,6 @@ function SidebarContent({
                                     const hasChildren = item.children && item.children.length > 0;
                                     const isSubmenuCollapsed = collapsedSubmenus.includes(item.id);
 
-                                    // If item has children, render as expandable submenu
                                     if (hasChildren) {
                                         return (
                                             <div key={item.id}>
@@ -409,7 +391,6 @@ function SidebarContent({
                 <div className='border-t border-border/50 p-2'>
                     <button
                         onClick={() => {
-                            // This will be passed from parent
                             if (typeof window !== 'undefined') {
                                 const event = new CustomEvent('toggle-sidebar');
                                 window.dispatchEvent(event);
@@ -439,7 +420,6 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
     const { navigationItems } = useNavigation();
     const [collapsed, setCollapsed] = useState(false);
 
-    // Group items
     const groupedItems = useMemo(() => {
         return navigationItems.reduce(
             (acc, item) => {

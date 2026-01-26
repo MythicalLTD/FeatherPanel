@@ -38,7 +38,6 @@ export default function ThemeCustomizer() {
         { name: t('appearance.colors.yellow'), value: 'yellow', color: 'hsl(48 96% 53%)' },
     ];
 
-    // Don't render until mounted to avoid hydration mismatch
     if (!mounted) {
         return (
             <div className='flex items-center gap-2'>

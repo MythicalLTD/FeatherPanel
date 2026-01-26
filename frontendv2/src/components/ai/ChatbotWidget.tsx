@@ -27,7 +27,6 @@ export default function ChatbotWidget() {
     const pathname = usePathname();
     const { t } = useTranslation();
 
-    // Keyboard shortcut (Ctrl+K or Cmd+K)
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             const target = event.target as HTMLElement;
@@ -47,7 +46,6 @@ export default function ChatbotWidget() {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // Show on server pages
     const shouldShow = pathname?.startsWith('/server/');
 
     if (!shouldShow) return null;

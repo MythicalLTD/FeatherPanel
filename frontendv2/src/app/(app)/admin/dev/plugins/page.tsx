@@ -179,7 +179,6 @@ export default function PluginManagerPage() {
     }, []);
 
     useEffect(() => {
-        // Only fetch data if developer mode is enabled
         if (isDeveloperModeEnabled === true) {
             fetchPlugins();
             loadCreationOptions();
@@ -403,7 +402,6 @@ export default function PluginManagerPage() {
 
     const configFields = selectedPlugin?.config || [];
 
-    // Developer Mode Check
     if (developerModeLoading) {
         return (
             <div className='flex items-center justify-center p-12'>

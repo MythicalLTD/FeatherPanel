@@ -46,7 +46,6 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { cn, formatMib } from '@/lib/utils';
 
-// UI Components
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -62,7 +61,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Types
 import { BackupItem, BackupsResponse, Server } from '@/types/server';
 
 export default function ServerBackupsPage() {
@@ -71,7 +69,6 @@ export default function ServerBackupsPage() {
     const router = useRouter();
     const uuidShort = params.uuidShort as string;
 
-    // Permissions
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const canRead = hasPermission('backup.read');
     const canCreate = hasPermission('backup.create');
@@ -79,7 +76,6 @@ export default function ServerBackupsPage() {
     const canDownload = hasPermission('backup.download');
     const canDelete = hasPermission('backup.delete');
 
-    // State
     const [backups, setBackups] = useState<BackupItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [server, setServer] = useState<Server | null>(null);
@@ -99,7 +95,6 @@ export default function ServerBackupsPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Modal States
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -108,7 +103,6 @@ export default function ServerBackupsPage() {
     const [restoring, setRestoring] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
 
-    // Form States
     const [newBackupName, setNewBackupName] = useState('');
     const [ignoredFiles, setIgnoredFiles] = useState<string[]>([]);
     const [newIgnorePattern, setNewIgnorePattern] = useState('');
@@ -123,7 +117,6 @@ export default function ServerBackupsPage() {
         variant?: 'default' | 'destructive';
     } | null>(null);
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchQuery);
@@ -184,7 +177,6 @@ export default function ServerBackupsPage() {
         }
     }, [canRead, permissionsLoading, fetchBackups, uuidShort, router, t]);
 
-    // Auto-refresh when backups are creating
     useEffect(() => {
         const hasCreating = backups.some((b) => !b.completed_at && !b.is_successful);
         if (hasCreating) {

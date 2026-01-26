@@ -102,7 +102,6 @@ export function PageCard({
                             )}
                         >
                             {iconSrc ? (
-                                // eslint-disable-next-line @next/next/no-img-element
                                 <img src={iconSrc} alt={title} className='h-full w-full object-contain' />
                             ) : (
                                 Icon && <Icon className={cn('h-5 w-5', styles.iconColor)} />

@@ -54,7 +54,6 @@ import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
-// Types
 interface ConfigField {
     name: string;
     display_name: string;
@@ -120,21 +119,18 @@ interface PreviouslyInstalledPlugin {
 
 export default function PluginsPage() {
     const { t } = useTranslation();
-    // State
+
     const [loading, setLoading] = useState(true);
     const [plugins, setPlugins] = useState<Plugin[]>([]);
 
-    // Drawers
     const [configDrawerOpen, setConfigDrawerOpen] = useState(false);
     const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
 
-    // Config
     const [configLoading, setConfigLoading] = useState(false);
     const [configError, setConfigError] = useState<string | null>(null);
     const [pluginConfig, setPluginConfig] = useState<PluginConfig | null>(null);
     const [savingSetting, setSavingSetting] = useState(false);
 
-    // Spell restrictions
     const [selectedSpellIds, setSelectedSpellIds] = useState<Set<number>>(new Set());
     const [selectedSpellsDetails, setSelectedSpellsDetails] = useState<
         Array<{ id: number; name: string; description?: string }>
@@ -147,7 +143,6 @@ export default function PluginsPage() {
     const [spellsTotalPages, setSpellsTotalPages] = useState(1);
     const [savingSpellRestrictions, setSavingSpellRestrictions] = useState(false);
 
-    // Dialogs
     const [installUrl, setInstallUrl] = useState('');
     const [installingFromUrl, setInstallingFromUrl] = useState(false);
     const [confirmUninstallOpen, setConfirmUninstallOpen] = useState(false);
@@ -156,7 +151,6 @@ export default function PluginsPage() {
     const [selectedPluginForUninstall, setSelectedPluginForUninstall] = useState<Plugin | null>(null);
     const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null);
 
-    // Updates
     const [checkingUpdateId, setCheckingUpdateId] = useState<string | null>(null);
 
     const [onlinePluginsCache, setOnlinePluginsCache] = useState<Map<string, { version: string; identifier: string }>>(
@@ -168,7 +162,6 @@ export default function PluginsPage() {
     const [installingUpdateId, setInstallingUpdateId] = useState<string | null>(null);
     const [pluginsWithUpdates, setPluginsWithUpdates] = useState<Plugin[]>([]);
 
-    // Previously Installed
     const [previouslyInstalledPlugins, setPreviouslyInstalledPlugins] = useState<PreviouslyInstalledPlugin[]>([]);
     const [showPreviouslyInstalledBanner, setShowPreviouslyInstalledBanner] = useState(false);
     const [reinstallDialogOpen, setReinstallDialogOpen] = useState(false);
@@ -177,7 +170,6 @@ export default function PluginsPage() {
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-plugins');
 
-    // Helper functions for version comparison
     const normalizeVersion = (v: string): string => v.replace(/^v/i, '');
 
     const compareVersions = (v1: string, v2: string): number => {
@@ -201,7 +193,6 @@ export default function PluginsPage() {
         return compareVersions(plugin.version, onlinePlugin.version) < 0;
     };
 
-    // API interactions
     const fetchPlugins = useCallback(async () => {
         setLoading(true);
         try {
@@ -251,15 +242,13 @@ export default function PluginsPage() {
                     return newCache;
                 });
             }
-        } catch {
-            // Silently fail
-        }
+        } catch {}
     };
 
-    // Re-calculate updates when cache or plugins change
     useEffect(() => {
         setPluginsWithUpdates(plugins.filter((p) => hasUpdateAvailable(p)));
-    }, [plugins, onlinePluginsCache]); // eslint-disable-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [plugins, onlinePluginsCache]);
 
     const checkAllUpdates = async () => {
         if (updateCheckLoading) return;
@@ -286,9 +275,7 @@ export default function PluginsPage() {
                 setPreviouslyInstalledPlugins(notCurrentlyInstalled);
                 setShowPreviouslyInstalledBanner(notCurrentlyInstalled.length > 0);
             }
-        } catch {
-            // Silently fail
-        }
+        } catch {}
     }, [plugins]);
 
     useEffect(() => {
@@ -302,7 +289,7 @@ export default function PluginsPage() {
             fetchPreviouslyInstalledPlugins();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [plugins.length]); // Only run once plugins are loaded initially? Or when list changes.
+    }, [plugins.length]);
 
     const loadPluginConfig = async (plugin: Plugin) => {
         setConfigLoading(true);
@@ -338,7 +325,6 @@ export default function PluginsPage() {
                 allowedOnlyOnSpells: apiData.allowedOnlyOnSpells || [],
             });
 
-            // Initialize selected spell IDs and fetch their details
             if (
                 apiData.allowedOnlyOnSpells &&
                 Array.isArray(apiData.allowedOnlyOnSpells) &&
@@ -347,7 +333,6 @@ export default function PluginsPage() {
                 const spellIds = apiData.allowedOnlyOnSpells;
                 setSelectedSpellIds(new Set(spellIds));
 
-                // Fetch details for selected spells
                 fetchSelectedSpellsDetails(spellIds);
             } else {
                 setSelectedSpellIds(new Set());
@@ -371,12 +356,12 @@ export default function PluginsPage() {
 
     const openPluginConfig = async (plugin: Plugin) => {
         setSelectedPlugin(plugin);
-        // Reset spell search and page when opening config
+
         setSpellSearchQuery('');
         setSpellPage(1);
         setConfigDrawerOpen(true);
         await loadPluginConfig(plugin);
-        // Fetch spells after config loads and drawer is open
+
         setTimeout(() => {
             fetchSpells();
         }, 100);
@@ -384,7 +369,6 @@ export default function PluginsPage() {
 
     const fetchSelectedSpellsDetails = async (spellIds: number[]) => {
         try {
-            // Fetch each selected spell by ID
             const spellPromises = spellIds.map((id) => axios.get(`/api/admin/spells/${id}`).catch(() => null));
             const spellResponses = await Promise.all(spellPromises);
             const selectedSpells = spellResponses
@@ -422,29 +406,24 @@ export default function PluginsPage() {
         }
     }, [spellPage, spellSearchQuery, t]);
 
-    // Debounce spell search - wait for user to finish typing
     useEffect(() => {
         if (!configDrawerOpen) return;
 
-        // Don't debounce page changes, only search queries
         if (spellSearchQuery !== '') {
             const timer = setTimeout(() => {
                 fetchSpells();
-            }, 1000); // Wait 1 second after user stops typing
+            }, 1000);
 
             return () => clearTimeout(timer);
         }
-        // Don't fetch when search is empty - let the drawer open effect handle it
     }, [spellSearchQuery, configDrawerOpen, fetchSpells]);
 
-    // Fetch spells when page changes (no debounce)
     useEffect(() => {
         if (configDrawerOpen && spellPage > 0) {
             fetchSpells();
         }
     }, [spellPage, configDrawerOpen, fetchSpells]);
 
-    // Reset state when drawer closes
     useEffect(() => {
         if (!configDrawerOpen) {
             setSpellSearchQuery('');
@@ -462,7 +441,7 @@ export default function PluginsPage() {
                 allowedOnlyOnSpells: Array.from(selectedSpellIds),
             });
             toast.success(t('admin.plugins.messages.spell_restrictions_saved'));
-            // Reload config to get updated spell restrictions
+
             await loadPluginConfig(selectedPlugin);
         } catch (error) {
             console.error(error);
@@ -494,7 +473,7 @@ export default function PluginsPage() {
         if (!e.target.files || e.target.files.length === 0) return;
         setPendingUploadFile(e.target.files[0]);
         setConfirmUploadOpen(true);
-        e.target.value = ''; // Reset input
+        e.target.value = '';
     };
 
     const performUpload = async () => {
@@ -642,7 +621,6 @@ export default function PluginsPage() {
         }
     };
 
-    // Computeds
     const configFields = useMemo(() => pluginConfig?.configSchema || [], [pluginConfig]);
     const hasConfigSchema = configFields.length > 0;
 
@@ -1441,7 +1419,6 @@ export default function PluginsPage() {
                 onOpenChange={(open) => {
                     setReinstallDialogOpen(open);
                     if (!open) {
-                        // Reset selection when dialog closes
                         setSelectedPluginsToReinstall(new Set());
                     }
                 }}

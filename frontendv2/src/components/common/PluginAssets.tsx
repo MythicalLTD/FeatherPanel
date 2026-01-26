@@ -19,7 +19,6 @@ import { useEffect } from 'react';
 
 export default function PluginAssets() {
     useEffect(() => {
-        // Load plugin CSS
         const cssLinkId = 'featherpanel-plugin-css';
         let cssLink = document.getElementById(cssLinkId) as HTMLLinkElement;
 
@@ -29,15 +28,13 @@ export default function PluginAssets() {
             cssLink.rel = 'stylesheet';
             cssLink.type = 'text/css';
             cssLink.href = '/api/system/plugin-css';
-            // Add cache busting
+
             cssLink.href += `?v=${Date.now()}`;
             document.head.appendChild(cssLink);
         } else {
-            // Update cache busting on existing link
             cssLink.href = `/api/system/plugin-css?v=${Date.now()}`;
         }
 
-        // Load plugin JavaScript
         const jsScriptId = 'featherpanel-plugin-js';
         let jsScript = document.getElementById(jsScriptId) as HTMLScriptElement;
 
@@ -49,7 +46,6 @@ export default function PluginAssets() {
             jsScript.async = true;
             document.body.appendChild(jsScript);
         } else {
-            // Remove old script and add new one to reload
             jsScript.remove();
             jsScript = document.createElement('script');
             jsScript.id = jsScriptId;
@@ -59,11 +55,7 @@ export default function PluginAssets() {
             document.body.appendChild(jsScript);
         }
 
-        // Cleanup function
-        return () => {
-            // Don't remove on cleanup as we want these to persist
-            // They will be reloaded on next mount anyway
-        };
+        return () => {};
     }, []);
 
     return null;

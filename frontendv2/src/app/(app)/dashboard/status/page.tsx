@@ -37,7 +37,6 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { formatMemory, formatDisk } from '@/lib/server-utils';
 import { cn } from '@/lib/utils';
 
-// UI Components
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -128,7 +127,6 @@ export default function StatusPage() {
     useEffect(() => {
         fetchNodes();
 
-        // Auto-refresh every 30 seconds
         const interval = setInterval(() => {
             fetchNodes(true);
         }, 30000);

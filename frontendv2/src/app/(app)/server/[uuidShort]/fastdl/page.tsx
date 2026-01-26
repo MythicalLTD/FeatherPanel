@@ -53,26 +53,21 @@ export default function ServerFastDlPage() {
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
 
-    // Permissions
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const canRead = hasPermission('settings.reinstall');
     const canManage = hasPermission('settings.reinstall');
 
-    // Feature Flag
     const fastDlEnabled = isEnabled(settings?.server_allow_user_made_fastdl);
 
-    // State
     const [config, setConfig] = React.useState<FastDlConfig | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
     const [enabling, setEnabling] = React.useState(false);
     const [disabling, setDisabling] = React.useState(false);
 
-    // Form State
     const [directory, setDirectory] = React.useState('');
     const [enabled, setEnabled] = React.useState(false);
 
-    // Widgets
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-fastdl');
 
     const fetchData = React.useCallback(async () => {
@@ -90,7 +85,6 @@ export default function ServerFastDlPage() {
         } catch (error) {
             const axiosError = error as AxiosError<FastDlResponse>;
             if (axiosError.response?.status === 404 || axiosError.response?.status === 403) {
-                // FastDL not configured yet or disabled
                 setConfig({ enabled: false, directory: null, url: null });
                 setEnabled(false);
                 setDirectory('');
@@ -128,7 +122,7 @@ export default function ServerFastDlPage() {
                 setEnabled(data.data.enabled);
                 setDirectory(data.data.directory || '');
                 toast.success(t('serverFastDl.enableSuccess'));
-                fetchData(); // Refresh to get updated URL
+                fetchData();
             }
         } catch (error) {
             const axiosError = error as AxiosError<FastDlResponse>;
@@ -175,7 +169,7 @@ export default function ServerFastDlPage() {
                 setEnabled(data.data.enabled);
                 setDirectory(data.data.directory || '');
                 toast.success(t('serverFastDl.updateSuccess'));
-                fetchData(); // Refresh to get updated URL
+                fetchData();
             }
         } catch (error) {
             const axiosError = error as AxiosError<FastDlResponse>;

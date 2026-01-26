@@ -151,16 +151,15 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                         {children}
                                     </blockquote>
                                 ),
-                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
                                 img: ({ node, ...props }) => (
-                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                         {...props}
                                         alt={props.alt || ''}
                                         className='rounded-xl border border-border/50 shadow-md my-8 mx-auto'
                                     />
                                 ),
-                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
                                 a: ({ node, ...props }) => (
                                     <a {...props} className='text-primary hover:underline font-medium'>
                                         {props.children}

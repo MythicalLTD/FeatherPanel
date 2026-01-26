@@ -90,7 +90,6 @@ export default function UserAnalyticsPage() {
 
             setOverview(overviewRes.data.data);
 
-            // Transform roles for chart
             interface RoleApiResponse {
                 role_display_name: string;
                 user_count: number;
@@ -106,7 +105,6 @@ export default function UserAnalyticsPage() {
             setTopUsers(topUsersRes.data.data.users);
             setGrowth(growthRes.data.data);
 
-            // Transform security for chart
             const sec = securityRes.data.data;
             const securityChartData = [
                 { name: t('admin.analytics.users.security_stats.fully_secured'), value: sec.fully_secured },

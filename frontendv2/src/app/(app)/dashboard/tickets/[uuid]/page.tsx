@@ -34,7 +34,6 @@ import clsx from 'clsx';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
-// Types
 interface ApiTicket {
     id: number;
     uuid: string;
@@ -109,29 +108,25 @@ export default function TicketViewPage() {
     const { t } = useTranslation();
     const { user: currentUser } = useSession();
 
-    // State
     const [loading, setLoading] = useState(true);
     const [ticket, setTicket] = useState<ApiTicket | null>(null);
     const [messages, setMessages] = useState<ApiTicketMessage[]>([]);
     const [error, setError] = useState<string | null>(null);
 
-    // Reply Form
     const [replyMessage, setReplyMessage] = useState('');
     const [replying, setReplying] = useState(false);
     const [files, setFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
-    // Scroll Ref
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Initial Fetch
     const fetchTicketDetails = async () => {
         try {
             const { data } = await axios.get<TicketResponse>(`/api/user/tickets/${uuid}`);
             if (data.success) {
                 setTicket(data.data.ticket);
-                // Sort messages by created_at OLD -> NEW (Ascending)
+
                 const sortedMessages = [...(data.data.messages || [])].sort((a, b) => {
                     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
                 });
@@ -152,17 +147,14 @@ export default function TicketViewPage() {
         if (uuid) {
             fetchTicketDetails();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [uuid]);
 
-    // Scroll to bottom on new messages
     useEffect(() => {
         if (messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [messages]);
 
-    // File Handling
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) addFiles(Array.from(e.target.files));
     };
@@ -183,7 +175,6 @@ export default function TicketViewPage() {
         setFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
-    // Reply Submit
     const handleReply = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!replyMessage.trim() && files.length === 0) return;
@@ -196,7 +187,6 @@ export default function TicketViewPage() {
 
             const messageId = data.data?.message_id;
 
-            // Upload attachments
             if (files.length > 0 && messageId) {
                 for (const file of files) {
                     const formData = new FormData();
@@ -327,7 +317,7 @@ export default function TicketViewPage() {
 
                         {messages.map((msg) => {
                             const isMe = currentUser?.uuid === msg.user?.uuid;
-                            const isInternal = msg.is_internal === 1 || msg.is_internal === true; // Handle both number and boolean safely
+                            const isInternal = msg.is_internal === 1 || msg.is_internal === true;
 
                             return (
                                 <div
@@ -419,12 +409,10 @@ export default function TicketViewPage() {
                                                         li: ({ children }) => <li className='mb-0.5'>{children}</li>,
                                                     }}
                                                 >
-                                                    {
-                                                        msg.message
-                                                            .replace(/\n---\n-\n/g, '\n---\n')
-                                                            .replace(/\n---\n---\n/g, '\n---\n')
-                                                            .replace(/\n\s*\n\s*\n/g, '\n\n') // Collapse excessive newlines
-                                                    }
+                                                    {msg.message
+                                                        .replace(/\n---\n-\n/g, '\n---\n')
+                                                        .replace(/\n---\n---\n/g, '\n---\n')
+                                                        .replace(/\n\s*\n\s*\n/g, '\n\n')}
                                                 </ReactMarkdown>
                                             </div>
 

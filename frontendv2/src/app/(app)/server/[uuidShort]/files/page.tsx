@@ -51,7 +51,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const { uuidShort } = use(params);
     const { t } = useTranslation();
 
-    // Hooks
     const {
         files,
         loading,
@@ -71,24 +70,20 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
     const { hasPermission } = useServerPermissions(uuidShort);
 
-    // Plugin Widgets - delay fetching to improve initial load
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-files');
 
-    // Delay widget fetching to improve initial page load
     useEffect(() => {
         const timer = setTimeout(() => {
             fetchWidgets();
-        }, 100); // Small delay to prioritize file loading
+        }, 100);
         return () => clearTimeout(timer);
     }, [fetchWidgets]);
 
-    // Permissions
     const canRead = hasPermission('file.read');
     const canCreate = hasPermission('file.create');
     const canUpdate = hasPermission('file.update');
     const canDelete = hasPermission('file.delete');
 
-    // Dialog States
     const [createFolderOpen, setCreateFolderOpen] = useState(false);
     const [createFileOpen, setCreateFileOpen] = useState(false);
     const [renameOpen, setRenameOpen] = useState(false);
@@ -104,19 +99,16 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [filesToCompress, setFilesToCompress] = useState<string[]>([]);
     const [moveCopyAction, setMoveCopyAction] = useState<'move' | 'copy'>('move');
 
-    // File Action State
     const [actionFile, setActionFile] = useState<FileObject | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
-    // Handlers
     const handleAction = (action: string, file: FileObject) => {
         setActionFile(file);
         switch (action) {
             case 'edit':
-                // Prefetch the file content immediately for better UX
                 const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory || '/')}`;
-                // Use router.push with prefetch for faster navigation
+
                 router.prefetch(editPath);
                 router.push(editPath);
                 break;
@@ -154,7 +146,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
     const handleDownload = async (filename: string) => {
         try {
-            // Ensure path starts with / and has no double slashes
             const path = (currentDirectory || '/').endsWith('/')
                 ? `${currentDirectory || '/'}${filename}`
                 : `${currentDirectory || '/'}/${filename}`;
@@ -184,7 +175,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         }
     };
 
-    // Keyboard Shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
@@ -230,7 +220,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         uploadFile(file);
     };
 
-    // Drag and Drop Logic
     useEffect(() => {
         const handleDragOver = (e: DragEvent) => {
             e.preventDefault();

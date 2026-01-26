@@ -30,7 +30,7 @@ interface ServerInfoCardsProps {
     diskLimit: number;
     wingsUptime: string;
     ping: number | null;
-    // Current usage
+
     cpuUsage?: number;
     memoryUsage?: number;
     diskUsage?: number;
@@ -77,7 +77,6 @@ export default function ServerInfoCards({
                 await navigator.clipboard.writeText(text);
                 toast.success(t('servers.console.info_cards.copied'));
             } else {
-                // Fallback for non-secure contexts
                 const textArea = document.createElement('textarea');
                 textArea.value = text;
                 textArea.style.position = 'fixed';

@@ -83,26 +83,21 @@ export default function ServerSettingsPage() {
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-settings');
 
-    // Config
     const canDeleteServer = isEnabled(settings?.server_allow_user_server_deletion || 'false');
 
-    // Permissions
     const canRename = hasPermission('settings.rename');
     const canReinstall = hasPermission('settings.reinstall');
-    const canViewSftp = true; // Usually basic server read, but assuming true if on this page for now, or check 'server.read'
+    const canViewSftp = true;
 
-    // State
     const [server, setServer] = React.useState<ServerWithSftp | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
     const [reinstalling, setReinstalling] = React.useState(false);
     const [deleting, setDeleting] = React.useState(false);
 
-    // Form State
     const [name, setName] = React.useState('');
     const [description, setDescription] = React.useState('');
 
-    // Dialog State
     const [showReinstallDialog, setShowReinstallDialog] = React.useState(false);
     const [confirmReinstallText, setConfirmReinstallText] = React.useState('');
     const [wipeFilesOnReinstall, setWipeFilesOnReinstall] = React.useState(false);
@@ -114,7 +109,6 @@ export default function ServerSettingsPage() {
     const [mathAnswer, setMathAnswer] = React.useState('');
     const [confirmServerName, setConfirmServerName] = React.useState('');
 
-    // Math Logic
     const generateMathQuestion = React.useCallback(() => {
         setMathQuestion({
             num1: Math.floor(Math.random() * 10) + 1,
@@ -130,7 +124,6 @@ export default function ServerSettingsPage() {
         return confirmServerName === server?.name;
     }, [confirmServerName, server]);
 
-    // Fetch Data
     const fetchData = React.useCallback(async () => {
         if (!uuidShort) return;
         setLoading(true);
@@ -155,7 +148,6 @@ export default function ServerSettingsPage() {
         }
     }, [permissionsLoading, settingsLoading, fetchData]);
 
-    // Actions
     const handleSave = async () => {
         if (!canRename) return;
         setSaving(true);
@@ -166,7 +158,7 @@ export default function ServerSettingsPage() {
             });
             if (data.success) {
                 toast.success(t('serverSettings.saveSuccess'));
-                // Update local state to match saved
+
                 if (server) {
                     setServer({ ...server, name, description });
                 }
@@ -187,7 +179,7 @@ export default function ServerSettingsPage() {
                 wipe_files: wipeFilesOnReinstall,
             });
             if (data.success) {
-                toast.success(t('serverSettings.reinstallSuccess')); // Add translation key if missing or use generic
+                toast.success(t('serverSettings.reinstallSuccess'));
                 setShowReinstallDialog(false);
             }
         } catch (error) {
@@ -229,7 +221,6 @@ export default function ServerSettingsPage() {
         );
     }
 
-    // Permission Gate
     if (!canRename && !canReinstall && !canViewSftp) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/40 backdrop-blur-3xl rounded-[3rem] border border-border/5'>

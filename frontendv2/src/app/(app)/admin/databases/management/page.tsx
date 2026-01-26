@@ -66,7 +66,6 @@ interface PhpMyAdminStatusResponse {
 export default function DatabaseManagementPage() {
     const { t } = useTranslation();
 
-    // State
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<DatabaseStatus | null>(null);
     const [migRunning, setMigRunning] = useState(false);
@@ -76,7 +75,6 @@ export default function DatabaseManagementPage() {
     const [pmaInstalled, setPmaInstalled] = useState(false);
     const [pmaStatusLoading, setPmaStatusLoading] = useState(false);
 
-    // Plugin Widgets
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-databases-management');
 
     useEffect(() => {
@@ -195,7 +193,6 @@ export default function DatabaseManagementPage() {
         checkPhpMyAdminStatus();
     }, [fetchStatus, checkPhpMyAdminStatus]);
 
-    // Helper for cards
     const StatItem = ({ label, value }: { label: string; value: string | number }) => (
         <div className='flex justify-between items-center py-1'>
             <span className='text-sm text-muted-foreground'>{label}</span>

@@ -58,13 +58,11 @@ export default function ServerSubusersPage() {
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-users');
 
-    // Permission checks
     const canRead = hasPermission('user.read');
     const canCreate = hasPermission('user.create');
     const canUpdate = hasPermission('user.update');
     const canDelete = hasPermission('user.delete');
 
-    // State
     const [subusers, setSubusers] = React.useState<Subuser[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [pagination, setPagination] = React.useState<SubuserPagination>({
@@ -77,7 +75,6 @@ export default function ServerSubusersPage() {
     });
     const [searchQuery, setSearchQuery] = React.useState('');
 
-    // Modals State
     const [isAddOpen, setIsAddOpen] = React.useState(false);
     const [addEmail, setAddEmail] = React.useState('');
     const [addLoading, setAddLoading] = React.useState(false);
@@ -93,7 +90,6 @@ export default function ServerSubusersPage() {
     const [selectedPermissions, setSelectedPermissions] = React.useState<string[]>([]);
     const [savingPermissions, setSavingPermissions] = React.useState(false);
 
-    // Fetch Data
     const fetchSubusers = React.useCallback(
         async (page = 1) => {
             if (!uuidShort || !isEnabled(settings?.server_allow_subusers)) return;
@@ -245,8 +241,7 @@ export default function ServerSubusersPage() {
 
         const category = parts[0];
         let key = parts[1];
-        // Convert kebab-case/snake_case to camelCase for translation keys if needed,
-        // but here the keys in en.json match the structure
+
         key = key.replace(/[-_]([a-z])/g, (_, letter) => letter.toUpperCase());
 
         const translationPath = `serverSubusers.permissionCategories.${category}.permissions.${key}.name`;

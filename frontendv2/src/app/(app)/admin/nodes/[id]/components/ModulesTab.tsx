@@ -38,7 +38,6 @@ export function ModulesTab({ node }: ModulesTabProps) {
     const [loading, setLoading] = useState(true);
     const [toggling, setToggling] = useState<string | null>(null);
 
-    // Config modal state
     const [configModalOpen, setConfigModalOpen] = useState(false);
     const [selectedModule, setSelectedModule] = useState<Module | null>(null);
     const [configData, setConfigData] = useState<string>('');

@@ -99,7 +99,6 @@ export default function SpellsPage() {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [currentRealm, setCurrentRealm] = useState<Realm | null>(null);
 
-    // Pagination
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
         pageSize: 10,
@@ -109,16 +108,13 @@ export default function SpellsPage() {
         hasPrev: false,
     });
 
-    // Form states
     const [refreshKey, setRefreshKey] = useState(0);
     const [importDialogOpen, setImportDialogOpen] = useState(false);
     const [importRealmId, setImportRealmId] = useState('');
     const [importing, setImporting] = useState(false);
 
-    // Get realm_id from URL
     const realmIdParam = searchParams?.get('realm_id');
 
-    // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -129,7 +125,6 @@ export default function SpellsPage() {
         return () => clearTimeout(timer);
     }, [searchQuery, debouncedSearchQuery]);
 
-    // Fetch realms for dropdown
     useEffect(() => {
         const fetchRealms = async () => {
             try {
@@ -137,7 +132,6 @@ export default function SpellsPage() {
                 const realmsList = data.data.realms || [];
                 setRealms(realmsList);
 
-                // Set current realm if filtering
                 if (realmIdParam) {
                     const realm = realmsList.find((r: Realm) => r.id === parseInt(realmIdParam));
                     setCurrentRealm(realm || null);
@@ -149,7 +143,6 @@ export default function SpellsPage() {
         fetchRealms();
     }, [realmIdParam]);
 
-    // Fetch spells
     useEffect(() => {
         const fetchSpells = async () => {
             setLoading(true);
@@ -221,7 +214,6 @@ export default function SpellsPage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // If we have a realm from URL, use it directly
         if (realmIdParam) {
             await performImport(file, realmIdParam);
             if (fileInputRef.current) {
@@ -230,9 +222,8 @@ export default function SpellsPage() {
             return;
         }
 
-        // Otherwise, show dialog to select realm
         setImportDialogOpen(true);
-        // Store file reference for later use
+
         (window as unknown as { __importFile?: File }).__importFile = file;
     };
 
@@ -252,7 +243,6 @@ export default function SpellsPage() {
             setImportDialogOpen(false);
             setImportRealmId('');
 
-            // Clean up
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }

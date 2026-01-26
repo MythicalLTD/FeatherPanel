@@ -50,7 +50,7 @@ export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProp
 
     const handleIframeError = (widgetId: string) => {
         setLoadingStates((prev) => ({ ...prev, [widgetId]: false }));
-        setErrorStates((prev) => ({ ...prev, [widgetId]: t('plugins.failedToLoadContent') })); // Simplified error message
+        setErrorStates((prev) => ({ ...prev, [widgetId]: t('plugins.failedToLoadContent') }));
     };
 
     const retryLoad = (widgetId: string) => {
@@ -70,10 +70,9 @@ export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProp
     const getGridClass = (widget: PluginWidget): string => {
         if (widget.layout) {
             const { columns, sm, md, lg, xl, colSpan } = widget.layout;
-            // Map 'columns' to colSpan if present, or use colSpan
+
             const baseSpan = colSpan ?? columns;
 
-            // Base class
             let classes = baseSpan ? `col-span-${baseSpan}` : 'col-span-12';
 
             if (sm) classes += ` sm:col-span-${sm}`;
@@ -94,7 +93,6 @@ export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProp
             return cn(sizeMap[widget.size] || sizeMap.full, widget.classes?.container);
         }
 
-        // Handle object size config if needed (simplified here to assume string or layout)
         return cn('col-span-12', widget.classes?.container);
     };
 
@@ -105,7 +103,6 @@ export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProp
         return true;
     };
 
-    // Helpers for card parts
     const shouldShowHeader = (widget: PluginWidget) => {
         if (!shouldRenderAsCard(widget)) return false;
         const header = widget.card?.header;
@@ -117,9 +114,6 @@ export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProp
     const getHeaderTitle = (widget: PluginWidget) => widget.card?.header?.title ?? widget.title;
     const getHeaderDescription = (widget: PluginWidget) => widget.card?.header?.description ?? widget.description;
 
-    // Icon handling requires dynamic imports or a map of Lucide icons,
-    // or we render the string as is if the backend sends SVG/HTML (unlikely)
-    // or just the name. For now, let's render the name in a badge-like style as in Vue.
     const getCardIcon = (widget: PluginWidget) => widget.card?.header?.icon ?? widget.icon;
 
     return (
@@ -230,8 +224,7 @@ export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProp
                                             }
                                             onLoad={() => handleIframeLoad(widget.id)}
                                             onError={() => handleIframeError(widget.id)}
-                                            // @ts-expect-error - legacy property but still useful for some browsers
-                                            allowTransparency='true'
+                                            allowTransparency={true}
                                         />
                                     )}
                                 </div>
@@ -264,7 +257,7 @@ export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProp
                                         }}
                                         onLoad={() => handleIframeLoad(widget.id)}
                                         onError={() => handleIframeError(widget.id)}
-                                        {...{ allowtransparency: 'true' }}
+                                        {...{ allowtransparency: true }}
                                     />
                                 )}
                             </div>

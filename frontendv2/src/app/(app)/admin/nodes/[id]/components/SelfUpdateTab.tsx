@@ -43,7 +43,6 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
     const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
     const [loading, setLoading] = useState(false);
 
-    // Advanced options state
     const [options, setOptions] = useState({
         source: 'github' as 'github' | 'url',
         repoOwner: DEFAULT_OPTIONS.repoOwner,
@@ -72,6 +71,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
 
     useEffect(() => {
         fetchVersionStatus();
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [nodeId]);
 
