@@ -471,6 +471,17 @@ export default function ServerFirewallPage() {
                         />
                     </div>
 
+					
+                    <div className='space-y-2'>
+                        <Label>{t('serverFirewall.protocol')}</Label>
+                        <HeadlessSelect
+                            value={formData.protocol || 'tcp'}
+                            onChange={(val) => setFormData((prev) => ({ ...prev, protocol: val as 'tcp' | 'udp' }))}
+                            options={protocolOptions}
+                            disabled={saving}
+                        />
+                    </div>
+
                     <div className='grid grid-cols-2 gap-4'>
                         <div className='space-y-2'>
                             <Label>{t('serverFirewall.priority')}</Label>
@@ -498,15 +509,6 @@ export default function ServerFirewallPage() {
                         </div>
                     </div>
 
-                    <div className='space-y-2'>
-                        <Label>{t('serverFirewall.protocol')}</Label>
-                        <HeadlessSelect
-                            value={formData.protocol || 'tcp'}
-                            onChange={(val) => setFormData((prev) => ({ ...prev, protocol: val as 'tcp' | 'udp' }))}
-                            options={protocolOptions}
-                            disabled={saving}
-                        />
-                    </div>
 
                     <div className='flex justify-end gap-2 mt-4'>
                         <Button variant='outline' onClick={() => setIsModalOpen(false)} disabled={saving} type='button'>

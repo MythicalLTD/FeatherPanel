@@ -15,7 +15,8 @@
 - Update avatar URL generation in SessionController to use application base URL, ensuring correct path for user avatars by @nayskutzu
 - Add installation status messages to English locale file for improved user feedback by @nayskutzu
 - Simplify SMTP configuration checks in AMailSender, setting default values for encryption and port by @nayskutzu
-- Enhance error handling for stale versions with user prompts in English locale by @NaysKutzu
+- Enhance error handling for stale versions with user prompts in English locale by @nayskutzu
+- Reintroduce protocol selection in server firewall page with improved layout by @nayskutzu
 
 ### Improved
 
