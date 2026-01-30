@@ -24,10 +24,32 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
 import { Home, RefreshCw } from 'lucide-react';
 
+/** Detect errors caused by stale cached assets after a new deploy (chunk load failures). */
+function isStaleVersionError(error: Error): boolean {
+    const msg = (error?.message || '').toLowerCase();
+    return (
+        msg.includes('loading chunk') ||
+        msg.includes('chunkloaderror') ||
+        msg.includes('failed to fetch dynamically imported module') ||
+        msg.includes('importing a module script failed') ||
+        msg.includes('loading css chunk') ||
+        msg.includes('error loading dynamically imported module') ||
+        msg.includes('load failed')
+    );
+}
+
+/** Force a full reload bypassing cache so user gets the new build. */
+function hardRefresh(): void {
+    const url = new URL(window.location.href);
+    url.searchParams.set('_', String(Date.now()));
+    window.location.href = url.toString();
+}
+
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
     const { backgroundType, backgroundImage } = useTheme();
     const { core } = useSettings();
     const { t } = useTranslation();
+    const staleVersion = isStaleVersionError(error);
 
     useEffect(() => {
         console.error(error);
@@ -122,10 +144,12 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 
                             <div className='space-y-3'>
                                 <h2 className='text-2xl md:text-3xl font-bold tracking-tight'>
-                                    {t('errors.500.title')}
+                                    {staleVersion ? t('errors.500.stale_version_title') : t('errors.500.title')}
                                 </h2>
-                                <p className='text-muted-foreground max-w-md mx-auto'>{t('errors.500.message')}</p>
-                                {error.digest && (
+                                <p className='text-muted-foreground max-w-md mx-auto'>
+                                    {staleVersion ? t('errors.500.stale_version_message') : t('errors.500.message')}
+                                </p>
+                                {!staleVersion && error.digest && (
                                     <p className='text-xs text-muted-foreground font-mono bg-muted px-3 py-1 rounded-lg inline-block'>
                                         {t('errors.500.error_id')}: {error.digest}
                                     </p>
@@ -133,9 +157,13 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
                             </div>
 
                             <div className='flex flex-col sm:flex-row gap-3 justify-center pt-4'>
-                                <Button onClick={reset} variant='outline' className='group'>
+                                <Button
+                                    onClick={staleVersion ? hardRefresh : reset}
+                                    variant='outline'
+                                    className='group'
+                                >
                                     <RefreshCw className='h-4 w-4 mr-2 group-hover:rotate-180 transition-transform duration-500' />
-                                    {t('errors.500.try_again')}
+                                    {staleVersion ? t('errors.500.refresh_page') : t('errors.500.try_again')}
                                 </Button>
                                 <Link href='/'>
                                     <Button className='w-full sm:w-auto group'>

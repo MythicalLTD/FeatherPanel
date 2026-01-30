@@ -23,9 +23,31 @@ import { useTheme } from '@/contexts/ThemeContext';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
 import { Home, RefreshCw } from 'lucide-react';
 
+/** Detect errors caused by stale cached assets after a new deploy (chunk load failures). */
+function isStaleVersionError(error: Error): boolean {
+    const msg = (error?.message || '').toLowerCase();
+    return (
+        msg.includes('loading chunk') ||
+        msg.includes('chunkloaderror') ||
+        msg.includes('failed to fetch dynamically imported module') ||
+        msg.includes('importing a module script failed') ||
+        msg.includes('loading css chunk') ||
+        msg.includes('error loading dynamically imported module') ||
+        msg.includes('load failed')
+    );
+}
+
+/** Force a full reload bypassing cache so user gets the new build. */
+function hardRefresh(): void {
+    const url = new URL(window.location.href);
+    url.searchParams.set('_', String(Date.now()));
+    window.location.href = url.toString();
+}
+
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
     const { backgroundType, backgroundImage } = useTheme();
     const [version, setVersion] = useState<string>('');
+    const staleVersion = isStaleVersionError(error);
 
     useEffect(() => {
         try {
@@ -121,13 +143,14 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 
                                     <div className='space-y-3'>
                                         <h2 className='text-2xl md:text-3xl font-bold tracking-tight'>
-                                            Critical Error
+                                            {staleVersion ? 'New Version Available' : 'Critical Error'}
                                         </h2>
                                         <p className='text-muted-foreground max-w-md mx-auto'>
-                                            A critical error occurred that prevented the application from loading.
-                                            Please try refreshing the page.
+                                            {staleVersion
+                                                ? 'The app was updated. Please refresh the page to load the latest version.'
+                                                : 'A critical error occurred that prevented the application from loading. Please try refreshing the page.'}
                                         </p>
-                                        {error.digest && (
+                                        {!staleVersion && error.digest && (
                                             <p className='text-xs text-muted-foreground font-mono bg-muted px-3 py-1 rounded-lg inline-block'>
                                                 Error ID: {error.digest}
                                             </p>
@@ -135,9 +158,13 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                                     </div>
 
                                     <div className='flex flex-col sm:flex-row gap-3 justify-center pt-4'>
-                                        <Button onClick={reset} variant='outline' className='group'>
+                                        <Button
+                                            onClick={staleVersion ? hardRefresh : reset}
+                                            variant='outline'
+                                            className='group'
+                                        >
                                             <RefreshCw className='h-4 w-4 mr-2 group-hover:rotate-180 transition-transform duration-500' />
-                                            Try Again
+                                            {staleVersion ? 'Refresh Page' : 'Try Again'}
                                         </Button>
                                         <Link href='/'>
                                             <Button className='w-full sm:w-auto group'>
