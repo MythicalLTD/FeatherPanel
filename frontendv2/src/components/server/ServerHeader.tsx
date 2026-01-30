@@ -57,13 +57,13 @@ export default function ServerHeader({
     const { t } = useTranslation();
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    const handleAction = async (action: string, callback?: () => void) => {
+    const handleAction = async (action: string, callback?: () => Promise<void> | void) => {
         if (!callback) return;
         setActionLoading(action);
         try {
             await callback();
         } finally {
-            setTimeout(() => setActionLoading(null), 1000);
+            setActionLoading(null);
         }
     };
 
@@ -127,7 +127,6 @@ export default function ServerHeader({
                                 size='sm'
                                 disabled={
                                     serverStatus === 'running' ||
-                                    serverStatus === 'starting' ||
                                     actionLoading === 'start'
                                 }
                                 onClick={() => handleAction('start', onStart)}
@@ -146,7 +145,7 @@ export default function ServerHeader({
                             <Button
                                 variant='outline'
                                 size='sm'
-                                disabled={serverStatus === 'offline' || actionLoading === 'restart'}
+                                disabled={actionLoading === 'restart'}
                                 onClick={() => handleAction('restart', onRestart)}
                                 className='flex items-center gap-2'
                             >
@@ -164,8 +163,6 @@ export default function ServerHeader({
                                 variant='outline'
                                 size='sm'
                                 disabled={
-                                    serverStatus === 'offline' ||
-                                    serverStatus === 'stopping' ||
                                     actionLoading === 'stop'
                                 }
                                 onClick={() => handleAction('stop', onStop)}
@@ -184,7 +181,7 @@ export default function ServerHeader({
                             <Button
                                 variant='destructive'
                                 size='sm'
-                                disabled={serverStatus === 'offline' || actionLoading === 'kill'}
+                                disabled={actionLoading === 'kill'}
                                 onClick={() => handleAction('kill', onKill)}
                                 className='flex items-center gap-2'
                             >

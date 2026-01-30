@@ -70,6 +70,7 @@ export default function ServerConsolePage() {
     const searchParams = useSearchParams();
     const serverUuid = params.uuidShort as string;
     const terminalRef = useRef<ServerTerminalRef>(null);
+    const pendingActionResolveRef = useRef<(() => void) | null>(null);
 
     const prevNetworkRef = useRef({ rx: 0, tx: 0, timestamp: 0 });
 
@@ -116,14 +117,14 @@ export default function ServerConsolePage() {
                     setConsoleFilters(parsed);
                 }, 0);
             }
-        } catch {}
+        } catch { }
     }, [serverUuid]);
 
     useEffect(() => {
         if (!serverUuid) return;
         try {
             localStorage.setItem(`featherpanel_console_filters_${serverUuid}`, JSON.stringify(consoleFilters));
-        } catch {}
+        } catch { }
     }, [serverUuid, consoleFilters]);
 
     const {
@@ -217,6 +218,10 @@ export default function ServerConsolePage() {
 
     const handleStatusUpdate = useCallback((status: string) => {
         setServerStatus(status);
+        if (pendingActionResolveRef.current) {
+            pendingActionResolveRef.current();
+            pendingActionResolveRef.current = null;
+        }
     }, []);
 
     const handleStatsUpdate = useCallback((stats: WingsStats) => {
@@ -317,6 +322,26 @@ export default function ServerConsolePage() {
             return () => clearTimeout(timer);
         }
     }, [cpuData.length]);
+
+    const handlePowerAction = useCallback(
+        async (action: 'start' | 'stop' | 'restart' | 'kill') => {
+            return new Promise<void>((resolve) => {
+                if (pendingActionResolveRef.current) {
+                    pendingActionResolveRef.current();
+                }
+                pendingActionResolveRef.current = resolve;
+                sendPowerAction(action);
+
+                setTimeout(() => {
+                    if (pendingActionResolveRef.current === resolve) {
+                        pendingActionResolveRef.current();
+                        pendingActionResolveRef.current = null;
+                    }
+                }, 2000);
+            });
+        },
+        [sendPowerAction],
+    );
 
     const getConnectionStatusInfo = () => {
         switch (connectionStatus) {
@@ -431,10 +456,10 @@ export default function ServerConsolePage() {
                 canStop={hasPermission('control.stop')}
                 canRestart={hasPermission('control.restart')}
                 canKill={hasPermission('control.stop')}
-                onStart={() => sendPowerAction('start')}
-                onStop={() => sendPowerAction('stop')}
-                onRestart={() => sendPowerAction('restart')}
-                onKill={() => sendPowerAction('kill')}
+                onStart={() => handlePowerAction('start')}
+                onStop={() => handlePowerAction('stop')}
+                onRestart={() => handlePowerAction('restart')}
+                onKill={() => handlePowerAction('kill')}
             />
 
             <WidgetRenderer widgets={getWidgets('server-console', 'after-header')} />
@@ -551,7 +576,7 @@ export default function ServerConsolePage() {
                         isOpen={eulaOpen}
                         onClose={() => setEulaOpen(false)}
                         server={server}
-                        onAccepted={() => {}}
+                        onAccepted={() => { }}
                     />
                     <JavaVersionDialog
                         isOpen={javaVersionOpen}
@@ -559,12 +584,12 @@ export default function ServerConsolePage() {
                         server={server}
                         detectedIssue={
                             detectedData.javaVersion &&
-                            (detectedData.javaVersion as { detectedVersion?: string }).detectedVersion
+                                (detectedData.javaVersion as { detectedVersion?: string }).detectedVersion
                                 ? t('features.javaVersion.detectedVersion', {
-                                      version:
-                                          (detectedData.javaVersion as { detectedVersion?: string }).detectedVersion ||
-                                          '',
-                                  })
+                                    version:
+                                        (detectedData.javaVersion as { detectedVersion?: string }).detectedVersion ||
+                                        '',
+                                })
                                 : undefined
                         }
                     />
