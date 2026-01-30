@@ -134,24 +134,13 @@ class AMailSender implements TimeTask
 
                     return;
                 }
-                if ($config->getSetting(ConfigInterface::SMTP_PORT, null) == null) {
-                    MinecraftColorCodeSupport::sendOutputWithNewLine('&cSMTP port is not set, skipping mail sending');
-                    MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
-
-                    return;
-                }
                 if ($config->getSetting(ConfigInterface::SMTP_FROM, null) == null) {
                     MinecraftColorCodeSupport::sendOutputWithNewLine('&cSMTP from is not set, skipping mail sending');
                     MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
 
                     return;
                 }
-                if ($config->getSetting(ConfigInterface::SMTP_ENCRYPTION, null) == null) {
-                    MinecraftColorCodeSupport::sendOutputWithNewLine('&cSMTP encryption is not set, skipping mail sending');
-                    MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
 
-                    return;
-                }
                 if ($config->getSetting(ConfigInterface::SMTP_FROM, null) == null) {
                     MinecraftColorCodeSupport::sendOutputWithNewLine('&cSMTP from is not set, skipping mail sending');
                     MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
@@ -171,8 +160,8 @@ class AMailSender implements TimeTask
                 $mailObj->SMTPAuth = true;
                 $mailObj->Username = $config->getSetting(ConfigInterface::SMTP_USER, null);
                 $mailObj->Password = $config->getSetting(ConfigInterface::SMTP_PASS, null);
-                $mailObj->SMTPSecure = $config->getSetting(ConfigInterface::SMTP_ENCRYPTION, 'ssl');
-                $mailObj->Port = $config->getSetting(ConfigInterface::SMTP_PORT, null);
+                $mailObj->SMTPSecure = $config->getSetting(ConfigInterface::SMTP_ENCRYPTION, 'tls');
+                $mailObj->Port = $config->getSetting(ConfigInterface::SMTP_PORT, '587');
                 $mailObj->setFrom($config->getSetting(ConfigInterface::SMTP_FROM, null), $config->getSetting(ConfigInterface::APP_NAME, null));
                 $mailObj->addReplyTo($config->getSetting(ConfigInterface::SMTP_FROM, null), $config->getSetting(ConfigInterface::APP_NAME, null));
                 $mailObj->isHTML(true);
