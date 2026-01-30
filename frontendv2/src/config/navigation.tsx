@@ -357,6 +357,17 @@ export const getAdminNavigationItems = (
             permission: Permissions.ADMIN_DATABASES_MANAGE,
             group: 'system',
         },
+        {
+            id: 'admin-logs',
+            name: t('navigation.items.logViewer'),
+            title: t('navigation.items.logViewer'),
+            url: '/admin/logs',
+            icon: FileText,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_ROOT,
+            group: 'system',
+        },
 
         ...(isDeveloperModeEnabled === true
             ? [
@@ -377,17 +388,6 @@ export const getAdminNavigationItems = (
                       title: t('navigation.items.console'),
                       url: '/admin/dev/console',
                       icon: SquareTerminal,
-                      isActive: false,
-                      category: 'admin' as const,
-                      permission: Permissions.ADMIN_ROOT,
-                      group: 'developer',
-                  },
-                  {
-                      id: 'admin-dev-logs',
-                      name: t('navigation.items.logViewer'),
-                      title: t('navigation.items.logViewer'),
-                      url: '/admin/dev/logs',
-                      icon: FileText,
                       isActive: false,
                       category: 'admin' as const,
                       permission: Permissions.ADMIN_ROOT,

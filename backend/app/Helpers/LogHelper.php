@@ -40,6 +40,8 @@ class LogHelper
                 return $logDir . 'featherpanel-web.fplog';
             case 'app':
                 return $logDir . 'App.fplog';
+            case 'mail':
+                return $logDir . 'mail.fplog';
             default:
                 return $logDir . 'featherpanel-web.fplog';
         }
@@ -181,6 +183,9 @@ class LogHelper
         }
         if (strpos($filename, 'App') !== false) {
             return 'app';
+        }
+        if (strpos($filename, 'mail') !== false) {
+            return 'mail';
         }
 
         return 'unknown';

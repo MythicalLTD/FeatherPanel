@@ -24,9 +24,36 @@ use App\Chat\TimedTask;
 use App\Config\ConfigFactory;
 use App\Config\ConfigInterface;
 use App\Cli\Utils\MinecraftColorCodeSupport;
+use App\Helpers\LogHelper;
+use App\Logger\LoggerFactory;
 
 class AMailSender implements TimeTask
 {
+    private function getMailLogger(): LoggerFactory
+    {
+        return new LoggerFactory(LogHelper::getLogFilePath('mail'));
+    }
+
+    /**
+     * Log to the dedicated mail log (and app log for errors) for easy debugging when mails fail.
+     */
+    private function mailLog(string $level, string $message, array $context = []): void
+    {
+        $logger = $this->getMailLogger();
+        $parts = ['[MAIL]', $message];
+        if (!empty($context)) {
+            $parts[] = json_encode($context);
+        }
+        $line = implode(' ', $parts);
+        if ($level === 'error') {
+            $logger->error($line);
+            \App\App::getInstance(false, true)->getLogger()->error($line);
+        } elseif ($level === 'warning') {
+            $logger->warning($line);
+        } else {
+            $logger->info($line);
+        }
+    }
     /**
      * Entry point for the cron mail sender.
      */
@@ -42,6 +69,7 @@ class AMailSender implements TimeTask
         } catch (\Exception $e) {
             $app = \App\App::getInstance(false, true);
             $app->getLogger()->error('Failed to send mail: ' . $e->getMessage());
+            $this->mailLog('error', 'Cron failed: ' . $e->getMessage());
             TimedTask::markRun('mail-sender', false, $e->getMessage());
         }
     }
@@ -54,43 +82,35 @@ class AMailSender implements TimeTask
         $app = \App\App::getInstance(false, true);
         $config = new ConfigFactory($app->getDatabase()->getPdo());
         $mailEnabled = $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false');
-        MinecraftColorCodeSupport::sendOutputWithNewLine('&aSending mails: ' . $mailEnabled);
         if ($mailEnabled == 'false') {
-            MinecraftColorCodeSupport::sendOutputWithNewLine('&cMail is disabled, skipping mail sending: ' . $mailEnabled);
+            $this->mailLog('info', 'Mail sending skipped: SMTP disabled');
+            MinecraftColorCodeSupport::sendOutputWithNewLine('&cMail is disabled, skipping mail sending');
 
             return;
         }
 
-        MinecraftColorCodeSupport::sendOutputWithNewLine('&aProcessing mails');
         // Only process mails with status 'pending' and not locked
         $mailQueue = array_filter(MailQueue::getPending(), function ($mail) {
-            MinecraftColorCodeSupport::sendOutputWithNewLine('&aProcessing mail: ' . $mail['id']);
-
             return ($mail['status'] ?? 'pending') === 'pending' && ($mail['locked'] ?? 'false') === 'false';
         });
-        MinecraftColorCodeSupport::sendOutputWithNewLine('&aFound ' . count($mailQueue) . ' mails to process');
+        $count = count($mailQueue);
+        $this->mailLog('info', "Processing queue: {$count} pending mail(s)");
+        MinecraftColorCodeSupport::sendOutputWithNewLine('&aFound ' . $count . ' mails to process');
 
-        MinecraftColorCodeSupport::sendOutputWithNewLine('&aProcessing mails');
         foreach ($mailQueue as $mail) {
-            MinecraftColorCodeSupport::sendOutputWithNewLine('&aProcessing mail: ' . $mail['id']);
-            // Lock the mail queue item to avoid duplicate processing
             MailQueue::update($mail['id'], ['locked' => 'true']);
             $mailInfo = MailList::getById($mail['id']);
             if (!$mailInfo) {
-                MinecraftColorCodeSupport::sendOutputWithNewLine('&cMailList entry not found for queue id: ' . $mail['id']);
+                $this->mailLog('error', 'MailList entry not found', ['queue_id' => $mail['id'], 'subject' => $mail['subject'] ?? '']);
                 MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
                 continue;
             }
-            MinecraftColorCodeSupport::sendOutputWithNewLine('&aFound mailInfo: ' . $mailInfo['id']);
             $userInfo = User::getUserByUuid($mailInfo['user_uuid']);
             if (!$userInfo || empty($userInfo['email']) || !filter_var($userInfo['email'], FILTER_VALIDATE_EMAIL)) {
-                $app->getLogger()->error('Invalid or missing user/email for mail queue id: ' . $mail['id']);
-                MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
-                MinecraftColorCodeSupport::sendOutputWithNewLine('&cInvalid or missing user/email for mail queue id: ' . $mail['id']);
+                $this->mailLog('error', 'Invalid or missing user/email', ['queue_id' => $mail['id'], 'subject' => $mail['subject'] ?? '']);
                 MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
                 continue;
             }
-            MinecraftColorCodeSupport::sendOutputWithNewLine('&aFound userInfo: ' . $userInfo['email']);
             $this->sendMail($mail, $mailInfo, $userInfo);
         }
     }
@@ -103,57 +123,39 @@ class AMailSender implements TimeTask
     {
         $app = \App\App::getInstance(false, true);
         $config = new ConfigFactory($app->getDatabase()->getPdo());
-        $mailEnabled = $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false');
-        MinecraftColorCodeSupport::sendOutputWithNewLine('&aMail enabled: ' . $mailEnabled);
-
-        if ($mailEnabled == 'false') {
-            MinecraftColorCodeSupport::sendOutputWithNewLine('&cMail is disabled, skipping mail sending: ' . $mailEnabled);
-
+        if ($config->getSetting(ConfigInterface::SMTP_ENABLED, 'false') == 'false') {
             return;
         }
-        MinecraftColorCodeSupport::sendOutputWithNewLine('&aSending mail to &e' . $userInfo['email']);
+
+        $to = $userInfo['email'];
+        $subject = $mail['subject'] ?? '(no subject)';
+
+        // Validate SMTP config once before retries
+        if ($config->getSetting(ConfigInterface::SMTP_HOST, null) == null) {
+            $this->mailLog('error', 'SMTP host not set', ['queue_id' => $mail['id'], 'to' => $to, 'subject' => $subject]);
+            MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
+            return;
+        }
+        if ($config->getSetting(ConfigInterface::SMTP_USER, null) == null) {
+            $this->mailLog('error', 'SMTP user not set', ['queue_id' => $mail['id'], 'to' => $to, 'subject' => $subject]);
+            MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
+            return;
+        }
+        if ($config->getSetting(ConfigInterface::SMTP_FROM, null) == null) {
+            $this->mailLog('error', 'SMTP from not set', ['queue_id' => $mail['id'], 'to' => $to, 'subject' => $subject]);
+            MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
+            return;
+        }
 
         $maxRetries = 3;
         $attempt = 0;
         $success = false;
         $lastError = '';
         while ($attempt < $maxRetries && !$success) {
-            MinecraftColorCodeSupport::sendOutputWithNewLine('&aAttempting to send mail to &e' . $userInfo['email'] . " (Attempt $attempt/$maxRetries)");
             ++$attempt;
+            $this->mailLog('info', "Attempt {$attempt}/{$maxRetries}", ['queue_id' => $mail['id'], 'to' => $to, 'subject' => $subject]);
+            MinecraftColorCodeSupport::sendOutputWithNewLine("&aAttempt {$attempt}/{$maxRetries}: sending to &e{$to}");
             try {
-                MinecraftColorCodeSupport::sendOutputWithNewLine('&aSending mail to &e' . $userInfo['email'] . " (Attempt $attempt/$maxRetries)");
-                if ($config->getSetting(ConfigInterface::SMTP_HOST, null) == null) {
-                    MinecraftColorCodeSupport::sendOutputWithNewLine('&cSMTP host is not set, skipping mail sending');
-                    MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
-
-                    return;
-                }
-                if ($config->getSetting(ConfigInterface::SMTP_USER, null) == null) {
-                    MinecraftColorCodeSupport::sendOutputWithNewLine('&cSMTP user is not set, skipping mail sending');
-                    MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
-
-                    return;
-                }
-                if ($config->getSetting(ConfigInterface::SMTP_FROM, null) == null) {
-                    MinecraftColorCodeSupport::sendOutputWithNewLine('&cSMTP from is not set, skipping mail sending');
-                    MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
-
-                    return;
-                }
-
-                if ($config->getSetting(ConfigInterface::SMTP_FROM, null) == null) {
-                    MinecraftColorCodeSupport::sendOutputWithNewLine('&cSMTP from is not set, skipping mail sending');
-                    MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
-
-                    return;
-                }
-                if ($config->getSetting(ConfigInterface::SMTP_FROM, null) == null) {
-                    MinecraftColorCodeSupport::sendOutputWithNewLine('&cSMTP from is not set, skipping mail sending');
-                    MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
-
-                    return;
-                }
-
                 $mailObj = new \PHPMailer\PHPMailer\PHPMailer(false);
                 $mailObj->isSMTP();
                 $mailObj->Host = $config->getSetting(ConfigInterface::SMTP_HOST, null);
@@ -174,17 +176,20 @@ class AMailSender implements TimeTask
                 $mailObj->send();
                 $success = true;
                 MailQueue::update($mail['id'], ['status' => 'sent', 'locked' => 'false']);
+                $this->mailLog('info', 'Sent', ['queue_id' => $mail['id'], 'to' => $to, 'subject' => $subject]);
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&aMail sent to &e' . $to);
             } catch (\Exception $e) {
                 $lastError = $e->getMessage();
-                MinecraftColorCodeSupport::sendOutputWithNewLine('&cFailed to send mail (attempt ' . $attempt . '): ' . $lastError);
-                $app->getLogger()->error('Failed to send mail (attempt ' . $attempt . '): ' . $lastError);
+                $this->mailLog('error', 'Send failed: ' . $lastError, ['queue_id' => $mail['id'], 'to' => $to, 'subject' => $subject, 'attempt' => $attempt]);
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&cAttempt ' . $attempt . ' failed: ' . $lastError);
                 if ($attempt < $maxRetries) {
-                    sleep(2); // Wait before retrying
+                    sleep(2);
                 }
             }
         }
         if (!$success) {
             MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
+            $this->mailLog('error', 'Gave up after ' . $maxRetries . ' attempts', ['queue_id' => $mail['id'], 'to' => $to, 'subject' => $subject, 'last_error' => $lastError]);
         }
     }
 }

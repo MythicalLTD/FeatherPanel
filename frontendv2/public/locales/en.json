@@ -2516,6 +2516,33 @@
 	},
 	"admin": {
 		"navbar": {},
+		"logs": {
+			"title": "Logs",
+			"description": "View application, web, and mail logs",
+			"log_type": "Log Type:",
+			"log_type_app": "App Logs",
+			"log_type_web": "Web Logs",
+			"log_type_mail": "Mail Logs",
+			"lines": "Lines:",
+			"logs_output": "Logs Output",
+			"lines_count": "lines",
+			"clear": "Clear",
+			"no_logs": "No logs available",
+			"loading": "Loading logs...",
+			"modified": "Modified:",
+			"actions": {
+				"refresh": "Refresh",
+				"auto_refresh": "Auto Refresh",
+				"stop_auto": "Stop Auto",
+				"clear_logs": "Clear Logs"
+			},
+			"messages": {
+				"fetch_failed": "Failed to fetch logs",
+				"fetch_files_failed": "Failed to fetch log files",
+				"cleared": "Logs cleared successfully",
+				"clear_failed": "Failed to clear logs"
+			}
+		},
 		"roles": {
 			"title": "Roles & Permissions",
 			"subtitle": "Manage roles and their associated permissions.",

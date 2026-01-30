@@ -33,7 +33,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Log file name'),
         new OA\Property(property: 'size', type: 'integer', description: 'File size in bytes'),
         new OA\Property(property: 'modified', type: 'integer', description: 'Last modification timestamp'),
-        new OA\Property(property: 'type', type: 'string', description: 'Log type (web, app, unknown)', enum: ['web', 'app', 'unknown']),
+        new OA\Property(property: 'type', type: 'string', description: 'Log type (web, app, mail, unknown)', enum: ['web', 'app', 'mail', 'unknown']),
     ]
 )]
 #[OA\Schema(
@@ -42,7 +42,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'logs', type: 'string', description: 'Log content as string'),
         new OA\Property(property: 'file', type: 'string', description: 'Log file name'),
-        new OA\Property(property: 'type', type: 'string', description: 'Log type', enum: ['web', 'app']),
+        new OA\Property(property: 'type', type: 'string', description: 'Log type', enum: ['web', 'app', 'mail']),
         new OA\Property(property: 'lines_count', type: 'integer', description: 'Number of lines in the log content'),
     ]
 )]
@@ -51,7 +51,7 @@ use Symfony\Component\HttpFoundation\Response;
     type: 'object',
     required: ['type'],
     properties: [
-        new OA\Property(property: 'type', type: 'string', description: 'Log type to clear', enum: ['web', 'app'], default: 'web'),
+        new OA\Property(property: 'type', type: 'string', description: 'Log type to clear', enum: ['web', 'app', 'mail'], default: 'web'),
     ]
 )]
 class LogViewerController
@@ -67,7 +67,7 @@ class LogViewerController
                 in: 'query',
                 description: 'Log type to retrieve',
                 required: false,
-                schema: new OA\Schema(type: 'string', enum: ['web', 'app'], default: 'web')
+                schema: new OA\Schema(type: 'string', enum: ['web', 'app', 'mail'], default: 'web')
             ),
             new OA\Parameter(
                 name: 'lines',
@@ -92,10 +92,6 @@ class LogViewerController
     public function getLogs(Request $request): Response
     {
         try {
-            $config = App::getInstance(true)->getConfig();
-            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to view logs in non-developer mode', 403);
-            }
             $logType = $request->query->get('type', 'web');
             $lines = (int) $request->query->get('lines', 100);
 
@@ -146,10 +142,6 @@ class LogViewerController
     public function clearLogs(Request $request): Response
     {
         try {
-            $config = App::getInstance(true)->getConfig();
-            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to clear logs in non-developer mode', 403);
-            }
             $logType = $request->request->get('type', 'web');
             $logFile = LogHelper::getLogFilePath($logType);
 
@@ -201,10 +193,6 @@ class LogViewerController
     public function getLogFiles(Request $request): Response
     {
         try {
-            $config = App::getInstance(true)->getConfig();
-            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to view log files in non-developer mode', 403);
-            }
             $logDir = dirname(__DIR__, 3) . '/storage/logs/';
             $files = [];
 
@@ -278,10 +266,6 @@ class LogViewerController
     public function uploadLogs(Request $request): Response
     {
         try {
-            $config = App::getInstance(true)->getConfig();
-            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to upload logs in non-developer mode', 403);
-            }
             $results = [];
 
             // Limit to last 10,000 lines to prevent memory issues
@@ -310,6 +294,19 @@ class LogViewerController
                 $results['app'] = [
                     'success' => false,
                     'error' => 'App log file not found',
+                ];
+            }
+
+            // Upload mail logs
+            $mailLogFile = LogHelper::getLogFilePath('mail');
+            if (file_exists($mailLogFile)) {
+                $mailContent = LogHelper::readLastLines($mailLogFile, $lineLimit);
+                $mailResult = LogHelper::uploadToMcloGs($mailContent);
+                $results['mail'] = $mailResult;
+            } else {
+                $results['mail'] = [
+                    'success' => false,
+                    'error' => 'Mail log file not found',
                 ];
             }
 

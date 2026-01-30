@@ -5,6 +5,8 @@
 ### Added
 
 - Added support for FastDL, enabling accelerated downloads for games utilizing the FastDL protocol. by @nayskutzu
+- Extend log viewer functionality to include mail logs and update UI for log management by @nayskutzu
+
 
 ### Fixed
 
