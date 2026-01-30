@@ -15,8 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Fragment } from 'react';
-import { Listbox, Transition, Field, Label, Description } from '@headlessui/react';
+import { Listbox, Field, Label, Description } from '@headlessui/react';
 import { Check, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -37,6 +36,8 @@ interface HeadlessSelectProps {
     buttonClassName?: string;
     disabled?: boolean;
     error?: string;
+    /** When 'top', dropdown opens upward to avoid overlapping content below (e.g. activity list). Default 'bottom'. */
+    anchorPosition?: 'top' | 'bottom';
 }
 
 export function HeadlessSelect({
@@ -50,8 +51,10 @@ export function HeadlessSelect({
     description,
     disabled,
     error,
+    anchorPosition = 'bottom',
 }: HeadlessSelectProps) {
     const selectedOption = options.find((o) => o.id === value) || null;
+    const anchor = anchorPosition === 'top' ? 'top start' : 'bottom start';
 
     return (
         <Listbox value={value} onChange={onChange} disabled={disabled}>
@@ -89,17 +92,16 @@ export function HeadlessSelect({
                     </span>
                 </Listbox.Button>
 
-                <Transition
-                    as={Fragment}
-                    enter='transition ease-out duration-200'
-                    enterFrom='opacity-0 translate-y-2 scale-95'
-                    enterTo='opacity-100 translate-y-0 scale-100'
-                    leave='transition ease-in duration-100'
-                    leaveFrom='opacity-100 translate-y-0 scale-100'
-                    leaveTo='opacity-0 translate-y-2 scale-95'
+                <Listbox.Options
+                    anchor={anchor}
+                    transition
+                    className={clsx(
+                        'max-h-60 w-[var(--button-width)] overflow-auto rounded-2xl bg-popover/80 backdrop-blur-3xl border border-white/10 dark:border-white/5 py-1 text-base shadow-[0_20px_50px_rgba(0,0,0,0.3)] focus:outline-none sm:text-sm z-50 custom-scrollbar p-1.5',
+                        'transition duration-200 ease-out data-closed:scale-95 data-closed:opacity-0',
+                        anchorPosition === 'top' ? 'origin-bottom' : 'origin-top',
+                    )}
                 >
-                    <Listbox.Options className='absolute mt-2 max-h-60 w-full overflow-auto rounded-2xl bg-popover/80 backdrop-blur-3xl border border-white/10 dark:border-white/5 py-1 text-base shadow-[0_20px_50px_rgba(0,0,0,0.3)] focus:outline-none sm:text-sm z-50 custom-scrollbar p-1.5 '>
-                        {options.map((option) => (
+                    {options.map((option) => (
                             <Listbox.Option
                                 key={option.id}
                                 className={({ active, selected }) =>
@@ -146,8 +148,7 @@ export function HeadlessSelect({
                                 )}
                             </Listbox.Option>
                         ))}
-                    </Listbox.Options>
-                </Transition>
+                </Listbox.Options>
 
                 {error && (
                     <Description className='text-sm text-destructive mt-2 flex items-center gap-1 animate-fade-in'>

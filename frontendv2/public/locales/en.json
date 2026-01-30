@@ -886,6 +886,12 @@
 			"task": "Task",
 			"subuser": "Subuser",
 			"allocation": "Allocation"
+		},
+		"filterDialog": {
+			"title": "Filter & view options",
+			"whatToShow": "What to show",
+			"apply": "Apply",
+			"showAll": "All Events"
 		}
 	},
 	"serverDatabases": {

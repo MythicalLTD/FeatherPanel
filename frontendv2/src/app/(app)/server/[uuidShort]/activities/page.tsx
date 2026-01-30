@@ -20,7 +20,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
-import { HeadlessSelect } from '@/components/ui/headless-select';
 import { Dialog, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
     Activity,
@@ -50,6 +49,8 @@ import {
     User,
     Globe,
     Loader2,
+    SlidersHorizontal,
+    Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -150,6 +151,8 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
 
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ActivityItem | null>(null);
+    const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+    const [pendingFilter, setPendingFilter] = useState('all');
 
     const fetchActivities = useCallback(
         async (page = 1) => {
@@ -372,6 +375,26 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         { id: 'allocation', name: t('serverActivities.filterNames.allocation') },
     ];
 
+    const selectedFilterLabel = filterOptions.find((o) => o.id === selectedEventFilter)?.name ?? t('serverActivities.allEvents');
+
+    const openFilterDialog = () => {
+        setPendingFilter(selectedEventFilter);
+        setFilterDialogOpen(true);
+    };
+
+    const applyFilter = () => {
+        setSelectedEventFilter(pendingFilter);
+        setFilterDialogOpen(false);
+        setTimeout(() => fetchActivities(1), 0);
+    };
+
+    const clearFilterInDialog = () => {
+        setPendingFilter('all');
+        setSelectedEventFilter('all');
+        setFilterDialogOpen(false);
+        setTimeout(() => fetchActivities(1), 0);
+    };
+
     if (permissionsLoading || (loading && activities.length === 0)) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
@@ -415,17 +438,19 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className='w-full md:w-64 flex gap-2'>
-                    <HeadlessSelect
-                        value={selectedEventFilter}
-                        onChange={(val: string | number) => {
-                            setSelectedEventFilter(String(val));
-                            setTimeout(() => fetchActivities(1), 0);
-                        }}
-                        options={filterOptions}
-                        placeholder={t('serverActivities.events')}
-                        buttonClassName='h-14 bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-base px-6 hover:bg-[#0A0A0A]/40 transition-colors font-medium'
-                    />
+                <div className='w-full md:w-auto flex gap-2'>
+                    <Button
+                        variant='glass'
+                        size='default'
+                        onClick={openFilterDialog}
+                        className='h-14 min-w-[12rem] md:min-w-[14rem] bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-base px-6 hover:bg-[#0A0A0A]/40 transition-colors font-medium flex items-center justify-between gap-3'
+                    >
+                        <SlidersHorizontal className='h-5 w-5 shrink-0 text-muted-foreground' />
+                        <span className='truncate'>{selectedFilterLabel}</span>
+                        {(selectedEventFilter !== 'all' || searchQuery) && (
+                            <span className='shrink-0 w-2 h-2 rounded-full bg-primary' aria-hidden />
+                        )}
+                    </Button>
                     {(searchQuery || selectedEventFilter !== 'all') && (
                         <Button
                             variant='glass'
@@ -565,6 +590,61 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             )}
 
             <WidgetRenderer widgets={getWidgets('server-activities', 'activity-bottom')} />
+
+            {/* Filter & view options dialog */}
+            <Dialog open={filterDialogOpen} onClose={() => setFilterDialogOpen(false)} className='max-w-md'>
+                <DialogHeader>
+                    <DialogTitle className='text-xl font-bold'>
+                        {t('serverActivities.filterDialog.title')}
+                    </DialogTitle>
+                    <DialogDescription className='text-muted-foreground'>
+                        {t('serverActivities.filterDialog.whatToShow')}
+                    </DialogDescription>
+                </DialogHeader>
+                <div className='mt-6 space-y-2 max-h-[min(60vh,400px)] overflow-y-auto pr-1 custom-scrollbar'>
+                    {filterOptions.map((option) => (
+                        <button
+                            key={option.id}
+                            type='button'
+                            onClick={() => setPendingFilter(option.id)}
+                            className={cn(
+                                'w-full flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5 text-left font-medium transition-all',
+                                pendingFilter === option.id
+                                    ? 'bg-primary/15 border-primary/40 text-primary'
+                                    : 'bg-muted/20 border-border/30 text-foreground hover:bg-muted/40 hover:border-border/50',
+                            )}
+                        >
+                            <span>{option.name}</span>
+                            {pendingFilter === option.id && <Check className='h-5 w-5 shrink-0 text-primary' />}
+                        </button>
+                    ))}
+                </div>
+                <DialogFooter className='mt-6 flex flex-wrap gap-2 sm:gap-3'>
+                    <Button
+                        variant='glass'
+                        size='default'
+                        onClick={clearFilterInDialog}
+                        className='order-2 sm:order-1'
+                    >
+                        {t('common.clear')}
+                    </Button>
+                    <Button
+                        variant='glass'
+                        size='default'
+                        onClick={() => setFilterDialogOpen(false)}
+                        className='order-3'
+                    >
+                        {t('common.cancel')}
+                    </Button>
+                    <Button
+                        size='default'
+                        onClick={applyFilter}
+                        className='order-1 sm:order-3 px-8 font-semibold'
+                    >
+                        {t('serverActivities.filterDialog.apply')}
+                    </Button>
+                </DialogFooter>
+            </Dialog>
 
             <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} className='max-w-[1200px]'>
                 {selectedItem && (
