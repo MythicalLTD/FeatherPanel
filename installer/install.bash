@@ -13,6 +13,7 @@ SKIP_OS_CHECK=false
 FORCE_ARM=false
 SKIP_INSTALL_CHECK=false
 SKIP_VIRT_CHECK=false
+SKIP_SYSTEM_UPDATE=false
 USE_DEV=false
 DEV_BRANCH=""
 DEV_SHA=""
@@ -33,6 +34,10 @@ while [[ $# -gt 0 ]]; do
 		;;
 	--skip-virt-check)
 		SKIP_VIRT_CHECK=true
+		shift
+		;;
+	--skip-system-update)
+		SKIP_SYSTEM_UPDATE=true
 		shift
 		;;
 	--dev)
@@ -59,6 +64,7 @@ while [[ $# -gt 0 ]]; do
 		echo "  --force-arm            Bypass ARM architecture warnings and checks"
 		echo "  --skip-install-check   Skip check for existing installation"
 		echo "  --skip-virt-check      Skip virtualization compatibility checks"
+		echo "  --skip-system-update   Skip apt update/upgrade and essential package installation"
 		echo "  --dev                  Use latest dev release images"
 		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., main, develop)"
 		echo "  --dev-sha SHA          Use dev images for specific commit SHA (requires --dev-branch)"
@@ -69,7 +75,7 @@ while [[ $# -gt 0 ]]; do
 		echo "  $0 --dev-branch main                # Dev images from main branch"
 		echo "  $0 --dev-branch main --dev-sha abc1234  # Specific commit from main branch"
 		echo ""
-		echo "Warning: Using --skip-os-check, --force-arm, --skip-install-check, or --skip-virt-check"
+		echo "Warning: Using --skip-os-check, --force-arm, --skip-install-check, --skip-virt-check, or --skip-system-update"
 		echo "may result in unsupported configurations. Use at your own risk."
 		echo ""
 		echo "Warning: Dev releases are development builds and may be unstable."
@@ -507,6 +513,39 @@ show_access_method_menu() {
 	echo -e "  ${YELLOW}[3]${NC} ${BOLD}Apache2 Reverse Proxy${NC} ${BLUE}(Traditional reverse proxy)${NC}"
 	echo -e "  ${CYAN}[4]${NC} ${BOLD}Direct Access${NC} ${BLUE}(Expose port 4831 directly)${NC}"
 	draw_hr
+}
+
+# Ensure system is ready: update packages, upgrade, install sudo/curl and essentials
+# Uses apt-get directly (we run as root); run early after OS check passes
+ensure_system_ready() {
+	if [ "$SKIP_SYSTEM_UPDATE" = true ]; then
+		log_warn "System update skipped via --skip-system-update flag"
+		return 0
+	fi
+
+	log_info "Updating package lists and ensuring essential packages (sudo, curl) are installed..."
+	log_info "This may take a few minutes on first run."
+
+	# We run as root - use apt-get directly (sudo may not exist on minimal systems)
+	if ! apt-get update -qq >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to update package lists. Check $LOG_FILE for details."
+		return 1
+	fi
+
+	# Install essential packages (sudo, curl needed by installer; others for Docker/Certbot)
+	ESSENTIAL_PACKAGES="sudo curl ca-certificates apt-transport-https gnupg"
+	for pkg in $ESSENTIAL_PACKAGES; do
+		if ! dpkg -s "$pkg" >/dev/null 2>&1; then
+			if ! run_with_spinner "Installing $pkg..." "$pkg installed." apt-get install -y -qq "$pkg"; then
+				log_warn "Failed to install $pkg - continuing anyway"
+			fi
+		fi
+	done
+
+	# Upgrade all packages (non-interactive, with spinner - can take several minutes)
+	if ! run_with_spinner "Upgrading system packages (may take 5-10 minutes)..." "System upgrade complete." apt-get upgrade -y -qq; then
+		log_warn "System upgrade had issues. Check $LOG_FILE. Continuing..."
+	fi
 }
 
 # Function to check if a package is installed and install it if not
@@ -3224,6 +3263,11 @@ if [ -f /etc/os-release ]; then
 	fi
 
 	log_success "Supported OS detected: $OS $OS_VERSION"
+
+	# Update system and ensure essential packages (sudo, curl, etc.) are installed
+	ensure_system_ready || {
+		log_warn "System preparation had issues. Installation may fail. Continuing..."
+	}
 
 	# Check if Docker is already installed
 	check_existing_docker() {
