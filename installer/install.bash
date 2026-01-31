@@ -233,6 +233,48 @@ draw_hr() {
 	echo -e "${CYAN}────────────────────────────────────────────────────────${NC}"
 }
 
+# Helper: detect public IPv4 and IPv6 for DNS setup (forces correct protocol, trims output)
+detect_public_ips() {
+	PUBLIC_IPV4=$(curl -4 -s --max-time 10 ifconfig.me 2>/dev/null || curl -4 -s --max-time 10 ipinfo.io/ip 2>/dev/null || true | tr -d '\r\n' | xargs || true)
+	PUBLIC_IPV6=$(curl -6 -s --max-time 10 ifconfig.co 2>/dev/null | tr -d '\r\n' | xargs || true)
+	# Validate: A record must be IPv4 (no colons), AAAA must be IPv6 (has colons)
+	[[ -n "$PUBLIC_IPV4" && "$PUBLIC_IPV4" == *:* ]] && PUBLIC_IPV4=""
+	[[ -n "$PUBLIC_IPV6" && "$PUBLIC_IPV6" != *:* ]] && PUBLIC_IPV6=""
+}
+
+# Helper: show DNS setup instructions (domain in $1, e.g. $domain or $panel_domain)
+show_dns_setup_instructions() {
+	local dns_domain="$1"
+	echo -e "${BOLD}${YELLOW}DNS Setup Required${NC}"
+	draw_hr
+	echo -e "${BLUE}Before creating the SSL certificate, you must create DNS records:${NC}"
+	echo ""
+	if [ -n "$PUBLIC_IPV4" ]; then
+		echo -e "${GREEN}Create an A record (IPv4):${NC}"
+		echo -e "  ${BOLD}Name:${NC} $dns_domain"
+		echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV4"
+		echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
+		echo ""
+	fi
+	if [ -n "$PUBLIC_IPV6" ]; then
+		echo -e "${GREEN}Create an AAAA record (IPv6):${NC}"
+		echo -e "  ${BOLD}Name:${NC} $dns_domain"
+		echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV6"
+		echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
+		echo ""
+	fi
+	if [ -z "$PUBLIC_IPV4" ] && [ -z "$PUBLIC_IPV6" ]; then
+		echo -e "${YELLOW}Could not detect your server's public IP. Create the appropriate DNS record manually.${NC}"
+		echo ""
+	else
+		[ -z "$PUBLIC_IPV4" ] && echo -e "${YELLOW}IPv4 not detected (IPv6-only server). Create an AAAA record.${NC}" && echo ""
+		[ -z "$PUBLIC_IPV6" ] && echo -e "${YELLOW}IPv6 not detected. An A record (IPv4) is sufficient.${NC}" && echo ""
+	fi
+	echo -e "${YELLOW}Please create these DNS records in your domain's DNS management panel.${NC}"
+	echo -e "${YELLOW}DNS propagation can take 5-60 minutes depending on your DNS provider.${NC}"
+	echo ""
+}
+
 # Helper function for centered, pretty messages
 print_centered() {
 	local text="$1"
@@ -1166,12 +1208,15 @@ update_feathercli() {
 install_certbot() {
 	local webserver_type="${1:-}" # Optional parameter: "nginx", "apache", or empty for auto-detect
 	log_step "Installing Certbot..."
+	log_info "Certbot has many dependencies - installation may take 5-15 minutes. Please wait..."
 
 	# Update package list (muted)
 	sudo apt-get update -qq >>"$LOG_FILE" 2>&1
 
-	# Install base certbot
-	install_packages certbot
+	# Install base certbot (with spinner - can take several minutes)
+	if ! run_with_spinner "Installing Certbot and dependencies..." "Certbot installed." install_packages certbot; then
+		return 1
+	fi
 
 	# Detect which web server plugins to install
 	plugins_to_install=()
@@ -1236,9 +1281,11 @@ install_certbot() {
 		fi
 	fi
 
-	# Install selected plugins
+	# Install selected plugins (with spinner - can take several minutes)
 	if [ ${#plugins_to_install[@]} -gt 0 ]; then
-		install_packages "${plugins_to_install[@]}"
+		if ! run_with_spinner "Installing web server plugin(s)..." "Web server plugins installed." install_packages "${plugins_to_install[@]}"; then
+			return 1
+		fi
 		log_success "Certbot installed successfully with web server plugins."
 	else
 		log_success "Certbot installed successfully (standalone mode available)."
@@ -1263,40 +1310,12 @@ create_ssl_certificate_http() {
 
 	# Get public IP addresses for DNS guidance
 	log_info "Detecting your server's public IP addresses..."
-	PUBLIC_IPV4=$(curl -s --max-time 10 ifconfig.me 2>/dev/null || curl -s --max-time 10 ipinfo.io/ip 2>/dev/null || echo "")
-	PUBLIC_IPV6=$(curl -s --max-time 10 -6 ifconfig.co 2>/dev/null || echo "")
+	detect_public_ips
 
 	if [ -t 1 ]; then clear; fi
 	print_banner
 	draw_hr
-	echo -e "${BOLD}${YELLOW}DNS Setup Required${NC}"
-	draw_hr
-	echo -e "${BLUE}Before creating the SSL certificate, you must create DNS records:${NC}"
-	echo -e ""
-	echo -e "${GREEN}Create an A record:${NC}"
-	echo -e "  ${BOLD}Name:${NC} $domain"
-	if [ -n "$PUBLIC_IPV4" ]; then
-		echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV4"
-	else
-		echo -e "  ${BOLD}Value:${NC} ${YELLOW}YOUR_SERVER_IPV4${NC}"
-	fi
-	echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
-	echo -e ""
-
-	if [ -n "$PUBLIC_IPV6" ]; then
-		echo -e "${GREEN}Create an AAAA record (IPv6 support):${NC}"
-		echo -e "  ${BOLD}Name:${NC} $domain"
-		echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV6"
-		echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
-		echo -e ""
-	else
-		echo -e "${YELLOW}IPv6 not detected or not available on this server.${NC}"
-		echo -e ""
-	fi
-
-	echo -e "${YELLOW}Please create these DNS records in your domain's DNS management panel.${NC}"
-	echo -e "${YELLOW}DNS propagation can take 5-60 minutes depending on your DNS provider.${NC}"
-	echo -e ""
+	show_dns_setup_instructions "$domain"
 	prompt "${BOLD}Press Enter when you have created the DNS records${NC} ${BLUE}(and waited for propagation)${NC}: " ready_to_continue
 
 	log_info "This will be the main domain for your Panel (not a subdirectory like /panel)."
@@ -1462,40 +1481,12 @@ create_ssl_certificate_dns() {
 
 	# Get public IP addresses for DNS guidance
 	log_info "Detecting your server's public IP addresses..."
-	PUBLIC_IPV4=$(curl -s --max-time 10 ifconfig.me 2>/dev/null || curl -s --max-time 10 ipinfo.io/ip 2>/dev/null || echo "")
-	PUBLIC_IPV6=$(curl -s --max-time 10 -6 ifconfig.co 2>/dev/null || echo "")
+	detect_public_ips
 
 	if [ -t 1 ]; then clear; fi
 	print_banner
 	draw_hr
-	echo -e "${BOLD}${YELLOW}DNS Setup Required${NC}"
-	draw_hr
-	echo -e "${BLUE}Before creating the SSL certificate, you must create DNS records:${NC}"
-	echo -e ""
-	echo -e "${GREEN}Create an A record:${NC}"
-	echo -e "  ${BOLD}Name:${NC} $domain"
-	if [ -n "$PUBLIC_IPV4" ]; then
-		echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV4"
-	else
-		echo -e "  ${BOLD}Value:${NC} ${YELLOW}YOUR_SERVER_IPV4${NC}"
-	fi
-	echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
-	echo -e ""
-
-	if [ -n "$PUBLIC_IPV6" ]; then
-		echo -e "${GREEN}Create an AAAA record (IPv6 support):${NC}"
-		echo -e "  ${BOLD}Name:${NC} $domain"
-		echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV6"
-		echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
-		echo -e ""
-	else
-		echo -e "${YELLOW}IPv6 not detected or not available on this server.${NC}"
-		echo -e ""
-	fi
-
-	echo -e "${YELLOW}Please create these DNS records in your domain's DNS management panel.${NC}"
-	echo -e "${YELLOW}DNS propagation can take 5-60 minutes depending on your DNS provider.${NC}"
-	echo -e ""
+	show_dns_setup_instructions "$domain"
 	prompt "${BOLD}Press Enter when you have created the DNS records${NC} ${BLUE}(and waited for propagation)${NC}: " ready_to_continue
 
 	log_info "This will be the main domain for your Panel (not a subdirectory like /panel)."
@@ -1597,8 +1588,11 @@ create_wings_ssl_certificate() {
 
 	if ! command -v certbot >/dev/null 2>&1; then
 		log_info "Certbot is not installed. Installing Certbot (standalone mode) for Wings..."
-		sudo apt-get update
-		install_packages certbot
+		log_info "Certbot has many dependencies - installation may take 5-15 minutes. Please wait..."
+		sudo apt-get update -qq >>"$LOG_FILE" 2>&1
+		if ! run_with_spinner "Installing Certbot and dependencies..." "Certbot installed." install_packages certbot; then
+			return 1
+		fi
 		log_success "Certbot installed successfully for Wings SSL certificates."
 	fi
 
@@ -1610,40 +1604,12 @@ create_wings_ssl_certificate() {
 
 	# Get public IP addresses for DNS guidance
 	log_info "Detecting your server's public IP addresses..."
-	PUBLIC_IPV4=$(curl -s --max-time 10 ifconfig.me 2>/dev/null || curl -s --max-time 10 ipinfo.io/ip 2>/dev/null || echo "")
-	PUBLIC_IPV6=$(curl -s --max-time 10 -6 ifconfig.co 2>/dev/null || echo "")
+	detect_public_ips
 
 	if [ -t 1 ]; then clear; fi
 	print_banner
 	draw_hr
-	echo -e "${BOLD}${YELLOW}DNS Setup Required${NC}"
-	draw_hr
-	echo -e "${BLUE}Before creating the SSL certificate, you must create DNS records:${NC}"
-	echo -e ""
-	echo -e "${GREEN}Create an A record:${NC}"
-	echo -e "  ${BOLD}Name:${NC} $domain"
-	if [ -n "$PUBLIC_IPV4" ]; then
-		echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV4"
-	else
-		echo -e "  ${BOLD}Value:${NC} ${YELLOW}YOUR_SERVER_IPV4${NC}"
-	fi
-	echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
-	echo -e ""
-
-	if [ -n "$PUBLIC_IPV6" ]; then
-		echo -e "${GREEN}Create an AAAA record (IPv6 support):${NC}"
-		echo -e "  ${BOLD}Name:${NC} $domain"
-		echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV6"
-		echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
-		echo -e ""
-	else
-		echo -e "${YELLOW}IPv6 not detected or not available on this server.${NC}"
-		echo -e ""
-	fi
-
-	echo -e "${YELLOW}Please create these DNS records in your domain's DNS management panel.${NC}"
-	echo -e "${YELLOW}DNS propagation can take 5-60 minutes depending on your DNS provider.${NC}"
-	echo -e ""
+	show_dns_setup_instructions "$domain"
 	prompt "${BOLD}Press Enter when you have created the DNS records${NC} ${BLUE}(and waited for propagation)${NC}: " ready_to_continue
 
 	log_info "Creating SSL certificate for Wings daemon..."
@@ -4199,37 +4165,12 @@ if [ -f /etc/os-release ]; then
 
 				# Get public IP addresses for DNS guidance
 				log_info "Detecting your server's public IP addresses..."
-				PUBLIC_IPV4=$(curl -s --max-time 10 ifconfig.me 2>/dev/null || curl -s --max-time 10 ipinfo.io/ip 2>/dev/null || echo "")
-				PUBLIC_IPV6=$(curl -s --max-time 10 -6 ifconfig.co 2>/dev/null || echo "")
+				detect_public_ips
 
 				if [ -t 1 ]; then clear; fi
 				print_banner
 				draw_hr
-				echo -e "${BOLD}${YELLOW}DNS Setup Required${NC}"
-				draw_hr
-				echo -e "${BLUE}Before creating the SSL certificate, you must create DNS records:${NC}"
-				echo -e ""
-				echo -e "${GREEN}Create an A record:${NC}"
-				echo -e "  ${BOLD}Name:${NC} $panel_domain"
-				if [ -n "$PUBLIC_IPV4" ]; then
-					echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV4"
-				else
-					echo -e "  ${BOLD}Value:${NC} ${YELLOW}YOUR_SERVER_IPV4${NC}"
-				fi
-				echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
-				echo -e ""
-
-				if [ -n "$PUBLIC_IPV6" ]; then
-					echo -e "${GREEN}Create an AAAA record (IPv6 support):${NC}"
-					echo -e "  ${BOLD}Name:${NC} $panel_domain"
-					echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV6"
-					echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
-					echo -e ""
-				fi
-
-				echo -e "${YELLOW}Please create these DNS records in your domain's DNS management panel.${NC}"
-				echo -e "${YELLOW}DNS propagation can take 5-60 minutes depending on your DNS provider.${NC}"
-				echo -e ""
+				show_dns_setup_instructions "$panel_domain"
 				prompt "${BOLD}Press Enter when you have created the DNS records${NC} ${BLUE}(and waited for propagation)${NC}: " ready_to_continue
 
 				# Try to create SSL certificate using HTTP/Standalone method
