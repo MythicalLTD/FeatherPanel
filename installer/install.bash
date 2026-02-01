@@ -139,6 +139,11 @@ run_with_spinner() {
 	local start_message="$1"
 	local success_message="$2"
 	shift 2
+	local show_elapsed="false"
+	if [ "${1:-}" = "true" ] || [ "${1:-}" = "false" ]; then
+		show_elapsed="$1"
+		shift 1
+	fi
 
 	log_step "$start_message"
 
@@ -146,6 +151,7 @@ run_with_spinner() {
 	local cmd_pid=$!
 	local spinner="|/-\\"
 	local i=0
+	local start_ts=$(date +%s)
 
 	if [ -t 1 ]; then
 		printf '  '
@@ -153,7 +159,16 @@ run_with_spinner() {
 
 	while kill -0 "$cmd_pid" >/dev/null 2>&1; do
 		if [ -t 1 ]; then
-			printf '\r[%c] %s' "${spinner:i%${#spinner}:1}" "$start_message"
+			local elapsed_str=""
+			if [ "$show_elapsed" = "true" ]; then
+				local elapsed=$(($(date +%s) - start_ts))
+				if [ $elapsed -ge 60 ]; then
+					local mins=$((elapsed / 60))
+					local secs=$((elapsed % 60))
+					elapsed_str=" (${mins}m ${secs}s)"
+				fi
+			fi
+			printf '\r[%c] %s%s   ' "${spinner:i%${#spinner}:1}" "$start_message" "$elapsed_str"
 		fi
 		i=$(((i + 1) % ${#spinner}))
 		sleep 0.15
@@ -543,7 +558,7 @@ ensure_system_ready() {
 	done
 
 	# Upgrade all packages (non-interactive, with spinner - can take several minutes)
-	if ! run_with_spinner "Upgrading system packages (may take 5-10 minutes)..." "System upgrade complete." apt-get upgrade -y -qq; then
+	if ! run_with_spinner "Upgrading system packages (may take 5-10 minutes)..." "System upgrade complete." true apt-get upgrade -y -qq; then
 		log_warn "System upgrade had issues. Check $LOG_FILE. Continuing..."
 	fi
 }
@@ -1248,12 +1263,13 @@ install_certbot() {
 	local webserver_type="${1:-}" # Optional parameter: "nginx", "apache", or empty for auto-detect
 	log_step "Installing Certbot..."
 	log_info "Certbot has many dependencies - installation may take 5-15 minutes. Please wait..."
+	log_info "To monitor progress in another terminal: tail -f $LOG_FILE"
 
 	# Update package list (muted)
 	sudo apt-get update -qq >>"$LOG_FILE" 2>&1
 
 	# Install base certbot (with spinner - can take several minutes)
-	if ! run_with_spinner "Installing Certbot and dependencies..." "Certbot installed." install_packages certbot; then
+	if ! run_with_spinner "Installing Certbot and dependencies..." "Certbot installed." true install_packages certbot; then
 		return 1
 	fi
 
@@ -1322,7 +1338,7 @@ install_certbot() {
 
 	# Install selected plugins (with spinner - can take several minutes)
 	if [ ${#plugins_to_install[@]} -gt 0 ]; then
-		if ! run_with_spinner "Installing web server plugin(s)..." "Web server plugins installed." install_packages "${plugins_to_install[@]}"; then
+		if ! run_with_spinner "Installing web server plugin(s)..." "Web server plugins installed." true install_packages "${plugins_to_install[@]}"; then
 			return 1
 		fi
 		log_success "Certbot installed successfully with web server plugins."
@@ -1629,7 +1645,7 @@ create_wings_ssl_certificate() {
 		log_info "Certbot is not installed. Installing Certbot (standalone mode) for Wings..."
 		log_info "Certbot has many dependencies - installation may take 5-15 minutes. Please wait..."
 		sudo apt-get update -qq >>"$LOG_FILE" 2>&1
-		if ! run_with_spinner "Installing Certbot and dependencies..." "Certbot installed." install_packages certbot; then
+		if ! run_with_spinner "Installing Certbot and dependencies..." "Certbot installed." true install_packages certbot; then
 			return 1
 		fi
 		log_success "Certbot installed successfully for Wings SSL certificates."
