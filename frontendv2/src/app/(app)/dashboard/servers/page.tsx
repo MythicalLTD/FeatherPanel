@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, Fragment, useCallback } from 'react';
+import { useState, useEffect, Fragment, useCallback, useRef } from 'react';
 
 import { Server, ServerFolder } from '@/types/server';
 
@@ -143,7 +143,7 @@ export default function ServersPage() {
 
                 if (serversArray.length > 0) {
                     const serverUuids = serversArray.map((s) => s.uuidShort);
-                    await connectServers(serverUuids);
+                    void connectServers(serverUuids);
                 }
             } catch (err) {
                 console.error('Failed to fetch servers:', err);
@@ -155,8 +155,11 @@ export default function ServersPage() {
         [pagination.per_page, t, connectServers],
     );
 
+    const fetchServersRef = useRef(fetchServers);
+    fetchServersRef.current = fetchServers;
+
     useEffect(() => {
-        fetchServers(1, viewMode === 'folders');
+        fetchServersRef.current(1, viewMode === 'folders');
     }, [viewMode]);
 
     useEffect(() => {
