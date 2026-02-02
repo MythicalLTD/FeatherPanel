@@ -16,6 +16,7 @@
 - Simplify SMTP configuration checks in AMailSender, setting default values for encryption and port by @nayskutzu
 - Enhance error handling for stale versions with user prompts in English locale by @nayskutzu
 - Reintroduce protocol selection in server firewall page with improved layout by @nayskutzu
+- Update admin settings navigation to redirect to the correct settings page by @nayskutzu
 
 ### Improved
 
