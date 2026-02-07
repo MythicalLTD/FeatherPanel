@@ -48,6 +48,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { copyToClipboard } from '@/lib/utils';
 
 interface UserRole {
     name: string;
@@ -199,6 +200,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
     useEffect(() => {
         fetchUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [resolvedParams.uuid]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -310,17 +312,6 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             toast.error(t('admin.users.messages.sso_failed'));
         } finally {
             setSsoGenerating(false);
-        }
-    };
-
-    const copySsoLinkToClipboard = async () => {
-        if (!ssoLink) return;
-
-        try {
-            await navigator.clipboard.writeText(ssoLink);
-            toast.success(t('admin.users.messages.sso_copied'));
-        } catch {
-            toast.error(t('admin.users.messages.sso_copy_failed'));
         }
     };
 
@@ -629,7 +620,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 {ssoLink ? (
                                     <div className='flex gap-2'>
                                         <Input value={ssoLink} readOnly className='h-10 text-xs font-mono' />
-                                        <Button size='icon' variant='outline' onClick={copySsoLinkToClipboard}>
+                                        <Button size='icon' variant='outline' onClick={() => copyToClipboard(ssoLink)}>
                                             <Copy className='h-4 w-4' />
                                         </Button>
                                     </div>

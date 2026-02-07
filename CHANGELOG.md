@@ -20,12 +20,14 @@
 - Update admin settings navigation to redirect to the correct settings page by @nayskutzu
 - Resolved an issue where the nodes page would incorrectly redirect users back to the locations page. by @nayskutzu
 - Fixed an issue preventing input in the PERPLEXIY AI agent configuration panel, ensuring users can now update settings as expected. by @nayskutzu
+- Fixed an issue where the SSO link copy function was not working in admin user settings. by @nayskutzu
 
 ### Improved
 
 - Enforce strict view_all handling in ServerUserController and dashboard to ensure only user-owned servers are displayed by @nayskutzu
 - Reimplement and re-organize cron jobs with new naming conventions, including data cleanup, zero trust scanning, and mail sending. by @nayskutzu
 - Implement filter dialog for server activities with localization support by @nayskutzu
+- Admins can now add themselves as subusers to servers, but are restricted from being added as server owners. by @nayskutzu
 
 ## v1.2.3 STABLE
 
