@@ -29,8 +29,20 @@ use App\Controllers\Wings\Server\WingsServersResetController;
 use App\Controllers\Wings\Server\WingsServerStatusController;
 use App\Controllers\Wings\Server\WingsServerInstallController;
 use App\Controllers\Wings\Transfer\WingsTransferStatusController;
+use App\Controllers\Wings\WingsConfigController;
 
 return function (RouteCollection $routes): void {
+    // Config endpoint: Wings (or setup script) fetches full config.yml from panel
+    App::getInstance(true)->registerWingsRoute(
+        $routes,
+        'wings-remote-config',
+        '/api/remote/config',
+        function (Request $request) {
+            return (new WingsConfigController())->getConfig($request);
+        },
+        ['GET']
+    );
+
     App::getInstance(true)->registerWingsRoute(
         $routes,
         'wings-remote-servers',

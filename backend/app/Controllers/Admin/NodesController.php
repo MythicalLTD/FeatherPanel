@@ -22,6 +22,7 @@ use App\Chat\Node;
 use App\Cache\Cache;
 use App\Chat\Activity;
 use App\Chat\Location;
+use App\Config\ConfigInterface;
 use GuzzleHttp\Client;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
@@ -911,6 +912,67 @@ class NodesController
         ]);
 
         return ApiResponse::success(['node' => $updatedNode], 'Master daemon reset key generated successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/admin/nodes/{id}/setup-command',
+        summary: 'Get node setup command',
+        description: 'Returns install command (step 1) and setup command (step 2) to configure the node. Step 1 installs FeatherWings; step 2 fetches config from the panel and restarts the daemon.',
+        tags: ['Admin - Nodes'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Setup commands (install + config)',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'panel_url', type: 'string', description: 'Panel base URL'),
+                        new OA\Property(property: 'config_url', type: 'string', description: 'Full URL to fetch config (GET with Wings Bearer token)'),
+                        new OA\Property(property: 'install_command', type: 'string', description: 'Step 1: Install FeatherWings on the node (curl get.featherpanel.com/installer.sh)'),
+                        new OA\Property(property: 'setup_command', type: 'string', description: 'Step 2: Fetch config and restart FeatherWings'),
+                        new OA\Property(property: 'config_path_hint', type: 'string', description: 'Suggested config path on the node (e.g. /etc/featherwings/config.yml)'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Node not found'),
+        ]
+    )]
+    public function getSetupCommand(Request $request, int $id): Response
+    {
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $panelUrl = rtrim(App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'), '/');
+        $configUrl = $panelUrl . '/api/remote/config';
+        $tokenId = $node['daemon_token_id'] ?? '';
+        $tokenSecret = $node['daemon_token'] ?? '';
+        $bearer = $tokenId . '.' . $tokenSecret;
+        $configPath = '/etc/featherwings/config.yml';
+        $configDir = '/etc/featherwings';
+
+        $installCommand = 'curl -sSL https://get.featherpanel.com/installer.sh | bash';
+        // Create config dir if missing, fetch config, then restart FeatherWings
+        $setupCommand = 'mkdir -p ' . $configDir . ' && curl -s -H "Authorization: Bearer ' . $bearer . '" "' . $configUrl . '" -o ' . $configPath . ' && systemctl restart featherwings';
+
+        return ApiResponse::success([
+            'panel_url' => $panelUrl,
+            'config_url' => $configUrl,
+            'install_command' => $installCommand,
+            'setup_command' => $setupCommand,
+            'config_path_hint' => $configPath,
+        ], 'Setup command retrieved successfully', 200);
     }
 
     #[OA\Post(

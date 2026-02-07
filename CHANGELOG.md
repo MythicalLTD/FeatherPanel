@@ -6,6 +6,7 @@
 
 - Added support for FastDL, enabling accelerated downloads for games utilizing the FastDL protocol. by @nayskutzu
 - Extend log viewer functionality to include mail logs and update UI for log management by @nayskutzu
+- Implement node setup command retrieval and Wings configuration generation; enhance admin routes and frontend integration for improved user experience by @nayskutzu
 
 ### Fixed
 

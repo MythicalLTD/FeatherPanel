@@ -129,6 +129,20 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-nodes-setup-command',
+        '/api/admin/nodes/{id}/setup-command',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodesController())->getSetupCommand($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-nodes-self-update',
         '/api/admin/nodes/{id}/self-update',
         function (Request $request, array $args) {

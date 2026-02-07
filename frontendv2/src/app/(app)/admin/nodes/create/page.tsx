@@ -171,9 +171,14 @@ export default function CreateNodePage() {
                 public_ip_v6: trimmedIPv6 === '' ? null : trimmedIPv6,
             };
 
-            await axios.put('/api/admin/nodes', submitData);
+            const { data } = await axios.put('/api/admin/nodes', submitData);
             toast.success(t('admin.node.messages.created'));
-            router.push('/admin/nodes');
+            const nodeId = data?.data?.node?.id;
+            if (nodeId) {
+                router.push(`/admin/nodes/${nodeId}/edit?tab=wings`);
+            } else {
+                router.push('/admin/nodes');
+            }
         } catch (error: unknown) {
             console.error('Error creating node:', error);
             const axiosError = error as { response?: { data?: { message?: string } } };

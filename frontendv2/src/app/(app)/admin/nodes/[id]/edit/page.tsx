@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -82,16 +82,18 @@ export default function EditNodePage() {
     const { t } = useTranslation();
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const nodeId = params.id;
+
+    const tabFromUrl = searchParams.get('tab');
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [locations, setLocations] = useState<Location[]>([]);
     const [selectedLocationName, setSelectedLocationName] = useState<string>('');
     const [nodeData, setNodeData] = useState<NodeData | null>(null);
-    const [copied, setCopied] = useState(false);
     const [resetting, setResetting] = useState(false);
-    const [activeTab, setActiveTab] = useState('details');
+    const [activeTab, setActiveTab] = useState(tabFromUrl === 'wings' ? 'wings' : 'details');
     const [locationModalOpen, setLocationModalOpen] = useState(false);
 
     const [locationPagination, setLocationPagination] = useState({
@@ -351,13 +353,6 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
         return yaml;
     }, [nodeData, form]);
 
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(wingsConfigYaml);
-        setCopied(true);
-        toast.success(t('admin.node.wings.config_copied'));
-        setTimeout(() => setCopied(false), 2000);
-    };
-
     const handleResetKey = async () => {
         setResetting(true);
         try {
@@ -544,9 +539,8 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
 
                         <TabsContent value='wings' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
                             <WingsTab
+                                nodeId={String(nodeId)}
                                 wingsConfigYaml={wingsConfigYaml}
-                                copyToClipboard={copyToClipboard}
-                                copied={copied}
                                 handleResetKey={handleResetKey}
                                 resetting={resetting}
                             />

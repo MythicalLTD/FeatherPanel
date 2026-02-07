@@ -761,4 +761,49 @@ class Node
 
         return $row;
     }
+
+    /**
+     * Generate Wings config.yml content from node data.
+     * Used by the panel to serve config to Wings via GET /api/remote/config (setup flow).
+     *
+     * @param array<string, mixed> $node Node record (must include uuid, daemon_token_id, daemon_token, daemonListen, scheme, fqdn, upload_size, daemonBase, daemonSFTP)
+     * @param string $panelUrl Panel base URL (e.g. https://panel.example.com) for Wings to call back
+     *
+     * @return string YAML content for FeatherWings config.yml
+     */
+    public static function generateWingsConfigYaml(array $node, string $panelUrl): string
+    {
+        $uuid = $node['uuid'] ?? '';
+        $tokenId = $node['daemon_token_id'] ?? '';
+        $token = $node['daemon_token'] ?? '';
+        $port = (int) ($node['daemonListen'] ?? 8080);
+        $scheme = ($node['scheme'] ?? 'https') === 'https';
+        $fqdn = $node['fqdn'] ?? 'localhost';
+        $uploadLimit = (int) ($node['upload_size'] ?? 100);
+        $dataPath = $node['daemonBase'] ?? '/var/lib/featherpanel/volumes';
+        $sftpPort = (int) ($node['daemonSFTP'] ?? 2022);
+
+        $remote = rtrim($panelUrl, '/');
+
+        $yaml = "debug: false\n";
+        $yaml .= "uuid: " . $uuid . "\n";
+        $yaml .= "token_id: " . $tokenId . "\n";
+        $yaml .= "token: " . $token . "\n";
+        $yaml .= "api:\n";
+        $yaml .= "  host: 0.0.0.0\n";
+        $yaml .= "  port: " . $port . "\n";
+        $yaml .= "  ssl:\n";
+        $yaml .= "    enabled: " . ($scheme ? 'true' : 'false') . "\n";
+        $yaml .= "    cert: /etc/letsencrypt/live/" . $fqdn . "/fullchain.pem\n";
+        $yaml .= "    key: /etc/letsencrypt/live/" . $fqdn . "/privkey.pem\n";
+        $yaml .= "  upload_limit: " . $uploadLimit . "\n";
+        $yaml .= "system:\n";
+        $yaml .= "  data: " . $dataPath . "\n";
+        $yaml .= "  sftp:\n";
+        $yaml .= "    bind_port: " . $sftpPort . "\n";
+        $yaml .= "allowed_mounts: []\n";
+        $yaml .= "remote: '" . $remote . "'\n";
+
+        return $yaml;
+    }
 }

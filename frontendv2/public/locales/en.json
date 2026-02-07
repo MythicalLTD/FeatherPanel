@@ -2743,9 +2743,18 @@
 				"config_help": "This configuration file should be saved as /etc/featherpanel/config.yml on your Wings daemon.",
 				"copy_config": "Copy Config",
 				"reset_key": "Request Master Daemon Reset Key",
+				"reset_key_help": "Generating a new master daemon key will invalidate the old one. You will need to update your Wings configuration manually.",
 				"reset_key_success": "Master daemon reset key requested successfully",
 				"reset_key_failed": "Failed to request reset key",
-				"config_copied": "Wings configuration copied to clipboard"
+				"config_copied": "Wings configuration copied to clipboard",
+				"setup_command_title": "Quick setup",
+				"setup_command_help": "Run these commands on your node server in order. Step 1 installs FeatherWings; step 2 fetches config from the panel and restarts the daemon.",
+				"setup_step_1": "Step 1 — Install FeatherWings",
+				"setup_step_2": "Step 2 — Fetch config and restart FeatherWings",
+				"copy_setup_command": "Copy command",
+				"setup_command_copied": "Setup command copied to clipboard",
+				"setup_command_then": "Step 2 creates /etc/featherwings if needed, writes the config, and restarts FeatherWings. Run step 1 first if FeatherWings is not installed.",
+				"setup_command_unavailable": "Setup command could not be loaded."
 			},
 			"columns": {},
 			"actions": {
