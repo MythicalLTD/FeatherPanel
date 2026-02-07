@@ -137,12 +137,6 @@ export default function NodesPage() {
         fetchLocations();
     }, []);
 
-    useEffect(() => {
-        if (!loading && nodes.length === 0 && !locationIdFilter && !debouncedSearchQuery) {
-            router.replace('/admin/locations');
-        }
-    }, [loading, nodes.length, locationIdFilter, debouncedSearchQuery, router]);
-
     const checkNodeHealth = useCallback(async (nodeId: number) => {
         try {
             const { data } = await axios.get(`/api/wings/admin/node/${nodeId}/system`);

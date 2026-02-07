@@ -17,6 +17,7 @@
 - Enhance error handling for stale versions with user prompts in English locale by @nayskutzu
 - Reintroduce protocol selection in server firewall page with improved layout by @nayskutzu
 - Update admin settings navigation to redirect to the correct settings page by @nayskutzu
+- Resolved an issue where the nodes page would incorrectly redirect users back to the locations page. by @nayskutzu
 
 ### Improved
 
