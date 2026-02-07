@@ -33,7 +33,6 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Editor } from '@monaco-editor/react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Globe, Plus, Search, Pencil, Trash2, Download, Upload, Check, X, FileCode, Users } from 'lucide-react';
-import router from 'next/router';
 
 interface TranslationFile {
     code: string;

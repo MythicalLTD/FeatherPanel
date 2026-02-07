@@ -94,7 +94,8 @@ export default function CreateProxyPage() {
         } finally {
             setLoading(false);
         }
-    }, [uuidShort, proxyEnabled, t]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [uuidShort, proxyEnabled, formData.port]);
 
     React.useEffect(() => {
         if (proxyEnabled && canManage) {

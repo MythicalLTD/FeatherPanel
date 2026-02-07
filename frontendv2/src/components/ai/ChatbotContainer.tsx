@@ -125,6 +125,7 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                 textareaRef.current?.focus();
             }, 100);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     const loadConversationsList = async () => {

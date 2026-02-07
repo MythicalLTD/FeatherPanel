@@ -95,6 +95,7 @@ export function ResourceCard({
         >
             {image ? (
                 <div className='absolute inset-0 z-0 opacity-10 blur-sm group-hover:opacity-20 transition-opacity'>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={image} alt='' className='w-full h-full object-cover' />
                 </div>
             ) : (

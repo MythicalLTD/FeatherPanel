@@ -86,18 +86,6 @@ export const getAdminNavigationItems = (
             group: 'overview',
         },
         {
-            id: 'admin-nodes-status',
-            name: t('navigation.items.nodeStatus'),
-            title: t('navigation.items.nodeStatus'),
-            url: '/admin/nodes/status',
-            icon: Activity,
-            isActive: false,
-            category: 'admin',
-            permission: Permissions.ADMIN_NODES_VIEW,
-            group: 'overview',
-        },
-
-        {
             id: 'admin-users',
             name: t('navigation.items.users'),
             title: t('navigation.items.users'),
@@ -175,6 +163,18 @@ export const getAdminNavigationItems = (
                     permission: Permissions.ADMIN_NODES_VIEW,
                     group: 'infrastructure',
                 },
+                {
+                    id: 'admin-nodes-status',
+                    name: t('navigation.items.nodeStatus'),
+                    title: t('navigation.items.nodeStatus'),
+                    url: '/admin/nodes/status',
+                    icon: Activity,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_NODES_VIEW,
+                    group: 'infrastructure',
+                },
+
                 {
                     id: 'admin-node-databases',
                     name: t('navigation.items.nodeDatabases'),

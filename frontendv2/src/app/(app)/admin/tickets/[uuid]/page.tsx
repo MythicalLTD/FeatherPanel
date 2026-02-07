@@ -247,6 +247,7 @@ export default function TicketViewPage() {
         fetchTicket();
         fetchDependencies();
         fetchWidgets();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [uuid]);
 
     useEffect(() => {

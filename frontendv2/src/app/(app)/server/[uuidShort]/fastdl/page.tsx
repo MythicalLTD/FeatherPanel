@@ -32,7 +32,7 @@ import { Download, Info, Loader2, Copy, ExternalLink, Save, AlertCircle, CheckCi
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { cn, isEnabled } from '@/lib/utils';
+import { isEnabled } from '@/lib/utils';
 
 interface FastDlConfig {
     enabled: boolean;

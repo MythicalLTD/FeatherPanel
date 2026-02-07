@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 /*
 This file is part of FeatherPanel.
 

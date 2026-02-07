@@ -208,8 +208,8 @@ export function SpigotConfigurationEditor({
     const [localForm, setLocalForm] = useState<SpigotForm>(form);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalForm(form);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [content]);
 
     const handleSave = () => {

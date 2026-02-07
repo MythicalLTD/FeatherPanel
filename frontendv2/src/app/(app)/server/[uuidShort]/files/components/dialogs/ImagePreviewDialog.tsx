@@ -82,6 +82,7 @@ export function ImagePreviewDialog({
                 URL.revokeObjectURL(blobUrl);
             }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, file?.name, uuid]);
 
     if (!file) return null;
@@ -140,6 +141,7 @@ export function ImagePreviewDialog({
 
                     {!loading && !error && blobUrl && (
                         <div className='relative group max-h-full animate-in zoom-in-95 duration-500'>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={blobUrl}
                                 alt={file.name}

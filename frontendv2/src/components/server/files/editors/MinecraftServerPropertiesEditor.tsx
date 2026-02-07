@@ -308,8 +308,8 @@ export function MinecraftServerPropertiesEditor({
     const [localForm, setLocalForm] = useState<MinecraftServerPropertiesForm>(form);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalForm(form);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [content]);
 
     const handleSave = () => {

@@ -125,6 +125,7 @@ export default function DashboardPage() {
         return () => {
             disconnectAll();
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const getServerLiveStats = (server: ServerData) => {

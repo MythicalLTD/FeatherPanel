@@ -200,7 +200,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
     useEffect(() => {
         fetchUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [resolvedParams.uuid]);
 
     const handleSubmit = async (e: React.FormEvent) => {

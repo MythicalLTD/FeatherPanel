@@ -276,8 +276,8 @@ export function BukkitConfigurationEditor({
     const [localForm, setLocalForm] = useState<BukkitForm>(form);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalForm(form);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [content]);
 
     const handleSave = () => {

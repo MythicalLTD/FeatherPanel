@@ -243,6 +243,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             fetchActivities(1);
         }, 500);
         return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchQuery, selectedEventFilter]);
 
     useEffect(() => {
@@ -254,6 +255,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             }
             fetchActivities(1);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [permissionsLoading]);
 
     function normalizeMetadata(m: unknown): ActivityMetadata | undefined {

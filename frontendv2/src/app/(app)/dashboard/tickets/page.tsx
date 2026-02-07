@@ -146,6 +146,7 @@ export default function TicketsPage() {
 
     useEffect(() => {
         fetchTickets();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pagination.page, filterStatus, filterCategory]);
 
     const fetchTickets = async () => {
