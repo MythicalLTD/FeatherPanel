@@ -24,7 +24,6 @@
 - Reimplement and re-organize cron jobs with new naming conventions, including data cleanup, zero trust scanning, and mail sending. by @nayskutzu
 - Implement filter dialog for server activities with localization support by @nayskutzu
 
-
 ## v1.2.3 STABLE
 
 ### Fixed
