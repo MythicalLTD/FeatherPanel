@@ -82,6 +82,7 @@ class SettingsController
         ConfigInterface::CHATBOT_OPENROUTER_API_KEY,
         ConfigInterface::CHATBOT_OPENAI_API_KEY,
         ConfigInterface::CHATBOT_GROK_API_KEY,
+        ConfigInterface::CHATBOT_PERPLEXITY_API_KEY,
         // Add other sensitive settings here
     ];
     private $settingsCategories = [
@@ -215,6 +216,9 @@ class SettingsController
                 ConfigInterface::CHATBOT_OLLAMA_MODEL,
                 ConfigInterface::CHATBOT_GROK_API_KEY,
                 ConfigInterface::CHATBOT_GROK_MODEL,
+                ConfigInterface::CHATBOT_PERPLEXITY_API_KEY,
+                ConfigInterface::CHATBOT_PERPLEXITY_MODEL,
+                ConfigInterface::CHATBOT_PERPLEXITY_BASE_URL,
             ],
         ],
         'ticket_system' => [
