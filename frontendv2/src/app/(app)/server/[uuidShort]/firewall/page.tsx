@@ -471,7 +471,6 @@ export default function ServerFirewallPage() {
                         />
                     </div>
 
-					
                     <div className='space-y-2'>
                         <Label>{t('serverFirewall.protocol')}</Label>
                         <HeadlessSelect
@@ -508,7 +507,6 @@ export default function ServerFirewallPage() {
                             />
                         </div>
                     </div>
-
 
                     <div className='flex justify-end gap-2 mt-4'>
                         <Button variant='outline' onClick={() => setIsModalOpen(false)} disabled={saving} type='button'>

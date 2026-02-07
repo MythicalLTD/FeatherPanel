@@ -117,14 +117,14 @@ export default function ServerConsolePage() {
                     setConsoleFilters(parsed);
                 }, 0);
             }
-        } catch { }
+        } catch {}
     }, [serverUuid]);
 
     useEffect(() => {
         if (!serverUuid) return;
         try {
             localStorage.setItem(`featherpanel_console_filters_${serverUuid}`, JSON.stringify(consoleFilters));
-        } catch { }
+        } catch {}
     }, [serverUuid, consoleFilters]);
 
     const {
@@ -576,7 +576,7 @@ export default function ServerConsolePage() {
                         isOpen={eulaOpen}
                         onClose={() => setEulaOpen(false)}
                         server={server}
-                        onAccepted={() => { }}
+                        onAccepted={() => {}}
                     />
                     <JavaVersionDialog
                         isOpen={javaVersionOpen}
@@ -584,12 +584,12 @@ export default function ServerConsolePage() {
                         server={server}
                         detectedIssue={
                             detectedData.javaVersion &&
-                                (detectedData.javaVersion as { detectedVersion?: string }).detectedVersion
+                            (detectedData.javaVersion as { detectedVersion?: string }).detectedVersion
                                 ? t('features.javaVersion.detectedVersion', {
-                                    version:
-                                        (detectedData.javaVersion as { detectedVersion?: string }).detectedVersion ||
-                                        '',
-                                })
+                                      version:
+                                          (detectedData.javaVersion as { detectedVersion?: string }).detectedVersion ||
+                                          '',
+                                  })
                                 : undefined
                         }
                     />

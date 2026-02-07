@@ -125,10 +125,7 @@ export default function ServerHeader({
                             <Button
                                 variant='outline'
                                 size='sm'
-                                disabled={
-                                    serverStatus === 'running' ||
-                                    actionLoading === 'start'
-                                }
+                                disabled={serverStatus === 'running' || actionLoading === 'start'}
                                 onClick={() => handleAction('start', onStart)}
                                 className='flex items-center gap-2'
                             >
@@ -162,9 +159,7 @@ export default function ServerHeader({
                             <Button
                                 variant='outline'
                                 size='sm'
-                                disabled={
-                                    actionLoading === 'stop'
-                                }
+                                disabled={actionLoading === 'stop'}
                                 onClick={() => handleAction('stop', onStop)}
                                 className='flex items-center gap-2'
                             >

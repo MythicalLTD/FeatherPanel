@@ -281,7 +281,10 @@ export default function TranslationsPage() {
                 icon={Globe}
                 actions={
                     <div className='flex gap-2'>
-                        <Button onClick={() => location.href = 'https://github.com/featherpanel-com/translations'} variant='outline'>
+                        <Button
+                            onClick={() => (location.href = 'https://github.com/featherpanel-com/translations')}
+                            variant='outline'
+                        >
                             <Users className='h-4 w-4 mr-2' />
                             {t('admin.translations.community_made')}
                         </Button>

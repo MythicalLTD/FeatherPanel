@@ -21,7 +21,6 @@ use App\App;
 use App\Helpers\LogHelper;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Config\ConfigInterface;
 use App\Plugins\Events\Events\LogViewerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

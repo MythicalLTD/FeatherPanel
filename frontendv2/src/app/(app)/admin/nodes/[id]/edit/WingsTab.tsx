@@ -38,12 +38,7 @@ interface SetupCommandData {
     config_path_hint: string;
 }
 
-export function WingsTab({
-    nodeId,
-    wingsConfigYaml,
-    handleResetKey,
-    resetting,
-}: WingsTabProps) {
+export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }: WingsTabProps) {
     const { t } = useTranslation();
     const [setupData, setSetupData] = useState<SetupCommandData | null>(null);
     const [setupLoading, setSetupLoading] = useState(false);
@@ -66,7 +61,6 @@ export function WingsTab({
     useEffect(() => {
         fetchSetupCommand();
     }, [fetchSetupCommand]);
-
 
     return (
         <div className='space-y-6'>
@@ -124,12 +118,12 @@ export function WingsTab({
                                     </div>
                                 </div>
                             )}
-                            <p className='text-xs text-muted-foreground'>
-                                {t('admin.node.wings.setup_command_then')}
-                            </p>
+                            <p className='text-xs text-muted-foreground'>{t('admin.node.wings.setup_command_then')}</p>
                         </>
                     ) : (
-                        <p className='text-sm text-muted-foreground'>{t('admin.node.wings.setup_command_unavailable')}</p>
+                        <p className='text-sm text-muted-foreground'>
+                            {t('admin.node.wings.setup_command_unavailable')}
+                        </p>
                     )}
                 </div>
             </PageCard>

@@ -19,6 +19,7 @@ use App\App;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Wings\WingsConfigController;
 use App\Controllers\Wings\Sftp\SftpAuthController;
 use App\Controllers\Wings\Backup\WingsBackupController;
 use App\Controllers\Wings\Activity\WingsActivityController;
@@ -29,7 +30,6 @@ use App\Controllers\Wings\Server\WingsServersResetController;
 use App\Controllers\Wings\Server\WingsServerStatusController;
 use App\Controllers\Wings\Server\WingsServerInstallController;
 use App\Controllers\Wings\Transfer\WingsTransferStatusController;
-use App\Controllers\Wings\WingsConfigController;
 
 return function (RouteCollection $routes): void {
     // Config endpoint: Wings (or setup script) fetches full config.yml from panel

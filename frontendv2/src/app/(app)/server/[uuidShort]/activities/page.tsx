@@ -375,7 +375,8 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         { id: 'allocation', name: t('serverActivities.filterNames.allocation') },
     ];
 
-    const selectedFilterLabel = filterOptions.find((o) => o.id === selectedEventFilter)?.name ?? t('serverActivities.allEvents');
+    const selectedFilterLabel =
+        filterOptions.find((o) => o.id === selectedEventFilter)?.name ?? t('serverActivities.allEvents');
 
     const openFilterDialog = () => {
         setPendingFilter(selectedEventFilter);
@@ -594,9 +595,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             {/* Filter & view options dialog */}
             <Dialog open={filterDialogOpen} onClose={() => setFilterDialogOpen(false)} className='max-w-md'>
                 <DialogHeader>
-                    <DialogTitle className='text-xl font-bold'>
-                        {t('serverActivities.filterDialog.title')}
-                    </DialogTitle>
+                    <DialogTitle className='text-xl font-bold'>{t('serverActivities.filterDialog.title')}</DialogTitle>
                     <DialogDescription className='text-muted-foreground'>
                         {t('serverActivities.filterDialog.whatToShow')}
                     </DialogDescription>
@@ -620,12 +619,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                     ))}
                 </div>
                 <DialogFooter className='mt-6 flex flex-wrap gap-2 sm:gap-3'>
-                    <Button
-                        variant='glass'
-                        size='default'
-                        onClick={clearFilterInDialog}
-                        className='order-2 sm:order-1'
-                    >
+                    <Button variant='glass' size='default' onClick={clearFilterInDialog} className='order-2 sm:order-1'>
                         {t('common.clear')}
                     </Button>
                     <Button
@@ -636,11 +630,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                     >
                         {t('common.cancel')}
                     </Button>
-                    <Button
-                        size='default'
-                        onClick={applyFilter}
-                        className='order-1 sm:order-3 px-8 font-semibold'
-                    >
+                    <Button size='default' onClick={applyFilter} className='order-1 sm:order-3 px-8 font-semibold'>
                         {t('serverActivities.filterDialog.apply')}
                     </Button>
                 </DialogFooter>

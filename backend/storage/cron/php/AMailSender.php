@@ -21,14 +21,34 @@ use App\Chat\User;
 use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\TimedTask;
+use App\Helpers\LogHelper;
 use App\Config\ConfigFactory;
+use App\Logger\LoggerFactory;
 use App\Config\ConfigInterface;
 use App\Cli\Utils\MinecraftColorCodeSupport;
-use App\Helpers\LogHelper;
-use App\Logger\LoggerFactory;
 
 class AMailSender implements TimeTask
 {
+    /**
+     * Entry point for the cron mail sender.
+     */
+    public function run()
+    {
+        $cron = new Cron('mail-sender', '1M');
+        $force = getenv('FP_CRON_FORCE') === '1';
+        try {
+            $cron->runIfDue(function () {
+                $this->sendMails();
+                TimedTask::markRun('mail-sender', true, 'Mail sender heartbeat');
+            }, $force);
+        } catch (\Exception $e) {
+            $app = \App\App::getInstance(false, true);
+            $app->getLogger()->error('Failed to send mail: ' . $e->getMessage());
+            $this->mailLog('error', 'Cron failed: ' . $e->getMessage());
+            TimedTask::markRun('mail-sender', false, $e->getMessage());
+        }
+    }
+
     private function getMailLogger(): LoggerFactory
     {
         return new LoggerFactory(LogHelper::getLogFilePath('mail'));
@@ -52,25 +72,6 @@ class AMailSender implements TimeTask
             $logger->warning($line);
         } else {
             $logger->info($line);
-        }
-    }
-    /**
-     * Entry point for the cron mail sender.
-     */
-    public function run()
-    {
-        $cron = new Cron('mail-sender', '1M');
-        $force = getenv('FP_CRON_FORCE') === '1';
-        try {
-            $cron->runIfDue(function () {
-                $this->sendMails();
-                TimedTask::markRun('mail-sender', true, 'Mail sender heartbeat');
-            }, $force);
-        } catch (\Exception $e) {
-            $app = \App\App::getInstance(false, true);
-            $app->getLogger()->error('Failed to send mail: ' . $e->getMessage());
-            $this->mailLog('error', 'Cron failed: ' . $e->getMessage());
-            TimedTask::markRun('mail-sender', false, $e->getMessage());
         }
     }
 
@@ -134,16 +135,19 @@ class AMailSender implements TimeTask
         if ($config->getSetting(ConfigInterface::SMTP_HOST, null) == null) {
             $this->mailLog('error', 'SMTP host not set', ['queue_id' => $mail['id'], 'to' => $to, 'subject' => $subject]);
             MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
+
             return;
         }
         if ($config->getSetting(ConfigInterface::SMTP_USER, null) == null) {
             $this->mailLog('error', 'SMTP user not set', ['queue_id' => $mail['id'], 'to' => $to, 'subject' => $subject]);
             MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
+
             return;
         }
         if ($config->getSetting(ConfigInterface::SMTP_FROM, null) == null) {
             $this->mailLog('error', 'SMTP from not set', ['queue_id' => $mail['id'], 'to' => $to, 'subject' => $subject]);
             MailQueue::update($mail['id'], ['status' => 'failed', 'locked' => 'false']);
+
             return;
         }
 
