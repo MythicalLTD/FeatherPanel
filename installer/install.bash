@@ -433,7 +433,7 @@ show_wings_menu() {
 	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install Wings${NC}"
 	echo -e "     ${BLUE}→ Install FeatherWings game server daemon${NC}"
 	echo -e "     ${BLUE}→ Creates systemd service for automatic startup${NC}"
-	echo -e "     ${YELLOW}⚠️  Requires SSL certificate (option 4) before installation${NC}"
+	echo -e "     ${BLUE}→ SSL (option 4) recommended for production; optional for home hosting${NC}"
 	echo ""
 	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall Wings${NC}"
 	echo -e "     ${YELLOW}⚠️  WARNING: This will remove Wings and its configuration${NC}"
@@ -445,8 +445,8 @@ show_wings_menu() {
 	echo -e "     ${BLUE}→ Restart Wings service with new version${NC}"
 	echo ""
 	echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Create SSL Certificate${NC}"
-	echo -e "     ${BLUE}→ Required before installing Wings${NC}"
-	echo -e "     ${BLUE}→ Creates Let's Encrypt certificate for Wings domain${NC}"
+	echo -e "     ${BLUE}→ Optional: use for domain-based nodes (Let's Encrypt)${NC}"
+	echo -e "     ${BLUE}→ Skip if home hosting; you can use self-signed or IP in config${NC}"
 	echo ""
 	draw_hr
 }
@@ -526,7 +526,8 @@ show_access_method_menu() {
 	echo -e "  ${GREEN}[1]${NC} ${BOLD}Cloudflare Tunnel${NC} ${BLUE}(HTTPS via Cloudflare, no port forwarding)${NC}"
 	echo -e "  ${BLUE}[2]${NC} ${BOLD}Nginx Reverse Proxy${NC} ${BLUE}(Traditional reverse proxy)${NC}"
 	echo -e "  ${YELLOW}[3]${NC} ${BOLD}Apache2 Reverse Proxy${NC} ${BLUE}(Traditional reverse proxy)${NC}"
-	echo -e "  ${CYAN}[4]${NC} ${BOLD}Direct Access${NC} ${BLUE}(Expose port 4831 directly)${NC}"
+	echo -e "  ${CYAN}[4]${NC} ${BOLD}Direct Access${NC} ${BLUE}(Home hosting / no domain – use http://YOUR_IP:4831)${NC}"
+	echo -e "     ${BLUE}→ No domain or SSL needed; ideal for local network or testing${NC}"
 	draw_hr
 }
 
@@ -1084,6 +1085,7 @@ EOF
 	log_info "Next steps:"
 	log_info "1. Create a node in your FeatherPanel admin panel"
 	log_info "2. Copy the configuration from the node to /etc/featherpanel/config.yml"
+	log_info "   (For home hosting: you can use your server IP and, if needed, a self-signed certificate in config.yml)"
 	log_info "3. Start FeatherWings with: sudo systemctl start featherwings"
 	log_info "4. Or run in debug mode first: sudo featherwings --debug"
 }
@@ -3967,10 +3969,11 @@ if [ -f /etc/os-release ]; then
 			log_info "Domain set to: $panel_domain"
 			;;
 		4)
-			# Direct Access
+			# Direct Access (home hosting / no domain)
 			CF_TUNNEL_SETUP="n"
 			REVERSE_PROXY_TYPE="none"
-			log_info "Direct access selected. Port 4831 will be exposed directly."
+			log_info "Direct access selected – no domain or SSL needed."
+			log_info "Access the Panel at http://YOUR_IP:4831 (open port 4831 in your firewall if needed)."
 			;;
 		esac
 
@@ -4460,15 +4463,15 @@ if [ -f /etc/os-release ]; then
 			fi
 			echo -e "     ${BLUE}• Configure DNS to point to your server${NC}"
 		else
-			echo -e "  ${GREEN}${BOLD}✓${NC} ${BOLD}Direct Access:${NC}"
+			echo -e "  ${GREEN}${BOLD}✓${NC} ${BOLD}Direct Access (home hosting / no domain):${NC}"
+			echo -e "     ${BLUE}• No domain or SSL required${NC}"
 			echo -e "     ${BLUE}• Local: ${CYAN}http://localhost:4831${NC}"
 			if [ "$PUBLIC_IP" != "Unable to detect" ]; then
-				echo -e "     ${BLUE}• Public: ${CYAN}http://$PUBLIC_IP:4831${NC}"
-				echo -e "     ${YELLOW}• Ensure port 4831 is open in firewall${NC}"
+				echo -e "     ${BLUE}• On your network: ${CYAN}http://$PUBLIC_IP:4831${NC}"
+				echo -e "     ${YELLOW}• Open port 4831 in your router/firewall if accessing from other devices${NC}"
 			else
-				echo -e "     ${BLUE}• Public: ${CYAN}http://YOUR_SERVER_IP:4831${NC}"
-				echo -e "     ${YELLOW}• Replace YOUR_SERVER_IP with your actual server IP${NC}"
-				echo -e "     ${YELLOW}• Ensure port 4831 is open in firewall${NC}"
+				echo -e "     ${BLUE}• On your network: ${CYAN}http://YOUR_SERVER_IP:4831${NC}"
+				echo -e "     ${YELLOW}• Replace with your machine's IP; open port 4831 if needed${NC}"
 			fi
 		fi
 
@@ -4489,7 +4492,7 @@ if [ -f /etc/os-release ]; then
 		echo -e "  ${GREEN}3.${NC} ${BLUE}Register the first account${NC} (this will be the administrator)"
 		echo -e "  ${GREEN}4.${NC} ${BLUE}Complete the initial setup${NC} in the Panel interface"
 		if [[ ! "$CF_TUNNEL_SETUP" =~ ^[yY]$ ]] && { [ -z "$REVERSE_PROXY_TYPE" ] || [ "$REVERSE_PROXY_TYPE" = "none" ]; }; then
-			echo -e "  ${GREEN}5.${NC} ${BLUE}Consider adding SSL certificate${NC} via SSL menu for security"
+			echo -e "  ${GREEN}5.${NC} ${BLUE}Optional: add SSL later${NC} via main menu → SSL Certificates (not required for home hosting)"
 		fi
 		echo ""
 		draw_hr
@@ -4834,33 +4837,36 @@ if [ -f /etc/os-release ]; then
 			fi
 		fi
 
-		# Check if SSL certificate exists
-		echo "Wings requires SSL certificates for secure communication with the panel."
-		echo "Please create an SSL certificate first using Wings SSL Certificate option (4)."
+		# SSL is optional for home hosting; inform and let user proceed either way
+		draw_hr
+		echo -e "${BOLD}${CYAN}Wings & SSL (optional for home hosting)${NC}"
+		draw_hr
 		echo ""
-		echo "Available certificates:"
+		echo -e "${BLUE}For production or a public node with a domain:${NC}"
+		echo -e "  ${CYAN}•${NC} Create an SSL certificate first (Wings menu option 4), then install Wings."
+		echo ""
+		echo -e "${BLUE}For home hosting or no domain:${NC}"
+		echo -e "  ${CYAN}•${NC} You can install Wings now and use your server IP or a self-signed certificate in ${BOLD}/etc/featherpanel/config.yml${NC}."
+		echo -e "  ${CYAN}•${NC} The Panel can connect to this node by IP (e.g. https://YOUR_IP:443 or with a self-signed cert)."
+		echo ""
 		if [ -d "/etc/letsencrypt/live" ]; then
-			# Only show directories that contain actual certificate files (not README or other files)
 			FOUND_CERTS=false
 			for domain_dir in /etc/letsencrypt/live/*; do
 				if [ -d "$domain_dir" ] && [ -f "$domain_dir/fullchain.pem" ] && [ -f "$domain_dir/privkey.pem" ]; then
+					[ "$FOUND_CERTS" = false ] && echo -e "${BLUE}Existing certificates (optional):${NC}"
 					domain=$(basename "$domain_dir")
 					echo "  - $domain"
 					FOUND_CERTS=true
 				fi
 			done
-			if [ "$FOUND_CERTS" = false ]; then
-				echo "  No valid certificates found"
-			fi
-		else
-			echo "  No certificates found"
+			[ "$FOUND_CERTS" = true ] && echo ""
 		fi
-		echo ""
+		draw_hr
 		continue_without_cert=""
-		prompt "Do you want to continue with Wings installation? (y/n): " continue_without_cert
+		prompt "${BOLD}Continue with Wings installation?${NC} ${BLUE}(y/n)${NC}: " continue_without_cert
 
 		if [[ ! "$continue_without_cert" =~ ^[yY]$ ]]; then
-			echo "Please create an SSL certificate first, then run Wings installation again."
+			echo "Installation cancelled. Run the installer again when ready."
 			exit 0
 		fi
 
@@ -4870,7 +4876,7 @@ if [ -f /etc/os-release ]; then
 		install_packages curl jq
 		install_wings
 		log_success "Wings installation finished. See log at $LOG_FILE"
-		log_warn "Remember to configure FeatherWings with SSL certificates in /etc/featherpanel/config.yml"
+		log_info "Configure /etc/featherpanel/config.yml with your Panel URL and, if using a domain, SSL certificate paths (or use IP/self-signed for home hosting)."
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
 		# Wings Uninstall
 		if [ ! -f /usr/local/bin/featherwings ]; then
