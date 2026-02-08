@@ -30,6 +30,7 @@
 - Implement filter dialog for server activities with localization support by @nayskutzu
 - Added cache control headers to ensure HTML is always served fresh and prevent unwanted caching. by @nayskutzu
 - Admins can now add themselves as subusers to servers, but are restricted from being added as server owners. by @nayskutzu
+- Introduce analytics settings in user profile enable external analytics script loading based on user preference. by @nayskutzu 
 
 ## v1.2.3 STABLE
 

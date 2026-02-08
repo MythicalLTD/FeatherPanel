@@ -23,7 +23,9 @@ import AppContent from '@/components/common/AppContent';
 import { Toaster } from 'sonner';
 
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { settingsApi } from '@/lib/settings-api';
+import { ANALYTICS_COOKIE_NAME } from '@/lib/analytics-cookie';
 
 export async function generateMetadata(): Promise<Metadata> {
     const data = await settingsApi.getPublicSettings();
@@ -78,16 +80,22 @@ import SystemHealthCheck from '@/components/SystemHealthCheck';
 import PluginAssets from '@/components/common/PluginAssets';
 import ChunkLoadErrorHandler from '@/components/common/ChunkLoadErrorHandler';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+    const cookieStore = await cookies();
+    const analyticsCookie = cookieStore.get(ANALYTICS_COOKIE_NAME)?.value;
+    const analyticsEnabled = analyticsCookie !== '0';
+
     return (
         <html lang='en' suppressHydrationWarning>
             <head>
                 <meta name='author' content='FeatherPanel' />
-                <script
-                    defer
-                    src='https://dynhost.mythical.systems/script.js'
-                    data-website-id='71281b01-8c95-4fac-9f58-6d68aac179d7'
-                ></script>
+                {analyticsEnabled && (
+                    <script
+                        defer
+                        src='https://dynhost.mythical.systems/script.js'
+                        data-website-id='71281b01-8c95-4fac-9f58-6d68aac179d7'
+                    />
+                )}
                 <noscript
                     dangerouslySetInnerHTML={{
                         __html: `<!-- FEATHERPANEL_HEADER_PLACEHOLDER_START -->\n<!-- FEATHERPANEL_HEADER_PLACEHOLDER_END -->`,

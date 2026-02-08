@@ -27,7 +27,9 @@ import { Textarea } from '@/components/featherui/Textarea';
 import axios from 'axios';
 import { toast } from 'sonner';
 import Turnstile from 'react-turnstile';
+import { Switch } from '@/components/ui/switch';
 import { cn, isEnabled } from '@/lib/utils';
+import { getAnalyticsCookie, setAnalyticsCookie } from '@/lib/analytics-cookie';
 
 interface FormData {
     username: string;
@@ -60,6 +62,7 @@ export default function ProfileTab() {
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState('');
     const [turnstileKey, setTurnstileKey] = useState(0);
+    const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
 
     const allowAvatarChange = settings?.user_allow_avatar_change ?? true;
     const allowUsernameChange = settings?.user_allow_username_change ?? true;
@@ -81,6 +84,10 @@ export default function ProfileTab() {
             setLoading(false);
         }
     }, [user]);
+
+    useEffect(() => {
+        setAnalyticsEnabled(getAnalyticsCookie());
+    }, []);
 
     const resetForm = () => {
         if (user) {
@@ -115,6 +122,12 @@ export default function ProfileTab() {
             };
             reader.readAsDataURL(file);
         }
+    };
+
+    const handleAnalyticsChange = (enabled: boolean) => {
+        setAnalyticsCookie(enabled);
+        setAnalyticsEnabled(enabled);
+        window.location.reload();
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -348,6 +361,23 @@ export default function ProfileTab() {
                             {t('account.ticketSignatureHint')}
                         </Description>
                     </Field>
+
+                    <div className='space-y-3 rounded-xl border border-border/50 bg-muted/30 p-4'>
+                        <div>
+                            <Label className='text-sm font-medium text-foreground'>{t('account.analytics')}</Label>
+                            <p className='text-xs text-muted-foreground mt-0.5'>
+                                {t('account.analyticsDescription')}
+                            </p>
+                        </div>
+                        <div className='flex items-center justify-between gap-4'>
+                            <span className='text-sm text-foreground'>{t('account.analyticsEnabled')}</span>
+                            <Switch
+                                checked={analyticsEnabled}
+                                onCheckedChange={handleAnalyticsChange}
+                                aria-label={t('account.analyticsEnabled')}
+                            />
+                        </div>
+                    </div>
                 </Fieldset>
 
                 <div className='space-y-4 pt-4 border-t border-border'>
