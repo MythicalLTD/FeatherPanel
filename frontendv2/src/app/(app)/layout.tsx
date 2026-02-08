@@ -76,6 +76,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 import SystemHealthCheck from '@/components/SystemHealthCheck';
 import PluginAssets from '@/components/common/PluginAssets';
+import ChunkLoadErrorHandler from '@/components/common/ChunkLoadErrorHandler';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -126,6 +127,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             <SessionProvider>
                                 <NotificationProvider>
                                     <PluginAssets />
+                                    <ChunkLoadErrorHandler />
                                     <SystemHealthCheck />
                                     <AppContent>{children}</AppContent>
                                     <Toaster richColors position='top-right' />

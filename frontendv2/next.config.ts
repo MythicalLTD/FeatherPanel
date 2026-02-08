@@ -20,6 +20,20 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   // Enable standalone output for optimized Docker builds
   output: "standalone",
+  // Prevent caching of HTML so users always get fresh chunk references after deploys
+  async headers() {
+    return [
+      {
+        source: "/((?!_next/static)(?!_next/image)(?!api)(?!attachments)(?!addons)(?!components)(?!pma).*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, must-revalidate",
+          },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
