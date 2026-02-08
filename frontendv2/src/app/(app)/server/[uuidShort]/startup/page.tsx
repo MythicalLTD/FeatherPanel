@@ -22,7 +22,6 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Zap, ChevronRight, RefreshCw, Save, Terminal, Container, Settings, Info, Loader2, Lock } from 'lucide-react';
-
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';

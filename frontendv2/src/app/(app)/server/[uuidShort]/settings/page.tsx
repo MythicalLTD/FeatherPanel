@@ -38,7 +38,7 @@ import {
     Lock,
     Link as LinkIcon,
 } from 'lucide-react';
-
+import {copyToClipboard} from '@/lib/utils';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
@@ -201,11 +201,6 @@ export default function ServerSettingsPage() {
             toast.error(t('serverSettings.deleteError'));
             setDeleting(false);
         }
-    };
-
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast.success(t('common.copied'));
     };
 
     const hasChanges = server?.name !== name || (server?.description || '') !== description;

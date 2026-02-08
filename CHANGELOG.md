@@ -21,6 +21,7 @@
 - Resolved an issue where the nodes page would incorrectly redirect users back to the locations page. by @nayskutzu
 - Fixed an issue preventing input in the PERPLEXIY AI agent configuration panel, ensuring users can now update settings as expected. by @nayskutzu
 - Fixed an issue where the SSO link copy function was not working in admin user settings. by @nayskutzu
+- Fixed an issue where the SFTP copy button was not functioning properly in the server settings. by @nayskutzu
 
 ### Improved
 
