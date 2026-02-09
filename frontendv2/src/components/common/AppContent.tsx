@@ -20,6 +20,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import TopLoadingBar from '@/components/common/TopLoadingBar';
 import AppPreloader from '@/components/common/AppPreloader';
 import PageTransition from '@/components/common/PageTransition';
+import HackerEasterEgg from '@/components/common/HackerEasterEgg';
 
 export default function AppContent({ children }: { children: React.ReactNode }) {
     const { initialLoading } = useTranslation();
@@ -29,11 +30,11 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
     }
 
     return (
-        <>
+        <HackerEasterEgg>
             <Suspense fallback={null}>
                 <TopLoadingBar />
             </Suspense>
             <PageTransition>{children}</PageTransition>
-        </>
+        </HackerEasterEgg>
     );
 }
