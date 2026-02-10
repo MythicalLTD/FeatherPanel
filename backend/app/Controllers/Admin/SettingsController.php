@@ -770,17 +770,17 @@ class SettingsController
             /**
              * FastDL is implemented in Wings, but we have some CVE's that are not fixed yet.
              */
-            // ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL => [
-            //    'name' => ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL,
-            //    'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL, 'false'),
-            //    'description' => 'Allow users to create and manage their own FastDL configurations',
-            //    'type' => 'select',
-            //    'required' => true,
-            //    'placeholder' => 'false',
-            //    'validation' => 'required|string|max:255',
-            //    'options' => ['true', 'false'],
-            //    'category' => 'servers',
-            // ],
+            ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL => [
+               'name' => ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL,
+               'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL, 'false'),
+               'description' => 'Allow users to create and manage their own FastDL configurations',
+               'type' => 'select',
+               'required' => true,
+               'placeholder' => 'false',
+               'validation' => 'required|string|max:255',
+               'options' => ['true', 'false'],
+               'category' => 'servers',
+            ],
             ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT => [
                 'name' => ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT,
                 'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT, 'false'),

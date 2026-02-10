@@ -26,6 +26,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -34,8 +35,9 @@ use Symfony\Component\HttpFoundation\Response;
     type: 'object',
     properties: [
         new OA\Property(property: 'enabled', type: 'boolean', description: 'Whether FastDL is enabled'),
-        new OA\Property(property: 'directory', type: 'string', nullable: true, description: 'Subdirectory within server data directory'),
-        new OA\Property(property: 'url', type: 'string', nullable: true, description: 'FastDL URL for the server'),
+        new OA\Property(property: 'directory', type: 'string', description: 'Subdirectory within server data directory (e.g., "fastdl")'),
+        new OA\Property(property: 'url', type: 'string', nullable: true, description: 'Full FastDL URL when enabled'),
+        new OA\Property(property: 'command', type: 'string', nullable: true, description: 'Ready-to-use sv_downloadurl command'),
     ]
 )]
 #[OA\Schema(
@@ -145,9 +147,21 @@ class ServerFastDlController
             /** @var array<string,mixed> $data */
             $data = $response->getData();
 
-            return ApiResponse::success([
-                'data' => $data,
-            ]);
+            // Ensure directory defaults to "fastdl" if not set
+            if (!isset($data['directory']) || empty($data['directory'])) {
+                $data['directory'] = 'fastdl';
+            }
+
+            // Rebuild FastDL URL based on node (Wings) host/port instead of panel URL
+            if (isset($data['enabled']) && $data['enabled']) {
+                $data['url'] = $this->buildFastDlUrl($node, $server, (string) $data['directory']);
+                $data['command'] = 'sv_downloadurl "' . $data['url'] . '"';
+            } else {
+                $data['url'] = null;
+                $data['command'] = null;
+            }
+
+            return ApiResponse::success($data);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to fetch FastDL configuration: ' . $e->getMessage());
 
@@ -230,9 +244,13 @@ class ServerFastDlController
         $wings = $this->createWings($node);
 
         try {
+            // Default to "fastdl" directory if not provided
             $data = [];
-            if (isset($payload['directory']) && is_string($payload['directory'])) {
+            if (isset($payload['directory']) && is_string($payload['directory']) && trim($payload['directory']) !== '') {
                 $data['directory'] = trim($payload['directory']);
+            } else {
+                // Default to "fastdl" if not specified
+                $data['directory'] = 'fastdl';
             }
 
             $response = $wings->getServer()->enableFastDl($server['uuid'], $data);
@@ -250,23 +268,26 @@ class ServerFastDlController
             /** @var array<string,mixed> $responseData */
             $responseData = $response->getData();
 
+            // Ensure directory is set
+            if (!isset($responseData['directory']) || empty($responseData['directory'])) {
+                $responseData['directory'] = $data['directory'] ?? 'fastdl';
+            }
+
+            // Always rebuild FastDL URL from node info (ignore any URL from Wings)
+            $responseData['url'] = $this->buildFastDlUrl($node, $server, (string) $responseData['directory']);
+            $responseData['command'] = 'sv_downloadurl "' . $responseData['url'] . '"';
+
             $this->logActivity(
                 $server,
                 $node,
                 'fastdl_enabled',
                 [
-                    'directory' => $data['directory'] ?? null,
+                    'directory' => $responseData['directory'],
                 ],
                 $user
             );
 
-            return ApiResponse::success(
-                [
-                    'data' => $responseData,
-                ],
-                'FastDL enabled successfully',
-                200
-            );
+            return ApiResponse::success($responseData, 'FastDL enabled successfully', 200);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to enable FastDL: ' . $e->getMessage());
 
@@ -355,6 +376,14 @@ class ServerFastDlController
             /** @var array<string,mixed> $responseData */
             $responseData = $response->getData();
 
+            // Ensure directory defaults to "fastdl"
+            if (!isset($responseData['directory']) || empty($responseData['directory'])) {
+                $responseData['directory'] = 'fastdl';
+            }
+
+            // Clear command when disabled
+            $responseData['command'] = null;
+
             $this->logActivity(
                 $server,
                 $node,
@@ -363,13 +392,7 @@ class ServerFastDlController
                 $user
             );
 
-            return ApiResponse::success(
-                [
-                    'data' => $responseData,
-                ],
-                'FastDL disabled successfully',
-                200
-            );
+            return ApiResponse::success($responseData, 'FastDL disabled successfully', 200);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to disable FastDL: ' . $e->getMessage());
 
@@ -478,24 +501,32 @@ class ServerFastDlController
             /** @var array<string,mixed> $responseData */
             $responseData = $response->getData();
 
+            // Ensure directory defaults to "fastdl" if not set
+            if (!isset($responseData['directory']) || empty($responseData['directory'])) {
+                $responseData['directory'] = 'fastdl';
+            }
+
+            // Rebuild URL/command from node host/port when enabled, clear when disabled
+            if (isset($responseData['enabled']) && $responseData['enabled']) {
+                $responseData['url'] = $this->buildFastDlUrl($node, $server, (string) $responseData['directory']);
+                $responseData['command'] = 'sv_downloadurl "' . $responseData['url'] . '"';
+            } else {
+                $responseData['url'] = null;
+                $responseData['command'] = null;
+            }
+
             $this->logActivity(
                 $server,
                 $node,
                 'fastdl_updated',
                 [
-                    'enabled' => $data['enabled'] ?? null,
-                    'directory' => $data['directory'] ?? null,
+                    'enabled' => $responseData['enabled'] ?? null,
+                    'directory' => $responseData['directory'] ?? null,
                 ],
                 $user
             );
 
-            return ApiResponse::success(
-                [
-                    'data' => $responseData,
-                ],
-                'FastDL configuration updated successfully',
-                200
-            );
+            return ApiResponse::success($responseData, 'FastDL configuration updated successfully', 200);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to update FastDL configuration: ' . $e->getMessage());
 
@@ -522,6 +553,23 @@ class ServerFastDlController
             $token,
             $timeout
         );
+    }
+
+    /**
+     * Build the public FastDL URL from node (Wings) host/port and directory.
+     *
+     * We intentionally do NOT use the panel/remote URL here – this is the \"wings\" side.
+     */
+    private function buildFastDlUrl(array $node, array $server, string $directory): string
+    {
+        $scheme = $node['scheme'] ?? 'http';
+        $host = $node['fqdn'] ?? 'localhost';
+        $port = (int) ($node['daemonListen'] ?? 80);
+
+        $base = rtrim(sprintf('%s://%s:%d', $scheme, $host, $port), '/');
+        $dir = trim($directory) !== '' ? trim($directory) : 'fastdl';
+
+        return $base . '/' . $server['uuid'] . '/' . $dir;
     }
 
     /**

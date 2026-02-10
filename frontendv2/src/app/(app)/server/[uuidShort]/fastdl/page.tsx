@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import * as React from 'react';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -27,28 +27,28 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Download, Info, Loader2, Copy, ExternalLink, Save, AlertCircle, CheckCircle2, Globe } from 'lucide-react';
+import { Download, Loader2, Copy, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { isEnabled } from '@/lib/utils';
+import { copyToClipboard } from '@/lib/utils';
 
 interface FastDlConfig {
     enabled: boolean;
-    directory: string | null;
-    url: string | null;
+    directory: string;
+    url?: string;
+    command?: string;
 }
 
 interface FastDlResponse {
     success: boolean;
-    data: FastDlConfig;
+    data?: FastDlConfig;
     error_message?: string;
 }
 
 export default function ServerFastDlPage() {
     const params = useParams();
-    const pathname = usePathname();
     const uuidShort = params.uuidShort as string;
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
@@ -62,35 +62,34 @@ export default function ServerFastDlPage() {
     const [config, setConfig] = React.useState<FastDlConfig | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
-    const [enabling, setEnabling] = React.useState(false);
-    const [disabling, setDisabling] = React.useState(false);
-
-    const [directory, setDirectory] = React.useState('');
-    const [enabled, setEnabled] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+    const [copied, setCopied] = React.useState(false);
+    const [customDirectory, setCustomDirectory] = React.useState('fastdl');
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-fastdl');
 
-    const fetchData = React.useCallback(async () => {
+    const loadStatus = React.useCallback(async () => {
         if (!uuidShort || !fastDlEnabled || !canRead) return;
 
         setLoading(true);
+        setError(null);
         try {
             const { data } = await axios.get<FastDlResponse>(`/api/user/servers/${uuidShort}/fastdl`);
 
-            if (data.success) {
+            if (data.success && data.data) {
                 setConfig(data.data);
-                setEnabled(data.data.enabled);
-                setDirectory(data.data.directory || '');
-            }
-        } catch (error) {
-            const axiosError = error as AxiosError<FastDlResponse>;
-            if (axiosError.response?.status === 404 || axiosError.response?.status === 403) {
-                setConfig({ enabled: false, directory: null, url: null });
-                setEnabled(false);
-                setDirectory('');
+                setCustomDirectory(data.data.directory || 'fastdl');
             } else {
-                console.error('Failed to fetch FastDL data:', error);
-                toast.error(axiosError.response?.data?.error_message || t('serverFastDl.fetchError'));
+                setError(data.error_message || t('serverFastDl.fetchError'));
+            }
+        } catch (err) {
+            const axiosError = err as AxiosError<FastDlResponse>;
+            if (axiosError.response?.status === 404 || axiosError.response?.status === 403) {
+                setConfig({ enabled: false, directory: 'fastdl', url: undefined, command: undefined });
+                setCustomDirectory('fastdl');
+            } else {
+                console.error('Failed to fetch FastDL data:', err);
+                setError(axiosError.response?.data?.error_message || t('serverFastDl.fetchError'));
             }
         } finally {
             setLoading(false);
@@ -100,96 +99,102 @@ export default function ServerFastDlPage() {
     React.useEffect(() => {
         if (!settingsLoading && !permissionsLoading) {
             if (fastDlEnabled && canRead) {
-                fetchData();
+                loadStatus();
                 fetchWidgets();
             } else {
                 setLoading(false);
             }
         }
-    }, [settingsLoading, permissionsLoading, fastDlEnabled, canRead, fetchData, fetchWidgets]);
+    }, [settingsLoading, permissionsLoading, fastDlEnabled, canRead, loadStatus, fetchWidgets]);
 
     const handleEnable = async () => {
         if (!canManage) return;
 
-        setEnabling(true);
+        setSaving(true);
+        setError(null);
         try {
+            const directory = customDirectory.trim() || undefined;
             const { data } = await axios.post<FastDlResponse>(`/api/user/servers/${uuidShort}/fastdl/enable`, {
                 directory: directory || undefined,
             });
 
-            if (data.success) {
+            if (data.success && data.data) {
                 setConfig(data.data);
-                setEnabled(data.data.enabled);
-                setDirectory(data.data.directory || '');
+                setCustomDirectory(data.data.directory || 'fastdl');
                 toast.success(t('serverFastDl.enableSuccess'));
-                fetchData();
+                await loadStatus();
+            } else {
+                const message = data.error_message || t('serverFastDl.enableError');
+                setError(message);
+                toast.error(message);
             }
-        } catch (error) {
-            const axiosError = error as AxiosError<FastDlResponse>;
-            console.error('Failed to enable FastDL:', error);
-            toast.error(axiosError.response?.data?.error_message || t('serverFastDl.enableError'));
+        } catch (err) {
+            const axiosError = err as AxiosError<FastDlResponse>;
+            console.error('Failed to enable FastDL:', err);
+            const message = axiosError.response?.data?.error_message || t('serverFastDl.enableError');
+            setError(message);
+            toast.error(message);
         } finally {
-            setEnabling(false);
+            setSaving(false);
         }
     };
 
     const handleDisable = async () => {
         if (!canManage) return;
 
-        setDisabling(true);
+        setSaving(true);
+        setError(null);
         try {
             const { data } = await axios.post<FastDlResponse>(`/api/user/servers/${uuidShort}/fastdl/disable`);
 
-            if (data.success) {
+            if (data.success && data.data) {
                 setConfig(data.data);
-                setEnabled(data.data.enabled);
                 toast.success(t('serverFastDl.disableSuccess'));
+                await loadStatus();
+            } else {
+                const message = data.error_message || t('serverFastDl.disableError');
+                setError(message);
+                toast.error(message);
             }
-        } catch (error) {
-            const axiosError = error as AxiosError<FastDlResponse>;
-            console.error('Failed to disable FastDL:', error);
-            toast.error(axiosError.response?.data?.error_message || t('serverFastDl.disableError'));
-        } finally {
-            setDisabling(false);
-        }
-    };
-
-    const handleUpdate = async () => {
-        if (!canManage) return;
-
-        setSaving(true);
-        try {
-            const { data } = await axios.put<FastDlResponse>(`/api/user/servers/${uuidShort}/fastdl`, {
-                enabled,
-                directory: directory || null,
-            });
-
-            if (data.success) {
-                setConfig(data.data);
-                setEnabled(data.data.enabled);
-                setDirectory(data.data.directory || '');
-                toast.success(t('serverFastDl.updateSuccess'));
-                fetchData();
-            }
-        } catch (error) {
-            const axiosError = error as AxiosError<FastDlResponse>;
-            console.error('Failed to update FastDL:', error);
-            toast.error(axiosError.response?.data?.error_message || t('serverFastDl.updateError'));
+        } catch (err) {
+            const axiosError = err as AxiosError<FastDlResponse>;
+            console.error('Failed to disable FastDL:', err);
+            const message = axiosError.response?.data?.error_message || t('serverFastDl.disableError');
+            setError(message);
+            toast.error(message);
         } finally {
             setSaving(false);
         }
     };
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast.success(t('common.copied'));
+    const copyCommand = async () => {
+        if (!config?.command) return;
+
+        try {
+            copyToClipboard(config.command);
+            setCopied(true);
+            toast.success(t('serverFastDl.commandCopied'));
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            toast.error(t('serverFastDl.copyError'));
+        }
     };
 
-    const hasChanges = config
-        ? config.enabled !== enabled || (config.directory || '') !== directory
-        : enabled || directory !== '';
-
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return (
+            <div className='flex flex-col items-center justify-center py-24'>
+                <div className='relative'>
+                    <div className='absolute inset-0 animate-ping opacity-20'>
+                        <div className='w-16 h-16 rounded-full bg-primary/20' />
+                    </div>
+                    <div className='relative p-4 rounded-full bg-primary/10'>
+                        <Loader2 className='h-8 w-8 animate-spin text-primary' />
+                    </div>
+                </div>
+                <span className='mt-4 text-muted-foreground animate-pulse'>{t('common.loading')}...</span>
+            </div>
+        );
+    }
 
     if (!canRead) {
         return (
@@ -240,204 +245,162 @@ export default function ServerFastDlPage() {
     }
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-fastdl', 'top-of-page')} />
             <PageHeader title={t('serverFastDl.title')} description={t('serverFastDl.description')} />
             <WidgetRenderer widgets={getWidgets('server-fastdl', 'after-header')} />
 
-            <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                <div className='lg:col-span-8 space-y-8'>
-                    <PageCard
-                        title={t('serverFastDl.status')}
-                        description={t('serverFastDl.statusDescription')}
-                        icon={Download}
-                    >
-                        <div className='space-y-6'>
-                            <div className='flex items-center justify-between p-4 bg-secondary/50 border border-border/10 rounded-xl'>
-                                <div className='flex items-center gap-3'>
-                                    {enabled ? (
-                                        <CheckCircle2 className='h-5 w-5 text-green-500' />
-                                    ) : (
-                                        <AlertCircle className='h-5 w-5 text-muted-foreground' />
-                                    )}
-                                    <div>
-                                        <p className='font-semibold'>{t('serverFastDl.fastDlStatus')}</p>
-                                        <p className='text-sm text-muted-foreground'>
-                                            {enabled ? t('serverFastDl.enabled') : t('serverFastDl.disabled')}
-                                        </p>
-                                    </div>
-                                </div>
-                                {canManage && (
-                                    <Switch
-                                        checked={enabled}
-                                        onCheckedChange={setEnabled}
-                                        disabled={saving || enabling || disabling}
-                                    />
-                                )}
+            <PageCard title={t('serverFastDl.configuration')} description={t('serverFastDl.configurationDescription')} icon={Download}>
+                <div className='space-y-6'>
+                    {error && (
+                        <div className='p-4 bg-destructive/10 border border-destructive/20 rounded-xl'>
+                            <div className='flex items-center gap-2'>
+                                <AlertCircle className='h-5 w-5 text-destructive' />
+                                <p className='text-sm text-destructive font-medium'>{error}</p>
                             </div>
-
-                            {enabled && config?.url && (
-                                <div className='space-y-2'>
-                                    <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1'>
-                                        {t('serverFastDl.fastDlUrl')}
-                                    </Label>
-                                    <div className='flex items-center gap-2 p-1 pl-4 pr-1 bg-white/5 border border-white/5 rounded-xl hover:border-blue-500/30 transition-colors group/input'>
-                                        <code className='text-xs font-mono flex-1 truncate text-foreground/80'>
-                                            {config.url}
-                                        </code>
-                                        <Button
-                                            variant='ghost'
-                                            size='sm'
-                                            className='h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400'
-                                            onClick={() => copyToClipboard(config.url || '')}
-                                        >
-                                            <Copy className='h-3.5 w-3.5' />
-                                        </Button>
-                                        <Button
-                                            variant='ghost'
-                                            size='sm'
-                                            className='h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400'
-                                            onClick={() => {
-                                                if (config.url) {
-                                                    window.open(config.url, '_blank');
-                                                }
-                                            }}
-                                        >
-                                            <ExternalLink className='h-3.5 w-3.5' />
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
                         </div>
-                    </PageCard>
-                    <WidgetRenderer widgets={getWidgets('server-fastdl', 'after-status')} />
-
-                    {canManage && (
-                        <>
-                            <PageCard
-                                title={t('serverFastDl.configuration')}
-                                description={t('serverFastDl.configurationDescription')}
-                                icon={Globe}
-                            >
-                                <div className='space-y-4'>
-                                    <div className='space-y-2'>
-                                        <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1'>
-                                            {t('serverFastDl.directory')}
-                                        </Label>
-                                        <Input
-                                            value={directory}
-                                            onChange={(e) => setDirectory(e.target.value)}
-                                            disabled={saving || enabling || disabling}
-                                            placeholder={t('serverFastDl.directoryPlaceholder')}
-                                            className='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 font-medium text-base rounded-xl'
-                                        />
-                                        <p className='text-xs text-muted-foreground'>
-                                            {t('serverFastDl.directoryHelp')}
-                                        </p>
-                                    </div>
-
-                                    <div className='flex gap-3 pt-2'>
-                                        <Button
-                                            onClick={handleUpdate}
-                                            disabled={saving || enabling || disabling || !hasChanges}
-                                            variant='default'
-                                            size='sm'
-                                        >
-                                            {saving ? (
-                                                <Loader2 className='h-4 w-4 animate-spin mr-2' />
-                                            ) : (
-                                                <Save className='h-4 w-4 mr-2' />
-                                            )}
-                                            {t('serverFastDl.saveChanges')}
-                                        </Button>
-                                        {!enabled && (
-                                            <Button
-                                                onClick={handleEnable}
-                                                disabled={enabling || disabling || saving}
-                                                variant='default'
-                                                size='sm'
-                                            >
-                                                {enabling ? (
-                                                    <Loader2 className='h-4 w-4 animate-spin mr-2' />
-                                                ) : (
-                                                    <CheckCircle2 className='h-4 w-4 mr-2' />
-                                                )}
-                                                {t('serverFastDl.enableFastDl')}
-                                            </Button>
-                                        )}
-                                        {enabled && (
-                                            <Button
-                                                onClick={handleDisable}
-                                                disabled={disabling || enabling || saving}
-                                                variant='destructive'
-                                                size='sm'
-                                            >
-                                                {disabling ? (
-                                                    <Loader2 className='h-4 w-4 animate-spin mr-2' />
-                                                ) : (
-                                                    <AlertCircle className='h-4 w-4 mr-2' />
-                                                )}
-                                                {t('serverFastDl.disableFastDl')}
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
-                            </PageCard>
-                            <WidgetRenderer widgets={getWidgets('server-fastdl', 'after-configuration')} />
-                        </>
                     )}
 
-                    <div className='p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl shadow-sm'>
+                    {/* Status Display */}
+                    <div>
+                        <div className='flex items-center justify-between mb-4'>
+                            <span className='text-sm font-medium text-foreground'>{t('serverFastDl.status')}</span>
+                            <span
+                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                    config?.enabled
+                                        ? 'bg-green-500/10 text-green-600 border border-green-500/20'
+                                        : 'bg-gray-500/10 text-gray-600 border border-gray-500/20'
+                                }`}
+                            >
+                                {config?.enabled ? t('serverFastDl.enabled') : t('serverFastDl.disabled')}
+                            </span>
+                        </div>
+
+                        {config?.enabled && (
+                            <div className='mt-6 space-y-4'>
+                                <div>
+                                    <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block'>
+                                        {t('serverFastDl.directory')}
+                                    </Label>
+                                    <div className='text-sm text-foreground bg-secondary/50 p-3 rounded-lg border border-border/50 font-mono'>
+                                        /{config.directory}
+                                    </div>
+                                </div>
+
+                                {config.url && (
+                                    <div>
+                                        <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block'>
+                                            {t('serverFastDl.fastDlUrl')}
+                                        </Label>
+                                        <div className='text-sm text-foreground bg-secondary/50 p-3 rounded-lg border border-border/50 break-all'>
+                                            {config.url}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {config.command && (
+                                    <div>
+                                        <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block'>
+                                            {t('serverFastDl.gameServerCommand')}
+                                        </Label>
+                                        <div className='flex items-center gap-2'>
+                                            <code className='flex-1 text-sm bg-gray-900 text-green-400 p-3 rounded-lg font-mono break-all border border-border/50'>
+                                                {config.command}
+                                            </code>
+                                            <Button
+                                                variant='outline'
+                                                size='icon'
+                                                onClick={copyCommand}
+                                                className='shrink-0'
+                                                title={t('serverFastDl.copyCommand')}
+                                            >
+                                                {copied ? (
+                                                    <CheckCircle2 className='h-4 w-4 text-green-500' />
+                                                ) : (
+                                                    <Copy className='h-4 w-4' />
+                                                )}
+                                            </Button>
+                                        </div>
+                                        <p className='mt-2 text-xs text-muted-foreground'>
+                                            {t('serverFastDl.commandHelp')}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Controls */}
+                    {!config?.enabled ? (
+                        <div className='space-y-4 pt-4 border-t border-border/50'>
+                            <div>
+                                <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block'>
+                                    {t('serverFastDl.directory')} ({t('common.optional')})
+                                </Label>
+                                <Input
+                                    type='text'
+                                    value={customDirectory}
+                                    onChange={(e) => setCustomDirectory(e.target.value)}
+                                    placeholder='fastdl'
+                                    disabled={saving}
+                                    className='h-12 bg-secondary/50 border-border/50 focus:border-primary/50 font-medium text-base rounded-xl'
+                                />
+                                <p className='mt-2 text-xs text-muted-foreground'>
+                                    {t('serverFastDl.directoryHelp')}
+                                </p>
+                            </div>
+                            <Button onClick={handleEnable} disabled={saving} className='w-full' variant='default'>
+                                {saving ? (
+                                    <>
+                                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                                        {t('serverFastDl.enabling')}
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle2 className='h-4 w-4 mr-2' />
+                                        {t('serverFastDl.enableFastDl')}
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className='pt-4 border-t border-border/50'>
+                            <Button onClick={handleDisable} disabled={saving} className='w-full' variant='destructive'>
+                                {saving ? (
+                                    <>
+                                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                                        {t('serverFastDl.disabling')}
+                                    </>
+                                ) : (
+                                    <>
+                                        <AlertCircle className='h-4 w-4 mr-2' />
+                                        {t('serverFastDl.disableFastDl')}
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Info Box */}
+                    <div className='mt-6 p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl'>
                         <div className='flex items-start gap-3'>
                             <Info className='h-5 w-5 text-blue-500 mt-0.5 shrink-0' />
                             <div className='space-y-2'>
-                                <h4 className='text-sm font-bold text-blue-500 uppercase tracking-wide'>
-                                    {t('serverFastDl.infoTitle')}
+                                <h4 className='text-sm font-semibold text-blue-500 uppercase tracking-wide'>
+                                    {t('serverFastDl.howItWorks')}
                                 </h4>
-                                <p className='text-xs text-muted-foreground leading-relaxed'>
-                                    {t('serverFastDl.infoDescription')}
-                                </p>
+                                <ul className='text-xs text-muted-foreground space-y-1 list-disc list-inside'>
+                                    <li>{t('serverFastDl.step1')}</li>
+                                    <li>{t('serverFastDl.step2')}</li>
+                                    <li>{t('serverFastDl.step3')}</li>
+                                    <li>{t('serverFastDl.step4')}</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
-                    <WidgetRenderer widgets={getWidgets('server-fastdl', 'after-info')} />
                 </div>
+            </PageCard>
 
-                <div className='lg:col-span-4 space-y-8'>
-                    <PageCard title={t('serverFastDl.quickActions')} icon={Download} variant='default'>
-                        <div className='space-y-4'>
-                            <p className='text-xs text-muted-foreground leading-relaxed'>
-                                {t('serverFastDl.quickActionsDescription')}
-                            </p>
-                            {enabled && config?.url && (
-                                <div className='space-y-2'>
-                                    <Button
-                                        variant='outline'
-                                        className='w-full'
-                                        onClick={() => copyToClipboard(config.url || '')}
-                                    >
-                                        <Copy className='h-4 w-4 mr-2' />
-                                        {t('serverFastDl.copyUrl')}
-                                    </Button>
-                                    <Button
-                                        variant='outline'
-                                        className='w-full'
-                                        onClick={() => {
-                                            if (config.url) {
-                                                window.open(config.url, '_blank');
-                                            }
-                                        }}
-                                    >
-                                        <ExternalLink className='h-4 w-4 mr-2' />
-                                        {t('serverFastDl.openUrl')}
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    </PageCard>
-                    <WidgetRenderer widgets={getWidgets('server-fastdl', 'after-quick-actions')} />
-                </div>
-            </div>
             <WidgetRenderer widgets={getWidgets('server-fastdl', 'bottom-of-page')} />
         </div>
     );
