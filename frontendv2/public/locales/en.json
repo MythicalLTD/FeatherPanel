@@ -539,6 +539,7 @@
 			},
 			"kill": "Kill",
 			"uuid": "UUID",
+			"upload_logs": "Upload Logs",
 			"info_cards": {
 				"address": "Server Address",
 				"uptime": "Server Uptime",
@@ -557,6 +558,14 @@
 				"network": "Network",
 				"no_data": "No data",
 				"cpu_load": "CPU Load"
+			},
+			"logs": {
+				"uploading": "Uploading server logs to mclo.gs...",
+				"upload_success": "Logs uploaded successfully",
+				"upload_failed": "Failed to upload logs",
+				"uploaded_title": "Server logs uploaded",
+				"uploaded_description": "Share this mclo.gs URL with support or anyone helping you debug.",
+				"url_copied": "Log URL copied to clipboard"
 			},
 			"terminal": {
 				"title": "Console",

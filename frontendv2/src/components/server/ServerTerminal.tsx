@@ -31,6 +31,7 @@ import {
     Clock,
     Settings2,
     ExternalLink,
+    UploadCloud,
 } from 'lucide-react';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
@@ -60,6 +61,7 @@ interface ServerTerminalProps {
     onFiltersChange?: (rules: ConsoleFilterRule[]) => void;
     fullHeight?: boolean;
     showPopoutButton?: boolean;
+    onUploadLogs?: () => void;
 }
 
 const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
@@ -72,6 +74,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             onFiltersChange,
             fullHeight = false,
             showPopoutButton = true,
+            onUploadLogs,
         },
         ref,
     ) => {
@@ -359,6 +362,16 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                     </Menu.Items>
                                 </Transition>
                             </Menu>
+                            {onUploadLogs && (
+                                <button
+                                    onClick={onUploadLogs}
+                                    className='h-9 w-9 rounded-lg border border-border bg-background hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground'
+                                    aria-label={t('servers.console.upload_logs')}
+                                    type='button'
+                                >
+                                    <UploadCloud className='h-4 w-4' />
+                                </button>
+                            )}
                             <button
                                 onClick={clearTerminal}
                                 className='h-9 w-9 rounded-lg border border-border bg-background hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground'

@@ -17,14 +17,18 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
+import axios from 'axios';
 import { useWingsWebSocket } from '@/hooks/useWingsWebSocket';
 import ServerHeader from '@/components/server/ServerHeader';
 import ServerInfoCards from '@/components/server/ServerInfoCards';
 import ServerTerminal, { ServerTerminalRef, ConsoleFilterRule } from '@/components/server/ServerTerminal';
 import ServerPerformance from '@/components/server/ServerPerformance';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
-import { AlertTriangle, Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { AlertTriangle, Wifi, WifiOff, Loader2, Copy } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useFeatureDetector } from '@/hooks/useFeatureDetector';
 import { EulaDialog } from '@/components/server/features/EulaDialog';
@@ -32,6 +36,8 @@ import { JavaVersionDialog } from '@/components/server/features/JavaVersionDialo
 import { PidLimitDialog } from '@/components/server/features/PidLimitDialog';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { toast } from 'sonner';
+import { copyToClipboard } from '@/lib/utils';
 
 interface WingsStats {
     uptime?: number;
@@ -79,6 +85,8 @@ export default function ServerConsolePage() {
     const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(serverUuid);
     const [serverStatus, setServerStatus] = useState('offline');
     const [wingsUptime, setWingsUptime] = useState<string>('');
+    const [showLogDialog, setShowLogDialog] = useState(false);
+    const [uploadedLogs, setUploadedLogs] = useState<{ id: string; url: string; raw: string } | null>(null);
 
     useEffect(() => {
         if (server?.status && !hasInitializedStatus.current) {
@@ -343,6 +351,40 @@ export default function ServerConsolePage() {
         [sendPowerAction],
     );
 
+    const handleUploadLogs = useCallback(() => {
+        if (!serverUuid) {
+            return;
+        }
+
+        const promise = axios
+            .post<{
+                success: boolean;
+                data?: { id: string; url: string; raw: string };
+                message?: string;
+            }>(`/api/user/servers/${serverUuid}/logs/upload`)
+            .then(({ data }) => {
+                if (!data.success || !data.data) {
+                    throw new Error(data.message || t('servers.console.logs.upload_failed'));
+                }
+                return data;
+            });
+
+        toast.promise(promise, {
+            loading: t('servers.console.logs.uploading'),
+            success: (data) => {
+                setUploadedLogs(data.data ?? null);
+                setShowLogDialog(true);
+                return t('servers.console.logs.upload_success');
+            },
+            error: (error) => {
+                if (error instanceof Error) {
+                    return error.message;
+                }
+                return t('servers.console.logs.upload_failed');
+            },
+        });
+    }, [serverUuid, t]);
+
     const getConnectionStatusInfo = () => {
         switch (connectionStatus) {
             case 'connecting':
@@ -419,6 +461,7 @@ export default function ServerConsolePage() {
                             onFiltersChange={setConsoleFilters}
                             fullHeight
                             showPopoutButton={false}
+                            onUploadLogs={canConnect && hasPermission('activity.read') ? handleUploadLogs : undefined}
                         />
                     ) : (
                         <Card className='border-2 border-yellow-500/20 bg-yellow-500/10 self-center mt-24 max-w-lg w-full'>
@@ -519,6 +562,7 @@ export default function ServerConsolePage() {
                             serverStatus={serverStatus}
                             filters={consoleFilters}
                             onFiltersChange={setConsoleFilters}
+                            onUploadLogs={canConnect && hasPermission('activity.read') ? handleUploadLogs : undefined}
                         />
                     )}
 
@@ -567,8 +611,39 @@ export default function ServerConsolePage() {
             )}
 
             <WidgetRenderer widgets={getWidgets('server-console', 'after-performance')} />
+            <WidgetRenderer widgets={getWidgets('server-console', 'after-performance')} />
 
             <WidgetRenderer widgets={getWidgets('server-console', 'bottom-of-page')} />
+
+            <Dialog open={showLogDialog} onOpenChange={setShowLogDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('servers.console.logs.uploaded_title')}</DialogTitle>
+                        <DialogDescription>
+                            {t('servers.console.logs.uploaded_description')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {uploadedLogs && uploadedLogs.url && (
+                        <div className='space-y-2 pt-4'>
+                            <div className='flex gap-2'>
+                                <Input value={uploadedLogs.url} readOnly />
+                                <Button
+                                    size='icon'
+                                    variant='outline'
+                                    onClick={() => {
+                                        if (uploadedLogs.url) {
+                                            copyToClipboard(uploadedLogs.url);
+                                            toast.success(t('servers.console.logs.url_copied'));
+                                        }
+                                    }}
+                                >
+                                    <Copy className='h-4 w-4' />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
 
             {server && (
                 <>
