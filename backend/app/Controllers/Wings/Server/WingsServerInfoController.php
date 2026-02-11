@@ -184,7 +184,8 @@ class WingsServerInfoController
         $environment['P_SERVER_LOCATION'] = $node['location_id'] ?? '';
         $environment['P_SERVER_UUID'] = $server['uuid'];
         $environment['P_SERVER_ALLOCATION_LIMIT'] = $server['allocation_limit'] ?? 0;
-        $environment['SERVER_MEMORY'] = $server['memory'];
+        // Use 1024 MB when memory is 0 (unlimited) - Wings does env substitution at runtime and -Xmx0M is invalid for Java
+        $environment['SERVER_MEMORY'] = ((int) $server['memory']) > 0 ? $server['memory'] : 1024;
         $environment['SERVER_IP'] = $allocation['ip'];
         $environment['SERVER_PORT'] = $allocation['port'];
 
@@ -544,11 +545,15 @@ class WingsServerInfoController
      */
     private function replacePlaceholders(string $value, array $server, array $allocation, array $environment): string
     {
+        // When memory is 0 (unlimited), use 1024 MB as safe default for Java -Xmx/-Xms to avoid invalid -Xmx0M
+        $memoryValue = (int) $server['memory'];
+        $memoryForPlaceholders = $memoryValue > 0 ? $memoryValue : 1024;
+
         // Modern placeholders - replace with actual values
         $replacements = [
             '{{server.build.default.port}}' => (string) $allocation['port'],
             '{{server.build.default.ip}}' => (string) $allocation['ip'],
-            '{{server.build.memory}}' => (string) $server['memory'],
+            '{{server.build.memory}}' => (string) $memoryForPlaceholders,
         ];
 
         // Legacy placeholders - also replace with actual values
@@ -557,8 +562,8 @@ class WingsServerInfoController
             '{{env.SERVER_PORT}}' => (string) $allocation['port'],
             '{{server.build.env.SERVER_IP}}' => (string) $allocation['ip'],
             '{{env.SERVER_IP}}' => (string) $allocation['ip'],
-            '{{server.build.env.SERVER_MEMORY}}' => (string) $server['memory'],
-            '{{env.SERVER_MEMORY}}' => (string) $server['memory'],
+            '{{server.build.env.SERVER_MEMORY}}' => (string) $memoryForPlaceholders,
+            '{{env.SERVER_MEMORY}}' => (string) $memoryForPlaceholders,
         ];
 
         // Apply all replacements
@@ -578,6 +583,10 @@ class WingsServerInfoController
                 continue;
             }
             $envValueStr = (string) $envValue;
+            // Override SERVER_MEMORY when 0 (unlimited) to avoid -Xmx0M in Java startup commands
+            if ($envKey === 'SERVER_MEMORY' && (int) $envValue === 0) {
+                $envValueStr = (string) $memoryForPlaceholders;
+            }
 
             $envPlaceholders = [
                 '{{server.build.env.' . $envKey . '}}',
@@ -636,6 +645,9 @@ class WingsServerInfoController
      */
     private function sanitizeJavaMemoryArguments(string $startupCommand, int $serverMemory): string
     {
+        // First pass: remove any -Xmx0M / -Xms0M etc. that could slip through (e.g. from variables, unlimited RAM)
+        $startupCommand = preg_replace('/\s*-Xm[xs]0[kKmMgGtT]?\s*/', ' ', $startupCommand);
+
         // Pattern to match Java memory arguments: -Xmx128M, -Xms64M, -Xmx1024m, etc.
         // Matches: -Xmx or -Xms, followed by digits, optionally followed by unit (k, K, m, M, g, G, t, T)
         $pattern = '/(-Xm[xs])([0-9]+)([kKmMgGtT]?)/';
