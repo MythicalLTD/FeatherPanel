@@ -357,11 +357,11 @@ class SubuserController
             return ApiResponse::error('User not found with this email', 'USER_NOT_FOUND', 404);
         }
 
-		$ownerServerID = $server['owner_id'];
-		if ($ownerServerID == $user['id']) {
-			return ApiResponse::error('Cannot add yourself as a subuser', 'CANNOT_ADD_SELF', 400);
-		}
-		
+        $ownerServerID = $server['owner_id'];
+        if ($ownerServerID == $user['id']) {
+            return ApiResponse::error('Cannot add yourself as a subuser', 'CANNOT_ADD_SELF', 400);
+        }
+
         // Check if subuser already exists for this user+server combination
         $existingSubuser = Subuser::getSubuserByUserAndServer($user['id'], $server['id']);
         if ($existingSubuser) {

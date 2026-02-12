@@ -38,7 +38,7 @@ import {
     Lock,
     Link as LinkIcon,
 } from 'lucide-react';
-import {copyToClipboard} from '@/lib/utils';
+import { copyToClipboard } from '@/lib/utils';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';

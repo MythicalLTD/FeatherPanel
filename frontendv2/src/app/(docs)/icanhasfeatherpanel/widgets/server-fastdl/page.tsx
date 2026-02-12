@@ -15,15 +15,7 @@ const widgetData = {
             path: 'src/app/(app)/server/[uuidShort]/fastdl/page.tsx',
         },
     ],
-    injectionPoints: [
-        'after-configuration',
-        'after-header',
-        'after-info',
-        'after-quick-actions',
-        'after-status',
-        'bottom-of-page',
-        'top-of-page',
-    ],
+    injectionPoints: ['after-header', 'bottom-of-page', 'top-of-page'],
 };
 
 export default function WidgetDetailPage() {
@@ -148,7 +140,7 @@ export default function WidgetDetailPage() {
   "enabled": true,
   "priority": 100,
   "page": "server-fastdl",
-  "location": "after-configuration",
+  "location": "after-header",
   "size": "full"
 }`}
                                     </code>

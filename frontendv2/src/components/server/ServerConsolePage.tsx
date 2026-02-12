@@ -619,9 +619,7 @@ export default function ServerConsolePage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('servers.console.logs.uploaded_title')}</DialogTitle>
-                        <DialogDescription>
-                            {t('servers.console.logs.uploaded_description')}
-                        </DialogDescription>
+                        <DialogDescription>{t('servers.console.logs.uploaded_description')}</DialogDescription>
                     </DialogHeader>
                     {uploadedLogs && uploadedLogs.url && (
                         <div className='space-y-2 pt-4'>

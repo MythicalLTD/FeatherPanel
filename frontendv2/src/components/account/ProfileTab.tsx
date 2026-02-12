@@ -365,9 +365,7 @@ export default function ProfileTab() {
                     <div className='space-y-3 rounded-xl border border-border/50 bg-muted/30 p-4'>
                         <div>
                             <Label className='text-sm font-medium text-foreground'>{t('account.analytics')}</Label>
-                            <p className='text-xs text-muted-foreground mt-0.5'>
-                                {t('account.analyticsDescription')}
-                            </p>
+                            <p className='text-xs text-muted-foreground mt-0.5'>{t('account.analyticsDescription')}</p>
                         </div>
                         <div className='flex items-center justify-between gap-4'>
                             <span className='text-sm text-foreground'>{t('account.analyticsEnabled')}</span>

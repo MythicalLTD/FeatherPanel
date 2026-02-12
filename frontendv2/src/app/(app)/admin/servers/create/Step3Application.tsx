@@ -144,9 +144,7 @@ export function Step3Application({
                                 </Label>
                                 <Input
                                     value={formData.dockerImage}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({ ...prev, dockerImage: e.target.value }))
-                                    }
+                                    onChange={(e) => setFormData((prev) => ({ ...prev, dockerImage: e.target.value }))}
                                     placeholder='ghcr.io/pterodactyl/yolks:java_8'
                                     className='font-mono text-sm h-11 bg-muted/30'
                                 />
@@ -183,27 +181,27 @@ export function Step3Application({
                                                 )}
                                             >
                                                 <div className='flex items-center justify-between gap-3'>
-                                                <div className='flex items-center gap-2 min-w-0'>
-                                                    <Container className='h-4 w-4 text-primary shrink-0' />
-                                                    <div className='min-w-0'>
-                                                        <p
-                                                            className={cn(
-                                                                'text-sm font-medium truncate',
-                                                                formData.dockerImage === img.value
-                                                                    ? 'text-primary'
-                                                                    : 'text-foreground group-hover/img:text-foreground',
-                                                            )}
-                                                        >
-                                                            {img.name}
-                                                        </p>
-                                                        <p className='text-xs font-mono text-muted-foreground truncate'>
-                                                            {img.value}
-                                                        </p>
+                                                    <div className='flex items-center gap-2 min-w-0'>
+                                                        <Container className='h-4 w-4 text-primary shrink-0' />
+                                                        <div className='min-w-0'>
+                                                            <p
+                                                                className={cn(
+                                                                    'text-sm font-medium truncate',
+                                                                    formData.dockerImage === img.value
+                                                                        ? 'text-primary'
+                                                                        : 'text-foreground group-hover/img:text-foreground',
+                                                                )}
+                                                            >
+                                                                {img.name}
+                                                            </p>
+                                                            <p className='text-xs font-mono text-muted-foreground truncate'>
+                                                                {img.value}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                {formData.dockerImage === img.value && (
-                                                    <div className='h-2 w-2 rounded-full bg-primary shrink-0' />
-                                                )}
+                                                    {formData.dockerImage === img.value && (
+                                                        <div className='h-2 w-2 rounded-full bg-primary shrink-0' />
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}

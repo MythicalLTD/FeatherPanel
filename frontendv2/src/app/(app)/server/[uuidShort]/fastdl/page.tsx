@@ -250,7 +250,11 @@ export default function ServerFastDlPage() {
             <PageHeader title={t('serverFastDl.title')} description={t('serverFastDl.description')} />
             <WidgetRenderer widgets={getWidgets('server-fastdl', 'after-header')} />
 
-            <PageCard title={t('serverFastDl.configuration')} description={t('serverFastDl.configurationDescription')} icon={Download}>
+            <PageCard
+                title={t('serverFastDl.configuration')}
+                description={t('serverFastDl.configurationDescription')}
+                icon={Download}
+            >
                 <div className='space-y-6'>
                     {error && (
                         <div className='p-4 bg-destructive/10 border border-destructive/20 rounded-xl'>
@@ -345,9 +349,7 @@ export default function ServerFastDlPage() {
                                     disabled={saving}
                                     className='h-12 bg-secondary/50 border-border/50 focus:border-primary/50 font-medium text-base rounded-xl'
                                 />
-                                <p className='mt-2 text-xs text-muted-foreground'>
-                                    {t('serverFastDl.directoryHelp')}
-                                </p>
+                                <p className='mt-2 text-xs text-muted-foreground'>{t('serverFastDl.directoryHelp')}</p>
                             </div>
                             <Button onClick={handleEnable} disabled={saving} className='w-full' variant='default'>
                                 {saving ? (
