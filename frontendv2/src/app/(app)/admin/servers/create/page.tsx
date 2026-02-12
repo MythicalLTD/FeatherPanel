@@ -26,7 +26,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { toast } from 'sonner';
 import { Server, X, ChevronRight, ChevronLeft, Plus, Search as SearchIcon, Loader2 } from 'lucide-react';
-
 import {
     ServerFormData,
     SelectedEntities,
@@ -39,7 +38,6 @@ import {
     Realm,
     WizardStep,
 } from './types';
-
 import { Step1CoreDetails } from './Step1CoreDetails';
 import { Step2Allocation } from './Step2Allocation';
 import { Step3Application } from './Step3Application';

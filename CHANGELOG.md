@@ -23,6 +23,7 @@
 - Fixed an issue where the SSO link copy function was not working in admin user settings. by @nayskutzu
 - Fixed an issue where the SFTP copy button was not functioning properly in the server settings. by @nayskutzu
 - Fixed an issue where servers with 0MB RAM were incorrectly handled as having 0MB memory, ensuring proper default memory allocation. by @nayskutzu
+- Enhance Docker image selection in server creation process by @nayskutzu
 
 ### Improved
 

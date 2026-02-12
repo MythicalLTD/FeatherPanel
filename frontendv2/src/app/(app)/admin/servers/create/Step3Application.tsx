@@ -19,9 +19,8 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { HeadlessSelect } from '@/components/ui/headless-select';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Search, Wand2, Box, Binary } from 'lucide-react';
+import { Sparkles, Search, Wand2, Box, Binary, Container } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StepProps, Realm, Spell } from './types';
 
@@ -49,11 +48,11 @@ export function Step3Application({
 }: Step3Props) {
     const { t } = useTranslation();
 
-    const getDockerImages = (): string[] => {
+    const getDockerImages = (): { name: string; value: string }[] => {
         if (!spellDetails?.docker_images) return [];
         try {
-            const dockerImagesObj = JSON.parse(spellDetails.docker_images);
-            return Object.values(dockerImagesObj) as string[];
+            const dockerImagesObj = JSON.parse(spellDetails.docker_images) as Record<string, string>;
+            return Object.entries(dockerImagesObj).map(([name, value]) => ({ name, value }));
         } catch {
             return [];
         }
@@ -136,19 +135,81 @@ export function Step3Application({
                         </div>
                     </div>
 
-                    {dockerImages.length > 0 && (
-                        <div className='space-y-3'>
-                            <Label className='flex items-center gap-1.5'>
-                                {t('admin.servers.form.docker_image')}
-                                <span className='text-red-500 font-bold'>*</span>
-                            </Label>
-                            <HeadlessSelect
-                                value={formData.dockerImage}
-                                onChange={(val) => setFormData((prev) => ({ ...prev, dockerImage: String(val) }))}
-                                options={dockerImages.map((img) => ({ id: img, name: img }))}
-                                placeholder={t('admin.servers.form.select_docker_image')}
-                            />
-                            <p className='text-xs text-muted-foreground'>{t('admin.servers.form.docker_image_help')}</p>
+                    {formData.spellId && (
+                        <div className='space-y-4'>
+                            <div className='space-y-2.5'>
+                                <Label className='flex items-center gap-1.5'>
+                                    {t('admin.servers.form.docker_image')}
+                                    <span className='text-red-500 font-bold'>*</span>
+                                </Label>
+                                <Input
+                                    value={formData.dockerImage}
+                                    onChange={(e) =>
+                                        setFormData((prev) => ({ ...prev, dockerImage: e.target.value }))
+                                    }
+                                    placeholder='ghcr.io/pterodactyl/yolks:java_8'
+                                    className='font-mono text-sm h-11 bg-muted/30'
+                                />
+                                <p className='text-xs text-muted-foreground'>
+                                    {t('admin.servers.form.docker_image_help')}
+                                </p>
+                            </div>
+
+                            {dockerImages.length > 0 && (
+                                <div className='space-y-2'>
+                                    <Label className='text-xs font-medium text-muted-foreground uppercase tracking-wider'>
+                                        {t('admin.servers.form.available_docker_images')}
+                                    </Label>
+                                    <div className='space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar'>
+                                        {dockerImages.map((img) => (
+                                            <div
+                                                key={img.value}
+                                                role='button'
+                                                tabIndex={0}
+                                                onClick={() =>
+                                                    setFormData((prev) => ({ ...prev, dockerImage: img.value }))
+                                                }
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                        e.preventDefault();
+                                                        setFormData((prev) => ({ ...prev, dockerImage: img.value }));
+                                                    }
+                                                }}
+                                                className={cn(
+                                                    'p-3 rounded-xl border transition-all duration-200 cursor-pointer group/img relative overflow-hidden',
+                                                    formData.dockerImage === img.value
+                                                        ? 'bg-primary/10 border-primary/40 ring-1 ring-primary/20'
+                                                        : 'bg-muted/20 border-border/50 hover:border-primary/30 hover:bg-muted/30',
+                                                )}
+                                            >
+                                                <div className='flex items-center justify-between gap-3'>
+                                                <div className='flex items-center gap-2 min-w-0'>
+                                                    <Container className='h-4 w-4 text-primary shrink-0' />
+                                                    <div className='min-w-0'>
+                                                        <p
+                                                            className={cn(
+                                                                'text-sm font-medium truncate',
+                                                                formData.dockerImage === img.value
+                                                                    ? 'text-primary'
+                                                                    : 'text-foreground group-hover/img:text-foreground',
+                                                            )}
+                                                        >
+                                                            {img.name}
+                                                        </p>
+                                                        <p className='text-xs font-mono text-muted-foreground truncate'>
+                                                            {img.value}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {formData.dockerImage === img.value && (
+                                                    <div className='h-2 w-2 rounded-full bg-primary shrink-0' />
+                                                )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

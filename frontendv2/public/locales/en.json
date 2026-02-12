@@ -1141,9 +1141,7 @@
 		"featureDisabled": "FastDL Feature Disabled",
 		"featureDisabledDescription": "FastDL management has been disabled by the administrator. Please contact support if you need this feature enabled.",
 		"accessDenied": "Access Denied",
-		"accessDeniedDescription": "You don't have permission to view FastDL settings for this server.",
-		"featureDisabled": "FastDL Management Disabled",
-		"featureDisabledDescription": "FastDL management has been disabled by the administrator."
+		"accessDeniedDescription": "You don't have permission to view FastDL settings for this server."
 	},
 	"serverProxy": {
 		"title": "Reverse Proxy",
@@ -3236,8 +3234,9 @@
 				"search_spells": "Search spells by name...",
 				"no_spells_found": "No spells found",
 				"docker_image": "Docker Image",
-				"docker_image_help": "Select the Docker image for this spell. This will be used to deploy the server.",
+				"docker_image_help": "Select or enter the Docker image for this spell. This will be used to deploy the server.",
 				"select_docker_image": "Select Docker image...",
+				"available_docker_images": "Available from spell",
 				"memory": "Memory (MiB)",
 				"memory_help": "The maximum amount of memory allowed for this container. Setting this to 0 will allow unlimited memory usage.",
 				"swap": "Swap (MiB)",
