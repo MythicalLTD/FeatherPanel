@@ -517,10 +517,12 @@ class UsersController
         $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
         // Generate UUID
         $data['uuid'] = UUIDUtils::generateV4();
+		$config = App::getInstance(true)->getConfig();
+		$avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://cdn.mythical.systems/featherpanel/logo.png');
         $data['remember_token'] = User::generateAccountToken();
         // Set default avatar if not provided
         if (empty($data['avatar'])) {
-            $data['avatar'] = 'https://cdn.mythical.systems/featherpanel/logo.png';
+            $data['avatar'] = $avatar;
         }
         // Set default role if not provided
         if (empty($data['role_id'])) {

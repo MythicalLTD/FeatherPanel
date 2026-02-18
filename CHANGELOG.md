@@ -9,6 +9,7 @@
 ### Added
 
 - Introduced seamless Ctrl+S (or Cmd+S) keyboard shortcut support in the file manager—enabling quick and convenient file saving. by @nayskutzu
+- Default user profile pictures now automatically use the panel’s app logo URL for a more unified look. by @nayskutzu
 
 ### Fixed
 

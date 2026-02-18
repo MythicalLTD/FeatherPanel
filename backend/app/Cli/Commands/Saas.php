@@ -20,6 +20,7 @@ namespace App\Cli\Commands;
 use App\Cli\App;
 use App\Chat\User;
 use App\Chat\Database;
+use App\Config\ConfigInterface;
 use App\Helpers\UUIDUtils;
 use App\Cli\CommandBuilder;
 use App\Config\ConfigFactory;
@@ -187,6 +188,9 @@ class Saas extends App implements CommandBuilder
         }
 
         $uuid = UUIDUtils::generateV4();
+		$config = self::$app->getConfig();
+		$avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://cdn.mythical.systems/featherpanel/logo.png');
+
         $data = [
             'username' => $username,
             'email' => $email,
@@ -195,7 +199,7 @@ class Saas extends App implements CommandBuilder
             'password' => password_hash($password, PASSWORD_BCRYPT),
             'uuid' => $uuid,
             'remember_token' => User::generateAccountToken(),
-            'avatar' => 'https://cdn.mythical.systems/featherpanel/logo.png',
+            'avatar' => $avatar,
             'role_id' => $roleId,
         ];
 

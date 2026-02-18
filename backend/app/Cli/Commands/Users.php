@@ -26,6 +26,7 @@ use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\ApiClient;
 use App\Chat\MailQueue;
+use App\Config\ConfigInterface;
 use App\Helpers\UUIDUtils;
 use App\Cli\CommandBuilder;
 
@@ -363,6 +364,9 @@ class Users extends App implements CommandBuilder
         }
         $roleId = empty($roleIdInput) ? 1 : (int) $roleIdInput;
 
+        $config = self::$app->getConfig();
+        $avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://cdn.mythical.systems/featherpanel/logo.png');
+
         $data = [
             'username' => $username,
             'email' => $email,
@@ -371,7 +375,7 @@ class Users extends App implements CommandBuilder
             'password' => password_hash($password, PASSWORD_BCRYPT),
             'uuid' => UUIDUtils::generateV4(),
             'remember_token' => User::generateAccountToken(),
-            'avatar' => 'https://cdn.mythical.systems/featherpanel/logo.png',
+            'avatar' => $avatar,
             'role_id' => $roleId,
         ];
 
