@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: CloudPlugins</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>CloudPlugins</h1>
+      <p class="muted">2 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:cloud:plugin:installed</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onPluginInstalled</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string identifier, array plugin data, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\CloudPluginsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(CloudPluginsEvent::onPluginInstalled(), function ($identifier, $data, $uuid) {
+        // Handle featherpanel:cloud:plugin:installed
+        // Parameters: string identifier, array plugin data, string user uuid.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:cloud:plugin:uninstalled</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onPluginUninstalled</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string identifier, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\CloudPluginsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(CloudPluginsEvent::onPluginUninstalled(), function ($identifier, $uuid) {
+        // Handle featherpanel:cloud:plugin:uninstalled
+        // Parameters: string identifier, string user uuid.
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

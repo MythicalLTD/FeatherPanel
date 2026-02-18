@@ -23,8 +23,8 @@ const __dirname = path.dirname(__filename);
 
 const EVENTS_DIR = path.join(__dirname, '../../backend/app/Plugins/Events/Events');
 const CONTROLLERS_DIR = path.join(__dirname, '../../backend/app/Controllers');
-const DOCS_DIR = path.join(__dirname, '../src/app/(docs)/icanhasfeatherpanel');
-const EVENTS_DOCS_DIR = path.join(DOCS_DIR, 'events');
+const PUBLIC_DOCS_DIR = path.join(__dirname, '../public/icanhasfeatherpanel');
+const EVENTS_DOCS_DIR = path.join(PUBLIC_DOCS_DIR, 'events');
 
 function getControllerFiles(dir, files = []) {
     if (!fs.existsSync(dir)) return files;
@@ -187,290 +187,199 @@ function sanitizeCategory(category) {
 }
 
 function generateMainEventsPage(categories, totalEvents) {
-    return `// @ts-nocheck
-'use client';
+    const categoryItems = categories
+        .map((category) => {
+            const sanitized = sanitizeCategory(category);
+            return `<li>
+    <a href="/icanhasfeatherpanel/events/${sanitized}.html">${category}</a>
+</li>`;
+        })
+        .join('\n');
 
-import Link from 'next/link';
-import { Zap, Code, ExternalLink } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+    const exampleCode = [
+        'public static function processEvents(PluginEvents $event): void',
+        '{',
+        "    $event->on('featherpanel:user:created', function ($user) {",
+        '        // Handle user creation',
+        '    });',
+        '}',
+    ].join('\n');
 
-const categories = ${JSON.stringify(categories, null, 2)};
+    return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>FeatherPanel Plugin Events & Hooks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2.25rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.5rem; margin-top: 2rem; }
+    h3 { font-size: 1.125rem; margin-top: 1.5rem; }
+    .muted { color: #9ca3af; }
+    .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-right: 0.5rem; }
+    ul { padding-left: 1.25rem; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.5rem; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Plugin Events &amp; Hooks</h1>
+      <p class="muted">
+        Complete reference of all plugin events and hooks available in FeatherPanel for extending functionality.
+      </p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge">${categories.length} event categories</span>
+        <span class="badge">${totalEvents} total events</span>
+      </div>
+    </header>
 
-export default function EventsPage() {
-    return (
-        <div className='min-h-screen bg-background'>
-            <div className='container mx-auto px-4 py-16 max-w-6xl'>
-                <div className='mb-12 text-center space-y-4'>
-                    <div className='inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 mb-4 backdrop-blur-sm'>
-                        <Zap className='w-10 h-10 text-primary' />
-                    </div>
-                    <h1 className='text-5xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
-                        Plugin Events & Hooks
-                    </h1>
-                    <p className='text-xl text-muted-foreground max-w-2xl mx-auto'>
-                        Complete reference of all plugin events and hooks available in FeatherPanel for extending functionality
-                    </p>
-                    <div className='flex items-center justify-center gap-4 pt-2'>
-                        <Badge variant='secondary' className='text-sm px-4 py-1.5 font-semibold bg-card border border-border/50'>
-                            ${categories.length} Event Categories
-                        </Badge>
-                        <Badge variant='outline' className='text-sm px-4 py-1.5 font-semibold bg-card border-border/50'>
-                            ${totalEvents} Total Events
-                        </Badge>
-                    </div>
-                </div>
+    <section>
+      <h2>Event Categories</h2>
+      <p class="muted">Click a category to see all events and their payloads.</p>
+      <ul>
+${categoryItems}
+      </ul>
+    </section>
 
-                <div className='grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12'>
-                    {categories.map((category) => {
-                        const sanitized = category.toLowerCase().replace(/([A-Z])/g, '-$1').replace(/^-+/, '').replace(/[^a-z0-9-]+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
-                        return (
-                            <Link key={category} href={\`/icanhasfeatherpanel/events/\${sanitized}\`} className='block'>
-                                <Card className='h-full transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/60 cursor-pointer border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 group'>
-                                    <CardHeader className='pb-3'>
-                                        <div className='flex items-center gap-3 mb-2'>
-                                            <div className='p-2 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors backdrop-blur-sm'>
-                                                <Code className='w-5 h-5 text-primary' />
-                                            </div>
-                                            <CardTitle className='text-lg text-foreground group-hover:text-primary transition-colors'>
-                                                {category}
-                                            </CardTitle>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className='flex items-center gap-2 text-primary font-semibold text-sm'>
-                                            <span>View Events</span>
-                                            <ExternalLink className='w-4 h-4 group-hover:translate-x-1 transition-transform' />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        );
-                    })}
-                </div>
+    <section class="card">
+      <h2>About Plugin Events</h2>
+      <p class="muted">
+        FeatherPanel uses an event-driven architecture that allows plugins to hook into system events and extend
+        functionality without modifying core code. Events are emitted at key points in the application lifecycle and
+        can be listened to by plugins.
+      </p>
 
-                <Card className='border-primary/20 bg-primary/5 backdrop-blur-sm border-border/50'>
-                    <CardHeader>
-                        <CardTitle className='text-xl text-foreground'>About Plugin Events</CardTitle>
-                        <CardDescription className='text-muted-foreground'>
-                            Understanding FeatherPanel&apos;s event-driven architecture
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className='space-y-4'>
-                        <div className='space-y-2'>
-                            <h3 className='font-semibold text-sm text-foreground'>Event System Overview</h3>
-                            <p className='text-sm text-muted-foreground'>
-                                FeatherPanel uses an event-driven architecture that allows plugins to hook into system events 
-                                and extend functionality without modifying core code. Events are emitted at key points in the 
-                                application lifecycle and can be listened to by plugins.
-                            </p>
-                        </div>
-                        <div className='space-y-2'>
-                            <h3 className='font-semibold text-sm text-foreground'>Registering Event Listeners</h3>
-                            <p className='text-sm text-muted-foreground mb-2'>
-                                In your plugin&apos;s main class, implement the <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>processEvents</code> method:
-                            </p>
-                            <pre className='p-3 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto backdrop-blur-sm'>
-                                <code className='text-xs font-mono text-foreground'>
-{${JSON.stringify(`public static function processEvents(PluginEvents $event): void
-{
-    $event->on('featherpanel:user:created', function ($user) {
-        // Handle user creation
-    });
-}`)}}
-                                </code>
-                            </pre>
-                        </div>
-                        <div className='space-y-2'>
-                            <h3 className='font-semibold text-sm text-foreground'>Event Naming</h3>
-                            <p className='text-sm text-muted-foreground'>
-                                Events follow a consistent naming pattern: <code className='px-1.5 py-0.5 rounded bg-muted/50 text-xs font-mono'>featherpanel:category:action</code>. 
-                                Each event includes callback parameter information to help you understand what data is available.
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
-    );
-}
+      <h3>Registering Event Listeners</h3>
+      <p class="muted">
+        In your plugin's main class, implement the <code>processEvents</code> method:
+      </p>
+      <pre><code>${exampleCode}</code></pre>
+
+      <h3>Event Naming</h3>
+      <p class="muted">
+        Events follow a consistent naming pattern:
+        <code>featherpanel:category:action</code>. Each event includes callback parameter information to help you
+        understand what data is available.
+      </p>
+    </section>
+  </main>
+</body>
+</html>
 `;
 }
 
 function generateCategoryPage(category, events) {
-    const escapedCategory = category.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
-    
-    // Build code examples for each event
-    const eventsWithExamples = events.map(event => {
-        // Use actual data keys if available, otherwise parse from callback description
-        let params = [];
-        if (event.actualData && event.actualData.length > 0) {
-            // Use actual data keys from controller emissions - convert snake_case to camelCase for PHP
-            params = event.actualData.map(key => {
-                // Convert snake_case to camelCase: user_uuid -> userUuid, allocation_id -> allocationId
-                const parts = key.split('_');
-                const camelCase = parts[0] + parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
-                return '$' + camelCase;
-            });
-        } else {
-            // Fallback to parsing callback description
-            params = event.callback.split(',').map(p => {
-                const trimmed = p.trim();
-                const parts = trimmed.split(' ');
-                const paramName = parts.length > 0 ? parts[parts.length - 1].replace(/\.$/, '') : 'param';
-                return '$' + paramName;
-            });
-        }
-        
-        // Build the code example - use single backslashes, JSON.stringify will handle escaping
-        const exampleCodeLines = [
-            `use App\\Plugins\\PluginEvents;`,
-            `use App\\Plugins\\Events\\Events\\${escapedCategory}Event;`,
-            ``,
-            `public static function processEvents(PluginEvents $evt): void`,
-            `{`,
-            `    $evt->on(${escapedCategory}Event::${event.method}(), function (${params.join(', ')}) {`,
-            `        // Handle ${event.name}`,
-            event.actualData && event.actualData.length > 0 
-                ? `        // Data keys: ${event.actualData.join(', ')}`
-                : `        // Parameters: ${event.callback}`,
-            `    });`,
-            `}`
-        ];
-        
-        const exampleCode = exampleCodeLines.join('\n');
-        
-        return { ...event, exampleCode };
-    });
-    
-    return `// @ts-nocheck
-'use client';
+    const headerTitle = `Events: ${category}`;
 
-import Link from 'next/link';
-import { ArrowLeft, Zap, Code } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+    const eventItems = events
+        .map((event) => {
+            const dataKeys =
+                event.actualData && event.actualData.length > 0
+                    ? event.actualData.join(', ')
+                    : 'N/A';
 
-const categoryData = {
-    name: ${JSON.stringify(category)},
-    events: ${JSON.stringify(eventsWithExamples, null, 2)}
-};
+            const sourceFiles =
+                event.sourceFiles && event.sourceFiles.length > 0
+                    ? event.sourceFiles.map((f) => `<li><code>${f}</code></li>`).join('\n')
+                    : '<li class="muted">No known emission locations.</li>';
 
-export default function CategoryEventsPage() {
-    // Helper to unescape JSON-escaped strings
-    const unescapeCode = (str: string) => {
-        // Replace double backslashes (escaped in JSON) with single backslash
-        // Replace escaped newlines with actual newlines
-        return str.replace(/\\\\\\\\/g, '\\\\').replace(/\\\\n/g, '\\n');
-    };
-    
-    return (
-        <div className='min-h-screen bg-background'>
-            <div className='container mx-auto px-4 py-16 max-w-6xl'>
-                <Link href='/icanhasfeatherpanel/events'>
-                    <Button variant='ghost' className='mb-8 -ml-4'>
-                        <ArrowLeft className='w-4 h-4 mr-2' />
-                        Back to Events
-                    </Button>
-                </Link>
+            let params = [];
+            if (event.actualData && event.actualData.length > 0) {
+                params = event.actualData.map((key) => {
+                    const parts = key.split('_');
+                    const camelCase =
+                        parts[0] + parts.slice(1).map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+                    return '$' + camelCase;
+                });
+            } else {
+                params = event.callback.split(',').map((p) => {
+                    const trimmed = p.trim();
+                    const parts = trimmed.split(' ');
+                    const paramName = parts.length > 0 ? parts[parts.length - 1].replace(/\.$/, '') : 'param';
+                    return '$' + paramName;
+                });
+            }
 
-                <div className='mb-12 space-y-4'>
-                    <div className='flex items-center gap-3'>
-                        <div className='p-3 rounded-xl bg-primary/10 border border-primary/20 backdrop-blur-sm'>
-                            <Zap className='w-6 h-6 text-primary' />
-                        </div>
-                        <div>
-                            <h1 className='text-4xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
-                                {categoryData.name}
-                            </h1>
-                            <p className='text-muted-foreground mt-1'>
-                                {categoryData.events.length} event{categoryData.events.length !== 1 ? 's' : ''} in this category
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            const exampleCode = [
+                'use App\\Plugins\\PluginEvents;',
+                `use App\\Plugins\\Events\\Events\\${category}Event;`,
+                '',
+                'public static function processEvents(PluginEvents $evt): void',
+                '{',
+                `    $evt->on(${category}Event::${event.method}(), function (${params.join(', ')}) {`,
+                `        // Handle ${event.name}`,
+                event.actualData && event.actualData.length > 0
+                    ? `        // Data keys: ${event.actualData.join(', ')}`
+                    : `        // Parameters: ${event.callback}`,
+                '    });',
+                '}',
+            ].join('\n');
 
-                <div className='space-y-4'>
-                    {categoryData.events.map((event) => (
-                        <Card key={event.name} className='border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors'>
-                            <CardHeader>
-                                <div className='flex items-start justify-between gap-4 flex-wrap'>
-                                    <div className='flex-1 min-w-0'>
-                                        <div className='flex items-center gap-2 mb-2 flex-wrap'>
-                                            <Code className='w-4 h-4 text-primary flex-shrink-0' />
-                                            <CardTitle className='text-lg font-mono text-foreground break-all'>
-                                                {event.name}
-                                            </CardTitle>
-                                        </div>
-                                        <CardDescription className='text-muted-foreground mb-3'>
-                                            <span className='font-semibold'>Callback parameters:</span> {event.callback}
-                                        </CardDescription>
-                                    </div>
-                                    <Badge variant='outline' className='text-xs font-mono bg-muted/30 border-border/50 text-foreground/80 flex-shrink-0'>
-                                        {event.method}
-                                    </Badge>
-                                </div>
-                            </CardHeader>
-                            <CardContent className='space-y-4'>
-                                {event.actualData && event.actualData.length > 0 && (
-                                    <div className='p-4 rounded-lg bg-muted/30 border border-border/50 backdrop-blur-sm'>
-                                        <h4 className='text-sm font-semibold text-foreground mb-2'>Event Data Structure</h4>
-                                        <p className='text-xs text-muted-foreground mb-3'>
-                                            This event receives the following data when emitted:
-                                        </p>
-                                        <div className='flex flex-wrap gap-2'>
-                                            {event.actualData.map((key) => (
-                                                <Badge 
-                                                    key={key} 
-                                                    variant='outline' 
-                                                    className='text-xs font-mono bg-muted/50 border-border/50 text-foreground/80'
-                                                >
-                                                    {key}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                        {event.sourceFiles && event.sourceFiles.length > 0 && (
-                                            <div className='mt-3 pt-3 border-t border-border/30'>
-                                                <p className='text-xs text-muted-foreground mb-1'>Emitted from:</p>
-                                                <div className='space-y-1'>
-                                                    {event.sourceFiles.slice(0, 2).map((file) => (
-                                                        <code key={file} className='text-xs text-muted-foreground block truncate'>
-                                                            {file}
-                                                        </code>
-                                                    ))}
-                                                    {event.sourceFiles.length > 2 && (
-                                                        <p className='text-xs text-muted-foreground italic'>
-                                                            +{event.sourceFiles.length - 2} more location{event.sourceFiles.length - 2 !== 1 ? 's' : ''}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                <div className='p-4 rounded-lg bg-muted/30 border border-border/50 backdrop-blur-sm'>
-                                    <h4 className='text-sm font-semibold text-foreground mb-2'>Usage Example</h4>
-                                    <pre className='p-3 rounded-lg bg-muted/50 border border-border/50 overflow-x-auto'>
-                                        <code className='text-xs font-mono text-foreground'>
-{unescapeCode(event.exampleCode)}
-                                        </code>
-                                    </pre>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
+            return `<article class="card">
+  <h2><code>${event.name}</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>${event.method}</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> ${event.callback}</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> ${dataKeys}</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+${sourceFiles}
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>${exampleCode}</code></pre>
+</article>`;
+        })
+        .join('\n\n');
+
+    return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>${headerTitle}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>${category}</h1>
+      <p class="muted">${events.length} event${events.length !== 1 ? 's' : ''} in this category.</p>
+    </header>
+
+${eventItems}
+  </main>
+</body>
+</html>
 `;
 }
 
 // Ensure docs directories exist
-if (!fs.existsSync(DOCS_DIR)) {
-    fs.mkdirSync(DOCS_DIR, { recursive: true });
+if (!fs.existsSync(PUBLIC_DOCS_DIR)) {
+    fs.mkdirSync(PUBLIC_DOCS_DIR, { recursive: true });
 }
 if (!fs.existsSync(EVENTS_DOCS_DIR)) {
     fs.mkdirSync(EVENTS_DOCS_DIR, { recursive: true });
@@ -480,7 +389,7 @@ console.log('Parsing plugin events...');
 const { events, categories, grouped } = parseAllEvents();
 
 // Generate main events page
-const mainPagePath = path.join(EVENTS_DOCS_DIR, 'page.tsx');
+const mainPagePath = path.join(EVENTS_DOCS_DIR, 'index.html');
 const mainPage = generateMainEventsPage(categories, events.length);
 fs.writeFileSync(mainPagePath, mainPage);
 console.log(`✓ Main events page: ${mainPagePath}`);
@@ -488,11 +397,7 @@ console.log(`✓ Main events page: ${mainPagePath}`);
 // Generate category pages
 categories.forEach(category => {
     const sanitized = sanitizeCategory(category);
-    const categoryDir = path.join(EVENTS_DOCS_DIR, sanitized);
-    if (!fs.existsSync(categoryDir)) {
-        fs.mkdirSync(categoryDir, { recursive: true });
-    }
-    const categoryPagePath = path.join(categoryDir, 'page.tsx');
+    const categoryPagePath = path.join(EVENTS_DOCS_DIR, `${sanitized}.html`);
     const categoryPage = generateCategoryPage(category, grouped[category]);
     fs.writeFileSync(categoryPagePath, categoryPage);
     console.log(`✓ Category page: ${categoryPagePath} (${grouped[category].length} events)`);

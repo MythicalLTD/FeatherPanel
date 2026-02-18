@@ -8,14 +8,13 @@
   "window.title": "FeatherPanel",
   "editor.insertSpaces": false,
   "editor.detectIndentation": false,
+  "git.autoRepositoryDetection": false,
+  "git.enableNestedRepositories": false,
   "workbench.colorCustomizations": {
     // Base surfaces and chrome
     "focusBorder": "#a855f7",
     "descriptionForeground": "#cbd5e1",
-    "activityBar.background": "#2d1854",
     "activityBar.activeBorder": "#a855f7",
-    "activityBar.border": "#2d1854",
-    "activityBar.foreground": "#e6e6f0",
     "activityBar.inactiveForeground": "#e6e6f099",
     "activityBarBadge.background": "#a855f7",
     "activityBarBadge.foreground": "#0f0a1a",
@@ -231,5 +230,8 @@
   },
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  } // required to format on save
+},
+"[jsonc]": {
+	"editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+} // required to format on save
 }

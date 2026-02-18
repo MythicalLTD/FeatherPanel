@@ -15,10 +15,11 @@
 		"scan:translations": "node scripts/scan-translations.js",
 		"scan:translations:unused": "node scripts/scan-unused-translations.js",
 		"fix:translations": "node scripts/fix-translation-placeholders.js",
-		"export:docs": "run-s export:docs:widgets export:docs:permissions export:docs:events",
+		"export:docs": "run-s export:docs:widgets export:docs:permissions export:docs:events export:docs:api",
 		"export:docs:widgets": "node scripts/export-widget-docs.js",
 		"export:docs:permissions": "node scripts/export-permissions-docs.js",
-		"export:docs:events": "node scripts/export-events-docs.js"
+		"export:docs:events": "node scripts/export-events-docs.js",
+		"export:docs:api": "node scripts/export-api-docs.js"
 	},
 	"dependencies": {
 		"@headlessui/react": "^2.2.9",
@@ -51,7 +52,6 @@
 		"react-qr-code": "^2.0.18",
 		"react-turnstile": "^1.1.5",
 		"recharts": "^3.7.0",
-		"redoc": "^2.5.2",
 		"sonner": "^2.0.7",
 		"tailwind-merge": "^3.4.0"
 	},

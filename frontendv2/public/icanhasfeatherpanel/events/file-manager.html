@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: FileManager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>FileManager</h1>
+      <p class="muted">6 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:admin:file_manager:directory:browsed</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDirectoryBrowsed</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string path, array items.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\FileManagerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(FileManagerEvent::onDirectoryBrowsed(), function ($path, $items) {
+        // Handle featherpanel:admin:file_manager:directory:browsed
+        // Parameters: string path, array items.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:file_manager:file:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onFileCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string path, bool is_directory.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> created_by, is_directory, path</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/FileManagerController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\FileManagerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(FileManagerEvent::onFileCreated(), function ($createdBy, $isDirectory, $path) {
+        // Handle featherpanel:admin:file_manager:file:created
+        // Data keys: created_by, is_directory, path
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:file_manager:file:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onFileDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string path, bool was_directory.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> deleted_by, path, was_directory</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/FileManagerController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\FileManagerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(FileManagerEvent::onFileDeleted(), function ($deletedBy, $path, $wasDirectory) {
+        // Handle featherpanel:admin:file_manager:file:deleted
+        // Data keys: deleted_by, path, was_directory
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:file_manager:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onFileManagerError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\FileManagerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(FileManagerEvent::onFileManagerError(), function ($message, $context) {
+        // Handle featherpanel:admin:file_manager:error
+        // Parameters: string error message, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:file_manager:file:read</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onFileRead</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string path, array file data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\FileManagerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(FileManagerEvent::onFileRead(), function ($path, $data) {
+        // Handle featherpanel:admin:file_manager:file:read
+        // Parameters: string path, array file data.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:file_manager:file:saved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onFileSaved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string path, int size.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> path, saved_by, size</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/FileManagerController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\FileManagerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(FileManagerEvent::onFileSaved(), function ($path, $savedBy, $size) {
+        // Handle featherpanel:admin:file_manager:file:saved
+        // Data keys: path, saved_by, size
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

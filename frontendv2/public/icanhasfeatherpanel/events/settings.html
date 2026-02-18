@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>Settings</h1>
+      <p class="muted">7 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:admin:settings:setting:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSettingRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string setting name, array setting data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> setting_data, setting_name</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SettingsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SettingsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SettingsEvent::onSettingRetrieved(), function ($settingData, $settingName) {
+        // Handle featherpanel:admin:settings:setting:retrieved
+        // Data keys: setting_data, setting_name
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:settings:category:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSettingsByCategoryRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string category, array settings.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> categories, category, category_config, settings</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SettingsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SettingsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SettingsEvent::onSettingsByCategoryRetrieved(), function ($categories, $category, $categoryConfig, $settings) {
+        // Handle featherpanel:admin:settings:category:retrieved
+        // Data keys: categories, category, category_config, settings
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:settings:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSettingsError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SettingsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SettingsEvent::onSettingsError(), function ($message, $context) {
+        // Handle featherpanel:admin:settings:error
+        // Parameters: string error message, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:settings:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSettingsRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array settings data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> categories, organized_settings, settings</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SettingsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SettingsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SettingsEvent::onSettingsRetrieved(), function ($categories, $organizedSettings, $settings) {
+        // Handle featherpanel:admin:settings:retrieved
+        // Data keys: categories, organized_settings, settings
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:settings:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSettingsUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array updated settings, array old values.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> settings_data, updated_settings, user</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SettingsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SettingsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SettingsEvent::onSettingsUpdated(), function ($settingsData, $updatedSettings, $user) {
+        // Handle featherpanel:admin:settings:updated
+        // Data keys: settings_data, updated_settings, user
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:settings:setting:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSettingUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string setting name, mixed old value, mixed new value.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SettingsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SettingsEvent::onSettingUpdated(), function ($name, $value, $value) {
+        // Handle featherpanel:admin:settings:setting:updated
+        // Parameters: string setting name, mixed old value, mixed new value.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:settings:validation:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSettingValidationError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string setting name, string error message.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SettingsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SettingsEvent::onSettingValidationError(), function ($name, $message) {
+        // Handle featherpanel:admin:settings:validation:error
+        // Parameters: string setting name, string error message.
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

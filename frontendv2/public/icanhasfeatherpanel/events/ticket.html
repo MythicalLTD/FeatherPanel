@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: Ticket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>Ticket</h1>
+      <p class="muted">21 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:attachment:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketAttachmentCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, array attachment data, int attachment id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> attachment, attachment_id, ticket, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketAttachmentsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketAttachmentCreated(), function ($attachment, $attachmentId, $ticket, $userUuid) {
+        // Handle featherpanel:ticket:attachment:created
+        // Data keys: attachment, attachment_id, ticket, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:attachment:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketAttachmentDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, int attachment id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> attachment_id, ticket, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketAttachmentsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketAttachmentDeleted(), function ($attachmentId, $ticket, $userUuid) {
+        // Handle featherpanel:ticket:attachment:deleted
+        // Data keys: attachment_id, ticket, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:attachment:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketAttachmentUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, array attachment data, array updated data, int attachment id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketAttachmentUpdated(), function ($data, $data, $data, $id, $uuid) {
+        // Handle featherpanel:ticket:attachment:updated
+        // Parameters: array ticket data, array attachment data, array updated data, int attachment id, string user uuid.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:category:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketCategoryCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array category data, int category id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> category, category_id, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketCategoriesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketCategoryCreated(), function ($category, $categoryId, $userUuid) {
+        // Handle featherpanel:ticket:category:created
+        // Data keys: category, category_id, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:category:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketCategoryDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array category data, int category id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> category, category_id, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketCategoriesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketCategoryDeleted(), function ($category, $categoryId, $userUuid) {
+        // Handle featherpanel:ticket:category:deleted
+        // Data keys: category, category_id, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:category:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketCategoryUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array category data, array updated data, int category id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> category, category_id, updated_data, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketCategoriesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketCategoryUpdated(), function ($category, $categoryId, $updatedData, $userUuid) {
+        // Handle featherpanel:ticket:category:updated
+        // Data keys: category, category_id, updated_data, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:closed</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketClosed</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> ticket, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketClosed(), function ($ticket, $userUuid) {
+        // Handle featherpanel:ticket:closed
+        // Data keys: ticket, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, int ticket id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> ticket, ticket_id, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketsController.php</code></li>
+<li><code>backend/app/Controllers/User/TicketsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketCreated(), function ($ticket, $ticketId, $userUuid) {
+        // Handle featherpanel:ticket:created
+        // Data keys: ticket, ticket_id, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> ticket, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketsController.php</code></li>
+<li><code>backend/app/Controllers/User/TicketsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketDeleted(), function ($ticket, $userUuid) {
+        // Handle featherpanel:ticket:deleted
+        // Data keys: ticket, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:message:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketMessageCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, array message data, int message id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> message, message_id, ticket, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketMessagesController.php</code></li>
+<li><code>backend/app/Controllers/Admin/TicketsController.php</code></li>
+<li><code>backend/app/Controllers/User/TicketsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketMessageCreated(), function ($message, $messageId, $ticket, $userUuid) {
+        // Handle featherpanel:ticket:message:created
+        // Data keys: message, message_id, ticket, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:message:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketMessageDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, int message id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> message_id, ticket, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketMessagesController.php</code></li>
+<li><code>backend/app/Controllers/User/TicketsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketMessageDeleted(), function ($messageId, $ticket, $userUuid) {
+        // Handle featherpanel:ticket:message:deleted
+        // Data keys: message_id, ticket, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:message:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketMessageUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, array message data, array updated data, int message id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> message, message_id, ticket, updated_data, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketMessagesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketMessageUpdated(), function ($message, $messageId, $ticket, $updatedData, $userUuid) {
+        // Handle featherpanel:ticket:message:updated
+        // Data keys: message, message_id, ticket, updated_data, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:priority:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketPriorityCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array priority data, int priority id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> priority, priority_id, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketPrioritiesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketPriorityCreated(), function ($priority, $priorityId, $userUuid) {
+        // Handle featherpanel:ticket:priority:created
+        // Data keys: priority, priority_id, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:priority:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketPriorityDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array priority data, int priority id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> priority, priority_id, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketPrioritiesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketPriorityDeleted(), function ($priority, $priorityId, $userUuid) {
+        // Handle featherpanel:ticket:priority:deleted
+        // Data keys: priority, priority_id, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:priority:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketPriorityUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array priority data, array updated data, int priority id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> priority, priority_id, updated_data, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketPrioritiesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketPriorityUpdated(), function ($priority, $priorityId, $updatedData, $userUuid) {
+        // Handle featherpanel:ticket:priority:updated
+        // Data keys: priority, priority_id, updated_data, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:reopened</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketReopened</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> ticket, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketReopened(), function ($ticket, $userUuid) {
+        // Handle featherpanel:ticket:reopened
+        // Data keys: ticket, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:status:changed</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketStatusChanged</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, string old status, string new status, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> new_status, old_status, ticket, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketStatusChanged(), function ($newStatus, $oldStatus, $ticket, $userUuid) {
+        // Handle featherpanel:ticket:status:changed
+        // Data keys: new_status, old_status, ticket, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:status:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketStatusCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array status data, int status id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> status, status_id, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketStatusesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketStatusCreated(), function ($status, $statusId, $userUuid) {
+        // Handle featherpanel:ticket:status:created
+        // Data keys: status, status_id, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:status:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketStatusDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array status data, int status id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> status, status_id, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketStatusesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketStatusDeleted(), function ($status, $statusId, $userUuid) {
+        // Handle featherpanel:ticket:status:deleted
+        // Data keys: status, status_id, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:status:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketStatusUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array status data, array updated data, int status id, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> status, status_id, updated_data, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketStatusesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketStatusUpdated(), function ($status, $statusId, $updatedData, $userUuid) {
+        // Handle featherpanel:ticket:status:updated
+        // Data keys: status, status_id, updated_data, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:ticket:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onTicketUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array ticket data, array updated data, string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> ticket, updated_data, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/TicketsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\TicketEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(TicketEvent::onTicketUpdated(), function ($ticket, $updatedData, $userUuid) {
+        // Handle featherpanel:ticket:updated
+        // Data keys: ticket, updated_data, user_uuid
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

@@ -37,7 +37,7 @@
     "dg/mysql-dump": "^1.6",
     "symfony/routing": "^7.3",
     "symfony/http-foundation": "^7.3",
-    "firebase/php-jwt": "^6.11",
+    "firebase/php-jwt": "^7.0",
     "symfony/mime": "^7.3",
     "zircote/swagger-php": "^5.4",
     "ext-redis": "*",

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: ServerFiles</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>ServerFiles</h1>
+      <p class="muted">7 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:directory:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerDirectoryCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, string directory path.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> directory_path, server_uuid, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerFilesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerFilesEvent::onServerDirectoryCreated(), function ($directoryPath, $serverUuid, $userUuid) {
+        // Handle featherpanel:user:server:directory:created
+        // Data keys: directory_path, server_uuid, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:file:renamed</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerFileRenamed</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, string file path.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> files, root, server_uuid, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerFilesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerFilesEvent::onServerFileRenamed(), function ($files, $root, $serverUuid, $userUuid) {
+        // Handle featherpanel:user:server:file:renamed
+        // Data keys: files, root, server_uuid, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:file:saved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerFileSaved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, string file path, int size.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> file_path, server_uuid, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerFilesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerFilesEvent::onServerFileSaved(), function ($filePath, $serverUuid, $userUuid) {
+        // Handle featherpanel:user:server:file:saved
+        // Data keys: file_path, server_uuid, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:files:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerFilesDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, array files deleted.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> server_uuid, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerFilesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerFilesEvent::onServerFilesDeleted(), function ($serverUuid, $userUuid) {
+        // Handle featherpanel:user:server:files:deleted
+        // Data keys: server_uuid, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:files:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerFilesError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerFilesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerFilesEvent::onServerFilesError(), function ($message, $context) {
+        // Handle featherpanel:user:server:files:error
+        // Parameters: string error message, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:file:uploaded</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerFileUploaded</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, array file data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> file_path, server_uuid, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerFilesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerFilesEvent::onServerFileUploaded(), function ($filePath, $serverUuid, $userUuid) {
+        // Handle featherpanel:user:server:file:uploaded
+        // Data keys: file_path, server_uuid, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:pull:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerPullProcessDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, string pull id.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> pull_id, server_uuid, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerFilesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerFilesEvent::onServerPullProcessDeleted(), function ($pullId, $serverUuid, $userUuid) {
+        // Handle featherpanel:user:server:pull:deleted
+        // Data keys: pull_id, server_uuid, user_uuid
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: Subdomains</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>Subdomains</h1>
+      <p class="muted">10 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:user:subdomain:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSubdomainCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string subdomain uuid, array subdomain data, array server data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> server_data, subdomain_data, subdomain_uuid, user</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/SubdomainController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SubdomainsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SubdomainsEvent::onSubdomainCreated(), function ($serverData, $subdomainData, $subdomainUuid, $user) {
+        // Handle featherpanel:user:subdomain:created
+        // Data keys: server_data, subdomain_data, subdomain_uuid, user
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:subdomain:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSubdomainDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string subdomain uuid, array subdomain data, array server data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> server_data, subdomain_data, subdomain_uuid, user</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/SubdomainController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SubdomainsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SubdomainsEvent::onSubdomainDeleted(), function ($serverData, $subdomainData, $subdomainUuid, $user) {
+        // Handle featherpanel:user:subdomain:deleted
+        // Data keys: server_data, subdomain_data, subdomain_uuid, user
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:subdomains:domain:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSubdomainDomainCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array domain data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> created_by, domain_data</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SubdomainsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SubdomainsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SubdomainsEvent::onSubdomainDomainCreated(), function ($createdBy, $domainData) {
+        // Handle featherpanel:admin:subdomains:domain:created
+        // Data keys: created_by, domain_data
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:subdomains:domain:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSubdomainDomainDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string domain uuid, array domain data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> deleted_by, domain_data, domain_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SubdomainsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SubdomainsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SubdomainsEvent::onSubdomainDomainDeleted(), function ($deletedBy, $domainData, $domainUuid) {
+        // Handle featherpanel:admin:subdomains:domain:deleted
+        // Data keys: deleted_by, domain_data, domain_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:subdomains:domain:not:found</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSubdomainDomainNotFound</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string domain uuid, string error message.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> domain_uuid, error_message</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SubdomainsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SubdomainsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SubdomainsEvent::onSubdomainDomainNotFound(), function ($domainUuid, $errorMessage) {
+        // Handle featherpanel:admin:subdomains:domain:not:found
+        // Data keys: domain_uuid, error_message
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:subdomains:domain:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSubdomainDomainRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string domain uuid, array domain data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> domain_data, domain_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SubdomainsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SubdomainsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SubdomainsEvent::onSubdomainDomainRetrieved(), function ($domainData, $domainUuid) {
+        // Handle featherpanel:admin:subdomains:domain:retrieved
+        // Data keys: domain_data, domain_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:subdomains:domains:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSubdomainDomainsRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array domains list.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> domains, filters, includeInactive, limit, page, pagination, search, total</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SubdomainsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SubdomainsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SubdomainsEvent::onSubdomainDomainsRetrieved(), function ($domains, $filters, $includeInactive, $limit, $page, $pagination, $search, $total) {
+        // Handle featherpanel:admin:subdomains:domains:retrieved
+        // Data keys: domains, filters, includeInactive, limit, page, pagination, search, total
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:subdomains:domain:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSubdomainDomainUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string domain uuid, array old data, array new data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> domain_uuid, new_data, old_data, updated_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SubdomainsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SubdomainsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SubdomainsEvent::onSubdomainDomainUpdated(), function ($domainUuid, $newData, $oldData, $updatedBy) {
+        // Handle featherpanel:admin:subdomains:domain:updated
+        // Data keys: domain_uuid, new_data, old_data, updated_by
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:subdomains:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSubdomainsError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SubdomainsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SubdomainsEvent::onSubdomainsError(), function ($message, $context) {
+        // Handle featherpanel:admin:subdomains:error
+        // Parameters: string error message, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:subdomains:settings:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSubdomainSettingsUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array settings data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> cloudflare_api_key_set, cloudflare_email, max_subdomains_per_server, settings, updated_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SubdomainsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SubdomainsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SubdomainsEvent::onSubdomainSettingsUpdated(), function ($cloudflareApiKeySet, $cloudflareEmail, $maxSubdomainsPerServer, $settings, $updatedBy) {
+        // Handle featherpanel:admin:subdomains:settings:updated
+        // Data keys: cloudflare_api_key_set, cloudflare_email, max_subdomains_per_server, settings, updated_by
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

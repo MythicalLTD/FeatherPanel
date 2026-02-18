@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: ServerBackup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>ServerBackup</h1>
+      <p class="muted">5 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:backup:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerBackupCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, array backup data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> backup_uuid, server_uuid, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/ServerBackupController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerBackupEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerBackupEvent::onServerBackupCreated(), function ($backupUuid, $serverUuid, $userUuid) {
+        // Handle featherpanel:user:server:backup:created
+        // Data keys: backup_uuid, server_uuid, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:backup:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerBackupDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, string backup uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> backup_uuid, server_uuid, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/ServerBackupController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerBackupEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerBackupEvent::onServerBackupDeleted(), function ($backupUuid, $serverUuid, $userUuid) {
+        // Handle featherpanel:user:server:backup:deleted
+        // Data keys: backup_uuid, server_uuid, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:backup:downloaded</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerBackupDownloaded</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, string backup uuid, string download url.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerBackupEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerBackupEvent::onServerBackupDownloaded(), function ($uuid, $uuid, $url) {
+        // Handle featherpanel:user:server:backup:downloaded
+        // Parameters: string server uuid, string backup uuid, string download url.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:backup:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerBackupError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerBackupEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerBackupEvent::onServerBackupError(), function ($message, $context) {
+        // Handle featherpanel:user:server:backup:error
+        // Parameters: string error message, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:backup:restored</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerBackupRestored</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, string backup uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> backup_uuid, server_uuid, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/ServerBackupController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerBackupEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerBackupEvent::onServerBackupRestored(), function ($backupUuid, $serverUuid, $userUuid) {
+        // Handle featherpanel:user:server:backup:restored
+        // Data keys: backup_uuid, server_uuid, user_uuid
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

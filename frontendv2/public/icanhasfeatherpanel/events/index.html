@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>FeatherPanel Plugin Events & Hooks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2.25rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.5rem; margin-top: 2rem; }
+    h3 { font-size: 1.125rem; margin-top: 1.5rem; }
+    .muted { color: #9ca3af; }
+    .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-right: 0.5rem; }
+    ul { padding-left: 1.25rem; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.5rem; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Plugin Events &amp; Hooks</h1>
+      <p class="muted">
+        Complete reference of all plugin events and hooks available in FeatherPanel for extending functionality.
+      </p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge">41 event categories</span>
+        <span class="badge">338 total events</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Event Categories</h2>
+      <p class="muted">Click a category to see all events and their payloads.</p>
+      <ul>
+<li>
+    <a href="/icanhasfeatherpanel/events/allocations.html">Allocations</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/app.html">App</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/auth.html">Auth</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/cloud-management.html">CloudManagement</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/cloud-plugins.html">CloudPlugins</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/console.html">Console</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/database-management.html">DatabaseManagement</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/database-snapshots.html">DatabaseSnapshots</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/databases.html">Databases</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/feather-zero-trust.html">FeatherZeroTrust</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/file-manager.html">FileManager</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/images.html">Images</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/knowledgebase.html">Knowledgebase</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/locations.html">Locations</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/log-viewer.html">LogViewer</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/mail-templates.html">MailTemplates</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/nodes.html">Nodes</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/notifications.html">Notifications</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/permissions.html">Permissions</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/plugin-manager.html">PluginManager</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/plugins-settings.html">PluginsSettings</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/realms.html">Realms</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/redirect-links.html">RedirectLinks</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/roles.html">Roles</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/server.html">Server</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/server-allocation.html">ServerAllocation</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/server-backup.html">ServerBackup</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/server-database.html">ServerDatabase</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/server-files.html">ServerFiles</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/server-schedule.html">ServerSchedule</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/server-subuser.html">ServerSubuser</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/server-task.html">ServerTask</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/server-user.html">ServerUser</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/settings.html">Settings</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/spells.html">Spells</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/subdomains.html">Subdomains</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/ticket.html">Ticket</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/user.html">User</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/user-api-client.html">UserApiClient</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/user-ssh-key.html">UserSshKey</a>
+</li>
+<li>
+    <a href="/icanhasfeatherpanel/events/wings.html">Wings</a>
+</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>About Plugin Events</h2>
+      <p class="muted">
+        FeatherPanel uses an event-driven architecture that allows plugins to hook into system events and extend
+        functionality without modifying core code. Events are emitted at key points in the application lifecycle and
+        can be listened to by plugins.
+      </p>
+
+      <h3>Registering Event Listeners</h3>
+      <p class="muted">
+        In your plugin's main class, implement the <code>processEvents</code> method:
+      </p>
+      <pre><code>public static function processEvents(PluginEvents $event): void
+{
+    $event->on('featherpanel:user:created', function ($user) {
+        // Handle user creation
+    });
+}</code></pre>
+
+      <h3>Event Naming</h3>
+      <p class="muted">
+        Events follow a consistent naming pattern:
+        <code>featherpanel:category:action</code>. Each event includes callback parameter information to help you
+        understand what data is available.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

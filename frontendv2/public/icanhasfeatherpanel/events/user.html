@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: User</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>User</h1>
+      <p class="muted">10 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:user:api:create</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserApiKeyCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string api key id.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\UserEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(UserEvent::onUserApiKeyCreated(), function ($uuid, $id) {
+        // Handle featherpanel:user:api:create
+        // Parameters: string user uuid, string api key id.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:api:delete</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserApiKeyDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string api key id.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\UserEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(UserEvent::onUserApiKeyDeleted(), function ($uuid, $id) {
+        // Handle featherpanel:user:api:delete
+        // Parameters: string user uuid, string api key id.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:api:update</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserApiKeyUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string api key id.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\UserEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(UserEvent::onUserApiKeyUpdated(), function ($uuid, $id) {
+        // Handle featherpanel:user:api:update
+        // Parameters: string user uuid, string api key id.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array user data, int user id, array created by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> created_by, user, user_id</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/PterodactylImporterController.php</code></li>
+<li><code>backend/app/Controllers/Admin/UsersController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\UserEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(UserEvent::onUserCreated(), function ($createdBy, $user, $userId) {
+        // Handle featherpanel:user:created
+        // Data keys: created_by, user, user_id
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array user data, array deleted by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> deleted_by, user</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/UsersController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\UserEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(UserEvent::onUserDeleted(), function ($deletedBy, $user) {
+        // Handle featherpanel:user:deleted
+        // Data keys: deleted_by, user
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:ssh:create</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserSshKeyCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string ssh key id.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\UserEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(UserEvent::onUserSshKeyCreated(), function ($uuid, $id) {
+        // Handle featherpanel:user:ssh:create
+        // Parameters: string user uuid, string ssh key id.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:ssh:delete</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserSshKeyDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string ssh key id.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\UserEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(UserEvent::onUserSshKeyDeleted(), function ($uuid, $id) {
+        // Handle featherpanel:user:ssh:delete
+        // Parameters: string user uuid, string ssh key id.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:ssh:update</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserSshKeyUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string ssh key id.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\UserEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(UserEvent::onUserSshKeyUpdated(), function ($uuid, $id) {
+        // Handle featherpanel:user:ssh:update
+        // Parameters: string user uuid, string ssh key id.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:update</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserUpdate</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/User/SessionController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\UserEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(UserEvent::onUserUpdate(), function ($userUuid) {
+        // Handle featherpanel:user:update
+        // Data keys: user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array user data, array updated data, array updated by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> updated_by, updated_data, user</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/UsersController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\UserEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(UserEvent::onUserUpdated(), function ($updatedBy, $updatedData, $user) {
+        // Handle featherpanel:user:updated
+        // Data keys: updated_by, updated_data, user
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

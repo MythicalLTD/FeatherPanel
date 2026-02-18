@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: ServerAllocation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>ServerAllocation</h1>
+      <p class="muted">3 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:allocation:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerAllocationDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, int allocation id.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> allocation_id, server_uuid, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/ServerAllocationController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerAllocationEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerAllocationEvent::onServerAllocationDeleted(), function ($allocationId, $serverUuid, $userUuid) {
+        // Handle featherpanel:user:server:allocation:deleted
+        // Data keys: allocation_id, server_uuid, user_uuid
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:allocation:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerAllocationError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerAllocationEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerAllocationEvent::onServerAllocationError(), function ($message, $context) {
+        // Handle featherpanel:user:server:allocation:error
+        // Parameters: string error message, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:server:allocation:set_primary</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerAllocationSetPrimary</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string server uuid, int allocation id, bool is_primary.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> allocation_id, server_uuid, user_uuid</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Server/ServerAllocationController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerAllocationEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerAllocationEvent::onServerAllocationSetPrimary(), function ($allocationId, $serverUuid, $userUuid) {
+        // Handle featherpanel:user:server:allocation:set_primary
+        // Data keys: allocation_id, server_uuid, user_uuid
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

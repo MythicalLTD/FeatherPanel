@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: Realms</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>Realms</h1>
+      <p class="muted">7 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:admin:realms:realm:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onRealmCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array realm data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> created_by, realm</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/RealmsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\RealmsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(RealmsEvent::onRealmCreated(), function ($createdBy, $realm) {
+        // Handle featherpanel:admin:realms:realm:created
+        // Data keys: created_by, realm
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:realms:realm:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onRealmDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int realm id, array realm data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> deleted_by, realm</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/RealmsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\RealmsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(RealmsEvent::onRealmDeleted(), function ($deletedBy, $realm) {
+        // Handle featherpanel:admin:realms:realm:deleted
+        // Data keys: deleted_by, realm
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:realms:realm:not:found</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onRealmNotFound</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int realm id, string error message.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\RealmsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(RealmsEvent::onRealmNotFound(), function ($id, $message) {
+        // Handle featherpanel:admin:realms:realm:not:found
+        // Parameters: int realm id, string error message.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:realms:realm:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onRealmRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int realm id, array realm data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\RealmsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(RealmsEvent::onRealmRetrieved(), function ($id, $data) {
+        // Handle featherpanel:admin:realms:realm:retrieved
+        // Parameters: int realm id, array realm data.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:realms:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onRealmsError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\RealmsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(RealmsEvent::onRealmsError(), function ($message, $context) {
+        // Handle featherpanel:admin:realms:error
+        // Parameters: string error message, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:realms:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onRealmsRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array realms list.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\RealmsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(RealmsEvent::onRealmsRetrieved(), function ($list) {
+        // Handle featherpanel:admin:realms:retrieved
+        // Parameters: array realms list.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:realms:realm:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onRealmUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int realm id, array old data, array new data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> realm, updated_by, updated_data</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/RealmsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\RealmsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(RealmsEvent::onRealmUpdated(), function ($realm, $updatedBy, $updatedData) {
+        // Handle featherpanel:admin:realms:realm:updated
+        // Data keys: realm, updated_by, updated_data
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

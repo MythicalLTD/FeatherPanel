@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: Knowledgebase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>Knowledgebase</h1>
+      <p class="muted">22 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:article:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticleCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array article, array created_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> article, created_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseArticleCreated(), function ($article, $createdBy) {
+        // Handle featherpanel:admin:knowledgebase:article:created
+        // Data keys: article, created_by
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:article:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticleDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array article, array deleted_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> article, deleted_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseArticleDeleted(), function ($article, $deletedBy) {
+        // Handle featherpanel:admin:knowledgebase:article:deleted
+        // Data keys: article, deleted_by
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:article:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticleRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array article.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> article</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseArticleRetrieved(), function ($article) {
+        // Handle featherpanel:admin:knowledgebase:article:retrieved
+        // Data keys: article
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:articles:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticlesRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array articles, array pagination, array search.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseArticlesRetrieved(), function ($articles, $pagination, $search) {
+        // Handle featherpanel:admin:knowledgebase:articles:retrieved
+        // Parameters: array articles, array pagination, array search.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:article:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticleUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array article, array updated_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> article, updated_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseArticleUpdated(), function ($article, $updatedBy) {
+        // Handle featherpanel:admin:knowledgebase:article:updated
+        // Data keys: article, updated_by
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:attachment:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseAttachmentDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array article, array attachment, array deleted_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> article, attachment, deleted_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseAttachmentDeleted(), function ($article, $attachment, $deletedBy) {
+        // Handle featherpanel:admin:knowledgebase:attachment:deleted
+        // Data keys: article, attachment, deleted_by
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:attachments:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseAttachmentsRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array article, array attachments.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> article, attachments</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseAttachmentsRetrieved(), function ($article, $attachments) {
+        // Handle featherpanel:admin:knowledgebase:attachments:retrieved
+        // Data keys: article, attachments
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:attachment:uploaded</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseAttachmentUploaded</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array article, array attachment, array uploaded_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> article, attachment, uploaded_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseAttachmentUploaded(), function ($article, $attachment, $uploadedBy) {
+        // Handle featherpanel:admin:knowledgebase:attachment:uploaded
+        // Data keys: article, attachment, uploaded_by
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:categories:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseCategoriesRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array categories, array pagination, array search.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseCategoriesRetrieved(), function ($categories, $pagination, $search) {
+        // Handle featherpanel:admin:knowledgebase:categories:retrieved
+        // Parameters: array categories, array pagination, array search.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:category:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseCategoryCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array category, array created_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> category, created_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseCategoryCreated(), function ($category, $createdBy) {
+        // Handle featherpanel:admin:knowledgebase:category:created
+        // Data keys: category, created_by
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:category:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseCategoryDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array category, array deleted_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> category, deleted_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseCategoryDeleted(), function ($category, $deletedBy) {
+        // Handle featherpanel:admin:knowledgebase:category:deleted
+        // Data keys: category, deleted_by
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:category:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseCategoryRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array category.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> category</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseCategoryRetrieved(), function ($category) {
+        // Handle featherpanel:admin:knowledgebase:category:retrieved
+        // Data keys: category
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:category:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseCategoryUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array category, array updated_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> category, updated_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseCategoryUpdated(), function ($category, $updatedBy) {
+        // Handle featherpanel:admin:knowledgebase:category:updated
+        // Data keys: category, updated_by
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:icon:uploaded</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseIconUploaded</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string filename, string url, array uploaded_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> filename, uploaded_by, url</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseIconUploaded(), function ($filename, $uploadedBy, $url) {
+        // Handle featherpanel:admin:knowledgebase:icon:uploaded
+        // Data keys: filename, uploaded_by, url
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:tag:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseTagCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array article, array tag, array created_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> article, created_by, tag</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseTagCreated(), function ($article, $createdBy, $tag) {
+        // Handle featherpanel:admin:knowledgebase:tag:created
+        // Data keys: article, created_by, tag
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:tag:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseTagDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array article, array tag, array deleted_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> article, deleted_by, tag</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseTagDeleted(), function ($article, $deletedBy, $tag) {
+        // Handle featherpanel:admin:knowledgebase:tag:deleted
+        // Data keys: article, deleted_by, tag
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:tags:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseTagsRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array article, array tags.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> article, tags</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseTagsRetrieved(), function ($article, $tags) {
+        // Handle featherpanel:admin:knowledgebase:tags:retrieved
+        // Data keys: article, tags
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:knowledgebase:article:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserKnowledgebaseArticleRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array article, array attachments, array tags, array|null user.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> article, attachments, tags, user</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onUserKnowledgebaseArticleRetrieved(), function ($article, $attachments, $tags, $user) {
+        // Handle featherpanel:user:knowledgebase:article:retrieved
+        // Data keys: article, attachments, tags, user
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:knowledgebase:articles:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserKnowledgebaseArticlesRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array articles, array pagination.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onUserKnowledgebaseArticlesRetrieved(), function ($articles, $pagination) {
+        // Handle featherpanel:user:knowledgebase:articles:retrieved
+        // Parameters: array articles, array pagination.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:knowledgebase:categories:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserKnowledgebaseCategoriesRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array categories, array pagination.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onUserKnowledgebaseCategoriesRetrieved(), function ($categories, $pagination) {
+        // Handle featherpanel:user:knowledgebase:categories:retrieved
+        // Parameters: array categories, array pagination.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:knowledgebase:category:articles:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserKnowledgebaseCategoryArticlesRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array category, array articles, array pagination.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onUserKnowledgebaseCategoryArticlesRetrieved(), function ($category, $articles, $pagination) {
+        // Handle featherpanel:user:knowledgebase:category:articles:retrieved
+        // Parameters: array category, array articles, array pagination.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:knowledgebase:category:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUserKnowledgebaseCategoryRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array category.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> category</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onUserKnowledgebaseCategoryRetrieved(), function ($category) {
+        // Handle featherpanel:user:knowledgebase:category:retrieved
+        // Data keys: category
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: Images</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>Images</h1>
+      <p class="muted">7 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:admin:images:image:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onImageCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array image data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> created_by, image_data, image_id</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/ImagesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ImagesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ImagesEvent::onImageCreated(), function ($createdBy, $imageData, $imageId) {
+        // Handle featherpanel:admin:images:image:created
+        // Data keys: created_by, image_data, image_id
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:images:image:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onImageDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int image id, array image data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> deleted_by, image</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/ImagesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ImagesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ImagesEvent::onImageDeleted(), function ($deletedBy, $image) {
+        // Handle featherpanel:admin:images:image:deleted
+        // Data keys: deleted_by, image
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:images:image:not:found</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onImageNotFound</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int image id, string error message.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ImagesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ImagesEvent::onImageNotFound(), function ($id, $message) {
+        // Handle featherpanel:admin:images:image:not:found
+        // Parameters: int image id, string error message.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:images:image:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onImageRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int image id, array image data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ImagesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ImagesEvent::onImageRetrieved(), function ($id, $data) {
+        // Handle featherpanel:admin:images:image:retrieved
+        // Parameters: int image id, array image data.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:images:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onImagesError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ImagesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ImagesEvent::onImagesError(), function ($message, $context) {
+        // Handle featherpanel:admin:images:error
+        // Parameters: string error message, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:images:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onImagesRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array images list.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ImagesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ImagesEvent::onImagesRetrieved(), function ($list) {
+        // Handle featherpanel:admin:images:retrieved
+        // Parameters: array images list.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:images:image:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onImageUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int image id, array old data, array new data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> image, updated_by, updated_data</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/ImagesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ImagesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ImagesEvent::onImageUpdated(), function ($image, $updatedBy, $updatedData) {
+        // Handle featherpanel:admin:images:image:updated
+        // Data keys: image, updated_by, updated_data
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

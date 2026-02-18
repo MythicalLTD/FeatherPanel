@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: Databases</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>Databases</h1>
+      <p class="muted">11 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:admin:databases:database:connection:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDatabaseConnectionError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int database id, string error message.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\DatabasesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(DatabasesEvent::onDatabaseConnectionError(), function ($id, $message) {
+        // Handle featherpanel:admin:databases:database:connection:error
+        // Parameters: int database id, string error message.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:databases:connection:tested</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDatabaseConnectionTested</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array connection data, array test results.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\DatabasesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(DatabasesEvent::onDatabaseConnectionTested(), function ($data, $results) {
+        // Handle featherpanel:admin:databases:connection:tested
+        // Parameters: array connection data, array test results.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:databases:database:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDatabaseCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array database data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> created_by, database_data, database_id</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/DatabasesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\DatabasesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(DatabasesEvent::onDatabaseCreated(), function ($createdBy, $databaseData, $databaseId) {
+        // Handle featherpanel:admin:databases:database:created
+        // Data keys: created_by, database_data, database_id
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:databases:database:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDatabaseDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int database id, array database data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> database, deleted_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/DatabasesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\DatabasesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(DatabasesEvent::onDatabaseDeleted(), function ($database, $deletedBy) {
+        // Handle featherpanel:admin:databases:database:deleted
+        // Data keys: database, deleted_by
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:databases:database:health:checked</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDatabaseHealthChecked</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int database id, array health data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\DatabasesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(DatabasesEvent::onDatabaseHealthChecked(), function ($id, $data) {
+        // Handle featherpanel:admin:databases:database:health:checked
+        // Parameters: int database id, array health data.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:databases:database:not:found</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDatabaseNotFound</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int database id, string error message.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\DatabasesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(DatabasesEvent::onDatabaseNotFound(), function ($id, $message) {
+        // Handle featherpanel:admin:databases:database:not:found
+        // Parameters: int database id, string error message.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:databases:database:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDatabaseRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int database id, array database data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\DatabasesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(DatabasesEvent::onDatabaseRetrieved(), function ($id, $data) {
+        // Handle featherpanel:admin:databases:database:retrieved
+        // Parameters: int database id, array database data.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:databases:by:node:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDatabasesByNodeRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int node id, array databases.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\DatabasesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(DatabasesEvent::onDatabasesByNodeRetrieved(), function ($id, $databases) {
+        // Handle featherpanel:admin:databases:by:node:retrieved
+        // Parameters: int node id, array databases.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:databases:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDatabasesError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\DatabasesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(DatabasesEvent::onDatabasesError(), function ($message, $context) {
+        // Handle featherpanel:admin:databases:error
+        // Parameters: string error message, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:databases:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDatabasesRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array databases list.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\DatabasesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(DatabasesEvent::onDatabasesRetrieved(), function ($list) {
+        // Handle featherpanel:admin:databases:retrieved
+        // Parameters: array databases list.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:databases:database:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onDatabaseUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int database id, array old data, array new data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> database, updated_by, updated_data</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/DatabasesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\DatabasesEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(DatabasesEvent::onDatabaseUpdated(), function ($database, $updatedBy, $updatedData) {
+        // Handle featherpanel:admin:databases:database:updated
+        // Data keys: database, updated_by, updated_data
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

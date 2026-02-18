@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: Notifications</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>Notifications</h1>
+      <p class="muted">8 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:admin:notifications:notification:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onNotificationCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array notification data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> created_by, notification_data, notification_id</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/NotificationsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\NotificationsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(NotificationsEvent::onNotificationCreated(), function ($createdBy, $notificationData, $notificationId) {
+        // Handle featherpanel:admin:notifications:notification:created
+        // Data keys: created_by, notification_data, notification_id
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:notifications:notification:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onNotificationDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int notification id, array notification data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> deleted_by, notification_data, notification_id</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/NotificationsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\NotificationsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(NotificationsEvent::onNotificationDeleted(), function ($deletedBy, $notificationData, $notificationId) {
+        // Handle featherpanel:admin:notifications:notification:deleted
+        // Data keys: deleted_by, notification_data, notification_id
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:user:notifications:notification:dismissed</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onNotificationDismissed</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int notification id, int user id.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> notification_id, user, user_id</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/NotificationController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\NotificationsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(NotificationsEvent::onNotificationDismissed(), function ($notificationId, $user, $userId) {
+        // Handle featherpanel:user:notifications:notification:dismissed
+        // Data keys: notification_id, user, user_id
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:notifications:notification:not:found</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onNotificationNotFound</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int notification id, string error message.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> error_message, notification_id</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/NotificationsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\NotificationsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(NotificationsEvent::onNotificationNotFound(), function ($errorMessage, $notificationId) {
+        // Handle featherpanel:admin:notifications:notification:not:found
+        // Data keys: error_message, notification_id
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:notifications:notification:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onNotificationRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int notification id, array notification data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> notification_data, notification_id</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/NotificationsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\NotificationsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(NotificationsEvent::onNotificationRetrieved(), function ($notificationData, $notificationId) {
+        // Handle featherpanel:admin:notifications:notification:retrieved
+        // Data keys: notification_data, notification_id
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:notifications:error</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onNotificationsError</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\NotificationsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(NotificationsEvent::onNotificationsError(), function ($message, $context) {
+        // Handle featherpanel:admin:notifications:error
+        // Parameters: string error message, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:notifications:retrieved</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onNotificationsRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array notifications list.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> filters, limit, notifications, page, pagination, search, total, type</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/NotificationsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\NotificationsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(NotificationsEvent::onNotificationsRetrieved(), function ($filters, $limit, $notifications, $page, $pagination, $search, $total, $type) {
+        // Handle featherpanel:admin:notifications:retrieved
+        // Data keys: filters, limit, notifications, page, pagination, search, total, type
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:notifications:notification:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onNotificationUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int notification id, array old data, array new data.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> new_data, notification_id, old_data, updated_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/NotificationsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\NotificationsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(NotificationsEvent::onNotificationUpdated(), function ($newData, $notificationId, $oldData, $updatedBy) {
+        // Handle featherpanel:admin:notifications:notification:updated
+        // Data keys: new_data, notification_id, old_data, updated_by
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

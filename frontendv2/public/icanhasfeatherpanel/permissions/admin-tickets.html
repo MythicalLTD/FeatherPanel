@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Permissions: Admin Tickets</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/permissions/index.html" class="back-link">&larr; Back to all permission categories</a>
+    <header>
+      <h1>Admin Tickets</h1>
+      <p class="muted">5 permissions in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>admin.tickets.create</code></h2>
+  <p class="muted"><strong>Constant:</strong> <code>ADMIN_TICKETS_CREATE</code></p>
+  <p class="muted">Create support tickets</p>
+</article>
+
+<article class="card">
+  <h2><code>admin.tickets.delete</code></h2>
+  <p class="muted"><strong>Constant:</strong> <code>ADMIN_TICKETS_DELETE</code></p>
+  <p class="muted">Delete support tickets</p>
+</article>
+
+<article class="card">
+  <h2><code>admin.tickets.edit</code></h2>
+  <p class="muted"><strong>Constant:</strong> <code>ADMIN_TICKETS_EDIT</code></p>
+  <p class="muted">Edit support tickets</p>
+</article>
+
+<article class="card">
+  <h2><code>admin.tickets.manage</code></h2>
+  <p class="muted"><strong>Constant:</strong> <code>ADMIN_TICKETS_MANAGE</code></p>
+  <p class="muted">Manage all aspects of support tickets</p>
+</article>
+
+<article class="card">
+  <h2><code>admin.tickets.view</code></h2>
+  <p class="muted"><strong>Constant:</strong> <code>ADMIN_TICKETS_VIEW</code></p>
+  <p class="muted">View support tickets</p>
+</article>
+
+    <section class="card">
+      <h2>Usage in Code</h2>
+      <h3>PHP Backend</h3>
+      <pre><code>use App\Helpers\PermissionHelper;
+
+// Check if user has permission
+if (PermissionHelper::hasPermission($userUuid, 'admin.tickets.create')) {
+    // User has permission
+}</code></pre>
+
+      <h3>Using Permission Constants</h3>
+      <pre><code>use App\Permissions;
+
+// Use constant instead of string
+if (PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_TICKETS_CREATE)) {
+    // User has permission
+}</code></pre>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.5 STABLE
+
+### Improved
+
+- Transitioned FeatherPanel documentation to a fully compiled format, resulting in significantly improved performance and faster access times. by @nayskutzu
+
 ## v1.2.4 STABLE
 
 ### Added
