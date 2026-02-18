@@ -27,9 +27,10 @@ import { PluginWidget } from '@/types/plugin-widgets';
 interface WidgetRendererProps {
     widgets: PluginWidget[];
     height?: string;
+    context?: Record<string, string | number | null | undefined>;
 }
 
-export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProps) {
+export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRendererProps) {
     const { t } = useTranslation();
     const pathname = usePathname();
     const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
@@ -39,8 +40,19 @@ export function WidgetRenderer({ widgets, height = '400px' }: WidgetRendererProp
 
     const getWidgetSrc = (widget: PluginWidget): string => {
         const baseUrl = `/components/${widget.plugin}/${widget.component}`;
-        const separator = baseUrl.includes('?') ? '&' : '?';
-        return `${baseUrl}${separator}route=${encodeURIComponent(pathname || '')}`;
+        const params = new URLSearchParams();
+        params.set('route', pathname || '');
+
+        // Add context parameters if provided
+        if (context) {
+            Object.entries(context).forEach(([key, value]) => {
+                if (value !== null && value !== undefined) {
+                    params.set(key, String(value));
+                }
+            });
+        }
+
+        return `${baseUrl}?${params.toString()}`;
     };
 
     const handleIframeLoad = (widgetId: string) => {

@@ -29,6 +29,8 @@ import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { Server, ArrowLeft, Save, Search as SearchIcon, MapPin } from 'lucide-react';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Location {
     id: number;
@@ -76,6 +78,12 @@ export default function CreateNodePage() {
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-nodes-create');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -190,6 +198,8 @@ export default function CreateNodePage() {
 
     return (
         <div className='max-w-6xl mx-auto py-8 px-4'>
+            <WidgetRenderer widgets={getWidgets('admin-nodes-create', 'top-of-page')} />
+
             <PageHeader
                 title={t('admin.node.form.create_title')}
                 description={t('admin.node.form.create_description')}
@@ -201,6 +211,8 @@ export default function CreateNodePage() {
                     </Button>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-nodes-create', 'after-header')} />
 
             <form onSubmit={handleSubmit} className='space-y-8 mt-8'>
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
@@ -616,6 +628,8 @@ export default function CreateNodePage() {
                     </div>
                 </SheetContent>
             </Sheet>
+
+            <WidgetRenderer widgets={getWidgets('admin-nodes-create', 'bottom-of-page')} />
         </div>
     );
 }

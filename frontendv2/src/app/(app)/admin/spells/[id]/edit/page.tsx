@@ -31,6 +31,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Sparkles, ArrowLeft, Trash2, Plus, Pencil, Settings, Container, Zap, FileCode, Terminal } from 'lucide-react';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Variable {
     id: number;
@@ -93,6 +95,12 @@ export default function EditSpellPage() {
 
     const [dockerImages, setDockerImages] = useState<{ name: string; value: string }[]>([]);
     const [features, setFeatures] = useState<string[]>([]);
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-spells-edit');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     useEffect(() => {
         const fetchSpell = async () => {
@@ -328,6 +336,8 @@ export default function EditSpellPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-spells-edit', 'top-of-page')} context={{ id: spellId }} />
+
             <PageHeader
                 title={t('admin.spells.form.edit_title')}
                 description={t('admin.spells.form.edit_description', { name: form.name })}
@@ -344,6 +354,8 @@ export default function EditSpellPage() {
                     </div>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-spells-edit', 'after-header')} context={{ id: spellId }} />
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className='grid w-full grid-cols-6'>
@@ -1030,6 +1042,8 @@ export default function EditSpellPage() {
                     )}
                 </TabsContent>
             </Tabs>
+
+            <WidgetRenderer widgets={getWidgets('admin-spells-edit', 'bottom-of-page')} context={{ id: spellId }} />
         </div>
     );
 }

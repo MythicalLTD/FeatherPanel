@@ -49,6 +49,8 @@ import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { copyToClipboard } from '@/lib/utils';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface UserRole {
     name: string;
@@ -131,6 +133,12 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         created_at: string;
     } | null>(null);
     const [mailPreviewOpen, setMailPreviewOpen] = useState(false);
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-users-edit');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const [editForm, setEditForm] = useState<EditForm>({
         username: '',
@@ -346,6 +354,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer
+                widgets={getWidgets('admin-users-edit', 'top-of-page')}
+                context={{ id: user.uuid, userId: user.id }}
+            />
+
             <PageHeader
                 title={t('admin.users.edit.title', { username: user.username })}
                 description={t('admin.users.edit.description')}
@@ -356,6 +369,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         {t('admin.users.back_to_list')}
                     </Button>
                 }
+            />
+
+            <WidgetRenderer
+                widgets={getWidgets('admin-users-edit', 'after-header')}
+                context={{ id: user.uuid, userId: user.id }}
             />
 
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
@@ -866,6 +884,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <WidgetRenderer
+                widgets={getWidgets('admin-users-edit', 'bottom-of-page')}
+                context={{ id: user.uuid, userId: user.id }}
+            />
         </div>
     );
 }

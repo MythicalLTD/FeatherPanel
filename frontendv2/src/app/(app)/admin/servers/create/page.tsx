@@ -44,6 +44,8 @@ import { Step3Application } from './Step3Application';
 import { Step4Resources } from './Step4Resources';
 import { Step5FeatureLimits } from './Step5FeatureLimits';
 import { Step6Review } from './Step6Review';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 const initialFormData: ServerFormData = {
     name: '',
@@ -174,6 +176,12 @@ export default function CreateServerPage() {
     });
 
     const [submitting, setSubmitting] = useState(false);
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-servers-create');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const wizardSteps: WizardStep[] = [
         { title: t('admin.servers.form.wizard.step1_title'), subtitle: t('admin.servers.form.wizard.step1_subtitle') },
@@ -605,6 +613,8 @@ export default function CreateServerPage() {
 
     return (
         <div className='max-w-5xl mx-auto pb-20'>
+            <WidgetRenderer widgets={getWidgets('admin-servers-create', 'top-of-page')} />
+
             <PageHeader
                 title={t('admin.servers.form.create_title')}
                 description={t('admin.servers.form.create_subtitle')}
@@ -616,6 +626,8 @@ export default function CreateServerPage() {
                     </Button>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-servers-create', 'after-header')} />
 
             <div className='mt-8 mb-12 p-6 bg-card rounded-2xl border border-border/50'>
                 <StepIndicator steps={wizardSteps} currentStep={currentStep} />
@@ -796,6 +808,8 @@ export default function CreateServerPage() {
                     </div>
                 )}
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-servers-create', 'bottom-of-page')} />
         </div>
     );
 }

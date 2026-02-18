@@ -56,6 +56,8 @@ import { UtilizationTab } from '../components/UtilizationTab';
 import { SystemInfoTab } from '../components/SystemInfoTab';
 import { SelfUpdateTab } from '../components/SelfUpdateTab';
 import { UtilizationResponse, DockerResponse, SystemInfoResponse, NodeData, Location } from '../types';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 export interface NodeForm {
     name: string;
@@ -95,6 +97,12 @@ export default function EditNodePage() {
     const [resetting, setResetting] = useState(false);
     const [activeTab, setActiveTab] = useState(tabFromUrl === 'wings' ? 'wings' : 'details');
     const [locationModalOpen, setLocationModalOpen] = useState(false);
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-nodes-edit');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const [locationPagination, setLocationPagination] = useState({
         current_page: 1,
@@ -462,6 +470,8 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-nodes-edit', 'top-of-page')} context={{ id: nodeId as string }} />
+
             <PageHeader
                 title={t('admin.node.form.edit_title')}
                 description={t('admin.node.form.edit_description')}
@@ -479,6 +489,8 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                     </div>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-nodes-edit', 'after-header')} context={{ id: nodeId as string }} />
 
             <div className='block'>
                 <Tabs
@@ -743,6 +755,8 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                     </div>
                 </SheetContent>
             </Sheet>
+
+            <WidgetRenderer widgets={getWidgets('admin-nodes-edit', 'bottom-of-page')} context={{ id: nodeId as string }} />
         </div>
     );
 }

@@ -50,6 +50,8 @@ import { LimitsTab } from './LimitsTab';
 import { StartupTab } from './StartupTab';
 import { AllocationsTab } from './AllocationsTab';
 import { ActionsTab } from './ActionsTab';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 import {
     ServerFormData,
@@ -174,6 +176,12 @@ export default function EditServerPage() {
     const [debouncedSpellSearch, setDebouncedSpellSearch] = useState('');
 
     const [allocationSearch, setAllocationSearch] = useState('');
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-servers-edit');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const filteredAllocations = useMemo(() => {
         if (!allocationSearch) return allocations;
@@ -684,6 +692,8 @@ export default function EditServerPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-servers-edit', 'top-of-page')} context={{ id: serverId }} />
+
             <PageHeader
                 title={t('admin.servers.edit.title')}
                 description={t('admin.servers.edit.description', { name: form.name })}
@@ -701,6 +711,8 @@ export default function EditServerPage() {
                     </div>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-servers-edit', 'after-header')} context={{ id: serverId }} />
 
             <Tabs
                 value={activeTab}
@@ -1146,6 +1158,8 @@ export default function EditServerPage() {
                     </div>
                 )}
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-servers-edit', 'bottom-of-page')} context={{ id: serverId }} />
         </div>
     );
 }

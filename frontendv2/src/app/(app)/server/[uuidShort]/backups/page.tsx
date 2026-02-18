@@ -703,11 +703,7 @@ export default function ServerBackupsPage() {
                             >
                                 {t('common.cancel')}
                             </Button>
-                            <Button
-                                type='submit'
-                                disabled={creating}
-                                className='h-12 flex-1 rounded-xl font-bold'
-                            >
+                            <Button type='submit' disabled={creating} className='h-12 flex-1 rounded-xl font-bold'>
                                 {creating ? <Loader2 className='h-5 w-5 animate-spin' /> : t('serverBackups.create')}
                             </Button>
                         </DialogFooter>
@@ -736,7 +732,9 @@ export default function ServerBackupsPage() {
                     <div className='rounded-2xl border border-orange-500/20 bg-orange-500/5 p-5 backdrop-blur-sm space-y-3 mx-1'>
                         <div className='flex items-center gap-3 text-orange-500'>
                             <AlertTriangle className='h-5 w-5' />
-                            <h4 className='text-[10px] font-black uppercase tracking-widest leading-none'>{t('serverBackups.caution')}</h4>
+                            <h4 className='text-[10px] font-black uppercase tracking-widest leading-none'>
+                                {t('serverBackups.caution')}
+                            </h4>
                         </div>
                         <p className='text-sm text-orange-700/80 dark:text-orange-500/80 leading-relaxed font-medium'>
                             {t('serverBackups.truncateDirectoryHelp')}

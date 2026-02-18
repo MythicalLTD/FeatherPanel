@@ -297,9 +297,11 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
         }
     };
 
+    const widgetContext = nodeId ? { nodeId } : undefined;
+
     return (
         <div className='space-y-6'>
-            <WidgetRenderer widgets={getWidgets(slug, 'top-of-page')} />
+            <WidgetRenderer widgets={getWidgets(slug, 'top-of-page')} context={widgetContext} />
             <PageHeader
                 title={
                     nodeId && node
@@ -316,7 +318,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 }
             />
 
-            <WidgetRenderer widgets={getWidgets(slug, 'after-header')} />
+            <WidgetRenderer widgets={getWidgets(slug, 'after-header')} context={widgetContext} />
 
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
@@ -341,7 +343,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
-                    <WidgetRenderer widgets={getWidgets(slug, 'before-list')} />
+                    <WidgetRenderer widgets={getWidgets(slug, 'before-list')} context={widgetContext} />
                     {databases.map((db) => (
                         <ResourceCard
                             key={db.id}
@@ -477,6 +479,8 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                     </p>
                 </PageCard>
             </div>
+
+            <WidgetRenderer widgets={getWidgets(slug, 'bottom-of-page')} context={widgetContext} />
 
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='space-y-6'>

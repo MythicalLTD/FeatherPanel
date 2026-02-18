@@ -30,6 +30,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Sparkles, ArrowLeft, Trash2, Plus, Container, Zap, FileCode, Terminal } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Realm {
     id: number;
@@ -70,6 +72,12 @@ export default function CreateSpellPage() {
 
     const [dockerImages, setDockerImages] = useState<{ name: string; value: string }[]>([]);
     const [features, setFeatures] = useState<string[]>([]);
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-spells-create');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     useEffect(() => {
         const fetchRealms = async () => {
@@ -149,6 +157,8 @@ export default function CreateSpellPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-spells-create', 'top-of-page')} />
+
             <PageHeader
                 title={t('admin.spells.form.create_title')}
                 description={t('admin.spells.form.create_description')}
@@ -165,6 +175,8 @@ export default function CreateSpellPage() {
                     </div>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-spells-create', 'after-header')} />
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className='grid w-full grid-cols-5'>
@@ -443,6 +455,8 @@ export default function CreateSpellPage() {
                     </PageCard>
                 </TabsContent>
             </Tabs>
+
+            <WidgetRenderer widgets={getWidgets('admin-spells-create', 'bottom-of-page')} />
         </div>
     );
 }

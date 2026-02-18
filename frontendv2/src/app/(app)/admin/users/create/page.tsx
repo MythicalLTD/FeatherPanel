@@ -27,6 +27,8 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select-native';
 import { toast } from 'sonner';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface AvailableRole {
     id: string;
@@ -49,6 +51,12 @@ export default function CreateUserPage() {
         password: '',
         role_id: '',
     });
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-users-create');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const fetchRoles = useCallback(async () => {
         try {
@@ -111,6 +119,8 @@ export default function CreateUserPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-users-create', 'top-of-page')} />
+
             <PageHeader
                 title={t('admin.users.create.title')}
                 description={t('admin.users.create.description')}
@@ -122,6 +132,8 @@ export default function CreateUserPage() {
                     </Button>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-users-create', 'after-header')} />
 
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
                 <div className='lg:col-span-2'>
@@ -256,6 +268,8 @@ export default function CreateUserPage() {
                     </PageCard>
                 </div>
             </div>
+
+            <WidgetRenderer widgets={getWidgets('admin-users-create', 'bottom-of-page')} />
         </div>
     );
 }
