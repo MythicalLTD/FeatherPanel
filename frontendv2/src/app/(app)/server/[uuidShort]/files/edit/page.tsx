@@ -253,24 +253,43 @@ export default function FileEditorPage({
         fetchWidgets();
     }, [fetchWidgets]);
 
-    const handleSave = async (newContent?: string) => {
-        if (!canEdit) return;
+    const handleSave = useCallback(
+        async (newContent?: string) => {
+            if (!canEdit) return;
 
-        const contentToSave = newContent ?? content;
-        setSaving(true);
-        const toastId = toast.loading(t('files.editor.saving'));
-        try {
-            await filesApi.saveFileContent(uuidShort, fullPath, contentToSave);
-            setContent(contentToSave);
-            setOriginalContent(contentToSave);
-            toast.success(t('files.editor.save_success'), { id: toastId });
-        } catch (error) {
-            console.error(error);
-            toast.error(t('files.editor.save_error'), { id: toastId });
-        } finally {
-            setSaving(false);
-        }
-    };
+            const contentToSave = newContent ?? content;
+            setSaving(true);
+            const toastId = toast.loading(t('files.editor.saving'));
+            try {
+                await filesApi.saveFileContent(uuidShort, fullPath, contentToSave);
+                setContent(contentToSave);
+                setOriginalContent(contentToSave);
+                toast.success(t('files.editor.save_success'), { id: toastId });
+            } catch (error) {
+                console.error(error);
+                toast.error(t('files.editor.save_error'), { id: toastId });
+            } finally {
+                setSaving(false);
+            }
+        },
+        [canEdit, content, uuidShort, fullPath, t],
+    );
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Check for Ctrl+S (Windows/Linux) or Cmd+S (Mac)
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                // Only save if we can edit and there are changes
+                if (canEdit && content !== originalContent && !saving) {
+                    handleSave();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [canEdit, content, originalContent, saving, handleSave]);
 
     const handleSwitchToRawEditor = () => {
         setUseMinecraftEditor(false);

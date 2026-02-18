@@ -6,6 +6,10 @@
 
 - Transitioned FeatherPanel documentation to a fully compiled format, resulting in significantly improved performance and faster access times. by @nayskutzu
 
+### Added
+
+- Introduced seamless Ctrl+S (or Cmd+S) keyboard shortcut support in the file manager—enabling quick and convenient file saving. by @nayskutzu
+
 ## v1.2.4 STABLE
 
 ### Added
