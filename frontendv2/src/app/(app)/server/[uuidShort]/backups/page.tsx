@@ -350,7 +350,7 @@ export default function ServerBackupsPage() {
                                     setIgnoredFiles([]);
                                     setCreateDialogOpen(true);
                                 }}
-                                className='shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all'
+                                className='active:scale-95 transition-all'
                             >
                                 <Plus className='h-5 w-5 mr-2' />
                                 {t('serverBackups.createBackup')}
@@ -413,7 +413,7 @@ export default function ServerBackupsPage() {
                                         setIgnoredFiles([]);
                                         setCreateDialogOpen(true);
                                     }}
-                                    className='h-14 px-10 text-lg shadow-2xl shadow-primary/20'
+                                    className='h-14 px-10 text-lg'
                                 >
                                     <Plus className='h-6 w-6 mr-2' />
                                     {t('serverBackups.createBackup')}
@@ -428,7 +428,7 @@ export default function ServerBackupsPage() {
                                 key={backup.id}
                                 className={cn(
                                     !backup.completed_at && !backup.is_successful && 'animate-pulse border-blue-500/20',
-                                    'hover:shadow-lg transition-all duration-300',
+                                    'transition-all duration-300',
                                 )}
                                 icon={Archive}
                                 iconWrapperClassName={cn(
@@ -450,12 +450,12 @@ export default function ServerBackupsPage() {
                                     <>
                                         <span
                                             className={cn(
-                                                'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none shadow-sm',
+                                                'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none',
                                                 !backup.completed_at && !backup.is_successful
-                                                    ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20 animate-pulse'
+                                                    ? 'bg-blue-500 text-white animate-pulse'
                                                     : backup.is_successful
-                                                      ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                                                      : 'bg-red-500 text-white shadow-lg shadow-red-500/20',
+                                                      ? 'bg-emerald-500 text-white'
+                                                      : 'bg-red-500 text-white',
                                             )}
                                         >
                                             {!backup.completed_at && !backup.is_successful
@@ -502,7 +502,7 @@ export default function ServerBackupsPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent
                                                 align='end'
-                                                className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl'
+                                                className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl'
                                             >
                                                 {canRestore && backup.is_successful === 1 && (
                                                     <DropdownMenuItem
@@ -612,7 +612,7 @@ export default function ServerBackupsPage() {
                 <div className='space-y-6 p-2'>
                     <DialogHeader>
                         <div className='flex items-center gap-4'>
-                            <div className='h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner'>
+                            <div className='h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
                                 <Plus className='h-6 w-6 text-primary' />
                             </div>
                             <div className='space-y-0.5'>
@@ -706,7 +706,7 @@ export default function ServerBackupsPage() {
                             <Button
                                 type='submit'
                                 disabled={creating}
-                                className='h-12 flex-1 shadow-xl shadow-primary/20 rounded-xl font-bold'
+                                className='h-12 flex-1 rounded-xl font-bold'
                             >
                                 {creating ? <Loader2 className='h-5 w-5 animate-spin' /> : t('serverBackups.create')}
                             </Button>
@@ -719,7 +719,7 @@ export default function ServerBackupsPage() {
                 <div className='space-y-6 p-2'>
                     <DialogHeader>
                         <div className='flex items-center gap-4'>
-                            <div className='h-12 w-12 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shadow-inner'>
+                            <div className='h-12 w-12 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20'>
                                 <RotateCcw className='h-6 w-6 text-orange-500' />
                             </div>
                             <div className='space-y-0.5'>
@@ -735,8 +735,8 @@ export default function ServerBackupsPage() {
 
                     <div className='rounded-2xl border border-orange-500/20 bg-orange-500/5 p-5 backdrop-blur-sm space-y-3 mx-1'>
                         <div className='flex items-center gap-3 text-orange-500'>
-                            <AlertTriangle className='h-5 w-5 shadow-sm' />
-                            <h4 className='text-[10px] font-black uppercase tracking-widest leading-none'>Caution</h4>
+                            <AlertTriangle className='h-5 w-5' />
+                            <h4 className='text-[10px] font-black uppercase tracking-widest leading-none'>{t('serverBackups.caution')}</h4>
                         </div>
                         <p className='text-sm text-orange-700/80 dark:text-orange-500/80 leading-relaxed font-medium'>
                             {t('serverBackups.truncateDirectoryHelp')}
@@ -762,7 +762,7 @@ export default function ServerBackupsPage() {
                                     {t('serverBackups.truncateDirectory')}
                                 </label>
                                 <p className='text-[10px] opacity-40 font-bold uppercase tracking-tighter'>
-                                    This will clear the server folder before restoring
+                                    {t('serverBackups.truncateDirectoryDescription')}
                                 </p>
                             </div>
                         </div>
@@ -780,7 +780,7 @@ export default function ServerBackupsPage() {
                                 type='submit'
                                 disabled={restoring}
                                 variant='destructive'
-                                className='h-12 flex-1 shadow-xl shadow-red-500/20 rounded-xl font-bold'
+                                className='h-12 flex-1 rounded-xl font-bold'
                             >
                                 {restoring ? (
                                     <Loader2 className='h-5 w-5 animate-spin' />
@@ -799,7 +799,7 @@ export default function ServerBackupsPage() {
                         <div className='flex items-center gap-4'>
                             <div
                                 className={cn(
-                                    'h-12 w-12 rounded-xl flex items-center justify-center border shadow-inner',
+                                    'h-12 w-12 rounded-xl flex items-center justify-center border',
                                     confirmAction?.variant === 'destructive'
                                         ? 'bg-red-500/10 border-red-500/20'
                                         : 'bg-primary/10 border-primary/20',
@@ -832,10 +832,7 @@ export default function ServerBackupsPage() {
                         </Button>
                         <Button
                             variant={confirmAction?.variant === 'destructive' ? 'destructive' : 'default'}
-                            className={cn(
-                                'h-12 flex-1 shadow-xl font-bold rounded-xl',
-                                confirmAction?.variant === 'destructive' ? 'shadow-red-500/20' : 'shadow-primary/20',
-                            )}
+                            className='h-12 flex-1 font-bold rounded-xl'
                             onClick={async () => {
                                 setActionLoading(true);
                                 try {

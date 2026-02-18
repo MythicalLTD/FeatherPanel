@@ -10,6 +10,10 @@
 
 - Introduced seamless Ctrl+S (or Cmd+S) keyboard shortcut support in the file manager—enabling quick and convenient file saving. by @nayskutzu
 
+### Fixed
+
+- Enhance error handling in database operations by @nayskutzu
+
 ## v1.2.4 STABLE
 
 ### Added

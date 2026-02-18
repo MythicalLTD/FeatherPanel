@@ -1011,7 +1011,9 @@
 		"confirmDeleteTitle": "Delete Backup",
 		"confirmLockTitle": "Lock Backup",
 		"confirmUnlockTitle": "Unlock Backup",
-		"failedToPerformAction": "Failed to perform action"
+		"failedToPerformAction": "Failed to perform action",
+		"caution": "Caution",
+		"truncateDirectoryDescription": "This will clear the server folder before restoring"
 	},
 	"serverImport": {
 		"title": "Server Import",

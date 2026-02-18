@@ -333,7 +333,7 @@ export default function ServerAllocationsPage() {
                                     size='default'
                                     onClick={handleAutoAllocate}
                                     disabled={limitReached || isAutoAllocating || loading}
-                                    className='shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all'
+                                    className='active:scale-95 transition-all'
                                 >
                                     {isAutoAllocating ? (
                                         <Loader2 className='mr-2 h-5 w-5 animate-spin' />
@@ -562,7 +562,7 @@ export default function ServerAllocationsPage() {
                                     variant='destructive'
                                     onClick={handleDelete}
                                     disabled={isDeleting}
-                                    className='h-12 flex-1 shadow-xl shadow-red-500/20 rounded-xl font-bold'
+                                    className='h-12 flex-1 rounded-xl font-bold'
                                 >
                                     {isDeleting && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                                     {t('serverAllocations.confirmDelete')}

@@ -199,7 +199,7 @@ export default function AdminDashboardPage() {
                             </button>
                             <button
                                 onClick={() => router.push('/admin/settings')}
-                                className='px-4 md:px-5 py-2 md:py-2.5 rounded-xl bg-red-500 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-105 transition-all whitespace-nowrap'
+                                className='px-4 md:px-5 py-2 md:py-2.5 rounded-xl bg-red-500 text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all whitespace-nowrap'
                             >
                                 {t('admin.dashboard.app_url_warning.update_settings')}
                             </button>

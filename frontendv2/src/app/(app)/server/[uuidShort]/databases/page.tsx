@@ -158,7 +158,12 @@ export default function ServerDatabasesPage() {
                 }
             } catch (error) {
                 console.error('Error fetching databases:', error);
-                toast.error(t('serverDatabases.failedToFetch'));
+                const errorMessage =
+                    (error as { response?: { data?: { message?: string; error_message?: string } } })?.response?.data
+                        ?.message ||
+                    (error as { response?: { data?: { error_message?: string } } })?.response?.data?.error_message ||
+                    t('serverDatabases.failedToFetch');
+                toast.error(errorMessage);
             } finally {
                 setLoading(false);
             }
@@ -216,7 +221,12 @@ export default function ServerDatabasesPage() {
             }
         } catch (error) {
             console.error('Error creating database:', error);
-            toast.error(t('serverDatabases.createFailed'));
+            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
+            const errorMessage =
+                axiosError?.response?.data?.message ||
+                axiosError?.response?.data?.error_message ||
+                t('serverDatabases.createFailed');
+            toast.error(errorMessage);
         } finally {
             setCreating(false);
         }
@@ -237,7 +247,12 @@ export default function ServerDatabasesPage() {
             }
         } catch (error) {
             console.error('Error deleting database:', error);
-            toast.error(t('serverDatabases.deleteFailed'));
+            const errorMessage =
+                (error as { response?: { data?: { message?: string; error_message?: string } } })?.response?.data
+                    ?.message ||
+                (error as { response?: { data?: { error_message?: string } } })?.response?.data?.error_message ||
+                t('serverDatabases.deleteFailed');
+            toast.error(errorMessage);
         } finally {
             setDeletingId(null);
         }
@@ -318,7 +333,7 @@ export default function ServerDatabasesPage() {
                                 size='default'
                                 disabled={limitReached || loading}
                                 onClick={() => setCreateDialogOpen(true)}
-                                className='shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all'
+                                className='active:scale-95 transition-all'
                             >
                                 <Plus className='h-5 w-5 mr-2' />
                                 {t('serverDatabases.createDatabase')}
@@ -890,7 +905,7 @@ export default function ServerDatabasesPage() {
                         </Button>
                         <Button
                             variant='destructive'
-                            className='h-12 flex-1 shadow-xl shadow-red-500/20 rounded-xl font-bold'
+                            className='h-12 flex-1 rounded-xl font-bold'
                             onClick={handleDeleteDatabase}
                             disabled={deletingId !== null}
                         >
