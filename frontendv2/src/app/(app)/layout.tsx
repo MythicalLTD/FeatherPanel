@@ -121,6 +121,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   document.documentElement.classList.add(theme);
                   document.documentElement.style.setProperty('--primary', colors[accentColor] || colors.purple);
                   document.documentElement.style.setProperty('--ring', colors[accentColor] || colors.purple);
+                  const motion = localStorage.getItem('motionLevel') || 'reduced';
+                  document.documentElement.dataset.motion = motion === 'full' ? 'full' : motion;
                 } catch (e) {}
               })();
             `,

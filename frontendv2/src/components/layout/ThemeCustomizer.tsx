@@ -19,12 +19,19 @@ import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/r
 import { Fragment } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Check, Palette, Image as ImageIcon, Moon, Sun } from 'lucide-react';
+import { Check, Palette, Image as ImageIcon, Moon, Sun, Sparkles } from 'lucide-react';
+import type { MotionLevel } from '@/contexts/ThemeContext';
 import BackgroundCustomizer from '@/components/theme/BackgroundCustomizer';
 import LanguageSelector from '@/components/layout/LanguageSelector';
 
+const MOTION_OPTIONS: { value: MotionLevel; labelKey: string }[] = [
+    { value: 'full', labelKey: 'appearance.motion.full' },
+    { value: 'reduced', labelKey: 'appearance.motion.reduced' },
+    { value: 'none', labelKey: 'appearance.motion.none' },
+];
+
 export default function ThemeCustomizer() {
-    const { theme, accentColor, toggleTheme, setAccentColor, mounted } = useTheme();
+    const { theme, accentColor, motionLevel, setAccentColor, setMotionLevel, toggleTheme, mounted } = useTheme();
     const { t, availableLanguages, setLocale, locale } = useTranslation();
 
     const accentColorOptions = [
@@ -81,7 +88,7 @@ export default function ThemeCustomizer() {
                         leaveFrom='transform opacity-100 scale-100'
                         leaveTo='transform opacity-0 scale-95'
                     >
-                        <MenuItems className='absolute right-0 mt-2 w-48 origin-top-right rounded-xl bg-card border border-border/50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none backdrop-blur-xl p-2 z-50'>
+                        <MenuItems className='absolute right-0 mt-2 w-52 origin-top-right rounded-xl bg-card border border-border/50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none backdrop-blur-xl p-2 z-50'>
                             <div className='px-3 py-2 text-sm font-semibold text-foreground border-b border-border/50 mb-2'>
                                 {t('appearance.accentColor')}
                             </div>
@@ -104,6 +111,29 @@ export default function ThemeCustomizer() {
                                     )}
                                 </MenuItem>
                             ))}
+                            <div className='my-2 border-t border-border/50' />
+                            <div className='px-3 py-2'>
+                                <div className='text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5'>
+                                    <Sparkles className='h-3.5 w-3.5' />
+                                    {t('appearance.motion.title')}
+                                </div>
+                                <div className='flex gap-1'>
+                                    {MOTION_OPTIONS.map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            type='button'
+                                            onClick={() => setMotionLevel(opt.value)}
+                                            className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                                                motionLevel === opt.value
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-muted/70 text-muted-foreground hover:bg-muted'
+                                            }`}
+                                        >
+                                            {t(opt.labelKey)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </MenuItems>
                     </Transition>
                 </Menu>
@@ -153,6 +183,31 @@ export default function ThemeCustomizer() {
                                     </BackgroundCustomizer>
                                 )}
                             </MenuItem>
+
+                            <div className='my-2 border-t border-border/50' />
+
+                            <div className='px-3 py-2'>
+                                <div className='text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5'>
+                                    <Sparkles className='h-3.5 w-3.5' />
+                                    {t('appearance.motion.title')}
+                                </div>
+                                <div className='flex gap-2'>
+                                    {MOTION_OPTIONS.map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            type='button'
+                                            onClick={() => setMotionLevel(opt.value)}
+                                            className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                                                motionLevel === opt.value
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-muted/70 text-muted-foreground hover:bg-muted'
+                                            }`}
+                                        >
+                                            {t(opt.labelKey)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
 
                             <div className='my-2 border-t border-border/50' />
 

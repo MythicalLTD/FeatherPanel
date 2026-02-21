@@ -78,7 +78,7 @@ export function PageCard({
     return (
         <div
             className={cn(
-                'backdrop-blur-3xl border rounded-3xl p-8 space-y-6 relative overflow-hidden group transition-all',
+                'backdrop-blur-3xl border rounded-3xl p-8 space-y-6 relative overflow-hidden group transition-all hover-lift hover-scale',
                 styles.bg,
                 styles.border,
                 className,

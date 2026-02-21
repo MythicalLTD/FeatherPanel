@@ -117,8 +117,92 @@ body {
     }
 }
 
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes pulse-soft {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes glow {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 hsl(var(--primary) / 0.2);
+    }
+    50% {
+        box-shadow: 0 0 20px 2px hsl(var(--primary) / 0.15);
+    }
+}
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
 .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.35s ease-out forwards;
 }
 
 .animate-loading-bar {
@@ -131,6 +215,92 @@ body {
 
 .animate-bounce {
     animation: bounce 2s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-glow {
+    animation: glow 3s ease-in-out infinite;
+}
+
+.animate-float {
+    animation: float 4s ease-in-out infinite;
+}
+
+/* Stagger delays for list children - use .stagger-children and .stagger-child */
+.stagger-children .stagger-child {
+    opacity: 0;
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.stagger-children .stagger-child:nth-child(1) { animation-delay: 0.02s; }
+.stagger-children .stagger-child:nth-child(2) { animation-delay: 0.05s; }
+.stagger-children .stagger-child:nth-child(3) { animation-delay: 0.08s; }
+.stagger-children .stagger-child:nth-child(4) { animation-delay: 0.11s; }
+.stagger-children .stagger-child:nth-child(5) { animation-delay: 0.14s; }
+.stagger-children .stagger-child:nth-child(6) { animation-delay: 0.17s; }
+.stagger-children .stagger-child:nth-child(7) { animation-delay: 0.2s; }
+.stagger-children .stagger-child:nth-child(8) { animation-delay: 0.23s; }
+.stagger-children .stagger-child:nth-child(9) { animation-delay: 0.26s; }
+.stagger-children .stagger-child:nth-child(10) { animation-delay: 0.29s; }
+.stagger-children .stagger-child:nth-child(11) { animation-delay: 0.32s; }
+.stagger-children .stagger-child:nth-child(12) { animation-delay: 0.35s; }
+.stagger-children .stagger-child:nth-child(13) { animation-delay: 0.38s; }
+.stagger-children .stagger-child:nth-child(14) { animation-delay: 0.41s; }
+.stagger-children .stagger-child:nth-child(15) { animation-delay: 0.44s; }
+
+/* Hover lift and glow - use .hover-lift and .hover-glow */
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.2), 0 0 0 1px hsl(var(--border) / 0.5);
+}
+
+.hover-glow:hover {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.2), 0 4px 20px -4px hsl(var(--primary) / 0.25);
+}
+
+/* Card and button press feedback */
+.hover-scale:active {
+    transform: scale(0.98);
+}
+.hover-scale {
+    transition: transform 0.15s ease;
+}
+
+/* Focus ring animation */
+.focus-ring-animate:focus-visible {
+    outline: none;
+    animation: focusRing 0.25s ease-out;
+}
+@keyframes focusRing {
+    from {
+        box-shadow: 0 0 0 0 hsl(var(--ring));
+    }
+    to {
+        box-shadow: 0 0 0 3px hsl(var(--ring) / 0.4);
+    }
+}
+
+/* Motion preferences: disable or reduce animations app-wide */
+[data-motion='none'] *,
+[data-motion='none'] *::before,
+[data-motion='none'] *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+}
+
+[data-motion='reduced'] *,
+[data-motion='reduced'] *::before,
+[data-motion='reduced'] *::after {
+    animation-duration: 0.08s !important;
+    transition-duration: 0.08s !important;
 }
 
 /* Custom scrollbar utilities */

@@ -765,6 +765,13 @@
 			"teal": "Teal",
 			"yellow": "Yellow"
 		},
+		"motion": {
+			"title": "Animations",
+			"description": "Control transitions and animations across the panel. Use Reduced for shorter effects, or Off for no motion.",
+			"full": "Full",
+			"reduced": "Reduced",
+			"none": "Off"
+		},
 		"quick_links": {}
 	},
 	"navigation": {

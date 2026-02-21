@@ -103,7 +103,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     <main
                         className={cn('flex-1', isFullWidthMode ? 'p-0 overflow-hidden' : 'py-6 px-4 sm:px-6 lg:px-8')}
                     >
-                        <div className={cn(isFullWidthMode && 'h-full', !isFullWidthMode && 'mx-auto max-w-7xl')}>
+                        <div
+                            className={cn(
+                                isFullWidthMode && 'h-full',
+                                !isFullWidthMode && 'mx-auto max-w-7xl animate-fade-in-up',
+                            )}
+                        >
                             {children}
                         </div>
                     </main>

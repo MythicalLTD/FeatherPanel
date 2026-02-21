@@ -11,6 +11,8 @@
 ### Added
 
 - Theme customizer now supports backdrop blur (0–24px), backdrop darken (0–100% overlay), and for custom background images: fit options (Cover, Contain, Fill). Settings apply across the panel including login and error pages. by @nayskutzu
+- Animations can be customized app-wide: choose Full, Reduced (default), or Off. Controlled from the theme palette and from the background settings dialog. by @nayskutzu
+- Many new motion and animation improvements: page content fades in on load, cards and server cards have hover lift and scale, dashboard server list uses staggered entrance, welcome banner scales in, and new global utilities (fade-in-up, scale-in, slide-in-right, pulse-soft, glow, hover-lift, hover-scale, stagger-children) for consistent polish across the panel. by @nayskutzu
 - Introduced seamless Ctrl+S (or Cmd+S) keyboard shortcut support in the file manager—enabling quick and convenient file saving. by @nayskutzu
 - Default user profile pictures now automatically use the panel’s app logo URL for a more unified look. by @nayskutzu
 - Admin users can now seamlessly access and view all servers directly from the dashboard page. by @nayskutzu

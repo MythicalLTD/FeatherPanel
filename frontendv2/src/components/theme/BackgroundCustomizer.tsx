@@ -29,10 +29,10 @@ import {
 } from '@headlessui/react';
 import { Fragment, useState, useRef } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
-import type { BackgroundImageFit } from '@/contexts/ThemeContext';
+import type { BackgroundImageFit, MotionLevel } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/ui/button';
-import { Image as ImageIcon, ArrowUp, XIcon } from 'lucide-react';
+import { Image as ImageIcon, ArrowUp, XIcon, Sparkles } from 'lucide-react';
 
 interface BackgroundCustomizerProps {
     children?: React.ReactNode;
@@ -44,6 +44,11 @@ const IMAGE_FIT_OPTIONS: { value: BackgroundImageFit; labelKey: string }[] = [
     { value: 'contain', labelKey: 'appearance.background.imageFit.contain' },
     { value: 'fill', labelKey: 'appearance.background.imageFit.fill' },
 ];
+const MOTION_OPTIONS: { value: MotionLevel; labelKey: string }[] = [
+    { value: 'full', labelKey: 'appearance.motion.full' },
+    { value: 'reduced', labelKey: 'appearance.motion.reduced' },
+    { value: 'none', labelKey: 'appearance.motion.none' },
+];
 
 export default function BackgroundCustomizer({ children }: BackgroundCustomizerProps) {
     const {
@@ -52,11 +57,13 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
         backdropBlur,
         backdropDarken,
         backgroundImageFit,
+        motionLevel,
         setBackgroundType,
         setBackgroundImage,
         setBackdropBlur,
         setBackdropDarken,
         setBackgroundImageFit,
+        setMotionLevel,
     } = useTheme();
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
@@ -457,6 +464,33 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                 </div>
                                             </div>
                                         )}
+                                        <div>
+                                            <label className='block text-sm font-medium text-foreground mb-2'>
+                                                <span className='flex items-center gap-1.5'>
+                                                    <Sparkles className='h-4 w-4' />
+                                                    {t('appearance.motion.title')}
+                                                </span>
+                                            </label>
+                                            <p className='text-xs text-muted-foreground mb-2'>
+                                                {t('appearance.motion.description')}
+                                            </p>
+                                            <div className='flex flex-wrap gap-2'>
+                                                {MOTION_OPTIONS.map((opt) => (
+                                                    <button
+                                                        key={opt.value}
+                                                        type='button'
+                                                        onClick={() => setMotionLevel(opt.value)}
+                                                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                                            motionLevel === opt.value
+                                                                ? 'bg-primary text-primary-foreground'
+                                                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                        }`}
+                                                    >
+                                                        {t(opt.labelKey)}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </DialogPanel>
                             </TransitionChild>

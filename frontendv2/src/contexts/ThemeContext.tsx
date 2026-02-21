@@ -20,6 +20,8 @@ import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactN
 type Theme = 'light' | 'dark';
 type BackgroundType = 'gradient' | 'solid' | 'image' | 'pattern';
 export type BackgroundImageFit = 'cover' | 'contain' | 'fill';
+/** Controls animations and transitions app-wide. */
+export type MotionLevel = 'full' | 'reduced' | 'none';
 
 interface ThemeContextType {
     theme: Theme;
@@ -32,6 +34,8 @@ interface ThemeContextType {
     backdropDarken: number;
     /** How custom background image fits (cover, contain, fill). */
     backgroundImageFit: BackgroundImageFit;
+    /** Animations and transitions: full, reduced, or none. */
+    motionLevel: MotionLevel;
     setTheme: (theme: Theme) => void;
     setAccentColor: (color: string) => void;
     setBackgroundType: (type: BackgroundType) => void;
@@ -39,6 +43,7 @@ interface ThemeContextType {
     setBackdropBlur: (px: number) => void;
     setBackdropDarken: (percent: number) => void;
     setBackgroundImageFit: (fit: BackgroundImageFit) => void;
+    setMotionLevel: (level: MotionLevel) => void;
     toggleTheme: () => void;
     mounted: boolean;
 }
@@ -65,6 +70,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [backdropBlur, setBackdropBlurState] = useState(0);
     const [backdropDarken, setBackdropDarkenState] = useState(0);
     const [backgroundImageFit, setBackgroundImageFitState] = useState<BackgroundImageFit>('cover');
+    const [motionLevel, setMotionLevelState] = useState<MotionLevel>('reduced');
 
     useLayoutEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -76,6 +82,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const savedBlur = localStorage.getItem('backdropBlur');
         const savedDarken = localStorage.getItem('backdropDarken');
         const savedFit = localStorage.getItem('backgroundImageFit') as BackgroundImageFit | null;
+        const savedMotion = localStorage.getItem('motionLevel') as MotionLevel | null;
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
         setThemeState(saved || (prefersDark ? 'dark' : 'light'));
@@ -85,6 +92,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setBackdropBlurState(savedBlur != null ? Math.min(24, Math.max(0, parseInt(savedBlur, 10) || 0)) : 0);
         setBackdropDarkenState(savedDarken != null ? Math.min(100, Math.max(0, parseInt(savedDarken, 10) || 0)) : 0);
         setBackgroundImageFitState(savedFit === 'contain' || savedFit === 'fill' ? savedFit : 'cover');
+        setMotionLevelState(
+            savedMotion === 'full' ? 'full' : savedMotion === 'none' ? 'none' : 'reduced'
+        );
     }, []);
 
     useEffect(() => {
@@ -100,6 +110,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         root.style.setProperty('--primary', accentHSL);
         localStorage.setItem('accentColor', accentColor);
     }, [theme, accentColor, mounted]);
+
+    useEffect(() => {
+        if (!mounted || typeof document === 'undefined') return;
+        document.documentElement.dataset.motion = motionLevel;
+    }, [motionLevel, mounted]);
 
     const setTheme = (newTheme: Theme) => {
         setThemeState(newTheme);
@@ -136,6 +151,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('backgroundImageFit', fit);
     };
 
+    const setMotionLevel = (level: MotionLevel) => {
+        setMotionLevelState(level);
+        localStorage.setItem('motionLevel', level);
+    };
+
     const toggleTheme = () => {
         setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
     };
@@ -150,6 +170,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 backdropBlur,
                 backdropDarken,
                 backgroundImageFit,
+                motionLevel,
                 setTheme,
                 setAccentColor,
                 setBackgroundType,
@@ -157,6 +178,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 setBackdropBlur,
                 setBackdropDarken,
                 setBackgroundImageFit,
+                setMotionLevel,
                 toggleTheme,
                 mounted,
             }}
