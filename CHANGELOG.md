@@ -18,6 +18,7 @@
 - Fixed an issue where subusers lacked write permissions for file editing. by @nayskutzu
 - Fixed an issue where servers appeared unassignable or were visually misplaced in certain areas of the interface. by @nayskutzu
 - Resolved an issue where internal notes could inadvertently become visible to users within the tickets area. by @nayskutzu
+- Fixed an issue in Firefox where both the fallback and user avatar would display simultaneously. by @nayskutzu
 
 ## v1.2.4 STABLE
 
