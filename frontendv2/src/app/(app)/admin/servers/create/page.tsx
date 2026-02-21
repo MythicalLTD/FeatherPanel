@@ -867,7 +867,7 @@ function SelectionSheet<T extends { id: number | string }>({
                     </SheetDescription>
                 </SheetHeader>
 
-                <div className='mt-6 space-y-4'>
+                    <div className='mt-6 space-y-4'>
                     <div className='relative group'>
                         <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                         <Input
@@ -877,6 +877,34 @@ function SelectionSheet<T extends { id: number | string }>({
                             className='pl-10'
                         />
                     </div>
+
+                    {pagination && pagination.total_pages > 1 && (
+                        <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                disabled={!pagination.has_prev}
+                                onClick={() => onPaginationChange({ ...pagination, current_page: pagination.current_page - 1 })}
+                                className='gap-1 h-8'
+                            >
+                                <ChevronLeft className='h-3 w-3' />
+                                {t('common.previous')}
+                            </Button>
+                            <span className='text-xs font-medium'>
+                                {pagination.current_page} / {pagination.total_pages}
+                            </span>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                disabled={!pagination.has_next}
+                                onClick={() => onPaginationChange({ ...pagination, current_page: pagination.current_page + 1 })}
+                                className='gap-1 h-8'
+                            >
+                                {t('common.next')}
+                                <ChevronRight className='h-3 w-3' />
+                            </Button>
+                        </div>
+                    )}
 
                     <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar'>
                         {items.length === 0 ? (

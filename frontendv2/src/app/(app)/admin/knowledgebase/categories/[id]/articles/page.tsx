@@ -304,6 +304,34 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-category-articles', 'before-list')} />
 
+            {pagination.totalPages > 1 && !loading && (
+                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        disabled={!pagination.hasPrev}
+                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        className='gap-1.5'
+                    >
+                        <ChevronLeft className='h-4 w-4' />
+                        {t('common.previous')}
+                    </Button>
+                    <span className='text-sm font-medium'>
+                        {pagination.page} / {pagination.totalPages}
+                    </span>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        disabled={!pagination.hasNext}
+                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        className='gap-1.5'
+                    >
+                        {t('common.next')}
+                        <ChevronRight className='h-4 w-4' />
+                    </Button>
+                </div>
+            )}
+
             {loading ? (
                 <TableSkeleton count={5} />
             ) : articles.length === 0 ? (

@@ -208,35 +208,35 @@ export default function UsersPage() {
         }
     };
 
-    const renderPagination = () => {
-        if (!pagination || pagination.totalPages <= 1) return null;
-
-        return (
-            <div className='flex items-center justify-center gap-2 mt-8'>
-                <Button
-                    variant='outline'
-                    size='icon'
-                    disabled={pagination.page === 1}
-                    onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                >
-                    <ChevronLeft className='h-4 w-4' />
-                </Button>
-                <div className='flex items-center gap-2'>
-                    <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
-                    </span>
-                </div>
-                <Button
-                    variant='outline'
-                    size='icon'
-                    disabled={pagination.page === pagination.totalPages}
-                    onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                >
-                    <ChevronRight className='h-4 w-4' />
-                </Button>
-            </div>
-        );
-    };
+    const paginationBar = (
+        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+            <Button
+                variant='outline'
+                size='sm'
+                disabled={!pagination || pagination.page === 1}
+                onClick={() => pagination && setPagination({ ...pagination, page: pagination.page - 1 })}
+                className='gap-1.5'
+            >
+                <ChevronLeft className='h-4 w-4' />
+                {t('common.previous')}
+            </Button>
+            <span className='text-sm font-medium'>
+                {pagination ? `${pagination.page} / ${pagination.totalPages}` : '—'}
+            </span>
+            <Button
+                variant='outline'
+                size='sm'
+                disabled={!pagination || pagination.page === pagination.totalPages}
+                onClick={() =>
+                    pagination && setPagination({ ...pagination, page: pagination.page + 1 })
+                }
+                className='gap-1.5'
+            >
+                {t('common.next')}
+                <ChevronRight className='h-4 w-4' />
+            </Button>
+        </div>
+    );
 
     return (
         <div className='space-y-6'>
@@ -288,6 +288,8 @@ export default function UsersPage() {
             </div>
 
             <WidgetRenderer widgets={getWidgets('admin-users', 'before-list')} />
+
+            {pagination && pagination.totalPages > 1 && paginationBar}
 
             {loading ? (
                 <TableSkeleton count={5} />
@@ -432,7 +434,9 @@ export default function UsersPage() {
                 </div>
             )}
 
-            {renderPagination()}
+            {pagination && pagination.totalPages > 1 && (
+                <div className='flex justify-center mt-6'>{paginationBar}</div>
+            )}
 
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.users.help.managing.title')} icon={UsersIcon}>

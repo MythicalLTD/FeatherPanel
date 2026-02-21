@@ -395,6 +395,34 @@ export default function ServerBackupsPage() {
                     </div>
                 </div>
 
+                {pagination.total > pagination.per_page && (
+                    <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+                        <Button
+                            variant='glass'
+                            size='sm'
+                            disabled={pagination.current_page === 1 || loading}
+                            onClick={() => fetchBackups(pagination.current_page - 1)}
+                            className='gap-1.5'
+                        >
+                            <ChevronLeft className='h-4 w-4' />
+                            {t('common.previous')}
+                        </Button>
+                        <span className='text-sm font-medium'>
+                            {pagination.current_page} / {pagination.last_page}
+                        </span>
+                        <Button
+                            variant='glass'
+                            size='sm'
+                            disabled={pagination.current_page === pagination.last_page || loading}
+                            onClick={() => fetchBackups(pagination.current_page + 1)}
+                            className='gap-1.5'
+                        >
+                            {t('common.next')}
+                            <ChevronRight className='h-4 w-4' />
+                        </Button>
+                    </div>
+                )}
+
                 {backups.length === 0 ? (
                     <EmptyState
                         title={t('serverBackups.noBackups')}

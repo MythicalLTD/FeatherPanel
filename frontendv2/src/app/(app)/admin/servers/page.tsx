@@ -355,7 +355,35 @@ export default function ServersPage() {
                     }
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <>
+                    {pagination.totalPages > 1 && (
+                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                disabled={!pagination.hasPrev}
+                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                                className='gap-1.5'
+                            >
+                                <ChevronLeft className='h-4 w-4' />
+                                {t('common.previous')}
+                            </Button>
+                            <span className='text-sm font-medium'>
+                                {pagination.page} / {pagination.totalPages}
+                            </span>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                disabled={!pagination.hasNext}
+                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                                className='gap-1.5'
+                            >
+                                {t('common.next')}
+                                <ChevronRight className='h-4 w-4' />
+                            </Button>
+                        </div>
+                    )}
+                    <div className='grid grid-cols-1 gap-4'>
                     {servers.map((server) => {
                         const badges: ResourceBadge[] = [
                             {
@@ -447,8 +475,7 @@ export default function ServersPage() {
                             />
                         );
                     })}
-                </div>
-            )}
+                    </div>
 
             {pagination.totalPages > 1 && (
                 <div className='flex items-center justify-center gap-2 mt-8'>
@@ -472,6 +499,8 @@ export default function ServersPage() {
                         <ChevronRight className='h-4 w-4' />
                     </Button>
                 </div>
+            )}
+                </>
             )}
 
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>

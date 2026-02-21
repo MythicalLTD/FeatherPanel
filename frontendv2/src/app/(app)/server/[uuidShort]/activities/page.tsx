@@ -471,6 +471,34 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                 </div>
             </div>
 
+            {pagination.total_records > pagination.per_page && (
+                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                    <Button
+                        variant='glass'
+                        size='sm'
+                        disabled={!pagination.has_prev || loading}
+                        onClick={() => changePage(pagination.current_page - 1)}
+                        className='gap-1.5'
+                    >
+                        <ChevronLeft className='h-4 w-4' />
+                        {t('common.previous')}
+                    </Button>
+                    <span className='text-sm font-medium'>
+                        {pagination.current_page} / {pagination.total_pages}
+                    </span>
+                    <Button
+                        variant='glass'
+                        size='sm'
+                        disabled={!pagination.has_next || loading}
+                        onClick={() => changePage(pagination.current_page + 1)}
+                        className='gap-1.5'
+                    >
+                        {t('common.next')}
+                        <ChevronRight className='h-4 w-4' />
+                    </Button>
+                </div>
+            )}
+
             {activities.length === 0 ? (
                 <EmptyState
                     title={t('serverActivities.noActivitiesFound')}

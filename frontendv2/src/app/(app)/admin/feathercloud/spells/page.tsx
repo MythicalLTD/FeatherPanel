@@ -499,6 +499,34 @@ export default function SpellsPage() {
                                 />
                             </div>
 
+                            {realmsPagination && realmsPagination.total_pages > 1 && (
+                                <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        disabled={realmsPage === 1}
+                                        onClick={() => setRealmsPage((p) => p - 1)}
+                                        className='gap-1 h-8'
+                                    >
+                                        <ChevronLeft className='h-3 w-3' />
+                                        {t('common.previous')}
+                                    </Button>
+                                    <span className='text-xs font-medium'>
+                                        {realmsPage} / {realmsPagination.total_pages}
+                                    </span>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        disabled={realmsPage === realmsPagination.total_pages}
+                                        onClick={() => setRealmsPage((p) => p + 1)}
+                                        className='gap-1 h-8'
+                                    >
+                                        {t('common.next')}
+                                        <ChevronRight className='h-3 w-3' />
+                                    </Button>
+                                </div>
+                            )}
+
                             <div className='space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar'>
                                 {realmsLoading ? (
                                     <div className='flex items-center justify-center py-10'>

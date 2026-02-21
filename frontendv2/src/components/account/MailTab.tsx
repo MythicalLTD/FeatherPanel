@@ -238,6 +238,34 @@ export default function MailTab() {
                 )}
             </div>
 
+            {pagination && pagination.total_pages > 1 && (
+                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        disabled={!pagination.has_prev}
+                        onClick={() => fetchMails(pagination.current_page - 1)}
+                        className='gap-1.5'
+                    >
+                        <ChevronLeft className='h-4 w-4' />
+                        {t('common.previous')}
+                    </Button>
+                    <span className='text-sm font-medium'>
+                        {pagination.current_page} / {pagination.total_pages}
+                    </span>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        disabled={!pagination.has_next}
+                        onClick={() => fetchMails(pagination.current_page + 1)}
+                        className='gap-1.5'
+                    >
+                        {t('common.next')}
+                        <ChevronRight className='h-4 w-4' />
+                    </Button>
+                </div>
+            )}
+
             {mails.length > 0 ? (
                 <div className='space-y-4'>
                     {mails.map((mail) => (

@@ -832,6 +832,38 @@ export default function EditServerPage() {
                             />
                         </div>
 
+                        {ownerPagination.total_pages > 1 && (
+                            <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={!ownerPagination.has_prev}
+                                    onClick={() =>
+                                        setOwnerPagination((prev) => ({ ...prev, current_page: prev.current_page - 1 }))
+                                    }
+                                    className='gap-1 h-8'
+                                >
+                                    <ChevronLeft className='h-3 w-3' />
+                                    {t('common.previous')}
+                                </Button>
+                                <span className='text-xs font-medium'>
+                                    {ownerPagination.current_page} / {ownerPagination.total_pages}
+                                </span>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={!ownerPagination.has_next}
+                                    onClick={() =>
+                                        setOwnerPagination((prev) => ({ ...prev, current_page: prev.current_page + 1 }))
+                                    }
+                                    className='gap-1 h-8'
+                                >
+                                    {t('common.next')}
+                                    <ChevronRight className='h-3 w-3' />
+                                </Button>
+                            </div>
+                        )}
+
                         <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                             {owners.length === 0 ? (
                                 <div className='text-center py-8 text-muted-foreground'>
@@ -954,6 +986,44 @@ export default function EditServerPage() {
                             />
                         </div>
 
+                        {realmPagination.total_pages > 1 && (
+                            <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={!realmPagination.has_prev}
+                                    onClick={() =>
+                                        setRealmPagination((prev) => ({
+                                            ...prev,
+                                            current_page: prev.current_page - 1,
+                                        }))
+                                    }
+                                    className='gap-1 h-8'
+                                >
+                                    <ChevronLeft className='h-3 w-3' />
+                                    {t('common.previous')}
+                                </Button>
+                                <span className='text-xs font-medium'>
+                                    {realmPagination.current_page} / {realmPagination.total_pages}
+                                </span>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={!realmPagination.has_next}
+                                    onClick={() =>
+                                        setRealmPagination((prev) => ({
+                                            ...prev,
+                                            current_page: prev.current_page + 1,
+                                        }))
+                                    }
+                                    className='gap-1 h-8'
+                                >
+                                    {t('common.next')}
+                                    <ChevronRight className='h-3 w-3' />
+                                </Button>
+                            </div>
+                        )}
+
                         <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                             {realms.length === 0 ? (
                                 <div className='text-center py-8 text-muted-foreground'>
@@ -1057,6 +1127,44 @@ export default function EditServerPage() {
                                 className='pl-10'
                             />
                         </div>
+
+                        {spellPagination.total_pages > 1 && (
+                            <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={!spellPagination.has_prev}
+                                    onClick={() =>
+                                        setSpellPagination((prev) => ({
+                                            ...prev,
+                                            current_page: prev.current_page - 1,
+                                        }))
+                                    }
+                                    className='gap-1 h-8'
+                                >
+                                    <ChevronLeft className='h-3 w-3' />
+                                    {t('common.previous')}
+                                </Button>
+                                <span className='text-xs font-medium'>
+                                    {spellPagination.current_page} / {spellPagination.total_pages}
+                                </span>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={!spellPagination.has_next}
+                                    onClick={() =>
+                                        setSpellPagination((prev) => ({
+                                            ...prev,
+                                            current_page: prev.current_page + 1,
+                                        }))
+                                    }
+                                    className='gap-1 h-8'
+                                >
+                                    {t('common.next')}
+                                    <ChevronRight className='h-3 w-3' />
+                                </Button>
+                            </div>
+                        )}
 
                         <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                             {spells.length === 0 ? (

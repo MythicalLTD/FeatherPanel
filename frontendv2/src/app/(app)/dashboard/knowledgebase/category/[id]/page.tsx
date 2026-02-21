@@ -131,6 +131,33 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             </div>
 
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'before-articles-list')} />
+            {pagination && pagination.total_pages > 1 && (
+                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        disabled={!pagination.has_prev}
+                        onClick={() => setCurrentPage((p) => p - 1)}
+                        className='gap-1.5'
+                    >
+                        <ChevronLeft className='h-4 w-4' />
+                        {t('dashboard.knowledgebase.previous')}
+                    </Button>
+                    <span className='text-sm font-medium'>
+                        {currentPage} / {pagination.total_pages}
+                    </span>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        disabled={!pagination.has_next}
+                        onClick={() => setCurrentPage((p) => p + 1)}
+                        className='gap-1.5'
+                    >
+                        {t('dashboard.knowledgebase.next')}
+                        <ChevronRight className='h-4 w-4' />
+                    </Button>
+                </div>
+            )}
             <div className='bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden'>
                 {articles.length === 0 ? (
                     <div className='py-24 text-center'>

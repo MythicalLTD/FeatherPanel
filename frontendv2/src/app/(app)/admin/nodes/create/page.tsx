@@ -543,6 +543,44 @@ export default function CreateNodePage() {
                             />
                         </div>
 
+                        {locationPagination.total_pages > 1 && (
+                            <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={!locationPagination.has_prev}
+                                    onClick={() =>
+                                        setLocationPagination((prev) => ({
+                                            ...prev,
+                                            current_page: prev.current_page - 1,
+                                        }))
+                                    }
+                                    className='gap-1 h-8'
+                                >
+                                    <ChevronLeft className='h-3 w-3' />
+                                    {t('common.previous')}
+                                </Button>
+                                <span className='text-xs font-medium'>
+                                    {locationPagination.current_page} / {locationPagination.total_pages}
+                                </span>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={!locationPagination.has_next}
+                                    onClick={() =>
+                                        setLocationPagination((prev) => ({
+                                            ...prev,
+                                            current_page: prev.current_page + 1,
+                                        }))
+                                    }
+                                    className='gap-1 h-8'
+                                >
+                                    {t('common.next')}
+                                    <ChevronRight className='h-3 w-3' />
+                                </Button>
+                            </div>
+                        )}
+
                         <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                             {locations.length === 0 ? (
                                 <div className='text-center py-8 text-muted-foreground'>

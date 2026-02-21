@@ -267,6 +267,33 @@ export default function TicketsPage() {
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'after-filters')} />
 
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'before-tickets-list')} />
+            {!loading && tickets.length > 0 && (pagination.hasNext || pagination.hasPrev) && (
+                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        disabled={!pagination.hasPrev}
+                        onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                        className='gap-1.5'
+                    >
+                        <ChevronLeft className='h-4 w-4' />
+                        {t('common.previous')}
+                    </Button>
+                    <span className='text-sm font-medium'>
+                        {pagination.page} / {Math.ceil(pagination.total / pagination.pageSize) || 1}
+                    </span>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        disabled={!pagination.hasNext}
+                        onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                        className='gap-1.5'
+                    >
+                        {t('common.next')}
+                        <ChevronRight className='h-4 w-4' />
+                    </Button>
+                </div>
+            )}
             {loading ? (
                 <div className='space-y-4'>
                     {[1, 2, 3].map((i) => (

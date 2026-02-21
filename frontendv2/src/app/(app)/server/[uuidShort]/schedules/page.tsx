@@ -272,7 +272,35 @@ export default function ServerSchedulesPage() {
                     }
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <>
+                    {pagination.total > pagination.per_page && (
+                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                disabled={pagination.current_page <= 1 || loading}
+                                onClick={() => fetchData(pagination.current_page - 1)}
+                                className='gap-1.5'
+                            >
+                                <ChevronLeft className='h-4 w-4' />
+                                {t('common.previous')}
+                            </Button>
+                            <span className='text-sm font-medium'>
+                                {pagination.current_page} / {pagination.last_page}
+                            </span>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                disabled={pagination.current_page >= pagination.last_page || loading}
+                                onClick={() => fetchData(pagination.current_page + 1)}
+                                className='gap-1.5'
+                            >
+                                {t('common.next')}
+                                <ChevronRight className='h-4 w-4' />
+                            </Button>
+                        </div>
+                    )}
+                    <div className='grid grid-cols-1 gap-4'>
                     {schedules.map((schedule) => (
                         <ResourceCard
                             key={schedule.id}
@@ -365,6 +393,7 @@ export default function ServerSchedulesPage() {
                         />
                     ))}
 
+                    </div>
                     {pagination.total > pagination.per_page && (
                         <div className='flex items-center justify-between gap-3 pt-4 border-t border-white/5'>
                             <div className='text-xs text-muted-foreground'>
@@ -393,7 +422,7 @@ export default function ServerSchedulesPage() {
                             </div>
                         </div>
                     )}
-                </div>
+                </>
             )}
 
             <WidgetRenderer widgets={getWidgets('server-schedules', 'after-schedules-list')} />

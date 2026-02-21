@@ -224,6 +224,33 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                 />
             ) : (
                 <>
+                    {pagination.total_pages > 1 && (
+                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                disabled={!pagination.has_prev}
+                                onClick={() => changePage(pagination.current_page - 1)}
+                                className='gap-1.5'
+                            >
+                                <ChevronLeft className='h-4 w-4' />
+                                {t('common.previous')}
+                            </Button>
+                            <span className='text-sm font-medium'>
+                                {pagination.current_page} / {pagination.total_pages}
+                            </span>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                disabled={!pagination.has_next}
+                                onClick={() => changePage(pagination.current_page + 1)}
+                                className='gap-1.5'
+                            >
+                                {t('common.next')}
+                                <ChevronRight className='h-4 w-4' />
+                            </Button>
+                        </div>
+                    )}
                     <div className='grid grid-cols-1 gap-4'>
                         {servers.map((server) => {
                             const badges: ResourceBadge[] = [

@@ -15,14 +15,15 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Fragment } from 'react';
+import { Fragment, useContext } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import { Menu as MenuIcon, CircleUser, LogOut, ShieldCheck } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { ServerContext } from '@/contexts/ServerContext';
 import Image from 'next/image';
 import Permissions from '@/lib/permissions';
 
@@ -32,8 +33,13 @@ interface NavbarProps {
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const { user, logout, hasPermission } = useSession();
     const { t } = useTranslation();
+    const serverContext = useContext(ServerContext);
+    const isOnServerPage = pathname?.startsWith('/server/');
+    const serverName = isOnServerPage ? serverContext?.server?.name : null;
+    const headerTitle = serverName ?? t('dashboard.title');
 
     const userNavigation = [{ name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser }];
 
@@ -71,8 +77,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             <div className='h-6 w-px bg-border lg:hidden' aria-hidden='true' />
 
             <div className='flex flex-1 gap-x-4 self-stretch lg:gap-x-6'>
-                <div className='flex flex-1 items-center'>
-                    <h1 className='text-lg font-semibold text-foreground'>{t('dashboard.title')}</h1>
+                <div className='flex flex-1 items-center min-w-0'>
+                    <h1 className='text-lg font-semibold text-foreground truncate' title={headerTitle}>
+                        {headerTitle}
+                    </h1>
                 </div>
 
                 <div className='flex items-center gap-x-2 sm:gap-x-4 lg:gap-x-6'>

@@ -396,6 +396,34 @@ export default function ServerSubusersPage() {
                         </Button>
                     </div>
 
+                    {pagination.total > pagination.per_page && (
+                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                disabled={pagination.current_page <= 1 || loading}
+                                onClick={() => fetchSubusers(pagination.current_page - 1)}
+                                className='gap-1.5'
+                            >
+                                <ChevronLeft className='h-4 w-4' />
+                                {t('common.previous')}
+                            </Button>
+                            <span className='text-sm font-medium'>
+                                {pagination.current_page} / {pagination.last_page}
+                            </span>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                disabled={pagination.current_page >= pagination.last_page || loading}
+                                onClick={() => fetchSubusers(pagination.current_page + 1)}
+                                className='gap-1.5'
+                            >
+                                {t('common.next')}
+                                <ChevronRight className='h-4 w-4' />
+                            </Button>
+                        </div>
+                    )}
+
                     {subusers.length === 0 ? (
                         <div className='text-center py-12 bg-card/10 rounded-4xl border border-dashed border-border/60'>
                             <h3 className='text-xl font-bold'>{t('serverSubusers.noResults')}</h3>

@@ -5,6 +5,8 @@
 ### Improved
 
 - Transitioned FeatherPanel documentation to a fully compiled format, resulting in significantly improved performance and faster access times. by @nayskutzu
+- The server name now appears in the navbar when viewing any server page, so users always see which server they are on. by @nayskutzu
+- Previous/Next page controls are now shown at the top of every paginated list across. by @nayskutzu
 
 ### Added
 

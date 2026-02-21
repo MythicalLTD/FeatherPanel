@@ -499,6 +499,32 @@ export default function ServersPage() {
                                 <EmptyState searchQuery={searchQuery} t={t} />
                             ) : (
                                 <>
+                                    {pagination.total_pages > 1 && (
+                                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                                            <button
+                                                onClick={() => changePage(pagination.current_page - 1)}
+                                                disabled={!pagination.has_prev || loading}
+                                                className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
+                                            >
+                                                <ChevronLeft className='h-4 w-4' />
+                                                {t('common.previous')}
+                                            </button>
+                                            <span className='text-sm font-medium'>
+                                                {t('servers.pagination.page', {
+                                                    current: String(pagination.current_page),
+                                                    total: String(pagination.total_pages),
+                                                })}
+                                            </span>
+                                            <button
+                                                onClick={() => changePage(pagination.current_page + 1)}
+                                                disabled={!pagination.has_next || loading}
+                                                className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
+                                            >
+                                                {t('common.next')}
+                                                <ChevronRight className='h-5 w-5' />
+                                            </button>
+                                        </div>
+                                    )}
                                     <div
                                         className={cn(
                                             selectedLayout === 'grid'
@@ -594,30 +620,58 @@ export default function ServersPage() {
                             {filteredServers.length === 0 ? (
                                 <EmptyState searchQuery={searchQuery} t={t} />
                             ) : (
-                                <div
-                                    className={cn(
-                                        selectedLayout === 'grid'
-                                            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
-                                            : 'flex flex-col gap-4',
+                                <>
+                                    {pagination.total_pages > 1 && (
+                                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                                            <button
+                                                onClick={() => changePage(pagination.current_page - 1)}
+                                                disabled={!pagination.has_prev || loading}
+                                                className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
+                                            >
+                                                <ChevronLeft className='h-5 w-5' />
+                                                {t('common.previous')}
+                                            </button>
+                                            <span className='text-sm font-medium'>
+                                                {t('servers.pagination.page', {
+                                                    current: String(pagination.current_page),
+                                                    total: String(pagination.total_pages),
+                                                })}
+                                            </span>
+                                            <button
+                                                onClick={() => changePage(pagination.current_page + 1)}
+                                                disabled={!pagination.has_next || loading}
+                                                className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
+                                            >
+                                                {t('common.next')}
+                                                <ChevronRight className='h-5 w-5' />
+                                            </button>
+                                        </div>
                                     )}
-                                >
-                                    {filteredServers.map((server) => (
-                                        <ServerCard
-                                            key={server.id}
-                                            server={server}
-                                            layout={selectedLayout}
-                                            serverUrl={`/server/${server.uuidShort}`}
-                                            liveStats={getServerLiveStats(server)}
-                                            isConnected={isServerConnected(server.uuidShort)}
-                                            t={t}
-                                            folders={folders}
-                                            onAssignFolder={(folderId) =>
-                                                assignServerToFolder(server.uuidShort, folderId)
-                                            }
-                                            onUnassignFolder={() => unassignServer(server.uuidShort)}
-                                        />
-                                    ))}
-                                </div>
+                                    <div
+                                        className={cn(
+                                            selectedLayout === 'grid'
+                                                ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                                                : 'flex flex-col gap-4',
+                                        )}
+                                    >
+                                        {filteredServers.map((server) => (
+                                            <ServerCard
+                                                key={server.id}
+                                                server={server}
+                                                layout={selectedLayout}
+                                                serverUrl={`/server/${server.uuidShort}`}
+                                                liveStats={getServerLiveStats(server)}
+                                                isConnected={isServerConnected(server.uuidShort)}
+                                                t={t}
+                                                folders={folders}
+                                                onAssignFolder={(folderId) =>
+                                                    assignServerToFolder(server.uuidShort, folderId)
+                                                }
+                                                onUnassignFolder={() => unassignServer(server.uuidShort)}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
                             )}
 
                             {pagination.total_pages > 1 && (
