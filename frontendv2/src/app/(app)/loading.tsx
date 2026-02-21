@@ -36,7 +36,7 @@ export default function Loading() {
     });
 
     return (
-        <div className='flex min-h-screen items-center justify-center bg-background'>
+        <div className='motion-always flex min-h-screen items-center justify-center bg-background'>
             <div className='relative'>
                 <div
                     className='h-16 w-16 rounded-full border-4 border-transparent animate-spin'

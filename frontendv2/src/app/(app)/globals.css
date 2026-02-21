@@ -286,21 +286,48 @@ body {
     }
 }
 
-/* Motion preferences: disable or reduce animations app-wide */
-[data-motion='none'] *,
-[data-motion='none'] *::before,
-[data-motion='none'] *::after {
+/* Motion preferences: only apply inside .motion-content so preloader & top loading bar are never affected */
+[data-motion='none'] .motion-content,
+[data-motion='none'] .motion-content *,
+[data-motion='none'] .motion-content *::before,
+[data-motion='none'] .motion-content *::after {
     animation-duration: 0s !important;
     animation-delay: 0s !important;
     transition-duration: 0s !important;
     transition-delay: 0s !important;
 }
 
-[data-motion='reduced'] *,
-[data-motion='reduced'] *::before,
-[data-motion='reduced'] *::after {
-    animation-duration: 0.08s !important;
-    transition-duration: 0.08s !important;
+[data-motion='reduced'] .motion-content,
+[data-motion='reduced'] .motion-content *,
+[data-motion='reduced'] .motion-content *::before,
+[data-motion='reduced'] .motion-content *::after {
+    animation-duration: 0.15s !important;
+    transition-duration: 0.15s !important;
+}
+
+/* When motion is none, stagger children must be visible immediately (no opacity: 0 flash) */
+[data-motion='none'] .motion-content .stagger-children .stagger-child {
+    opacity: 1 !important;
+    animation: none !important;
+}
+
+/* Loading/preloader areas: always allow normal animation so spinners don't flicker */
+[data-motion='none'] .motion-content .motion-always,
+[data-motion='none'] .motion-content .motion-always *,
+[data-motion='none'] .motion-content .motion-always *::before,
+[data-motion='none'] .motion-content .motion-always *::after {
+    animation-duration: 0.5s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.2s !important;
+    transition-delay: 0s !important;
+}
+
+[data-motion='reduced'] .motion-content .motion-always,
+[data-motion='reduced'] .motion-content .motion-always *,
+[data-motion='reduced'] .motion-content .motion-always *::before,
+[data-motion='reduced'] .motion-content .motion-always *::after {
+    animation-duration: 0.4s !important;
+    transition-duration: 0.2s !important;
 }
 
 /* Custom scrollbar utilities */

@@ -36,7 +36,7 @@ export default function AuthLoading() {
     });
 
     return (
-        <div className='flex min-h-screen items-center justify-center'>
+        <div className='motion-always flex min-h-screen items-center justify-center'>
             <div className='relative'>
                 <div
                     className='h-12 w-12 rounded-full border-3 border-transparent animate-spin'

@@ -171,7 +171,7 @@ export default function DashboardPage() {
         <div className='space-y-8'>
             <WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} />
 
-            <div className='relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 sm:p-6 md:p-8 animate-scale-in'>
+            <div className='relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 sm:p-6 md:p-8'>
                 <div className='relative z-10'>
                     <h1 className='text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2'>
                         {t('dashboard.welcome')}

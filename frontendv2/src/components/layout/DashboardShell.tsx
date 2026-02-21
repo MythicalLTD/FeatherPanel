@@ -89,7 +89,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
     return (
         <BackgroundWrapper>
-            <div className={cn('min-h-screen flex flex-col', isFullWidthMode && 'h-screen overflow-hidden')}>
+            <div
+                className={cn(
+                    'motion-content min-h-screen flex flex-col',
+                    isFullWidthMode && 'h-screen overflow-hidden',
+                )}
+            >
                 <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
                 <div
@@ -103,12 +108,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     <main
                         className={cn('flex-1', isFullWidthMode ? 'p-0 overflow-hidden' : 'py-6 px-4 sm:px-6 lg:px-8')}
                     >
-                        <div
-                            className={cn(
-                                isFullWidthMode && 'h-full',
-                                !isFullWidthMode && 'mx-auto max-w-7xl animate-fade-in-up',
-                            )}
-                        >
+                        <div className={cn(isFullWidthMode && 'h-full', !isFullWidthMode && 'mx-auto max-w-7xl')}>
                             {children}
                         </div>
                     </main>
