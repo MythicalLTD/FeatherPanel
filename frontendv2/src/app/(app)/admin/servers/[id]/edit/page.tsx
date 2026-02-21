@@ -35,6 +35,8 @@ import {
     Loader2,
     Search as SearchIcon,
     Box,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';

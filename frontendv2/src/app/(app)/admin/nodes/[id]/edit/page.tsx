@@ -38,6 +38,8 @@ import {
     Zap,
     Search as SearchIcon,
     MapPin,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 
 import { DetailsTab } from './DetailsTab';
