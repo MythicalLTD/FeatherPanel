@@ -423,6 +423,23 @@ class SftpAuthController
             }
 
             $result = [];
+            // Current panel permissions (file.*)
+            if (in_array('file.read', $perms, true)) {
+                $result[] = 'file.read';
+            }
+            if (in_array('file.read-content', $perms, true)) {
+                $result[] = 'file.read-content';
+            }
+            if (in_array('file.create', $perms, true)) {
+                $result[] = 'file.create';
+            }
+            if (in_array('file.update', $perms, true)) {
+                $result[] = 'file.update';
+            }
+            if (in_array('file.delete', $perms, true)) {
+                $result[] = 'file.delete';
+            }
+            // Legacy permission names (files.*) for backward compatibility
             if (in_array('files.read', $perms, true) || in_array('files.download', $perms, true)) {
                 $result[] = 'file.read';
                 $result[] = 'file.read-content';
