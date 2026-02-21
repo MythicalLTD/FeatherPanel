@@ -19,18 +19,18 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useState } from 'react';
 
 export default function BackgroundWrapper({ children }: { children: React.ReactNode }) {
-    const { backgroundType, backgroundImage } = useTheme();
+    const { backgroundType, backgroundImage, backdropBlur, backdropDarken, backgroundImageFit } = useTheme();
     const [mounted] = useState(() => typeof window !== 'undefined');
 
     if (!mounted) {
         return <>{children}</>;
     }
 
-    const getBackgroundStyle = () => {
+    const getBackgroundStyle = (): React.CSSProperties => {
         if (backgroundType === 'image' && backgroundImage) {
             return {
                 backgroundImage: `url(${backgroundImage})`,
-                backgroundSize: 'cover',
+                backgroundSize: backgroundImageFit,
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
                 backgroundAttachment: 'fixed',
@@ -76,9 +76,23 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
         return {};
     };
 
+    const hasOverlay = backdropBlur > 0 || backdropDarken > 0;
+    const overlayStyle: React.CSSProperties = {
+        backdropFilter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
+        WebkitBackdropFilter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
+        backgroundColor: backdropDarken > 0 ? `rgba(0,0,0,${backdropDarken / 100})` : undefined,
+    };
+
     return (
-        <div className='min-h-screen transition-all duration-500' style={getBackgroundStyle()}>
-            {children}
+        <div className='min-h-screen transition-all duration-500 relative' style={getBackgroundStyle()}>
+            {hasOverlay && (
+                <div
+                    className='pointer-events-none absolute inset-0 transition-all duration-500'
+                    style={overlayStyle}
+                    aria-hidden
+                />
+            )}
+            <div className='relative'>{children}</div>
         </div>
     );
 }

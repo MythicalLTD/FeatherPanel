@@ -29,6 +29,7 @@ import {
 } from '@headlessui/react';
 import { Fragment, useState, useRef } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import type { BackgroundImageFit } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/ui/button';
 import { Image as ImageIcon, ArrowUp, XIcon } from 'lucide-react';
@@ -37,8 +38,26 @@ interface BackgroundCustomizerProps {
     children?: React.ReactNode;
 }
 
+const BLUR_STEPS = [0, 4, 8, 12, 16, 24];
+const IMAGE_FIT_OPTIONS: { value: BackgroundImageFit; labelKey: string }[] = [
+    { value: 'cover', labelKey: 'appearance.background.imageFit.cover' },
+    { value: 'contain', labelKey: 'appearance.background.imageFit.contain' },
+    { value: 'fill', labelKey: 'appearance.background.imageFit.fill' },
+];
+
 export default function BackgroundCustomizer({ children }: BackgroundCustomizerProps) {
-    const { backgroundType, backgroundImage, setBackgroundType, setBackgroundImage } = useTheme();
+    const {
+        backgroundType,
+        backgroundImage,
+        backdropBlur,
+        backdropDarken,
+        backgroundImageFit,
+        setBackgroundType,
+        setBackgroundImage,
+        setBackdropBlur,
+        setBackdropDarken,
+        setBackgroundImageFit,
+    } = useTheme();
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [imageUrl, setImageUrl] = useState(backgroundImage);
@@ -379,6 +398,66 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                             </TabPanel>
                                         </TabPanels>
                                     </TabGroup>
+
+                                    <div className='mt-6 pt-6 border-t border-border/50 space-y-5'>
+                                        <div>
+                                            <label className='block text-sm font-medium text-foreground mb-2'>
+                                                {t('appearance.background.backdropBlur')}
+                                            </label>
+                                            <div className='flex flex-wrap gap-2'>
+                                                {BLUR_STEPS.map((px) => (
+                                                    <button
+                                                        key={px}
+                                                        type='button'
+                                                        onClick={() => setBackdropBlur(px)}
+                                                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                                            backdropBlur === px
+                                                                ? 'bg-primary text-primary-foreground'
+                                                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                        }`}
+                                                    >
+                                                        {px === 0 ? t('appearance.background.off') : `${px}px`}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className='block text-sm font-medium text-foreground mb-2'>
+                                                {t('appearance.background.backdropDarken')} ({backdropDarken}%)
+                                            </label>
+                                            <input
+                                                type='range'
+                                                min={0}
+                                                max={100}
+                                                value={backdropDarken}
+                                                onChange={(e) => setBackdropDarken(Number(e.target.value))}
+                                                className='w-full h-2 rounded-lg appearance-none bg-muted accent-primary'
+                                            />
+                                        </div>
+                                        {backgroundType === 'image' && (
+                                            <div>
+                                                <label className='block text-sm font-medium text-foreground mb-2'>
+                                                    {t('appearance.background.imageFit')}
+                                                </label>
+                                                <div className='flex flex-wrap gap-2'>
+                                                    {IMAGE_FIT_OPTIONS.map((opt) => (
+                                                        <button
+                                                            key={opt.value}
+                                                            type='button'
+                                                            onClick={() => setBackgroundImageFit(opt.value)}
+                                                            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                                                backgroundImageFit === opt.value
+                                                                    ? 'bg-primary text-primary-foreground'
+                                                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                            }`}
+                                                        >
+                                                            {t(opt.labelKey)}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </DialogPanel>
                             </TransitionChild>
                         </div>

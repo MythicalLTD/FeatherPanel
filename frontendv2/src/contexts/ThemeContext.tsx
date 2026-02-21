@@ -19,16 +19,26 @@ import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactN
 
 type Theme = 'light' | 'dark';
 type BackgroundType = 'gradient' | 'solid' | 'image' | 'pattern';
+export type BackgroundImageFit = 'cover' | 'contain' | 'fill';
 
 interface ThemeContextType {
     theme: Theme;
     accentColor: string;
     backgroundType: BackgroundType;
     backgroundImage: string;
+    /** Backdrop blur in pixels (0, 4, 8, 12, 16, 24). */
+    backdropBlur: number;
+    /** Backdrop dark overlay opacity 0–100. */
+    backdropDarken: number;
+    /** How custom background image fits (cover, contain, fill). */
+    backgroundImageFit: BackgroundImageFit;
     setTheme: (theme: Theme) => void;
     setAccentColor: (color: string) => void;
     setBackgroundType: (type: BackgroundType) => void;
     setBackgroundImage: (image: string) => void;
+    setBackdropBlur: (px: number) => void;
+    setBackdropDarken: (percent: number) => void;
+    setBackgroundImageFit: (fit: BackgroundImageFit) => void;
     toggleTheme: () => void;
     mounted: boolean;
 }
@@ -52,6 +62,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [accentColor, setAccentColorState] = useState('purple');
     const [backgroundType, setBackgroundTypeState] = useState<BackgroundType>('gradient');
     const [backgroundImage, setBackgroundImageState] = useState('');
+    const [backdropBlur, setBackdropBlurState] = useState(0);
+    const [backdropDarken, setBackdropDarkenState] = useState(0);
+    const [backgroundImageFit, setBackgroundImageFitState] = useState<BackgroundImageFit>('cover');
 
     useLayoutEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -60,12 +73,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const savedAccent = localStorage.getItem('accentColor');
         const savedBgType = localStorage.getItem('backgroundType') as BackgroundType | null;
         const savedBgImage = localStorage.getItem('backgroundImage');
+        const savedBlur = localStorage.getItem('backdropBlur');
+        const savedDarken = localStorage.getItem('backdropDarken');
+        const savedFit = localStorage.getItem('backgroundImageFit') as BackgroundImageFit | null;
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
         setThemeState(saved || (prefersDark ? 'dark' : 'light'));
         setAccentColorState(savedAccent || 'purple');
         setBackgroundTypeState(savedBgType || 'gradient');
         setBackgroundImageState(savedBgImage || '');
+        setBackdropBlurState(savedBlur != null ? Math.min(24, Math.max(0, parseInt(savedBlur, 10) || 0)) : 0);
+        setBackdropDarkenState(savedDarken != null ? Math.min(100, Math.max(0, parseInt(savedDarken, 10) || 0)) : 0);
+        setBackgroundImageFitState(savedFit === 'contain' || savedFit === 'fill' ? savedFit : 'cover');
     }, []);
 
     useEffect(() => {
@@ -100,6 +119,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('backgroundImage', image);
     };
 
+    const setBackdropBlur = (px: number) => {
+        const value = Math.min(24, Math.max(0, px));
+        setBackdropBlurState(value);
+        localStorage.setItem('backdropBlur', String(value));
+    };
+
+    const setBackdropDarken = (percent: number) => {
+        const value = Math.min(100, Math.max(0, percent));
+        setBackdropDarkenState(value);
+        localStorage.setItem('backdropDarken', String(value));
+    };
+
+    const setBackgroundImageFit = (fit: BackgroundImageFit) => {
+        setBackgroundImageFitState(fit);
+        localStorage.setItem('backgroundImageFit', fit);
+    };
+
     const toggleTheme = () => {
         setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
     };
@@ -111,10 +147,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 accentColor,
                 backgroundType,
                 backgroundImage,
+                backdropBlur,
+                backdropDarken,
+                backgroundImageFit,
                 setTheme,
                 setAccentColor,
                 setBackgroundType,
                 setBackgroundImage,
+                setBackdropBlur,
+                setBackdropDarken,
+                setBackgroundImageFit,
                 toggleTheme,
                 mounted,
             }}

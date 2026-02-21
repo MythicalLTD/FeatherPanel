@@ -746,7 +746,14 @@
 				"forestMist": "Forest Mist",
 				"roseGarden": "Rose Garden",
 				"goldenHour": "Golden Hour"
-			}
+			},
+			"backdropBlur": "Backdrop blur",
+			"backdropDarken": "Backdrop darken",
+			"off": "Off",
+			"imageFit": "Image fit",
+			"imageFit.cover": "Cover",
+			"imageFit.contain": "Contain",
+			"imageFit.fill": "Fill"
 		},
 		"colors": {
 			"purple": "Purple",

@@ -10,6 +10,7 @@
 
 ### Added
 
+- Theme customizer now supports backdrop blur (0–24px), backdrop darken (0–100% overlay), and for custom background images: fit options (Cover, Contain, Fill). Settings apply across the panel including login and error pages. by @nayskutzu
 - Introduced seamless Ctrl+S (or Cmd+S) keyboard shortcut support in the file manager—enabling quick and convenient file saving. by @nayskutzu
 - Default user profile pictures now automatically use the panel’s app logo URL for a more unified look. by @nayskutzu
 - Admin users can now seamlessly access and view all servers directly from the dashboard page. by @nayskutzu

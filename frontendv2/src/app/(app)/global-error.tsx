@@ -45,7 +45,7 @@ function hardRefresh(): void {
 }
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-    const { backgroundType, backgroundImage } = useTheme();
+    const { backgroundType, backgroundImage, backdropBlur, backdropDarken, backgroundImageFit } = useTheme();
     const [version, setVersion] = useState<string>('');
     const staleVersion = isStaleVersionError(error);
 
@@ -103,17 +103,24 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                 );
             case 'image':
                 return backgroundImage ? (
-                    <>
-                        <div
-                            className='absolute inset-0 bg-cover bg-center bg-no-repeat'
-                            style={{ backgroundImage: `url(${backgroundImage})` }}
-                        />
-                        <div className='absolute inset-0 bg-background/80 backdrop-blur-sm' />
-                    </>
+                    <div
+                        className='absolute inset-0 bg-center bg-no-repeat'
+                        style={{
+                            backgroundImage: `url(${backgroundImage})`,
+                            backgroundSize: backgroundImageFit,
+                        }}
+                    />
                 ) : null;
             default:
                 return null;
         }
+    };
+
+    const hasOverlay = backdropBlur > 0 || backdropDarken > 0;
+    const overlayStyle: React.CSSProperties = {
+        backdropFilter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
+        WebkitBackdropFilter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
+        backgroundColor: backdropDarken > 0 ? `rgba(0,0,0,${backdropDarken / 100})` : undefined,
     };
 
     return (
@@ -121,6 +128,9 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             <body className='bg-background text-foreground'>
                 <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-4'>
                     {renderBackground()}
+                    {hasOverlay && (
+                        <div className='pointer-events-none absolute inset-0 z-[1]' style={overlayStyle} aria-hidden />
+                    )}
 
                     <div className='pointer-events-auto absolute top-4 right-4 z-50'>
                         <ThemeCustomizer />
