@@ -21,11 +21,13 @@ import { MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ChatbotContainer from './ChatbotContainer';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 export default function ChatbotWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();
     const { t } = useTranslation();
+    const { settings } = useSettings();
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -46,7 +48,8 @@ export default function ChatbotWidget() {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    const shouldShow = pathname?.startsWith('/server/');
+    const chatbotEnabled = settings?.chatbot_enabled === 'true';
+    const shouldShow = pathname?.startsWith('/server/') && chatbotEnabled;
 
     if (!shouldShow) return null;
 
