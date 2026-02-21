@@ -196,14 +196,27 @@ class TicketsController
         // Enrich ticket data
         $ticket = $this->enrichTicketData($ticket);
 
-        // Get messages for this ticket
-        $messages = TicketMessage::getByTicketId((int) $ticket['id'], 100, 0);
+        // Get messages for this ticket (exclude internal notes from regular users)
+        $messages = array_values(array_filter(
+            TicketMessage::getByTicketId((int) $ticket['id'], 100, 0),
+            static fn (array $message): bool => empty($message['is_internal'])
+        ));
         foreach ($messages as &$message) {
             $message = $this->enrichMessageData($message);
         }
 
-        // Get attachments for this ticket
-        $attachments = TicketAttachment::getAll((int) $ticket['id'], null, 100, 0);
+        // Get attachments for this ticket (only those linked to visible non-internal messages)
+        $visibleMessageIds = array_map(static fn (array $message): int => (int) $message['id'], $messages);
+        $attachments = array_values(array_filter(
+            TicketAttachment::getAll((int) $ticket['id'], null, 100, 0),
+            static function (array $attachment) use ($visibleMessageIds): bool {
+                if (!isset($attachment['message_id']) || $attachment['message_id'] === null) {
+                    return true;
+                }
+
+                return in_array((int) $attachment['message_id'], $visibleMessageIds, true);
+            }
+        ));
 
         return ApiResponse::success([
             'ticket' => $ticket,
@@ -686,6 +699,9 @@ class TicketsController
             $message = TicketMessage::getById($messageId);
             if (!$message || (int) $message['ticket_id'] !== (int) $ticket['id']) {
                 return ApiResponse::error('Invalid message ID', 'INVALID_MESSAGE_ID', 400);
+            }
+            if (!empty($message['is_internal'])) {
+                return ApiResponse::error('Cannot attach files to internal messages', 'ACCESS_DENIED', 403);
             }
         }
 
