@@ -10,10 +10,13 @@
 
 - Introduced seamless Ctrl+S (or Cmd+S) keyboard shortcut support in the file manager—enabling quick and convenient file saving. by @nayskutzu
 - Default user profile pictures now automatically use the panel’s app logo URL for a more unified look. by @nayskutzu
+- Admin users can now seamlessly access and view all servers directly from the dashboard page. by @nayskutzu
 
 ### Fixed
 
 - Enhance error handling in database operations by @nayskutzu
+- Fixed an issue where subusers lacked write permissions for file editing. by @nayskutzu
+- Fixed an issue where servers appeared unassignable or were visually misplaced in certain areas of the interface. by @nayskutzu
 
 ## v1.2.4 STABLE
 
