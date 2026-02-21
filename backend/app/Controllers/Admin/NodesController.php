@@ -938,7 +938,7 @@ class NodesController
                         new OA\Property(property: 'config_url', type: 'string', description: 'Full URL to fetch config (GET with Wings Bearer token)'),
                         new OA\Property(property: 'install_command', type: 'string', description: 'Step 1: Install FeatherWings on the node (curl get.featherpanel.com/installer.sh)'),
                         new OA\Property(property: 'setup_command', type: 'string', description: 'Step 2: Fetch config and restart FeatherWings'),
-                        new OA\Property(property: 'config_path_hint', type: 'string', description: 'Suggested config path on the node (e.g. /etc/featherwings/config.yml)'),
+                        new OA\Property(property: 'config_path_hint', type: 'string', description: 'Suggested config path on the node (e.g. /etc/featherpanel/config.yml)'),
                     ]
                 )
             ),
@@ -959,8 +959,8 @@ class NodesController
         $tokenId = $node['daemon_token_id'] ?? '';
         $tokenSecret = $node['daemon_token'] ?? '';
         $bearer = $tokenId . '.' . $tokenSecret;
-        $configPath = '/etc/featherwings/config.yml';
-        $configDir = '/etc/featherwings';
+        $configPath = '/etc/featherpanel/config.yml';
+        $configDir = '/etc/featherpanel';
 
         $installCommand = 'curl -sSL https://get.featherpanel.com/installer.sh | bash';
         // Create config dir if missing, fetch config, then restart FeatherWings

@@ -34,7 +34,7 @@ class PluginManagerControllerTest extends TestCase
             define('APP_ADDONS_DIR', dirname(__DIR__) . '/storage/addons');
         }
         if (!defined('APP_DEBUG')) {
-            define('APP_DEBUG', false);
+            define('APP_DEBUG', true);
         }
 
         $this->controller = new PluginManagerController();

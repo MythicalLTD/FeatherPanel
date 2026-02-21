@@ -2779,7 +2779,7 @@
 				"setup_step_2": "Step 2 — Fetch config and restart FeatherWings",
 				"copy_setup_command": "Copy command",
 				"setup_command_copied": "Setup command copied to clipboard",
-				"setup_command_then": "Step 2 creates /etc/featherwings if needed, writes the config, and restarts FeatherWings. Run step 1 first if FeatherWings is not installed.",
+				"setup_command_then": "Step 2 creates /etc/featherpanel if needed, writes the config, and restarts FeatherWings. Run step 1 first if FeatherWings is not installed.",
 				"setup_command_unavailable": "Setup command could not be loaded."
 			},
 			"columns": {},
