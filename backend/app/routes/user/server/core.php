@@ -37,6 +37,19 @@ return function (RouteCollection $routes): void {
         'user-servers'
     );
 
+    // All servers excluding current user's (admin only) - for dashboard "All Servers" tab
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'session-servers-all-others',
+        '/api/user/servers/all-others',
+        function (Request $request) {
+            return (new ServerUserController())->getAdminAllOtherServers($request);
+        },
+        ['GET'],
+        Rate::perSecond(2),
+        'user-servers-all-others'
+    );
+
     // Rate limit: Admin can override in ratelimit.json, default is 30 per minute
     App::getInstance(true)->registerServerRoute(
         $routes,

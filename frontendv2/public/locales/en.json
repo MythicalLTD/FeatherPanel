@@ -460,6 +460,8 @@
 		"folderDescription": "Description (Optional)",
 		"folderDescriptionPlaceholder": "Describe this folder...",
 		"allServers": "All Servers",
+		"myServers": "My Servers",
+		"allServersAdmin": "All Servers",
 		"byFolder": "By Folder",
 		"unassigned": "Unassigned",
 		"node": "Node",
@@ -4269,7 +4271,8 @@
 					"created": "Created",
 					"actions": "Actions",
 					"offline": "Offline",
-					"no_servers": "No servers found for this user."
+					"no_servers": "No servers found for this user.",
+					"viewAll": "View all servers"
 				},
 				"activities": {
 					"title": "Activities",
@@ -4288,6 +4291,14 @@
 					"actions": "Actions",
 					"no_mails": "No mails found."
 				}
+			},
+			"servers": {
+				"title": "User Servers",
+				"description": "Servers owned by {{username}}",
+				"descriptionGeneric": "Servers owned by this user",
+				"backToUser": "Back to user",
+				"noServers": "No servers",
+				"noServersDescription": "This user does not own any servers."
 			},
 			"messages": {
 				"created": "User created successfully",

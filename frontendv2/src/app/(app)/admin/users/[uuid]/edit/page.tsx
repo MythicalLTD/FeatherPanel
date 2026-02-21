@@ -193,7 +193,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             });
 
             try {
-                const serversRes = await axios.get(`/api/admin/users/${resolvedParams.uuid}/servers`);
+                const serversRes = await axios.get(`/api/admin/users/${resolvedParams.uuid}/servers`, {
+                    params: { limit: 50 },
+                });
                 setOwnedServers(serversRes.data?.data?.servers || []);
             } catch {
                 setOwnedServers([]);
@@ -682,7 +684,19 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 </div>
 
                 <TabsContent value='servers'>
-                    <PageCard title={t('admin.users.edit.servers.title')} icon={ServerIcon}>
+                    <PageCard
+                        title={t('admin.users.edit.servers.title')}
+                        icon={ServerIcon}
+                        action={
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => router.push(`/admin/users/${resolvedParams.uuid}/servers`)}
+                            >
+                                {t('admin.users.edit.servers.viewAll', { defaultValue: 'View all servers' })}
+                            </Button>
+                        }
+                    >
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>

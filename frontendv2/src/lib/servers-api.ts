@@ -51,10 +51,18 @@ interface ServersResponse {
 
 // Servers API
 export const serversApi = {
-    // Get all servers
+    // Get all servers (owned + subuser, or viewAll for full admin list)
     getServers: async (viewAll = false, page = 1, perPage = 10): Promise<ServersResponse> => {
         const response = await api.get<ApiResponse<ServersResponse>>('/user/servers', {
             params: { view_all: viewAll, page, per_page: perPage },
+        });
+        return response.data.data;
+    },
+
+    // Get all servers excluding current user's (admin only) - for "All Servers" tab
+    getAdminAllOtherServers: async (page = 1, perPage = 10, search = ''): Promise<ServersResponse> => {
+        const response = await api.get<ApiResponse<ServersResponse>>('/user/servers/all-others', {
+            params: { page, per_page: perPage, search },
         });
         return response.data.data;
     },

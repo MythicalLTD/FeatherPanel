@@ -56,6 +56,8 @@ import {
     LayoutGrid,
     List,
 } from 'lucide-react';
+import { useSession } from '@/contexts/SessionContext';
+import Permissions from '@/lib/permissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { ServerCard } from '@/components/servers/ServerCard';
@@ -64,6 +66,8 @@ import { FolderDialog } from '@/components/servers/FolderDialog';
 
 export default function ServersPage() {
     const { t } = useTranslation();
+    const { hasPermission } = useSession();
+    const canViewAllServers = hasPermission(Permissions.ADMIN_SERVERS_VIEW);
 
     const sortOptions = [
         { id: 'name', name: t('servers.sort.name') },
@@ -118,6 +122,9 @@ export default function ServersPage() {
         to: 0,
     });
 
+    // Admin: "My Servers" vs "All Servers" (others' servers)
+    const [serverScope, setServerScope] = useState<'mine' | 'all'>('mine');
+
     const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-servers');
 
     useEffect(() => {
@@ -155,12 +162,52 @@ export default function ServersPage() {
         [pagination.per_page, t, connectServers],
     );
 
+    const fetchAllOtherServers = useCallback(
+        async (page = 1) => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                const response = await serversApi.getAdminAllOtherServers(
+                    page,
+                    pagination.per_page,
+                    searchQuery,
+                );
+
+                const serversArray = Array.isArray(response.servers) ? response.servers : [];
+                setServers(serversArray);
+                setPagination(response.pagination);
+
+                if (serversArray.length > 0) {
+                    const serverUuids = serversArray.map((s) => s.uuidShort);
+                    void connectServers(serverUuids);
+                }
+            } catch (err) {
+                console.error('Failed to fetch all other servers', err);
+                setError(err instanceof Error ? err.message : t('servers.errorLoading'));
+            } finally {
+                setLoading(false);
+            }
+        },
+        [pagination.per_page, searchQuery, t, connectServers],
+    );
+
     const fetchServersRef = useRef(fetchServers);
     fetchServersRef.current = fetchServers;
 
     useEffect(() => {
-        fetchServersRef.current(1, viewMode === 'folders');
-    }, [viewMode]);
+        if (serverScope === 'all') {
+            void fetchAllOtherServers(1);
+        } else {
+            fetchServersRef.current(1, viewMode === 'folders');
+        }
+    }, [viewMode, serverScope, fetchAllOtherServers]);
+
+    useEffect(() => {
+        if (serverScope === 'all') {
+            void fetchAllOtherServers(1);
+        }
+    }, [serverScope, searchQuery, fetchAllOtherServers]);
 
     useEffect(() => {
         return () => {
@@ -220,6 +267,12 @@ export default function ServersPage() {
     };
 
     const changePage = (newPage: number) => {
+        if (serverScope === 'all') {
+            if (newPage >= 1 && newPage <= pagination.total_pages) {
+                void fetchAllOtherServers(newPage);
+            }
+            return;
+        }
         if (viewMode === 'folders') return;
         if (newPage >= 1 && newPage <= pagination.total_pages) {
             fetchServers(newPage, false);
@@ -369,7 +422,9 @@ export default function ServersPage() {
                         </div>
 
                         <button
-                            onClick={() => fetchServers()}
+                            onClick={() =>
+                                serverScope === 'all' ? void fetchAllOtherServers(pagination.current_page) : fetchServers()
+                            }
                             disabled={loading}
                             className='p-2.5 bg-background border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-50'
                             title={t('servers.refresh')}
@@ -408,6 +463,101 @@ export default function ServersPage() {
             )}
 
             {!loading && !error && (
+                <>
+                    {canViewAllServers && (
+                        <div className='flex gap-2 p-1 bg-card rounded-xl border border-border w-fit mb-6'>
+                            <button
+                                type='button'
+                                onClick={() => setServerScope('mine')}
+                                className={cn(
+                                    'px-6 py-3 text-sm font-semibold rounded-lg transition-all',
+                                    serverScope === 'mine'
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                                )}
+                            >
+                                {t('servers.myServers')}
+                            </button>
+                            <button
+                                type='button'
+                                onClick={() => setServerScope('all')}
+                                className={cn(
+                                    'px-6 py-3 text-sm font-semibold rounded-lg transition-all',
+                                    serverScope === 'all'
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                                )}
+                            >
+                                {t('servers.allServersAdmin')} ({serverScope === 'all' ? pagination.total_records : '…'})
+                            </button>
+                        </div>
+                    )}
+
+                    {serverScope === 'all' ? (
+                        <div className='space-y-6'>
+                            {filteredServers.length === 0 ? (
+                                <EmptyState searchQuery={searchQuery} t={t} />
+                            ) : (
+                                <>
+                                    <div
+                                        className={cn(
+                                            selectedLayout === 'grid'
+                                                ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                                                : 'flex flex-col gap-4',
+                                        )}
+                                    >
+                                        {filteredServers.map((server) => (
+                                            <ServerCard
+                                                key={server.id}
+                                                server={server}
+                                                layout={selectedLayout}
+                                                serverUrl={`/server/${server.uuidShort}`}
+                                                liveStats={getServerLiveStats(server)}
+                                                isConnected={isServerConnected(server.uuidShort)}
+                                                t={t}
+                                                folders={[]}
+                                                onAssignFolder={() => {}}
+                                                onUnassignFolder={() => {}}
+                                            />
+                                        ))}
+                                    </div>
+                                    {pagination.total_pages > 1 && (
+                                        <div className='flex items-center justify-between py-6 px-4 mt-6 border-t border-border'>
+                                            <p className='text-sm text-muted-foreground'>
+                                                {t('servers.pagination.showing', {
+                                                    from: String(pagination.from),
+                                                    to: String(pagination.to),
+                                                    total: String(pagination.total_records),
+                                                })}
+                                            </p>
+                                            <div className='flex items-center gap-2'>
+                                                <button
+                                                    onClick={() => changePage(pagination.current_page - 1)}
+                                                    disabled={!pagination.has_prev || loading}
+                                                    className='p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                                >
+                                                    <ChevronLeft className='h-5 w-5' />
+                                                </button>
+                                                <span className='px-4 py-2 text-sm font-medium'>
+                                                    {t('servers.pagination.page', {
+                                                        current: String(pagination.current_page),
+                                                        total: String(pagination.total_pages),
+                                                    })}
+                                                </span>
+                                                <button
+                                                    onClick={() => changePage(pagination.current_page + 1)}
+                                                    disabled={!pagination.has_next || loading}
+                                                    className='p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                                >
+                                                    <ChevronRight className='h-5 w-5' />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    ) : (
                 <TabGroup
                     selectedIndex={viewMode === 'all' ? 0 : 1}
                     onChange={(index) => setViewMode(index === 0 ? 'all' : 'folders')}
@@ -626,6 +776,8 @@ export default function ServersPage() {
                         </TabPanel>
                     </TabPanels>
                 </TabGroup>
+                    )}
+                </>
             )}
 
             <FolderDialog

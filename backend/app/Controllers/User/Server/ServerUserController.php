@@ -474,6 +474,139 @@ class ServerUserController
         ], 'User servers fetched successfully', 200);
     }
 
+    /**
+     * Get all servers excluding those owned by the current user (admin only).
+     * Used on the user dashboard "All Servers" tab for admins.
+     */
+    public function getAdminAllOtherServers(Request $request): Response
+    {
+        $user = $request->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        if (!PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SERVERS_VIEW)) {
+            return ApiResponse::error('You do not have permission to view other users\' servers', 'PERMISSION_DENIED', 403);
+        }
+
+        $page = (int) $request->query->get('page', 1);
+        $limit = (int) $request->query->get('limit', 10);
+        $search = $request->query->get('search', '');
+
+        if ($page < 1) {
+            $page = 1;
+        }
+        if ($limit < 1) {
+            $limit = 10;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
+
+        $total = Server::getCount($search, null, null, null, null, (int) $user['id']);
+        $servers = Server::searchServers(
+            page: $page,
+            limit: $limit,
+            search: $search,
+            fields: [],
+            sortBy: 'id',
+            sortOrder: 'DESC',
+            ownerId: null,
+            excludeOwnerId: (int) $user['id'],
+        );
+
+        foreach ($servers as &$server) {
+            $server['is_subuser'] = false;
+            $server['subuser_permissions'] = [];
+            $server['subuser_id'] = null;
+            $owner = \App\Chat\User::getUserById($server['owner_id']);
+            $server['owner'] = $owner ? [
+                'id' => $owner['id'],
+                'username' => $owner['username'],
+                'email' => $owner['email'],
+                'avatar' => $owner['avatar'] ?? null,
+            ] : null;
+
+            $node = Node::getNodeById($server['node_id']);
+            $server['node'] = [
+                'name' => $node['name'] ?? null,
+                'maintenance_mode' => $node['maintenance_mode'] ?? null,
+                'fqdn' => $node['fqdn'] ?? null,
+                'behind_proxy' => $node['behind_proxy'] ?? null,
+            ];
+
+            $location = null;
+            if (isset($node['location_id']) && $node['location_id'] > 0) {
+                $locationData = Location::getById((int) $node['location_id']);
+                if ($locationData) {
+                    $location = [
+                        'id' => $locationData['id'] ?? null,
+                        'name' => $locationData['name'] ?? null,
+                        'description' => $locationData['description'] ?? null,
+                        'flag_code' => $locationData['flag_code'] ?? null,
+                    ];
+                }
+            }
+            $server['location'] = $location;
+
+            $server['realm'] = \App\Chat\Realm::getById($server['realms_id']);
+            $server['realm'] = [
+                'name' => $server['realm']['name'] ?? null,
+                'description' => $server['realm']['description'] ?? null,
+                'logo' => $server['realm']['logo'] ?? null,
+            ];
+            $server['spell'] = Spell::getSpellById($server['spell_id']);
+            $server['spell'] = [
+                'name' => $server['spell']['name'] ?? null,
+                'description' => $server['spell']['description'] ?? null,
+                'banner' => $server['spell']['banner'] ?? null,
+            ];
+            $server['allocation'] = Allocation::getAllocationById($server['allocation_id']);
+            $server['allocation'] = [
+                'ip' => $server['allocation']['ip'] ?? null,
+                'port' => $server['allocation']['port'] ?? null,
+                'ip_alias' => $server['allocation']['ip_alias'] ?? null,
+            ];
+
+            unset(
+                $server['external_id'],
+                $server['node_id'],
+                $server['skip_scripts'],
+                $server['allocation_id'],
+                $server['realms_id'],
+                $server['spell_id'],
+                $server['startup'],
+                $server['image'],
+                $server['last_error'],
+                $server['installed_at'],
+                $server['updated_at'],
+                $server['created_at']
+            );
+        }
+
+        $totalPages = (int) ceil($total / $limit);
+        $from = ($page - 1) * $limit + 1;
+        $to = min($from + $limit - 1, $total);
+
+        return ApiResponse::success([
+            'servers' => $servers,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_records' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $search,
+                'has_results' => count($servers) > 0,
+            ],
+        ], 'All other servers fetched successfully', 200);
+    }
+
     #[OA\Get(
         path: '/api/user/servers/{uuidShort}',
         summary: 'Get server details',

@@ -408,6 +408,7 @@ class Server
      * @param string $sortBy Field to sort by (default: 'id')
      * @param string $sortOrder 'ASC' or 'DESC' (default: 'ASC')
      * @param int|null $ownerId Filter by owner ID (optional)
+     * @param int|null $excludeOwnerId Exclude servers owned by this user ID (optional)
      * @param int|null $nodeId Filter by node ID (optional)
      * @param int|null $realmId Filter by realm ID (optional)
      * @param int|null $spellId Filter by spell ID (optional)
@@ -420,6 +421,7 @@ class Server
         string $sortBy = 'id',
         string $sortOrder = 'ASC',
         ?int $ownerId = null,
+        ?int $excludeOwnerId = null,
         ?int $nodeId = null,
         ?int $realmId = null,
         ?int $spellId = null,
@@ -444,6 +446,11 @@ class Server
         if ($ownerId !== null) {
             $where[] = 'owner_id = :owner_id';
             $params['owner_id'] = $ownerId;
+        }
+
+        if ($excludeOwnerId !== null) {
+            $where[] = 'owner_id != :exclude_owner_id';
+            $params['exclude_owner_id'] = $excludeOwnerId;
         }
 
         if ($nodeId !== null) {
@@ -660,6 +667,8 @@ class Server
 
     /**
      * Get the total number of servers.
+     *
+     * @param int|null $excludeOwnerId Exclude servers owned by this user ID (optional)
      */
     public static function getCount(
         string $search = '',
@@ -667,6 +676,7 @@ class Server
         ?int $nodeId = null,
         ?int $realmId = null,
         ?int $spellId = null,
+        ?int $excludeOwnerId = null,
     ): int {
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT COUNT(*) FROM ' . self::$table;
@@ -681,6 +691,11 @@ class Server
         if ($ownerId !== null) {
             $where[] = 'owner_id = :owner_id';
             $params['owner_id'] = $ownerId;
+        }
+
+        if ($excludeOwnerId !== null) {
+            $where[] = 'owner_id != :exclude_owner_id';
+            $params['exclude_owner_id'] = $excludeOwnerId;
         }
 
         if ($nodeId !== null) {

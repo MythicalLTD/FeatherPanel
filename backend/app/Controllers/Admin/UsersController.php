@@ -19,7 +19,12 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\User;
+use App\Chat\Node;
+use App\Chat\Server;
 use App\Chat\Subuser;
+use App\Chat\Realm;
+use App\Chat\Spell;
+use App\Chat\Allocation;
 use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\SsoToken;
@@ -875,17 +880,96 @@ class UsersController
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
 
-        $servers = \App\Chat\Server::searchServers(
-            page: 1,
-            limit: 1000,
-            search: '',
-            fields: ['id', 'name', 'description', 'status', 'uuidShort', 'uuid', 'created_at'],
+        $page = (int) $request->query->get('page', 1);
+        $limit = (int) $request->query->get('limit', 25);
+        $search = $request->query->get('search', '');
+
+        if ($page < 1) {
+            $page = 1;
+        }
+        if ($limit < 1) {
+            $limit = 25;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
+
+        $total = Server::getCount($search, (int) $user['id']);
+        $servers = Server::searchServers(
+            page: $page,
+            limit: $limit,
+            search: $search,
+            fields: [],
             sortBy: 'id',
-            sortOrder: 'ASC',
-            ownerId: (int) $user['id']
+            sortOrder: 'DESC',
+            ownerId: (int) $user['id'],
         );
 
-        return ApiResponse::success(['servers' => $servers], 'Owned servers fetched', 200);
+        foreach ($servers as &$server) {
+            $node = Node::getNodeById($server['node_id']);
+            $server['node'] = $node ? [
+                'id' => $node['id'],
+                'name' => $node['name'] ?? null,
+                'fqdn' => $node['fqdn'] ?? null,
+                'maintenance_mode' => (bool) ($node['maintenance_mode'] ?? false),
+            ] : null;
+
+            $server['realm'] = Realm::getById($server['realms_id']);
+            $server['realm'] = $server['realm'] ? [
+                'id' => $server['realm']['id'] ?? null,
+                'name' => $server['realm']['name'] ?? null,
+            ] : null;
+
+            $server['spell'] = Spell::getSpellById($server['spell_id']);
+            $server['spell'] = $server['spell'] ? [
+                'id' => $server['spell']['id'] ?? null,
+                'name' => $server['spell']['name'] ?? null,
+            ] : null;
+
+            $allocation = Allocation::getAllocationById($server['allocation_id']);
+            $server['allocation'] = $allocation ? [
+                'id' => $allocation['id'],
+                'ip' => $allocation['ip'] ?? null,
+                'port' => $allocation['port'] ?? null,
+                'ip_alias' => $allocation['ip_alias'] ?? null,
+            ] : null;
+
+            // Keep resource limits and status for admin view
+            unset(
+                $server['external_id'],
+                $server['node_id'],
+                $server['skip_scripts'],
+                $server['allocation_id'],
+                $server['realms_id'],
+                $server['spell_id'],
+                $server['startup'],
+                $server['image'],
+                $server['last_error'],
+                $server['installed_at'],
+            );
+        }
+
+        $totalPages = (int) ceil($total / $limit);
+        $from = ($page - 1) * $limit + 1;
+        $to = min($from + $limit - 1, $total);
+
+        return ApiResponse::success([
+            'servers' => $servers,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_records' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $search,
+                'has_results' => count($servers) > 0,
+            ],
+        ], 'Owned servers fetched', 200);
     }
 
     #[OA\Get(
