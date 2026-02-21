@@ -307,11 +307,11 @@ class SettingsController
             ],
             ConfigInterface::APP_LOGO_DARK => [
                 'name' => ConfigInterface::APP_LOGO_DARK,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_LOGO_DARK, 'https://cdn.mythical.systems/featherpanel/logo.png'),
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_LOGO_DARK, 'https://github.com/featherpanel-com.png'),
                 'description' => 'The logo of the application (For dark mode)',
                 'type' => 'text',
                 'required' => true,
-                'placeholder' => 'https://cdn.mythical.systems/featherpanel/logo.png',
+                'placeholder' => 'https://github.com/featherpanel-com.png',
                 'validation' => 'required|string|max:255',
                 'options' => [],
                 'category' => 'app',

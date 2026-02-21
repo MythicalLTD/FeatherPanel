@@ -905,7 +905,7 @@ class PterodactylImporterController
             }
             $roleId = $isRootAdmin ? 4 : 1; // 4 = admin, 1 = user
 			$config = App::getInstance(true)->getConfig();
-			$avatar = $config->getSetting(ConfigInterface::APP_LOGO_DARK, 'https://cdn.mythical.systems/featherpanel/logo.png');
+			$avatar = $config->getSetting(ConfigInterface::APP_LOGO_DARK, 'https://github.com/featherpanel-com.png');
             $userData = [
                 'uuid' => $user['uuid'],
                 'username' => $user['username'],

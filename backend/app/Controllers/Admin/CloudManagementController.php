@@ -370,7 +370,7 @@ class CloudManagementController
             // Get panel information
             $panelName = $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
             $panelUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
-            $logoUrl = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://cdn.mythical.systems/featherpanel/logo.png');
+            $logoUrl = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
 
             // Get or generate panel credentials
             $panelPublic = $config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '');

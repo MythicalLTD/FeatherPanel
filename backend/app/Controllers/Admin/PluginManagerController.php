@@ -324,7 +324,7 @@ class PluginManagerController
                     'version' => $version,
                     'target' => 'v2',
                     'author' => is_array($author) ? $author : [$author],
-                    'icon' => 'https://cdn.mythical.systems/featherpanel/logo.png',
+                    'icon' => 'https://github.com/featherpanel-com.png',
                     'requiredConfigs' => $requiredConfigs,
                     'dependencies' => $dependencies,
                 ],

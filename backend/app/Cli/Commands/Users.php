@@ -365,7 +365,7 @@ class Users extends App implements CommandBuilder
         $roleId = empty($roleIdInput) ? 1 : (int) $roleIdInput;
 
         $config = self::$app->getConfig();
-        $avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://cdn.mythical.systems/featherpanel/logo.png');
+        $avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
 
         $data = [
             'username' => $username,

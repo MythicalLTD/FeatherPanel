@@ -27,7 +27,7 @@ import { useSession } from '@/contexts/SessionContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import clsx from 'clsx';
@@ -290,9 +290,7 @@ export default function TicketViewPage() {
                 <div className='lg:col-span-8 flex flex-col bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden h-full'>
                     <div className='flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar space-y-8'>
                         <div className='flex gap-4 group'>
-                            <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50'>
-                                <AvatarFallback>OP</AvatarFallback>
-                            </Avatar>
+                            <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50' />
                             <div className='flex-1 space-y-1 max-w-[85%]'>
                                 <div className='flex items-center gap-2'>
                                     <span className='font-semibold text-sm'>{t('tickets.originalRequest')}</span>
@@ -327,7 +325,6 @@ export default function TicketViewPage() {
                                 >
                                     <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50 shrink-0'>
                                         <AvatarImage src={msg.user?.avatar} />
-                                        <AvatarFallback>{msg.user?.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
                                     </Avatar>
 
                                     <div

@@ -38,7 +38,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Select } from '@/components/ui/select-native';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -312,10 +312,15 @@ export default function UsersPage() {
             ) : (
                 <div className='grid grid-cols-1 gap-6'>
                     {users.map((user) => {
+                        const avatarSrc =
+                            user.avatar &&
+                            typeof user.avatar === 'string' &&
+                            (user.avatar.startsWith('http') || user.avatar.startsWith('/'))
+                                ? user.avatar
+                                : undefined;
                         const IconComponent = ({ className }: { className?: string }) => (
                             <Avatar className={className}>
-                                <AvatarImage src={user.avatar} alt={user.username} />
-                                <AvatarFallback>{user.username[0]?.toUpperCase()}</AvatarFallback>
+                                {avatarSrc && <AvatarImage src={avatarSrc} alt={user.username} />}
                             </Avatar>
                         );
 

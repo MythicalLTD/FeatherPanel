@@ -132,8 +132,8 @@ class WebAppController
     {
         $config = App::getInstance(true)->getConfig();
         $appName = $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
-        $appLogoWhite = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://cdn.mythical.systems/featherpanel/logo.png');
-        $appLogoDark = $config->getSetting(ConfigInterface::APP_LOGO_DARK, 'https://cdn.mythical.systems/featherpanel/logo.png');
+        $appLogoWhite = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
+        $appLogoDark = $config->getSetting(ConfigInterface::APP_LOGO_DARK, 'https://github.com/featherpanel-com.png');
 
         // PWA manifest with accurate FeatherPanel colors and enhanced styling
         $startUrl = '/';

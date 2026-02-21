@@ -51,8 +51,8 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_URL => 'https://featherpanel.mythical.systems',
             ConfigInterface::APP_DEVELOPER_MODE => 'false',
             ConfigInterface::APP_TIMEZONE => 'UTC',
-            ConfigInterface::APP_LOGO_WHITE => 'https://cdn.mythical.systems/featherpanel/logo.png',
-            ConfigInterface::APP_LOGO_DARK => 'https://cdn.mythical.systems/featherpanel/logo.png',
+            ConfigInterface::APP_LOGO_WHITE => 'https://github.com/featherpanel-com.png',
+            ConfigInterface::APP_LOGO_DARK => 'https://github.com/featherpanel-com.png',
 
             ConfigInterface::APP_SUPPORT_URL => 'https://discord.mythical.systems',
 

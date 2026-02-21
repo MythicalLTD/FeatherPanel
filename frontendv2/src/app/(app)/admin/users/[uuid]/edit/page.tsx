@@ -44,7 +44,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select-native';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -507,7 +507,6 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='flex flex-col items-center mb-6'>
                             <Avatar className='h-24 w-24 mb-4 ring-4 ring-background shadow-lg'>
                                 <AvatarImage src={user.avatar} alt={user.username} />
-                                <AvatarFallback className='text-2xl'>{user.username[0]}</AvatarFallback>
                             </Avatar>
                             <h2 className='text-xl font-bold'>{user.username}</h2>
                             <p className='text-muted-foreground text-sm'>{user.email}</p>

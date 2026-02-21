@@ -3,7 +3,7 @@ CREATE TABLE
 		`id` INT (11) NOT NULL AUTO_INCREMENT,
 		`name` VARCHAR(255) NOT NULL,
 		`description` TEXT,
-		`logo` VARCHAR(255) DEFAULT "https://cdn.mythical.systems/featherpanel/logo.png",
+		`logo` VARCHAR(255) DEFAULT "https://github.com/featherpanel-com.png",
 		`author` VARCHAR(255) DEFAULT "support@mythical.systems",
 		`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		`updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

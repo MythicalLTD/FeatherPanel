@@ -22,7 +22,10 @@ const Avatar = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElem
     ({ className, ...props }, ref) => (
         <div
             ref={ref}
-            className={cn('relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full', className)}
+            className={cn(
+                'relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full outline-none',
+                className,
+            )}
             {...props}
         />
     ),
@@ -30,27 +33,40 @@ const Avatar = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElem
 Avatar.displayName = 'Avatar';
 
 const AvatarImage = React.forwardRef<HTMLImageElement, React.ImgHTMLAttributes<HTMLImageElement>>(
-    ({ className, ...props }, ref) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-            ref={ref}
-            className={cn('aspect-square h-full w-full object-cover', className)}
-            alt={props.alt || 'Avatar'}
-            {...props}
-        />
-    ),
+    ({ className, src, onError, onLoad, ...props }, ref) => {
+        const [error, setError] = React.useState(false);
+        const [loaded, setLoaded] = React.useState(false);
+        const hasValidSrc = src && typeof src === 'string' && src.trim() !== '';
+
+        // Don't render img when no valid src or when load failed – avoids Firefox broken-image icon (grey dot)
+        if (!hasValidSrc || error) {
+            return null;
+        }
+
+        return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+                ref={ref}
+                src={src}
+                className={cn(
+                    'aspect-square h-full w-full object-cover object-center outline-none transition-opacity duration-150',
+                    loaded ? 'opacity-100' : 'opacity-0',
+                    className,
+                )}
+                alt={props.alt || 'Avatar'}
+                onLoad={(e) => {
+                    setLoaded(true);
+                    onLoad?.(e);
+                }}
+                onError={(e) => {
+                    setError(true);
+                    onError?.(e);
+                }}
+                {...props}
+            />
+        );
+    },
 );
 AvatarImage.displayName = 'AvatarImage';
 
-const AvatarFallback = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-    ({ className, ...props }, ref) => (
-        <div
-            ref={ref}
-            className={cn('flex h-full w-full items-center justify-center rounded-full bg-muted', className)}
-            {...props}
-        />
-    ),
-);
-AvatarFallback.displayName = 'AvatarFallback';
-
-export { Avatar, AvatarImage, AvatarFallback };
+export { Avatar, AvatarImage };

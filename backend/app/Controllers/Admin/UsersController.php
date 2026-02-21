@@ -523,7 +523,7 @@ class UsersController
         // Generate UUID
         $data['uuid'] = UUIDUtils::generateV4();
 		$config = App::getInstance(true)->getConfig();
-		$avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://cdn.mythical.systems/featherpanel/logo.png');
+		$avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
         $data['remember_token'] = User::generateAccountToken();
         // Set default avatar if not provided
         if (empty($data['avatar'])) {

@@ -189,7 +189,7 @@ class Saas extends App implements CommandBuilder
 
         $uuid = UUIDUtils::generateV4();
 		$config = self::$app->getConfig();
-		$avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://cdn.mythical.systems/featherpanel/logo.png');
+		$avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
 
         $data = [
             'username' => $username,

@@ -25,7 +25,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import Link from 'next/link';
@@ -472,9 +472,6 @@ export default function TicketViewPage() {
                         <div className='flex gap-4 group'>
                             <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50'>
                                 <AvatarImage src={ticket.user.avatar} />
-                                <AvatarFallback className='bg-primary/10 text-primary font-bold'>
-                                    {ticket.user.username?.charAt(0)}
-                                </AvatarFallback>
                             </Avatar>
                             <div className='flex-1 space-y-1 max-w-[85%]'>
                                 <div className='flex items-center gap-2'>
@@ -512,16 +509,6 @@ export default function TicketViewPage() {
                                 >
                                     <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50 shrink-0'>
                                         <AvatarImage src={msg.user?.avatar} />
-                                        <AvatarFallback
-                                            className={cn(
-                                                'font-bold',
-                                                isStaff
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-muted text-muted-foreground',
-                                            )}
-                                        >
-                                            {msg.user?.username?.charAt(0)}
-                                        </AvatarFallback>
                                     </Avatar>
 
                                     <div

@@ -40,8 +40,8 @@ export default function AppPreloader() {
         theme === 'dark'
             ? settings?.app_logo_dark ||
               settings?.app_logo_white ||
-              'https://cdn.mythical.systems/featherpanel/logo.png'
-            : settings?.app_logo_white || 'https://cdn.mythical.systems/featherpanel/logo.png';
+              'https://github.com/featherpanel-com.png'
+            : settings?.app_logo_white || 'https://github.com/featherpanel-com.png';
 
     return (
         <div className='fixed inset-0 z-9999 flex items-center justify-center bg-background animate-fade-in overflow-hidden'>
