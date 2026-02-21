@@ -75,12 +75,8 @@ export function ServerCard({
             >
                 {server.spell?.banner && (
                     <Link
-                        href={accessible ? serverUrl : '#'}
-                        className={cn(
-                            'w-full sm:w-24 h-32 sm:h-16 rounded-lg overflow-hidden shrink-0 block',
-                            accessible && 'cursor-pointer',
-                        )}
-                        onClick={(e) => !accessible && e.preventDefault()}
+                        href={serverUrl}
+                        className='w-full sm:w-24 h-32 sm:h-16 rounded-lg overflow-hidden shrink-0 block cursor-pointer'
                     >
                         <div
                             className='w-full h-full bg-cover bg-center'
@@ -89,11 +85,7 @@ export function ServerCard({
                     </Link>
                 )}
 
-                <Link
-                    href={accessible ? serverUrl : '#'}
-                    className={cn('flex-1 min-w-0 w-full block', accessible && 'cursor-pointer')}
-                    onClick={(e) => !accessible && e.preventDefault()}
-                >
+                <Link href={serverUrl} className='flex-1 min-w-0 w-full block cursor-pointer'>
                     <div className='flex items-center gap-3 mb-2'>
                         <h3 className='text-lg font-semibold truncate'>{server.name}</h3>
                         <StatusBadge status={status} t={t} />
@@ -108,11 +100,7 @@ export function ServerCard({
                 </Link>
 
                 <div className='flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0'>
-                    <Link
-                        href={accessible ? serverUrl : '#'}
-                        className={cn('flex items-center gap-4 sm:gap-6', accessible && 'cursor-pointer')}
-                        onClick={(e) => !accessible && e.preventDefault()}
-                    >
+                    <Link href={serverUrl} className='flex items-center gap-4 sm:gap-6 cursor-pointer'>
                         <div className='text-sm'>
                             <div className='text-muted-foreground text-xs sm:text-sm'>{t('servers.node')}</div>
                             <div className='font-medium text-sm sm:text-base'>{server.node?.name}</div>
@@ -204,11 +192,7 @@ export function ServerCard({
                 accessible ? 'hover:border-primary hover:shadow-2xl hover:shadow-primary/10' : 'opacity-60',
             )}
         >
-            <Link
-                href={accessible ? serverUrl : '#'}
-                className={cn('relative block', accessible && 'cursor-pointer')}
-                onClick={(e) => !accessible && e.preventDefault()}
-            >
+            <Link href={serverUrl} className='relative block cursor-pointer'>
                 {server.spell?.banner && (
                     <div className='relative h-40 overflow-hidden'>
                         <div
@@ -230,11 +214,7 @@ export function ServerCard({
 
             <div className='p-4 sm:p-6 space-y-4'>
                 <div className='flex items-start justify-between gap-4'>
-                    <Link
-                        href={accessible ? serverUrl : '#'}
-                        className={cn('flex-1 min-w-0 block', accessible && 'cursor-pointer')}
-                        onClick={(e) => !accessible && e.preventDefault()}
-                    >
+                    <Link href={serverUrl} className='flex-1 min-w-0 block cursor-pointer'>
                         <h3 className='text-xl font-bold truncate mb-1'>{server.name}</h3>
                         <p className='text-sm text-muted-foreground line-clamp-2'>
                             {server.description || t('servers.noDescription')}
@@ -312,11 +292,7 @@ export function ServerCard({
                     </Menu>
                 </div>
 
-                <Link
-                    href={accessible ? serverUrl : '#'}
-                    className={cn('flex items-center gap-2', accessible && 'cursor-pointer')}
-                    onClick={(e) => !accessible && e.preventDefault()}
-                >
+                <Link href={serverUrl} className='flex items-center gap-2 cursor-pointer'>
                     <StatusBadge status={status} t={t} />
                     {server.is_subuser && (
                         <span className='px-2 py-1 bg-blue-500/10 text-blue-500 text-xs font-medium rounded-lg'>
@@ -325,11 +301,7 @@ export function ServerCard({
                     )}
                 </Link>
 
-                <Link
-                    href={accessible ? serverUrl : '#'}
-                    className={cn('grid grid-cols-2 gap-3 pt-2', accessible && 'cursor-pointer')}
-                    onClick={(e) => !accessible && e.preventDefault()}
-                >
+                <Link href={serverUrl} className='grid grid-cols-2 gap-3 pt-2 cursor-pointer'>
                     <div className='text-sm'>
                         <div className='text-muted-foreground mb-1'>{t('servers.node')}</div>
                         <div className='font-medium truncate'>{server.node?.name || 'N/A'}</div>
@@ -340,11 +312,7 @@ export function ServerCard({
                     </div>
                 </Link>
 
-                <Link
-                    href={accessible ? serverUrl : '#'}
-                    className={cn('space-y-2 pt-2 block', accessible && 'cursor-pointer')}
-                    onClick={(e) => !accessible && e.preventDefault()}
-                >
+                <Link href={serverUrl} className='space-y-2 pt-2 block cursor-pointer'>
                     <ResourceBar
                         label={t('servers.memoryShort')}
                         used={memory}
