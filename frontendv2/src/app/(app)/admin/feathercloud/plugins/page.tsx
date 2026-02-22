@@ -380,8 +380,7 @@ export default function PluginsPage() {
                                                 : null,
                                             {
                                                 label: t('admin.marketplace.plugins.featured'),
-                                                className:
-                                                    'bg-amber-500 text-white border-amber-600 font-bold px-3 ',
+                                                className: 'bg-amber-500 text-white border-amber-600 font-bold px-3 ',
                                             },
                                         ].filter(Boolean) as ResourceBadge[]
                                     }

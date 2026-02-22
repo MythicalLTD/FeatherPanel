@@ -851,10 +851,7 @@ export default function TicketViewPage() {
                     </div>
 
                     <div className='pt-4 pb-2'>
-                        <Button
-                            type='submit'
-                            className='w-full h-12 text-lg font-black uppercase tracking-tight '
-                        >
+                        <Button type='submit' className='w-full h-12 text-lg font-black uppercase tracking-tight '>
                             {t('common.save')}
                         </Button>
                     </div>

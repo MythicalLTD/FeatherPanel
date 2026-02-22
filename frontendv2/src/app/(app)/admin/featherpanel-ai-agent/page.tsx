@@ -623,12 +623,7 @@ export default function FeatherAiAgentPage() {
                             <Button variant='outline' className='h-12 px-8' onClick={resetSettings}>
                                 Reset
                             </Button>
-                            <Button
-                                type='submit'
-                                size='lg'
-                                className='h-12 px-8 gap-2 '
-                                disabled={saving}
-                            >
+                            <Button type='submit' size='lg' className='h-12 px-8 gap-2 ' disabled={saving}>
                                 {saving ? <RefreshCw className='h-4 w-4 animate-spin' /> : <Save className='h-4 w-4' />}
                                 {saving ? 'Saving...' : 'Save Changes'}
                             </Button>

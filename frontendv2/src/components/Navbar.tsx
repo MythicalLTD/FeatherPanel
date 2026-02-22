@@ -64,7 +64,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const canAccessAdmin = hasPermission(Permissions.ADMIN_DASHBOARD_VIEW);
 
     return (
-        <div className='sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/60 px-4 sm:gap-x-6 sm:px-6 lg:px-8'>
+        <div className='sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card/80 backdrop-blur-xl supports-backdrop-filter:bg-card/60 px-4 sm:gap-x-6 sm:px-6 lg:px-8'>
             <button
                 type='button'
                 className='-m-2.5 p-2.5 text-muted-foreground lg:hidden hover:text-foreground transition-colors'

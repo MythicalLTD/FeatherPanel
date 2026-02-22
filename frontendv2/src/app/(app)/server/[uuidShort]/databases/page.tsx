@@ -747,10 +747,7 @@ export default function ServerDatabasesPage() {
                         >
                             {t('common.cancel')}
                         </Button>
-                        <Button
-                            className='h-12 flex-1 rounded-xl font-bold'
-                            onClick={confirmSensitiveWarning}
-                        >
+                        <Button className='h-12 flex-1 rounded-xl font-bold' onClick={confirmSensitiveWarning}>
                             {t('serverDatabases.viewDatabase')}
                         </Button>
                     </DialogFooter>

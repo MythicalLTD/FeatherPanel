@@ -358,11 +358,7 @@ export default function ServerSubusersPage() {
                     icon={Users}
                     action={
                         canCreate && (
-                            <Button
-                                size='default'
-                                onClick={() => setIsAddOpen(true)}
-                                className='h-14 px-10 text-lg '
-                            >
+                            <Button size='default' onClick={() => setIsAddOpen(true)} className='h-14 px-10 text-lg '>
                                 <Plus className='h-6 w-6 mr-2' />
                                 {t('serverSubusers.addSubuser')}
                             </Button>

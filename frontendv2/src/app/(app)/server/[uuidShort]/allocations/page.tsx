@@ -397,11 +397,7 @@ export default function ServerAllocationsPage() {
                         icon={Network}
                         action={
                             canCreate && !limitReached ? (
-                                <Button
-                                    size='default'
-                                    onClick={handleAutoAllocate}
-                                    className='h-14 px-10 text-lg'
-                                >
+                                <Button size='default' onClick={handleAutoAllocate} className='h-14 px-10 text-lg'>
                                     {t('serverAllocations.createFirstAllocation')}
                                 </Button>
                             ) : undefined

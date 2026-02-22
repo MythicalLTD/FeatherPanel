@@ -486,7 +486,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                                     </div>
                                 </Transition.Child>
 
-                                <div className='flex grow flex-col gap-y-5 overflow-y-auto bg-card border-r border-border'>
+                                <div className='flex grow flex-col gap-y-5 overflow-y-auto bg-card/70 backdrop-blur-xl border-r border-border/80'>
                                     <SidebarContent
                                         mobile
                                         collapsed={collapsed}
@@ -506,7 +506,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
             <div className='hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:flex-col'>
                 <div
                     className={cn(
-                        'flex grow flex-col gap-y-5 overflow-y-auto bg-card border-r border-border transition-all duration-300',
+                        'flex grow flex-col gap-y-5 overflow-y-auto bg-card/70 backdrop-blur-xl border-r border-border/80 transition-all duration-300',
                         collapsed ? 'w-16' : 'w-64',
                     )}
                 >

@@ -111,12 +111,7 @@ export function PullFileDialog({ open, onOpenChange, uuid, root, onSuccess }: Pu
                     <Button variant='ghost' onClick={() => onOpenChange(false)}>
                         {t('files.dialogs.pull.cancel')}
                     </Button>
-                    <Button
-                        variant='default'
-                        onClick={handlePull}
-                        disabled={loading || !url}
-                        className=''
-                    >
+                    <Button variant='default' onClick={handlePull} disabled={loading || !url} className=''>
                         {t('files.dialogs.pull.pull_button')}
                     </Button>
                 </DialogFooter>

@@ -224,7 +224,7 @@ export default function DashboardPage() {
                                 ))}
                             </div>
                         ) : (
-                            <div className='rounded-xl border border-border bg-card p-12 text-center'>
+                            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-12 text-center'>
                                 <Server className='h-12 w-12 text-muted-foreground/50 mx-auto mb-3' />
                                 <p className='text-muted-foreground font-medium'>
                                     {t('dashboard.recent_servers.no_servers')}
@@ -249,7 +249,7 @@ export default function DashboardPage() {
 
                 <div className='space-y-8'>
                     {user && (
-                        <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
+                        <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
                             <div className='flex items-center gap-4'>
                                 {user.avatar ? (
                                     <Image
@@ -291,7 +291,7 @@ export default function DashboardPage() {
                         </div>
                     )}
 
-                    <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
+                    <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
                         <div className='flex items-center justify-between mb-6'>
                             <h2 className='text-lg font-bold'>{t('dashboard.activity.title')}</h2>
                             <Link

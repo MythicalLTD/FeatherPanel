@@ -629,7 +629,7 @@ export default function CreateServerPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-servers-create', 'after-header')} />
 
-            <div className='mt-8 mb-12 p-6 bg-card rounded-2xl border border-border/50'>
+            <div className='mt-8 mb-12 p-6 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
                 <StepIndicator steps={wizardSteps} currentStep={currentStep} />
             </div>
 
@@ -680,7 +680,7 @@ export default function CreateServerPage() {
                 {currentStep === 6 && <Step6Review {...stepProps} />}
             </div>
 
-            <div className='flex items-center justify-between mt-8 p-6 bg-card rounded-2xl border border-border/50'>
+            <div className='flex items-center justify-between mt-8 p-6 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
                 <Button variant='outline' onClick={handlePrevious} disabled={currentStep === 1} className='gap-2'>
                     <ChevronLeft className='h-4 w-4' />
                     {t('admin.servers.form.wizard.previous')}

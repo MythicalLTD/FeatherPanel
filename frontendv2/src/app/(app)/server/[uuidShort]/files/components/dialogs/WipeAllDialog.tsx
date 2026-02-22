@@ -85,12 +85,7 @@ export function WipeAllDialog({ open, onOpenChange, uuid, onSuccess }: WipeAllDi
                     <Button variant='ghost' onClick={() => onOpenChange(false)} className='hover:bg-white/5'>
                         {t('files.dialogs.wipe.cancel')}
                     </Button>
-                    <Button
-                        variant='destructive'
-                        onClick={handleWipe}
-                        disabled={loading}
-                        className=' h-10 px-6'
-                    >
+                    <Button variant='destructive' onClick={handleWipe} disabled={loading} className=' h-10 px-6'>
                         <Trash2 className='mr-2 h-4 w-4' />
                         {t('files.dialogs.wipe.confirm')}
                     </Button>

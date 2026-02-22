@@ -110,12 +110,7 @@ export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuc
                     <Button variant='ghost' onClick={() => onOpenChange(false)}>
                         {t('files.dialogs.permissions.cancel')}
                     </Button>
-                    <Button
-                        variant='default'
-                        onClick={handleUpdate}
-                        disabled={loading || !mode}
-                        className=' h-10 px-6'
-                    >
+                    <Button variant='default' onClick={handleUpdate} disabled={loading || !mode} className=' h-10 px-6'>
                         {t('files.dialogs.permissions.update')}
                     </Button>
                 </DialogFooter>

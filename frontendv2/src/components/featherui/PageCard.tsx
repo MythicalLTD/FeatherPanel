@@ -78,19 +78,12 @@ export function PageCard({
     return (
         <div
             className={cn(
-                'backdrop-blur-3xl border rounded-3xl p-8 space-y-6 relative overflow-hidden group transition-all hover-lift hover-scale',
+                'backdrop-blur-xl border rounded-3xl p-8 space-y-6 relative overflow-hidden group transition-all',
                 styles.bg,
                 styles.border,
                 className,
             )}
         >
-            <div
-                className={cn(
-                    'absolute top-0 right-0 w-32 h-32 blur-2xl pointer-events-none transition-all duration-700 opacity-0 group-hover:opacity-100',
-                    styles.glow,
-                )}
-            />
-
             <div className='flex items-center justify-between border-b border-border/10 pb-6 relative z-10'>
                 <div className='flex items-center gap-4'>
                     {(Icon || iconSrc) && (

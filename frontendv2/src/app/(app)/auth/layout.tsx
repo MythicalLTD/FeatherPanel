@@ -58,9 +58,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                                     priority
                                 />
                             </div>
-                            <span className='text-xl font-bold tracking-tight text-foreground'>
-                                {appName}
-                            </span>
+                            <span className='text-xl font-bold tracking-tight text-foreground'>{appName}</span>
                         </Link>
                     </div>
 
