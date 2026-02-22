@@ -191,12 +191,33 @@ class ServerSchedule
     }
 
     /**
+     * Reset schedules stuck in processing for longer than the given minutes.
+     * Returns the number of schedules reset.
+     */
+    public static function resetStuckProcessing(int $stuckAfterMinutes = 15): int
+    {
+        if ($stuckAfterMinutes < 1) {
+            return 0;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET is_processing = 0, updated_at = NOW() WHERE is_processing = 1 AND updated_at < DATE_SUB(NOW(), INTERVAL :minutes MINUTE)');
+        $stmt->bindValue(':minutes', $stuckAfterMinutes, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->rowCount();
+    }
+
+    /**
      * Get schedules that are due to run.
+     * Uses PHP's current time (app timezone) for comparison so timezone matches
+     * the one used when calculating next_run_at, avoiding instant execution.
      */
     public static function getDueSchedules(): array
     {
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE is_active = 1 AND next_run_at <= NOW() AND is_processing = 0');
+        $now = date('Y-m-d H:i:s');
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE is_active = 1 AND next_run_at <= :now AND is_processing = 0');
+        $stmt->bindValue(':now', $now, \PDO::PARAM_STR);
         $stmt->execute();
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -540,6 +561,13 @@ class ServerSchedule
                 if (method_exists($schedule, 'getNextRunDate')) {
                     $base = self::resolveBaseDateTime($referenceTime);
                     $nextRun = $schedule->getNextRunDate($base, 0, false);
+                    $now = new \DateTime();
+
+                    // Ensure next run is strictly in the future to avoid schedules running instantly
+                    if ($nextRun <= $now) {
+                        $nextRun->modify('+1 second');
+                        $nextRun = $schedule->getNextRunDate($nextRun, 0, false);
+                    }
 
                     return $nextRun->format('Y-m-d H:i:s');
                 }

@@ -654,7 +654,7 @@ class ServerScheduleController
     #[OA\Delete(
         path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}',
         summary: 'Delete schedule',
-        description: 'Delete a schedule. Cannot delete schedules that are currently processing.',
+        description: 'Delete a schedule. Schedules that are currently processing can also be deleted (e.g. to clear stuck schedules).',
         tags: ['User - Server Schedules'],
         parameters: [
             new OA\Parameter(
@@ -682,7 +682,7 @@ class ServerScheduleController
                     ]
                 )
             ),
-            new OA\Response(response: 400, description: 'Bad request - Missing parameters or schedule is currently processing'),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters'),
             new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
             new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
             new OA\Response(response: 404, description: 'Not found - Server or schedule not found'),
@@ -714,10 +714,7 @@ class ServerScheduleController
             return ApiResponse::error('Schedule not found', 'SCHEDULE_NOT_FOUND', 404);
         }
 
-        // Check if schedule is currently processing
-        if ($schedule['is_processing']) {
-            return ApiResponse::error('Cannot delete schedule while it is processing', 'SCHEDULE_PROCESSING', 400);
-        }
+        // Allow delete even when processing so stuck schedules can be removed
 
         // Delete schedule
         if (!ServerSchedule::deleteSchedule($scheduleId)) {

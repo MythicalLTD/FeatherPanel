@@ -78,6 +78,12 @@ class AServerScheduleProcessor implements TimeTask
 
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aProcessing server schedules...');
 
+        // Reset schedules stuck in processing (e.g. cron crashed or timed out)
+        $stuckReset = ServerSchedule::resetStuckProcessing(15);
+        if ($stuckReset > 0) {
+            MinecraftColorCodeSupport::sendOutputWithNewLine('&eReset ' . $stuckReset . ' schedule(s) stuck in processing');
+        }
+
         // Get all due schedules
         $dueSchedules = ServerSchedule::getDueSchedules();
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aFound ' . count($dueSchedules) . ' due schedules');

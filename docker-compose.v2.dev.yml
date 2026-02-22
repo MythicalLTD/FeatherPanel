@@ -106,6 +106,7 @@ volumes:
     driver: local
   featherpanel_snapshots:
     driver: local
+  
 
 networks:
   featherpanel_network:

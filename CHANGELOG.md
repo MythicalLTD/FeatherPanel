@@ -25,6 +25,8 @@
 - Resolved an issue where internal notes could inadvertently become visible to users within the tickets area. by @nayskutzu
 - Fixed an issue in Firefox where both the fallback and user avatar would display simultaneously. by @nayskutzu
 - Fixed an issue where the chatbot would display even when disabled. by @nayskutzu
+- Schedules stuck in “processing” and not deletable by @nayskutzu
+- Schedules running instantly / ignoring time by @nayskutzu
 
 ## v1.2.4 STABLE
 
