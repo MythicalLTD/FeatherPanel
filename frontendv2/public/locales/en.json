@@ -727,6 +727,19 @@
 			"title": "Background Settings",
 			"customize": "Customize background",
 			"change": "Change Background",
+			"aurora": "Aurora",
+			"auroraDescription": "Animated backgrounds that match your theme colors",
+			"variants": {
+				"aurora": "Aurora",
+				"beams": "Beams",
+				"colorBends": "Color Bends",
+				"darkVeil": "Dark Veil",
+				"floatingLines": "Floating Lines",
+				"silk": "Silk"
+			},
+			"themeGradient": "Theme gradient",
+			"themeGradientDescription": "Subtle gradient using your main accent color",
+			"custom": "Custom",
 			"gradients": "Gradients",
 			"solidPattern": "Solid/Pattern",
 			"customImage": "Custom Image",
@@ -763,7 +776,14 @@
 			"orange": "Orange",
 			"pink": "Pink",
 			"teal": "Teal",
-			"yellow": "Yellow"
+			"yellow": "Yellow",
+			"white": "White",
+			"violet": "Violet",
+			"cyan": "Cyan",
+			"lime": "Lime",
+			"amber": "Amber",
+			"rose": "Rose",
+			"slate": "Slate"
 		},
 		"motion": {
 			"title": "Animations",

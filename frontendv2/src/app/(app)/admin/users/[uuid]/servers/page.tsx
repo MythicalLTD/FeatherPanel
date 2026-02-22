@@ -117,9 +117,10 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
 
     const fetchUser = useCallback(async () => {
         try {
-            const { data } = await axios.get<{ success: boolean; data?: { user?: { username: string; uuid: string } } }>(
-                `/api/admin/users/${uuid}`,
-            );
+            const { data } = await axios.get<{
+                success: boolean;
+                data?: { user?: { username: string; uuid: string } };
+            }>(`/api/admin/users/${uuid}`);
             if (data.success && data.data?.user) {
                 setUser(data.data.user);
             }
@@ -359,4 +360,3 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
         </div>
     );
 }
-

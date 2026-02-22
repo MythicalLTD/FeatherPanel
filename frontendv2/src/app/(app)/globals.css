@@ -288,33 +288,69 @@ body {
     animation: fadeInUp 0.4s ease-out forwards;
 }
 
-.stagger-children .stagger-child:nth-child(1) { animation-delay: 0.02s; }
-.stagger-children .stagger-child:nth-child(2) { animation-delay: 0.05s; }
-.stagger-children .stagger-child:nth-child(3) { animation-delay: 0.08s; }
-.stagger-children .stagger-child:nth-child(4) { animation-delay: 0.11s; }
-.stagger-children .stagger-child:nth-child(5) { animation-delay: 0.14s; }
-.stagger-children .stagger-child:nth-child(6) { animation-delay: 0.17s; }
-.stagger-children .stagger-child:nth-child(7) { animation-delay: 0.2s; }
-.stagger-children .stagger-child:nth-child(8) { animation-delay: 0.23s; }
-.stagger-children .stagger-child:nth-child(9) { animation-delay: 0.26s; }
-.stagger-children .stagger-child:nth-child(10) { animation-delay: 0.29s; }
-.stagger-children .stagger-child:nth-child(11) { animation-delay: 0.32s; }
-.stagger-children .stagger-child:nth-child(12) { animation-delay: 0.35s; }
-.stagger-children .stagger-child:nth-child(13) { animation-delay: 0.38s; }
-.stagger-children .stagger-child:nth-child(14) { animation-delay: 0.41s; }
-.stagger-children .stagger-child:nth-child(15) { animation-delay: 0.44s; }
+.stagger-children .stagger-child:nth-child(1) {
+    animation-delay: 0.02s;
+}
+.stagger-children .stagger-child:nth-child(2) {
+    animation-delay: 0.05s;
+}
+.stagger-children .stagger-child:nth-child(3) {
+    animation-delay: 0.08s;
+}
+.stagger-children .stagger-child:nth-child(4) {
+    animation-delay: 0.11s;
+}
+.stagger-children .stagger-child:nth-child(5) {
+    animation-delay: 0.14s;
+}
+.stagger-children .stagger-child:nth-child(6) {
+    animation-delay: 0.17s;
+}
+.stagger-children .stagger-child:nth-child(7) {
+    animation-delay: 0.2s;
+}
+.stagger-children .stagger-child:nth-child(8) {
+    animation-delay: 0.23s;
+}
+.stagger-children .stagger-child:nth-child(9) {
+    animation-delay: 0.26s;
+}
+.stagger-children .stagger-child:nth-child(10) {
+    animation-delay: 0.29s;
+}
+.stagger-children .stagger-child:nth-child(11) {
+    animation-delay: 0.32s;
+}
+.stagger-children .stagger-child:nth-child(12) {
+    animation-delay: 0.35s;
+}
+.stagger-children .stagger-child:nth-child(13) {
+    animation-delay: 0.38s;
+}
+.stagger-children .stagger-child:nth-child(14) {
+    animation-delay: 0.41s;
+}
+.stagger-children .stagger-child:nth-child(15) {
+    animation-delay: 0.44s;
+}
 
 /* Hover lift and glow - use .hover-lift and .hover-glow */
 .hover-lift {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.2), 0 0 0 1px hsl(var(--border) / 0.5);
+    box-shadow:
+        0 8px 24px -8px rgba(0, 0, 0, 0.2),
+        0 0 0 1px hsl(var(--border) / 0.5);
 }
 
 .hover-glow:hover {
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.2), 0 4px 20px -4px hsl(var(--primary) / 0.25);
+    box-shadow:
+        0 0 0 1px hsl(var(--primary) / 0.2),
+        0 4px 20px -4px hsl(var(--primary) / 0.25);
 }
 
 /* Card and button press feedback */

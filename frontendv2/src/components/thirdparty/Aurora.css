@@ -1,0 +1,17 @@
+.aurora-container {
+    width: 100%;
+    height: 100%;
+}
+
+/* Full-viewport aurora for auth layout */
+.auth-aurora-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: hsl(var(--background));
+}
+
+.auth-aurora-wrap .aurora-container {
+    position: absolute;
+    inset: 0;
+}

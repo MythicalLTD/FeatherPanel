@@ -472,7 +472,10 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
 
     return (
         <div className='space-y-6'>
-            <WidgetRenderer widgets={getWidgets('admin-nodes-edit', 'top-of-page')} context={{ id: nodeId as string }} />
+            <WidgetRenderer
+                widgets={getWidgets('admin-nodes-edit', 'top-of-page')}
+                context={{ id: nodeId as string }}
+            />
 
             <PageHeader
                 title={t('admin.node.form.edit_title')}
@@ -492,7 +495,10 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 }
             />
 
-            <WidgetRenderer widgets={getWidgets('admin-nodes-edit', 'after-header')} context={{ id: nodeId as string }} />
+            <WidgetRenderer
+                widgets={getWidgets('admin-nodes-edit', 'after-header')}
+                context={{ id: nodeId as string }}
+            />
 
             <div className='block'>
                 <Tabs
@@ -796,7 +802,10 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 </SheetContent>
             </Sheet>
 
-            <WidgetRenderer widgets={getWidgets('admin-nodes-edit', 'bottom-of-page')} context={{ id: nodeId as string }} />
+            <WidgetRenderer
+                widgets={getWidgets('admin-nodes-edit', 'bottom-of-page')}
+                context={{ id: nodeId as string }}
+            />
         </div>
     );
 }

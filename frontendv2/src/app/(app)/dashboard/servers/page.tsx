@@ -168,11 +168,7 @@ export default function ServersPage() {
                 setLoading(true);
                 setError(null);
 
-                const response = await serversApi.getAdminAllOtherServers(
-                    page,
-                    pagination.per_page,
-                    searchQuery,
-                );
+                const response = await serversApi.getAdminAllOtherServers(page, pagination.per_page, searchQuery);
 
                 const serversArray = Array.isArray(response.servers) ? response.servers : [];
                 setServers(serversArray);
@@ -423,7 +419,9 @@ export default function ServersPage() {
 
                         <button
                             onClick={() =>
-                                serverScope === 'all' ? void fetchAllOtherServers(pagination.current_page) : fetchServers()
+                                serverScope === 'all'
+                                    ? void fetchAllOtherServers(pagination.current_page)
+                                    : fetchServers()
                             }
                             disabled={loading}
                             className='p-2.5 bg-background border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-50'
@@ -488,7 +486,8 @@ export default function ServersPage() {
                                         : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                                 )}
                             >
-                                {t('servers.allServersAdmin')} ({serverScope === 'all' ? pagination.total_records : '…'})
+                                {t('servers.allServersAdmin')} ({serverScope === 'all' ? pagination.total_records : '…'}
+                                )
                             </button>
                         </div>
                     )}
@@ -584,185 +583,69 @@ export default function ServersPage() {
                             )}
                         </div>
                     ) : (
-                <TabGroup
-                    selectedIndex={viewMode === 'all' ? 0 : 1}
-                    onChange={(index) => setViewMode(index === 0 ? 'all' : 'folders')}
-                >
-                    <TabList className='flex gap-2 p-1 bg-card rounded-xl border border-border w-fit'>
-                        <Tab
-                            className={({ selected }) =>
-                                cn(
-                                    'px-6 py-3 text-sm font-semibold rounded-lg transition-all focus:outline-none',
-                                    selected
-                                        ? 'bg-primary text-primary-foreground shadow-sm'
-                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                                )
-                            }
+                        <TabGroup
+                            selectedIndex={viewMode === 'all' ? 0 : 1}
+                            onChange={(index) => setViewMode(index === 0 ? 'all' : 'folders')}
                         >
-                            {t('servers.allServers')} ({pagination.total_records})
-                        </Tab>
-                        <Tab
-                            className={({ selected }) =>
-                                cn(
-                                    'px-6 py-3 text-sm font-semibold rounded-lg transition-all focus:outline-none',
-                                    selected
-                                        ? 'bg-primary text-primary-foreground shadow-sm'
-                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                                )
-                            }
-                        >
-                            {t('servers.byFolder')}
-                        </Tab>
-                    </TabList>
-
-                    <TabPanels className='mt-6'>
-                        <TabPanel>
-                            {filteredServers.length === 0 ? (
-                                <EmptyState searchQuery={searchQuery} t={t} />
-                            ) : (
-                                <>
-                                    {pagination.total_pages > 1 && (
-                                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
-                                            <button
-                                                onClick={() => changePage(pagination.current_page - 1)}
-                                                disabled={!pagination.has_prev || loading}
-                                                className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
-                                            >
-                                                <ChevronLeft className='h-5 w-5' />
-                                                {t('common.previous')}
-                                            </button>
-                                            <span className='text-sm font-medium'>
-                                                {t('servers.pagination.page', {
-                                                    current: String(pagination.current_page),
-                                                    total: String(pagination.total_pages),
-                                                })}
-                                            </span>
-                                            <button
-                                                onClick={() => changePage(pagination.current_page + 1)}
-                                                disabled={!pagination.has_next || loading}
-                                                className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
-                                            >
-                                                {t('common.next')}
-                                                <ChevronRight className='h-5 w-5' />
-                                            </button>
-                                        </div>
-                                    )}
-                                    <div
-                                        className={cn(
-                                            selectedLayout === 'grid'
-                                                ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
-                                                : 'flex flex-col gap-4',
-                                        )}
-                                    >
-                                        {filteredServers.map((server) => (
-                                            <ServerCard
-                                                key={server.id}
-                                                server={server}
-                                                layout={selectedLayout}
-                                                serverUrl={`/server/${server.uuidShort}`}
-                                                liveStats={getServerLiveStats(server)}
-                                                isConnected={isServerConnected(server.uuidShort)}
-                                                t={t}
-                                                folders={folders}
-                                                onAssignFolder={(folderId) =>
-                                                    assignServerToFolder(server.uuidShort, folderId)
-                                                }
-                                                onUnassignFolder={() => unassignServer(server.uuidShort)}
-                                            />
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-
-                            {pagination.total_pages > 1 && (
-                                <div className='flex items-center justify-between py-6 px-4 mt-6 border-t border-border'>
-                                    <p className='text-sm text-muted-foreground'>
-                                        {t('servers.pagination.showing', {
-                                            from: String(pagination.from),
-                                            to: String(pagination.to),
-                                            total: String(pagination.total_records),
-                                        })}
-                                    </p>
-                                    <div className='flex items-center gap-2'>
-                                        <button
-                                            onClick={() => changePage(pagination.current_page - 1)}
-                                            disabled={!pagination.has_prev || loading}
-                                            className='p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-                                        >
-                                            <ChevronLeft className='h-5 w-5' />
-                                        </button>
-                                        <span className='px-4 py-2 text-sm font-medium'>
-                                            {t('servers.pagination.page', {
-                                                current: String(pagination.current_page),
-                                                total: String(pagination.total_pages),
-                                            })}
-                                        </span>
-                                        <button
-                                            onClick={() => changePage(pagination.current_page + 1)}
-                                            disabled={!pagination.has_next || loading}
-                                            className='p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-                                        >
-                                            <ChevronRight className='h-5 w-5' />
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </TabPanel>
-
-                        <TabPanel>
-                            <div className='space-y-4'>
-                                {pagination.total_records > 10 && (
-                                    <div className='p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl'>
-                                        <p className='text-sm text-blue-600 dark:text-blue-400'>
-                                            {t('servers.folderViewAllLoaded', {
-                                                total: String(pagination.total_records),
-                                                defaultValue: `All ${pagination.total_records} servers are loaded for folder organization.`,
-                                            })}
-                                        </p>
-                                    </div>
-                                )}
-
-                                <button
-                                    onClick={openCreateFolder}
-                                    className='flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors'
+                            <TabList className='flex gap-2 p-1 bg-card rounded-xl border border-border w-fit'>
+                                <Tab
+                                    className={({ selected }) =>
+                                        cn(
+                                            'px-6 py-3 text-sm font-semibold rounded-lg transition-all focus:outline-none',
+                                            selected
+                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                                        )
+                                    }
                                 >
-                                    <FolderPlus className='h-5 w-5' />
-                                    {t('servers.createFolder')}
-                                </button>
+                                    {t('servers.allServers')} ({pagination.total_records})
+                                </Tab>
+                                <Tab
+                                    className={({ selected }) =>
+                                        cn(
+                                            'px-6 py-3 text-sm font-semibold rounded-lg transition-all focus:outline-none',
+                                            selected
+                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                                        )
+                                    }
+                                >
+                                    {t('servers.byFolder')}
+                                </Tab>
+                            </TabList>
 
-                                {serversByFolder.map((folder) => (
-                                    <div key={folder.id} className='space-y-4'>
-                                        <div className='flex items-center justify-between'>
-                                            <div className='flex items-center gap-3'>
-                                                <Folder className='h-6 w-6 text-primary' />
-                                                <div>
-                                                    <h3 className='text-xl font-semibold'>{folder.name}</h3>
-                                                    {folder.description && (
-                                                        <p className='text-sm text-muted-foreground'>
-                                                            {folder.description}
-                                                        </p>
-                                                    )}
+                            <TabPanels className='mt-6'>
+                                <TabPanel>
+                                    {filteredServers.length === 0 ? (
+                                        <EmptyState searchQuery={searchQuery} t={t} />
+                                    ) : (
+                                        <>
+                                            {pagination.total_pages > 1 && (
+                                                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                                                    <button
+                                                        onClick={() => changePage(pagination.current_page - 1)}
+                                                        disabled={!pagination.has_prev || loading}
+                                                        className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
+                                                    >
+                                                        <ChevronLeft className='h-5 w-5' />
+                                                        {t('common.previous')}
+                                                    </button>
+                                                    <span className='text-sm font-medium'>
+                                                        {t('servers.pagination.page', {
+                                                            current: String(pagination.current_page),
+                                                            total: String(pagination.total_pages),
+                                                        })}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => changePage(pagination.current_page + 1)}
+                                                        disabled={!pagination.has_next || loading}
+                                                        className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
+                                                    >
+                                                        {t('common.next')}
+                                                        <ChevronRight className='h-5 w-5' />
+                                                    </button>
                                                 </div>
-                                                <span className='px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full'>
-                                                    {folder.servers.length}
-                                                </span>
-                                            </div>
-                                            <div className='flex items-center gap-2'>
-                                                <button
-                                                    onClick={(e) => openEditFolder(folder, e)}
-                                                    className='p-2 hover:bg-muted rounded-lg transition-colors'
-                                                >
-                                                    <Pencil className='h-5 w-5 text-muted-foreground' />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => handleDeleteFolder(folder.id, e)}
-                                                    className='p-2 hover:bg-destructive/10 rounded-lg transition-colors'
-                                                >
-                                                    <Trash2 className='h-5 w-5 text-destructive' />
-                                                </button>
-                                            </div>
-                                        </div>
-                                        {folder.servers.length > 0 && (
+                                            )}
                                             <div
                                                 className={cn(
                                                     selectedLayout === 'grid'
@@ -770,7 +653,7 @@ export default function ServersPage() {
                                                         : 'flex flex-col gap-4',
                                                 )}
                                             >
-                                                {folder.servers.map((server) => (
+                                                {filteredServers.map((server) => (
                                                     <ServerCard
                                                         key={server.id}
                                                         server={server}
@@ -787,49 +670,167 @@ export default function ServersPage() {
                                                     />
                                                 ))}
                                             </div>
+                                        </>
+                                    )}
+
+                                    {pagination.total_pages > 1 && (
+                                        <div className='flex items-center justify-between py-6 px-4 mt-6 border-t border-border'>
+                                            <p className='text-sm text-muted-foreground'>
+                                                {t('servers.pagination.showing', {
+                                                    from: String(pagination.from),
+                                                    to: String(pagination.to),
+                                                    total: String(pagination.total_records),
+                                                })}
+                                            </p>
+                                            <div className='flex items-center gap-2'>
+                                                <button
+                                                    onClick={() => changePage(pagination.current_page - 1)}
+                                                    disabled={!pagination.has_prev || loading}
+                                                    className='p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                                >
+                                                    <ChevronLeft className='h-5 w-5' />
+                                                </button>
+                                                <span className='px-4 py-2 text-sm font-medium'>
+                                                    {t('servers.pagination.page', {
+                                                        current: String(pagination.current_page),
+                                                        total: String(pagination.total_pages),
+                                                    })}
+                                                </span>
+                                                <button
+                                                    onClick={() => changePage(pagination.current_page + 1)}
+                                                    disabled={!pagination.has_next || loading}
+                                                    className='p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                                >
+                                                    <ChevronRight className='h-5 w-5' />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </TabPanel>
+
+                                <TabPanel>
+                                    <div className='space-y-4'>
+                                        {pagination.total_records > 10 && (
+                                            <div className='p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl'>
+                                                <p className='text-sm text-blue-600 dark:text-blue-400'>
+                                                    {t('servers.folderViewAllLoaded', {
+                                                        total: String(pagination.total_records),
+                                                        defaultValue: `All ${pagination.total_records} servers are loaded for folder organization.`,
+                                                    })}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        <button
+                                            onClick={openCreateFolder}
+                                            className='flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors'
+                                        >
+                                            <FolderPlus className='h-5 w-5' />
+                                            {t('servers.createFolder')}
+                                        </button>
+
+                                        {serversByFolder.map((folder) => (
+                                            <div key={folder.id} className='space-y-4'>
+                                                <div className='flex items-center justify-between'>
+                                                    <div className='flex items-center gap-3'>
+                                                        <Folder className='h-6 w-6 text-primary' />
+                                                        <div>
+                                                            <h3 className='text-xl font-semibold'>{folder.name}</h3>
+                                                            {folder.description && (
+                                                                <p className='text-sm text-muted-foreground'>
+                                                                    {folder.description}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <span className='px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full'>
+                                                            {folder.servers.length}
+                                                        </span>
+                                                    </div>
+                                                    <div className='flex items-center gap-2'>
+                                                        <button
+                                                            onClick={(e) => openEditFolder(folder, e)}
+                                                            className='p-2 hover:bg-muted rounded-lg transition-colors'
+                                                        >
+                                                            <Pencil className='h-5 w-5 text-muted-foreground' />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => handleDeleteFolder(folder.id, e)}
+                                                            className='p-2 hover:bg-destructive/10 rounded-lg transition-colors'
+                                                        >
+                                                            <Trash2 className='h-5 w-5 text-destructive' />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                {folder.servers.length > 0 && (
+                                                    <div
+                                                        className={cn(
+                                                            selectedLayout === 'grid'
+                                                                ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                                                                : 'flex flex-col gap-4',
+                                                        )}
+                                                    >
+                                                        {folder.servers.map((server) => (
+                                                            <ServerCard
+                                                                key={server.id}
+                                                                server={server}
+                                                                layout={selectedLayout}
+                                                                serverUrl={`/server/${server.uuidShort}`}
+                                                                liveStats={getServerLiveStats(server)}
+                                                                isConnected={isServerConnected(server.uuidShort)}
+                                                                t={t}
+                                                                folders={folders}
+                                                                onAssignFolder={(folderId) =>
+                                                                    assignServerToFolder(server.uuidShort, folderId)
+                                                                }
+                                                                onUnassignFolder={() =>
+                                                                    unassignServer(server.uuidShort)
+                                                                }
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+
+                                        {unassignedServers.length > 0 && (
+                                            <div className='space-y-4'>
+                                                <div className='flex items-center gap-3'>
+                                                    <ServerIcon className='h-6 w-6 text-muted-foreground' />
+                                                    <h3 className='text-xl font-semibold'>{t('servers.unassigned')}</h3>
+                                                    <span className='px-3 py-1 bg-muted text-muted-foreground text-sm font-medium rounded-full'>
+                                                        {unassignedServers.length}
+                                                    </span>
+                                                </div>
+                                                <div
+                                                    className={cn(
+                                                        selectedLayout === 'grid'
+                                                            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                                                            : 'flex flex-col gap-4',
+                                                    )}
+                                                >
+                                                    {unassignedServers.map((server) => (
+                                                        <ServerCard
+                                                            key={server.id}
+                                                            server={server}
+                                                            layout={selectedLayout}
+                                                            serverUrl={`/server/${server.uuidShort}`}
+                                                            liveStats={getServerLiveStats(server)}
+                                                            isConnected={isServerConnected(server.uuidShort)}
+                                                            t={t}
+                                                            folders={folders}
+                                                            onAssignFolder={(folderId) =>
+                                                                assignServerToFolder(server.uuidShort, folderId)
+                                                            }
+                                                            onUnassignFolder={() => unassignServer(server.uuidShort)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
-                                ))}
-
-                                {unassignedServers.length > 0 && (
-                                    <div className='space-y-4'>
-                                        <div className='flex items-center gap-3'>
-                                            <ServerIcon className='h-6 w-6 text-muted-foreground' />
-                                            <h3 className='text-xl font-semibold'>{t('servers.unassigned')}</h3>
-                                            <span className='px-3 py-1 bg-muted text-muted-foreground text-sm font-medium rounded-full'>
-                                                {unassignedServers.length}
-                                            </span>
-                                        </div>
-                                        <div
-                                            className={cn(
-                                                selectedLayout === 'grid'
-                                                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
-                                                    : 'flex flex-col gap-4',
-                                            )}
-                                        >
-                                            {unassignedServers.map((server) => (
-                                                <ServerCard
-                                                    key={server.id}
-                                                    server={server}
-                                                    layout={selectedLayout}
-                                                    serverUrl={`/server/${server.uuidShort}`}
-                                                    liveStats={getServerLiveStats(server)}
-                                                    isConnected={isServerConnected(server.uuidShort)}
-                                                    t={t}
-                                                    folders={folders}
-                                                    onAssignFolder={(folderId) =>
-                                                        assignServerToFolder(server.uuidShort, folderId)
-                                                    }
-                                                    onUnassignFolder={() => unassignServer(server.uuidShort)}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </TabPanel>
-                    </TabPanels>
-                </TabGroup>
+                                </TabPanel>
+                            </TabPanels>
+                        </TabGroup>
                     )}
                 </>
             )}

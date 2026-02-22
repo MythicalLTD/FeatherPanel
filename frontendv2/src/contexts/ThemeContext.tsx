@@ -18,7 +18,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode } from 'react';
 
 type Theme = 'light' | 'dark';
-type BackgroundType = 'gradient' | 'solid' | 'image' | 'pattern';
+type BackgroundType = 'aurora' | 'gradient' | 'solid' | 'image' | 'pattern';
+export type BackgroundAnimatedVariant = 'aurora' | 'beams' | 'colorBends' | 'darkVeil' | 'floatingLines' | 'silk';
 export type BackgroundImageFit = 'cover' | 'contain' | 'fill';
 /** Controls animations and transitions app-wide. */
 export type MotionLevel = 'full' | 'reduced' | 'none';
@@ -27,6 +28,7 @@ interface ThemeContextType {
     theme: Theme;
     accentColor: string;
     backgroundType: BackgroundType;
+    backgroundAnimatedVariant: BackgroundAnimatedVariant;
     backgroundImage: string;
     /** Backdrop blur in pixels (0, 4, 8, 12, 16, 24). */
     backdropBlur: number;
@@ -39,6 +41,7 @@ interface ThemeContextType {
     setTheme: (theme: Theme) => void;
     setAccentColor: (color: string) => void;
     setBackgroundType: (type: BackgroundType) => void;
+    setBackgroundAnimatedVariant: (variant: BackgroundAnimatedVariant) => void;
     setBackgroundImage: (image: string) => void;
     setBackdropBlur: (px: number) => void;
     setBackdropDarken: (percent: number) => void;
@@ -59,13 +62,22 @@ const ACCENT_COLORS = {
     pink: '330 81% 60%',
     teal: '173 80% 40%',
     yellow: '48 96% 53%',
+    white: '210 20% 92%',
+    violet: '270 75% 55%',
+    cyan: '188 78% 41%',
+    lime: '84 69% 35%',
+    amber: '38 92% 50%',
+    rose: '347 77% 50%',
+    slate: '215 20% 45%',
 };
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [mounted, setMounted] = useState(false);
     const [theme, setThemeState] = useState<Theme>('dark');
     const [accentColor, setAccentColorState] = useState('purple');
-    const [backgroundType, setBackgroundTypeState] = useState<BackgroundType>('gradient');
+    const [backgroundType, setBackgroundTypeState] = useState<BackgroundType>('aurora');
+    const [backgroundAnimatedVariant, setBackgroundAnimatedVariantState] =
+        useState<BackgroundAnimatedVariant>('aurora');
     const [backgroundImage, setBackgroundImageState] = useState('');
     const [backdropBlur, setBackdropBlurState] = useState(0);
     const [backdropDarken, setBackdropDarkenState] = useState(0);
@@ -78,6 +90,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const saved = localStorage.getItem('theme') as Theme | null;
         const savedAccent = localStorage.getItem('accentColor');
         const savedBgType = localStorage.getItem('backgroundType') as BackgroundType | null;
+        const savedAnimatedVariant = localStorage.getItem(
+            'backgroundAnimatedVariant',
+        ) as BackgroundAnimatedVariant | null;
         const savedBgImage = localStorage.getItem('backgroundImage');
         const savedBlur = localStorage.getItem('backdropBlur');
         const savedDarken = localStorage.getItem('backdropDarken');
@@ -86,15 +101,31 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
         setThemeState(saved || (prefersDark ? 'dark' : 'light'));
-        setAccentColorState(savedAccent || 'purple');
-        setBackgroundTypeState(savedBgType || 'gradient');
+        setAccentColorState(savedAccent && savedAccent in ACCENT_COLORS ? savedAccent : 'purple');
+        setBackgroundTypeState(
+            savedBgType === 'aurora' ||
+                savedBgType === 'gradient' ||
+                savedBgType === 'solid' ||
+                savedBgType === 'image' ||
+                savedBgType === 'pattern'
+                ? savedBgType
+                : 'aurora',
+        );
+        setBackgroundAnimatedVariantState(
+            savedAnimatedVariant === 'aurora' ||
+                savedAnimatedVariant === 'beams' ||
+                savedAnimatedVariant === 'colorBends' ||
+                savedAnimatedVariant === 'darkVeil' ||
+                savedAnimatedVariant === 'floatingLines' ||
+                savedAnimatedVariant === 'silk'
+                ? savedAnimatedVariant
+                : 'aurora',
+        );
         setBackgroundImageState(savedBgImage || '');
         setBackdropBlurState(savedBlur != null ? Math.min(24, Math.max(0, parseInt(savedBlur, 10) || 0)) : 0);
         setBackdropDarkenState(savedDarken != null ? Math.min(100, Math.max(0, parseInt(savedDarken, 10) || 0)) : 0);
         setBackgroundImageFitState(savedFit === 'contain' || savedFit === 'fill' ? savedFit : 'cover');
-        setMotionLevelState(
-            savedMotion === 'full' ? 'full' : savedMotion === 'none' ? 'none' : 'reduced'
-        );
+        setMotionLevelState(savedMotion === 'full' ? 'full' : savedMotion === 'none' ? 'none' : 'reduced');
     }, []);
 
     useEffect(() => {
@@ -127,6 +158,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const setBackgroundType = (type: BackgroundType) => {
         setBackgroundTypeState(type);
         localStorage.setItem('backgroundType', type);
+    };
+
+    const setBackgroundAnimatedVariant = (variant: BackgroundAnimatedVariant) => {
+        setBackgroundAnimatedVariantState(variant);
+        localStorage.setItem('backgroundAnimatedVariant', variant);
     };
 
     const setBackgroundImage = (image: string) => {
@@ -166,6 +202,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 theme,
                 accentColor,
                 backgroundType,
+                backgroundAnimatedVariant,
                 backgroundImage,
                 backdropBlur,
                 backdropDarken,
@@ -174,6 +211,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 setTheme,
                 setAccentColor,
                 setBackgroundType,
+                setBackgroundAnimatedVariant,
                 setBackgroundImage,
                 setBackdropBlur,
                 setBackdropDarken,

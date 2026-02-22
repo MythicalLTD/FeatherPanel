@@ -384,122 +384,122 @@ export default function ServersPage() {
                         </div>
                     )}
                     <div className='grid grid-cols-1 gap-4'>
-                    {servers.map((server) => {
-                        const badges: ResourceBadge[] = [
-                            {
-                                label: server.node?.name || 'Unknown Node',
-                                className: 'bg-primary/10 text-primary border-primary/20',
-                            },
-                            {
-                                label: server.owner?.username || 'System',
-                                className: 'bg-muted text-muted-foreground border-border/50',
-                            },
-                        ];
+                        {servers.map((server) => {
+                            const badges: ResourceBadge[] = [
+                                {
+                                    label: server.node?.name || 'Unknown Node',
+                                    className: 'bg-primary/10 text-primary border-primary/20',
+                                },
+                                {
+                                    label: server.owner?.username || 'System',
+                                    className: 'bg-muted text-muted-foreground border-border/50',
+                                },
+                            ];
 
-                        const serverStatus = displayStatus(server as unknown as ServerType);
-                        return (
-                            <ResourceCard
-                                key={server.id}
-                                title={server.name}
-                                subtitle={server.uuidShort}
-                                icon={Server}
-                                badges={badges}
-                                description={
-                                    <div className='flex items-center gap-4 mt-2 flex-wrap'>
-                                        <StatusBadge status={serverStatus} t={t} />
-                                        <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                                            <Database className='h-3.5 w-3.5' />
-                                            <span>{formatMemory(server.memory)}</span>
+                            const serverStatus = displayStatus(server as unknown as ServerType);
+                            return (
+                                <ResourceCard
+                                    key={server.id}
+                                    title={server.name}
+                                    subtitle={server.uuidShort}
+                                    icon={Server}
+                                    badges={badges}
+                                    description={
+                                        <div className='flex items-center gap-4 mt-2 flex-wrap'>
+                                            <StatusBadge status={serverStatus} t={t} />
+                                            <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                <Database className='h-3.5 w-3.5' />
+                                                <span>{formatMemory(server.memory)}</span>
+                                            </div>
+                                            <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                <Cpu className='h-3.5 w-3.5' />
+                                                <span>{formatCpu(server.cpu)}</span>
+                                            </div>
+                                            <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                <HardDrive className='h-3.5 w-3.5' />
+                                                <span>{formatDisk(server.disk)}</span>
+                                            </div>
                                         </div>
-                                        <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                                            <Cpu className='h-3.5 w-3.5' />
-                                            <span>{formatCpu(server.cpu)}</span>
-                                        </div>
-                                        <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                                            <HardDrive className='h-3.5 w-3.5' />
-                                            <span>{formatDisk(server.disk)}</span>
-                                        </div>
-                                    </div>
-                                }
-                                actions={
-                                    <div className='flex items-center gap-2'>
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            onClick={() => handleView(server)}
-                                            title={t('admin.servers.actions.view')}
-                                        >
-                                            <Eye className='h-4 w-4' />
-                                        </Button>
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            onClick={() => router.push(`/admin/servers/${server.id}/edit`)}
-                                            title={t('admin.servers.actions.edit')}
-                                        >
-                                            <Pencil className='h-4 w-4' />
-                                        </Button>
-                                        {server.status === 'transferring' ? (
+                                    }
+                                    actions={
+                                        <div className='flex items-center gap-2'>
                                             <Button
                                                 size='sm'
                                                 variant='ghost'
-                                                className='text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
-                                                onClick={() => handleCancelTransfer(server)}
-                                                loading={cancellingTransferId === server.id}
-                                                title={t('common.cancel')}
+                                                onClick={() => handleView(server)}
+                                                title={t('admin.servers.actions.view')}
                                             >
-                                                <X className='h-4 w-4' />
+                                                <Eye className='h-4 w-4' />
                                             </Button>
-                                        ) : (
                                             <Button
                                                 size='sm'
                                                 variant='ghost'
-                                                onClick={() => openTransferDialog(server)}
-                                                title={t('admin.servers.actions.transfer')}
+                                                onClick={() => router.push(`/admin/servers/${server.id}/edit`)}
+                                                title={t('admin.servers.actions.edit')}
                                             >
-                                                <ArrowLeftRight className='h-4 w-4' />
+                                                <Pencil className='h-4 w-4' />
                                             </Button>
-                                        )}
+                                            {server.status === 'transferring' ? (
+                                                <Button
+                                                    size='sm'
+                                                    variant='ghost'
+                                                    className='text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
+                                                    onClick={() => handleCancelTransfer(server)}
+                                                    loading={cancellingTransferId === server.id}
+                                                    title={t('common.cancel')}
+                                                >
+                                                    <X className='h-4 w-4' />
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size='sm'
+                                                    variant='ghost'
+                                                    onClick={() => openTransferDialog(server)}
+                                                    title={t('admin.servers.actions.transfer')}
+                                                >
+                                                    <ArrowLeftRight className='h-4 w-4' />
+                                                </Button>
+                                            )}
 
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                            onClick={() => handleDelete(server)}
-                                            title={t('admin.servers.actions.delete')}
-                                        >
-                                            <Trash2 className='h-4 w-4' />
-                                        </Button>
-                                    </div>
-                                }
-                            />
-                        );
-                    })}
+                                            <Button
+                                                size='sm'
+                                                variant='ghost'
+                                                className='text-destructive hover:text-destructive hover:bg-destructive/10'
+                                                onClick={() => handleDelete(server)}
+                                                title={t('admin.servers.actions.delete')}
+                                            >
+                                                <Trash2 className='h-4 w-4' />
+                                            </Button>
+                                        </div>
+                                    }
+                                />
+                            );
+                        })}
                     </div>
 
-            {pagination.totalPages > 1 && (
-                <div className='flex items-center justify-center gap-2 mt-8'>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
-                    >
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
-            )}
+                    {pagination.totalPages > 1 && (
+                        <div className='flex items-center justify-center gap-2 mt-8'>
+                            <Button
+                                variant='outline'
+                                size='icon'
+                                disabled={!pagination.hasPrev}
+                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                            >
+                                <ChevronLeft className='h-4 w-4' />
+                            </Button>
+                            <span className='text-sm font-medium'>
+                                {pagination.page} / {pagination.totalPages}
+                            </span>
+                            <Button
+                                variant='outline'
+                                size='icon'
+                                disabled={!pagination.hasNext}
+                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                            >
+                                <ChevronRight className='h-4 w-4' />
+                            </Button>
+                        </div>
+                    )}
                 </>
             )}
 

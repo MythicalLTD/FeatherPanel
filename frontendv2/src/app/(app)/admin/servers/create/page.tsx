@@ -867,7 +867,7 @@ function SelectionSheet<T extends { id: number | string }>({
                     </SheetDescription>
                 </SheetHeader>
 
-                    <div className='mt-6 space-y-4'>
+                <div className='mt-6 space-y-4'>
                     <div className='relative group'>
                         <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                         <Input
@@ -884,7 +884,9 @@ function SelectionSheet<T extends { id: number | string }>({
                                 variant='outline'
                                 size='sm'
                                 disabled={!pagination.has_prev}
-                                onClick={() => onPaginationChange({ ...pagination, current_page: pagination.current_page - 1 })}
+                                onClick={() =>
+                                    onPaginationChange({ ...pagination, current_page: pagination.current_page - 1 })
+                                }
                                 className='gap-1 h-8'
                             >
                                 <ChevronLeft className='h-3 w-3' />
@@ -897,7 +899,9 @@ function SelectionSheet<T extends { id: number | string }>({
                                 variant='outline'
                                 size='sm'
                                 disabled={!pagination.has_next}
-                                onClick={() => onPaginationChange({ ...pagination, current_page: pagination.current_page + 1 })}
+                                onClick={() =>
+                                    onPaginationChange({ ...pagination, current_page: pagination.current_page + 1 })
+                                }
                                 className='gap-1 h-8'
                             >
                                 {t('common.next')}

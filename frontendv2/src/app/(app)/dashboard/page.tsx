@@ -210,15 +210,15 @@ export default function DashboardPage() {
                                 {servers.map((server) => (
                                     <div key={server.id} className='stagger-child'>
                                         <ServerCard
-                                        server={server}
-                                        layout='list'
-                                        serverUrl={`/server/${server.uuidShort}`}
-                                        liveStats={getServerLiveStats(server)}
-                                        isConnected={isServerConnected(server.uuidShort)}
-                                        t={t}
-                                        folders={[]}
-                                        onAssignFolder={() => {}}
-                                        onUnassignFolder={() => {}}
+                                            server={server}
+                                            layout='list'
+                                            serverUrl={`/server/${server.uuidShort}`}
+                                            liveStats={getServerLiveStats(server)}
+                                            isConnected={isServerConnected(server.uuidShort)}
+                                            t={t}
+                                            folders={[]}
+                                            onAssignFolder={() => {}}
+                                            onUnassignFolder={() => {}}
                                         />
                                     </div>
                                 ))}

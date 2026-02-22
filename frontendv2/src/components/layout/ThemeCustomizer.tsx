@@ -43,6 +43,13 @@ export default function ThemeCustomizer() {
         { name: t('appearance.colors.pink'), value: 'pink', color: 'hsl(330 81% 60%)' },
         { name: t('appearance.colors.teal'), value: 'teal', color: 'hsl(173 80% 40%)' },
         { name: t('appearance.colors.yellow'), value: 'yellow', color: 'hsl(48 96% 53%)' },
+        { name: t('appearance.colors.white'), value: 'white', color: 'hsl(210 20% 92%)' },
+        { name: t('appearance.colors.violet'), value: 'violet', color: 'hsl(270 75% 55%)' },
+        { name: t('appearance.colors.cyan'), value: 'cyan', color: 'hsl(188 78% 41%)' },
+        { name: t('appearance.colors.lime'), value: 'lime', color: 'hsl(84 69% 35%)' },
+        { name: t('appearance.colors.amber'), value: 'amber', color: 'hsl(38 92% 50%)' },
+        { name: t('appearance.colors.rose'), value: 'rose', color: 'hsl(347 77% 50%)' },
+        { name: t('appearance.colors.slate'), value: 'slate', color: 'hsl(215 20% 45%)' },
     ];
 
     if (!mounted) {

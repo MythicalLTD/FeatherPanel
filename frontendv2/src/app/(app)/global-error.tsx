@@ -61,26 +61,14 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
         } catch {}
     }, []);
 
-    const renderBackground = () => {
-        const gradientMap: Record<string, string> = {
-            'purple-dream':
-                'linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(79, 70, 229, 0.05) 50%, rgba(147, 51, 234, 0.1) 100%)',
-            'ocean-breeze':
-                'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(59, 130, 246, 0.05) 50%, rgba(6, 182, 212, 0.1) 100%)',
-            'sunset-glow':
-                'linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(239, 68, 68, 0.05) 50%, rgba(251, 146, 60, 0.1) 100%)',
-            'forest-mist':
-                'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 50%, rgba(34, 197, 94, 0.1) 100%)',
-            'rose-garden':
-                'linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(219, 39, 119, 0.05) 50%, rgba(236, 72, 153, 0.1) 100%)',
-            'golden-hour':
-                'linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.05) 50%, rgba(251, 191, 36, 0.1) 100%)',
-        };
+    const themeGradient =
+        'linear-gradient(135deg, hsl(var(--primary) / 0.12) 0%, hsl(var(--primary) / 0.04) 50%, hsl(var(--primary) / 0.12) 100%)';
 
+    const renderBackground = () => {
         switch (backgroundType) {
+            case 'aurora':
             case 'gradient':
-                const gradient = gradientMap[backgroundImage] || gradientMap['purple-dream'];
-                return <div className='pointer-events-none absolute inset-0' style={{ background: gradient }} />;
+                return <div className='pointer-events-none absolute inset-0' style={{ background: themeGradient }} />;
             case 'solid':
                 if (backgroundImage && backgroundImage.startsWith('#')) {
                     return (

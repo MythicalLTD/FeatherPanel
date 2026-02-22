@@ -217,71 +217,74 @@ const LogsTab = () => {
                         </div>
                     )}
                     <div className='grid grid-cols-1 gap-6'>
-                    {logs.map((log) => (
-                        <ResourceCard
-                            key={log.execution_id}
-                            icon={getStatusIcon(log.status)}
-                            title={`${t('admin.featherzerotrust.logs.execution')}: ${log.execution_id}`}
-                            subtitle={`${t('admin.featherzerotrust.logs.startedAt')}: ${formatDate(log.started_at)}`}
-                            badges={[
-                                {
-                                    label: log.status.toUpperCase(),
-                                    className: cn(
-                                        log.status === 'completed' &&
-                                            'bg-green-500/10 text-green-600 border-green-500/20',
-                                        log.status === 'failed' && 'bg-red-500/10 text-red-600 border-red-500/20',
-                                        log.status === 'running' &&
-                                            'bg-blue-500/10 text-blue-600 border-blue-500/20 animate-pulse',
-                                    ),
-                                },
-                            ]}
-                            description={
-                                <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-2'>
-                                    <div className='flex items-center gap-2 text-xs text-muted-foreground'>
-                                        <Server className='h-3 w-3' />
-                                        <span>
-                                            {log.total_servers_scanned} {t('admin.featherzerotrust.logs.servers')}
-                                        </span>
+                        {logs.map((log) => (
+                            <ResourceCard
+                                key={log.execution_id}
+                                icon={getStatusIcon(log.status)}
+                                title={`${t('admin.featherzerotrust.logs.execution')}: ${log.execution_id}`}
+                                subtitle={`${t('admin.featherzerotrust.logs.startedAt')}: ${formatDate(log.started_at)}`}
+                                badges={[
+                                    {
+                                        label: log.status.toUpperCase(),
+                                        className: cn(
+                                            log.status === 'completed' &&
+                                                'bg-green-500/10 text-green-600 border-green-500/20',
+                                            log.status === 'failed' && 'bg-red-500/10 text-red-600 border-red-500/20',
+                                            log.status === 'running' &&
+                                                'bg-blue-500/10 text-blue-600 border-blue-500/20 animate-pulse',
+                                        ),
+                                    },
+                                ]}
+                                description={
+                                    <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-2'>
+                                        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                                            <Server className='h-3 w-3' />
+                                            <span>
+                                                {log.total_servers_scanned} {t('admin.featherzerotrust.logs.servers')}
+                                            </span>
+                                        </div>
+                                        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                                            <AlertTriangle
+                                                className={cn(
+                                                    'h-3 w-3',
+                                                    log.total_detections > 0
+                                                        ? 'text-destructive'
+                                                        : 'text-muted-foreground',
+                                                )}
+                                            />
+                                            <span
+                                                className={cn(
+                                                    log.total_detections > 0 && 'text-destructive font-semibold',
+                                                )}
+                                            >
+                                                {log.total_detections} {t('admin.featherzerotrust.logs.detections')}
+                                            </span>
+                                        </div>
+                                        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                                            <Clock className='h-3 w-3' />
+                                            <span>{formatDuration(log.details?.duration_seconds)}</span>
+                                        </div>
+                                        <div className='text-xs text-muted-foreground'>
+                                            {t('admin.featherzerotrust.logs.completed')}:{' '}
+                                            {log.completed_at
+                                                ? formatDate(log.completed_at)
+                                                : t('admin.featherzerotrust.logs.inProgress')}
+                                        </div>
                                     </div>
-                                    <div className='flex items-center gap-2 text-xs text-muted-foreground'>
-                                        <AlertTriangle
-                                            className={cn(
-                                                'h-3 w-3',
-                                                log.total_detections > 0 ? 'text-destructive' : 'text-muted-foreground',
-                                            )}
-                                        />
-                                        <span
-                                            className={cn(log.total_detections > 0 && 'text-destructive font-semibold')}
-                                        >
-                                            {log.total_detections} {t('admin.featherzerotrust.logs.detections')}
-                                        </span>
-                                    </div>
-                                    <div className='flex items-center gap-2 text-xs text-muted-foreground'>
-                                        <Clock className='h-3 w-3' />
-                                        <span>{formatDuration(log.details?.duration_seconds)}</span>
-                                    </div>
-                                    <div className='text-xs text-muted-foreground'>
-                                        {t('admin.featherzerotrust.logs.completed')}:{' '}
-                                        {log.completed_at
-                                            ? formatDate(log.completed_at)
-                                            : t('admin.featherzerotrust.logs.inProgress')}
-                                    </div>
-                                </div>
-                            }
-                            actions={
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    className='transition-all hover:scale-105'
-                                    onClick={() => fetchLogDetails(log.execution_id)}
-                                >
-                                    <Eye className='h-4 w-4 mr-2' />
-                                    {t('admin.featherzerotrust.logs.viewDetails')}
-                                </Button>
-                            }
-                        />
-                    ))}
-
+                                }
+                                actions={
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        className='transition-all hover:scale-105'
+                                        onClick={() => fetchLogDetails(log.execution_id)}
+                                    >
+                                        <Eye className='h-4 w-4 mr-2' />
+                                        {t('admin.featherzerotrust.logs.viewDetails')}
+                                    </Button>
+                                }
+                            />
+                        ))}
                     </div>
                     {pagination.totalPages > 1 && (
                         <div className='flex items-center justify-center gap-2 mt-8'>

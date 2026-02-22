@@ -117,6 +117,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     pink: '330 81% 60%',
                     teal: '173 80% 40%',
                     yellow: '48 96% 53%',
+                    white: '210 20% 92%',
+                    violet: '270 75% 55%',
+                    cyan: '188 78% 41%',
+                    lime: '84 69% 35%',
+                    amber: '38 92% 50%',
+                    rose: '347 77% 50%',
+                    slate: '215 20% 45%',
                   };
                   document.documentElement.classList.add(theme);
                   document.documentElement.style.setProperty('--primary', colors[accentColor] || colors.purple);

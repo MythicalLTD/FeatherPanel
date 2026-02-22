@@ -38,9 +38,7 @@ export default function AppPreloader() {
     const appName = settings?.app_name || 'FeatherPanel';
     const logoUrl =
         theme === 'dark'
-            ? settings?.app_logo_dark ||
-              settings?.app_logo_white ||
-              'https://github.com/featherpanel-com.png'
+            ? settings?.app_logo_dark || settings?.app_logo_white || 'https://github.com/featherpanel-com.png'
             : settings?.app_logo_white || 'https://github.com/featherpanel-com.png';
 
     return (

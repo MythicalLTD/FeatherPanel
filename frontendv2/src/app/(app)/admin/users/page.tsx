@@ -227,9 +227,7 @@ export default function UsersPage() {
                 variant='outline'
                 size='sm'
                 disabled={!pagination || pagination.page === pagination.totalPages}
-                onClick={() =>
-                    pagination && setPagination({ ...pagination, page: pagination.page + 1 })
-                }
+                onClick={() => pagination && setPagination({ ...pagination, page: pagination.page + 1 })}
                 className='gap-1.5'
             >
                 {t('common.next')}
@@ -434,9 +432,7 @@ export default function UsersPage() {
                 </div>
             )}
 
-            {pagination && pagination.totalPages > 1 && (
-                <div className='flex justify-center mt-6'>{paginationBar}</div>
-            )}
+            {pagination && pagination.totalPages > 1 && <div className='flex justify-center mt-6'>{paginationBar}</div>}
 
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.users.help.managing.title')} icon={UsersIcon}>
