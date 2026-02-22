@@ -653,7 +653,7 @@ export default function ServerAllocationsPage() {
                                             className={cn(
                                                 'p-4 rounded-2xl border cursor-pointer flex justify-between items-center transition-all duration-200',
                                                 selectedAssignId === item.id
-                                                    ? 'bg-primary/10 border-primary/50 shadow-[0_0_20px_rgba(var(--primary),0.2)] scale-[1.02]'
+                                                    ? 'bg-primary/10 border-primary/50 scale-[1.02]'
                                                     : 'bg-black/20 border-white/5 hover:bg-black/40 hover:border-white/10',
                                             )}
                                             onClick={() => setSelectedAssignId(item.id)}

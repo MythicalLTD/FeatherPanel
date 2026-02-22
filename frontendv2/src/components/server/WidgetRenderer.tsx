@@ -146,7 +146,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                 <CardHeader className={cn('space-y-1 pb-4', widget.classes?.header)}>
                                     <div className='flex items-center gap-3'>
                                         {getCardIcon(widget) && (
-                                            <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-[0_0_15px_rgba(var(--primary),0.1)] border border-primary/20'>
+                                            <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20'>
                                                 <span className='text-sm font-bold uppercase tracking-wider'>
                                                     {getCardIcon(widget)}
                                                 </span>

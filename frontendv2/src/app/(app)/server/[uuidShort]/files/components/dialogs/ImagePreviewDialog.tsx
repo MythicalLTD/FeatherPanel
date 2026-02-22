@@ -145,7 +145,7 @@ export function ImagePreviewDialog({
                             <img
                                 src={blobUrl}
                                 alt={file.name}
-                                className='max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl transition-transform group-hover:scale-[1.02] duration-500'
+                                className='max-w-full max-h-[70vh] object-contain rounded-lg transition-transform group-hover:scale-[1.02] duration-500'
                             />
                             <div className='absolute inset-0 rounded-lg ring-1 ring-white/10 pointer-events-none' />
                         </div>

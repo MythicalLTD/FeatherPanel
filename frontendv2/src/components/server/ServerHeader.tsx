@@ -83,7 +83,7 @@ export default function ServerHeader({
     };
 
     return (
-        <div className='rounded-xl border border-border bg-card shadow-sm'>
+        <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl'>
             <div className='p-6'>
                 <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
                     <div className='space-y-2'>

@@ -157,7 +157,7 @@ export default function ServerSubdomainsPage() {
             <WidgetRenderer widgets={getWidgets('server-subdomains', 'after-header')} />
 
             {limitReached && (
-                <div className='relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500 shadow-sm'>
+                <div className='relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500'>
                     <div className='relative z-10 flex items-start gap-5'>
                         <div className='h-12 w-12 rounded-2xl bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30 shrink-0'>
                             <AlertTriangle className='h-6 w-6 text-yellow-500' />

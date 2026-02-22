@@ -83,7 +83,7 @@ export function FileActionToolbar({
 
     return (
         <div className='sticky top-0 z-20 pb-4'>
-            <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-black/5 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-xl p-2 shadow-sm transition-all duration-300'>
+            <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-black/5 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-xl p-2 transition-all duration-300'>
                 {hasSelection ? (
                     <>
                         <div className='flex items-center gap-3 px-2'>

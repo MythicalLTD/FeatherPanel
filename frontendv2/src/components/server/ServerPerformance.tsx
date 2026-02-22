@@ -128,7 +128,7 @@ export default function ServerPerformance({
                 return (
                     <div
                         key={chart.title}
-                        className='rounded-xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-all'
+                        className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 transition-all'
                     >
                         <div className='flex items-center justify-between mb-3'>
                             <h3 className='text-sm font-medium text-gray-900 dark:text-white'>{chart.title}</h3>
@@ -173,7 +173,7 @@ export default function ServerPerformance({
                                                     }
 
                                                     return (
-                                                        <div className='bg-background border border-border rounded-lg p-2 shadow-lg'>
+                                                        <div className='bg-background/95 backdrop-blur border border-border rounded-lg p-2'>
                                                             <p className='text-xs font-medium'>{formattedValue}</p>
                                                         </div>
                                                     );

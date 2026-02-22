@@ -176,7 +176,7 @@ export default function EditSchedulePage() {
             <form onSubmit={handleUpdate} className='space-y-8'>
                 <div className='fixed inset-0 bg-linear-to-br from-primary/5 via-transparent to-blue-500/5 pointer-events-none -z-10' />
 
-                <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
+                <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
                             <Calendar className='h-5 w-5 text-primary' />
@@ -210,7 +210,7 @@ export default function EditSchedulePage() {
                     </div>
                 </div>
 
-                <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
+                <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
                     <div className='flex items-center justify-between border-b border-border/10 pb-6'>
                         <div className='flex items-center gap-4'>
                             <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
@@ -311,7 +311,7 @@ export default function EditSchedulePage() {
                     <p className='text-xs text-muted-foreground'>{t('serverSchedules.cronHelp')}</p>
                 </div>
 
-                <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
+                <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
                     <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                         <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
                             <Calendar className='h-5 w-5 text-primary' />

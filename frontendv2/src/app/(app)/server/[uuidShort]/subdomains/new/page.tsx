@@ -206,7 +206,7 @@ export default function CreateSubdomainPage() {
                         </div>
                     )}
 
-                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
+                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
                         <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                             <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
                                 <Globe className='h-5 w-5 text-primary' />
@@ -261,7 +261,7 @@ export default function CreateSubdomainPage() {
                 </div>
 
                 <div className='lg:col-span-4 space-y-8'>
-                    <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-sm relative overflow-hidden group'>
+                    <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 relative overflow-hidden group'>
                         <div className='absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000' />
                         <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10'>
                             <Info className='h-5 w-5 text-blue-500' />
@@ -276,7 +276,7 @@ export default function CreateSubdomainPage() {
                         </div>
                     </div>
 
-                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm relative overflow-hidden'>
+                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 relative overflow-hidden'>
                         <div className='flex items-center gap-4 border-b border-border/10 pb-6 relative z-10'>
                             <div className='h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center border border-border/10'>
                                 <Settings2 className='h-5 w-5 text-muted-foreground' />

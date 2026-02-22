@@ -709,7 +709,7 @@ export default function ServerTransferSpellPage() {
                                                     className={cn(
                                                         'h-2 w-2 rounded-full transition-all duration-300',
                                                         variableErrors[v.variable_id]
-                                                            ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'
+                                                            ? 'bg-red-500'
                                                             : 'bg-primary/40 group-hover/var:bg-primary',
                                                     )}
                                                 />

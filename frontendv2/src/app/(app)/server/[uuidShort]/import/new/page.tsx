@@ -205,7 +205,7 @@ export default function CreateServerImportPage() {
             <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
                 <div className='lg:col-span-8 space-y-8'>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-                        <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
+                        <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
                             <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                                 <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
                                     <Globe className='h-5 w-5 text-primary' />
@@ -281,7 +281,7 @@ export default function CreateServerImportPage() {
                             </div>
                         </div>
 
-                        <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm'>
+                        <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
                             <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
                                 <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20'>
                                     <User className='h-5 w-5 text-blue-500' />
@@ -337,7 +337,7 @@ export default function CreateServerImportPage() {
                         </div>
                     </div>
 
-                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-8 shadow-sm relative overflow-hidden'>
+                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-8 relative overflow-hidden'>
                         <div className='absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-[80px] pointer-events-none' />
                         <div className='flex items-center gap-5 border-b border-border/10 pb-8'>
                             <div className='h-12 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20'>
@@ -420,7 +420,7 @@ export default function CreateServerImportPage() {
                 </div>
 
                 <div className='lg:col-span-4 space-y-8'>
-                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 shadow-sm relative overflow-hidden group'>
+                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 relative overflow-hidden group'>
                         <div className='absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl pointer-events-none group-hover:bg-primary/10 transition-all duration-700' />
                         <div className='flex items-center gap-4 border-b border-border/10 pb-6 relative z-10'>
                             <div className='h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center border border-border/10'>
@@ -464,13 +464,13 @@ export default function CreateServerImportPage() {
                                         className={cn(
                                             'w-10 h-5 rounded-full transition-all duration-500 relative shrink-0',
                                             form.wipe
-                                                ? 'bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]'
+                                                ? 'bg-primary'
                                                 : 'bg-muted',
                                         )}
                                     >
                                         <div
                                             className={cn(
-                                                'absolute top-1 w-3 h-3 rounded-full bg-background transition-all duration-500 shadow-md',
+                                                'absolute top-1 w-3 h-3 rounded-full bg-background transition-all duration-500',
                                                 form.wipe ? 'left-6' : 'left-1',
                                             )}
                                         />
@@ -507,13 +507,13 @@ export default function CreateServerImportPage() {
                                         className={cn(
                                             'w-10 h-5 rounded-full transition-all duration-500 relative shrink-0',
                                             form.wipeAllFiles
-                                                ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'
+                                                ? 'bg-red-500'
                                                 : 'bg-muted',
                                         )}
                                     >
                                         <div
                                             className={cn(
-                                                'absolute top-1 w-3 h-3 rounded-full bg-background transition-all duration-500 shadow-md',
+                                                'absolute top-1 w-3 h-3 rounded-full bg-background transition-all duration-500',
                                                 form.wipeAllFiles ? 'left-6' : 'left-1',
                                             )}
                                         />
@@ -541,7 +541,7 @@ export default function CreateServerImportPage() {
                         )}
                     </div>
 
-                    <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-sm relative overflow-hidden group'>
+                    <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 relative overflow-hidden group'>
                         <div className='absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000' />
                         <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10'>
                             <ShieldAlert className='h-5 w-5 text-blue-500' />

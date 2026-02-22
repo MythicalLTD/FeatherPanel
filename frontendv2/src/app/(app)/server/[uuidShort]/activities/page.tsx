@@ -541,7 +541,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                                 iconWrapperClassName={getEventIconClass(activity.event)}
                                 title={formatEvent(activity.event)}
                                 badges={
-                                    <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40 shadow-sm'>
+                                    <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40'>
                                         {activity.id}
                                     </span>
                                 }
@@ -673,7 +673,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                             <div className='flex items-center gap-6'>
                                 <div
                                     className={cn(
-                                        'h-20 w-20 rounded-4xl flex items-center justify-center border-4 shadow-2xl transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0',
+                                        'h-20 w-20 rounded-4xl flex items-center justify-center border-4 transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0',
                                         getEventIconClass(selectedItem.event),
                                     )}
                                 >
@@ -770,7 +770,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                                     </Button>
                                 </div>
                                 <div className='relative group h-full'>
-                                    <pre className='h-full max-h-[600px] bg-black/40 text-emerald-400 p-8 rounded-4xl overflow-x-auto font-mono text-base border border-white/5 custom-scrollbar leading-relaxed backdrop-blur-3xl shadow-2xl'>
+                                    <pre className='h-full max-h-[600px] bg-black/40 text-emerald-400 p-8 rounded-4xl overflow-x-auto font-mono text-base border border-white/5 custom-scrollbar leading-relaxed backdrop-blur-3xl'>
                                         {rawJson || '// No additional metadata available'}
                                     </pre>
                                 </div>

@@ -103,8 +103,8 @@ export function FileRow({
                     className={cn(
                         'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/5 transition-all group-hover:scale-110',
                         file.isFile
-                            ? 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 shadow-sm'
-                            : 'bg-amber-500/10 text-amber-500 shadow-sm shadow-amber-500/20',
+                            ? 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400'
+                            : 'bg-amber-500/10 text-amber-500',
                     )}
                 >
                     {file.isFile ? (

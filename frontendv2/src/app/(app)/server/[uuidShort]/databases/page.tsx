@@ -439,7 +439,7 @@ export default function ServerDatabasesPage() {
                                 title={db.database}
                                 badges={
                                     <>
-                                        <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-primary/10 text-primary border border-primary/20 shadow-sm'>
+                                        <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-primary/10 text-primary border border-primary/20'>
                                             {db.database_type}
                                         </span>
                                         {db.remote === '%' ? (
@@ -448,7 +448,7 @@ export default function ServerDatabasesPage() {
                                                 All Hosts
                                             </span>
                                         ) : (
-                                            <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-muted border border-border/50 shadow-sm font-mono text-muted-foreground'>
+                                            <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-muted border border-border/50 font-mono text-muted-foreground'>
                                                 {db.remote}
                                             </span>
                                         )}
@@ -476,7 +476,7 @@ export default function ServerDatabasesPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent
                                                 align='end'
-                                                className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl'
+                                                className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl'
                                             >
                                                 {canViewPassword && (
                                                     <>
@@ -717,7 +717,7 @@ export default function ServerDatabasesPage() {
                     </DialogHeader>
 
                     <div
-                        className='flex items-center gap-4 p-5 bg-card rounded-3xl border border-border/50 cursor-pointer group hover:bg-accent/50 transition-all mx-1'
+                        className='flex items-center gap-4 p-5 bg-card/50 backdrop-blur-xl rounded-3xl border border-border/50 cursor-pointer group hover:bg-accent/50 transition-all mx-1'
                         onClick={() => setRememberSensitiveChoice(!rememberSensitiveChoice)}
                     >
                         <Checkbox

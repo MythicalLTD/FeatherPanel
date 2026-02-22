@@ -182,7 +182,7 @@ export default function ServerProxyPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-proxy', 'after-header')} />
 
-            <div className='relative overflow-hidden p-6 rounded-3xl bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500 shadow-sm'>
+            <div className='relative overflow-hidden p-6 rounded-3xl bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500'>
                 <div className='relative z-10 flex items-start gap-5'>
                     <div className='h-12 w-12 rounded-2xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shrink-0'>
                         <Info className='h-6 w-6 text-blue-500' />
@@ -249,15 +249,14 @@ export default function ServerProxyPage() {
                             badges={[
                                 {
                                     label: `:${proxy.port}`,
-                                    className: 'bg-background/50 border border-border/40 shadow-sm opacity-80',
+                                    className: 'bg-background/50 border border-border/40 opacity-80',
                                 },
                                 ...(proxy.ssl
                                     ? [
                                           {
                                               label: t('serverProxy.sslEnabled'),
                                               className:
-                                                  'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-emerald-500/5',
-                                          },
+                                                  'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20                                           },
                                       ]
                                     : []),
                             ]}

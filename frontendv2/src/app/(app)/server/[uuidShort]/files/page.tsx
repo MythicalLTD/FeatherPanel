@@ -340,7 +340,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                         </div>
                                         <div className='h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5'>
                                             <div
-                                                className='h-full bg-linear-to-r from-primary to-primary-foreground transition-all duration-500 shadow-[0_0_10px_rgba(var(--primary),0.5)]'
+                                                className='h-full bg-linear-to-r from-primary to-primary-foreground transition-all duration-500 '
                                                 style={{ width: `${pull.Progress}%` }}
                                             />
                                         </div>

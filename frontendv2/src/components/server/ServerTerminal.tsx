@@ -272,7 +272,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const canSend = canSendCommands && (serverStatus === 'running' || serverStatus === 'starting');
 
         return (
-            <div className='rounded-xl border border-border bg-card shadow-sm overflow-hidden'>
+            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl overflow-hidden'>
                 <div className='border-b border-border p-4 sm:p-6'>
                     <div className='flex items-center justify-between'>
                         <div className='flex items-center gap-3'>

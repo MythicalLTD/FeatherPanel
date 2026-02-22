@@ -102,7 +102,7 @@ export default function ServerInfoCards({
 
     return (
         <div className={cn('grid gap-6', className)}>
-            <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
+            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
                 <h3 className='text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2'>
                     <Wifi className='h-4 w-4' />
                     {t('servers.console.info_cards.network_title')}
@@ -157,7 +157,7 @@ export default function ServerInfoCards({
                 </div>
             </div>
 
-            <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
+            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
                 <h3 className='text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2'>
                     <Activity className='h-4 w-4' />
                     {t('servers.console.info_cards.resources_title')}
@@ -208,7 +208,7 @@ export default function ServerInfoCards({
                 </div>
             </div>
 
-            <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
+            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
                 <h3 className='text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2'>
                     <Activity className='h-4 w-4' />
                     {t('servers.console.info_cards.network_title')}

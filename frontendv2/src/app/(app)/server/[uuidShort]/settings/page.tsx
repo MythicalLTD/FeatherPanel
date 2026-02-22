@@ -423,7 +423,7 @@ export default function ServerSettingsPage() {
                             </div>
                         </div>
 
-                        <div className='mt-6 p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl shadow-sm'>
+                        <div className='mt-6 p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl'>
                             <div className='flex items-start gap-3'>
                                 <Info className='h-5 w-5 text-blue-500 mt-0.5 shrink-0' />
                                 <div className='space-y-2'>

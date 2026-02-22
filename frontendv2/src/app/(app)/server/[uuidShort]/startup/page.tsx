@@ -465,7 +465,7 @@ export default function ServerStartupPage() {
                                                     className={cn(
                                                         'w-1.5 h-1.5 rounded-full transition-all duration-300',
                                                         variableErrors[v.variable_id]
-                                                            ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'
+                                                            ? 'bg-red-500'
                                                             : 'bg-purple-500/50 group-hover/var:bg-purple-500',
                                                     )}
                                                 />
@@ -565,7 +565,7 @@ export default function ServerStartupPage() {
                                                     {image}
                                                 </p>
                                                 {form.image === image && (
-                                                    <div className='h-1.5 w-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' />
+                                                    <div className='h-1.5 w-1.5 rounded-full bg-blue-500' />
                                                 )}
                                             </div>
                                         </div>
@@ -610,7 +610,7 @@ export default function ServerStartupPage() {
                     )}
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-spell-selection')} />
 
-                    <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 shadow-sm relative overflow-hidden group'>
+                    <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 relative overflow-hidden group'>
                         <div className='absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000' />
                         <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10'>
                             <Info className='h-5 w-5 text-blue-500' />
