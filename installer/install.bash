@@ -8,6 +8,9 @@ if [ "$EUID" -ne 0 ]; then
 	exit 1
 fi
 
+apt update -y 
+apt upgrade -y 
+
 # Parse command-line arguments
 SKIP_OS_CHECK=false
 FORCE_ARM=false
@@ -64,7 +67,7 @@ while [[ $# -gt 0 ]]; do
 		echo "  --force-arm            Bypass ARM architecture warnings and checks"
 		echo "  --skip-install-check   Skip check for existing installation"
 		echo "  --skip-virt-check      Skip virtualization compatibility checks"
-		echo "  --skip-system-update   Skip apt update/upgrade and essential package installation"
+		echo "  --skip-system-update   Skip apt update and essential package installation"
 		echo "  --dev                  Use latest dev release images"
 		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., main, develop)"
 		echo "  --dev-sha SHA          Use dev images for specific commit SHA (requires --dev-branch)"
@@ -540,7 +543,10 @@ ensure_system_ready() {
 	fi
 
 	log_info "Updating package lists and ensuring essential packages (sudo, curl) are installed..."
-	log_info "This may take a few minutes on first run."
+
+	# Avoid any interactive prompts (can hang when script is piped or in CI)
+	export DEBIAN_FRONTEND=noninteractive
+	export APT_LISTCHANGES_FRONTEND=none
 
 	# We run as root - use apt-get directly (sudo may not exist on minimal systems)
 	if ! apt-get update -qq >>"$LOG_FILE" 2>&1; then
@@ -548,20 +554,18 @@ ensure_system_ready() {
 		return 1
 	fi
 
-	# Install essential packages (sudo, curl needed by installer; others for Docker/Certbot)
+	# Install essential packages only (no full upgrade - upgrade can hang on prompts or take extremely long)
 	ESSENTIAL_PACKAGES="sudo curl ca-certificates apt-transport-https gnupg"
 	for pkg in $ESSENTIAL_PACKAGES; do
 		if ! dpkg -s "$pkg" >/dev/null 2>&1; then
-			if ! run_with_spinner "Installing $pkg..." "$pkg installed." apt-get install -y -qq "$pkg"; then
+			if ! run_with_spinner "Installing $pkg..." "$pkg installed." apt-get install -y -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" "$pkg"; then
 				log_warn "Failed to install $pkg - continuing anyway"
 			fi
 		fi
 	done
 
-	# Upgrade all packages (non-interactive, with spinner - can take several minutes)
-	if ! run_with_spinner "Upgrading system packages (may take 5-10 minutes)..." "System upgrade complete." true apt-get upgrade -y -qq; then
-		log_warn "System upgrade had issues. Check $LOG_FILE. Continuing..."
-	fi
+	log_success "Package lists updated and essential packages ready."
+	log_info "To upgrade all system packages later (optional): sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y"
 }
 
 # Function to check if a package is installed and install it if not
