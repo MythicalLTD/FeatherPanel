@@ -16,15 +16,23 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
+import AuthBackground from '@/components/auth/AuthBackground';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
-    const { backgroundType, backgroundImage, backdropBlur, backdropDarken, backgroundImageFit } = useTheme();
-    const { core } = useSettings();
+    const { backgroundType, backgroundImage, backdropBlur, backdropDarken, backgroundImageFit, theme } = useTheme();
+    const { core, settings } = useSettings();
     const { t } = useTranslation();
+
+    const appName = settings?.app_name || 'FeatherPanel';
+    const logoUrl =
+        theme === 'dark'
+            ? settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png'
+            : settings?.app_logo_white || settings?.app_logo_dark || '/assets/logo.png';
 
     const renderBackground = () => {
         const gradientMap: Record<string, string> = {
@@ -90,6 +98,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
     return (
         <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-4 sm:p-6 md:p-10'>
+            <AuthBackground />
             {renderBackground()}
             {hasOverlay && (
                 <div className='pointer-events-none absolute inset-0 z-[1]' style={overlayStyle} aria-hidden />
@@ -103,21 +112,34 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 <div className='mb-6 flex flex-col items-center gap-4'>
                     <Link
                         href='/'
-                        className='group flex flex-col items-center gap-3 font-medium transition-all duration-300 hover:scale-105'
-                    ></Link>
+                        className='group flex flex-col items-center gap-3 font-medium transition-all duration-300 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl'
+                    >
+                        <div className='relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-lg transition-transform duration-300 group-hover:shadow-xl'>
+                            <Image
+                                src={logoUrl}
+                                alt={appName}
+                                width={56}
+                                height={56}
+                                className='object-contain p-1.5'
+                                unoptimized
+                                priority
+                            />
+                        </div>
+                        <span className='text-xl font-bold tracking-tight text-foreground'>{appName}</span>
+                    </Link>
                 </div>
 
-                <div className='relative group'>
+                <div className='relative group motion-content'>
                     <div className='absolute -inset-0.5 bg-linear-to-r from-primary/50 to-primary/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000' />
 
-                    <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 shadow-2xl shadow-black/20 transition-all duration-300'>
+                    <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 shadow-2xl shadow-black/20 transition-all duration-300 animate-fade-in-up'>
                         <div className='relative z-10'>{children}</div>
                     </div>
                 </div>
 
                 <div className='mt-8 text-center text-xs text-muted-foreground transition-all duration-200'>
                     <p className='mb-2 font-medium'>
-                        {t('branding.running_on', { name: 'FeatherPanel', version: core?.version || '' }).trim()}
+                        {t('branding.running_on', { name: appName, version: core?.version || '' }).trim()}
                     </p>
                     <a
                         href='https://featherpanel.com'

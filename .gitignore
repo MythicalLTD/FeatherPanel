@@ -24,3 +24,7 @@ backend/storage/config/ratelimit.json
 old/
 /blueprintconverter/
 .cursor/
+node_modules
+package-lock.json
+pnpm-lock.yaml
+package.json

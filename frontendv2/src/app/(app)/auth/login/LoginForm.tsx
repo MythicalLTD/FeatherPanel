@@ -197,7 +197,9 @@ export default function LoginForm() {
 
             {!isSsoLogin && (
                 <div className='text-center space-y-2'>
-                    <h2 className='text-2xl font-bold tracking-tight'>{t('auth.login.title')}</h2>
+                    <h2 className='text-2xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent'>
+                        {t('auth.login.title')}
+                    </h2>
                     <p className='text-sm text-muted-foreground'>{t('auth.login.subtitle')}</p>
                 </div>
             )}
