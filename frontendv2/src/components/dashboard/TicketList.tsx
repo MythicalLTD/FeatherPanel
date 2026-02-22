@@ -69,7 +69,7 @@ export function TicketList({ t }: TicketListProps) {
 
     if (loading) {
         return (
-            <div className='rounded-xl border border-border bg-card shadow-sm p-6 space-y-4'>
+            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 space-y-4'>
                 <div className='flex items-center justify-between'>
                     <div className='h-6 w-32 bg-muted animate-pulse rounded' />
                     <div className='h-4 w-16 bg-muted animate-pulse rounded' />
@@ -88,7 +88,7 @@ export function TicketList({ t }: TicketListProps) {
     }
 
     return (
-        <div className='rounded-xl border border-border bg-card shadow-sm'>
+        <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl'>
             <div className='flex items-center justify-between p-6 border-b border-border'>
                 <div className='flex items-center gap-2'>
                     <Ticket className='h-5 w-5 text-muted-foreground' />

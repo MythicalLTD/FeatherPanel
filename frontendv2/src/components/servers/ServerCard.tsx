@@ -69,7 +69,7 @@ export function ServerCard({
         return (
             <div
                 className={cn(
-                    'flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 bg-card rounded-2xl border border-border transition-all relative group hover-lift hover-scale',
+                    'flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 transition-all relative group',
                     accessible ? 'hover:border-primary' : 'opacity-60',
                 )}
             >
@@ -188,7 +188,7 @@ export function ServerCard({
     return (
         <div
             className={cn(
-                'group relative bg-card rounded-2xl border border-border overflow-hidden transition-all hover-lift hover-scale',
+                'group relative bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden transition-all',
                 accessible ? 'hover:border-primary' : 'opacity-60',
             )}
         >

@@ -100,7 +100,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                     <div className='hidden lg:block lg:h-6 lg:w-px lg:bg-border' aria-hidden='true' />
 
                     <Menu as='div' className='relative'>
-                        <Menu.Button className='flex items-center gap-x-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all'>
+                        <Menu.Button className='flex items-center gap-x-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all focus:ring-0 focus:outline-none'>
                             <span className='sr-only'>{t('navbar.openUserMenu')}</span>
                             {user?.avatar ? (
                                 <Image
@@ -109,10 +109,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                                     width={32}
                                     height={32}
                                     unoptimized
-                                    className='h-8 w-8 rounded-full border border-primary/20 object-cover'
+                                    className='h-8 w-8 rounded-full border border-border/60 object-cover'
                                 />
                             ) : (
-                                <div className='h-8 w-8 rounded-full bg-linear-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center'>
+                                <div className='h-8 w-8 rounded-full bg-muted/80 border border-border/60 flex items-center justify-center'>
                                     <span className='text-sm font-semibold text-primary'>{getUserInitials()}</span>
                                 </div>
                             )}
@@ -131,7 +131,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                             leaveFrom='transform opacity-100 scale-100'
                             leaveTo='transform opacity-0 scale-95'
                         >
-                            <Menu.Items className='absolute right-0 z-10 mt-2.5 w-64 origin-top-right rounded-xl bg-card border border-border ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden'>
+                            <Menu.Items className='absolute right-0 z-10 mt-2.5 w-64 origin-top-right rounded-xl bg-card/80 backdrop-blur-xl border border-border/80 focus:outline-none overflow-hidden'>
                                 <div className='px-4 py-3 border-b border-border'>
                                     <div className='flex items-center gap-3 mb-2'>
                                         {user?.avatar ? (
