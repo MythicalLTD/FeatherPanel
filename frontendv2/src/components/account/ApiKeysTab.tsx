@@ -276,7 +276,10 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             ) : (
                 <div className='space-y-3'>
                     {filteredClients.map((client) => (
-                        <div key={client.id} className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4'>
+                        <div
+                            key={client.id}
+                            className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4'
+                        >
                             <div className='flex items-start justify-between mb-3'>
                                 <div className='flex-1'>
                                     <h4 className='text-sm font-semibold text-foreground'>{client.name}</h4>

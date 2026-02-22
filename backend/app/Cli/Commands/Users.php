@@ -26,9 +26,9 @@ use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\ApiClient;
 use App\Chat\MailQueue;
-use App\Config\ConfigInterface;
 use App\Helpers\UUIDUtils;
 use App\Cli\CommandBuilder;
+use App\Config\ConfigInterface;
 
 class Users extends App implements CommandBuilder
 {

@@ -269,7 +269,10 @@ export default function MailTab() {
             {mails.length > 0 ? (
                 <div className='space-y-4'>
                     {mails.map((mail) => (
-                        <div key={mail.id} className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4 transition-colors'>
+                        <div
+                            key={mail.id}
+                            className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4 transition-colors'
+                        >
                             <div className='flex items-start justify-between mb-3'>
                                 <div className='flex-1'>
                                     <h4 className='text-sm font-semibold text-foreground mb-2'>{mail.subject}</h4>

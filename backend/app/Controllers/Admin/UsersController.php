@@ -18,18 +18,18 @@
 namespace App\Controllers\Admin;
 
 use App\App;
-use App\Chat\User;
 use App\Chat\Node;
-use App\Chat\Server;
-use App\Chat\Subuser;
+use App\Chat\User;
 use App\Chat\Realm;
 use App\Chat\Spell;
-use App\Chat\Allocation;
+use App\Chat\Server;
+use App\Chat\Subuser;
 use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\SsoToken;
 use App\Chat\ApiClient;
 use App\Chat\MailQueue;
+use App\Chat\Allocation;
 use App\Helpers\UUIDUtils;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -522,8 +522,8 @@ class UsersController
         $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
         // Generate UUID
         $data['uuid'] = UUIDUtils::generateV4();
-		$config = App::getInstance(true)->getConfig();
-		$avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
+        $config = App::getInstance(true)->getConfig();
+        $avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
         $data['remember_token'] = User::generateAccountToken();
         // Set default avatar if not provided
         if (empty($data['avatar'])) {
@@ -778,7 +778,7 @@ class UsersController
         }
 
         // Check if user has any servers
-        $servers = \App\Chat\Server::searchServers(
+        $servers = Server::searchServers(
             page: 1,
             limit: 1,
             search: '',

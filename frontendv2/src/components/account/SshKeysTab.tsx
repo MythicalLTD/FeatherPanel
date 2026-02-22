@@ -271,7 +271,10 @@ export default function SshKeysTab() {
             ) : (
                 <div className='space-y-3'>
                     {filteredKeys.map((key) => (
-                        <div key={key.id} className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4'>
+                        <div
+                            key={key.id}
+                            className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4'
+                        >
                             <div className='flex items-start justify-between mb-3'>
                                 <div className='flex-1'>
                                     <h4 className='text-sm font-semibold text-foreground'>{key.name}</h4>

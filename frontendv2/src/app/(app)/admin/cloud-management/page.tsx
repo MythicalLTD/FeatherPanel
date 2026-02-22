@@ -72,11 +72,7 @@ function StatusBadge({ connected }: { connected: boolean }) {
                     : 'bg-muted/50 text-muted-foreground border-border/50',
             )}
         >
-            {connected ? (
-                <CheckCircle2 className='h-3.5 w-3.5' />
-            ) : (
-                <XCircle className='h-3.5 w-3.5' />
-            )}
+            {connected ? <CheckCircle2 className='h-3.5 w-3.5' /> : <XCircle className='h-3.5 w-3.5' />}
             {connected
                 ? t('admin.cloud_management.connection_status.active')
                 : t('admin.cloud_management.connection_status.inactive')}
@@ -294,10 +290,7 @@ export default function CloudManagementPage() {
                 </PageCard>
             )}
 
-            <PageCard
-                title={t('admin.cloud_management.features.title')}
-                icon={Store}
-            >
+            <PageCard title={t('admin.cloud_management.features.title')} icon={Store}>
                 <ul className='space-y-4'>
                     <li className='flex gap-4 rounded-xl border border-border/50 bg-muted/5 p-4'>
                         <div className='h-10 w-10 shrink-0 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center'>
@@ -362,7 +355,10 @@ export default function CloudManagementPage() {
                             onClick={refreshCloudData}
                         >
                             <RefreshCw
-                                className={cn('h-4 w-4 mr-2', (isRefreshingCloudData || cloudLoading) && 'animate-spin')}
+                                className={cn(
+                                    'h-4 w-4 mr-2',
+                                    (isRefreshingCloudData || cloudLoading) && 'animate-spin',
+                                )}
                             />
                             {t('admin.cloud_management.cloud_info.refresh')}
                         </Button>
@@ -435,10 +431,7 @@ export default function CloudManagementPage() {
                 </PageCard>
             )}
 
-            <PageCard
-                title={t('admin.cloud_management.security.title')}
-                icon={LockKeyhole}
-            >
+            <PageCard title={t('admin.cloud_management.security.title')} icon={LockKeyhole}>
                 <div className='grid gap-4 sm:grid-cols-2'>
                     <div className='flex gap-3 rounded-xl border border-border/50 bg-muted/5 p-4'>
                         <Key className='h-5 w-5 shrink-0 text-muted-foreground' />

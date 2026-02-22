@@ -460,13 +460,7 @@ export default function CreateTicketPage() {
                                 {t('common.cancel')}
                             </Button>
                         </Link>
-                        <Button
-                            type='submit'
-                            size='lg'
-                            className='px-8'
-                            loading={creating}
-                            disabled={isLoading}
-                        >
+                        <Button type='submit' size='lg' className='px-8' loading={creating} disabled={isLoading}>
                             {creating ? t('tickets.creating') : t('tickets.createTicketButton')}
                         </Button>
                     </div>

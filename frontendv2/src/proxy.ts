@@ -18,8 +18,8 @@ import { NextRequest, NextResponse } from 'next/server';
 export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-	const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
-	console.log(`[DEBUG] [SSR] [proxy] ${request.method} ${request.url} -> ${pathname} [ip: ${ip}]`);
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    console.log(`[DEBUG] [SSR] [proxy] ${request.method} ${request.url} -> ${pathname} [ip: ${ip}]`);
 
     const publicRoutes = [
         '/',

@@ -20,10 +20,10 @@ namespace App\Cli\Commands;
 use App\Cli\App;
 use App\Chat\User;
 use App\Chat\Database;
-use App\Config\ConfigInterface;
 use App\Helpers\UUIDUtils;
 use App\Cli\CommandBuilder;
 use App\Config\ConfigFactory;
+use App\Config\ConfigInterface;
 
 class Saas extends App implements CommandBuilder
 {
@@ -188,8 +188,8 @@ class Saas extends App implements CommandBuilder
         }
 
         $uuid = UUIDUtils::generateV4();
-		$config = self::$app->getConfig();
-		$avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
+        $config = self::$app->getConfig();
+        $avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
 
         $data = [
             'username' => $username,

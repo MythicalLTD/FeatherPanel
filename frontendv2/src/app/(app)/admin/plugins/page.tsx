@@ -268,14 +268,22 @@ export default function PluginsPage() {
             const response = await axios.get('/api/admin/plugins/previously-installed');
             if (response.data.success && response.data.data?.plugins) {
                 const installedIdentifiers = new Set(plugins.map((p) => p.identifier));
+                // Show any plugin from history that is not currently installed (so user can reinstall)
                 const notCurrentlyInstalled = response.data.data.plugins.filter(
-                    (p: PreviouslyInstalledPlugin) =>
-                        p.uninstalled_at === null && !installedIdentifiers.has(p.identifier),
+                    (p: PreviouslyInstalledPlugin) => !installedIdentifiers.has(p.identifier),
                 );
-                setPreviouslyInstalledPlugins(notCurrentlyInstalled);
-                setShowPreviouslyInstalledBanner(notCurrentlyInstalled.length > 0);
+                // Dedupe by identifier (history can have multiple records per plugin)
+                const byId = new Map<string, PreviouslyInstalledPlugin>();
+                notCurrentlyInstalled.forEach((p: PreviouslyInstalledPlugin) => {
+                    if (!byId.has(p.identifier)) byId.set(p.identifier, p);
+                });
+                const list = Array.from(byId.values());
+                setPreviouslyInstalledPlugins(list);
+                setShowPreviouslyInstalledBanner(list.length > 0);
             }
-        } catch {}
+        } catch {
+            // Non-blocking: keep existing state on API failure
+        }
     }, [plugins]);
 
     useEffect(() => {
@@ -596,6 +604,7 @@ export default function PluginsPage() {
         setReinstallingPlugins(true);
         let success = 0;
         let fail = 0;
+        let firstError: string | null = null;
 
         const toReinstall = previouslyInstalledPlugins.filter((p) => selectedPluginsToReinstall.has(p.identifier));
 
@@ -603,8 +612,11 @@ export default function PluginsPage() {
             try {
                 await axios.post('/api/admin/plugins/online/install', { identifier: plugin.identifier });
                 success++;
-            } catch {
+            } catch (err) {
                 fail++;
+                if (!firstError && axios.isAxiosError(err) && err.response?.data?.message) {
+                    firstError = err.response.data.message;
+                }
             }
         }
 
@@ -617,7 +629,8 @@ export default function PluginsPage() {
             fetchPreviouslyInstalledPlugins();
             setTimeout(() => window.location.reload(), 2000);
         } else {
-            toast.error(t('admin.plugins.messages.reinstall_failed'));
+            const reason = firstError ? `: ${firstError}` : '';
+            toast.error(t('admin.plugins.messages.reinstall_failed') + reason);
         }
     };
 

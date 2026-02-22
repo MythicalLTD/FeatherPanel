@@ -30,7 +30,6 @@ use App\Chat\Activity;
 use App\Chat\Location;
 use App\Chat\Allocation;
 use App\Chat\UserSshKey;
-use App\Config\ConfigInterface;
 use App\Helpers\UUIDUtils;
 use App\Chat\SpellVariable;
 use App\Chat\ServerDatabase;
@@ -39,6 +38,7 @@ use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
+use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\UserEvent;
 use App\Plugins\Events\Events\NodesEvent;
@@ -356,7 +356,7 @@ class PterodactylImporterController
 
             // Log any variable import errors
             if (!empty($variableErrors)) {
-                $logger = \App\App::getInstance(true)->getLogger();
+                $logger = App::getInstance(true)->getLogger();
                 $logger->warning('Some variables failed to import for spell ' . $spell['name'] . ': ' . implode(', ', $variableErrors));
             }
 
@@ -371,7 +371,7 @@ class PterodactylImporterController
                 201
             );
         } catch (\Exception $e) {
-            $logger = \App\App::getInstance(true)->getLogger();
+            $logger = App::getInstance(true)->getLogger();
             $logger->error('Failed to import egg: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
 
             return ApiResponse::error('Failed to import egg: ' . $e->getMessage(), 'EGG_IMPORT_ERROR', 500);
@@ -587,7 +587,7 @@ class PterodactylImporterController
                 201
             );
         } catch (\Exception $e) {
-            $logger = \App\App::getInstance(true)->getLogger();
+            $logger = App::getInstance(true)->getLogger();
             $logger->error('Failed to import node: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
 
             return ApiResponse::error('Failed to import node: ' . $e->getMessage(), 'NODE_IMPORT_ERROR', 500);
@@ -762,7 +762,7 @@ class PterodactylImporterController
                 201
             );
         } catch (\Exception $e) {
-            $logger = \App\App::getInstance(true)->getLogger();
+            $logger = App::getInstance(true)->getLogger();
             $logger->error('Failed to import allocation: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
 
             return ApiResponse::error('Failed to import allocation: ' . $e->getMessage(), 'ALLOCATION_IMPORT_ERROR', 500);
@@ -904,8 +904,8 @@ class PterodactylImporterController
                 }
             }
             $roleId = $isRootAdmin ? 4 : 1; // 4 = admin, 1 = user
-			$config = App::getInstance(true)->getConfig();
-			$avatar = $config->getSetting(ConfigInterface::APP_LOGO_DARK, 'https://github.com/featherpanel-com.png');
+            $config = App::getInstance(true)->getConfig();
+            $avatar = $config->getSetting(ConfigInterface::APP_LOGO_DARK, 'https://github.com/featherpanel-com.png');
             $userData = [
                 'uuid' => $user['uuid'],
                 'username' => $user['username'],
@@ -971,7 +971,7 @@ class PterodactylImporterController
                 201
             );
         } catch (\Exception $e) {
-            $logger = \App\App::getInstance(true)->getLogger();
+            $logger = App::getInstance(true)->getLogger();
             $logger->error('Failed to import user: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
 
             return ApiResponse::error('Failed to import user: ' . $e->getMessage(), 'USER_IMPORT_ERROR', 500);
@@ -1140,7 +1140,7 @@ class PterodactylImporterController
                 201
             );
         } catch (\Exception $e) {
-            $logger = \App\App::getInstance(true)->getLogger();
+            $logger = App::getInstance(true)->getLogger();
             $logger->error('Failed to import SSH key: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
 
             return ApiResponse::error('Failed to import SSH key: ' . $e->getMessage(), 'SSH_KEY_IMPORT_ERROR', 500);
@@ -1459,7 +1459,7 @@ class PterodactylImporterController
             $serverId = Server::createServer($serverData);
             if (!$serverId) {
                 // Get the last error from the logger to provide more details
-                $logger = \App\App::getInstance(true)->getLogger();
+                $logger = App::getInstance(true)->getLogger();
 
                 // Try to get more details about why it failed
                 $errorDetails = [];
@@ -1588,7 +1588,7 @@ class PterodactylImporterController
 
             // Log any variable import errors
             if (!empty($variableErrors)) {
-                $logger = \App\App::getInstance(true)->getLogger();
+                $logger = App::getInstance(true)->getLogger();
                 $logger->warning('Some server variables failed to import for server ID ' . $serverId . ': ' . implode(', ', $variableErrors));
             }
 
@@ -1623,7 +1623,7 @@ class PterodactylImporterController
                 201
             );
         } catch (\Exception $e) {
-            $logger = \App\App::getInstance(true)->getLogger();
+            $logger = App::getInstance(true)->getLogger();
             $logger->error('Failed to import server: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
 
             return ApiResponse::error('Failed to import server: ' . $e->getMessage(), 'SERVER_IMPORT_ERROR', 500);
@@ -1808,7 +1808,7 @@ class PterodactylImporterController
                 201
             );
         } catch (\Exception $e) {
-            $logger = \App\App::getInstance(true)->getLogger();
+            $logger = App::getInstance(true)->getLogger();
             $logger->error('Failed to import server database: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
 
             return ApiResponse::error('Failed to import server database: ' . $e->getMessage(), 'DATABASE_IMPORT_ERROR', 500);
@@ -1967,7 +1967,7 @@ class PterodactylImporterController
                 201
             );
         } catch (\Exception $e) {
-            $logger = \App\App::getInstance(true)->getLogger();
+            $logger = App::getInstance(true)->getLogger();
             $logger->error('Failed to import backup: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
 
             return ApiResponse::error('Failed to import backup: ' . $e->getMessage(), 'BACKUP_IMPORT_ERROR', 500);
@@ -2136,7 +2136,7 @@ class PterodactylImporterController
                 201
             );
         } catch (\Exception $e) {
-            $logger = \App\App::getInstance(true)->getLogger();
+            $logger = App::getInstance(true)->getLogger();
             $logger->error('Failed to import subuser: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
 
             return ApiResponse::error('Failed to import subuser: ' . $e->getMessage(), 'SUBUSER_IMPORT_ERROR', 500);
@@ -2306,7 +2306,7 @@ class PterodactylImporterController
                 201
             );
         } catch (\Exception $e) {
-            $logger = \App\App::getInstance(true)->getLogger();
+            $logger = App::getInstance(true)->getLogger();
             $logger->error('Failed to import schedule: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
 
             return ApiResponse::error('Failed to import schedule: ' . $e->getMessage(), 'SCHEDULE_IMPORT_ERROR', 500);
@@ -2460,7 +2460,7 @@ class PterodactylImporterController
                 201
             );
         } catch (\Exception $e) {
-            $logger = \App\App::getInstance(true)->getLogger();
+            $logger = App::getInstance(true)->getLogger();
             $logger->error('Failed to import task: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
 
             return ApiResponse::error('Failed to import task: ' . $e->getMessage(), 'TASK_IMPORT_ERROR', 500);
