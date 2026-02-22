@@ -256,7 +256,8 @@ export default function ServerProxyPage() {
                                           {
                                               label: t('serverProxy.sslEnabled'),
                                               className:
-                                                  'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20                                           },
+                                                  'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20',
+                                          },
                                       ]
                                     : []),
                             ]}

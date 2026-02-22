@@ -320,7 +320,7 @@ export default function CreateProxyPage() {
                                             'w-full h-10 font-bold tracking-wide uppercase text-[10px] rounded-xl transition-all',
                                             dnsVerified
                                                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                                : 'bg-primary hover:bg-primary/90'
+                                                : 'bg-primary hover:bg-primary/90',
                                         )}
                                     >
                                         {verifyingDns ? (

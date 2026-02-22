@@ -463,9 +463,7 @@ export default function CreateServerImportPage() {
                                     <div
                                         className={cn(
                                             'w-10 h-5 rounded-full transition-all duration-500 relative shrink-0',
-                                            form.wipe
-                                                ? 'bg-primary'
-                                                : 'bg-muted',
+                                            form.wipe ? 'bg-primary' : 'bg-muted',
                                         )}
                                     >
                                         <div
@@ -506,9 +504,7 @@ export default function CreateServerImportPage() {
                                     <div
                                         className={cn(
                                             'w-10 h-5 rounded-full transition-all duration-500 relative shrink-0',
-                                            form.wipeAllFiles
-                                                ? 'bg-red-500'
-                                                : 'bg-muted',
+                                            form.wipeAllFiles ? 'bg-red-500' : 'bg-muted',
                                         )}
                                     >
                                         <div
