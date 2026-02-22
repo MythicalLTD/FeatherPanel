@@ -86,7 +86,7 @@ export default function AccountPage() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'top-of-page')} />
 
-            <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
+            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
                 <div className='flex flex-col items-center text-center gap-4'>
                     {user?.avatar ? (
                         <NextImage
@@ -112,7 +112,7 @@ export default function AccountPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'after-profile-card')} />
 
-            <div className='rounded-xl border border-border bg-card shadow-sm'>
+            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl'>
                 <Tab.Group selectedIndex={selectedIndex} onChange={handleTabChange}>
                     <div className='block sm:hidden p-4 border-b border-border'>
                         <select

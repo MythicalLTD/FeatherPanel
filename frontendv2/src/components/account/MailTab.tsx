@@ -269,7 +269,7 @@ export default function MailTab() {
             {mails.length > 0 ? (
                 <div className='space-y-4'>
                     {mails.map((mail) => (
-                        <div key={mail.id} className='rounded-lg border border-border bg-card p-4  transition-shadow'>
+                        <div key={mail.id} className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4 transition-colors'>
                             <div className='flex items-start justify-between mb-3'>
                                 <div className='flex-1'>
                                     <h4 className='text-sm font-semibold text-foreground mb-2'>{mail.subject}</h4>
@@ -348,7 +348,7 @@ export default function MailTab() {
             <Dialog open={mailModalOpen} onClose={() => setMailModalOpen(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-5xl max-h-[90vh] rounded-xl bg-card border border-border p-6 flex flex-col'>
+                    <DialogPanel className='w-full max-w-5xl max-h-[90vh] rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6 flex flex-col'>
                         <DialogTitle className='text-xl font-semibold text-foreground mb-2'>
                             {selectedMail?.subject}
                         </DialogTitle>

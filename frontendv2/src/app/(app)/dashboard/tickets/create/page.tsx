@@ -277,7 +277,7 @@ export default function CreateTicketPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-create', 'after-header')} />
 
-            <div className='bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden'>
+            <div className='bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 overflow-hidden'>
                 <form onSubmit={handleSubmit} className='p-8 space-y-8'>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                         <div className='md:col-span-2'>
@@ -463,7 +463,7 @@ export default function CreateTicketPage() {
                         <Button
                             type='submit'
                             size='lg'
-                            className='px-8 shadow-md shadow-primary/20'
+                            className='px-8'
                             loading={creating}
                             disabled={isLoading}
                         >

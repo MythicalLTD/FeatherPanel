@@ -18,6 +18,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  experimental: {
+    turbopackFileSystemCacheForDev: true, // Huge boost for cold starts
+},
   // Enable standalone output for optimized Docker builds
   output: "standalone",
   // Prevent caching of HTML so users always get fresh chunk references after deploys

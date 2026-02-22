@@ -276,7 +276,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             ) : (
                 <div className='space-y-3'>
                     {filteredClients.map((client) => (
-                        <div key={client.id} className='rounded-lg border border-border bg-card p-4'>
+                        <div key={client.id} className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4'>
                             <div className='flex items-start justify-between mb-3'>
                                 <div className='flex-1'>
                                     <h4 className='text-sm font-semibold text-foreground'>{client.name}</h4>
@@ -340,7 +340,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             >
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card border border-border p-6 shadow-xl'>
+                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
                         <DialogTitle className='text-lg font-semibold text-foreground mb-2'>
                             {editModal ? t('account.apiKeys.editKey') : t('account.apiKeys.addKey')}
                         </DialogTitle>
@@ -387,7 +387,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             <Dialog open={viewModal} onClose={() => setViewModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card border border-border p-6 shadow-xl'>
+                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
                         <DialogTitle className='text-lg font-semibold text-foreground mb-4'>
                             {selectedClient?.name}
                         </DialogTitle>
@@ -445,7 +445,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             <Dialog open={deleteModal} onClose={() => setDeleteModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-md rounded-xl bg-card border border-border p-6 shadow-xl'>
+                    <DialogPanel className='w-full max-w-md rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
                         <DialogTitle className='text-lg font-semibold text-foreground mb-2'>
                             {t('account.apiKeys.confirmDelete')}
                         </DialogTitle>
@@ -467,7 +467,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             <Dialog open={regenerateModal} onClose={() => setRegenerateModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-md rounded-xl bg-card border border-border p-6 shadow-xl'>
+                    <DialogPanel className='w-full max-w-md rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
                         <DialogTitle className='text-lg font-semibold text-foreground mb-2'>
                             {t('account.apiKeys.confirmRegenerate')}
                         </DialogTitle>

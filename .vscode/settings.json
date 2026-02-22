@@ -233,5 +233,8 @@
 },
 "[jsonc]": {
 	"editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+},
+"[typescript]": {
+	"editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
 } // required to format on save
 }

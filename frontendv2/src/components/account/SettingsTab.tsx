@@ -148,7 +148,7 @@ export default function SettingsTab() {
                 <p className='text-sm text-muted-foreground mt-1'>{t('account.securitySettingsDescription')}</p>
             </div>
 
-            <div className='rounded-lg border border-border bg-card p-6'>
+            <div className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
                 <div className='flex items-start gap-4'>
                     <div className='shrink-0'>
                         <div className='w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center'>
@@ -209,7 +209,7 @@ export default function SettingsTab() {
             </div>
 
             {isEnabled(settings?.discord_oauth_enabled) && (
-                <div className='rounded-lg border border-border bg-card p-6'>
+                <div className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
                     <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
                         <div className='flex-1'>
                             <h4 className='text-sm font-medium text-foreground'>{t('account.discordAccount')}</h4>
@@ -243,7 +243,7 @@ export default function SettingsTab() {
                 </div>
             )}
 
-            <div className='rounded-lg border border-border bg-card p-6'>
+            <div className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
                 <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
                     <div className='flex-1'>
                         <h4 className='text-sm font-medium text-foreground'>{t('account.sessionManagement')}</h4>

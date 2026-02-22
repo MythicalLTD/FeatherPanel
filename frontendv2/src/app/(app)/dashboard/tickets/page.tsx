@@ -231,7 +231,7 @@ export default function TicketsPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'after-header')} />
 
-            <div className='bg-card/50 backdrop-blur-sm rounded-xl border border-border/50 p-1'>
+            <div className='bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 p-1'>
                 <div className='flex flex-col md:flex-row gap-4 p-4'>
                     <div className='flex-1 flex flex-col md:flex-row gap-4 w-full'>
                         <div className='w-full md:w-56 z-20'>
@@ -318,7 +318,7 @@ export default function TicketsPage() {
                     </Link>
                 </div>
             ) : (
-                <div className='bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden'>
+                <div className='bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 overflow-hidden'>
                     <div className='divide-y divide-border/50'>
                         {tickets.map((ticket) => (
                             <div

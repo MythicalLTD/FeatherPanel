@@ -302,7 +302,7 @@ export default function ServersPage() {
                 <WidgetRenderer widgets={getWidgets('dashboard-servers', 'after-header')} />
             </div>
 
-            <div className='flex flex-col gap-4 p-4 bg-card rounded-2xl border border-border'>
+            <div className='flex flex-col gap-4 p-4 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
                 <div className='flex-1 w-full'>
                     <input
                         type='text'
@@ -463,7 +463,7 @@ export default function ServersPage() {
             {!loading && !error && (
                 <>
                     {canViewAllServers && (
-                        <div className='flex gap-2 p-1 bg-card rounded-xl border border-border w-fit mb-6'>
+                        <div className='flex gap-2 p-1 bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 w-fit mb-6'>
                             <button
                                 type='button'
                                 onClick={() => setServerScope('mine')}
@@ -587,7 +587,7 @@ export default function ServersPage() {
                             selectedIndex={viewMode === 'all' ? 0 : 1}
                             onChange={(index) => setViewMode(index === 0 ? 'all' : 'folders')}
                         >
-                            <TabList className='flex gap-2 p-1 bg-card rounded-xl border border-border w-fit'>
+                            <TabList className='flex gap-2 p-1 bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 w-fit'>
                                 <Tab
                                     className={({ selected }) =>
                                         cn(

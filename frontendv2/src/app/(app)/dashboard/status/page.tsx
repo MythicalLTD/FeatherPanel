@@ -199,7 +199,7 @@ export default function StatusPage() {
 
             {statusData?.data?.global && (
                 <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-                    <div className='bg-card border border-border/50 rounded-xl p-5 flex items-center justify-between shadow-sm'>
+                    <div className='bg-card/50 backdrop-blur-xl border border-border/50 rounded-xl p-5 flex items-center justify-between'>
                         <div className='space-y-1'>
                             <p className='text-[10px] text-muted-foreground uppercase font-black tracking-widest'>
                                 {t('dashboard.status.totalNodes')}
@@ -210,7 +210,7 @@ export default function StatusPage() {
                             <LayoutGrid className='h-6 w-6 text-primary opacity-60' />
                         </div>
                     </div>
-                    <div className='bg-card border border-border/50 rounded-xl p-5 flex items-center justify-between shadow-sm'>
+                    <div className='bg-card/50 backdrop-blur-xl border border-border/50 rounded-xl p-5 flex items-center justify-between'>
                         <div className='space-y-1'>
                             <p className='text-[10px] text-muted-foreground uppercase font-black tracking-widest'>
                                 {t('dashboard.status.healthyNodes')}
@@ -221,7 +221,7 @@ export default function StatusPage() {
                             <Check className='h-6 w-6 text-green-500 opacity-60' />
                         </div>
                     </div>
-                    <div className='bg-card border border-border/50 rounded-xl p-5 flex items-center justify-between shadow-sm'>
+                    <div className='bg-card/50 backdrop-blur-xl border border-border/50 rounded-xl p-5 flex items-center justify-between'>
                         <div className='space-y-1'>
                             <p className='text-[10px] text-muted-foreground uppercase font-black tracking-widest'>
                                 {t('dashboard.status.totalServers')}
@@ -232,7 +232,7 @@ export default function StatusPage() {
                             <ServerIcon className='h-6 w-6 text-primary opacity-60' />
                         </div>
                     </div>
-                    <div className='bg-card border border-border/50 rounded-xl p-5 flex items-center justify-between shadow-sm'>
+                    <div className='bg-card/50 backdrop-blur-xl border border-border/50 rounded-xl p-5 flex items-center justify-between'>
                         <div className='space-y-1'>
                             <p className='text-[10px] text-muted-foreground uppercase font-black tracking-widest'>
                                 {t('dashboard.status.avgCpuUsage')}
@@ -254,7 +254,7 @@ export default function StatusPage() {
                     <h2 className='text-xl font-bold tracking-tight'>{t('dashboard.status.individualNodes')}</h2>
                 </div>
 
-                <div className='bg-card/50 backdrop-blur-sm rounded-xl border border-border/50 p-1'>
+                <div className='bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 p-1'>
                     <div className='flex flex-col md:flex-row gap-4 p-4'>
                         <div className='flex-1'>
                             <div className='relative'>
@@ -272,7 +272,7 @@ export default function StatusPage() {
 
                 <WidgetRenderer widgets={getWidgets('dashboard-status', 'before-node-list')} />
 
-                <div className='bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden'>
+                <div className='bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 overflow-hidden'>
                     <div className='divide-y divide-border/50'>
                         {filteredNodes.length > 0 ? (
                             filteredNodes.map((node) => (
@@ -283,7 +283,7 @@ export default function StatusPage() {
                                     <div className='flex items-center gap-5 flex-1 min-w-0'>
                                         <div
                                             className={cn(
-                                                'h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border border-border/30 shadow-inner',
+                                                'h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border border-border/30',
                                                 node.status === 'healthy'
                                                     ? 'bg-green-500/5 text-green-500'
                                                     : 'bg-red-500/5 text-red-500',
@@ -413,7 +413,7 @@ export default function StatusPage() {
 
             {statusData?.data?.global && (
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
-                    <div className='bg-card rounded-xl border border-border/50 p-6 shadow-sm'>
+                    <div className='bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 p-6'>
                         <div className='flex items-center justify-between mb-4'>
                             <span className='text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground'>
                                 <MemoryStick className='h-4 w-4 text-blue-500 opacity-60' />{' '}
@@ -433,7 +433,7 @@ export default function StatusPage() {
                             />
                         </div>
                     </div>
-                    <div className='bg-card rounded-xl border border-border/50 p-6 shadow-sm'>
+                    <div className='bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 p-6'>
                         <div className='flex items-center justify-between mb-4'>
                             <span className='text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground'>
                                 <HardDrive className='h-4 w-4 text-green-500 opacity-60' />{' '}

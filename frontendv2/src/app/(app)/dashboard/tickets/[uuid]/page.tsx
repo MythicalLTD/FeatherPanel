@@ -287,7 +287,7 @@ export default function TicketViewPage() {
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'after-header')} />
 
             <div className='flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6'>
-                <div className='lg:col-span-8 flex flex-col bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden h-full'>
+                <div className='lg:col-span-8 flex flex-col bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden h-full'>
                     <div className='flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar space-y-8'>
                         <div className='flex gap-4 group'>
                             <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50' />
@@ -357,7 +357,7 @@ export default function TicketViewPage() {
 
                                         <div
                                             className={clsx(
-                                                'relative px-4 py-3 text-sm shadow-sm w-fit min-w-[140px]',
+                                                'relative px-4 py-3 text-sm w-fit min-w-[140px]',
                                                 isInternal
                                                     ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-dashed rounded-xl'
                                                     : isMe
@@ -449,7 +449,7 @@ export default function TicketViewPage() {
                                                         href={att.url}
                                                         target='_blank'
                                                         rel='noopener noreferrer'
-                                                        className='flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border/50 text-xs hover:border-primary/50 transition-colors shadow-sm'
+                                                        className='flex items-center gap-2 px-3 py-2 rounded-lg bg-card/50 backdrop-blur-xl border border-border/50 text-xs hover:border-primary/50 transition-colors'
                                                     >
                                                         <div className='p-1.5 rounded-md bg-muted text-muted-foreground'>
                                                             <Paperclip className='h-3.5 w-3.5' />
@@ -535,7 +535,7 @@ export default function TicketViewPage() {
                                             value={replyMessage}
                                             onChange={(e) => setReplyMessage(e.target.value)}
                                             placeholder={t('tickets.typeReply')}
-                                            className='min-h-[44px] max-h-[200px] py-3 pr-12 resize-none rounded-xl border-border/50 bg-background hover:border-primary/50 focus:border-primary focus:ring-primary/20 shadow-sm'
+                                            className='min-h-[44px] max-h-[200px] py-3 pr-12 resize-none rounded-xl border-border/50 bg-background hover:border-primary/50 focus:border-primary focus:ring-primary/20'
                                             rows={1}
                                             style={{ height: '44px' }}
                                             onInput={(e) => {
@@ -553,7 +553,7 @@ export default function TicketViewPage() {
                                         <Button
                                             type='submit'
                                             size='icon'
-                                            className='absolute right-1 top-1 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all rounded-lg'
+                                            className='absolute right-1 top-1 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-lg'
                                             loading={replying}
                                             disabled={!replyMessage.trim() && files.length === 0}
                                         >
@@ -577,7 +577,7 @@ export default function TicketViewPage() {
                 <div className='lg:col-span-4 space-y-4 h-full overflow-y-auto custom-scrollbar pb-6'>
                     <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'sidebar-top')} />
 
-                    <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+                    <Card className='border-border/50 bg-card/50 backdrop-blur-xl'>
                         <CardHeader className='pb-2'>
                             <CardTitle className='text-sm font-medium text-muted-foreground uppercase tracking-wider'>
                                 {t('tickets.details')}
@@ -627,7 +627,7 @@ export default function TicketViewPage() {
                     </Card>
 
                     {ticket.server && (
-                        <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+                        <Card className='border-border/50 bg-card/50 backdrop-blur-xl'>
                             <CardHeader className='pb-2'>
                                 <CardTitle className='text-sm font-medium text-muted-foreground uppercase tracking-wider'>
                                     {t('tickets.server')}

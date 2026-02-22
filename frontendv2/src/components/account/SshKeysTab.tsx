@@ -271,7 +271,7 @@ export default function SshKeysTab() {
             ) : (
                 <div className='space-y-3'>
                     {filteredKeys.map((key) => (
-                        <div key={key.id} className='rounded-lg border border-border bg-card p-4'>
+                        <div key={key.id} className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4'>
                             <div className='flex items-start justify-between mb-3'>
                                 <div className='flex-1'>
                                     <h4 className='text-sm font-semibold text-foreground'>{key.name}</h4>
@@ -341,7 +341,7 @@ export default function SshKeysTab() {
             >
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card border border-border p-6 shadow-xl'>
+                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
                         <DialogTitle className='text-lg font-semibold text-foreground mb-2'>
                             {editModal ? t('account.sshKeys.editKey') : t('account.sshKeys.addKey')}
                         </DialogTitle>
@@ -408,7 +408,7 @@ export default function SshKeysTab() {
             <Dialog open={viewModal} onClose={() => setViewModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card border border-border p-6 shadow-xl'>
+                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
                         <DialogTitle className='text-lg font-semibold text-foreground mb-4'>
                             {selectedKey?.name}
                         </DialogTitle>
@@ -439,7 +439,7 @@ export default function SshKeysTab() {
             <Dialog open={deleteModal} onClose={() => setDeleteModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-md rounded-xl bg-card border border-border p-6 shadow-xl'>
+                    <DialogPanel className='w-full max-w-md rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
                         <DialogTitle className='text-lg font-semibold text-foreground mb-2'>
                             {t('account.sshKeys.confirmDelete')}
                         </DialogTitle>
