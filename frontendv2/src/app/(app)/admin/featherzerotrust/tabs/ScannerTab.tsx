@@ -269,7 +269,7 @@ const ScannerTab = () => {
                         </div>
 
                         <Button
-                            className='w-full h-12 text-md font-bold transition-all hover:scale-[1.01] active:scale-[0.99] shadow-lg shadow-primary/20'
+                            className='w-full h-12 text-md font-bold transition-all hover:scale-[1.01] active:scale-[0.99] '
                             disabled={scanning || selectedServers.length === 0}
                             onClick={handlePerformScan}
                         >

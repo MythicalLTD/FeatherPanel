@@ -400,7 +400,7 @@ export default function ServerAllocationsPage() {
                                 <Button
                                     size='default'
                                     onClick={handleAutoAllocate}
-                                    className='h-14 px-10 text-lg shadow-2xl shadow-primary/20'
+                                    className='h-14 px-10 text-lg'
                                 >
                                     {t('serverAllocations.createFirstAllocation')}
                                 </Button>
@@ -414,7 +414,6 @@ export default function ServerAllocationsPage() {
                                 key={allocation.id}
                                 className={cn(
                                     allocation.is_primary && 'bg-primary/5 border-primary/20 hover:border-primary/40',
-                                    'hover:shadow-lg hover:shadow-primary/5',
                                 )}
                                 icon={Globe}
                                 iconWrapperClassName={cn(
@@ -477,7 +476,7 @@ export default function ServerAllocationsPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent
                                                     align='end'
-                                                    className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl shadow-2xl'
+                                                    className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl '
                                                 >
                                                     {canUpdate && (
                                                         <DropdownMenuItem
@@ -611,7 +610,7 @@ export default function ServerAllocationsPage() {
                                 <Button
                                     onClick={handleSetPrimary}
                                     disabled={isSettingPrimary}
-                                    className='h-12 flex-1 shadow-xl shadow-primary/20 rounded-xl font-bold'
+                                    className='h-12 flex-1 rounded-xl font-bold'
                                 >
                                     {isSettingPrimary && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                                     {t('serverAllocations.confirmSetPrimary')}
@@ -691,7 +690,7 @@ export default function ServerAllocationsPage() {
                                                 </div>
                                             </div>
                                             {selectedAssignId === item.id && (
-                                                <div className='h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg transform scale-100 transition-transform'>
+                                                <div className='h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center transform scale-100 transition-transform'>
                                                     <Check className='h-5 w-5' />
                                                 </div>
                                             )}
@@ -711,7 +710,7 @@ export default function ServerAllocationsPage() {
                                 <Button
                                     onClick={handleAssignAllocation}
                                     disabled={isAssigning || !selectedAssignId}
-                                    className='h-12 flex-1 shadow-xl shadow-primary/20 rounded-xl font-bold'
+                                    className='h-12 flex-1 rounded-xl font-bold'
                                 >
                                     {isAssigning && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                                     {t('serverAllocations.assignAllocation')}

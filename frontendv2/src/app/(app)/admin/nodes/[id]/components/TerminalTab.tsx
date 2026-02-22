@@ -190,7 +190,7 @@ export function TerminalTab({ node }: TerminalTabProps) {
                 icon={TerminalIcon}
             >
                 <div className='space-y-4'>
-                    <div className='rounded-2xl border border-border bg-black overflow-hidden shadow-2xl shadow-black/50'>
+                    <div className='rounded-2xl border border-border bg-black overflow-hidden '>
                         <div ref={terminalRef} className='w-full h-[450px] bg-black p-2' />
                     </div>
 

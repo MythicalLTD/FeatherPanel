@@ -78,7 +78,6 @@ export default function LogoutPage() {
         <div className='flex flex-col items-center justify-center gap-6'>
             <div className='flex flex-col items-center gap-4 text-center'>
                 <div className='relative'>
-                    <div className='absolute inset-0 bg-primary/20 rounded-full blur-xl' />
                     <div className='relative bg-primary/10 rounded-full p-4'>
                         <LogOut className='size-12 text-primary' />
                     </div>

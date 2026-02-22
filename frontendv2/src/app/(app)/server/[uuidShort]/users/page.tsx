@@ -361,7 +361,7 @@ export default function ServerSubusersPage() {
                             <Button
                                 size='default'
                                 onClick={() => setIsAddOpen(true)}
-                                className='h-14 px-10 text-lg shadow-2xl shadow-primary/20'
+                                className='h-14 px-10 text-lg '
                             >
                                 <Plus className='h-6 w-6 mr-2' />
                                 {t('serverSubusers.addSubuser')}
@@ -559,7 +559,7 @@ export default function ServerSubusersPage() {
                         size='default'
                         onClick={handleAddSubuser}
                         disabled={addLoading || !addEmail}
-                        className='rounded-2xl shadow-lg shadow-primary/20'
+                        className='rounded-2xl '
                     >
                         {addLoading ? (
                             <Loader2 className='mr-2 h-5 w-5 animate-spin' />
@@ -592,7 +592,7 @@ export default function ServerSubusersPage() {
                         size='default'
                         onClick={handleDelete}
                         disabled={deleting}
-                        className='rounded-2xl shadow-lg shadow-red-500/20'
+                        className='rounded-2xl '
                     >
                         {deleting ? (
                             <Loader2 className='mr-2 h-5 w-5 animate-spin' />
@@ -675,7 +675,7 @@ export default function ServerSubusersPage() {
                                                         className={cn(
                                                             'h-6 w-6 rounded-lg border-2 transition-all flex items-center justify-center',
                                                             selectedPermissions.includes(perm)
-                                                                ? 'bg-primary border-primary shadow-lg shadow-primary/20'
+                                                                ? 'bg-primary border-primary '
                                                                 : 'border-border/10 group-hover:border-primary/40',
                                                         )}
                                                     >
@@ -719,7 +719,7 @@ export default function ServerSubusersPage() {
                             size='default'
                             onClick={handleSavePermissions}
                             disabled={savingPermissions}
-                            className='rounded-2xl shadow-lg shadow-primary/20'
+                            className='rounded-2xl '
                         >
                             {savingPermissions ? (
                                 <Loader2 className='mr-2 h-5 w-5 animate-spin' />

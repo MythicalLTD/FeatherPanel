@@ -137,7 +137,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                             className={cn(
                                 'h-full flex flex-col overflow-hidden transition-all duration-300',
                                 'bg-linear-to-br from-primary/10 via-primary/5 to-transparent',
-                                'border-primary/20 shadow-sm hover:shadow-md hover:border-primary/30',
+                                'border-primary/20 hover:border-primary/30',
                                 widget.card?.variant === 'outline' && 'border-primary/40',
                                 widget.classes?.card,
                             )}

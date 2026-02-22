@@ -72,16 +72,16 @@ export default function ThemeCustomizer() {
 
                 <button
                     onClick={toggleTheme}
-                    className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-110 hover:shadow-lg transition-all duration-200 flex items-center justify-center'
+                    className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-105 transition-all duration-200 flex items-center justify-center'
                     title={theme === 'dark' ? t('appearance.theme.switchToLight') : t('appearance.theme.switchToDark')}
                 >
                     {theme === 'dark' ? <Sun className='h-4 w-4' /> : <Moon className='h-4 w-4' />}
                 </button>
 
                 <Menu as='div' className='relative'>
-                    <MenuButton className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-110 hover:shadow-lg transition-all duration-200 flex items-center justify-center'>
+                    <MenuButton className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-105 transition-all duration-200 flex items-center justify-center'>
                         <div
-                            className='h-5 w-5 rounded-full border-2 border-white shadow-sm'
+                            className='h-5 w-5 rounded-full border-2 border-white'
                             style={{ backgroundColor: accentColorOptions.find((c) => c.value === accentColor)?.color }}
                         />
                     </MenuButton>
@@ -95,7 +95,7 @@ export default function ThemeCustomizer() {
                         leaveFrom='transform opacity-100 scale-100'
                         leaveTo='transform opacity-0 scale-95'
                     >
-                        <MenuItems className='absolute right-0 mt-2 w-52 origin-top-right rounded-xl bg-card border border-border/50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none backdrop-blur-xl p-2 z-50'>
+                        <MenuItems className='absolute right-0 mt-2 w-52 origin-top-right rounded-xl bg-card border border-border/50 ring-1 ring-black ring-opacity-5 focus:outline-none backdrop-blur-xl p-2 z-50'>
                             <div className='px-3 py-2 text-sm font-semibold text-foreground border-b border-border/50 mb-2'>
                                 {t('appearance.accentColor')}
                             </div>
@@ -109,7 +109,7 @@ export default function ThemeCustomizer() {
                                             } group flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors`}
                                         >
                                             <div
-                                                className='h-5 w-5 rounded-full border-2 border-white shadow-sm mr-3'
+                                                className='h-5 w-5 rounded-full border-2 border-white mr-3'
                                                 style={{ backgroundColor: option.color }}
                                             />
                                             <span className='flex-1 text-left'>{option.name}</span>
@@ -161,7 +161,7 @@ export default function ThemeCustomizer() {
                         leaveFrom='transform opacity-100 scale-100'
                         leaveTo='transform opacity-0 scale-95'
                     >
-                        <MenuItems className='absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-card border border-border/50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none backdrop-blur-xl p-2 z-50 max-h-[80vh] overflow-y-auto'>
+                        <MenuItems className='absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-card border border-border/50 ring-1 ring-black ring-opacity-5 focus:outline-none backdrop-blur-xl p-2 z-50 max-h-[80vh] overflow-y-auto'>
                             <MenuItem>
                                 {({ focus }) => (
                                     <button
@@ -227,7 +227,7 @@ export default function ThemeCustomizer() {
                                         <button
                                             key={option.value}
                                             onClick={() => setAccentColor(option.value)}
-                                            className='relative h-8 w-8 rounded-full border-2 border-white shadow-sm flex items-center justify-center transition-transform hover:scale-110'
+                                            className='relative h-8 w-8 rounded-full border-2 border-white flex items-center justify-center transition-transform hover:scale-110'
                                             style={{ backgroundColor: option.color }}
                                         >
                                             {accentColor === option.value && <Check className='h-4 w-4 text-white' />}

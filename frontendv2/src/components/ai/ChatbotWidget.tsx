@@ -58,11 +58,8 @@ export default function ChatbotWidget() {
             {!isOpen && (
                 <div className='fixed bottom-6 right-6 z-50'>
                     <div className='relative'>
-                        <div className='absolute inset-0 rounded-full bg-primary/20 animate-ping' />
-                        <div className='absolute inset-0 rounded-full bg-primary/10 animate-pulse' />
-
                         <Button
-                            className='relative h-14 w-14 md:h-16 md:w-16 rounded-full shadow-2xl hover:shadow-primary/50 hover:scale-110 transition-all duration-300 bg-linear-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 border-2 border-primary/20'
+                            className='relative h-14 w-14 md:h-16 md:w-16 rounded-full hover:scale-105 transition-all duration-200 bg-primary hover:bg-primary/90 border border-primary/20'
                             size='icon'
                             onClick={() => setIsOpen(true)}
                         >

@@ -114,7 +114,7 @@ export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuc
                         variant='default'
                         onClick={handleUpdate}
                         disabled={loading || !mode}
-                        className='shadow-lg shadow-primary/20 h-10 px-6'
+                        className=' h-10 px-6'
                     >
                         {t('files.dialogs.permissions.update')}
                     </Button>

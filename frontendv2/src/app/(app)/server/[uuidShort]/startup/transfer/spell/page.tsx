@@ -506,7 +506,7 @@ export default function ServerTransferSpellPage() {
                         className={cn(
                             'relative overflow-hidden p-4 rounded-xl border transition-all duration-300',
                             currentStep === s.step
-                                ? 'bg-primary/10 border-primary/30 shadow-lg shadow-primary/5'
+                                ? 'bg-primary/10 border-primary/30 '
                                 : currentStep > s.step && !s.disabled
                                   ? 'bg-emerald-500/5 border-emerald-500/20 cursor-pointer hover:bg-emerald-500/10'
                                   : 'bg-white/5 border-white/5 opacity-40',
@@ -565,7 +565,7 @@ export default function ServerTransferSpellPage() {
                                 >
                                     <div className='absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors' />
                                     <div className='space-y-4 relative z-10'>
-                                        <div className='h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-xl shadow-primary/5'>
+                                        <div className='h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 '>
                                             <Boxes className='h-7 w-7 text-primary' />
                                         </div>
                                         <div>
@@ -639,9 +639,9 @@ export default function ServerTransferSpellPage() {
 
                 {currentStep === 3 && targetSpell && (
                     <div className='space-y-8 '>
-                        <div className='bg-orange-500/5 border border-orange-500/10 rounded-3xl p-8 shadow-xl'>
+                        <div className='bg-orange-500/5 border border-orange-500/10 rounded-3xl p-8 '>
                             <div className='flex items-start gap-6'>
-                                <div className='h-14 w-14 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shrink-0 shadow-lg shadow-orange-500/5'>
+                                <div className='h-14 w-14 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shrink-0 '>
                                     <AlertTriangle className='h-7 w-7 text-orange-500' />
                                 </div>
                                 <div className='space-y-4'>

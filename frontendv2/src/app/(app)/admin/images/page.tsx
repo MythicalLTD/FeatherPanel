@@ -516,7 +516,7 @@ export default function ImagesPage() {
                             <img
                                 src={selectedImage?.url}
                                 alt={selectedImage?.name}
-                                className='max-w-full max-h-full object-contain shadow-2xl'
+                                className='max-w-full max-h-full object-contain '
                             />
                         </div>
 

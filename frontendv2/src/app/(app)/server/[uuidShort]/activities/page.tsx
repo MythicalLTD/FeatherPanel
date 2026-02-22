@@ -780,7 +780,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                         <DialogFooter className='border-t border-white/5 pt-8 mt-4 flex items-center justify-end'>
                             <Button
                                 size='default'
-                                className='px-12 h-14 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/20'
+                                className='px-12 h-14 rounded-2xl font-black uppercase tracking-[0.2em]'
                                 onClick={() => setDetailsOpen(false)}
                             >
                                 {t('serverActivities.details.closeEntry')}

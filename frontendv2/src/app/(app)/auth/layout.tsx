@@ -47,7 +47,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                             href='/'
                             className='group flex flex-col items-center gap-3 font-medium transition-all duration-300 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl'
                         >
-                            <div className='relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-white/20 bg-card/80 shadow-xl shadow-black/30 backdrop-blur-md transition-transform duration-300 group-hover:shadow-2xl group-hover:border-primary/40'>
+                            <div className='relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-white/20 bg-card/80 backdrop-blur-md transition-transform duration-300 group-hover:border-primary/40'>
                                 <Image
                                     src={logoUrl}
                                     alt={appName}
@@ -58,16 +58,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                                     priority
                                 />
                             </div>
-                            <span className='text-xl font-bold tracking-tight text-foreground drop-shadow-sm'>
+                            <span className='text-xl font-bold tracking-tight text-foreground'>
                                 {appName}
                             </span>
                         </Link>
                     </div>
 
                     <div className='relative group motion-content'>
-                        <div className='absolute -inset-px rounded-3xl bg-linear-to-r from-primary/60 via-primary/30 to-primary/60 opacity-60 blur-sm transition-opacity duration-500 group-hover:opacity-80' />
-
-                        <div className='relative rounded-3xl border border-white/15 bg-card/90 backdrop-blur-2xl p-8 shadow-2xl shadow-black/30 transition-all duration-300 animate-fade-in-up'>
+                        <div className='relative rounded-3xl border border-white/15 bg-card/90 backdrop-blur-2xl p-8 transition-all duration-300 animate-fade-in-up'>
                             <div className='relative z-10'>{children}</div>
                         </div>
                     </div>

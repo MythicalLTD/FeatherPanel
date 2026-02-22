@@ -162,7 +162,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                                 onClick={() => setOptions({ ...options, source: 'github' })}
                                 className={`flex items-start gap-4 p-4 rounded-2xl border transition-all text-left group ${
                                     options.source === 'github'
-                                        ? 'bg-primary/5 border-primary shadow-lg shadow-primary/5'
+                                        ? 'bg-primary/5 border-primary '
                                         : 'bg-muted/30 border-border/50 hover:bg-muted/50'
                                 }`}
                             >
@@ -190,7 +190,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                                 onClick={() => setOptions({ ...options, source: 'url' })}
                                 className={`flex items-start gap-4 p-4 rounded-2xl border transition-all text-left group ${
                                     options.source === 'url'
-                                        ? 'bg-blue-500/5 border-blue-500 shadow-lg shadow-blue-500/5'
+                                        ? 'bg-blue-500/5 border-blue-500 '
                                         : 'bg-muted/30 border-border/50 hover:bg-muted/50'
                                 }`}
                             >
@@ -325,7 +325,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
 
                     <div className='flex justify-end pt-4 '>
                         <Button
-                            className='h-12 px-10 rounded-2xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white'
+                            className='h-12 px-10 rounded-2xl  bg-primary hover:bg-primary/90 text-white'
                             loading={updating}
                             onClick={handleUpdate}
                         >

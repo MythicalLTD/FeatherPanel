@@ -123,7 +123,7 @@ export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, 
                         variant='default'
                         onClick={handleAction}
                         disabled={loading || !destination}
-                        className='shadow-lg shadow-primary/20 h-10 px-6 capitalize'
+                        className=' h-10 px-6 capitalize'
                     >
                         {action === 'move' ? t('files.dialogs.move_copy.move') : t('files.dialogs.move_copy.copy')}
                     </Button>

@@ -64,7 +64,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const canAccessAdmin = hasPermission(Permissions.ADMIN_DASHBOARD_VIEW);
 
     return (
-        <div className='sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/60 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8'>
+        <div className='sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/60 px-4 sm:gap-x-6 sm:px-6 lg:px-8'>
             <button
                 type='button'
                 className='-m-2.5 p-2.5 text-muted-foreground lg:hidden hover:text-foreground transition-colors'
@@ -131,7 +131,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                             leaveFrom='transform opacity-100 scale-100'
                             leaveTo='transform opacity-0 scale-95'
                         >
-                            <Menu.Items className='absolute right-0 z-10 mt-2.5 w-64 origin-top-right rounded-xl bg-card border border-border shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden'>
+                            <Menu.Items className='absolute right-0 z-10 mt-2.5 w-64 origin-top-right rounded-xl bg-card border border-border ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden'>
                                 <div className='px-4 py-3 border-b border-border'>
                                     <div className='flex items-center gap-3 mb-2'>
                                         {user?.avatar ? (

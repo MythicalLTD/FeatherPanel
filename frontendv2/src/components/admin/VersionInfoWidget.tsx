@@ -124,7 +124,7 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                                     </p>
                                 </div>
                             </div>
-                            <button className='w-full py-3 rounded-xl bg-amber-500 text-amber-950 text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20'>
+                            <button className='w-full py-3 rounded-xl bg-amber-500 text-amber-950 text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-colors '>
                                 {t('admin.version.update_now')}
                             </button>
                         </div>

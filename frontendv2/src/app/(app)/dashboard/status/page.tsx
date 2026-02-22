@@ -189,7 +189,7 @@ export default function StatusPage() {
                 <Button
                     onClick={manualRefresh}
                     disabled={refreshing}
-                    className='bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20'
+                    className='bg-primary hover:bg-primary/90 text-primary-foreground '
                 >
                     <RefreshCw className={cn('mr-2 h-4 w-4', refreshing && 'animate-spin')} />
                     {refreshing ? t('dashboard.status.refreshing') : t('dashboard.status.refresh')}

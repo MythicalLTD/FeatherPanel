@@ -120,7 +120,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
                 <div className='relative group'>
                     <div className='absolute -inset-0.5 bg-linear-to-r from-destructive/50 to-destructive/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000' />
 
-                    <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 md:p-12 shadow-2xl shadow-black/20'>
+                    <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 md:p-12 '>
                         <div className='text-center space-y-6'>
                             <div className='relative'>
                                 <div className='inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-destructive/10 mb-4'>

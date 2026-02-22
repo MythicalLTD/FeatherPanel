@@ -26,7 +26,7 @@ export default function MaintenancePage() {
             <div className='absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-primary/10 blur-[100px]' />
 
             <div className='relative z-10 mx-auto w-full max-w-lg space-y-8 p-6'>
-                <div className='relative mx-auto flex h-32 w-32 items-center justify-center rounded-3xl bg-primary/5 shadow-2xl shadow-primary/20 ring-1 ring-white/10 backdrop-blur-3xl'>
+                <div className='relative mx-auto flex h-32 w-32 items-center justify-center rounded-3xl bg-primary/5  ring-1 ring-white/10 backdrop-blur-3xl'>
                     <div className='absolute inset-0 rounded-3xl bg-linear-to-tr from-white/10 to-transparent' />
                     <svg
                         xmlns='http://www.w3.org/2000/svg'
@@ -65,7 +65,7 @@ export default function MaintenancePage() {
                         variant='outline'
                         size='lg'
                         onClick={() => (window.location.href = '/')}
-                        className='group relative overflow-hidden transition-all hover:scale-105 hover:border-primary/50 hover:bg-primary/5 hover:text-primary hover:shadow-lg hover:shadow-primary/10'
+                        className='group relative overflow-hidden transition-all hover:scale-105 hover:border-primary/50 hover:bg-primary/5 hover:text-primary '
                     >
                         <div className='absolute inset-0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/10 to-transparent' />
                         <span className='relative flex items-center gap-2'>

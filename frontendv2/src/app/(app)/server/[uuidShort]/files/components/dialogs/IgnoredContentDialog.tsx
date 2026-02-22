@@ -142,7 +142,7 @@ export function IgnoredContentDialog({ open, onOpenChange, uuid, onSuccess }: Ig
                     <Button variant='ghost' onClick={() => onOpenChange(false)}>
                         {t('files.dialogs.ignored.cancel')}
                     </Button>
-                    <Button variant='default' onClick={handleSave} className='shadow-lg shadow-primary/20 h-10 px-6'>
+                    <Button variant='default' onClick={handleSave} className=' h-10 px-6'>
                         {t('files.dialogs.ignored.save')}
                     </Button>
                 </DialogFooter>

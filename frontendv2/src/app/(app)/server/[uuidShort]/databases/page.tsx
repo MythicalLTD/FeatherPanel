@@ -422,7 +422,7 @@ export default function ServerDatabasesPage() {
                                 <Button
                                     size='default'
                                     onClick={() => setCreateDialogOpen(true)}
-                                    className='h-14 px-10 text-lg shadow-2xl shadow-primary/20'
+                                    className='h-14 px-10 text-lg'
                                 >
                                     <Plus className='h-6 w-6 mr-2' />
                                     {t('serverDatabases.createDatabase')}
@@ -693,7 +693,7 @@ export default function ServerDatabasesPage() {
                             <Button
                                 type='submit'
                                 disabled={creating || availableHosts.length === 0}
-                                className='h-12 flex-1 shadow-xl shadow-primary/20 rounded-xl font-bold'
+                                className='h-12 flex-1 rounded-xl font-bold'
                             >
                                 {creating ? <Loader2 className='h-5 w-5 animate-spin' /> : t('serverDatabases.create')}
                             </Button>
@@ -748,7 +748,7 @@ export default function ServerDatabasesPage() {
                             {t('common.cancel')}
                         </Button>
                         <Button
-                            className='h-12 flex-1 shadow-xl shadow-primary/20 rounded-xl font-bold'
+                            className='h-12 flex-1 rounded-xl font-bold'
                             onClick={confirmSensitiveWarning}
                         >
                             {t('serverDatabases.viewDatabase')}
@@ -887,7 +887,7 @@ export default function ServerDatabasesPage() {
                             </Button>
                             <Button
                                 size='default'
-                                className='px-10 rounded-xl font-bold shadow-xl shadow-primary/20'
+                                className='px-10 rounded-xl font-bold '
                                 onClick={() => setViewDialogOpen(false)}
                             >
                                 {t('common.close')}

@@ -381,7 +381,7 @@ export default function PluginsPage() {
                                             {
                                                 label: t('admin.marketplace.plugins.featured'),
                                                 className:
-                                                    'bg-amber-500 text-white border-amber-600 font-bold px-3 shadow-lg shadow-amber-500/20',
+                                                    'bg-amber-500 text-white border-amber-600 font-bold px-3 ',
                                             },
                                         ].filter(Boolean) as ResourceBadge[]
                                     }
@@ -787,7 +787,7 @@ export default function PluginsPage() {
                         </Button>
                         {selectedPackage && (
                             <Button
-                                className='flex-2 rounded-xl h-14 text-sm font-bold shadow-lg shadow-primary/20'
+                                className='flex-2 rounded-xl h-14 text-sm font-bold '
                                 disabled={
                                     installingOnlineId === selectedPackage.identifier ||
                                     installedPluginIds.includes(selectedPackage.identifier)

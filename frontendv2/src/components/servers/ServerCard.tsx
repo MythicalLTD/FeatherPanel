@@ -70,7 +70,7 @@ export function ServerCard({
             <div
                 className={cn(
                     'flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 bg-card rounded-2xl border border-border transition-all relative group hover-lift hover-scale',
-                    accessible ? 'hover:border-primary hover:shadow-lg' : 'opacity-60',
+                    accessible ? 'hover:border-primary' : 'opacity-60',
                 )}
             >
                 {server.spell?.banner && (
@@ -127,7 +127,7 @@ export function ServerCard({
                             leaveFrom='transform opacity-100 scale-100'
                             leaveTo='transform opacity-0 scale-95'
                         >
-                            <MenuItems className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-popover border border-border shadow-2xl focus:outline-none py-1'>
+                            <MenuItems className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-popover border border-border focus:outline-none py-1'>
                                 {server.folder_id ? (
                                     <MenuItem>
                                         {({ active }) => (
@@ -189,7 +189,7 @@ export function ServerCard({
         <div
             className={cn(
                 'group relative bg-card rounded-2xl border border-border overflow-hidden transition-all hover-lift hover-scale',
-                accessible ? 'hover:border-primary hover:shadow-2xl hover:shadow-primary/10' : 'opacity-60',
+                accessible ? 'hover:border-primary' : 'opacity-60',
             )}
         >
             <Link href={serverUrl} className='relative block cursor-pointer'>
@@ -237,7 +237,7 @@ export function ServerCard({
                             leaveFrom='transform opacity-100 scale-100'
                             leaveTo='transform opacity-0 scale-95'
                         >
-                            <MenuItems className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-popover border border-border shadow-2xl focus:outline-none py-1'>
+                            <MenuItems className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-popover border border-border focus:outline-none py-1'>
                                 {server.folder_id ? (
                                     <MenuItem>
                                         {({ active }) => (

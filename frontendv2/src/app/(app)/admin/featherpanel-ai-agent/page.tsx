@@ -626,7 +626,7 @@ export default function FeatherAiAgentPage() {
                             <Button
                                 type='submit'
                                 size='lg'
-                                className='h-12 px-8 gap-2 shadow-lg shadow-primary/20'
+                                className='h-12 px-8 gap-2 '
                                 disabled={saving}
                             >
                                 {saving ? <RefreshCw className='h-4 w-4 animate-spin' /> : <Save className='h-4 w-4' />}

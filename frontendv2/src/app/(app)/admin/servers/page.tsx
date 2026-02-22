@@ -326,7 +326,7 @@ export default function ServersPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-servers', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
+            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl '>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                     <Input
@@ -848,7 +848,7 @@ export default function ServersPage() {
                                 </label>
                                 <Button
                                     variant='outline'
-                                    className='w-full h-12 justify-between rounded-xl px-4 border border-border shadow-sm bg-background/50'
+                                    className='w-full h-12 justify-between rounded-xl px-4 border border-border  bg-background/50'
                                     onClick={() => {
                                         fetchNodes();
                                         setIsNodeModalOpen(true);
@@ -874,7 +874,7 @@ export default function ServersPage() {
                                 </label>
                                 <Button
                                     variant='outline'
-                                    className='w-full h-12 justify-between rounded-xl px-4 border border-border shadow-sm bg-background/50'
+                                    className='w-full h-12 justify-between rounded-xl px-4 border border-border  bg-background/50'
                                     onClick={() => {
                                         if (selectedNode) {
                                             fetchAllocations(selectedNode.id);
@@ -931,7 +931,7 @@ export default function ServersPage() {
                         <Button
                             onClick={initiateTransfer}
                             disabled={!selectedNode || !selectedAllocation || isInitiatingTransfer}
-                            className='bg-amber-500 hover:bg-amber-600 text-white rounded-xl h-11 px-6 shadow-lg shadow-amber-500/20'
+                            className='bg-amber-500 hover:bg-amber-600 text-white rounded-xl h-11 px-6 '
                         >
                             {isInitiatingTransfer ? (
                                 <>
@@ -980,7 +980,7 @@ export default function ServersPage() {
                                         setSelectedAllocation(null);
                                         setIsNodeModalOpen(false);
                                     }}
-                                    className={`w-full p-4 rounded-xl border text-left transition-all ${selectedNode?.id === node.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border/50 hover:bg-muted/50'}`}
+                                    className={`w-full p-4 rounded-xl border text-left transition-all ${selectedNode?.id === node.id ? 'border-primary bg-primary/5 ' : 'border-border/50 hover:bg-muted/50'}`}
                                 >
                                     <div className='flex items-center justify-between'>
                                         <div>
@@ -1031,7 +1031,7 @@ export default function ServersPage() {
                                         setSelectedAllocation(allc);
                                         setIsAllocationModalOpen(false);
                                     }}
-                                    className={`w-full p-4 rounded-xl border text-left transition-all ${selectedAllocation?.id === allc.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border/50 hover:bg-muted/50'}`}
+                                    className={`w-full p-4 rounded-xl border text-left transition-all ${selectedAllocation?.id === allc.id ? 'border-primary bg-primary/5 ' : 'border-border/50 hover:bg-muted/50'}`}
                                 >
                                     <div className='flex items-center justify-between'>
                                         <div>
@@ -1092,7 +1092,7 @@ function RelationCard({
         <div className='p-4 rounded-2xl bg-muted/30 border border-border/50 group hover:border-primary/30 transition-all'>
             <div className='flex items-center gap-3 mb-2'>
                 <div className='p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-all'>
-                    <Icon className='h-3.5 w-3.5' />
+                    {Icon && typeof Icon === 'function' ? <Icon className='h-3.5 w-3.5' /> : null}
                 </div>
                 <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
                     {title}

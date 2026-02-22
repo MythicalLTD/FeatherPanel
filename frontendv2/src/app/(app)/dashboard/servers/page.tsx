@@ -334,7 +334,7 @@ export default function ServersPage() {
                                     leaveFrom='opacity-100'
                                     leaveTo='opacity-0'
                                 >
-                                    <ListboxOptions className='absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-popover border border-border py-1 shadow-2xl focus:outline-none text-sm'>
+                                    <ListboxOptions className='absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-popover border border-border py-1 focus:outline-none text-sm'>
                                         {sortOptions.map((option) => (
                                             <ListboxOption
                                                 key={option.id}
@@ -383,7 +383,7 @@ export default function ServersPage() {
                                             cn(
                                                 'flex-1 flex items-center justify-center cursor-pointer rounded-lg px-3 transition-all',
                                                 checked
-                                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                                    ? 'bg-primary text-primary-foreground '
                                                     : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                                             )
                                         }
@@ -412,7 +412,7 @@ export default function ServersPage() {
                                 onChange={setShowOnlyRunning}
                                 className='group relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 data-checked:bg-green-500 bg-muted shrink-0'
                             >
-                                <span className='inline-block h-3 w-3 transform rounded-full bg-white shadow-lg transition-transform group-data-checked:translate-x-4 translate-x-1' />
+                                <span className='inline-block h-3 w-3 transform rounded-full bg-white transition-transform group-data-checked:translate-x-4 translate-x-1' />
                             </Switch>
                             <span className='text-sm font-medium whitespace-nowrap'>{t('servers.runningOnly')}</span>
                         </div>
@@ -470,7 +470,7 @@ export default function ServersPage() {
                                 className={cn(
                                     'px-6 py-3 text-sm font-semibold rounded-lg transition-all',
                                     serverScope === 'mine'
-                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        ? 'bg-primary text-primary-foreground '
                                         : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                                 )}
                             >
@@ -482,7 +482,7 @@ export default function ServersPage() {
                                 className={cn(
                                     'px-6 py-3 text-sm font-semibold rounded-lg transition-all',
                                     serverScope === 'all'
-                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        ? 'bg-primary text-primary-foreground '
                                         : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                                 )}
                             >
@@ -593,7 +593,7 @@ export default function ServersPage() {
                                         cn(
                                             'px-6 py-3 text-sm font-semibold rounded-lg transition-all focus:outline-none',
                                             selected
-                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                ? 'bg-primary text-primary-foreground '
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                                         )
                                     }
@@ -605,7 +605,7 @@ export default function ServersPage() {
                                         cn(
                                             'px-6 py-3 text-sm font-semibold rounded-lg transition-all focus:outline-none',
                                             selected
-                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                ? 'bg-primary text-primary-foreground '
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                                         )
                                     }

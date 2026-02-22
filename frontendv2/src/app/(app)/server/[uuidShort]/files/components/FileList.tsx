@@ -64,7 +64,7 @@ export function FileList({
                 <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000' />
 
                 <div className='relative'>
-                    <div className='flex h-24 w-24 items-center justify-center rounded-3xl bg-white/5 text-white/20 border border-white/10 shadow-2xl relative z-10'>
+                    <div className='flex h-24 w-24 items-center justify-center rounded-3xl bg-white/5 text-white/20 border border-white/10 relative z-10'>
                         <FolderOpen className='h-10 w-10 opacity-40 group-hover:scale-110 transition-transform duration-500' />
                     </div>
 
@@ -88,7 +88,7 @@ export function FileList({
     const allSelected = files.length > 0 && selectedFiles.length === files.length;
 
     return (
-        <div className='overflow-hidden rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/10 dark:shadow-black/40'>
+        <div className='overflow-hidden rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 backdrop-blur-xl '>
             <div
                 className='flex items-center gap-3 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 px-4 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/60 dark:text-white/40'
                 style={{ color: 'hsl(var(--foreground))', opacity: 0.6 }}

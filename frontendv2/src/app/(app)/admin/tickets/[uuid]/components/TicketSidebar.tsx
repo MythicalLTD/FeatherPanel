@@ -72,10 +72,10 @@ export function TicketSidebar({
                             <div className='absolute inset-0 bg-primary/5 blur-3xl rounded-full scale-150 animate-pulse group-hover/avatar:scale-110 transition-transform duration-1000' />
                             <div className='relative space-y-3'>
                                 <div className='relative inline-block'>
-                                    <Avatar className='h-20 w-20 mx-auto border-4 border-background shadow-xl transition-all duration-500 group-hover/avatar:scale-105'>
+                                    <Avatar className='h-20 w-20 mx-auto border-4 border-background transition-all duration-500 group-hover/avatar:scale-105'>
                                         <AvatarImage src={userDetails.avatar} />
                                     </Avatar>
-                                    <div className='absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-background border border-border/50 flex items-center justify-center shadow-md'>
+                                    <div className='absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-background border border-border/50 flex items-center justify-center '>
                                         <div className='h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse' />
                                     </div>
                                 </div>

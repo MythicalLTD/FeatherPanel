@@ -101,7 +101,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
             ) : (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-110 hover:shadow-lg transition-all duration-200 flex items-center justify-center'
+                    className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-110 transition-all duration-200 flex items-center justify-center'
                     title={t('appearance.background.customize')}
                 >
                     <ImageIcon className='h-4 w-4' aria-hidden='true' />
@@ -133,7 +133,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                 leaveFrom='opacity-100 scale-100'
                                 leaveTo='opacity-0 scale-95'
                             >
-                                <DialogPanel className='w-full max-w-lg transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 shadow-xl transition-all'>
+                                <DialogPanel className='w-full max-w-lg transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 transition-all'>
                                     <div className='flex items-center justify-between mb-6'>
                                         <DialogTitle className='text-lg font-semibold text-foreground'>
                                             {t('appearance.background.title')}

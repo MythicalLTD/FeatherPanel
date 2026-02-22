@@ -327,7 +327,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                     leaveFrom='transform opacity-100 scale-100'
                                     leaveTo='transform opacity-0 scale-95'
                                 >
-                                    <Menu.Items className='absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-popover border border-border/50 shadow-xl focus:outline-none z-20 overflow-hidden'>
+                                    <Menu.Items className='absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-popover border border-border/50 focus:outline-none z-20 overflow-hidden'>
                                         <div className='p-2 border-b border-border/50 bg-muted/30'>
                                             <p className='text-xs font-medium text-muted-foreground px-2'>
                                                 {t('servers.console.terminal.history_title')}
@@ -562,7 +562,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                     {showScrollButton && (
                         <button
                             onClick={scrollToBottom}
-                            className='absolute top-4 right-4 z-10 shadow-lg backdrop-blur-sm bg-background/95 hover:bg-background px-3 py-2 rounded-lg border border-border flex items-center gap-2 transition-colors'
+                            className='absolute top-4 right-4 z-10 backdrop-blur-sm bg-background/95 hover:bg-background px-3 py-2 rounded-lg border border-border flex items-center gap-2 transition-colors'
                         >
                             <ChevronDown className='h-4 w-4' />
                             <span className='hidden sm:inline text-sm'>

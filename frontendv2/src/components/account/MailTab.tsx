@@ -271,7 +271,7 @@ export default function MailTab() {
                     {mails.map((mail) => (
                         <div
                             key={mail.id}
-                            className='rounded-lg border border-border bg-card p-4 hover:shadow-md transition-shadow'
+                            className='rounded-lg border border-border bg-card p-4  transition-shadow'
                         >
                             <div className='flex items-start justify-between mb-3'>
                                 <div className='flex-1'>
@@ -351,7 +351,7 @@ export default function MailTab() {
             <Dialog open={mailModalOpen} onClose={() => setMailModalOpen(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-5xl max-h-[90vh] rounded-xl bg-card border border-border p-6 shadow-xl flex flex-col'>
+                    <DialogPanel className='w-full max-w-5xl max-h-[90vh] rounded-xl bg-card border border-border p-6 flex flex-col'>
                         <DialogTitle className='text-xl font-semibold text-foreground mb-2'>
                             {selectedMail?.subject}
                         </DialogTitle>

@@ -463,10 +463,10 @@ export default function FileEditorPage({
                     onSwitchToRaw={handleSwitchToRawEditor}
                 />
             ) : (
-                <div className='flex-1 rounded-4xl border border-border/50 bg-card/50 shadow-2xl backdrop-blur-3xl overflow-hidden p-1 flex flex-col group transition-all hover:border-border/80 relative min-h-0'>
+                <div className='flex-1 rounded-4xl border border-border/50 bg-card/50 backdrop-blur-3xl overflow-hidden p-1 flex flex-col group transition-all hover:border-border/80 relative min-h-0'>
                     <div className='flex items-center justify-between p-3 border-b border-border/10 bg-muted/30 shrink-0'>
                         <div className='flex items-center gap-3'>
-                            <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5'>
+                            <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 '>
                                 <FileCode className='h-5 w-5' />
                             </div>
                             <div className='flex flex-col'>
@@ -505,7 +505,7 @@ export default function FileEditorPage({
                                 {t('files.editor.cancel')}
                             </Button>
                             <Button
-                                className='bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 active:scale-95 transition-all'
+                                className='bg-primary hover:bg-primary/90 text-primary-foreground  active:scale-95 transition-all'
                                 size='sm'
                                 onClick={() => handleSave()}
                                 disabled={saving || content === originalContent}

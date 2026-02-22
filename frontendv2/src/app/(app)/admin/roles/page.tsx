@@ -671,7 +671,7 @@ export default function RolesPage() {
                             />
 
                             {permissionSearch && (
-                                <div className='absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-xl max-h-[280px] overflow-auto bg-popover shadow-2xl p-1 border-none'>
+                                <div className='absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-xl max-h-[280px] overflow-auto bg-popover p-1 border-none'>
                                     {filteredAvailablePermissions.length === 0 ? (
                                         <div className='p-4 text-sm text-muted-foreground text-center'>
                                             {t('admin.roles.no_results')}

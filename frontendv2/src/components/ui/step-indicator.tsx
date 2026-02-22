@@ -43,7 +43,7 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                                     className={cn(
                                         'flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all',
                                         isCompleted && 'border-primary bg-primary text-white',
-                                        isActive && 'border-primary bg-background text-primary ring-4 ring-primary/20',
+                                        isActive && 'border-primary bg-background text-primary',
                                         !isActive && !isCompleted && 'border-border bg-muted text-muted-foreground',
                                     )}
                                 >

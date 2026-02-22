@@ -30,7 +30,7 @@ export function PageHeader({ title, description, icon: Icon, actions, className 
         <div className={cn('flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4', className)}>
             <div className='flex items-center gap-6'>
                 {Icon && (
-                    <div className='h-20 w-20 rounded-[2.5rem] bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-2xl shadow-primary/10 shrink-0'>
+                    <div className='h-20 w-20 rounded-[2.5rem] bg-primary/10 flex items-center justify-center text-primary border border-primary/20  shrink-0'>
                         <Icon className='h-10 w-10' />
                     </div>
                 )}

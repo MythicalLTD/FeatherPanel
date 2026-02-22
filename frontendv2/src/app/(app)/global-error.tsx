@@ -128,7 +128,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                         <div className='relative group'>
                             <div className='absolute -inset-0.5 bg-linear-to-r from-destructive/50 to-destructive/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000' />
 
-                            <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 md:p-12 shadow-2xl shadow-black/20'>
+                            <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 md:p-12 '>
                                 <div className='text-center space-y-6'>
                                     <div className='relative'>
                                         <h1 className='text-9xl md:text-[12rem] font-black bg-linear-to-br from-destructive via-destructive/80 to-destructive/60 bg-clip-text text-transparent leading-none'>

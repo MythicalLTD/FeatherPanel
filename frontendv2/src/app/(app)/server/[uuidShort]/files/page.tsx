@@ -263,7 +263,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             <WidgetRenderer widgets={getWidgets('server-files', 'after-header')} />
 
             <div className='flex flex-col gap-4'>
-                <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-white/5 bg-white/10 p-4 backdrop-blur-sm shadow-xl shadow-black/20'>
+                <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-white/5 bg-white/10 p-4 backdrop-blur-sm '>
                     <FileBreadcrumbs
                         currentDirectory={currentDirectory || '/'}
                         onNavigate={navigate}
@@ -377,8 +377,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
             {isDragging && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-primary/20 backdrop-blur-md border-4 border-dashed border-primary animate-in fade-in zoom-in duration-300 pointer-events-none'>
-                    <div className='flex flex-col items-center gap-6 bg-background/80 p-12 rounded-3xl shadow-2xl border border-primary/20 scale-110'>
-                        <div className='flex h-24 w-24 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-2xl shadow-primary/40 animate-bounce'>
+                    <div className='flex flex-col items-center gap-6 bg-background/80 p-12 rounded-3xl border border-primary/20 scale-110'>
+                        <div className='flex h-24 w-24 items-center justify-center rounded-3xl bg-primary text-primary-foreground  animate-bounce'>
                             <Upload className='h-12 w-12' />
                         </div>
                         <div className='text-center'>

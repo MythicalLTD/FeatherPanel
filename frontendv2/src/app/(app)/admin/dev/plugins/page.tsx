@@ -899,7 +899,7 @@ export default function PluginManagerPage() {
                         </Button>
                         {selectedPlugin && configFields.length > 0 && (
                             <Button
-                                className='flex-2 rounded-xl h-14 text-sm font-bold shadow-lg shadow-primary/20'
+                                className='flex-2 rounded-xl h-14 text-sm font-bold '
                                 disabled={loading}
                                 onClick={updatePluginSettings}
                             >
@@ -1008,7 +1008,7 @@ export default function PluginManagerPage() {
                             {t('common.cancel')}
                         </Button>
                         <Button
-                            className='flex-2 rounded-xl h-14 text-sm font-bold shadow-lg shadow-primary/20'
+                            className='flex-2 rounded-xl h-14 text-sm font-bold '
                             disabled={isCreatingAction}
                             onClick={createActionItem}
                         >
@@ -1047,7 +1047,7 @@ export default function PluginManagerPage() {
                         </Button>
                         <Button
                             variant='destructive'
-                            className='flex-2 rounded-xl h-14 text-sm font-bold shadow-lg shadow-destructive/20'
+                            className='flex-2 rounded-xl h-14 text-sm font-bold '
                             disabled={isUninstalling}
                             onClick={() => selectedPluginForUninstall && onUninstall(selectedPluginForUninstall)}
                         >

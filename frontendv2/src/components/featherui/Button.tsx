@@ -22,15 +22,15 @@ import { Slot } from '@radix-ui/react-slot';
 
 const variants = {
     default:
-        'bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 hover:shadow-primary/30',
+        'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]',
     destructive:
-        'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 shadow-lg shadow-red-500/10 hover:scale-[1.02] active:scale-95',
+        'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 active:scale-[0.98]',
     outline: 'border border-white/10 bg-white/5 hover:bg-white/10 text-foreground backdrop-blur-sm',
-    secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
+    secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
     ghost: 'hover:bg-accent hover:text-accent-foreground',
     link: 'text-primary underline-offset-4 hover:underline',
     warning:
-        'bg-orange-500/10 text-orange-500 border border-orange-500/20 hover:bg-orange-500/20 shadow-lg shadow-red-500/10 hover:scale-[1.02] active:scale-95',
+        'bg-orange-500/10 text-orange-500 border border-orange-500/20 hover:bg-orange-500/20 active:scale-[0.98]',
     glass: 'bg-background/50 backdrop-blur-md border border-border/40 hover:bg-background/80',
     plain: 'bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground',
 };

@@ -115,7 +115,7 @@ export function PullFileDialog({ open, onOpenChange, uuid, root, onSuccess }: Pu
                         variant='default'
                         onClick={handlePull}
                         disabled={loading || !url}
-                        className='shadow-lg shadow-primary/20'
+                        className=''
                     >
                         {t('files.dialogs.pull.pull_button')}
                     </Button>

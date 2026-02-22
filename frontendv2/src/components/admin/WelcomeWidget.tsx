@@ -55,7 +55,7 @@ export function WelcomeWidget({ version }: { version?: string }) {
                     <div className='flex flex-wrap items-center gap-2 md:gap-3'>
                         <Link
                             href='/admin/servers/create'
-                            className='flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-primary text-primary-foreground text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 whitespace-nowrap'
+                            className='flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-primary text-primary-foreground text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all  whitespace-nowrap'
                         >
                             <PlusCircle className='h-3.5 w-3.5 md:h-4 md:w-4 shrink-0' />
                             <span className='truncate'>{t('admin.welcome.create_server')}</span>

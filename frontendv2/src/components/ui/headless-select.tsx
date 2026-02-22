@@ -64,7 +64,7 @@ export function HeadlessSelect({
 
                 <Listbox.Button
                     className={clsx(
-                        'relative w-full h-12 cursor-pointer rounded-xl border bg-muted/30 text-sm transition-all duration-200 focus:outline-none focus:ring-4 px-4 py-3 text-left shadow-sm hover:shadow-md focus:shadow-lg font-semibold',
+                        'relative w-full h-12 cursor-pointer rounded-xl border bg-muted/30 text-sm transition-all duration-200 focus:outline-none focus:ring-4 px-4 py-3 text-left  font-semibold',
                         error
                             ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                             : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border',
@@ -108,7 +108,7 @@ export function HeadlessSelect({
                                 clsx(
                                     'relative cursor-pointer select-none py-3 pl-4 pr-10 rounded-xl transition-all duration-200 mx-0.5 my-0.5 group',
                                     active
-                                        ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]'
+                                        ? 'bg-primary text-white  scale-[1.02]'
                                         : selected
                                           ? 'bg-primary/10 text-primary'
                                           : 'text-foreground/80 hover:bg-muted/50',

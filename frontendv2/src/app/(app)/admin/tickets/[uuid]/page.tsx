@@ -734,7 +734,7 @@ export default function TicketViewPage() {
                                     type='submit'
                                     disabled={isSubmitting || (!reply.trim() && files.length === 0)}
                                     className={cn(
-                                        'rounded-xl h-10 px-6 font-bold uppercase tracking-wide transition-all shadow-lg shadow-primary/20',
+                                        'rounded-xl h-10 px-6 font-bold uppercase tracking-wide transition-all ',
                                         isInternal
                                             ? 'bg-yellow-500 hover:bg-yellow-600'
                                             : 'bg-linear-to-r from-primary to-primary/90 hover:brightness-110',
@@ -853,7 +853,7 @@ export default function TicketViewPage() {
                     <div className='pt-4 pb-2'>
                         <Button
                             type='submit'
-                            className='w-full h-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20'
+                            className='w-full h-12 text-lg font-black uppercase tracking-tight '
                         >
                             {t('common.save')}
                         </Button>

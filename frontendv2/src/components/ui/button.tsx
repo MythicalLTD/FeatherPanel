@@ -31,12 +31,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
         const variants = {
             default:
-                'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30',
+                'bg-primary text-primary-foreground hover:bg-primary/90',
             outline:
-                'border-2 border-border bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground hover:border-primary/50 shadow-sm hover:shadow-md',
+                'border-2 border-border bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground hover:border-primary/50',
             ghost: 'hover:bg-accent hover:text-accent-foreground',
             destructive:
-                'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/25',
+                'bg-destructive text-destructive-foreground hover:bg-destructive/90',
         };
 
         const sizes = {

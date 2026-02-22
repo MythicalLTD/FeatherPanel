@@ -169,16 +169,6 @@ body {
     }
 }
 
-@keyframes glow {
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 hsl(var(--primary) / 0.2);
-    }
-    50% {
-        box-shadow: 0 0 20px 2px hsl(var(--primary) / 0.15);
-    }
-}
-
 @keyframes float {
     0%,
     100% {
@@ -264,10 +254,6 @@ body {
     animation: pulse-soft 2s ease-in-out infinite;
 }
 
-.animate-glow {
-    animation: glow 3s ease-in-out infinite;
-}
-
 .animate-float {
     animation: float 4s ease-in-out infinite;
 }
@@ -334,23 +320,16 @@ body {
     animation-delay: 0.44s;
 }
 
-/* Hover lift and glow - use .hover-lift and .hover-glow */
+/* Hover lift - subtle only, no glow */
 .hover-lift {
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+    transition: transform 0.2s ease;
 }
 .hover-lift:hover {
-    transform: translateY(-2px);
-    box-shadow:
-        0 8px 24px -8px rgba(0, 0, 0, 0.2),
-        0 0 0 1px hsl(var(--border) / 0.5);
+    transform: translateY(-1px);
 }
 
 .hover-glow:hover {
-    box-shadow:
-        0 0 0 1px hsl(var(--primary) / 0.2),
-        0 4px 20px -4px hsl(var(--primary) / 0.25);
+    /* No glow - kept for class compatibility */
 }
 
 /* Card and button press feedback */

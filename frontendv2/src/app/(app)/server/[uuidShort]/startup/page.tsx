@@ -577,10 +577,10 @@ export default function ServerStartupPage() {
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-docker-image')} />
 
                     {canChangeSpell && (
-                        <div className='bg-primary/5 border border-primary/10 backdrop-blur-3xl rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden group'>
+                        <div className='bg-primary/5 border border-primary/10 backdrop-blur-3xl rounded-3xl p-8 space-y-6 relative overflow-hidden group'>
                             <div className='absolute -bottom-12 -right-12 w-48 h-48 bg-primary/10 blur-3xl pointer-events-none group-hover:bg-primary/20 transition-all duration-1000' />
                             <div className='flex items-center gap-5 relative z-10'>
-                                <div className='h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-xl shadow-primary/5'>
+                                <div className='h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 '>
                                     <Zap className='h-6 w-6 text-primary fill-primary/20' />
                                 </div>
                                 <div className='space-y-1'>

@@ -61,7 +61,7 @@ export function WipeAllDialog({ open, onOpenChange, uuid, onSuccess }: WipeAllDi
             <DialogContent className='sm:max-w-md border-red-500/20 bg-red-950/10 backdrop-blur-xl'>
                 <DialogHeader>
                     <div className='flex items-center gap-3'>
-                        <div className='flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 shadow-lg shadow-red-500/10'>
+                        <div className='flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 '>
                             <AlertTriangle className='h-6 w-6' />
                         </div>
                         <div>
@@ -89,7 +89,7 @@ export function WipeAllDialog({ open, onOpenChange, uuid, onSuccess }: WipeAllDi
                         variant='destructive'
                         onClick={handleWipe}
                         disabled={loading}
-                        className='shadow-lg shadow-red-500/20 h-10 px-6'
+                        className=' h-10 px-6'
                     >
                         <Trash2 className='mr-2 h-4 w-4' />
                         {t('files.dialogs.wipe.confirm')}

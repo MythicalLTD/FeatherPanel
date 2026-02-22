@@ -513,7 +513,7 @@ export default function CreateNodePage() {
                     <Button
                         type='submit'
                         loading={loading}
-                        className='w-full sm:w-auto min-w-[200px] h-14 text-lg shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 transition-all'
+                        className='w-full sm:w-auto min-w-[200px] h-14 text-lg bg-primary hover:bg-primary/90 transition-all'
                     >
                         <Save className='h-5 w-5 mr-3' />
                         {t('admin.node.form.submit_create')}

@@ -160,7 +160,7 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                                 variant='destructive'
                                 onClick={handleResetKey}
                                 loading={resetting}
-                                className='h-11 px-6 shadow-lg shadow-red-500/10'
+                                className='h-11 px-6 '
                             >
                                 <RefreshCw className='h-4 w-4 mr-2' />
                                 {t('admin.node.wings.reset_key')}

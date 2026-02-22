@@ -599,7 +599,7 @@ export default function SpellsPage() {
                             {t('common.cancel')}
                         </Button>
                         <Button
-                            className='flex-2 rounded-xl h-14 font-bold shadow-lg shadow-primary/20'
+                            className='flex-2 rounded-xl h-14 font-bold '
                             disabled={!selectedRealmId || installingId !== null}
                             onClick={handleInstall}
                         >
