@@ -197,14 +197,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                 </p>
                                                 <div className='grid grid-cols-2 sm:grid-cols-3 gap-3'>
                                                     {(
-                                                        [
-                                                            'aurora',
-                                                            'beams',
-                                                            'colorBends',
-                                                            'darkVeil',
-                                                            'floatingLines',
-                                                            'silk',
-                                                        ] as BackgroundAnimatedVariant[]
+                                                        ['aurora', 'beams', 'colorBends', 'floatingLines', 'silk'] as BackgroundAnimatedVariant[]
                                                     ).map((variant) => {
                                                         const isSelected =
                                                             backgroundType === 'aurora' &&

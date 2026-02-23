@@ -16,6 +16,8 @@
 - Introduced seamless Ctrl+S (or Cmd+S) keyboard shortcut support in the file manager—enabling quick and convenient file saving. by @nayskutzu
 - Default user profile pictures now automatically use the panel’s app logo URL for a more unified look. by @nayskutzu
 - Admin users can now seamlessly access and view all servers directly from the dashboard page. by @nayskutzu
+- Expanded theme customization options for enhanced personalization and flexibility. by @nayskutzu
+- Upload progress is now visually displayed in the file manager, providing real-time feedback during file uploads. by @nayskutzu
 
 ### Fixed
 

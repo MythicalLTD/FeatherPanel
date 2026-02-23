@@ -19,12 +19,11 @@ import dynamic from 'next/dynamic';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useState } from 'react';
 
-import { getAuroraColorStops, getPrimaryHex, getBeamLightHex, getAccentHue } from '@/lib/themeColors';
+import { getAuroraColorStops, getPrimaryHex, getBeamLightHex } from '@/lib/themeColors';
 
 import '@/components/thirdparty/Aurora.css';
 import '@/components/thirdparty/Beams.css';
 import '@/components/thirdparty/ColorBends.css';
-import '@/components/thirdparty/DarkVeil.css';
 import '@/components/thirdparty/FloatingLines.css';
 
 const Aurora = dynamic(() => import('@/components/thirdparty/Aurora'), {
@@ -33,7 +32,6 @@ const Aurora = dynamic(() => import('@/components/thirdparty/Aurora'), {
 });
 const Beams = dynamic(() => import('@/components/thirdparty/Beams'), { ssr: false });
 const ColorBends = dynamic(() => import('@/components/thirdparty/ColorBends'), { ssr: false });
-const DarkVeil = dynamic(() => import('@/components/thirdparty/DarkVeil'), { ssr: false });
 const FloatingLines = dynamic(() => import('@/components/thirdparty/FloatingLines'), { ssr: false });
 const Silk = dynamic(() => import('@/components/thirdparty/Silk'), { ssr: false });
 
@@ -127,24 +125,6 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
                                 frequency={1}
                                 warpStrength={1}
                             />
-                        )}
-                        {backgroundAnimatedVariant === 'darkVeil' && (
-                            <>
-                                <DarkVeil
-                                    hueShift={getAccentHue(accentColor)}
-                                    noiseIntensity={0.03}
-                                    speed={0.5}
-                                    warpAmount={0.5}
-                                />
-                                <div
-                                    className='absolute inset-0 pointer-events-none'
-                                    style={{
-                                        background: `linear-gradient(135deg, hsl(var(--primary) / 0.45) 0%, transparent 50%, hsl(var(--primary) / 0.25) 100%)`,
-                                        mixBlendMode: 'color',
-                                    }}
-                                    aria-hidden
-                                />
-                            </>
                         )}
                         {backgroundAnimatedVariant === 'floatingLines' && (
                             <FloatingLines

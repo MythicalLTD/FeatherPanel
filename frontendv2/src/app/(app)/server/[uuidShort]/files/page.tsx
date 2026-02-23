@@ -42,9 +42,17 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { toast } from 'sonner';
 import { filesApi } from '@/lib/files-api';
 import { FileObject } from '@/types/server';
-import { Download, X, Upload } from 'lucide-react';
+import { Download, X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import React, { use } from 'react';
 import { Button } from '@/components/featherui/Button';
+
+type UploadQueueItem = {
+    id: string;
+    file: File;
+    progress: number;
+    status: 'pending' | 'uploading' | 'done' | 'error';
+    error?: string;
+};
 
 export default function ServerFilesPage({ params }: { params: Promise<{ uuidShort: string }> }) {
     const router = useRouter();
@@ -94,10 +102,11 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [previewOpen, setPreviewOpen] = useState(false);
     const [moveCopyOpen, setMoveCopyOpen] = useState(false);
     const [permissionsOpen, setPermissionsOpen] = useState(false);
-    const [uploading, setUploading] = useState(false);
     const [compressOpen, setCompressOpen] = useState(false);
     const [filesToCompress, setFilesToCompress] = useState<string[]>([]);
     const [moveCopyAction, setMoveCopyAction] = useState<'move' | 'copy'>('move');
+    const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
+    const uploadProcessingRef = useRef(false);
 
     const [actionFile, setActionFile] = useState<FileObject | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -194,30 +203,93 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         fileInputRef.current?.click();
     };
 
-    const uploadFile = React.useCallback(
-        async (file: File) => {
-            setUploading(true);
-            const toastId = toast.loading(t('files.messages.uploading', { file: file.name }));
+    const processUploadQueue = React.useCallback(
+        async (queue: UploadQueueItem[], setQueue: React.Dispatch<React.SetStateAction<UploadQueueItem[]>>) => {
+            if (uploadProcessingRef.current) return;
+            const next = queue.find((u) => u.status === 'pending');
+            if (!next) return;
+
+            uploadProcessingRef.current = true;
+            setQueue((prev) =>
+                prev.map((u) => (u.id === next.id ? { ...u, status: 'uploading' as const, progress: 0 } : u)),
+            );
 
             try {
-                await filesApi.uploadFile(uuidShort, currentDirectory || '/', file);
-                toast.success(t('files.messages.upload_complete'), { id: toastId });
+                await filesApi.uploadFile(uuidShort, currentDirectory || '/', next.file, (percent) => {
+                    setUploadQueue((p) => p.map((u) => (u.id === next.id ? { ...u, progress: percent } : u)));
+                });
+                setUploadQueue((prev) => {
+                    const updated = prev.map((u) =>
+                        u.id === next.id ? { ...u, status: 'done' as const, progress: 100 } : u,
+                    );
+                    const hasPending = updated.some((u) => u.status === 'pending');
+                    if (hasPending) setTimeout(() => processUploadQueue(updated, setUploadQueue), 0);
+                    return updated;
+                });
                 refresh();
             } catch (error) {
-                console.error(error);
-                toast.error(t('files.messages.upload_failed'), { id: toastId });
+                const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+                setUploadQueue((prev) => {
+                    const updated = prev.map((u) =>
+                        u.id === next.id
+                            ? { ...u, status: 'error' as const, error: message || t('files.messages.upload_failed') }
+                            : u,
+                    );
+                    const hasPending = updated.some((u) => u.status === 'pending');
+                    if (hasPending) setTimeout(() => processUploadQueue(updated, setUploadQueue), 0);
+                    return updated;
+                });
             } finally {
-                setUploading(false);
-                if (fileInputRef.current) fileInputRef.current.value = '';
+                uploadProcessingRef.current = false;
             }
         },
         [uuidShort, currentDirectory, refresh, t],
     );
 
+    const addToUploadQueue = React.useCallback(
+        (files: File[]) => {
+            const newItems: UploadQueueItem[] = files.map((file) => ({
+                id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                file,
+                progress: 0,
+                status: 'pending',
+            }));
+            setUploadQueue((prev) => {
+                const next = [...prev, ...newItems];
+                setTimeout(() => processUploadQueue(next, setUploadQueue), 0);
+                return next;
+            });
+        },
+        [processUploadQueue],
+    );
+
+    const removeUploadFromQueue = React.useCallback((id: string) => {
+        setUploadQueue((prev) => prev.filter((u) => u.id !== id));
+    }, []);
+
+    const clearCompletedUploads = React.useCallback(() => {
+        setUploadQueue((prev) => prev.filter((u) => u.status === 'uploading' || u.status === 'pending'));
+    }, []);
+
+    const uploadFile = React.useCallback(
+        async (file: File) => {
+            addToUploadQueue([file]);
+        },
+        [addToUploadQueue],
+    );
+
+    const uploadFiles = React.useCallback(
+        async (files: File[]) => {
+            if (files.length) addToUploadQueue(Array.from(files));
+        },
+        [addToUploadQueue],
+    );
+
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return;
-        const file = e.target.files[0];
-        uploadFile(file);
+        const files = Array.from(e.target.files);
+        uploadFiles(files);
+        e.target.value = '';
     };
 
     useEffect(() => {
@@ -236,9 +308,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             setIsDragging(false);
             if (e.dataTransfer?.files.length) {
                 const files = Array.from(e.dataTransfer.files);
-                for (const file of files) {
-                    await uploadFile(file);
-                }
+                uploadFiles(files);
             }
         };
 
@@ -251,7 +321,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             window.removeEventListener('dragleave', handleDragLeave);
             window.removeEventListener('drop', handleDrop);
         };
-    }, [uploadFile]);
+    }, [uploadFiles]);
 
     return (
         <div className='flex flex-col gap-6 relative min-h-screen pb-20'>
@@ -275,7 +345,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 <WidgetRenderer widgets={getWidgets('server-files', 'after-search-bar')} />
 
                 <FileActionToolbar
-                    loading={loading || uploading}
+                    loading={loading || uploadQueue.some((u) => u.status === 'uploading' || u.status === 'pending')}
                     selectedCount={selectedFiles.length}
                     onRefresh={refresh}
                     onCreateFile={() => setCreateFileOpen(true)}
@@ -300,6 +370,85 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     canDelete={canDelete}
                     currentDirectory={currentDirectory || '/'}
                 />
+
+                {uploadQueue.length > 0 && (
+                    <div className='mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-4 duration-500'>
+                        <div className='md:col-span-2 lg:col-span-3 flex items-center justify-between'>
+                            <span className='text-xs font-bold uppercase tracking-widest text-primary/80'>
+                                {uploadQueue.length === 1
+                                    ? t('files.toolbar.upload')
+                                    : `${uploadQueue.length} ${t('files.toolbar.upload')}`}
+                            </span>
+                            {uploadQueue.some((u) => u.status === 'done' || u.status === 'error') && (
+                                <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    onClick={clearCompletedUploads}
+                                    className='text-muted-foreground hover:text-foreground text-xs'
+                                >
+                                    {t('files.toolbar.clear_completed')}
+                                </Button>
+                            )}
+                        </div>
+                        {uploadQueue.map((item) => (
+                            <div
+                                key={item.id}
+                                className='group relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-xl transition-all hover:border-primary/40 text-left'
+                            >
+                                <div className='absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity' />
+                                <div className='relative flex flex-col gap-3 text-left'>
+                                    <div className='flex items-center justify-between'>
+                                        <div className='flex items-center gap-2 min-w-0'>
+                                            <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary'>
+                                                {item.status === 'uploading' && (
+                                                    <Upload className='h-4 w-4 animate-pulse' />
+                                                )}
+                                                {item.status === 'done' && <CheckCircle2 className='h-4 w-4 text-green-500' />}
+                                                {item.status === 'error' && <AlertCircle className='h-4 w-4 text-destructive' />}
+                                                {item.status === 'pending' && <Upload className='h-4 w-4 text-muted-foreground' />}
+                                            </div>
+                                            <span className='text-sm font-medium truncate' title={item.file.name}>
+                                                {item.file.name}
+                                            </span>
+                                        </div>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            onClick={() => removeUploadFromQueue(item.id)}
+                                            className='h-7 w-7 shrink-0 text-muted-foreground hover:text-red-500'
+                                        >
+                                            <X className='h-4 w-4' />
+                                        </Button>
+                                    </div>
+                                    {(item.status === 'uploading' || item.status === 'pending') && (
+                                        <div className='space-y-1.5'>
+                                            <div className='flex justify-between text-[10px] font-bold uppercase tracking-tighter text-white/40'>
+                                                <span>
+                                                    {item.status === 'uploading' ? t('files.messages.uploading', { file: '' }) : t('files.toolbar.upload')}
+                                                </span>
+                                                <span className='text-primary'>{item.progress}%</span>
+                                            </div>
+                                            <div className='h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5'>
+                                                <div
+                                                    className='h-full bg-gradient-to-r from-primary to-primary-foreground transition-all duration-300'
+                                                    style={{ width: `${item.progress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                    {item.status === 'done' && (
+                                        <p className='text-xs text-green-600 dark:text-green-400'>{t('files.messages.upload_complete')}</p>
+                                    )}
+                                    {item.status === 'error' && (
+                                        <p className='text-xs text-destructive truncate' title={item.error}>
+                                            {item.error}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {activePulls.length > 0 && (
                     <div className='mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-4 duration-500'>
@@ -373,7 +522,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 <WidgetRenderer widgets={getWidgets('server-files', 'after-files-list')} />
             </div>
 
-            <input type='file' ref={fileInputRef} className='hidden' onChange={handleFileChange} />
+            <input type='file' ref={fileInputRef} className='hidden' onChange={handleFileChange} multiple />
 
             {isDragging && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-primary/20 backdrop-blur-md border-4 border-dashed border-primary animate-in fade-in zoom-in duration-300 pointer-events-none'>

@@ -19,7 +19,7 @@ import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactN
 
 type Theme = 'light' | 'dark';
 type BackgroundType = 'aurora' | 'gradient' | 'solid' | 'image' | 'pattern';
-export type BackgroundAnimatedVariant = 'aurora' | 'beams' | 'colorBends' | 'darkVeil' | 'floatingLines' | 'silk';
+export type BackgroundAnimatedVariant = 'aurora' | 'beams' | 'colorBends' | 'floatingLines' | 'silk';
 export type BackgroundImageFit = 'cover' | 'contain' | 'fill';
 /** Controls animations and transitions app-wide. */
 export type MotionLevel = 'full' | 'reduced' | 'none';
@@ -115,7 +115,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             savedAnimatedVariant === 'aurora' ||
                 savedAnimatedVariant === 'beams' ||
                 savedAnimatedVariant === 'colorBends' ||
-                savedAnimatedVariant === 'darkVeil' ||
                 savedAnimatedVariant === 'floatingLines' ||
                 savedAnimatedVariant === 'silk'
                 ? savedAnimatedVariant

@@ -155,7 +155,12 @@ export const filesApi = {
         await api.delete(`/user/servers/${uuid}/delete-pull-process/${id}`);
     },
 
-    uploadFile: async (uuid: string, root: string, file: File): Promise<void> => {
+    uploadFile: async (
+        uuid: string,
+        root: string,
+        file: File,
+        onProgress?: (percent: number) => void,
+    ): Promise<void> => {
         await api.post(`/user/servers/${uuid}/upload-file`, file, {
             params: {
                 path: root,
@@ -164,6 +169,12 @@ export const filesApi = {
             headers: {
                 'Content-Type': 'application/octet-stream',
             },
+            onUploadProgress:
+                onProgress &&
+                ((e) => {
+                    const percent = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+                    onProgress(Math.min(percent, 100));
+                }),
         });
     },
 

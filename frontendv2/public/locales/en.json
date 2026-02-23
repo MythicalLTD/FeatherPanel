@@ -1822,6 +1822,7 @@
 		"toolbar": {
 			"selected": "Selected",
 			"cancel": "Cancel",
+			"clear_completed": "Clear completed",
 			"download": "Download",
 			"compress": "Compress",
 			"move": "Move",
