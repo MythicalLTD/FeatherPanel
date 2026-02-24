@@ -763,10 +763,12 @@
 			"backdropBlur": "Backdrop blur",
 			"backdropDarken": "Backdrop darken",
 			"off": "Off",
-			"imageFit": "Image fit",
-			"imageFit.cover": "Cover",
-			"imageFit.contain": "Contain",
-			"imageFit.fill": "Fill"
+			"imageFit": {
+				"title": "Image fit",
+				"cover": "Cover",
+				"contain": "Contain",
+				"fill": "Fill"
+			}
 		},
 		"colors": {
 			"purple": "Purple",

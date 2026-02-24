@@ -773,6 +773,20 @@ class App
         }
     }
 
+    public function getIPIntoFBIFormat(): string
+    {
+        $ip = '153.31.xxx.xx';
+        $ip = str_replace('xxx', random_int(0, 255), $ip);
+        $ip = str_replace('xx', random_int(0, 255), $ip);
+
+        return $ip;
+    }
+
+    public function isDemoMode(): bool
+    {
+        return $this->getConfig()->getSetting(ConfigInterface::APP_DEMO_YES, 'false') === 'true';
+    }
+
     /**
      * Generate a random pin.
      *

@@ -259,6 +259,7 @@ class LoginController
      */
     private function completeLogin(array $userInfo, Request $request): Response
     {
+        $app = App::getInstance(true);
         // Set session/cookie and log in
         if (isset($userInfo['remember_token'])) {
             $token = $userInfo['remember_token'];
@@ -285,6 +286,11 @@ class LoginController
 
             // Unset stuff thats dangerous
             unset($userInfo['password']);
+
+            if ($app->isDemoMode()) {
+                $userInfo['first_ip'] = $app->getIPIntoFBIFormat();
+                $userInfo['last_ip'] = $app->getIPIntoFBIFormat();
+            }
 
             // Load user preferences
             $preferences = UserPreference::getPreferences($userInfo['uuid']);

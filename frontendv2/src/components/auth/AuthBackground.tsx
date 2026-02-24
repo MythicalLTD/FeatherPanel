@@ -15,15 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useTheme } from '@/contexts/ThemeContext';
-
-/**
- * Animated auth background (aurora-style mesh). Respects motionLevel.
- */
 export default function AuthBackground() {
-    const { motionLevel } = useTheme();
-    const animate = motionLevel === 'full';
-
     return (
         <div className='pointer-events-none absolute inset-0 overflow-hidden' aria-hidden>
             {/* Base gradient */}
@@ -34,26 +26,14 @@ export default function AuthBackground() {
                         'radial-gradient(ellipse 120% 80% at 50% -20%, hsl(var(--primary) / 0.25), transparent 50%), radial-gradient(ellipse 80% 60% at 80% 50%, hsl(var(--primary) / 0.15), transparent 45%), radial-gradient(ellipse 70% 70% at 20% 80%, hsl(var(--primary) / 0.12), transparent 45%), hsl(var(--background))',
                 }}
             />
-            {/* Animated blobs (only when motion is full) */}
+            {/* Previously animated blobs; now always static since motion is forced off. */}
             <div
                 className='absolute inset-0 opacity-30 dark:opacity-40'
-                style={
-                    !animate
-                        ? {
-                              background:
-                                  'radial-gradient(ellipse 60% 50% at 70% 30%, hsl(var(--primary) / 0.4), transparent), radial-gradient(ellipse 50% 60% at 30% 70%, hsl(var(--primary) / 0.3), transparent)',
-                          }
-                        : undefined
-                }
-            >
-                {animate && (
-                    <>
-                        <div className='absolute -left-1/4 top-0 h-[60vh] w-[60vw] rounded-full bg-primary/20 blur-[100px] animate-auth-blob-1' />
-                        <div className='absolute -right-1/4 bottom-0 h-[50vh] w-[50vw] rounded-full bg-primary/15 blur-[90px] animate-auth-blob-2' />
-                        <div className='absolute left-1/2 top-1/2 h-[40vmin] w-[40vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[80px] animate-auth-blob-3' />
-                    </>
-                )}
-            </div>
+                style={{
+                    background:
+                        'radial-gradient(ellipse 60% 50% at 70% 30%, hsl(var(--primary) / 0.4), transparent), radial-gradient(ellipse 50% 60% at 30% 70%, hsl(var(--primary) / 0.3), transparent)',
+                }}
+            />
             {/* Subtle grain overlay */}
             <div
                 className='absolute inset-0 opacity-[0.03] dark:opacity-[0.05]'

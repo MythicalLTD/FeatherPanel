@@ -203,6 +203,7 @@ class UsersController
     )]
     public function index(Request $request): Response
     {
+        $app = App::getInstance(true);
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
@@ -256,6 +257,10 @@ class UsersController
                 $user['role']['name'] = $roleId;
                 $user['role']['display_name'] = 'User';
                 $user['role']['color'] = '#666666';
+            }
+            if ($app->isDemoMode()) {
+                $user['first_ip'] = $app->getIPIntoFBIFormat();
+                $user['last_ip'] = $app->getIPIntoFBIFormat();
             }
             unset($user['role_id']);
         }
@@ -317,6 +322,7 @@ class UsersController
     )]
     public function show(Request $request, string $uuid): Response
     {
+        $app = App::getInstance(true);
         $user = User::getUserByUuid($uuid);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
@@ -339,8 +345,12 @@ class UsersController
 
         unset($user['password']);
 
-        $user['activities'] = array_map(function ($activity) {
+        $user['activities'] = array_map(function ($activity) use ($app) {
             unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
+
+            if ($app->isDemoMode()) {
+                $activity['ip_address'] = $app->getIPIntoFBIFormat();
+            }
 
             return $activity;
         }, Activity::getActivitiesByUser($user['uuid']));
@@ -355,6 +365,10 @@ class UsersController
                 unset($mail['id'], $mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
                 $user['mails'][] = $mail;
             }
+        }
+        if ($app->isDemoMode()) {
+            $user['first_ip'] = $app->getIPIntoFBIFormat();
+            $user['last_ip'] = $app->getIPIntoFBIFormat();
         }
 
         return ApiResponse::success(['user' => $user, 'roles' => $rolesMap], 'User fetched successfully', 200);
@@ -393,6 +407,7 @@ class UsersController
     )]
     public function showByExternalId(Request $request, string $externalId): Response
     {
+        $app = App::getInstance(true);
         if (empty($externalId)) {
             return ApiResponse::error('External ID is required', 'INVALID_EXTERNAL_ID', 400);
         }
@@ -420,8 +435,12 @@ class UsersController
 
         unset($user['password']);
 
-        $user['activities'] = array_map(function ($activity) {
+        $user['activities'] = array_map(function ($activity) use ($app) {
             unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
+
+            if ($app->isDemoMode()) {
+                $activity['ip_address'] = $app->getIPIntoFBIFormat();
+            }
 
             return $activity;
         }, Activity::getActivitiesByUser($user['uuid']));
@@ -436,6 +455,11 @@ class UsersController
                 unset($mail['id'], $mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
                 $user['mails'][] = $mail;
             }
+        }
+
+        if ($app->isDemoMode()) {
+            $user['first_ip'] = $app->getIPIntoFBIFormat();
+            $user['last_ip'] = $app->getIPIntoFBIFormat();
         }
 
         return ApiResponse::success(['user' => $user, 'roles' => $rolesMap], 'User fetched successfully', 200);
@@ -621,7 +645,8 @@ class UsersController
     public function update(Request $request, string $uuid): Response
     {
         $user = User::getUserByUuid($uuid);
-        $config = App::getInstance(true)->getConfig();
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
@@ -634,6 +659,16 @@ class UsersController
         }
         if (isset($data['uuid'])) {
             unset($data['uuid']);
+        }
+
+        if ($app->isDemoMode()) {
+            if ($user['id'] === 1) {
+                return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+            }
+
+            if ($user['id'] === 2) {
+                return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+            }
         }
 
         // Validation rules (only for fields being updated)
@@ -771,10 +806,22 @@ class UsersController
     )]
     public function delete(Request $request, string $uuid): Response
     {
-        $config = App::getInstance(true)->getConfig();
+
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
         $user = User::getUserByUuid($uuid);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        if ($app->isDemoMode()) {
+            if ($user['id'] === 1) {
+                return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+            }
+
+            if ($user['id'] === 2) {
+                return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+            }
         }
 
         // Check if user has any servers

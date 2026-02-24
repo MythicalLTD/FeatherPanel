@@ -7,6 +7,9 @@
 - Transitioned FeatherPanel documentation to a fully compiled format, resulting in significantly improved performance and faster access times. by @nayskutzu
 - The server name now appears in the navbar when viewing any server page, so users always see which server they are on. by @nayskutzu
 - Previous/Next page controls are now shown at the top of every paginated list across. by @nayskutzu
+- Resolved an issue where updating environment variables was not functioning correctly. by @nayskutzu
+- By default, SEO indexing is now turned off to enhance privacy and control over search engine visibility. by @nayskutzu
+- Significantly enhanced the logs uploading process for increased reliability and performance. by @nayskutzu
 
 ### Added
 
@@ -18,6 +21,8 @@
 - Admin users can now seamlessly access and view all servers directly from the dashboard page. by @nayskutzu
 - Expanded theme customization options for enhanced personalization and flexibility. by @nayskutzu
 - Upload progress is now visually displayed in the file manager, providing real-time feedback during file uploads. by @nayskutzu
+- Admins can now enforce specific customization options for all users, ensuring a consistent experience across the panel. by @nayskutzu
+- Added robust support for IP spoofing simulation and enhanced anti-griefing protections in demo mode to ensure a safer, more flexible testing environment. by @nayskutzu
 
 ### Fixed
 

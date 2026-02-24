@@ -719,6 +719,7 @@ class ApiClientController
     )]
     public function getApiClientActivities(Request $request): Response
     {
+        $app = App::getInstance(true);
         $user = AuthMiddleware::getCurrentUser($request);
         if ($user == null) {
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
@@ -739,7 +740,11 @@ class ApiClientController
 
         // Get user's API client related activities
         $activities = Activity::getActivitiesByUser($user['uuid']);
-        $apiClientActivities = array_filter($activities, function ($activity) {
+        $apiClientActivities = array_filter($activities, function ($activity) use ($app) {
+            if ($app->isDemoMode()) {
+                $activity['ip_address'] = $app->getIPIntoFBIFormat();
+            }
+
             return str_starts_with($activity['name'], 'api_client_') || str_starts_with($activity['name'], 'api_keys_');
         });
 

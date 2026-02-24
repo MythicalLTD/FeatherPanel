@@ -116,7 +116,7 @@ class LogViewerController
     #[OA\Post(
         path: '/api/admin/log-viewer/clear',
         summary: 'Clear log file',
-        description: 'Clear the contents of a specific log file. Only available in developer mode and requires ADMIN_ROOT permissions.',
+        description: 'Clear the contents of a specific log file. Requires ADMIN_ROOT permissions.',
         tags: ['Admin - Log Viewer'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -226,7 +226,7 @@ class LogViewerController
     #[OA\Post(
         path: '/api/admin/log-viewer/upload',
         summary: 'Upload logs to mclo.gs',
-        description: 'Upload web and app logs to mclo.gs paste service and get shareable URLs. Only available in developer mode and requires ADMIN_ROOT permissions.',
+        description: 'Upload recent web and app logs to mclo.gs paste service and get shareable URLs. Requires ADMIN_ROOT permissions.',
         tags: ['Admin - Log Viewer'],
         responses: [
             new OA\Response(
@@ -267,28 +267,40 @@ class LogViewerController
         try {
             $results = [];
 
-            // Limit to last 10,000 lines to prevent memory issues
-            $lineLimit = 10000;
+            // Limit to last lines to prevent memory issues and oversized uploads.
+            // 3,000 lines is usually enough context while staying under external service limits.
+            $lineLimit = 3000;
 
-            // Upload web logs
+            // Helper to hard-cap very large log payloads (e.g. exceptionally long lines)
+            $truncateContent = static function (string $content): string {
+                $maxBytes = 500000; // ~500 KB
+                $length = strlen($content);
+                if ($length <= $maxBytes) {
+                    return $content;
+                }
+
+                // Keep the last part of the log (most recent entries)
+                return substr($content, -$maxBytes);
+            };
+
+            // Upload web logs (often missing when web server logs are external)
             $webLogFile = LogHelper::getLogFilePath('web');
             if (file_exists($webLogFile)) {
-                $webContent = LogHelper::readLastLines($webLogFile, $lineLimit);
-                $webResult = LogHelper::uploadToMcloGs($webContent);
-                $results['web'] = $webResult;
+                $webContent = $truncateContent(LogHelper::readLastLines($webLogFile, $lineLimit));
+                $results['web'] = LogHelper::uploadToMcloGs($webContent);
             } else {
+                // Do not fail the whole upload if web logs are missing – this is expected on some setups.
                 $results['web'] = [
                     'success' => false,
-                    'error' => 'Web log file not found',
+                    'error' => 'Web log file not found (this is normal when web server logs are external)',
                 ];
             }
 
             // Upload app logs
             $appLogFile = LogHelper::getLogFilePath('app');
             if (file_exists($appLogFile)) {
-                $appContent = LogHelper::readLastLines($appLogFile, $lineLimit);
-                $appResult = LogHelper::uploadToMcloGs($appContent);
-                $results['app'] = $appResult;
+                $appContent = $truncateContent(LogHelper::readLastLines($appLogFile, $lineLimit));
+                $results['app'] = LogHelper::uploadToMcloGs($appContent);
             } else {
                 $results['app'] = [
                     'success' => false,
@@ -299,9 +311,8 @@ class LogViewerController
             // Upload mail logs
             $mailLogFile = LogHelper::getLogFilePath('mail');
             if (file_exists($mailLogFile)) {
-                $mailContent = LogHelper::readLastLines($mailLogFile, $lineLimit);
-                $mailResult = LogHelper::uploadToMcloGs($mailContent);
-                $results['mail'] = $mailResult;
+                $mailContent = $truncateContent(LogHelper::readLastLines($mailLogFile, $lineLimit));
+                $results['mail'] = LogHelper::uploadToMcloGs($mailContent);
             } else {
                 $results['mail'] = [
                     'success' => false,

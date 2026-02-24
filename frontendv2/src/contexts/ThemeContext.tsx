@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode } from 'react';
+import { useSettings } from '@/contexts/SettingsContext';
 
 type Theme = 'light' | 'dark';
 type BackgroundType = 'aurora' | 'gradient' | 'solid' | 'image' | 'pattern';
@@ -36,7 +37,7 @@ interface ThemeContextType {
     backdropDarken: number;
     /** How custom background image fits (cover, contain, fill). */
     backgroundImageFit: BackgroundImageFit;
-    /** Animations and transitions: full, reduced, or none. */
+    /** Animations and transitions: full, reduced, or none. Currently forced to 'none'. */
     motionLevel: MotionLevel;
     setTheme: (theme: Theme) => void;
     setAccentColor: (color: string) => void;
@@ -75,14 +76,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [mounted, setMounted] = useState(false);
     const [theme, setThemeState] = useState<Theme>('dark');
     const [accentColor, setAccentColorState] = useState('purple');
-    const [backgroundType, setBackgroundTypeState] = useState<BackgroundType>('aurora');
+    const [backgroundType, setBackgroundTypeState] = useState<BackgroundType>('pattern');
     const [backgroundAnimatedVariant, setBackgroundAnimatedVariantState] =
         useState<BackgroundAnimatedVariant>('aurora');
     const [backgroundImage, setBackgroundImageState] = useState('');
     const [backdropBlur, setBackdropBlurState] = useState(0);
     const [backdropDarken, setBackdropDarkenState] = useState(0);
     const [backgroundImageFit, setBackgroundImageFitState] = useState<BackgroundImageFit>('cover');
-    const [motionLevel, setMotionLevelState] = useState<MotionLevel>('reduced');
+    const [motionLevel, setMotionLevelState] = useState<MotionLevel>('none');
+    const { settings } = useSettings();
 
     useLayoutEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -97,7 +99,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const savedBlur = localStorage.getItem('backdropBlur');
         const savedDarken = localStorage.getItem('backdropDarken');
         const savedFit = localStorage.getItem('backgroundImageFit') as BackgroundImageFit | null;
-        const savedMotion = localStorage.getItem('motionLevel') as MotionLevel | null;
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
         setThemeState(saved || (prefersDark ? 'dark' : 'light'));
@@ -109,7 +110,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 savedBgType === 'image' ||
                 savedBgType === 'pattern'
                 ? savedBgType
-                : 'aurora',
+                : 'pattern',
         );
         setBackgroundAnimatedVariantState(
             savedAnimatedVariant === 'aurora' ||
@@ -124,7 +125,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setBackdropBlurState(savedBlur != null ? Math.min(24, Math.max(0, parseInt(savedBlur, 10) || 0)) : 0);
         setBackdropDarkenState(savedDarken != null ? Math.min(100, Math.max(0, parseInt(savedDarken, 10) || 0)) : 0);
         setBackgroundImageFitState(savedFit === 'contain' || savedFit === 'fill' ? savedFit : 'cover');
-        setMotionLevelState(savedMotion === 'full' ? 'full' : savedMotion === 'none' ? 'none' : 'reduced');
+        // Force motion to 'none' regardless of any previously saved preference.
+        setMotionLevelState('none');
+        localStorage.setItem('motionLevel', 'none');
     }, []);
 
     useEffect(() => {
@@ -141,54 +144,88 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('accentColor', accentColor);
     }, [theme, accentColor, mounted]);
 
+    // Apply admin-enforced defaults/locks from public settings (if present).
+    // Note: we now enforce locks inside setter functions and initial state;
+    // this effect only ensures settings are loaded before user interaction.
+    useEffect(() => {
+        if (!mounted || !settings) return;
+        // No-op: locks are respected in setters.
+    }, [mounted, settings]);
+
     useEffect(() => {
         if (!mounted || typeof document === 'undefined') return;
         document.documentElement.dataset.motion = motionLevel;
     }, [motionLevel, mounted]);
 
     const setTheme = (newTheme: Theme) => {
+        // If admin locked theme, ignore user changes.
+        if (settings?.app_theme_lock === 'true') return;
         setThemeState(newTheme);
+        localStorage.setItem('theme', newTheme);
     };
 
     const setAccentColor = (color: string) => {
+        // If admin locked accent color, ignore user changes.
+        if (settings?.app_accent_color_lock === 'true') return;
         setAccentColorState(color);
+        localStorage.setItem('accentColor', color);
     };
 
     const setBackgroundType = (type: BackgroundType) => {
+        // If admin locked background type, ignore user changes.
+        if (settings?.app_background_type_lock === 'true') return;
         setBackgroundTypeState(type);
         localStorage.setItem('backgroundType', type);
     };
 
     const setBackgroundAnimatedVariant = (variant: BackgroundAnimatedVariant) => {
+        // Background animated variant is implicitly controlled by background type lock;
+        // still allow variant changes unless background type itself is locked away from aurora.
+        if (settings?.app_background_type_lock === 'true' && backgroundType === 'aurora') {
+            // When locked to aurora, allow changing variant within aurora family.
+            setBackgroundAnimatedVariantState(variant);
+            localStorage.setItem('backgroundAnimatedVariant', variant);
+            return;
+        }
+        // If background type is not aurora, variants are irrelevant but safe to store.
         setBackgroundAnimatedVariantState(variant);
         localStorage.setItem('backgroundAnimatedVariant', variant);
     };
 
     const setBackgroundImage = (image: string) => {
+        // If admin locked global background image, ignore user changes.
+        if (settings?.app_background_lock === 'true') return;
         setBackgroundImageState(image);
         localStorage.setItem('backgroundImage', image);
     };
 
     const setBackdropBlur = (px: number) => {
+        // If admin locked blur, ignore user changes.
+        if (settings?.app_backdrop_blur_lock === 'true') return;
         const value = Math.min(24, Math.max(0, px));
         setBackdropBlurState(value);
         localStorage.setItem('backdropBlur', String(value));
     };
 
     const setBackdropDarken = (percent: number) => {
+        // If admin locked darken, ignore user changes.
+        if (settings?.app_backdrop_darken_lock === 'true') return;
         const value = Math.min(100, Math.max(0, percent));
         setBackdropDarkenState(value);
         localStorage.setItem('backdropDarken', String(value));
     };
 
     const setBackgroundImageFit = (fit: BackgroundImageFit) => {
+        // If admin locked image fit, ignore user changes.
+        if (settings?.app_background_image_fit_lock === 'true') return;
         setBackgroundImageFitState(fit);
         localStorage.setItem('backgroundImageFit', fit);
     };
 
-    const setMotionLevel = (level: MotionLevel) => {
-        setMotionLevelState(level);
-        localStorage.setItem('motionLevel', level);
+    const setMotionLevel = () => {
+        // Motion level is now fixed to 'none' – ignore requested level but keep API stable.
+        setMotionLevelState('none');
+        localStorage.setItem('motionLevel', 'none');
     };
 
     const toggleTheme = () => {

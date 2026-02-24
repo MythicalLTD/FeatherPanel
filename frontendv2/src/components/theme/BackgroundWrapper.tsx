@@ -17,7 +17,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import dynamic from 'next/dynamic';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useState } from 'react';
+import { useSettings } from '@/contexts/SettingsContext';
+import { useEffect, useState } from 'react';
 
 import { getAuroraColorStops, getPrimaryHex, getBeamLightHex } from '@/lib/themeColors';
 
@@ -44,8 +45,40 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
         backgroundImageFit,
         accentColor,
         backgroundAnimatedVariant,
+        setBackgroundType,
+        setBackgroundImage,
     } = useTheme();
+    const { settings } = useSettings();
     const [mounted] = useState(() => typeof window !== 'undefined');
+
+    useEffect(() => {
+        if (!mounted) return;
+        if (!settings) return;
+
+        const imageUrl = settings.app_background_image_url;
+        const lock = settings.app_background_lock === 'true';
+
+        // If admin has configured a global background image
+        if (imageUrl) {
+            if (lock) {
+                // Hard force: always apply admin background for everyone
+                setBackgroundImage(imageUrl);
+                setBackgroundType('image');
+            } else if (!backgroundImage) {
+                // Soft default: seed only when user has not chosen anything yet
+                setBackgroundImage(imageUrl);
+                setBackgroundType('image');
+            }
+        }
+    }, [
+        mounted,
+        settings,
+        settings?.app_background_image_url,
+        settings?.app_background_lock,
+        backgroundImage,
+        setBackgroundImage,
+        setBackgroundType,
+    ]);
 
     if (!mounted) {
         return <>{children}</>;

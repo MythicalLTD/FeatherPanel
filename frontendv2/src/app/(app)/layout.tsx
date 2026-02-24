@@ -35,6 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
     const description = settings?.app_seo_description || 'A powerful game server management panel.';
     const keywords = settings?.app_seo_keywords || 'game, server, management, panel, hosting';
     const logo = settings?.app_logo_dark || '/assets/logo.png';
+    const indexingEnabled = settings?.app_seo_indexing === 'true';
 
     return {
         title: {
@@ -73,12 +74,23 @@ export async function generateMetadata(): Promise<Metadata> {
             images: [logo],
         },
         applicationName: settings?.app_name || 'FeatherPanel',
+        robots: indexingEnabled
+            ? {
+                  index: true,
+                  follow: true,
+              }
+            : {
+                  index: false,
+                  follow: false,
+                  nocache: true,
+              },
     };
 }
 
 import SystemHealthCheck from '@/components/SystemHealthCheck';
 import PluginAssets from '@/components/common/PluginAssets';
 import ChunkLoadErrorHandler from '@/components/common/ChunkLoadErrorHandler';
+import { PwaInstaller } from '@/components/common/PwaInstaller';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
     const cookieStore = await cookies();
@@ -128,8 +140,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   document.documentElement.classList.add(theme);
                   document.documentElement.style.setProperty('--primary', colors[accentColor] || colors.purple);
                   document.documentElement.style.setProperty('--ring', colors[accentColor] || colors.purple);
-                  const motion = localStorage.getItem('motionLevel') || 'reduced';
-                  document.documentElement.dataset.motion = motion === 'full' ? 'full' : motion;
+                  // Motion is now always off ('none') for app-wide transitions.
+                  localStorage.setItem('motionLevel', 'none');
+                  document.documentElement.dataset.motion = 'none';
                 } catch (e) {}
               })();
             `,
@@ -138,21 +151,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </head>
             <body className='bg-background text-foreground'>
                 <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_APP_PLACEHOLDER_START -->' }} />
-                <ThemeProvider>
-                    <SettingsProvider>
+                <SettingsProvider>
+                    <ThemeProvider>
                         <TranslationProvider>
                             <SessionProvider>
                                 <NotificationProvider>
                                     <PluginAssets />
                                     <ChunkLoadErrorHandler />
                                     <SystemHealthCheck />
+                                    <PwaInstaller />
                                     <AppContent>{children}</AppContent>
                                     <Toaster richColors position='top-right' />
                                 </NotificationProvider>
                             </SessionProvider>
                         </TranslationProvider>
-                    </SettingsProvider>
-                </ThemeProvider>
+                    </ThemeProvider>
+                </SettingsProvider>
                 <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_APP_PLACEHOLDER_END -->' }} />
                 <div
                     dangerouslySetInnerHTML={{

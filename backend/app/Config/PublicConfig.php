@@ -53,6 +53,26 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_TIMEZONE => 'UTC',
             ConfigInterface::APP_LOGO_WHITE => 'https://github.com/featherpanel-com.png',
             ConfigInterface::APP_LOGO_DARK => 'https://github.com/featherpanel-com.png',
+            // Appearance defaults (safe, non-sensitive)
+            // Optional global background image URL and a lock flag to force it for all users.
+            ConfigInterface::APP_BACKGROUND_IMAGE_URL => '',
+            ConfigInterface::APP_BACKGROUND_LOCK => 'false',
+            // Optional admin defaults/locks for theme + accent + background type.
+            ConfigInterface::APP_ACCENT_COLOR_DEFAULT => 'purple',
+            ConfigInterface::APP_ACCENT_COLOR_LOCK => 'false',
+            ConfigInterface::APP_THEME_DEFAULT => 'dark',
+            ConfigInterface::APP_THEME_LOCK => 'false',
+            // background type: aurora, gradient, solid, image, pattern
+            ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT => 'pattern',
+            ConfigInterface::APP_BACKGROUND_TYPE_LOCK => 'false',
+            // backdrop blur/darken and image fit defaults + locks
+            ConfigInterface::APP_BACKDROP_BLUR_DEFAULT => '0',
+            ConfigInterface::APP_BACKDROP_BLUR_LOCK => 'false',
+            ConfigInterface::APP_BACKDROP_DARKEN_DEFAULT => '0',
+            ConfigInterface::APP_BACKDROP_DARKEN_LOCK => 'false',
+            // image fit: cover, contain, fill
+            ConfigInterface::APP_BACKGROUND_IMAGE_FIT_DEFAULT => 'cover',
+            ConfigInterface::APP_BACKGROUND_IMAGE_FIT_LOCK => 'false',
 
             ConfigInterface::APP_SUPPORT_URL => 'https://discord.mythical.systems',
 
@@ -60,6 +80,8 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_SEO_TITLE => 'FeatherPanel',
             ConfigInterface::APP_SEO_DESCRIPTION => 'A powerful game server management panel.',
             ConfigInterface::APP_SEO_KEYWORDS => 'game, server, management, panel, hosting',
+            // By default, do NOT allow search engine indexing.
+            ConfigInterface::APP_SEO_INDEXING => 'false',
 
             // PWA Settings
             ConfigInterface::APP_PWA_ENABLED => 'false',
@@ -148,6 +170,9 @@ class PublicConfig extends ConfigFactory
 
             // Cache driver settings
             ConfigInterface::CACHE_DRIVER => 'file',
+
+            // Demo mode settings
+            ConfigInterface::APP_DEMO_YES => 'false',
         ];
     }
 }

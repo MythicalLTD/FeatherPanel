@@ -1767,6 +1767,7 @@ class ServerUserController
     )]
     public function deleteServer(Request $request, string $uuidShort): Response
     {
+        $app = App::getInstance(true);
         // Get authenticated user
         $app = App::getInstance(true, false);
         $user = $request->get('user');
@@ -1783,6 +1784,12 @@ class ServerUserController
         $server = Server::getServerByUuidShort($uuidShort);
         if (!$server) {
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        if ($app->isDemoMode()) {
+            if (in_array($server['id'], range(1, 10), true)) {
+                return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+            }
         }
 
         // Only server owners can delete servers (subusers cannot delete servers)
@@ -1810,7 +1817,7 @@ class ServerUserController
         // Clean up server databases before deleting the server
         $this->cleanupServerDatabases((int) $server['id']);
 
-        $config = App::getInstance(true)->getConfig();
+        $config = $app->getConfig();
 
         // Get node info and owner info BEFORE deleting from database (needed for logging and email)
         $nodeInfo = Node::getNodeById($server['node_id']);

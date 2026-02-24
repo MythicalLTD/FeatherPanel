@@ -1622,6 +1622,7 @@ class ServersController
     )]
     public function delete(Request $request, int $id): Response
     {
+        $app = App::getInstance(true);
         $server = Server::getServerById($id);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
@@ -1645,7 +1646,12 @@ class ServersController
         // Clean up server databases before deleting the server
         $this->cleanupServerDatabases($id);
 
-        $config = App::getInstance(true)->getConfig();
+        $config = $app->getConfig();
+        if ($app->isDemoMode()) {
+            if (in_array($server['id'], range(1, 10), true)) {
+                return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+            }
+        }
         $user = User::getUserById($server['owner_id']);
 
         $deleted = Server::hardDeleteServer($id);
@@ -1767,6 +1773,13 @@ class ServersController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        $app = App::getInstance(true);
+        if ($app->isDemoMode()) {
+            if (in_array($server['id'], range(1, 10), true)) {
+                return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+            }
+        }
+
         (new SubdomainCleanupService())->cleanupServerSubdomains((int) $server['id']);
 
         // Unclaim all allocations (primary + additional) before deleting the server
@@ -1785,7 +1798,7 @@ class ServersController
         // Clean up server databases before deleting the server
         $this->cleanupServerDatabases($id);
 
-        $config = App::getInstance(true)->getConfig();
+        $config = $app->getConfig();
         $user = User::getUserById($server['owner_id']);
 
         // Hard delete - only removes from database, does NOT contact Wings

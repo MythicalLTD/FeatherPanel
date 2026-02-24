@@ -30,6 +30,25 @@ interface ConfigInterface
     public const APP_LOGO_DARK = 'app_logo_dark';
     public const APP_SUPPORT_URL = 'app_support_url';
     /**
+     * Appearance / Branding.
+     *
+     * These are safe to expose publicly and control high-level UI defaults.
+     */
+    public const APP_BACKGROUND_IMAGE_URL = 'app_background_image_url';
+    public const APP_BACKGROUND_LOCK = 'app_background_lock';
+    public const APP_ACCENT_COLOR_DEFAULT = 'app_accent_color_default';
+    public const APP_ACCENT_COLOR_LOCK = 'app_accent_color_lock';
+    public const APP_THEME_DEFAULT = 'app_theme_default';
+    public const APP_THEME_LOCK = 'app_theme_lock';
+    public const APP_BACKGROUND_TYPE_DEFAULT = 'app_background_type_default';
+    public const APP_BACKGROUND_TYPE_LOCK = 'app_background_type_lock';
+    public const APP_BACKDROP_BLUR_DEFAULT = 'app_backdrop_blur_default';
+    public const APP_BACKDROP_BLUR_LOCK = 'app_backdrop_blur_lock';
+    public const APP_BACKDROP_DARKEN_DEFAULT = 'app_backdrop_darken_default';
+    public const APP_BACKDROP_DARKEN_LOCK = 'app_backdrop_darken_lock';
+    public const APP_BACKGROUND_IMAGE_FIT_DEFAULT = 'app_background_image_fit_default';
+    public const APP_BACKGROUND_IMAGE_FIT_LOCK = 'app_background_image_fit_lock';
+    /**
      * Social Media Links.
      */
     public const LINKEDIN_URL = 'linkedin_url';
@@ -77,6 +96,7 @@ interface ConfigInterface
     public const APP_SEO_TITLE = 'app_seo_title';
     public const APP_SEO_DESCRIPTION = 'app_seo_description';
     public const APP_SEO_KEYWORDS = 'app_seo_keywords';
+    public const APP_SEO_INDEXING = 'app_seo_indexing';
 
     /**
      * PWA Settings.
@@ -197,4 +217,6 @@ interface ConfigInterface
      * Cache Driver.
      */
     public const CACHE_DRIVER = 'cache_driver'; // file, redis
+
+    public const APP_DEMO_YES = 'app_demo_yes';
 }

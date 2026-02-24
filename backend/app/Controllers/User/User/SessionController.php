@@ -252,6 +252,16 @@ class SessionController
             $data['remember_token'] = User::generateAccountToken();
         }
 
+        if ($app->isDemoMode()) {
+            if ($user['id'] === 1) {
+                return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+            }
+
+            if ($user['id'] === 2) {
+                return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+            }
+        }
+
         $userQuery = User::updateUser($user['uuid'], $data);
         if (!$userQuery) {
             return ApiResponse::error('Failed to update user', 'FAILED_TO_UPDATE_USER', 500);
@@ -287,6 +297,7 @@ class SessionController
     )]
     public function get(Request $request): Response
     {
+        $app = App::getInstance(true);
         $user = AuthMiddleware::getCurrentUser($request);
         if ($user == null) {
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
@@ -306,15 +317,17 @@ class SessionController
             'color' => $role ? ($role['color'] ?? '#666666') : '#666666',
         ];
 
-        // Load user preferences
-        $preferences = UserPreference::getPreferences($user['uuid']);
-
         unset($user['password'], $user['two_fa_key']);
+
+        if ($app->isDemoMode()) {
+            $user['first_ip'] = $app->getIPIntoFBIFormat();
+            $user['last_ip'] = $app->getIPIntoFBIFormat();
+        }
 
         return ApiResponse::success([
             'user_info' => $user,
             'permissions' => $permissions,
-            'preferences' => $preferences,
+            'preferences' => [],
         ], 'Session retrieved', 200);
     }
 
@@ -503,10 +516,8 @@ class SessionController
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
 
-        $preferences = UserPreference::getPreferences($user['uuid']);
-
         return ApiResponse::success([
-            'preferences' => $preferences,
+            'preferences' => [],
         ], 'Preferences retrieved successfully', 200);
     }
 
@@ -751,6 +762,7 @@ class SessionController
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
 
+        $app = App::getInstance(true);
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
@@ -781,7 +793,7 @@ class SessionController
                 'user_uuid' => $activity['user_uuid'] ?? '',
                 'name' => $activity['name'] ?? '',
                 'context' => $activity['context'] ?? null,
-                'ip_address' => $activity['ip_address'] ?? null,
+                'ip_address' => $app->isDemoMode() ? $app->getIPIntoFBIFormat() : $activity['ip_address'] ?? null,
                 'created_at' => $activity['created_at'] ?? '',
                 'updated_at' => $activity['updated_at'] ?? '',
             ];

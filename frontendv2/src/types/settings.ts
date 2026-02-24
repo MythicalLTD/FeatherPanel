@@ -78,11 +78,40 @@ export interface AppSettings {
     app_seo_title: string;
     app_seo_description: string;
     app_seo_keywords: string;
+    app_seo_indexing?: string;
     app_pwa_enabled: string;
     app_pwa_short_name: string;
     app_pwa_description: string;
     app_pwa_theme_color: string;
     app_pwa_bg_color: string;
+    /** Optional: default background image URL for all users (used as a starting point, users can still customize unless locked). */
+    app_background_image_url?: string;
+    /** When 'true', force the configured background image URL for all users. */
+    app_background_lock?: string;
+    /** Optional default accent color (purple, blue, etc.). */
+    app_accent_color_default?: string;
+    /** When 'true', force the configured accent color for all users. */
+    app_accent_color_lock?: string;
+    /** Optional default theme (light or dark). */
+    app_theme_default?: string;
+    /** When 'true', force the configured theme for all users. */
+    app_theme_lock?: string;
+    /** Optional default background type (aurora, gradient, solid, image, pattern). */
+    app_background_type_default?: string;
+    /** When 'true', force the configured background type for all users. */
+    app_background_type_lock?: string;
+    /** Optional default backdrop blur in pixels (0–24). */
+    app_backdrop_blur_default?: string;
+    /** When 'true', force the configured backdrop blur for all users. */
+    app_backdrop_blur_lock?: string;
+    /** Optional default backdrop darken in percent (0–100). */
+    app_backdrop_darken_default?: string;
+    /** When 'true', force the configured backdrop darken for all users. */
+    app_backdrop_darken_lock?: string;
+    /** Optional default background image fit (cover, contain, fill). */
+    app_background_image_fit_default?: string;
+    /** When 'true', force the configured background image fit for all users. */
+    app_background_image_fit_lock?: string;
 }
 
 export interface CoreInfo {

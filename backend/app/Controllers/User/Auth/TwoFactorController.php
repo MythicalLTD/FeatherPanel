@@ -101,6 +101,9 @@ class TwoFactorController
         $app = App::getInstance(true);
         $config = $app->getConfig();
         $data = json_decode($request->getContent(), true);
+        if ($app->isDemoMode()) {
+            return ApiResponse::error('Demo mode is enabled', 'DEMO_MODE_ENABLED');
+        }
         global $eventManager;
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
             $turnstileKeyPublic = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PUB, 'NULL');

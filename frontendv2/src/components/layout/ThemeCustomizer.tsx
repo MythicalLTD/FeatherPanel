@@ -19,19 +19,12 @@ import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/r
 import { Fragment } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Check, Palette, Image as ImageIcon, Moon, Sun, Sparkles } from 'lucide-react';
-import type { MotionLevel } from '@/contexts/ThemeContext';
+import { Check, Palette, Image as ImageIcon, Moon, Sun } from 'lucide-react';
 import BackgroundCustomizer from '@/components/theme/BackgroundCustomizer';
 import LanguageSelector from '@/components/layout/LanguageSelector';
 
-const MOTION_OPTIONS: { value: MotionLevel; labelKey: string }[] = [
-    { value: 'full', labelKey: 'appearance.motion.full' },
-    { value: 'reduced', labelKey: 'appearance.motion.reduced' },
-    { value: 'none', labelKey: 'appearance.motion.none' },
-];
-
 export default function ThemeCustomizer() {
-    const { theme, accentColor, motionLevel, setAccentColor, setMotionLevel, toggleTheme, mounted } = useTheme();
+    const { theme, accentColor, setAccentColor, toggleTheme, mounted } = useTheme();
     const { t, availableLanguages, setLocale, locale } = useTranslation();
 
     const accentColorOptions = [
@@ -118,29 +111,7 @@ export default function ThemeCustomizer() {
                                     )}
                                 </MenuItem>
                             ))}
-                            <div className='my-2 border-t border-border/50' />
-                            <div className='px-3 py-2'>
-                                <div className='text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5'>
-                                    <Sparkles className='h-3.5 w-3.5' />
-                                    {t('appearance.motion.title')}
-                                </div>
-                                <div className='flex gap-1'>
-                                    {MOTION_OPTIONS.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            type='button'
-                                            onClick={() => setMotionLevel(opt.value)}
-                                            className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
-                                                motionLevel === opt.value
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-muted/70 text-muted-foreground hover:bg-muted'
-                                            }`}
-                                        >
-                                            {t(opt.labelKey)}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                            {/* Motion level selector removed – motion is now always off ('none'). */}
                         </MenuItems>
                     </Transition>
                 </Menu>
@@ -191,30 +162,7 @@ export default function ThemeCustomizer() {
                                 )}
                             </MenuItem>
 
-                            <div className='my-2 border-t border-border/50' />
-
-                            <div className='px-3 py-2'>
-                                <div className='text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5'>
-                                    <Sparkles className='h-3.5 w-3.5' />
-                                    {t('appearance.motion.title')}
-                                </div>
-                                <div className='flex gap-2'>
-                                    {MOTION_OPTIONS.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            type='button'
-                                            onClick={() => setMotionLevel(opt.value)}
-                                            className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                                                motionLevel === opt.value
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-muted/70 text-muted-foreground hover:bg-muted'
-                                            }`}
-                                        >
-                                            {t(opt.labelKey)}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                            {/* Motion level selector removed – motion is now always off ('none'). */}
 
                             <div className='my-2 border-t border-border/50' />
 

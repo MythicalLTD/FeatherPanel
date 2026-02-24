@@ -403,9 +403,15 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                 {item.status === 'uploading' && (
                                                     <Upload className='h-4 w-4 animate-pulse' />
                                                 )}
-                                                {item.status === 'done' && <CheckCircle2 className='h-4 w-4 text-green-500' />}
-                                                {item.status === 'error' && <AlertCircle className='h-4 w-4 text-destructive' />}
-                                                {item.status === 'pending' && <Upload className='h-4 w-4 text-muted-foreground' />}
+                                                {item.status === 'done' && (
+                                                    <CheckCircle2 className='h-4 w-4 text-green-500' />
+                                                )}
+                                                {item.status === 'error' && (
+                                                    <AlertCircle className='h-4 w-4 text-destructive' />
+                                                )}
+                                                {item.status === 'pending' && (
+                                                    <Upload className='h-4 w-4 text-muted-foreground' />
+                                                )}
                                             </div>
                                             <span className='text-sm font-medium truncate' title={item.file.name}>
                                                 {item.file.name}
@@ -424,7 +430,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                         <div className='space-y-1.5'>
                                             <div className='flex justify-between text-[10px] font-bold uppercase tracking-tighter text-white/40'>
                                                 <span>
-                                                    {item.status === 'uploading' ? t('files.messages.uploading', { file: '' }) : t('files.toolbar.upload')}
+                                                    {item.status === 'uploading'
+                                                        ? t('files.messages.uploading', { file: '' })
+                                                        : t('files.toolbar.upload')}
                                                 </span>
                                                 <span className='text-primary'>{item.progress}%</span>
                                             </div>
@@ -437,7 +445,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                         </div>
                                     )}
                                     {item.status === 'done' && (
-                                        <p className='text-xs text-green-600 dark:text-green-400'>{t('files.messages.upload_complete')}</p>
+                                        <p className='text-xs text-green-600 dark:text-green-400'>
+                                            {t('files.messages.upload_complete')}
+                                        </p>
                                     )}
                                     {item.status === 'error' && (
                                         <p className='text-xs text-destructive truncate' title={item.error}>
