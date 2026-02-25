@@ -242,6 +242,13 @@ class LoginController
             return ApiResponse::error('Invalid password', 'INVALID_PASSWORD');
         }
 
+        // When OIDC has disabled local login, only allow local login for admins
+        if ($config->getSetting(ConfigInterface::OIDC_DISABLE_LOCAL_LOGIN, 'false') === 'true') {
+            if (!\App\Helpers\PermissionHelper::hasPermission($userInfo['uuid'], \App\Permissions::ADMIN_ROOT)) {
+                return ApiResponse::error('Local login is disabled', 'LOCAL_LOGIN_DISABLED', 403);
+            }
+        }
+
         // 2FA logic
         if (isset($userInfo['two_fa_enabled']) && $userInfo['two_fa_enabled'] == 'true') {
             // Do NOT set session/cookie yet

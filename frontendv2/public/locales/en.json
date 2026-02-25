@@ -2662,7 +2662,7 @@
 				"save_failed": "Failed to save provider",
 				"toggle_failed": "Failed to toggle provider state"
 			},
-			"deleteConfirm": "Delete provider \"{{name}}\"?"
+			"deleteConfirm": "Delete provider \"{name}\"?"
 		},
 		"roles": {
 			"title": "Roles & Permissions",

@@ -43,6 +43,24 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class OidcProvidersController
 {
+    private static function stripClientSecret(array $provider): array
+    {
+        $out = $provider;
+        unset($out['client_secret']);
+
+        return $out;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $providers
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function stripClientSecretFromList(array $providers): array
+    {
+        return array_map(self::stripClientSecret(...), $providers);
+    }
+
     #[OA\Get(
         path: '/api/admin/oidc/providers',
         summary: 'List OIDC providers',
@@ -63,7 +81,11 @@ class OidcProvidersController
     {
         $providers = OidcProvider::getAllProviders();
 
-        return ApiResponse::success(['providers' => $providers], 'Providers fetched successfully', 200);
+        return ApiResponse::success(
+            ['providers' => self::stripClientSecretFromList($providers)],
+            'Providers fetched successfully',
+            200
+        );
     }
 
     #[OA\Put(
@@ -115,7 +137,11 @@ class OidcProvidersController
 
         $provider = OidcProvider::getProviderByUuid($uuid);
 
-        return ApiResponse::success(['provider' => $provider], 'Provider created successfully', 200);
+        return ApiResponse::success(
+            ['provider' => self::stripClientSecret($provider ?? [])],
+            'Provider created successfully',
+            200
+        );
     }
 
     #[OA\Patch(
@@ -181,7 +207,7 @@ class OidcProvidersController
         }
 
         if (empty($update)) {
-            return ApiResponse::success(['provider' => $existing], 'No changes applied', 200);
+            return ApiResponse::success(['provider' => self::stripClientSecret($existing)], 'No changes applied', 200);
         }
 
         if (!OidcProvider::updateProvider($uuid, $update)) {
@@ -190,7 +216,11 @@ class OidcProvidersController
 
         $provider = OidcProvider::getProviderByUuid($uuid);
 
-        return ApiResponse::success(['provider' => $provider], 'Provider updated successfully', 200);
+        return ApiResponse::success(
+            ['provider' => self::stripClientSecret($provider ?? [])],
+            'Provider updated successfully',
+            200
+        );
     }
 
     #[OA\Delete(

@@ -174,7 +174,22 @@ class OidcController
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_FAILONERROR, true);
         $tokenResponse = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_errno($ch);
+        $curlErrMsg = curl_error($ch);
+        curl_close($ch);
+        if ($curlErr !== 0 || $tokenResponse === false) {
+            $app->getLogger()->warning('OIDC token request failed: ' . ($curlErrMsg ?: 'Unknown cURL error'));
+            return new RedirectResponse('/auth/login?error=oidc_token_failed');
+        }
+        if ($httpCode < 200 || $httpCode >= 300) {
+            $app->getLogger()->warning('OIDC token endpoint returned HTTP ' . $httpCode);
+            return new RedirectResponse('/auth/login?error=oidc_token_failed');
+        }
         $tokenData = json_decode($tokenResponse ?: '', true);
 
         if (!is_array($tokenData) || !isset($tokenData['id_token'])) {
@@ -237,6 +252,9 @@ class OidcController
             }
         }
 
+        $emailVerified = $claims['email_verified'] ?? null;
+        $emailVerifiedStrict = $emailVerified === true || $emailVerified === 'true';
+
         $providerId = $providerUuid;
 
         $user = $this->findUserByOidcSubject($providerId, $subject);
@@ -256,6 +274,9 @@ class OidcController
                 return new RedirectResponse('/auth/login?error=oidc_provision_failed');
             }
         } else {
+            if ($requireEmailVerified && !$emailVerifiedStrict) {
+                return new RedirectResponse('/auth/login?error=oidc_email_not_verified');
+            }
             User::updateUser($user['uuid'], [
                 'oidc_provider' => $providerId,
                 'oidc_subject' => $subject,
@@ -353,18 +374,22 @@ class OidcController
     }
 
     /**
-     * Fetch JSON from an HTTP endpoint.
+     * Fetch JSON from an HTTP endpoint with timeouts and error handling.
      */
     private function fetchJson(string $url): array | null
     {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_FAILONERROR, true);
         $response = curl_exec($ch);
-
-        if ($response === false) {
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_errno($ch);
+        curl_close($ch);
+        if ($curlErr !== 0 || $response === false || $httpCode < 200 || $httpCode >= 300) {
             return null;
         }
-
         $data = json_decode($response, true);
 
         return is_array($data) ? $data : null;

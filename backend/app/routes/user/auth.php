@@ -197,7 +197,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new OidcController())->login($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(10),
+        'user-auth-oidc'
     );
 
     App::getInstance(true)->registerApiRoute(
