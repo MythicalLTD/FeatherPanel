@@ -83,6 +83,7 @@ class SettingsController
         ConfigInterface::CHATBOT_OPENAI_API_KEY,
         ConfigInterface::CHATBOT_GROK_API_KEY,
         ConfigInterface::CHATBOT_PERPLEXITY_API_KEY,
+        ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET,
         // Add other sensitive settings here
     ];
     private $settingsCategories = [
@@ -180,7 +181,7 @@ class SettingsController
         ],
         'oauth' => [
             'name' => 'OAuth',
-            'description' => 'OAuth configuration settings',
+            'description' => 'Discord OAuth configuration. For OIDC/SSO use Admin → OIDC / SSO Providers.',
             'icon' => 'shield',
             'settings' => [
                 ConfigInterface::DISCORD_OAUTH_ENABLED,
@@ -869,6 +870,7 @@ class SettingsController
                 'required' => false,
                 'placeholder' => 'Enter client secret to change',
                 'sensitive' => true,
+                'category' => 'oauth',
             ],
             ConfigInterface::SERVER_ALLOW_EGG_CHANGE => [
                 'name' => ConfigInterface::SERVER_ALLOW_EGG_CHANGE,

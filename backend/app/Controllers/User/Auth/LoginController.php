@@ -256,8 +256,11 @@ class LoginController
 
     /**
      * Complete login process - set session, log activity, emit event, and return user data.
+     *
+     * This method is public so that other authentication flows (e.g. OAuth/OIDC)
+     * can reuse the same session and activity logic.
      */
-    private function completeLogin(array $userInfo, Request $request): Response
+    public function completeLogin(array $userInfo, Request $request): Response
     {
         $app = App::getInstance(true);
         // Set session/cookie and log in

@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\User\Auth\LoginController;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\Auth\DiscordController;
+use App\Controllers\User\Auth\OidcController;
 use App\Controllers\User\Auth\RegisterController;
 use App\Controllers\User\Auth\TwoFactorController;
 use App\Controllers\User\Auth\AuthLogoutController;
@@ -186,5 +187,28 @@ return function (RouteCollection $routes): void {
         ['DELETE'],
         Rate::perMinute(5), // Default: Admin can override in ratelimit.json
         'user-auth-discord'
+    );
+
+    // Generic OIDC (OpenID Connect) SSO routes
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'oidc-login',
+        '/api/user/auth/oidc/login',
+        function (Request $request) {
+            return (new OidcController())->login($request);
+        },
+        ['GET']
+    );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'oidc-callback',
+        '/api/user/auth/oidc/callback',
+        function (Request $request) {
+            return (new OidcController())->callback($request);
+        },
+        ['GET'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-auth-oidc'
     );
 };

@@ -314,6 +314,17 @@ export const getAdminNavigationItems = (
             group: 'system',
         },
         {
+            id: 'admin-oidc-providers',
+            name: t('navigation.items.oidcProviders'),
+            title: t('navigation.items.oidcProviders'),
+            url: '/admin/oidc-providers',
+            icon: ShieldCheck,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_SETTINGS_VIEW,
+            group: 'system',
+        },
+        {
             id: 'admin-rate-limits',
             name: t('navigation.items.rateLimits'),
             title: t('navigation.items.rateLimits'),
