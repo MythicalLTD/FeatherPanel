@@ -37,7 +37,7 @@ interface ThemeContextType {
     backdropDarken: number;
     /** How custom background image fits (cover, contain, fill). */
     backgroundImageFit: BackgroundImageFit;
-    /** Animations and transitions: full, reduced, or none. Currently forced to 'none'. */
+    /** Animations and transitions: full, reduced, or none. */
     motionLevel: MotionLevel;
     setTheme: (theme: Theme) => void;
     setAccentColor: (color: string) => void;
@@ -83,7 +83,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [backdropBlur, setBackdropBlurState] = useState(0);
     const [backdropDarken, setBackdropDarkenState] = useState(0);
     const [backgroundImageFit, setBackgroundImageFitState] = useState<BackgroundImageFit>('cover');
-    const [motionLevel, setMotionLevelState] = useState<MotionLevel>('none');
+    const [motionLevel, setMotionLevelState] = useState<MotionLevel>('full');
     const { settings } = useSettings();
 
     useLayoutEffect(() => {
@@ -99,7 +99,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const savedBlur = localStorage.getItem('backdropBlur');
         const savedDarken = localStorage.getItem('backdropDarken');
         const savedFit = localStorage.getItem('backgroundImageFit') as BackgroundImageFit | null;
+        const savedMotion = localStorage.getItem('motionLevel') as MotionLevel | null;
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         setThemeState(saved || (prefersDark ? 'dark' : 'light'));
         setAccentColorState(savedAccent && savedAccent in ACCENT_COLORS ? savedAccent : 'purple');
@@ -125,9 +127,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setBackdropBlurState(savedBlur != null ? Math.min(24, Math.max(0, parseInt(savedBlur, 10) || 0)) : 0);
         setBackdropDarkenState(savedDarken != null ? Math.min(100, Math.max(0, parseInt(savedDarken, 10) || 0)) : 0);
         setBackgroundImageFitState(savedFit === 'contain' || savedFit === 'fill' ? savedFit : 'cover');
-        // Force motion to 'none' regardless of any previously saved preference.
-        setMotionLevelState('none');
-        localStorage.setItem('motionLevel', 'none');
+        const initialMotion: MotionLevel =
+            savedMotion === 'full' || savedMotion === 'reduced' || savedMotion === 'none'
+                ? savedMotion
+                : prefersReducedMotion
+                  ? 'reduced'
+                  : 'full';
+        setMotionLevelState(initialMotion);
+        localStorage.setItem('motionLevel', initialMotion);
     }, []);
 
     useEffect(() => {
@@ -222,10 +229,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('backgroundImageFit', fit);
     };
 
-    const setMotionLevel = () => {
-        // Motion level is now fixed to 'none' – ignore requested level but keep API stable.
-        setMotionLevelState('none');
-        localStorage.setItem('motionLevel', 'none');
+    const setMotionLevel = (level: MotionLevel) => {
+        setMotionLevelState(level);
+        localStorage.setItem('motionLevel', level);
     };
 
     const toggleTheme = () => {

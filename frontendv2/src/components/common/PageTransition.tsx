@@ -15,6 +15,34 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-export default function PageTransition({ children }: { children: React.ReactNode }) {
-    return <>{children}</>;
+import { ReactNode, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import clsx from 'clsx';
+import { useTheme } from '@/contexts/ThemeContext';
+
+interface PageTransitionProps {
+    children: ReactNode;
+}
+
+export default function PageTransition({ children }: PageTransitionProps) {
+    const pathname = usePathname();
+    const { motionLevel } = useTheme();
+    const [currentPath, setCurrentPath] = useState(pathname);
+
+    useEffect(() => {
+        setCurrentPath(pathname);
+    }, [pathname]);
+
+    const animationClass =
+        motionLevel === 'none'
+            ? ''
+            : motionLevel === 'reduced'
+              ? 'animate-fade-in'
+              : 'animate-fade-in-up';
+
+    return (
+        <div key={currentPath} className={clsx('motion-content min-h-screen', animationClass)}>
+            {children}
+        </div>
+    );
 }

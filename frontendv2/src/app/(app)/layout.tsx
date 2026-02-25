@@ -140,9 +140,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   document.documentElement.classList.add(theme);
                   document.documentElement.style.setProperty('--primary', colors[accentColor] || colors.purple);
                   document.documentElement.style.setProperty('--ring', colors[accentColor] || colors.purple);
-                  // Motion is now always off ('none') for app-wide transitions.
-                  localStorage.setItem('motionLevel', 'none');
-                  document.documentElement.dataset.motion = 'none';
+                  // Initialize motion preference for app-wide transitions.
+                  const savedMotion = localStorage.getItem('motionLevel');
+                  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                  var motion = savedMotion === 'full' || savedMotion === 'reduced' || savedMotion === 'none'
+                    ? savedMotion
+                    : (prefersReduced ? 'reduced' : 'full');
+                  localStorage.setItem('motionLevel', motion);
+                  document.documentElement.dataset.motion = motion;
                 } catch (e) {}
               })();
             `,
