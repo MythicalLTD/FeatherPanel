@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-undef */
 /*
 This file is part of FeatherPanel.
 
@@ -20,7 +21,7 @@ import { useRouter } from 'next/navigation';
 import { Editor, OnMount } from '@monaco-editor/react';
 import { filesApi } from '@/lib/files-api';
 import { toast } from 'sonner';
-import { Save, Loader2, FileCode, Lock, CheckCircle2 } from 'lucide-react';
+import { Save, Loader2, FileCode, Lock, CheckCircle2, Boxes } from 'lucide-react';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -496,6 +497,19 @@ export default function FileEditorPage({
                                     {t('files.editor.read_only')}
                                 </div>
                             )}
+							<Button
+                                variant='ghost'
+                                size='sm'
+                                onClick={() => {
+                                    const idePath = `/server/${uuidShort}/files/ide?file=${encodeURIComponent(
+                                        fileName,
+                                    )}&directory=${encodeURIComponent(directory || '/')}`;
+                                    window.open(idePath, '_blank', 'noopener');
+                                }}
+                            >
+                                <Boxes className='h-4 w-4 rounded-full size-6 mr-2' />
+                                {t('files.editor.open_in_ide')}
+                            </Button>
                             <Button
                                 variant='ghost'
                                 size='sm'

@@ -27,6 +27,7 @@ import {
     Copy,
     ShieldCheck,
     MoreVertical,
+    Boxes,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -53,6 +54,7 @@ interface FileActionToolbarProps {
     onCopySelected: () => void;
     onMoveSelected: () => void;
     onPermissionsSelected: () => void;
+    onOpenInIDE: () => void;
     canCreate: boolean;
     canDelete: boolean;
     currentDirectory: string;
@@ -74,6 +76,7 @@ export function FileActionToolbar({
     onCopySelected,
     onMoveSelected,
     onPermissionsSelected,
+    onOpenInIDE,
     canCreate,
     canDelete,
     currentDirectory,
@@ -200,6 +203,16 @@ export function FileActionToolbar({
                                     {t('files.toolbar.upload')}
                                 </Button>
                             )}
+
+                            <Button
+                                variant='ghost'
+                                size='sm'
+                                onClick={onOpenInIDE}
+                                className='h-9 px-3 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'
+                            >
+                                <Boxes className='mr-2 h-4 w-4' />
+                                <span className='hidden xs:inline'>{t('files.toolbar.open_in_ide')}</span>
+                            </Button>
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger

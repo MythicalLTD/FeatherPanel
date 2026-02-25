@@ -49,7 +49,8 @@ export default function ChatbotWidget() {
     }, []);
 
     const chatbotEnabled = settings?.chatbot_enabled === 'true';
-    const shouldShow = pathname?.startsWith('/server/') && chatbotEnabled;
+    const isIDE = pathname?.includes('/files/ide');
+    const shouldShow = pathname?.startsWith('/server/') && !isIDE && chatbotEnabled;
 
     if (!shouldShow) return null;
 

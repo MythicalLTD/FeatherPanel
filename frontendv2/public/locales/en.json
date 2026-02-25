@@ -1844,6 +1844,7 @@
 			"compress": "Compress",
 			"move": "Move",
 			"copy": "Copy",
+			"open_in_ide": "Open in IDE",
 			"permissions": "Permissions",
 			"refresh": "Refresh",
 			"new_file": "New File",
@@ -1879,6 +1880,7 @@
 			"description": "Editing file at {path}",
 			"read_only": "Read Only",
 			"cancel": "Cancel",
+			"open_in_ide": "Open in IDE",
 			"encrypting": "Encrypting...",
 			"save_changes": "Save Changes",
 			"saving": "Saving file...",
@@ -1887,7 +1889,18 @@
 			"load_error": "Failed to load file content",
 			"loading_description": "Please wait while the file content is loaded",
 			"loading_title": "Loading File...",
-			"load_timeout": "File loading timed out. The file may be too large or the server is taking too long to respond."
+			"load_timeout": "File loading timed out. The file may be too large or the server is taking too long to respond.",
+			"unsaved_prompt": "You have unsaved changes in this file. Are you sure you want to leave without saving?",
+			"window_title": "File Editor"
+		},
+		"search": {
+			"files_placeholder": "Filter files in this folder...",
+			"contents_placeholder": "Search text in files...",
+			"search": "Search",
+			"stop": "Stop",
+			"no_results": "No matches found in this folder",
+			"results_title": "Search results",
+			"result_item": "{count} matches in {file}"
 		},
 		"editors": {
 			"minecraftProperties": {

@@ -116,10 +116,13 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         setActionFile(file);
         switch (action) {
             case 'edit':
-                const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory || '/')}`;
-
-                router.prefetch(editPath);
-                router.push(editPath);
+                {
+                    const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(
+                        file.name,
+                    )}&directory=${encodeURIComponent(currentDirectory || '/')}`;
+                    router.prefetch(editPath);
+                    router.push(editPath);
+                }
                 break;
             case 'preview':
                 setPreviewOpen(true);
@@ -271,13 +274,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         setUploadQueue((prev) => prev.filter((u) => u.status === 'uploading' || u.status === 'pending'));
     }, []);
 
-    const uploadFile = React.useCallback(
-        async (file: File) => {
-            addToUploadQueue([file]);
-        },
-        [addToUploadQueue],
-    );
-
     const uploadFiles = React.useCallback(
         async (files: File[]) => {
             if (files.length) addToUploadQueue(Array.from(files));
@@ -366,6 +362,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         setMoveCopyOpen(true);
                     }}
                     onPermissionsSelected={() => setPermissionsOpen(true)}
+                    onOpenInIDE={() => {
+                        const idePath = `/server/${uuidShort}/files/ide?directory=${encodeURIComponent(
+                            currentDirectory || '/',
+                        )}`;
+                        window.open(idePath, '_blank', 'noopener');
+                    }}
                     canCreate={canCreate}
                     canDelete={canDelete}
                     currentDirectory={currentDirectory || '/'}
