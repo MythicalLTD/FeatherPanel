@@ -495,6 +495,7 @@ export default function ServerConsolePage() {
                 serverUuidShort={server.uuidShort}
                 nodeLocation={server.location?.name || server.node?.name}
                 nodeLocationFlag={server.location?.flag_code}
+                nodeName={server.node?.name}
                 canStart={hasPermission('control.start')}
                 canStop={hasPermission('control.stop')}
                 canRestart={hasPermission('control.restart')}

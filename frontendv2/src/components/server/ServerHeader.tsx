@@ -28,6 +28,7 @@ interface ServerHeaderProps {
     serverUuidShort?: string;
     nodeLocation?: string;
     nodeLocationFlag?: string;
+    nodeName?: string;
     canStart?: boolean;
     canStop?: boolean;
     canRestart?: boolean;
@@ -45,6 +46,7 @@ export default function ServerHeader({
     serverUuidShort,
     nodeLocation,
     nodeLocationFlag,
+    nodeName,
     canStart = false,
     canStop = false,
     canRestart = false,
@@ -110,6 +112,12 @@ export default function ServerHeader({
                                         <span className='opacity-50'>@</span>
                                     )}
                                     <span className='font-medium'>{nodeLocation}</span>
+                                </span>
+                            )}
+                            {nodeName && (
+                                <span className='flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/50 border border-border/50'>
+                                    <span className='opacity-50'>{t('servers.node')}:</span>
+                                    <span className='font-medium'>{nodeName}</span>
                                 </span>
                             )}
                         </div>
