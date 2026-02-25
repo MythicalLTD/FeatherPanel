@@ -510,6 +510,25 @@ export default function ServerFilesIDEPage({
                         }}
                         onDrop={(e) => {
                             e.preventDefault();
+                            const destDir = normalizeDirectory(currentDirectory || '/');
+
+                            // If external files are being dropped, upload them into the current directory
+                            if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+                                const filesList = Array.from(e.dataTransfer.files);
+                                void (async () => {
+                                    try {
+                                        for (const file of filesList) {
+                                            await filesApi.uploadFile(uuidShort, destDir || '/', file);
+                                        }
+                                        await fetchDirectory(destDir || '/');
+                                    } catch (error) {
+                                        console.error(error);
+                                        toast.error(t('files.messages.upload_failed'));
+                                    }
+                                })();
+                                return;
+                            }
+
                             const raw =
                                 e.dataTransfer?.getData('application/x-feather-file') ||
                                 e.dataTransfer?.getData('text/plain');
@@ -522,8 +541,6 @@ export default function ServerFilesIDEPage({
                                 };
                                 const sourcePath = normalizeDirectory(parsed.path);
                                 if (!sourcePath) return;
-
-                                const destDir = normalizeDirectory(currentDirectory || '/');
 
                                 // Prevent moving a directory into itself or its descendants
                                 if (
@@ -687,6 +704,31 @@ export default function ServerFilesIDEPage({
                                                 onDrop={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
+
+                                                    const filesList = e.dataTransfer?.files;
+                                                    const destDirForUpload = isFolder ? entryPath : dirKey;
+
+                                                    // External file upload when dropping files onto a row
+                                                    if (filesList && filesList.length > 0 && destDirForUpload) {
+                                                        const list = Array.from(filesList);
+                                                        void (async () => {
+                                                            try {
+                                                                for (const f of list) {
+                                                                    await filesApi.uploadFile(
+                                                                        uuidShort,
+                                                                        destDirForUpload || '/',
+                                                                        f,
+                                                                    );
+                                                                }
+                                                                await fetchDirectory(destDirForUpload || '/');
+                                                            } catch (error) {
+                                                                console.error(error);
+                                                                toast.error(t('files.messages.upload_failed'));
+                                                            }
+                                                        })();
+                                                        return;
+                                                    }
+
                                                     const raw =
                                                         e.dataTransfer?.getData('application/x-feather-file') ||
                                                         e.dataTransfer?.getData('text/plain');
