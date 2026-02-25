@@ -92,6 +92,7 @@ export default function UsersPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
+    const [bannedFilter, setBannedFilter] = useState('');
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
         pageSize: 15,
@@ -135,6 +136,7 @@ export default function UsersPage() {
                         limit: pagination.pageSize,
                         search: debouncedSearchQuery || undefined,
                         role: roleFilter || undefined,
+                        banned: bannedFilter || undefined,
                     },
                     signal: controller.signal,
                 });
@@ -185,7 +187,7 @@ export default function UsersPage() {
         return () => {
             controller.abort();
         };
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, roleFilter, refreshKey, t]);
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, roleFilter, refreshKey, t, bannedFilter]);
 
     const handleDeleteUser = async (user: ApiUser) => {
         if (!confirm(t('admin.users.messages.delete_confirm', { username: user.username }))) {
@@ -282,6 +284,18 @@ export default function UsersPage() {
                             ))}
                         </Select>
                     )}
+                    <Select
+                        value={bannedFilter}
+                        onChange={(e) => {
+                            setBannedFilter(e.target.value);
+                            setPagination({ ...pagination, page: 1 });
+                        }}
+                        className='w-[160px] h-11 rounded-xl bg-background/50 border-border/50'
+                    >
+                        <option value=''>{t('admin.users.filters.any_status')}</option>
+                        <option value='false'>{t('admin.users.filters.status_active')}</option>
+                        <option value='true'>{t('admin.users.filters.status_banned')}</option>
+                    </Select>
                 </div>
             </div>
 

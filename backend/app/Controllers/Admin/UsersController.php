@@ -181,6 +181,55 @@ class UsersController
                 required: false,
                 schema: new OA\Schema(type: 'string')
             ),
+            new OA\Parameter(
+                name: 'role',
+                in: 'query',
+                description: 'Filter users by role ID',
+                required: false,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'banned',
+                in: 'query',
+                description: 'Filter users by banned status (true/false)',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'user_id',
+                in: 'query',
+                description: 'Filter users by numeric ID',
+                required: false,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'query',
+                description: 'Filter users by UUID',
+                required: false,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+            new OA\Parameter(
+                name: 'external_id',
+                in: 'query',
+                description: 'Filter users by external ID',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'sort_by',
+                in: 'query',
+                description: 'Field to sort users by (id, username, email, last_seen, created_at)',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'sort_order',
+                in: 'query',
+                description: 'Sort order (ASC or DESC)',
+                required: false,
+                schema: new OA\Schema(type: 'string', enum: ['ASC', 'DESC'])
+            ),
         ],
         responses: [
             new OA\Response(
@@ -207,6 +256,31 @@ class UsersController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
+        $roleId = $request->query->getInt('role', 0) ?: null;
+        $bannedParam = $request->query->get('banned');
+        $userId = $request->query->getInt('user_id', 0) ?: null;
+        $uuid = $request->query->get('uuid');
+        $externalId = $request->query->get('external_id');
+        $sortBy = $request->query->get('sort_by', 'id');
+        $sortOrder = strtoupper((string) $request->query->get('sort_order', 'ASC'));
+
+        $banned = null;
+        if ($bannedParam !== null && $bannedParam !== '') {
+            if ($bannedParam === 'true' || $bannedParam === '1') {
+                $banned = true;
+            } elseif ($bannedParam === 'false' || $bannedParam === '0') {
+                $banned = false;
+            }
+        }
+
+        $allowedSortFields = ['id', 'username', 'email', 'last_seen', 'created_at'];
+        if (!in_array($sortBy, $allowedSortFields, true)) {
+            $sortBy = 'id';
+        }
+
+        if (!in_array($sortOrder, ['ASC', 'DESC'], true)) {
+            $sortOrder = 'ASC';
+        }
 
         if ($page < 1) {
             $page = 1;
@@ -218,7 +292,6 @@ class UsersController
             $limit = 100;
         }
 
-        $offset = ($page - 1) * $limit;
         $users = User::searchUsers(
             $page,
             $limit,
@@ -233,8 +306,13 @@ class UsersController
                 'last_seen',
                 'email',
             ],
-            'id',
-            'ASC'
+            $sortBy,
+            $sortOrder,
+            $roleId,
+            $banned,
+            $userId,
+            $uuid ?: null,
+            $externalId ?: null,
         );
 
         $roles = \App\Chat\Role::getAllRoles();
@@ -265,7 +343,14 @@ class UsersController
             unset($user['role_id']);
         }
 
-        $total = User::getCount($search);
+        $total = User::getCount(
+            $search,
+            $roleId,
+            $banned,
+            $userId,
+            $uuid ?: null,
+            $externalId ?: null,
+        );
         $totalPages = ceil($total / $limit);
         $from = ($page - 1) * $limit + 1;
         $to = min($from + $limit - 1, $total);
@@ -286,6 +371,7 @@ class UsersController
                 'query' => $search,
                 'has_results' => count($users) > 0,
             ],
+            'roles' => $rolesMap,
         ], 'Users fetched successfully', 200);
     }
 

@@ -180,6 +180,11 @@ class User
         array $fields = [],
         string $sortBy = 'id',
         string $sortOrder = 'ASC',
+        ?int $roleId = null,
+        ?bool $banned = null,
+        ?int $userId = null,
+        ?string $uuid = null,
+        ?string $externalId = null,
     ): array {
         $pdo = Database::getPdoConnection();
 
@@ -198,8 +203,34 @@ class User
         }
 
         if (!empty($search)) {
-            $where[] = '(username LIKE :search OR email LIKE :search)';
+            $where[] =
+                '(username LIKE :search OR email LIKE :search OR first_name LIKE :search OR last_name LIKE :search OR uuid LIKE :search OR external_id LIKE :search OR CAST(id AS CHAR) LIKE :search)';
             $params['search'] = '%' . $search . '%';
+        }
+
+        if ($roleId !== null) {
+            $where[] = 'role_id = :role_id';
+            $params['role_id'] = $roleId;
+        }
+
+        if ($banned !== null) {
+            $where[] = 'banned = :banned';
+            $params['banned'] = $banned ? 'true' : 'false';
+        }
+
+        if ($userId !== null) {
+            $where[] = 'id = :user_id';
+            $params['user_id'] = $userId;
+        }
+
+        if ($uuid !== null && $uuid !== '') {
+            $where[] = 'uuid = :uuid';
+            $params['uuid'] = $uuid;
+        }
+
+        if ($externalId !== null && $externalId !== '') {
+            $where[] = 'external_id = :external_id';
+            $params['external_id'] = $externalId;
         }
 
         if (!empty($where)) {
@@ -385,16 +416,58 @@ class User
     /**
      * Get the total number of users.
      */
-    public static function getCount(string $search = ''): int
-    {
+    public static function getCount(
+        string $search = '',
+        ?int $roleId = null,
+        ?bool $banned = null,
+        ?int $userId = null,
+        ?string $uuid = null,
+        ?string $externalId = null,
+    ): int {
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT COUNT(*) FROM ' . self::$table;
+        $where = [];
+        $params = [];
+
         if ($search !== '') {
-            $sql .= ' WHERE username LIKE :search';
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute(['search' => '%' . $search . '%']);
+            $where[] =
+                '(username LIKE :search OR email LIKE :search OR first_name LIKE :search OR last_name LIKE :search OR uuid LIKE :search OR external_id LIKE :search OR CAST(id AS CHAR) LIKE :search)';
+            $params['search'] = '%' . $search . '%';
+        }
+
+        if ($roleId !== null) {
+            $where[] = 'role_id = :role_id';
+            $params['role_id'] = $roleId;
+        }
+
+        if ($banned !== null) {
+            $where[] = 'banned = :banned';
+            $params['banned'] = $banned ? 'true' : 'false';
+        }
+
+        if ($userId !== null) {
+            $where[] = 'id = :user_id';
+            $params['user_id'] = $userId;
+        }
+
+        if ($uuid !== null && $uuid !== '') {
+            $where[] = 'uuid = :uuid';
+            $params['uuid'] = $uuid;
+        }
+
+        if ($externalId !== null && $externalId !== '') {
+            $where[] = 'external_id = :external_id';
+            $params['external_id'] = $externalId;
+        }
+
+        if (!empty($where)) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $stmt = $pdo->prepare($sql);
+        if (!empty($params)) {
+            $stmt->execute($params);
         } else {
-            $stmt = $pdo->prepare($sql);
             $stmt->execute();
         }
 

@@ -241,6 +241,55 @@ class ServersController
                 required: false,
                 schema: new OA\Schema(type: 'integer')
             ),
+            new OA\Parameter(
+                name: 'location_id',
+                in: 'query',
+                description: 'Filter servers by location ID (through their node)',
+                required: false,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'server_id',
+                in: 'query',
+                description: 'Filter servers by server ID',
+                required: false,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'query',
+                description: 'Filter servers by UUID',
+                required: false,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+            new OA\Parameter(
+                name: 'uuid_short',
+                in: 'query',
+                description: 'Filter servers by short UUID',
+                required: false,
+                schema: new OA\Schema(type: 'string', maxLength: 8)
+            ),
+            new OA\Parameter(
+                name: 'external_id',
+                in: 'query',
+                description: 'Filter servers by external ID',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'sort_by',
+                in: 'query',
+                description: 'Field to sort servers by (id, name, created_at, updated_at)',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'sort_order',
+                in: 'query',
+                description: 'Sort order (ASC or DESC)',
+                required: false,
+                schema: new OA\Schema(type: 'string', enum: ['ASC', 'DESC'])
+            ),
         ],
         responses: [
             new OA\Response(
@@ -270,11 +319,29 @@ class ServersController
         $nodeId = $request->query->get('node_id');
         $realmId = $request->query->get('realm_id');
         $spellId = $request->query->get('spell_id');
+        $locationId = $request->query->get('location_id');
+        $serverId = $request->query->get('server_id');
+        $uuid = $request->query->get('uuid');
+        $uuidShort = $request->query->get('uuid_short');
+        $externalId = $request->query->get('external_id');
+        $sortBy = $request->query->get('sort_by', 'id');
+        $sortOrder = strtoupper((string) $request->query->get('sort_order', 'DESC'));
 
         $ownerId = $ownerId ? (int) $ownerId : null;
         $nodeId = $nodeId ? (int) $nodeId : null;
         $realmId = $realmId ? (int) $realmId : null;
         $spellId = $spellId ? (int) $spellId : null;
+        $locationId = $locationId ? (int) $locationId : null;
+        $serverId = $serverId ? (int) $serverId : null;
+
+        $allowedSortFields = ['id', 'name', 'created_at', 'updated_at'];
+        if (!in_array($sortBy, $allowedSortFields, true)) {
+            $sortBy = 'id';
+        }
+
+        if (!in_array($sortOrder, ['ASC', 'DESC'], true)) {
+            $sortOrder = 'DESC';
+        }
 
         if ($page < 1) {
             $page = 1;
@@ -290,10 +357,17 @@ class ServersController
             page: $page,
             limit: $limit,
             search: $search,
+            fields: [],
+            sortBy: $sortBy,
+            sortOrder: $sortOrder,
             ownerId: $ownerId,
             nodeId: $nodeId,
             realmId: $realmId,
-            spellId: $spellId
+            spellId: $spellId,
+            serverId: $serverId,
+            uuid: $uuid ?: null,
+            uuidShort: $uuidShort ?: null,
+            externalId: $externalId ?: null,
         );
 
         // Add related data to each server
@@ -326,7 +400,18 @@ class ServersController
             }
         }
 
-        $total = Server::getCount($search, $ownerId, $nodeId, $realmId, $spellId);
+        $total = Server::getCount(
+            $search,
+            $ownerId,
+            $nodeId,
+            $realmId,
+            $spellId,
+            null,
+            $serverId,
+            $uuid ?: null,
+            $uuidShort ?: null,
+            $externalId ?: null,
+        );
         $totalPages = ceil($total / $limit);
         $from = ($page - 1) * $limit + 1;
         $to = min($from + $limit - 1, $total);

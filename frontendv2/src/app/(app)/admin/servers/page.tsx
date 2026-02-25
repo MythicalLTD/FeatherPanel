@@ -68,6 +68,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select } from '@/components/ui/select-native';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 
 export default function ServersPage() {
@@ -112,6 +113,40 @@ export default function ServersPage() {
         to: 0,
     });
 
+    const [ownerFilter, setOwnerFilter] = useState('');
+    const [nodeFilter, setNodeFilter] = useState('');
+    const [realmFilter, setRealmFilter] = useState('');
+    const [spellFilter, setSpellFilter] = useState('');
+    const [locationFilter, setLocationFilter] = useState('');
+    const [serverIdFilter, setServerIdFilter] = useState('');
+    const [uuidFilter, setUuidFilter] = useState('');
+    const [externalIdFilter, setExternalIdFilter] = useState('');
+    const [sortBy, setSortBy] = useState<'id' | 'name' | 'created_at' | 'updated_at'>('id');
+    const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
+    const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+    const [filterOwner, setFilterOwner] = useState<{ id: number; username: string; email?: string } | null>(null);
+    const [filterNode, setFilterNode] = useState<ApiNode | null>(null);
+    const [filterRealm, setFilterRealm] = useState<{ id: number; name: string } | null>(null);
+    const [filterSpell, setFilterSpell] = useState<{ id: number; name: string } | null>(null);
+    const [filterLocation, setFilterLocation] = useState<{ id: number; name: string } | null>(null);
+    const [isOwnerFilterModalOpen, setIsOwnerFilterModalOpen] = useState(false);
+    const [isNodeFilterModalOpen, setIsNodeFilterModalOpen] = useState(false);
+    const [isRealmFilterModalOpen, setIsRealmFilterModalOpen] = useState(false);
+    const [isSpellFilterModalOpen, setIsSpellFilterModalOpen] = useState(false);
+    const [isLocationFilterModalOpen, setIsLocationFilterModalOpen] = useState(false);
+    const [ownerFilterSearch, setOwnerFilterSearch] = useState('');
+    const [ownerFilterResults, setOwnerFilterResults] = useState<
+        { id: number; uuid: string; username: string; email: string }[]
+    >([]);
+    const [ownerFilterLoading, setOwnerFilterLoading] = useState(false);
+    const [realmFilterSearch, setRealmFilterSearch] = useState('');
+    const [spellFilterSearch, setSpellFilterSearch] = useState('');
+    const [locationFilterSearch, setLocationFilterSearch] = useState('');
+    const [realmsList, setRealmsList] = useState<{ id: number; name: string; description?: string }[]>([]);
+    const [spellsList, setSpellsList] = useState<{ id: number; name: string; description?: string }[]>([]);
+    const [locationsList, setLocationsList] = useState<{ id: number; name: string; description?: string }[]>([]);
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -130,6 +165,16 @@ export default function ServersPage() {
                     page: pagination.page,
                     limit: pagination.pageSize,
                     search: debouncedSearchQuery || undefined,
+                    owner_id: ownerFilter || undefined,
+                    node_id: nodeFilter || undefined,
+                    realm_id: realmFilter || undefined,
+                    spell_id: spellFilter || undefined,
+                    location_id: locationFilter || undefined,
+                    server_id: serverIdFilter || undefined,
+                    uuid: uuidFilter || undefined,
+                    external_id: externalIdFilter || undefined,
+                    sort_by: sortBy,
+                    sort_order: sortOrder,
                 },
             });
 
@@ -151,7 +196,22 @@ export default function ServersPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, t]);
+    }, [
+        pagination.page,
+        pagination.pageSize,
+        debouncedSearchQuery,
+        ownerFilter,
+        nodeFilter,
+        realmFilter,
+        spellFilter,
+        locationFilter,
+        serverIdFilter,
+        uuidFilter,
+        externalIdFilter,
+        sortBy,
+        sortOrder,
+        t,
+    ]);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-servers');
 
@@ -308,6 +368,32 @@ export default function ServersPage() {
         return `${cpu}%`;
     };
 
+    const fetchOwnerFilterUsers = useCallback(
+        async (query: string) => {
+            setOwnerFilterLoading(true);
+            try {
+                const { data } = await axios.get('/api/admin/users', {
+                    params: {
+                        page: 1,
+                        limit: 10,
+                        search: query || undefined,
+                    },
+                });
+
+                if (data?.success) {
+                    setOwnerFilterResults(data.data.users || []);
+                } else {
+                    setOwnerFilterResults([]);
+                }
+            } catch {
+                setOwnerFilterResults([]);
+            } finally {
+                setOwnerFilterLoading(false);
+            }
+        },
+        [],
+    );
+
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('admin-servers', 'top-of-page')} />
@@ -326,7 +412,7 @@ export default function ServersPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-servers', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl '>
+            <div className='flex flex-col gap-4 items-stretch bg-card/40 backdrop-blur-md p-4 rounded-2xl'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                     <Input
@@ -336,6 +422,181 @@ export default function ServersPage() {
                         className='pl-10 h-11 w-full'
                     />
                 </div>
+                <div className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                        <Button
+                            variant={filterOwner ? 'default' : 'outline'}
+                            size='sm'
+                            className='h-9 text-xs'
+                            onClick={() => {
+                                setIsOwnerFilterModalOpen(true);
+                                if (!ownerFilterResults.length) {
+                                    fetchOwnerFilterUsers('');
+                                }
+                            }}
+                        >
+                            <User className='h-3.5 w-3.5 mr-2' />
+                            {filterOwner
+                                ? t('admin.servers.filters.user_selected', { username: filterOwner.username })
+                                : t('admin.servers.filters.user')}
+                        </Button>
+                        <Button
+                            variant={filterNode ? 'default' : 'outline'}
+                            size='sm'
+                            className='h-9 text-xs'
+                            onClick={() => {
+                                fetchNodes();
+                                setIsNodeFilterModalOpen(true);
+                            }}
+                        >
+                            <Network className='h-3.5 w-3.5 mr-2' />
+                            {filterNode
+                                ? t('admin.servers.filters.node_selected', { name: filterNode.name })
+                                : t('admin.servers.filters.node')}
+                        </Button>
+                        <Button
+                            variant={filterRealm ? 'default' : 'outline'}
+                            size='sm'
+                            className='h-9 text-xs'
+                            onClick={() => {
+                                setIsRealmFilterModalOpen(true);
+                            }}
+                        >
+                            <Layers className='h-3.5 w-3.5 mr-2' />
+                            {filterRealm
+                                ? t('admin.servers.filters.realm_selected', { name: filterRealm.name })
+                                : t('admin.servers.filters.realm')}
+                        </Button>
+                        <Button
+                            variant={filterSpell ? 'default' : 'outline'}
+                            size='sm'
+                            className='h-9 text-xs'
+                            onClick={() => {
+                                setIsSpellFilterModalOpen(true);
+                                if (!spellsList.length) {
+                                    // initial load without search
+                                    axios
+                                        .get('/api/admin/spells', {
+                                            params: { page: 1, limit: 25, realm_id: filterRealm?.id || undefined },
+                                        })
+                                        .then(({ data }) => setSpellsList(data?.data?.spells || []))
+                                        .catch(() => setSpellsList([]));
+                                }
+                            }}
+                        >
+                            <Gauge className='h-3.5 w-3.5 mr-2' />
+                            {filterSpell
+                                ? t('admin.servers.filters.spell_selected', { name: filterSpell.name })
+                                : t('admin.servers.filters.spell')}
+                        </Button>
+                        <Button
+                            variant={filterLocation ? 'default' : 'outline'}
+                            size='sm'
+                            className='h-9 text-xs'
+                            onClick={() => {
+                                setIsLocationFilterModalOpen(true);
+                                if (!locationsList.length) {
+                                    axios
+                                        .get('/api/admin/locations', {
+                                            params: { page: 1, limit: 25 },
+                                        })
+                                        .then(({ data }) => setLocationsList(data?.data?.locations || []))
+                                        .catch(() => setLocationsList([]));
+                                }
+                            }}
+                        >
+                            <Database className='h-3.5 w-3.5 mr-2' />
+                            {filterLocation
+                                ? t('admin.servers.filters.location_selected', { name: filterLocation.name })
+                                : t('admin.servers.filters.location')}
+                        </Button>
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='h-9 text-xs'
+                            onClick={() => setShowAdvancedFilters((prev) => !prev)}
+                        >
+                            {t('admin.servers.filters.advanced')}
+                        </Button>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                        <Select
+                            value={`${sortBy}-${sortOrder}`}
+                            onChange={(e) => {
+                                const [field, order] = e.target.value.split('-') as [
+                                    'id' | 'name' | 'created_at' | 'updated_at',
+                                    'ASC' | 'DESC',
+                                ];
+                                setSortBy(field);
+                                setSortOrder(order);
+                            }}
+                            className='w-[220px] h-11 rounded-xl bg-background/50 border-border/50 text-sm'
+                        >
+                            <option value='id-DESC'>{t('admin.servers.sort.newest')}</option>
+                            <option value='id-ASC'>{t('admin.servers.sort.oldest')}</option>
+                            <option value='name-ASC'>{t('admin.servers.sort.name_asc')}</option>
+                            <option value='name-DESC'>{t('admin.servers.sort.name_desc')}</option>
+                            <option value='created_at-DESC'>{t('admin.servers.sort.created_desc')}</option>
+                            <option value='created_at-ASC'>{t('admin.servers.sort.created_asc')}</option>
+                        </Select>
+                    </div>
+                </div>
+                {showAdvancedFilters && (
+                    <div className='grid grid-cols-1 md:grid-cols-3 gap-3 pt-2'>
+                        <Input
+                            type='number'
+                            min={1}
+                            value={serverIdFilter}
+                            onChange={(e) => {
+                                setServerIdFilter(e.target.value);
+                                setPagination((p) => ({ ...p, page: 1 }));
+                            }}
+                            placeholder={t('admin.servers.filters.server_id')}
+                            className='h-9 text-xs'
+                        />
+                        <Input
+                            value={uuidFilter}
+                            onChange={(e) => {
+                                setUuidFilter(e.target.value);
+                                setPagination((p) => ({ ...p, page: 1 }));
+                            }}
+                            placeholder={t('admin.servers.filters.uuid')}
+                            className='h-9 text-xs'
+                        />
+                        <Input
+                            value={externalIdFilter}
+                            onChange={(e) => {
+                                setExternalIdFilter(e.target.value);
+                                setPagination((p) => ({ ...p, page: 1 }));
+                            }}
+                            placeholder={t('admin.servers.filters.external_id')}
+                            className='h-9 text-xs'
+                        />
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='h-9 justify-start text-xs'
+                            onClick={() => {
+                                setOwnerFilter('');
+                                setNodeFilter('');
+                                setFilterOwner(null);
+                                setFilterNode(null);
+                                setRealmFilter('');
+                                setSpellFilter('');
+                                setLocationFilter('');
+                                setFilterRealm(null);
+                                setFilterSpell(null);
+                                setFilterLocation(null);
+                                setServerIdFilter('');
+                                setUuidFilter('');
+                                setExternalIdFilter('');
+                                setPagination((p) => ({ ...p, page: 1 }));
+                            }}
+                        >
+                            {t('admin.servers.filters.clear')}
+                        </Button>
+                    </div>
+                )}
             </div>
 
             <WidgetRenderer widgets={getWidgets('admin-servers', 'before-list')} />
@@ -807,6 +1068,405 @@ export default function ServersPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <HeadlessModal
+                isOpen={isOwnerFilterModalOpen}
+                onClose={() => setIsOwnerFilterModalOpen(false)}
+                title={t('admin.servers.filters.user')}
+            >
+                <div className='space-y-4'>
+                    <div className='relative'>
+                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Input
+                            placeholder={t('admin.servers.filters.user_search_placeholder')}
+                            value={ownerFilterSearch}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setOwnerFilterSearch(value);
+                                fetchOwnerFilterUsers(value);
+                            }}
+                            className='pl-10 h-11'
+                        />
+                    </div>
+                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                        {ownerFilterLoading ? (
+                            <div className='flex items-center justify-center py-10'>
+                                <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                            </div>
+                        ) : ownerFilterResults.length === 0 ? (
+                            <div className='text-center py-10 text-muted-foreground text-sm'>
+                                {t('admin.servers.filters.user_no_results')}
+                            </div>
+                        ) : (
+                            ownerFilterResults.map((user) => (
+                                <button
+                                    key={user.id}
+                                    onClick={() => {
+                                        setFilterOwner({ id: user.id, username: user.username, email: user.email });
+                                        setOwnerFilter(String(user.id));
+                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        setIsOwnerFilterModalOpen(false);
+                                    }}
+                                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                                        filterOwner?.id === user.id
+                                            ? 'border-primary bg-primary/5 '
+                                            : 'border-border/50 hover:bg-muted/50'
+                                    }`}
+                                >
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <p className='font-bold text-sm'>{user.username}</p>
+                                            <p className='text-xs text-muted-foreground'>{user.email}</p>
+                                        </div>
+                                        {filterOwner?.id === user.id && (
+                                            <ShieldCheck className='h-5 w-5 text-primary' />
+                                        )}
+                                    </div>
+                                </button>
+                            ))
+                        )}
+                    </div>
+                    {filterOwner && (
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='w-full justify-start text-xs'
+                            onClick={() => {
+                                setFilterOwner(null);
+                                setOwnerFilter('');
+                                setPagination((p) => ({ ...p, page: 1 }));
+                            }}
+                        >
+                            {t('admin.servers.filters.clear')}
+                        </Button>
+                    )}
+                </div>
+            </HeadlessModal>
+
+            <HeadlessModal
+                isOpen={isNodeFilterModalOpen}
+                onClose={() => setIsNodeFilterModalOpen(false)}
+                title={t('admin.servers.filters.node')}
+            >
+                <div className='space-y-4'>
+                    <div className='relative'>
+                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Input
+                            placeholder={t('admin.servers.filters.node_search_placeholder')}
+                            value={nodeSearch}
+                            onChange={(e) => {
+                                setNodeSearch(e.target.value);
+                                fetchNodes(e.target.value);
+                            }}
+                            className='pl-10 h-11'
+                        />
+                    </div>
+                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                        {loadingNodes ? (
+                            <div className='flex items-center justify-center py-10'>
+                                <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                            </div>
+                        ) : nodesList.length === 0 ? (
+                            <div className='text-center py-10 text-muted-foreground text-sm'>
+                                {t('admin.servers.filters.node_no_results')}
+                            </div>
+                        ) : (
+                            nodesList.map((node) => (
+                                <button
+                                    key={node.id}
+                                    onClick={() => {
+                                        setFilterNode(node);
+                                        setNodeFilter(String(node.id));
+                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        setIsNodeFilterModalOpen(false);
+                                    }}
+                                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                                        filterNode?.id === node.id
+                                            ? 'border-primary bg-primary/5 '
+                                            : 'border-border/50 hover:bg-muted/50'
+                                    }`}
+                                >
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <p className='font-bold text-sm'>{node.name}</p>
+                                            <p className='text-xs text-muted-foreground'>{node.fqdn}</p>
+                                        </div>
+                                        {filterNode?.id === node.id && (
+                                            <ShieldCheck className='h-5 w-5 text-primary' />
+                                        )}
+                                    </div>
+                                </button>
+                            ))
+                        )}
+                    </div>
+                    {filterNode && (
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='w-full justify-start text-xs'
+                            onClick={() => {
+                                setFilterNode(null);
+                                setNodeFilter('');
+                                setPagination((p) => ({ ...p, page: 1 }));
+                            }}
+                        >
+                            {t('admin.servers.filters.clear')}
+                        </Button>
+                    )}
+                </div>
+            </HeadlessModal>
+
+            <HeadlessModal
+                isOpen={isRealmFilterModalOpen}
+                onClose={() => setIsRealmFilterModalOpen(false)}
+                title={t('admin.servers.filters.realm')}
+            >
+                <div className='space-y-4'>
+                    <div className='relative'>
+                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Input
+                            placeholder={t('admin.servers.filters.realm_search_placeholder')}
+                            value={realmFilterSearch}
+                            onChange={async (e) => {
+                                const value = e.target.value;
+                                setRealmFilterSearch(value);
+                                try {
+                                    const { data } = await axios.get('/api/admin/realms', {
+                                        params: { page: 1, limit: 25, search: value || undefined },
+                                    });
+                                    setRealmsList(data?.data?.realms || []);
+                                } catch {
+                                    setRealmsList([]);
+                                }
+                            }}
+                            className='pl-10 h-11'
+                        />
+                    </div>
+                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                        {realmsList.length === 0 ? (
+                            <div className='text-center py-10 text-muted-foreground text-sm'>
+                                {t('admin.servers.filters.realm_no_results')}
+                            </div>
+                        ) : (
+                            realmsList.map((realm) => (
+                                <button
+                                    key={realm.id}
+                                    onClick={() => {
+                                        setFilterRealm({ id: realm.id, name: realm.name });
+                                        setRealmFilter(String(realm.id));
+                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        setIsRealmFilterModalOpen(false);
+                                    }}
+                                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                                        filterRealm?.id === realm.id
+                                            ? 'border-primary bg-primary/5 '
+                                            : 'border-border/50 hover:bg-muted/50'
+                                    }`}
+                                >
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <p className='font-bold text-sm'>{realm.name}</p>
+                                            {realm.description && (
+                                                <p className='text-xs text-muted-foreground line-clamp-2'>
+                                                    {realm.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                        {filterRealm?.id === realm.id && (
+                                            <ShieldCheck className='h-5 w-5 text-primary' />
+                                        )}
+                                    </div>
+                                </button>
+                            ))
+                        )}
+                    </div>
+                    {filterRealm && (
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='w-full justify-start text-xs'
+                            onClick={() => {
+                                setFilterRealm(null);
+                                setRealmFilter('');
+                                setPagination((p) => ({ ...p, page: 1 }));
+                            }}
+                        >
+                            {t('admin.servers.filters.clear')}
+                        </Button>
+                    )}
+                </div>
+            </HeadlessModal>
+
+            <HeadlessModal
+                isOpen={isSpellFilterModalOpen}
+                onClose={() => setIsSpellFilterModalOpen(false)}
+                title={t('admin.servers.filters.spell')}
+            >
+                <div className='space-y-4'>
+                    <div className='relative'>
+                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Input
+                            placeholder={t('admin.servers.filters.spell_search_placeholder')}
+                            value={spellFilterSearch}
+                            onChange={async (e) => {
+                                const value = e.target.value;
+                                setSpellFilterSearch(value);
+                                try {
+                                    const { data } = await axios.get('/api/admin/spells', {
+                                        params: {
+                                            page: 1,
+                                            limit: 25,
+                                            search: value || undefined,
+                                            realm_id: filterRealm?.id || undefined,
+                                        },
+                                    });
+                                    setSpellsList(data?.data?.spells || []);
+                                } catch {
+                                    setSpellsList([]);
+                                }
+                            }}
+                            className='pl-10 h-11'
+                        />
+                    </div>
+                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                        {spellsList.length === 0 ? (
+                            <div className='text-center py-10 text-muted-foreground text-sm'>
+                                {t('admin.servers.filters.spell_no_results')}
+                            </div>
+                        ) : (
+                            spellsList.map((spell) => (
+                                <button
+                                    key={spell.id}
+                                    onClick={() => {
+                                        setFilterSpell({ id: spell.id, name: spell.name });
+                                        setSpellFilter(String(spell.id));
+                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        setIsSpellFilterModalOpen(false);
+                                    }}
+                                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                                        filterSpell?.id === spell.id
+                                            ? 'border-primary bg-primary/5 '
+                                            : 'border-border/50 hover:bg-muted/50'
+                                    }`}
+                                >
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <p className='font-bold text-sm'>{spell.name}</p>
+                                            {spell.description && (
+                                                <p className='text-xs text-muted-foreground line-clamp-2'>
+                                                    {spell.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                        {filterSpell?.id === spell.id && (
+                                            <ShieldCheck className='h-5 w-5 text-primary' />
+                                        )}
+                                    </div>
+                                </button>
+                            ))
+                        )}
+                    </div>
+                    {filterSpell && (
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='w-full justify-start text-xs'
+                            onClick={() => {
+                                setFilterSpell(null);
+                                setSpellFilter('');
+                                setPagination((p) => ({ ...p, page: 1 }));
+                            }}
+                        >
+                            {t('admin.servers.filters.clear')}
+                        </Button>
+                    )}
+                </div>
+            </HeadlessModal>
+
+            <HeadlessModal
+                isOpen={isLocationFilterModalOpen}
+                onClose={() => setIsLocationFilterModalOpen(false)}
+                title={t('admin.servers.filters.location')}
+            >
+                <div className='space-y-4'>
+                    <div className='relative'>
+                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Input
+                            placeholder={t('admin.servers.filters.location_search_placeholder')}
+                            value={locationFilterSearch}
+                            onChange={async (e) => {
+                                const value = e.target.value;
+                                setLocationFilterSearch(value);
+                                try {
+                                    const { data } = await axios.get('/api/admin/locations', {
+                                        params: {
+                                            page: 1,
+                                            limit: 25,
+                                            search: value || undefined,
+                                        },
+                                    });
+                                    setLocationsList(data?.data?.locations || []);
+                                } catch {
+                                    setLocationsList([]);
+                                }
+                            }}
+                            className='pl-10 h-11'
+                        />
+                    </div>
+                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                        {locationsList.length === 0 ? (
+                            <div className='text-center py-10 text-muted-foreground text-sm'>
+                                {t('admin.servers.filters.location_no_results')}
+                            </div>
+                        ) : (
+                            locationsList.map((location) => (
+                                <button
+                                    key={location.id}
+                                    onClick={() => {
+                                        setFilterLocation({ id: location.id, name: location.name });
+                                        setLocationFilter(String(location.id));
+                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        setIsLocationFilterModalOpen(false);
+                                    }}
+                                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                                        filterLocation?.id === location.id
+                                            ? 'border-primary bg-primary/5 '
+                                            : 'border-border/50 hover:bg-muted/50'
+                                    }`}
+                                >
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <p className='font-bold text-sm'>{location.name}</p>
+                                            {location.description && (
+                                                <p className='text-xs text-muted-foreground line-clamp-2'>
+                                                    {location.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                        {filterLocation?.id === location.id && (
+                                            <ShieldCheck className='h-5 w-5 text-primary' />
+                                        )}
+                                    </div>
+                                </button>
+                            ))
+                        )}
+                    </div>
+                    {filterLocation && (
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='w-full justify-start text-xs'
+                            onClick={() => {
+                                setFilterLocation(null);
+                                setLocationFilter('');
+                                setPagination((p) => ({ ...p, page: 1 }));
+                            }}
+                        >
+                            {t('admin.servers.filters.clear')}
+                        </Button>
+                    )}
+                </div>
+            </HeadlessModal>
 
             <AlertDialog
                 open={isTransferDialogOpen}

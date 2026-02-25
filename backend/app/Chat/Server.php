@@ -412,6 +412,10 @@ class Server
      * @param int|null $nodeId Filter by node ID (optional)
      * @param int|null $realmId Filter by realm ID (optional)
      * @param int|null $spellId Filter by spell ID (optional)
+     * @param int|null $serverId Filter by server ID (optional)
+     * @param string|null $uuid Filter by UUID (optional)
+     * @param string|null $uuidShort Filter by short UUID (optional)
+     * @param string|null $externalId Filter by external ID (optional)
      */
     public static function searchServers(
         int $page = 1,
@@ -425,6 +429,10 @@ class Server
         ?int $nodeId = null,
         ?int $realmId = null,
         ?int $spellId = null,
+        ?int $serverId = null,
+        ?string $uuid = null,
+        ?string $uuidShort = null,
+        ?string $externalId = null,
     ): array {
         $pdo = Database::getPdoConnection();
 
@@ -466,6 +474,26 @@ class Server
         if ($spellId !== null) {
             $where[] = 'spell_id = :spell_id';
             $params['spell_id'] = $spellId;
+        }
+
+        if ($serverId !== null) {
+            $where[] = 'id = :server_id';
+            $params['server_id'] = $serverId;
+        }
+
+        if ($uuid !== null && $uuid !== '') {
+            $where[] = 'uuid = :uuid';
+            $params['uuid'] = $uuid;
+        }
+
+        if ($uuidShort !== null && $uuidShort !== '') {
+            $where[] = 'uuidShort = :uuid_short';
+            $params['uuid_short'] = $uuidShort;
+        }
+
+        if ($externalId !== null && $externalId !== '') {
+            $where[] = 'external_id = :external_id';
+            $params['external_id'] = $externalId;
         }
 
         if (!empty($where)) {
@@ -677,6 +705,10 @@ class Server
         ?int $realmId = null,
         ?int $spellId = null,
         ?int $excludeOwnerId = null,
+        ?int $serverId = null,
+        ?string $uuid = null,
+        ?string $uuidShort = null,
+        ?string $externalId = null,
     ): int {
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT COUNT(*) FROM ' . self::$table;
@@ -711,6 +743,26 @@ class Server
         if ($spellId !== null) {
             $where[] = 'spell_id = :spell_id';
             $params['spell_id'] = $spellId;
+        }
+
+        if ($serverId !== null) {
+            $where[] = 'id = :server_id';
+            $params['server_id'] = $serverId;
+        }
+
+        if ($uuid !== null && $uuid !== '') {
+            $where[] = 'uuid = :uuid';
+            $params['uuid'] = $uuid;
+        }
+
+        if ($uuidShort !== null && $uuidShort !== '') {
+            $where[] = 'uuidShort = :uuid_short';
+            $params['uuid_short'] = $uuidShort;
+        }
+
+        if ($externalId !== null && $externalId !== '') {
+            $where[] = 'external_id = :external_id';
+            $params['external_id'] = $externalId;
         }
 
         if (!empty($where)) {

@@ -24,6 +24,7 @@
 - Upload progress is now visually displayed in the file manager, providing real-time feedback during file uploads. by @nayskutzu
 - Admins can now enforce specific customization options for all users, ensuring a consistent experience across the panel. by @nayskutzu
 - Added robust support for IP spoofing simulation and enhanced anti-griefing protections in demo mode to ensure a safer, more flexible testing environment. by @nayskutzu
+- Introduced advanced filtering options on both the servers and users pages, enabling a more powerful and intuitive search experience. by @nayskutzu
 
 ### Fixed
 

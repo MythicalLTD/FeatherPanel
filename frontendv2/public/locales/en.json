@@ -3181,6 +3181,43 @@
 			"search_placeholder": "Search by name, description, or status...",
 			"no_results": "No servers found",
 			"create": "Create Server",
+			"filters": {
+				"advanced": "Advanced filters",
+				"owner_id": "Filter by owner ID",
+				"node_id": "Filter by node ID",
+				"server_id": "Filter by server ID",
+				"uuid": "Filter by server UUID",
+				"external_id": "Filter by external ID",
+				"clear": "Clear filters",
+				"user": "Filter by user",
+				"user_selected": "User: {username}",
+				"user_search_placeholder": "Search users by username, email, ID, or UUID...",
+				"user_no_results": "No matching users found",
+				"node": "Filter by node",
+				"node_selected": "Node: {name}",
+				"node_search_placeholder": "Search nodes by name or FQDN...",
+				"node_no_results": "No matching nodes found",
+				"realm": "Filter by realm",
+				"realm_selected": "Realm: {name}",
+				"realm_search_placeholder": "Search realms by name or description...",
+				"realm_no_results": "No matching realms found",
+				"spell": "Filter by spell",
+				"spell_selected": "Spell: {name}",
+				"spell_search_placeholder": "Search spells by name or description...",
+				"spell_no_results": "No matching spells found",
+				"location": "Filter by location",
+				"location_selected": "Location: {name}",
+				"location_search_placeholder": "Search locations by name or description...",
+				"location_no_results": "No matching locations found"
+			},
+			"sort": {
+				"newest": "Newest first",
+				"oldest": "Oldest first",
+				"name_asc": "Name A–Z",
+				"name_desc": "Name Z–A",
+				"created_desc": "Recently created",
+				"created_asc": "Oldest created"
+			},
 			"actions": {
 				"view": "View details",
 				"edit": "Edit server",
@@ -4300,7 +4337,10 @@
 			"clear_filters": "Clear Filters",
 			"back_to_list": "Back to Users",
 			"filters": {
-				"all_roles": "All Roles"
+				"all_roles": "All Roles",
+				"any_status": "Any Status",
+				"status_active": "Only active users",
+				"status_banned": "Only banned users"
 			},
 			"common": {},
 			"badges": {
