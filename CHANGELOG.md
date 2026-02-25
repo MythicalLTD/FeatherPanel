@@ -10,6 +10,7 @@
 - Resolved an issue where updating environment variables was not functioning correctly. by @nayskutzu
 - By default, SEO indexing is now turned off to enhance privacy and control over search engine visibility. by @nayskutzu
 - Significantly enhanced the logs uploading process for increased reliability and performance. by @nayskutzu
+- One-click mass plugin installation—no more waiting through endless refreshes. by @nayskutzu
 
 ### Added
 

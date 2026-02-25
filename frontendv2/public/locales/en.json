@@ -4077,7 +4077,30 @@
 				"available": "Available Plugins",
 				"clear_search": "Clear Search",
 				"no_results": "No results found",
-				"featured": "Featured"
+				"featured": "Featured",
+				"install_success": "Successfully installed {identifier}",
+				"install_failed": "Failed to install plugin",
+				"queue": {
+					"title": "Download List",
+					"subtitle": "The following plugins were added to the download list. Click download to install them now.",
+					"add_to_list": "Add to download list",
+					"in_list": "In download list",
+					"remove": "Remove",
+					"clear": "Clear list",
+					"download_now": "Download now",
+					"downloading": "Downloading...",
+					"install_success_single": "Installed 1 plugin successfully",
+					"install_success_multiple": "Installed {count} plugins successfully",
+					"install_failed": "Failed to install selected plugins",
+					"install_failed_single": "Failed to install {identifier}"
+				},
+				"repo": {
+					"title": "Plugin Repositories",
+					"description": "Manage where plugins are downloaded from. This is currently locked to the official FeatherPanel repository.",
+					"official_name": "FeatherPanel Official Repository",
+					"official_badge": "Official",
+					"locked_notice": "This repository is managed by FeatherPanel. Adding more repositories will be available soon."
+				}
 			},
 			"spells": {
 				"title": "Spells Marketplace",

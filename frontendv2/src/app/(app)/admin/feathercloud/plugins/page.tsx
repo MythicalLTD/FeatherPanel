@@ -101,7 +101,7 @@ export default function PluginsPage() {
     const [currentOnlinePage, setCurrentOnlinePage] = useState(1);
     const [onlineSearch, setOnlineSearch] = useState('');
     const [verifiedOnly, setVerifiedOnly] = useState(false);
-    const [sortBy, setSortBy] = useState('downloads');
+    const [sortBy, setSortBy] = useState('newest');
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
     const [packageDetailsOpen, setPackageDetailsOpen] = useState(false);
@@ -111,6 +111,9 @@ export default function PluginsPage() {
 
     const [installedPluginIds, setInstalledPluginIds] = useState<string[]>([]);
     const [installingOnlineId, setInstallingOnlineId] = useState<string | null>(null);
+    const [selectedPluginIds, setSelectedPluginIds] = useState<string[]>([]);
+    const [queuedPlugins, setQueuedPlugins] = useState<Record<string, string>>({});
+    const [bulkInstalling, setBulkInstalling] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-feathercloud-plugins');
 
@@ -168,7 +171,8 @@ export default function PluginsPage() {
 
             try {
                 const response = await axios.get(`/api/admin/plugins/online/list?${params.toString()}`);
-                setOnlineAddons(response.data?.data?.addons || []);
+                const addons: OnlineAddon[] = response.data?.data?.addons || [];
+                setOnlineAddons(addons);
                 setOnlinePagination(response.data?.data?.pagination || null);
             } catch (err: unknown) {
                 const e = err as { response?: { data?: { message?: string } } };
@@ -208,20 +212,86 @@ export default function PluginsPage() {
         setInstallingOnlineId(identifier);
         try {
             await axios.post('/api/admin/plugins/online/install', { identifier });
-            toast.success(`Successfully installed ${identifier}`);
+            toast.success(
+                t('admin.marketplace.plugins.install_success', {
+                    identifier,
+                }),
+            );
             fetchInstalledPlugins();
             setTimeout(() => window.location.reload(), 1500);
         } catch (err: unknown) {
             const e = err as { response?: { data?: { message?: string } } };
-            toast.error(e?.response?.data?.message || 'Failed to install plugin');
+            toast.error(
+                e?.response?.data?.message || t('admin.marketplace.plugins.install_failed'),
+            );
         } finally {
             setInstallingOnlineId(null);
         }
     };
 
+    const handleBulkInstall = async () => {
+        if (selectedPluginIds.length === 0) return;
+
+        setBulkInstalling(true);
+
+        let successCount = 0;
+
+        for (const identifier of selectedPluginIds) {
+            try {
+                await axios.post('/api/admin/plugins/online/install', { identifier });
+                successCount++;
+            } catch (err: unknown) {
+                const e = err as { response?: { data?: { message?: string } } };
+                toast.error(
+                    e?.response?.data?.message ||
+                        t('admin.marketplace.plugins.queue.install_failed_single', {
+                            identifier,
+                        }),
+                );
+            }
+        }
+
+        if (successCount > 0) {
+            toast.success(
+                successCount === 1
+                    ? t('admin.marketplace.plugins.queue.install_success_single')
+                    : t('admin.marketplace.plugins.queue.install_success_multiple', {
+                          count: String(successCount),
+                      }),
+            );
+            await fetchInstalledPlugins();
+            setSelectedPluginIds([]);
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            toast.error(t('admin.marketplace.plugins.queue.install_failed'));
+        }
+
+        setBulkInstalling(false);
+    };
+
     const clearTagFilter = () => {
         setSelectedTag(null);
         setCurrentOnlinePage(1);
+    };
+
+    const toggleSelectPlugin = (identifier: string, name?: string) => {
+        setSelectedPluginIds((prev) => {
+            if (prev.includes(identifier)) {
+                setQueuedPlugins((prevQueue) => {
+                    const next = { ...prevQueue };
+                    delete next[identifier];
+                    return next;
+                });
+                return prev.filter((id) => id !== identifier);
+            }
+
+            setQueuedPlugins((prevQueue) => ({
+                ...prevQueue,
+                [identifier]: name || identifier,
+            }));
+
+            return [...prev, identifier];
+        });
     };
 
     const renderPagination = () => {
@@ -504,6 +574,11 @@ export default function PluginsPage() {
                                 <Puzzle className={className} />
                             );
 
+                        const isInstalled = installedPluginIds.includes(addon.identifier);
+                        const isSelected = selectedPluginIds.includes(addon.identifier);
+                        const requiresCloud = addon.premium === 1 && !cloudAccountConfigured;
+                        const queueDisabled = bulkInstalling || requiresCloud || isInstalled;
+
                         return (
                             <ResourceCard
                                 key={addon.identifier}
@@ -582,7 +657,7 @@ export default function PluginsPage() {
                                         <Button variant='outline' size='sm' onClick={() => viewPackageDetails(addon)}>
                                             <Info className='h-4 w-4' />
                                         </Button>
-                                        {addon.premium === 1 && !cloudAccountConfigured ? (
+                                        {requiresCloud ? (
                                             <Button
                                                 variant='outline'
                                                 size='sm'
@@ -596,24 +671,24 @@ export default function PluginsPage() {
                                             <Button
                                                 variant='default'
                                                 size='sm'
-                                                disabled={
-                                                    installingOnlineId === addon.identifier ||
-                                                    installedPluginIds.includes(addon.identifier)
-                                                }
-                                                onClick={() => handleInstall(addon.identifier)}
+                                                disabled={queueDisabled}
+                                                onClick={() => toggleSelectPlugin(addon.identifier, addon.name)}
                                                 className='min-w-[100px]'
                                             >
-                                                {installingOnlineId === addon.identifier ? (
-                                                    <RefreshCw className='h-4 w-4 animate-spin' />
-                                                ) : installedPluginIds.includes(addon.identifier) ? (
+                                                {isInstalled ? (
                                                     <>
                                                         <BadgeCheck className='h-4 w-4 mr-2' />
                                                         {t('admin.marketplace.plugins.installed')}
                                                     </>
+                                                ) : isSelected ? (
+                                                    <>
+                                                        <CheckIcon className='h-4 w-4 mr-2' />
+                                                        {t('admin.marketplace.plugins.queue.in_list')}
+                                                    </>
                                                 ) : (
                                                     <>
                                                         <CloudDownload className='h-4 w-4 mr-2' />
-                                                        {t('admin.marketplace.plugins.install')}
+                                                        {t('admin.marketplace.plugins.queue.add_to_list')}
                                                     </>
                                                 )}
                                             </Button>
@@ -627,6 +702,105 @@ export default function PluginsPage() {
             )}
 
             {renderPagination()}
+
+            {selectedPluginIds.length > 0 && (
+                <div className='fixed bottom-4 right-4 z-40 w-full max-w-xs sm:max-w-sm'>
+                    <div className='rounded-2xl border border-primary/30 bg-background/95 shadow-xl p-4 space-y-3'>
+                        <div className='flex items-start justify-between gap-2'>
+                            <div>
+                                <p className='text-xs font-semibold text-primary uppercase tracking-wider'>
+                                    {t('admin.marketplace.plugins.queue.title')}
+                                </p>
+                                <p className='text-xs text-muted-foreground'>
+                                    {t('admin.marketplace.plugins.queue.subtitle')}
+                                </p>
+                            </div>
+                            <Badge className='text-[10px] px-2 py-1 rounded-full'>
+                                {selectedPluginIds.length}
+                            </Badge>
+                        </div>
+                        <div className='max-h-40 overflow-y-auto space-y-1 text-xs'>
+                            {Object.entries(queuedPlugins)
+                                .filter(([id]) => selectedPluginIds.includes(id))
+                                .map(([id, name]) => (
+                                    <div
+                                        key={id}
+                                        className='flex items-center justify-between gap-2 rounded-md bg-muted/60 px-2 py-1'
+                                    >
+                                        <span className='truncate'>{name}</span>
+                                        <button
+                                            type='button'
+                                            className='text-[10px] text-muted-foreground hover:text-destructive transition-colors'
+                                            onClick={() => toggleSelectPlugin(id)}
+                                            disabled={bulkInstalling}
+                                        >
+                                            {t('admin.marketplace.plugins.queue.remove')}
+                                        </button>
+                                    </div>
+                                ))}
+                        </div>
+                        <div className='flex items-center gap-2'>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => setSelectedPluginIds([])}
+                                disabled={bulkInstalling}
+                            >
+                                {t('admin.marketplace.plugins.queue.clear')}
+                            </Button>
+                            <Button
+                                size='sm'
+                                onClick={handleBulkInstall}
+                                disabled={bulkInstalling}
+                                className='flex-1'
+                            >
+                                {bulkInstalling ? (
+                                    <>
+                                        <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                                        {t('admin.marketplace.plugins.queue.downloading')}
+                                    </>
+                                ) : (
+                                    <>
+                                        <CloudDownload className='h-4 w-4 mr-2' />
+                                        {t('admin.marketplace.plugins.queue.download_now')}
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <PageCard title={t('admin.marketplace.plugins.repo.title')} icon={Globe}>
+                <div className='space-y-4'>
+                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                        {t('admin.marketplace.plugins.repo.description')}
+                    </p>
+                    <div className='mt-2 rounded-2xl border border-border bg-muted/40 p-4 flex flex-col sm:flex-row sm:items-center gap-3'>
+                        <div className='flex-1 min-w-0'>
+                            <div className='flex items-center gap-2'>
+                                <span className='text-sm font-semibold truncate'>
+                                    {t('admin.marketplace.plugins.repo.official_name')}
+                                </span>
+                                <Badge
+                                    variant='secondary'
+                                    className='px-2 py-0 h-6 text-[10px] uppercase tracking-wide bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                                >
+                                    <BadgeCheck className='h-3 w-3 mr-1' />
+                                    {t('admin.marketplace.plugins.repo.official_badge')}
+                                </Badge>
+                            </div>
+                            <p className='text-xs text-muted-foreground mt-1 truncate'>repo.featherpanel.com</p>
+                        </div>
+                        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                            <Lock className='h-4 w-4' />
+                            <span className='font-medium'>
+                                {t('admin.marketplace.plugins.repo.locked_notice')}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </PageCard>
 
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
                 <PageCard title={t('admin.marketplace.spells.help.repo_title')} icon={Globe}>
