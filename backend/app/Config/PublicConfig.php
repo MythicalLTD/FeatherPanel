@@ -120,6 +120,14 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::DISCORD_OAUTH_ENABLED => 'false',
             ConfigInterface::DISCORD_OAUTH_CLIENT_ID => 'XXXX',
 
+            // OIDC (generic OpenID Connect SSO) settings
+            // Only non-sensitive values are exposed here.
+            ConfigInterface::OIDC_ENABLED => 'false',
+            // Human friendly name displayed on the login button (e.g. "SSO", "Company SSO").
+            ConfigInterface::OIDC_PROVIDER_NAME => 'SSO',
+            // When true, hide/disable the local username/password login form for non-admins.
+            ConfigInterface::OIDC_DISABLE_LOCAL_LOGIN => 'false',
+
             // Servers related settings
             ConfigInterface::SERVER_ALLOW_EGG_CHANGE => 'false',
             ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE => 'true',

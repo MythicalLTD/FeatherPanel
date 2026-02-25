@@ -52,6 +52,8 @@ export interface AppSettings {
     telemetry: string;
     discord_oauth_enabled: string;
     discord_oauth_client_id: string;
+    oidc_enabled: string;
+    oidc_provider_name?: string;
     server_allow_startup_change: string;
     server_allow_subusers: string;
     server_allow_schedules: string;

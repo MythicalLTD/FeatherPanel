@@ -115,6 +115,26 @@ interface ConfigInterface
     public const DISCORD_OAUTH_CLIENT_SECRET = 'discord_oauth_client_secret';
 
     /**
+     * OpenID Connect (OIDC) - generic SSO provider.
+     *
+     * These settings allow configuring a single OIDC provider in a
+     * provider-agnostic way (Keycloak, Authentik, Azure AD, etc.).
+     */
+    public const OIDC_ENABLED = 'oidc_enabled';
+    public const OIDC_PROVIDER_NAME = 'oidc_provider_name';
+    public const OIDC_ISSUER_URL = 'oidc_issuer_url';
+    public const OIDC_CLIENT_ID = 'oidc_client_id';
+    public const OIDC_CLIENT_SECRET = 'oidc_client_secret';
+    public const OIDC_SCOPES = 'oidc_scopes';
+    public const OIDC_AUTO_PROVISION = 'oidc_auto_provision';
+    public const OIDC_REQUIRE_EMAIL_VERIFIED = 'oidc_require_email_verified';
+    public const OIDC_EMAIL_CLAIM = 'oidc_email_claim';
+    public const OIDC_SUBJECT_CLAIM = 'oidc_subject_claim';
+    public const OIDC_ALLOWED_GROUP_CLAIM = 'oidc_allowed_group_claim';
+    public const OIDC_ALLOWED_GROUP_VALUE = 'oidc_allowed_group_value';
+    public const OIDC_DISABLE_LOCAL_LOGIN = 'oidc_disable_local_login';
+
+    /**
      * Servers Related Configs.
      */
     public const SERVER_ALLOW_EGG_CHANGE = 'server_allow_egg_change';

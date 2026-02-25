@@ -10,7 +10,8 @@
 			"no_account": "Don't have an account?",
 			"create_account": "Create account",
 			"discord": "Discord",
-			"or_continue": "Or continue with"
+			"or_continue": "Or continue with",
+			"sso": "Single Sign-On"
 		},
 		"register": {
 			"title": "Create an account",
@@ -819,6 +820,7 @@
 			"translations": "Translations",
 			"aiAgent": "AI Agent",
 			"settings": "Settings",
+			"oidcProviders": "OIDC / SSO Providers",
 			"rateLimits": "Rate Limits",
 			"databaseManagement": "Database Management",
 			"pterodactylImporter": "Pterodactyl Importer",
@@ -2613,6 +2615,54 @@
 				"cleared": "Logs cleared successfully",
 				"clear_failed": "Failed to clear logs"
 			}
+		},
+		"oidcProviders": {
+			"title": "OIDC Providers",
+			"description": "Configure one or more OpenID Connect Single Sign-On providers.",
+			"configuredProviders": "Configured Providers",
+			"addProvider": "Add Provider",
+			"loading": "Loading providers…",
+			"noProviders": "No providers configured yet.",
+			"createProvider": "Create Provider",
+			"editProvider": "Edit Provider",
+			"enabled": "Enabled",
+			"disabled": "Disabled",
+			"edit": "Edit",
+			"enable": "Enable",
+			"disable": "Disable",
+			"delete": "Delete",
+			"cancel": "Cancel",
+			"save": "Save",
+			"form": {
+				"name": "Name",
+				"issuerUrl": "Issuer URL",
+				"issuerUrlPlaceholder": "https://auth.example.com/realms/main",
+				"clientId": "Client ID",
+				"clientSecret": "Client Secret",
+				"clientSecretPlaceholder": "Leave empty to keep existing secret",
+				"scopes": "Scopes",
+				"scopesPlaceholder": "openid email profile",
+				"emailClaim": "Email claim",
+				"emailClaimPlaceholder": "email",
+				"subjectClaim": "Subject claim",
+				"subjectClaimPlaceholder": "sub",
+				"groupClaim": "Group/role claim (optional)",
+				"groupClaimPlaceholder": "groups",
+				"groupValue": "Required group/role value (optional)",
+				"groupValuePlaceholder": "admins",
+				"autoProvision": "Auto-provision users",
+				"requireEmailVerified": "Require email verified",
+				"enabledLabel": "Enabled"
+			},
+			"messages": {
+				"fetch_failed": "Failed to load providers",
+				"deleted": "Provider deleted",
+				"delete_failed": "Failed to delete provider",
+				"saved": "Provider saved",
+				"save_failed": "Failed to save provider",
+				"toggle_failed": "Failed to toggle provider state"
+			},
+			"deleteConfirm": "Delete provider \"{name}\"?"
 		},
 		"roles": {
 			"title": "Roles & Permissions",

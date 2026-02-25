@@ -102,7 +102,7 @@ class LoginController
             }
 
             // Use existing login flow to set session and return user data
-            return $this->completeLogin($userInfo, $request);
+            return $this->completeLogin($userInfo);
         }
 
         // Handle SSO token login
@@ -121,7 +121,7 @@ class LoginController
                 return ApiResponse::error('User not found for SSO token', 'SSO_USER_NOT_FOUND', 404);
             }
 
-            return $this->completeLogin($userInfo, $request);
+            return $this->completeLogin($userInfo);
         }
 
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
@@ -225,6 +225,14 @@ class LoginController
 
             return ApiResponse::error('User is banned', 'USER_BANNED');
         }
+
+        // When OIDC has disabled local login, only allow local login for admins (before password check to avoid leaking valid-credential signal)
+        if ($config->getSetting(ConfigInterface::OIDC_DISABLE_LOCAL_LOGIN, 'false') === 'true') {
+            if (!\App\Helpers\PermissionHelper::hasPermission($userInfo['uuid'], \App\Permissions::ADMIN_ROOT)) {
+                return ApiResponse::error('Local login is disabled', 'LOCAL_LOGIN_DISABLED', 403);
+            }
+        }
+
         if (!password_verify($data['password'], $userInfo['password'])) {
             // Emit login failed event
             global $eventManager;
@@ -251,13 +259,16 @@ class LoginController
         }
 
         // Use the common login completion method
-        return $this->completeLogin($userInfo, $request);
+        return $this->completeLogin($userInfo);
     }
 
     /**
      * Complete login process - set session, log activity, emit event, and return user data.
+     *
+     * This method is public so that other authentication flows (e.g. OAuth/OIDC)
+     * can reuse the same session and activity logic.
      */
-    private function completeLogin(array $userInfo, Request $request): Response
+    public function completeLogin(array $userInfo): Response
     {
         $app = App::getInstance(true);
         // Set session/cookie and log in
