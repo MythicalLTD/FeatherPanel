@@ -91,7 +91,6 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
                 backgroundSize: backgroundImageFit,
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
-                backgroundAttachment: 'fixed',
             };
         }
 
