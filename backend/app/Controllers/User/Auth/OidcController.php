@@ -130,11 +130,11 @@ class OidcController
             return new RedirectResponse('/auth/login?error=oidc_invalid_state');
         }
 
-        Cache::forget('oidc_state_' . $state);
-
         if (!$code || !is_string($code)) {
             return new RedirectResponse('/auth/login?error=oidc_missing_code');
         }
+
+        Cache::forget('oidc_state_' . $state);
 
         $providerUuid = (string) $cached['provider_uuid'];
         $provider = \App\Chat\OidcProvider::getProviderByUuid($providerUuid);
@@ -265,7 +265,7 @@ class OidcController
         $providerId = $providerUuid;
 
         $user = $this->findUserByOidcSubject($providerId, $subject);
-        if (!$user && $email) {
+        if (!$user && $email && $emailVerifiedStrict) {
             $user = User::getUserByEmail($email);
         }
 

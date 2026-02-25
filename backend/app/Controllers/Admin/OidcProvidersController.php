@@ -275,9 +275,10 @@ class OidcProvidersController
                     $value = $validated;
                 }
                 if ($field === 'client_secret') {
-                    if (is_string($value) && $value !== '') {
-                        $update[$field] = $app->encryptValue($value);
+                    if (!is_string($value) || trim($value) === '') {
+                        return ApiResponse::error('client_secret cannot be empty when provided', 'INVALID_CLIENT_SECRET', 400);
                     }
+                    $update[$field] = $app->encryptValue($value);
                     continue;
                 }
                 $update[$field] = $value;
