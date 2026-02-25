@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.2.5 STABLE
+## v1.3.0 STABLE
 
 ### Improved
 
