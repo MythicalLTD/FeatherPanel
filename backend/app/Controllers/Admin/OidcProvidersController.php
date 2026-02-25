@@ -17,6 +17,7 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
 use App\Chat\OidcProvider;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -59,6 +60,63 @@ class OidcProvidersController
     private static function stripClientSecretFromList(array $providers): array
     {
         return array_map(self::stripClientSecret(...), $providers);
+    }
+
+    /**
+     * Validate and normalize issuer URL: must be HTTPS and host must not be private/reserved.
+     *
+     * @return string|null Normalized URL (with trailing slash trimmed) or null if invalid
+     */
+    private static function validateIssuerUrl(string $raw): ?string
+    {
+        $trimmed = trim($raw);
+        if ($trimmed === '') {
+            return null;
+        }
+        $parsed = parse_url($trimmed);
+        if ($parsed === false || !isset($parsed['scheme'], $parsed['host'])) {
+            return null;
+        }
+        if (strtolower($parsed['scheme']) !== 'https') {
+            return null;
+        }
+        $host = $parsed['host'];
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                $parts = array_map('intval', explode('.', $host));
+                if (count($parts) === 4) {
+                    if ($parts[0] === 127) {
+                        return null;
+                    }
+                    if ($parts[0] === 10) {
+                        return null;
+                    }
+                    if ($parts[0] === 192 && $parts[1] === 168) {
+                        return null;
+                    }
+                    if ($parts[0] === 169 && $parts[1] === 254) {
+                        return null;
+                    }
+                    if ($parts[0] === 172 && $parts[1] >= 16 && $parts[1] <= 31) {
+                        return null;
+                    }
+                }
+            } else {
+                $norm = inet_pton($host);
+                if ($norm !== false) {
+                    $hex = bin2hex($norm);
+                    if (strlen($hex) === 32) {
+                        if ($hex === '00000000000000000000000000000001' || str_starts_with($hex, 'fe80') || str_starts_with($hex, 'fc') || str_starts_with($hex, 'fd')) {
+                            return null;
+                        }
+                    }
+                    if (str_starts_with($hex, '00000000000000000000ffff7f')) {
+                        return null;
+                    }
+                }
+            }
+        }
+        return rtrim($trimmed, '/');
     }
 
     #[OA\Get(
@@ -112,14 +170,23 @@ class OidcProvidersController
             }
         }
 
+        $issuerUrl = self::validateIssuerUrl($data['issuer_url']);
+        if ($issuerUrl === null) {
+            return ApiResponse::error('Issuer URL must be a valid HTTPS URL and must not use a private or reserved host', 'INVALID_ISSUER_URL', 400);
+        }
+
+        $app = App::getInstance(true);
+        $clientSecretPlain = trim($data['client_secret']);
+        $clientSecretEncrypted = $app->encryptValue($clientSecretPlain);
+
         $uuid = OidcProvider::generateUuid();
 
         $insert = [
             'uuid' => $uuid,
             'name' => trim($data['name']),
-            'issuer_url' => rtrim(trim($data['issuer_url']), '/'),
+            'issuer_url' => $issuerUrl,
             'client_id' => trim($data['client_id']),
-            'client_secret' => $data['client_secret'],
+            'client_secret' => $clientSecretEncrypted,
             'scopes' => isset($data['scopes']) && is_string($data['scopes']) ? trim($data['scopes']) : 'openid email profile',
             'email_claim' => isset($data['email_claim']) && is_string($data['email_claim']) ? trim($data['email_claim']) : 'email',
             'subject_claim' => isset($data['subject_claim']) && is_string($data['subject_claim']) ? trim($data['subject_claim']) : 'sub',
@@ -127,7 +194,7 @@ class OidcProvidersController
             'group_value' => isset($data['group_value']) && is_string($data['group_value']) ? trim($data['group_value']) : null,
             'auto_provision' => isset($data['auto_provision']) && $data['auto_provision'] === 'true' ? 'true' : 'false',
             'require_email_verified' => isset($data['require_email_verified']) && $data['require_email_verified'] === 'true' ? 'true' : 'false',
-            'enabled' => isset($data['enabled']) && $data['enabled'] === 'false' ? 'false' : 'true',
+            'enabled' => isset($data['enabled']) && $data['enabled'] === 'true' ? 'true' : 'false',
         ];
 
         $id = OidcProvider::createProvider($insert);
@@ -190,6 +257,7 @@ class OidcProvidersController
             'enabled',
         ];
 
+        $app = App::getInstance(true);
         foreach ($fields as $field) {
             if (array_key_exists($field, $data)) {
                 $value = $data[$field];
@@ -200,7 +268,17 @@ class OidcProvidersController
                     $value = $value === 'true' ? 'true' : 'false';
                 }
                 if ($field === 'issuer_url' && is_string($value)) {
-                    $value = rtrim($value, '/');
+                    $validated = self::validateIssuerUrl($value);
+                    if ($validated === null) {
+                        return ApiResponse::error('Issuer URL must be a valid HTTPS URL and must not use a private or reserved host', 'INVALID_ISSUER_URL', 400);
+                    }
+                    $value = $validated;
+                }
+                if ($field === 'client_secret') {
+                    if (is_string($value) && $value !== '') {
+                        $update[$field] = $app->encryptValue($value);
+                    }
+                    continue;
                 }
                 $update[$field] = $value;
             }

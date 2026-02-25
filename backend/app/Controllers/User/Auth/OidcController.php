@@ -51,7 +51,6 @@ class OidcController
     public function login(Request $request): RedirectResponse
     {
         $app = App::getInstance(true);
-        $config = $app->getConfig();
         $providerUuid = $request->query->get('provider');
 
         if (!is_string($providerUuid) || $providerUuid === '') {
@@ -114,7 +113,6 @@ class OidcController
     public function callback(Request $request): RedirectResponse | Response
     {
         $app = App::getInstance(true);
-        $config = $app->getConfig();
         $code = $request->query->get('code');
         $state = $request->query->get('state');
         $error = $request->query->get('error');
@@ -146,7 +144,16 @@ class OidcController
 
         $issuerUrl = rtrim((string) $provider['issuer_url'], '/');
         $clientId = (string) $provider['client_id'];
-        $clientSecret = (string) $provider['client_secret'];
+        $clientSecretRaw = $provider['client_secret'] ?? '';
+        if ($clientSecretRaw === '') {
+            return new RedirectResponse('/auth/login?error=oidc_not_configured');
+        }
+        try {
+            $clientSecret = $app->decryptValue((string) $clientSecretRaw);
+        } catch (\Throwable $e) {
+            $app->getLogger()->warning('OIDC client_secret decryption failed: ' . $e->getMessage());
+            $clientSecret = (string) $clientSecretRaw;
+        }
 
         if ($issuerUrl === '' || $clientId === '' || $clientSecret === '') {
             return new RedirectResponse('/auth/login?error=oidc_not_configured');
@@ -286,7 +293,7 @@ class OidcController
 
         $loginController = new LoginController();
 
-        return $loginController->completeLogin($user, $request);
+        return $loginController->completeLogin($user);
     }
 
     /**
@@ -306,13 +313,18 @@ class OidcController
 
     /**
      * Auto-provision a user account based on OIDC claims.
+     * Only accepts a real email (no preferred_username fallback); validates email format.
+     * Retries username with random suffix on collision (up to 5 attempts).
      */
     private function autoProvisionUser(array $claims, ?string $email, string $providerId, string $subject): ?array
     {
         $app = App::getInstance(true);
 
-        $emailValue = $email ?? ($claims['preferred_username'] ?? null);
-        if (!is_string($emailValue) || trim($emailValue) === '') {
+        if ($email === null || !is_string($email) || trim($email) === '') {
+            return null;
+        }
+        $emailValue = trim($email);
+        if (!filter_var($emailValue, FILTER_VALIDATE_EMAIL)) {
             return null;
         }
 
@@ -322,7 +334,7 @@ class OidcController
         }
 
         $baseUsername = preg_replace('/[^a-zA-Z0-9_]/', '_', strtolower($usernameSource)) ?: 'user';
-        $username = substr($baseUsername, 0, 32);
+        $baseUsername = substr($baseUsername, 0, 27);
 
         $firstName = '';
         $lastName = '';
@@ -340,29 +352,45 @@ class OidcController
             $lastName = $parts[1] ?? '';
         }
 
-        if ($firstName === '') {
-            $firstName = $username;
-        }
-        if ($lastName === '') {
-            $lastName = 'OIDC';
-        }
-
         $uuid = \App\Chat\User::generateUuid();
-
         $password = bin2hex(random_bytes(32));
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-        $userId = User::createUser([
-            'username' => $username,
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-            'email' => $emailValue,
-            'password' => $hashedPassword,
-            'uuid' => $uuid,
-            'oidc_provider' => $providerId,
-            'oidc_subject' => $subject,
-            'oidc_email' => $email,
-        ], true);
+        $maxAttempts = 5;
+        $userId = false;
+        $username = '';
+
+        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+            if ($attempt === 0) {
+                $username = substr($baseUsername, 0, 32);
+            } else {
+                $suffix = bin2hex(random_bytes(2));
+                $username = substr($baseUsername . '_' . $suffix, 0, 32);
+            }
+
+            if ($firstName === '') {
+                $firstName = $username;
+            }
+            if ($lastName === '') {
+                $lastName = 'OIDC';
+            }
+
+            $userId = User::createUser([
+                'username' => $username,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'email' => $emailValue,
+                'password' => $hashedPassword,
+                'uuid' => $uuid,
+                'oidc_provider' => $providerId,
+                'oidc_subject' => $subject,
+                'oidc_email' => $emailValue,
+            ], true);
+
+            if ($userId !== false) {
+                break;
+            }
+        }
 
         if (!$userId) {
             $app->getLogger()->error('Failed to auto-provision OIDC user: ' . $emailValue);
