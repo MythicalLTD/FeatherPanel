@@ -145,6 +145,7 @@ export default function ServersPage() {
                     false,
                     page,
                     fetchAllForFolders ? 1000 : pagination.per_page,
+                    searchQuery,
                 );
 
                 const serversArray = Array.isArray(response.servers) ? response.servers : [];
@@ -163,7 +164,7 @@ export default function ServersPage() {
                 setLoading(false);
             }
         },
-        [pagination.per_page, t, connectServers],
+        [pagination.per_page, searchQuery, t, connectServers],
     );
 
     const fetchAllOtherServers = useCallback(
@@ -201,7 +202,7 @@ export default function ServersPage() {
         } else {
             fetchServersRef.current(1, viewMode === 'folders');
         }
-    }, [viewMode, serverScope, fetchAllOtherServers]);
+    }, [viewMode, serverScope, searchQuery, fetchAllOtherServers]);
 
     useEffect(() => {
         if (serverScope === 'all') {
@@ -220,13 +221,10 @@ export default function ServersPage() {
         folder_id: serverAssignments[server.uuidShort] || server.folder_id,
     }));
 
-    const filteredServers = (Array.isArray(serversWithFolders) ? serversWithFolders : [])
-        .filter(
-            (server) =>
-                server.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                server.description?.toLowerCase().includes(searchQuery.toLowerCase()),
-        )
-        .filter((server) => !showOnlyRunning || server.status === 'running');
+    // Search is applied server-side (across all pages). Only filter by "running only" client-side.
+    const filteredServers = (Array.isArray(serversWithFolders) ? serversWithFolders : []).filter(
+        (server) => !showOnlyRunning || server.status === 'running',
+    );
 
     const serversByFolder = folders.map((folder) => ({
         ...folder,

@@ -39,6 +39,7 @@
 - Fixed an issue where the chatbot would display even when disabled. by @nayskutzu
 - Schedules stuck in “processing” and not deletable by @nayskutzu
 - Schedules running instantly / ignoring time by @nayskutzu
+- Enhanced server search to deliver results across all pages, providing a seamless and unified search experience. by @nayskutzu
 
 ## v1.2.4 STABLE
 
