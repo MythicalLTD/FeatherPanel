@@ -28,6 +28,7 @@
 - Introduced advanced filtering options on both the servers and users pages, enabling a more powerful and intuitive search experience. by @nayskutzu
 - Introduced bulk power controls for servers, allowing administrators and clients to perform mass start, stop, and restart actions effortlessly. by @nayskutzu
 - Launched a powerful new integrated development environment (IDE) for seamless and efficient server file management! by @nayskutzu
+- Expanded font support throughout FeatherPanel, introducing additional typeface options and updating the default system font for a refreshed look and improved readability. by @nayskutzu
 
 ### Fixed
 
