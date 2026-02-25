@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-undef */
 /*
 This file is part of FeatherPanel.
 
@@ -497,7 +496,7 @@ export default function FileEditorPage({
                                     {t('files.editor.read_only')}
                                 </div>
                             )}
-							<Button
+                            <Button
                                 variant='ghost'
                                 size='sm'
                                 onClick={() => {

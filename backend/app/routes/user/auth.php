@@ -17,11 +17,11 @@
 
 use App\App;
 use RateLimit\Rate;
+use App\Controllers\User\Auth\OidcController;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\User\Auth\LoginController;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\Auth\DiscordController;
-use App\Controllers\User\Auth\OidcController;
 use App\Controllers\User\Auth\RegisterController;
 use App\Controllers\User\Auth\TwoFactorController;
 use App\Controllers\User\Auth\AuthLogoutController;

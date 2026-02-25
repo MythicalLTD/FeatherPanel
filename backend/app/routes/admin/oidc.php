@@ -18,9 +18,9 @@
 use App\App;
 use App\Permissions;
 use App\Helpers\ApiResponse;
-use App\Controllers\Admin\OidcProvidersController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\OidcProvidersController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
@@ -76,4 +76,3 @@ return function (RouteCollection $routes): void {
         ['DELETE']
     );
 };
-

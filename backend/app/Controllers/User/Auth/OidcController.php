@@ -20,9 +20,8 @@ namespace App\Controllers\User\Auth;
 use App\App;
 use App\Chat\User;
 use App\Cache\Cache;
-use App\Config\ConfigInterface;
-use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -191,10 +190,12 @@ class OidcController
         curl_close($ch);
         if ($curlErr !== 0 || $tokenResponse === false) {
             $app->getLogger()->warning('OIDC token request failed: ' . ($curlErrMsg ?: 'Unknown cURL error'));
+
             return new RedirectResponse('/auth/login?error=oidc_token_failed');
         }
         if ($httpCode < 200 || $httpCode >= 300) {
             $app->getLogger()->warning('OIDC token endpoint returned HTTP ' . $httpCode);
+
             return new RedirectResponse('/auth/login?error=oidc_token_failed');
         }
         $tokenData = json_decode($tokenResponse ?: '', true);
@@ -352,7 +353,7 @@ class OidcController
             $lastName = $parts[1] ?? '';
         }
 
-        $uuid = \App\Chat\User::generateUuid();
+        $uuid = User::generateUuid();
         $password = bin2hex(random_bytes(32));
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
@@ -360,7 +361,7 @@ class OidcController
         $userId = false;
         $username = '';
 
-        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+        for ($attempt = 0; $attempt < $maxAttempts; ++$attempt) {
             if ($attempt === 0) {
                 $username = substr($baseUsername, 0, 32);
             } else {
@@ -404,7 +405,7 @@ class OidcController
     /**
      * Fetch JSON from an HTTP endpoint with timeouts and error handling.
      */
-    private function fetchJson(string $url): array | null
+    private function fetchJson(string $url): ?array
     {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -429,7 +430,7 @@ class OidcController
      * This is intentional for now to avoid pulling in additional dependencies.
      * The token is still validated for issuer and audience.
      */
-    private function decodeJwtWithoutVerification(string $jwt): array | null
+    private function decodeJwtWithoutVerification(string $jwt): ?array
     {
         $parts = explode('.', $jwt);
         if (count($parts) !== 3) {
@@ -449,4 +450,3 @@ class OidcController
         return is_array($data) ? $data : null;
     }
 }
-

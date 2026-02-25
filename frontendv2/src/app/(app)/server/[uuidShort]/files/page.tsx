@@ -231,12 +231,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 });
                 refresh();
             } catch (error) {
-                const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+                const message =
+                    (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                    t('files.editor.save_error');
                 setUploadQueue((prev) => {
                     const updated = prev.map((u) =>
-                        u.id === next.id
-                            ? { ...u, status: 'error' as const, error: message || t('files.messages.upload_failed') }
-                            : u,
+                        u.id === next.id ? { ...u, status: 'error' as const, error: message } : u,
                     );
                     const hasPending = updated.some((u) => u.status === 'pending');
                     if (hasPending) setTimeout(() => processUploadQueue(updated, setUploadQueue), 0);

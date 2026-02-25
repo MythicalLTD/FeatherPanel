@@ -44,81 +44,6 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class OidcProvidersController
 {
-    private static function stripClientSecret(array $provider): array
-    {
-        $out = $provider;
-        unset($out['client_secret']);
-
-        return $out;
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $providers
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private static function stripClientSecretFromList(array $providers): array
-    {
-        return array_map(self::stripClientSecret(...), $providers);
-    }
-
-    /**
-     * Validate and normalize issuer URL: must be HTTPS and host must not be private/reserved.
-     *
-     * @return string|null Normalized URL (with trailing slash trimmed) or null if invalid
-     */
-    private static function validateIssuerUrl(string $raw): ?string
-    {
-        $trimmed = trim($raw);
-        if ($trimmed === '') {
-            return null;
-        }
-        $parsed = parse_url($trimmed);
-        if ($parsed === false || !isset($parsed['scheme'], $parsed['host'])) {
-            return null;
-        }
-        if (strtolower($parsed['scheme']) !== 'https') {
-            return null;
-        }
-        $host = $parsed['host'];
-        if (filter_var($host, FILTER_VALIDATE_IP)) {
-            if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-                $parts = array_map('intval', explode('.', $host));
-                if (count($parts) === 4) {
-                    if ($parts[0] === 127) {
-                        return null;
-                    }
-                    if ($parts[0] === 10) {
-                        return null;
-                    }
-                    if ($parts[0] === 192 && $parts[1] === 168) {
-                        return null;
-                    }
-                    if ($parts[0] === 169 && $parts[1] === 254) {
-                        return null;
-                    }
-                    if ($parts[0] === 172 && $parts[1] >= 16 && $parts[1] <= 31) {
-                        return null;
-                    }
-                }
-            } else {
-                $norm = inet_pton($host);
-                if ($norm !== false) {
-                    $hex = bin2hex($norm);
-                    if (strlen($hex) === 32) {
-                        if ($hex === '00000000000000000000000000000001' || str_starts_with($hex, 'fe80') || str_starts_with($hex, 'fc') || str_starts_with($hex, 'fd')) {
-                            return null;
-                        }
-                    }
-                    if (str_starts_with($hex, '00000000000000000000ffff7f')) {
-                        return null;
-                    }
-                }
-            }
-        }
-        return rtrim($trimmed, '/');
-    }
-
     #[OA\Get(
         path: '/api/admin/oidc/providers',
         summary: 'List OIDC providers',
@@ -332,5 +257,80 @@ class OidcProvidersController
 
         return ApiResponse::success([], 'Provider deleted successfully', 200);
     }
-}
 
+    private static function stripClientSecret(array $provider): array
+    {
+        $out = $provider;
+        unset($out['client_secret']);
+
+        return $out;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $providers
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function stripClientSecretFromList(array $providers): array
+    {
+        return array_map(self::stripClientSecret(...), $providers);
+    }
+
+    /**
+     * Validate and normalize issuer URL: must be HTTPS and host must not be private/reserved.
+     *
+     * @return string|null Normalized URL (with trailing slash trimmed) or null if invalid
+     */
+    private static function validateIssuerUrl(string $raw): ?string
+    {
+        $trimmed = trim($raw);
+        if ($trimmed === '') {
+            return null;
+        }
+        $parsed = parse_url($trimmed);
+        if ($parsed === false || !isset($parsed['scheme'], $parsed['host'])) {
+            return null;
+        }
+        if (strtolower($parsed['scheme']) !== 'https') {
+            return null;
+        }
+        $host = $parsed['host'];
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                $parts = array_map('intval', explode('.', $host));
+                if (count($parts) === 4) {
+                    if ($parts[0] === 127) {
+                        return null;
+                    }
+                    if ($parts[0] === 10) {
+                        return null;
+                    }
+                    if ($parts[0] === 192 && $parts[1] === 168) {
+                        return null;
+                    }
+                    if ($parts[0] === 169 && $parts[1] === 254) {
+                        return null;
+                    }
+                    if ($parts[0] === 172 && $parts[1] >= 16 && $parts[1] <= 31) {
+                        return null;
+                    }
+                }
+            } else {
+                $norm = inet_pton($host);
+                if ($norm !== false) {
+                    $hex = bin2hex($norm);
+                    if (strlen($hex) === 32) {
+                        if ($hex === '00000000000000000000000000000001' || str_starts_with($hex, 'fe80') || str_starts_with($hex, 'fc') || str_starts_with($hex, 'fd')) {
+                            return null;
+                        }
+                    }
+                    if (str_starts_with($hex, '00000000000000000000ffff7f')) {
+                        return null;
+                    }
+                }
+            }
+        }
+
+        return rtrim($trimmed, '/');
+    }
+}

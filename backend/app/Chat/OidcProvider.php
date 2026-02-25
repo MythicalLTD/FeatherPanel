@@ -17,8 +17,6 @@
 
 namespace App\Chat;
 
-use App\App;
-
 /**
  * OIDC provider model for CRUD operations on the featherpanel_oidc_providers table.
  */
@@ -28,10 +26,6 @@ class OidcProvider
 
     /**
      * Create a new OIDC provider.
-     *
-     * @param array $data
-     *
-     * @return int|false
      */
     public static function createProvider(array $data): int | false
     {
@@ -144,4 +138,3 @@ class OidcProvider
         );
     }
 }
-

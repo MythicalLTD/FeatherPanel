@@ -221,9 +221,7 @@ export default function PluginsPage() {
             setTimeout(() => window.location.reload(), 1500);
         } catch (err: unknown) {
             const e = err as { response?: { data?: { message?: string } } };
-            toast.error(
-                e?.response?.data?.message || t('admin.marketplace.plugins.install_failed'),
-            );
+            toast.error(e?.response?.data?.message || t('admin.marketplace.plugins.install_failed'));
         } finally {
             setInstallingOnlineId(null);
         }
@@ -715,9 +713,7 @@ export default function PluginsPage() {
                                     {t('admin.marketplace.plugins.queue.subtitle')}
                                 </p>
                             </div>
-                            <Badge className='text-[10px] px-2 py-1 rounded-full'>
-                                {selectedPluginIds.length}
-                            </Badge>
+                            <Badge className='text-[10px] px-2 py-1 rounded-full'>{selectedPluginIds.length}</Badge>
                         </div>
                         <div className='max-h-40 overflow-y-auto space-y-1 text-xs'>
                             {Object.entries(queuedPlugins)
@@ -748,12 +744,7 @@ export default function PluginsPage() {
                             >
                                 {t('admin.marketplace.plugins.queue.clear')}
                             </Button>
-                            <Button
-                                size='sm'
-                                onClick={handleBulkInstall}
-                                disabled={bulkInstalling}
-                                className='flex-1'
-                            >
+                            <Button size='sm' onClick={handleBulkInstall} disabled={bulkInstalling} className='flex-1'>
                                 {bulkInstalling ? (
                                     <>
                                         <RefreshCw className='h-4 w-4 animate-spin mr-2' />
@@ -794,9 +785,7 @@ export default function PluginsPage() {
                         </div>
                         <div className='flex items-center gap-2 text-xs text-muted-foreground'>
                             <Lock className='h-4 w-4' />
-                            <span className='font-medium'>
-                                {t('admin.marketplace.plugins.repo.locked_notice')}
-                            </span>
+                            <span className='font-medium'>{t('admin.marketplace.plugins.repo.locked_notice')}</span>
                         </div>
                     </div>
                 </div>

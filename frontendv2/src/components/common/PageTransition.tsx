@@ -34,11 +34,7 @@ export default function PageTransition({ children }: PageTransitionProps) {
     }, [pathname]);
 
     const animationClass =
-        motionLevel === 'none'
-            ? ''
-            : motionLevel === 'reduced'
-              ? 'animate-fade-in'
-              : 'animate-fade-in-up';
+        motionLevel === 'none' ? '' : motionLevel === 'reduced' ? 'animate-fade-in' : 'animate-fade-in-up';
 
     return (
         <div key={currentPath} className={clsx('motion-content min-h-screen', animationClass)}>

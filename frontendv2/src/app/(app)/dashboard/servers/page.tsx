@@ -253,7 +253,7 @@ export default function ServersPage() {
     const handleBulkPowerAction = async (action: 'start' | 'stop' | 'restart') => {
         if (selectedServers.length === 0) {
             // Reuse generic servers bulk translation
-            // eslint-disable-next-line no-alert
+
             return;
         }
 
@@ -271,7 +271,6 @@ export default function ServersPage() {
             const successCount = results.filter(Boolean).length;
 
             if (successCount === 0) {
-                // eslint-disable-next-line no-console
                 console.error('Bulk power action failed for all servers');
             } else if (successCount < selectedServers.length) {
                 // Partial success; keep selection so the user can retry failed ones

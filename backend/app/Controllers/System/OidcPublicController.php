@@ -44,4 +44,3 @@ class OidcPublicController
         return ApiResponse::success(['providers' => $providers], 'Providers fetched successfully', 200);
     }
 }
-

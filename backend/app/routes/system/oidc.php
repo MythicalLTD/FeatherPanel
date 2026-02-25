@@ -16,9 +16,9 @@
  */
 
 use App\App;
-use App\Controllers\System\OidcPublicController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\System\OidcPublicController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerApiRoute(
@@ -31,4 +31,3 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 };
-

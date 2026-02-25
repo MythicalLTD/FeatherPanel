@@ -421,31 +421,28 @@ export default function ServersPage() {
         return `${cpu}%`;
     };
 
-    const fetchOwnerFilterUsers = useCallback(
-        async (query: string) => {
-            setOwnerFilterLoading(true);
-            try {
-                const { data } = await axios.get('/api/admin/users', {
-                    params: {
-                        page: 1,
-                        limit: 10,
-                        search: query || undefined,
-                    },
-                });
+    const fetchOwnerFilterUsers = useCallback(async (query: string) => {
+        setOwnerFilterLoading(true);
+        try {
+            const { data } = await axios.get('/api/admin/users', {
+                params: {
+                    page: 1,
+                    limit: 10,
+                    search: query || undefined,
+                },
+            });
 
-                if (data?.success) {
-                    setOwnerFilterResults(data.data.users || []);
-                } else {
-                    setOwnerFilterResults([]);
-                }
-            } catch {
+            if (data?.success) {
+                setOwnerFilterResults(data.data.users || []);
+            } else {
                 setOwnerFilterResults([]);
-            } finally {
-                setOwnerFilterLoading(false);
             }
-        },
-        [],
-    );
+        } catch {
+            setOwnerFilterResults([]);
+        } finally {
+            setOwnerFilterLoading(false);
+        }
+    }, []);
 
     return (
         <div className='space-y-6'>
@@ -1305,9 +1302,7 @@ export default function ServersPage() {
                                             <p className='font-bold text-sm'>{node.name}</p>
                                             <p className='text-xs text-muted-foreground'>{node.fqdn}</p>
                                         </div>
-                                        {filterNode?.id === node.id && (
-                                            <ShieldCheck className='h-5 w-5 text-primary' />
-                                        )}
+                                        {filterNode?.id === node.id && <ShieldCheck className='h-5 w-5 text-primary' />}
                                     </div>
                                 </button>
                             ))
