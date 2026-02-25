@@ -79,19 +79,13 @@ if [ $migration_exit_code -ne 0 ]; then
 fi
 echo "Migrations finished."
 
-# Set ownership and permissions (first run only, and only where needed)
-PERMISSIONS_MARKER="/var/www/html/storage/.permissions_initialized"
+echo "Setting up ownership and permissions..."
+echo "Please note that this may take a while..."
 
-if [ ! -f "$PERMISSIONS_MARKER" ]; then
-    echo "Setting ownership and permissions (first run)..."
-    # Application needs write access mainly under storage/ and public/attachments
-    chown -R www-data:www-data /var/www/html/storage /var/www/html/public/attachments 2>/dev/null || true
-    chmod -R 770 /var/www/html/storage /var/www/html/public/attachments 2>/dev/null || true
-    touch "$PERMISSIONS_MARKER"
-    echo "Ownership and permissions set."
-else
-    echo "Skipping ownership and permissions (already initialized)."
-fi
+chown -R www-data:www-data /var/www/html
+chmod -R 777 /var/www/html
+echo "Ownership and permissions set."
+
 
 # Setup cron jobs (fallback method)
 echo "Setting up cron jobs..."
