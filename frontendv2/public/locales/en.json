@@ -530,6 +530,19 @@
 			"showing": "Showing {from} to {to} of {total} servers",
 			"page": "Page {current} of {total}"
 		},
+		"bulk": {
+			"title": "Bulk power actions",
+			"selectedCount": "{count} servers selected",
+			"noSelection": "No servers selected",
+			"selectAllPage": "Select all on this page",
+			"clearSelection": "Clear selection",
+			"start": "Start selected",
+			"stop": "Stop selected",
+			"restart": "Restart selected",
+			"success": "Power action sent to {count} servers.",
+			"partialSuccess": "Power action sent, but some servers failed.",
+			"error": "Failed to send power actions. Please try again."
+		},
 		"console": {
 			"loading": "Loading server...",
 			"noConsolePermissionSend": "You do not have permission to send commands.",

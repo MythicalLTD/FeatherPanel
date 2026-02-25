@@ -70,6 +70,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select-native';
 import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function ServersPage() {
     const { t } = useTranslation();
@@ -146,6 +147,8 @@ export default function ServersPage() {
     const [realmsList, setRealmsList] = useState<{ id: number; name: string; description?: string }[]>([]);
     const [spellsList, setSpellsList] = useState<{ id: number; name: string; description?: string }[]>([]);
     const [locationsList, setLocationsList] = useState<{ id: number; name: string; description?: string }[]>([]);
+    const [selectedServerIds, setSelectedServerIds] = useState<number[]>([]);
+    const [bulkPowerLoading, setBulkPowerLoading] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -219,6 +222,56 @@ export default function ServersPage() {
         fetchWidgets();
         fetchServers();
     }, [fetchServers, refreshKey, fetchWidgets]);
+
+    const toggleServerSelection = (serverId: number) => {
+        setSelectedServerIds((prev) =>
+            prev.includes(serverId) ? prev.filter((id) => id !== serverId) : [...prev, serverId],
+        );
+    };
+
+    const clearSelection = () => setSelectedServerIds([]);
+
+    const selectAllVisible = () => {
+        const visibleIds = servers.map((server) => server.id);
+        setSelectedServerIds(visibleIds);
+    };
+
+    const selectedServers = servers.filter((server) => selectedServerIds.includes(server.id));
+
+    const handleBulkPowerAction = async (action: 'start' | 'stop' | 'restart') => {
+        if (selectedServers.length === 0) {
+            return;
+        }
+
+        setBulkPowerLoading(true);
+        try {
+            const results = await Promise.all(
+                selectedServers.map((server) =>
+                    axios
+                        .post(`/api/user/servers/${server.uuidShort}/power/${action}`)
+                        .then(() => true)
+                        .catch(() => false),
+                ),
+            );
+
+            const successCount = results.filter(Boolean).length;
+
+            if (successCount === 0) {
+                toast.error(t('servers.bulk.error'));
+            } else if (successCount < selectedServers.length) {
+                toast.warning(t('servers.bulk.partialSuccess'));
+            } else {
+                toast.success(
+                    t('servers.bulk.success', {
+                        count: String(successCount),
+                    }),
+                );
+                clearSelection();
+            }
+        } finally {
+            setBulkPowerLoading(false);
+        }
+    };
 
     const handleDelete = (server: ApiServer, hard: boolean = false) => {
         setConfirmDeleteId(server.id);
@@ -617,6 +670,62 @@ export default function ServersPage() {
                 />
             ) : (
                 <>
+                    <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-border bg-card/60 px-4 py-3 mb-4'>
+                        <div className='flex items-center gap-2 text-sm'>
+                            <button
+                                type='button'
+                                onClick={selectAllVisible}
+                                className='text-xs sm:text-sm font-medium text-primary hover:underline'
+                            >
+                                {t('servers.bulk.selectAllPage')}
+                            </button>
+                            <span className='text-xs sm:text-sm text-muted-foreground'>
+                                {selectedServers.length > 0
+                                    ? t('servers.bulk.selectedCount', {
+                                          count: String(selectedServers.length),
+                                      })
+                                    : t('servers.bulk.noSelection')}
+                            </span>
+                            {selectedServers.length > 0 && (
+                                <button
+                                    type='button'
+                                    onClick={clearSelection}
+                                    className='text-xs sm:text-sm text-muted-foreground hover:text-foreground hover:underline'
+                                >
+                                    {t('servers.bulk.clearSelection')}
+                                </button>
+                            )}
+                        </div>
+                        <div className='flex items-center gap-2'>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                onClick={() => handleBulkPowerAction('start')}
+                                disabled={selectedServers.length === 0 || bulkPowerLoading}
+                            >
+                                {t('servers.start')}
+                            </Button>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                onClick={() => handleBulkPowerAction('stop')}
+                                disabled={selectedServers.length === 0 || bulkPowerLoading}
+                            >
+                                {t('servers.stop')}
+                            </Button>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                onClick={() => handleBulkPowerAction('restart')}
+                                disabled={selectedServers.length === 0 || bulkPowerLoading}
+                            >
+                                {t('servers.restart')}
+                            </Button>
+                        </div>
+                    </div>
                     {pagination.totalPages > 1 && (
                         <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
                             <Button
@@ -684,6 +793,11 @@ export default function ServersPage() {
                                     }
                                     actions={
                                         <div className='flex items-center gap-2'>
+                                            <Checkbox
+                                                checked={selectedServerIds.includes(server.id)}
+                                                onCheckedChange={() => toggleServerSelection(server.id)}
+                                                className='h-4 w-4'
+                                            />
                                             <Button
                                                 size='sm'
                                                 variant='ghost'

@@ -34,6 +34,7 @@ import {
 import type { Server, ServerFolder } from '@/types/server';
 import { StatusBadge } from './StatusBadge';
 import { ResourceBar } from './ResourceBar';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ServerCardProps {
     server: Server;
@@ -45,6 +46,10 @@ interface ServerCardProps {
     onAssignFolder: (folderId: number) => void;
     onUnassignFolder: () => void;
     serverUrl: string;
+    /** Optional selection controls for bulk actions */
+    selectable?: boolean;
+    selected?: boolean;
+    onToggleSelect?: () => void;
 }
 
 export function ServerCard({
@@ -57,6 +62,9 @@ export function ServerCard({
     onAssignFolder,
     onUnassignFolder,
     serverUrl,
+    selectable = false,
+    selected = false,
+    onToggleSelect,
 }: ServerCardProps) {
     const accessible = isServerAccessible(server);
     const status = liveStats?.status || displayStatus(server);
@@ -73,6 +81,15 @@ export function ServerCard({
                     accessible ? 'hover:border-primary' : 'opacity-60',
                 )}
             >
+                {selectable && (
+                    <div className='self-start pt-1'>
+                        <Checkbox
+                            checked={selected}
+                            onCheckedChange={() => onToggleSelect && onToggleSelect()}
+                            className='h-4 w-4'
+                        />
+                    </div>
+                )}
                 {server.spell?.banner && (
                     <Link
                         href={serverUrl}
@@ -192,6 +209,18 @@ export function ServerCard({
                 accessible ? 'hover:border-primary' : 'opacity-60',
             )}
         >
+            {selectable && (
+                <div
+                    className='absolute top-3 right-3 z-20'
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onToggleSelect && onToggleSelect();
+                    }}
+                >
+                    <Checkbox checked={selected} onCheckedChange={() => {}} className='h-4 w-4 bg-card/80' />
+                </div>
+            )}
             <Link href={serverUrl} className='relative block cursor-pointer'>
                 {server.spell?.banner && (
                     <div className='relative h-40 overflow-hidden'>
