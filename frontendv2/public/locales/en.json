@@ -1872,6 +1872,11 @@
 			"uploading": "Uploading {file}...",
 			"upload_complete": "Upload complete",
 			"upload_failed": "Upload failed",
+			"uploading_folder": "Uploading folder",
+			"uploading_folder_progress": "Uploading folder ({current} of {total} files)",
+			"upload_folder_complete": "Folder upload complete ({count} files)",
+			"upload_folder_error": "Folder upload failed",
+			"uploading_files_progress": "Uploading {current} of {total} files",
 			"drop_to_upload": "Drop to Upload",
 			"drop_description": "Release your files to start uploading to"
 		},

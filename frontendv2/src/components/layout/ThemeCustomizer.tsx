@@ -49,20 +49,17 @@ export default function ThemeCustomizer() {
         {
             name: 'Modern (Inter)',
             value: 'inter' as const,
-            preview:
-                "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            preview: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         },
         {
             name: 'System UI',
             value: 'system' as const,
-            preview:
-                "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            preview: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         },
         {
             name: 'Rounded (Nunito)',
             value: 'rounded' as const,
-            preview:
-                "'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            preview: "'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         },
     ];
 
@@ -133,9 +130,7 @@ export default function ThemeCustomizer() {
                                 </MenuItem>
                             ))}
                             <div className='my-2 border-t border-border/50' />
-                            <div className='px-3 py-1 text-xs font-semibold text-muted-foreground'>
-                                Fonts
-                            </div>
+                            <div className='px-3 py-1 text-xs font-semibold text-muted-foreground'>Fonts</div>
                             {fontOptions.map((option) => (
                                 <MenuItem key={option.value}>
                                     {({ focus }) => (
@@ -145,15 +140,10 @@ export default function ThemeCustomizer() {
                                                 focus ? 'bg-accent' : ''
                                             } group flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors`}
                                         >
-                                            <span
-                                                className='flex-1 text-left'
-                                                style={{ fontFamily: option.preview }}
-                                            >
+                                            <span className='flex-1 text-left' style={{ fontFamily: option.preview }}>
                                                 {option.name}
                                             </span>
-                                            {fontFamily === option.value && (
-                                                <Check className='h-4 w-4 text-primary' />
-                                            )}
+                                            {fontFamily === option.value && <Check className='h-4 w-4 text-primary' />}
                                         </button>
                                     )}
                                 </MenuItem>
@@ -234,9 +224,7 @@ export default function ThemeCustomizer() {
                             <div className='my-2 border-t border-border/50' />
 
                             <div className='px-3 py-1'>
-                                <div className='text-xs font-semibold text-muted-foreground mb-2'>
-                                    Fonts
-                                </div>
+                                <div className='text-xs font-semibold text-muted-foreground mb-2'>Fonts</div>
                                 <div className='space-y-1'>
                                     {fontOptions.map((option) => (
                                         <MenuItem key={option.value}>
@@ -249,9 +237,7 @@ export default function ThemeCustomizer() {
                                                     style={{ fontFamily: option.preview }}
                                                 >
                                                     <span>{option.name}</span>
-                                                    {fontFamily === option.value && (
-                                                        <Check className='h-3 w-3' />
-                                                    )}
+                                                    {fontFamily === option.value && <Check className='h-3 w-3' />}
                                                 </button>
                                             )}
                                         </MenuItem>

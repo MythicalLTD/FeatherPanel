@@ -12,6 +12,7 @@
 - Significantly enhanced the logs uploading process for increased reliability and performance. by @nayskutzu
 - One-click mass plugin installation—no more waiting through endless refreshes. by @nayskutzu
 - The node name is now prominently displayed on the server console page for improved clarity. by @nayskutzu
+- Seamless folder upload is now supported in FeatherPanel, allowing users to upload entire directories with a single action. by @nayskutzu
 
 ### Added
 

@@ -215,6 +215,7 @@ export function ServerCard({
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                         onToggleSelect && onToggleSelect();
                     }}
                 >

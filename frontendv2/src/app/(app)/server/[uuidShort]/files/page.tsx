@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFileManager } from '@/hooks/useFileManager';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
@@ -46,12 +46,56 @@ import { Download, X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import React, { use } from 'react';
 import { Button } from '@/components/featherui/Button';
 
+type FileWithPath = { file: File; relativePath: string };
+
+async function collectFilesFromDataTransfer(dt: DataTransfer): Promise<FileWithPath[]> {
+    const result: FileWithPath[] = [];
+    const items = dt.items;
+    if (!items?.length) return result;
+
+    const readEntry = async (
+        entry: FileSystemFileEntry | FileSystemDirectoryEntry,
+        basePath: string,
+    ): Promise<void> => {
+        if (entry.isFile) {
+            const file = await new Promise<File>((resolve, reject) => {
+                (entry as FileSystemFileEntry).file(resolve, reject);
+            });
+            result.push({ file, relativePath: basePath ? `${basePath}/${file.name}` : file.name });
+        } else if (entry.isDirectory) {
+            const dir = entry as FileSystemDirectoryEntry;
+            const reader = dir.createReader();
+            const entries = await new Promise<FileSystemEntry[]>((resolve, reject) => {
+                reader.readEntries(resolve, reject);
+            });
+            const dirName = basePath ? `${basePath}/${dir.name}` : dir.name;
+            for (const child of entries) {
+                await readEntry(child as FileSystemFileEntry | FileSystemDirectoryEntry, dirName);
+            }
+        }
+    };
+
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const entry = item.webkitGetAsEntry?.() ?? null;
+        if (entry) {
+            await readEntry(entry as FileSystemFileEntry | FileSystemDirectoryEntry, '');
+        } else {
+            const file = item.getAsFile();
+            if (file) result.push({ file, relativePath: file.name });
+        }
+    }
+    return result;
+}
+
 type UploadQueueItem = {
     id: string;
     file: File;
     progress: number;
     status: 'pending' | 'uploading' | 'done' | 'error';
     error?: string;
+    targetDirectory: string;
+    batchId?: string;
 };
 
 export default function ServerFilesPage({ params }: { params: Promise<{ uuidShort: string }> }) {
@@ -107,6 +151,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [moveCopyAction, setMoveCopyAction] = useState<'move' | 'copy'>('move');
     const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
     const uploadProcessingRef = useRef(false);
+    const createdDirectoriesRef = useRef<Set<string>>(new Set());
 
     const [actionFile, setActionFile] = useState<FileObject | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -202,9 +247,52 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
+    useEffect(() => {
+        if (fileInputRef.current) {
+            fileInputRef.current.setAttribute('webkitdirectory', 'true');
+            fileInputRef.current.setAttribute('directory', 'true');
+        }
+    }, []);
+
     const handleUploadClick = () => {
         fileInputRef.current?.click();
     };
+
+    const ensureDirectoryExists = React.useCallback(
+        async (directory: string) => {
+            const normalizeDirectoryPath = (path: string): string => {
+                if (!path) return '/';
+                if (path === '/') return '/';
+                const trimmed = path.replace(/\/+/g, '/').replace(/\/+$/g, '');
+                return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+            };
+
+            const target = normalizeDirectoryPath(directory);
+
+            if (target === '/' || createdDirectoriesRef.current.has(target)) {
+                return;
+            }
+
+            const segments = target.replace(/^\/+|\/+$/g, '').split('/');
+            let current = '/';
+
+            for (const segment of segments) {
+                const next = current === '/' ? `/${segment}` : `${current}/${segment}`;
+
+                if (!createdDirectoriesRef.current.has(next)) {
+                    try {
+                        await filesApi.createFolder(uuidShort, current, segment);
+                    } catch {
+                        // Ignore errors (directory may already exist or creation may fail for other reasons)
+                    }
+                    createdDirectoriesRef.current.add(next);
+                }
+
+                current = next;
+            }
+        },
+        [uuidShort],
+    );
 
     const processUploadQueue = React.useCallback(
         async (queue: UploadQueueItem[], setQueue: React.Dispatch<React.SetStateAction<UploadQueueItem[]>>) => {
@@ -218,7 +306,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             );
 
             try {
-                await filesApi.uploadFile(uuidShort, currentDirectory || '/', next.file, (percent) => {
+                await ensureDirectoryExists(next.targetDirectory);
+
+                await filesApi.uploadFile(uuidShort, next.targetDirectory, next.file, (percent) => {
                     setUploadQueue((p) => p.map((u) => (u.id === next.id ? { ...u, progress: percent } : u)));
                 });
                 setUploadQueue((prev) => {
@@ -246,33 +336,131 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 uploadProcessingRef.current = false;
             }
         },
-        [uuidShort, currentDirectory, refresh, t],
+        [uuidShort, refresh, t, ensureDirectoryExists],
     );
 
     const addToUploadQueue = React.useCallback(
         (files: File[]) => {
-            const newItems: UploadQueueItem[] = files.map((file) => ({
-                id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-                file,
-                progress: 0,
-                status: 'pending',
-            }));
+            const baseDirectory = currentDirectory || '/';
+
+            const normalizeDirectoryPath = (path: string): string => {
+                if (!path) return '/';
+                if (path === '/') return '/';
+                const trimmed = path.replace(/\/+/g, '/').replace(/\/+$/g, '');
+                return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+            };
+
+            const joinDirectories = (base: string, relative: string): string => {
+                const baseDir = normalizeDirectoryPath(base || '/');
+                const cleanRelative = relative.replace(/^\/+|\/+$/g, '');
+
+                if (!cleanRelative) {
+                    return baseDir;
+                }
+
+                if (baseDir === '/') {
+                    return normalizeDirectoryPath(`/${cleanRelative}`);
+                }
+
+                return normalizeDirectoryPath(`${baseDir}/${cleanRelative}`);
+            };
+
+            const batchId = files.length > 1 ? `batch-${Date.now()}` : undefined;
+            const newItems: UploadQueueItem[] = files.map((file) => {
+                const fileWithPath = file as File & { webkitRelativePath?: string };
+                const relativePath = fileWithPath.webkitRelativePath || '';
+
+                let subDirectory = '';
+                if (relativePath && relativePath.includes('/')) {
+                    subDirectory = relativePath.substring(0, relativePath.lastIndexOf('/'));
+                }
+
+                const targetDirectory = joinDirectories(baseDirectory, subDirectory);
+
+                return {
+                    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                    file,
+                    progress: 0,
+                    status: 'pending',
+                    targetDirectory,
+                    batchId,
+                };
+            });
             setUploadQueue((prev) => {
                 const next = [...prev, ...newItems];
                 setTimeout(() => processUploadQueue(next, setUploadQueue), 0);
                 return next;
             });
         },
-        [processUploadQueue],
+        [processUploadQueue, currentDirectory],
+    );
+
+    const addToUploadQueueFromDrop = React.useCallback(
+        (filesWithPaths: FileWithPath[]) => {
+            const baseDirectory = currentDirectory || '/';
+            const normalizeDirectoryPath = (path: string): string => {
+                if (!path) return '/';
+                if (path === '/') return '/';
+                const trimmed = path.replace(/\/+/g, '/').replace(/\/+$/g, '');
+                return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+            };
+            const joinDirectories = (base: string, relative: string): string => {
+                const baseDir = normalizeDirectoryPath(base || '/');
+                const cleanRelative = relative.replace(/^\/+|\/+$/g, '');
+                if (!cleanRelative) return baseDir;
+                if (baseDir === '/') return normalizeDirectoryPath(`/${cleanRelative}`);
+                return normalizeDirectoryPath(`${baseDir}/${cleanRelative}`);
+            };
+            const batchId = `batch-${Date.now()}`;
+            const newItems: UploadQueueItem[] = filesWithPaths.map(({ file, relativePath }) => {
+                let subDirectory = '';
+                if (relativePath && relativePath.includes('/')) {
+                    subDirectory = relativePath.substring(0, relativePath.lastIndexOf('/'));
+                }
+                const targetDirectory = joinDirectories(baseDirectory, subDirectory);
+                return {
+                    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                    file,
+                    progress: 0,
+                    status: 'pending',
+                    targetDirectory,
+                    batchId,
+                };
+            });
+            setUploadQueue((prev) => {
+                const next = [...prev, ...newItems];
+                setTimeout(() => processUploadQueue(next, setUploadQueue), 0);
+                return next;
+            });
+        },
+        [processUploadQueue, currentDirectory],
     );
 
     const removeUploadFromQueue = React.useCallback((id: string) => {
         setUploadQueue((prev) => prev.filter((u) => u.id !== id));
     }, []);
 
+    const removeUploadBatch = React.useCallback((batchId: string) => {
+        setUploadQueue((prev) => prev.filter((u) => u.batchId !== batchId));
+    }, []);
+
     const clearCompletedUploads = React.useCallback(() => {
         setUploadQueue((prev) => prev.filter((u) => u.status === 'uploading' || u.status === 'pending'));
     }, []);
+
+    const uploadBatches = useMemo(() => {
+        const byBatch = new Map<string, UploadQueueItem[]>();
+        for (const item of uploadQueue) {
+            const key = item.batchId ?? item.id;
+            if (!byBatch.has(key)) byBatch.set(key, []);
+            byBatch.get(key)!.push(item);
+        }
+        return Array.from(byBatch.entries()).map(([batchKey, items]) => ({
+            batchKey,
+            batchId: items[0]?.batchId,
+            items,
+        }));
+    }, [uploadQueue]);
 
     const uploadFiles = React.useCallback(
         async (files: File[]) => {
@@ -291,6 +479,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     useEffect(() => {
         const handleDragOver = (e: DragEvent) => {
             e.preventDefault();
+            if (!e.dataTransfer?.types?.includes('Files')) return;
             setIsDragging(true);
         };
         const handleDragLeave = (e: DragEvent) => {
@@ -302,9 +491,11 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         const handleDrop = async (e: DragEvent) => {
             e.preventDefault();
             setIsDragging(false);
-            if (e.dataTransfer?.files.length) {
-                const files = Array.from(e.dataTransfer.files);
-                uploadFiles(files);
+            const dt = e.dataTransfer;
+            if (!dt) return;
+            const filesWithPaths = await collectFilesFromDataTransfer(dt);
+            if (filesWithPaths.length) {
+                addToUploadQueueFromDrop(filesWithPaths);
             }
         };
 
@@ -317,7 +508,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             window.removeEventListener('dragleave', handleDragLeave);
             window.removeEventListener('drop', handleDrop);
         };
-    }, [uploadFiles]);
+    }, [currentDirectory, addToUploadQueueFromDrop]);
 
     return (
         <div className='flex flex-col gap-6 relative min-h-screen pb-20'>
@@ -379,7 +570,10 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             <span className='text-xs font-bold uppercase tracking-widest text-primary/80'>
                                 {uploadQueue.length === 1
                                     ? t('files.toolbar.upload')
-                                    : `${uploadQueue.length} ${t('files.toolbar.upload')}`}
+                                    : t('files.messages.uploading_files_progress', {
+                                          current: String(uploadQueue.length),
+                                          total: String(uploadQueue.length),
+                                      })}
                             </span>
                             {uploadQueue.some((u) => u.status === 'done' || u.status === 'error') && (
                                 <Button
@@ -392,73 +586,159 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 </Button>
                             )}
                         </div>
-                        {uploadQueue.map((item) => (
-                            <div
-                                key={item.id}
-                                className='group relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-xl transition-all hover:border-primary/40 text-left'
-                            >
-                                <div className='absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity' />
-                                <div className='relative flex flex-col gap-3 text-left'>
-                                    <div className='flex items-center justify-between'>
-                                        <div className='flex items-center gap-2 min-w-0'>
-                                            <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary'>
-                                                {item.status === 'uploading' && (
-                                                    <Upload className='h-4 w-4 animate-pulse' />
-                                                )}
-                                                {item.status === 'done' && (
-                                                    <CheckCircle2 className='h-4 w-4 text-green-500' />
-                                                )}
-                                                {item.status === 'error' && (
-                                                    <AlertCircle className='h-4 w-4 text-destructive' />
-                                                )}
-                                                {item.status === 'pending' && (
-                                                    <Upload className='h-4 w-4 text-muted-foreground' />
+                        {uploadBatches.map(({ batchKey, batchId, items }) => {
+                            const isBatch = items.length > 1;
+                            const doneCount = items.filter((u) => u.status === 'done').length;
+                            const uploadingItem = items.find((u) => u.status === 'uploading');
+                            const hasError = items.some((u) => u.status === 'error');
+                            const allDone = doneCount === items.length;
+                            const batchProgress =
+                                items.length > 1
+                                    ? Math.round(
+                                          (doneCount * 100 + (uploadingItem ? uploadingItem.progress : 0)) /
+                                              items.length,
+                                      )
+                                    : (uploadingItem?.progress ?? items[0]?.progress ?? 0);
+                            const currentLabel = items.length > 1 ? doneCount + (uploadingItem ? 1 : 0) : 1;
+
+                            if (isBatch) {
+                                return (
+                                    <div
+                                        key={batchKey}
+                                        className='group relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-xl transition-all hover:border-primary/40 text-left'
+                                    >
+                                        <div className='absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity' />
+                                        <div className='relative flex flex-col gap-3 text-left'>
+                                            <div className='flex items-center justify-between'>
+                                                <div className='flex items-center gap-2 min-w-0'>
+                                                    <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary'>
+                                                        {allDone && <CheckCircle2 className='h-4 w-4 text-green-500' />}
+                                                        {hasError && !allDone && (
+                                                            <AlertCircle className='h-4 w-4 text-destructive' />
+                                                        )}
+                                                        {!allDone && !hasError && (
+                                                            <Upload className='h-4 w-4 animate-pulse' />
+                                                        )}
+                                                    </div>
+                                                    <span className='text-sm font-medium truncate'>
+                                                        {allDone
+                                                            ? t('files.messages.upload_folder_complete', {
+                                                                  count: String(items.length),
+                                                              })
+                                                            : hasError
+                                                              ? t('files.messages.upload_folder_error')
+                                                              : t('files.messages.uploading_folder')}
+                                                    </span>
+                                                </div>
+                                                {batchId && (
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='icon'
+                                                        onClick={() => removeUploadBatch(batchId)}
+                                                        className='h-7 w-7 shrink-0 text-muted-foreground hover:text-red-500'
+                                                    >
+                                                        <X className='h-4 w-4' />
+                                                    </Button>
                                                 )}
                                             </div>
-                                            <span className='text-sm font-medium truncate' title={item.file.name}>
-                                                {item.file.name}
-                                            </span>
+                                            {!allDone && !hasError && (
+                                                <div className='space-y-1.5'>
+                                                    <div className='flex justify-between text-[10px] font-bold uppercase tracking-tighter text-white/40'>
+                                                        <span>
+                                                            {t('files.messages.uploading_folder_progress', {
+                                                                current: String(currentLabel),
+                                                                total: String(items.length),
+                                                            })}
+                                                        </span>
+                                                        <span className='text-primary'>{batchProgress}%</span>
+                                                    </div>
+                                                    <div className='h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5'>
+                                                        <div
+                                                            className='h-full bg-gradient-to-r from-primary to-primary-foreground transition-all duration-300'
+                                                            style={{ width: `${batchProgress}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {hasError && !allDone && (
+                                                <p className='text-xs text-destructive'>
+                                                    {t('files.messages.upload_folder_error')}
+                                                </p>
+                                            )}
                                         </div>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            onClick={() => removeUploadFromQueue(item.id)}
-                                            className='h-7 w-7 shrink-0 text-muted-foreground hover:text-red-500'
-                                        >
-                                            <X className='h-4 w-4' />
-                                        </Button>
                                     </div>
-                                    {(item.status === 'uploading' || item.status === 'pending') && (
-                                        <div className='space-y-1.5'>
-                                            <div className='flex justify-between text-[10px] font-bold uppercase tracking-tighter text-white/40'>
-                                                <span>
-                                                    {item.status === 'uploading'
-                                                        ? t('files.messages.uploading', { file: '' })
-                                                        : t('files.toolbar.upload')}
+                                );
+                            }
+
+                            const item = items[0]!;
+                            return (
+                                <div
+                                    key={item.id}
+                                    className='group relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-xl transition-all hover:border-primary/40 text-left'
+                                >
+                                    <div className='absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity' />
+                                    <div className='relative flex flex-col gap-3 text-left'>
+                                        <div className='flex items-center justify-between'>
+                                            <div className='flex items-center gap-2 min-w-0'>
+                                                <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary'>
+                                                    {item.status === 'uploading' && (
+                                                        <Upload className='h-4 w-4 animate-pulse' />
+                                                    )}
+                                                    {item.status === 'done' && (
+                                                        <CheckCircle2 className='h-4 w-4 text-green-500' />
+                                                    )}
+                                                    {item.status === 'error' && (
+                                                        <AlertCircle className='h-4 w-4 text-destructive' />
+                                                    )}
+                                                    {item.status === 'pending' && (
+                                                        <Upload className='h-4 w-4 text-muted-foreground' />
+                                                    )}
+                                                </div>
+                                                <span className='text-sm font-medium truncate' title={item.file.name}>
+                                                    {item.file.name}
                                                 </span>
-                                                <span className='text-primary'>{item.progress}%</span>
                                             </div>
-                                            <div className='h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5'>
-                                                <div
-                                                    className='h-full bg-gradient-to-r from-primary to-primary-foreground transition-all duration-300'
-                                                    style={{ width: `${item.progress}%` }}
-                                                />
-                                            </div>
+                                            <Button
+                                                variant='ghost'
+                                                size='icon'
+                                                onClick={() => removeUploadFromQueue(item.id)}
+                                                className='h-7 w-7 shrink-0 text-muted-foreground hover:text-red-500'
+                                            >
+                                                <X className='h-4 w-4' />
+                                            </Button>
                                         </div>
-                                    )}
-                                    {item.status === 'done' && (
-                                        <p className='text-xs text-green-600 dark:text-green-400'>
-                                            {t('files.messages.upload_complete')}
-                                        </p>
-                                    )}
-                                    {item.status === 'error' && (
-                                        <p className='text-xs text-destructive truncate' title={item.error}>
-                                            {item.error}
-                                        </p>
-                                    )}
+                                        {(item.status === 'uploading' || item.status === 'pending') && (
+                                            <div className='space-y-1.5'>
+                                                <div className='flex justify-between text-[10px] font-bold uppercase tracking-tighter text-white/40'>
+                                                    <span>
+                                                        {item.status === 'uploading'
+                                                            ? t('files.messages.uploading', { file: '' })
+                                                            : t('files.toolbar.upload')}
+                                                    </span>
+                                                    <span className='text-primary'>{item.progress}%</span>
+                                                </div>
+                                                <div className='h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5'>
+                                                    <div
+                                                        className='h-full bg-gradient-to-r from-primary to-primary-foreground transition-all duration-300'
+                                                        style={{ width: `${item.progress}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                        {item.status === 'done' && (
+                                            <p className='text-xs text-green-600 dark:text-green-400'>
+                                                {t('files.messages.upload_complete')}
+                                            </p>
+                                        )}
+                                        {item.status === 'error' && (
+                                            <p className='text-xs text-destructive truncate' title={item.error}>
+                                                {item.error}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 
