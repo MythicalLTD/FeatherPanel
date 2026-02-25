@@ -24,7 +24,7 @@ import BackgroundCustomizer from '@/components/theme/BackgroundCustomizer';
 import LanguageSelector from '@/components/layout/LanguageSelector';
 
 export default function ThemeCustomizer() {
-    const { theme, accentColor, setAccentColor, toggleTheme, mounted } = useTheme();
+    const { theme, accentColor, setAccentColor, fontFamily, setFontFamily, toggleTheme, mounted } = useTheme();
     const { t, availableLanguages, setLocale, locale } = useTranslation();
 
     const accentColorOptions = [
@@ -43,6 +43,27 @@ export default function ThemeCustomizer() {
         { name: t('appearance.colors.amber'), value: 'amber', color: 'hsl(38 92% 50%)' },
         { name: t('appearance.colors.rose'), value: 'rose', color: 'hsl(347 77% 50%)' },
         { name: t('appearance.colors.slate'), value: 'slate', color: 'hsl(215 20% 45%)' },
+    ];
+
+    const fontOptions = [
+        {
+            name: 'Modern (Inter)',
+            value: 'inter' as const,
+            preview:
+                "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        },
+        {
+            name: 'System UI',
+            value: 'system' as const,
+            preview:
+                "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        },
+        {
+            name: 'Rounded (Nunito)',
+            value: 'rounded' as const,
+            preview:
+                "'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        },
     ];
 
     if (!mounted) {
@@ -107,6 +128,32 @@ export default function ThemeCustomizer() {
                                             />
                                             <span className='flex-1 text-left'>{option.name}</span>
                                             {accentColor === option.value && <Check className='h-4 w-4 text-primary' />}
+                                        </button>
+                                    )}
+                                </MenuItem>
+                            ))}
+                            <div className='my-2 border-t border-border/50' />
+                            <div className='px-3 py-1 text-xs font-semibold text-muted-foreground'>
+                                Fonts
+                            </div>
+                            {fontOptions.map((option) => (
+                                <MenuItem key={option.value}>
+                                    {({ focus }) => (
+                                        <button
+                                            onClick={() => setFontFamily(option.value)}
+                                            className={`${
+                                                focus ? 'bg-accent' : ''
+                                            } group flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors`}
+                                        >
+                                            <span
+                                                className='flex-1 text-left'
+                                                style={{ fontFamily: option.preview }}
+                                            >
+                                                {option.name}
+                                            </span>
+                                            {fontFamily === option.value && (
+                                                <Check className='h-4 w-4 text-primary' />
+                                            )}
                                         </button>
                                     )}
                                 </MenuItem>
@@ -180,6 +227,34 @@ export default function ThemeCustomizer() {
                                         >
                                             {accentColor === option.value && <Check className='h-4 w-4 text-white' />}
                                         </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className='my-2 border-t border-border/50' />
+
+                            <div className='px-3 py-1'>
+                                <div className='text-xs font-semibold text-muted-foreground mb-2'>
+                                    Fonts
+                                </div>
+                                <div className='space-y-1'>
+                                    {fontOptions.map((option) => (
+                                        <MenuItem key={option.value}>
+                                            {({ focus }) => (
+                                                <button
+                                                    onClick={() => setFontFamily(option.value)}
+                                                    className={`${focus ? 'bg-accent' : ''} flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${
+                                                        fontFamily === option.value ? 'text-primary' : ''
+                                                    }`}
+                                                    style={{ fontFamily: option.preview }}
+                                                >
+                                                    <span>{option.name}</span>
+                                                    {fontFamily === option.value && (
+                                                        <Check className='h-3 w-3' />
+                                                    )}
+                                                </button>
+                                            )}
+                                        </MenuItem>
                                     ))}
                                 </div>
                             </div>

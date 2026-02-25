@@ -23,6 +23,8 @@
     --input: 0 0% 90%;
     --ring: 262 83% 58%;
     --radius: 0.5rem;
+    /* Default UI font (can be overridden via theme). */
+    --app-font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 @theme inline {
@@ -45,7 +47,8 @@
     --color-border: hsl(var(--border));
     --color-input: hsl(var(--input));
     --color-ring: hsl(var(--ring));
-    --font-sans: var(--font-geist-sans);
+    /* Tie Tailwind's font-sans to the app font variable. */
+    --font-sans: var(--app-font-family);
     --font-mono: var(--font-geist-mono);
 }
 
@@ -74,9 +77,7 @@
 body {
     background: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family:
-        -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
-        'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: var(--app-font-family);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }

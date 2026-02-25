@@ -58,6 +58,8 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
         setBackdropBlur,
         setBackdropDarken,
         setBackgroundImageFit,
+        fontFamily,
+        setFontFamily,
     } = useTheme();
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
@@ -480,6 +482,48 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                             </div>
                                         )}
                                         {/* Motion level controls removed – motion is now always off ('none'). */}
+
+                                        <div>
+                                            <label className='block text-sm font-medium text-foreground mb-2'>
+                                                Fonts
+                                            </label>
+                                            <div className='space-y-1'>
+                                                {[
+                                                    {
+                                                        name: 'Modern (Inter)',
+                                                        value: 'inter' as const,
+                                                        preview:
+                                                            "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                                                    },
+                                                    {
+                                                        name: 'System UI',
+                                                        value: 'system' as const,
+                                                        preview:
+                                                            "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                                                    },
+                                                    {
+                                                        name: 'Rounded (Nunito)',
+                                                        value: 'rounded' as const,
+                                                        preview:
+                                                            "'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                                                    },
+                                                ].map((option) => (
+                                                    <button
+                                                        key={option.value}
+                                                        type='button'
+                                                        onClick={() => setFontFamily(option.value)}
+                                                        className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                                                            fontFamily === option.value
+                                                                ? 'bg-primary/10 text-primary'
+                                                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                        }`}
+                                                        style={{ fontFamily: option.preview }}
+                                                    >
+                                                        <span>{option.name}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </DialogPanel>
                             </TransitionChild>

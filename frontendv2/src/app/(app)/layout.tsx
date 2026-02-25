@@ -101,6 +101,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <html lang='en' suppressHydrationWarning>
             <head>
                 <meta name='author' content='FeatherPanel' />
+                <link rel='preconnect' href='https://fonts.googleapis.com' />
+                <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin='anonymous' />
+                <link
+                    rel='stylesheet'
+                    href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap'
+                />
                 {analyticsEnabled && (
                     <script
                         defer
@@ -148,6 +154,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     : (prefersReduced ? 'reduced' : 'full');
                   localStorage.setItem('motionLevel', motion);
                   document.documentElement.dataset.motion = motion;
+
+                  // Initialize font preference for UI.
+                  const savedFont = localStorage.getItem('fontFamily');
+                  var fontStacks = {
+                    inter: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                    system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                    rounded: "'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                  };
+                  if (savedFont && fontStacks[savedFont]) {
+                    document.documentElement.style.setProperty('--app-font-family', fontStacks[savedFont]);
+                  }
                 } catch (e) {}
               })();
             `,

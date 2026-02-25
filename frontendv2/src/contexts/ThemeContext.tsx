@@ -24,6 +24,8 @@ export type BackgroundAnimatedVariant = 'aurora' | 'beams' | 'colorBends' | 'flo
 export type BackgroundImageFit = 'cover' | 'contain' | 'fill';
 /** Controls animations and transitions app-wide. */
 export type MotionLevel = 'full' | 'reduced' | 'none';
+/** UI font family preference. */
+type FontFamily = 'system' | 'inter' | 'rounded';
 
 interface ThemeContextType {
     theme: Theme;
@@ -39,6 +41,8 @@ interface ThemeContextType {
     backgroundImageFit: BackgroundImageFit;
     /** Animations and transitions: full, reduced, or none. */
     motionLevel: MotionLevel;
+    /** UI font family preference (system, Inter, rounded). */
+    fontFamily: FontFamily;
     setTheme: (theme: Theme) => void;
     setAccentColor: (color: string) => void;
     setBackgroundType: (type: BackgroundType) => void;
@@ -48,6 +52,7 @@ interface ThemeContextType {
     setBackdropDarken: (percent: number) => void;
     setBackgroundImageFit: (fit: BackgroundImageFit) => void;
     setMotionLevel: (level: MotionLevel) => void;
+    setFontFamily: (font: FontFamily) => void;
     toggleTheme: () => void;
     mounted: boolean;
 }
@@ -84,6 +89,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [backdropDarken, setBackdropDarkenState] = useState(0);
     const [backgroundImageFit, setBackgroundImageFitState] = useState<BackgroundImageFit>('cover');
     const [motionLevel, setMotionLevelState] = useState<MotionLevel>('full');
+    const [fontFamily, setFontFamilyState] = useState<FontFamily>('inter');
     const { settings } = useSettings();
 
     useLayoutEffect(() => {
@@ -100,6 +106,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const savedDarken = localStorage.getItem('backdropDarken');
         const savedFit = localStorage.getItem('backgroundImageFit') as BackgroundImageFit | null;
         const savedMotion = localStorage.getItem('motionLevel') as MotionLevel | null;
+        const savedFontFamily = localStorage.getItem('fontFamily') as FontFamily | null;
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -135,6 +142,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                   : 'full';
         setMotionLevelState(initialMotion);
         localStorage.setItem('motionLevel', initialMotion);
+
+        const initialFont: FontFamily =
+            savedFontFamily === 'system' || savedFontFamily === 'rounded' || savedFontFamily === 'inter'
+                ? savedFontFamily
+                : 'inter';
+        setFontFamilyState(initialFont);
+        localStorage.setItem('fontFamily', initialFont);
     }, []);
 
     useEffect(() => {
@@ -149,7 +163,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         root.style.setProperty('--color-primary', `hsl(${accentHSL})`);
         root.style.setProperty('--primary', accentHSL);
         localStorage.setItem('accentColor', accentColor);
-    }, [theme, accentColor, mounted]);
+
+        const fontStacks: Record<FontFamily, string> = {
+            inter: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            rounded: "'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        };
+        const stack = fontStacks[fontFamily] || fontStacks.inter;
+        root.style.setProperty('--app-font-family', stack);
+        localStorage.setItem('fontFamily', fontFamily);
+    }, [theme, accentColor, fontFamily, mounted]);
 
     // Apply admin-enforced defaults/locks from public settings (if present).
     // Note: we now enforce locks inside setter functions and initial state;
@@ -234,6 +257,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('motionLevel', level);
     };
 
+    const setFontFamily = (font: FontFamily) => {
+        setFontFamilyState(font);
+        localStorage.setItem('fontFamily', font);
+    };
+
     const toggleTheme = () => {
         setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
     };
@@ -250,6 +278,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 backdropDarken,
                 backgroundImageFit,
                 motionLevel,
+                fontFamily,
                 setTheme,
                 setAccentColor,
                 setBackgroundType,
@@ -259,6 +288,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 setBackdropDarken,
                 setBackgroundImageFit,
                 setMotionLevel,
+                setFontFamily,
                 toggleTheme,
                 mounted,
             }}
