@@ -1,0 +1,48 @@
+# Caddy - FeatherPanel frontend (replaces nginx)
+# Proxies /api, /pma, /attachments, /addons, /components to backend; everything else to Next.js
+
+:80 {
+	encode zstd gzip
+
+	request_body {
+		max_size 250MB
+	}
+
+	header X-Frame-Options "SAMEORIGIN"
+	header X-Content-Type-Options "nosniff"
+	header X-XSS-Protection "1; mode=block"
+	header Referrer-Policy "strict-origin-when-cross-origin"
+
+	@api path /api*
+	handle @api {
+		reverse_proxy backend:80
+	}
+
+	@pma path /pma*
+	handle @pma {
+		reverse_proxy backend:80
+	}
+
+	@attachments path /attachments*
+	handle @attachments {
+		reverse_proxy backend:80
+	}
+
+	@addons path /addons*
+	handle @addons {
+		reverse_proxy backend:80
+	}
+
+	@components path /components*
+	handle @components {
+		reverse_proxy backend:80
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000 {
+			transport http {
+				read_timeout 86400s
+			}
+		}
+	}
+}

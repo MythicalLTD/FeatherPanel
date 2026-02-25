@@ -20,11 +20,11 @@ COPY . .
 # Build the application in standalone mode
 RUN pnpm build
 
-# Production stage with nginx + Node.js
+# Production stage with Caddy + Node.js
 FROM node:22-alpine AS production
 
-# Install nginx and supervisor
-RUN apk add --no-cache nginx supervisor
+# Install Caddy and supervisor (Alpine community repo)
+RUN apk add --no-cache caddy supervisor
 
 # Set working directory
 WORKDIR /app
@@ -37,8 +37,8 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/http.d/default.conf
+# Copy Caddy configuration
+COPY Caddyfile /etc/caddy/Caddyfile
 
 # Create supervisor configuration
 RUN mkdir -p /var/log/supervisor && \
@@ -50,6 +50,7 @@ RUN mkdir -p /var/log/supervisor && \
     echo 'command=node server.js' >> /etc/supervisord.conf && \
     echo 'environment=HOSTNAME="0.0.0.0"' >> /etc/supervisord.conf && \
     echo 'directory=/app' >> /etc/supervisord.conf && \
+    echo 'priority=1' >> /etc/supervisord.conf && \
     echo 'autostart=true' >> /etc/supervisord.conf && \
     echo 'autorestart=true' >> /etc/supervisord.conf && \
     echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf && \
@@ -57,8 +58,9 @@ RUN mkdir -p /var/log/supervisor && \
     echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf && \
     echo 'stderr_logfile_maxbytes=0' >> /etc/supervisord.conf && \
     echo '' >> /etc/supervisord.conf && \
-    echo '[program:nginx]' >> /etc/supervisord.conf && \
-    echo 'command=nginx -g "daemon off;"' >> /etc/supervisord.conf && \
+    echo '[program:caddy]' >> /etc/supervisord.conf && \
+    echo 'command=caddy run --config /etc/caddy/Caddyfile --adapter caddyfile' >> /etc/supervisord.conf && \
+    echo 'priority=10' >> /etc/supervisord.conf && \
     echo 'autostart=true' >> /etc/supervisord.conf && \
     echo 'autorestart=true' >> /etc/supervisord.conf && \
     echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf && \
@@ -66,8 +68,8 @@ RUN mkdir -p /var/log/supervisor && \
     echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf && \
     echo 'stderr_logfile_maxbytes=0' >> /etc/supervisord.conf
 
-# Expose port 80 (nginx)
+# Expose port 80 (Caddy)
 EXPOSE 80
 
-# Start supervisor to run both nginx and Next.js
+# Start supervisor to run both Caddy and Next.js
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

@@ -79,12 +79,19 @@ if [ $migration_exit_code -ne 0 ]; then
 fi
 echo "Migrations finished."
 
-# Set everything to be owned by www-data with 777 permissions
-# TODO: This takes a while
-echo "Setting ownership and permissions..."
-chown -R www-data:www-data /var/www/html
-chmod -R 777 /var/www/html
-echo "Ownership and permissions set."
+# Set ownership and permissions (first run only, and only where needed)
+PERMISSIONS_MARKER="/var/www/html/storage/.permissions_initialized"
+
+if [ ! -f "$PERMISSIONS_MARKER" ]; then
+    echo "Setting ownership and permissions (first run)..."
+    # Application needs write access mainly under storage/ and public/attachments
+    chown -R www-data:www-data /var/www/html/storage /var/www/html/public/attachments 2>/dev/null || true
+    chmod -R 770 /var/www/html/storage /var/www/html/public/attachments 2>/dev/null || true
+    touch "$PERMISSIONS_MARKER"
+    echo "Ownership and permissions set."
+else
+    echo "Skipping ownership and permissions (already initialized)."
+fi
 
 # Setup cron jobs (fallback method)
 echo "Setting up cron jobs..."
@@ -97,8 +104,5 @@ echo ""
 echo "🚀 FeatherPanel Docker is ready to work! 🚀"
 echo ""
 
-# Remove the default nginx index page
-rm /var/www/html/index.nginx-debian.html
-
-# Start the main application
+# Start FrankenPHP (Caddy + PHP) and cron via supervisord
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

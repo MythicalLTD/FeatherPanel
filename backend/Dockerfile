@@ -1,64 +1,41 @@
-# Use PHP 8.5 with FPM
-FROM php:8.5-fpm
+# FrankenPHP = Caddy + PHP in one (replaces nginx + php-fpm)
+# PHP 8.5 variant when available; use php8.4 if the build fails
+FROM dunglas/frankenphp:php8.5
 
-# Set working directory
+# Set working directory (app lives here; Caddyfile serves from public/)
 WORKDIR /var/www/html
 
 # Set environment variables to avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm
 
-# Install system dependencies with BuildKit cache mount
+# Disable HTTPS in container (reverse proxy handles TLS)
+ENV SERVER_NAME=:80
+
+# Install system dependencies (no nginx; supervisor for frankenphp + cron)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y \
     git \
     curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libzip-dev \
-    zip \
-    unzip \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
-    libmcrypt-dev \
-    libgd-dev \
-    libicu-dev \
-    libpq-dev \
-    libxml2-dev \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    nginx \
     supervisor \
     mariadb-client \
     cron \
-    pkg-config \
-    libsasl2-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions, including PostgreSQL support
-# Note: pdo, json, openssl, curl, fileinfo, xml, dom, sodium, exif, pcntl, opcache are built-in
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_mysql \
-        pdo_pgsql \
-        pgsql \
-        mbstring \
-        zip \
-        gd \
-        intl \
-        bcmath \
-		mysqli
-
-# Install Redis extension with BuildKit cache mount
-RUN --mount=type=cache,target=/tmp/pecl-cache \
-    pecl install redis && docker-php-ext-enable redis
-
-# Install MongoDB extension with BuildKit cache mount
-#RUN --mount=type=cache,target=/tmp/pecl-cache \
-#    pecl install mongodb && docker-php-ext-enable mongodb
+# PHP extensions (match previous FPM setup: DB, Redis, GD, intl, etc.)
+# install-php-extensions pulls build deps per extension
+RUN install-php-extensions \
+    pdo_mysql \
+    pdo_pgsql \
+    pgsql \
+    mysqli \
+    mbstring \
+    gd \
+    intl \
+    bcmath \
+    zip \
+    redis
 
 # Reset environment variables
 ENV DEBIAN_FRONTEND=
@@ -76,7 +53,7 @@ RUN --mount=type=cache,target=/root/.composer/cache \
 # Copy remaining application files with correct ownership
 COPY --chown=www-data:www-data . .
 
-# Configure PHP (based on health check recommendations)
+# Custom PHP configuration (same limits as before)
 RUN echo 'memory_limit = -1\n\
 upload_max_filesize = 100M\n\
 post_max_size = 100M\n\
@@ -96,16 +73,14 @@ opcache.max_accelerated_files = 4000\n\
 opcache.revalidate_freq = 2\n\
 opcache.fast_shutdown = 1' > /usr/local/etc/php/conf.d/custom.ini
 
-# Configure nginx
-COPY nginx.conf /etc/nginx/sites-available/default
-RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+# Caddy/FrankenPHP configuration (replaces nginx.conf)
+COPY Caddyfile /etc/caddy/Caddyfile
 
-# Configure supervisor
+# Configure supervisor (frankenphp + cron only)
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Create necessary directories
 RUN mkdir -p /var/log/supervisor \
-    && mkdir -p /run/php \
     && mkdir -p /var/www/html/storage/logs \
     && mkdir -p /var/www/html/storage/cache \
     && mkdir -p /var/www/html/storage/uploads \
@@ -120,16 +95,14 @@ RUN chmod +x /usr/local/bin/init.sh
 RUN mkdir -p /var/spool/cron/crontabs \
     && mkdir -p /var/www/html/storage/cron
 
-# Copy and make cron setup script executable
+# Copy and make cron scripts executable
 COPY setup-cron.sh /usr/local/bin/setup-cron.sh
 RUN chmod +x /usr/local/bin/setup-cron.sh
-
-# Copy and make cron runner script executable
 COPY cron-runner.sh /usr/local/bin/cron-runner.sh
 RUN chmod +x /usr/local/bin/cron-runner.sh
 
 # Expose port 80
 EXPOSE 80
 
-# Start with init script
+# Start with init script (migrations, then supervisord runs frankenphp + cron)
 CMD ["/usr/local/bin/init.sh"]

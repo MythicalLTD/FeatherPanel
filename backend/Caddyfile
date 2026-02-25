@@ -1,0 +1,29 @@
+# FrankenPHP (Caddy + PHP) - FeatherPanel
+# Replaces nginx + php-fpm. PHP runs in-process via php_server.
+
+:80 {
+	root * /var/www/html/public
+	encode zstd br gzip
+	header Server FeatherPanel
+
+	# Match nginx: allow larger uploads and long timeouts
+	request_body {
+		max_size 250MB
+	}
+
+	# Block executing PHP in user-writable paths (security)
+	@block_php path_regexp ^/(attachments|uploads|storage)/.*\.php$
+	handle @block_php {
+		respond 403
+	}
+
+	# Deny .ht* files
+	@dot_ht path_regexp /\.ht
+	handle @dot_ht {
+		respond 403
+	}
+
+	php_server {
+		try_files {path} index.php
+	}
+}
