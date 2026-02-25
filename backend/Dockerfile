@@ -12,12 +12,14 @@ ENV TERM=xterm
 # Disable HTTPS in container (reverse proxy handles TLS)
 ENV SERVER_NAME=:80
 
-# Install system dependencies (no nginx; supervisor for frankenphp + cron)
+# Install system dependencies (no nginx; supervisor for frankenphp + cron, plus unzip for addons)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y \
     git \
     curl \
+    zip \
+    unzip \
     supervisor \
     mariadb-client \
     cron \
