@@ -45,6 +45,11 @@ function joinPath(directory: string, name: string): string {
     return directory.endsWith('/') ? `${directory}${name}` : `${directory}/${name}`;
 }
 
+function normalizeDirectory(path: string | null | undefined): string {
+    if (!path || path === '/') return '/';
+    return path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
+}
+
 function getParentDirectory(path: string): string {
     if (!path || path === '/') return '/';
     const normalized = path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
@@ -97,9 +102,12 @@ export default function ServerFilesIDEPage({
     const { file: initialFile, directory: initialDirectory } = use(searchParams);
 
     const [currentDirectory, setCurrentDirectory] = useState<string>(initialDirectory || '/');
+    const [currentFileDirectory, setCurrentFileDirectory] = useState<string>(initialDirectory || '/');
     const [currentFileName, setCurrentFileName] = useState<string | null>(initialFile || null);
 
     const [files, setFiles] = useState<FileObject[]>([]);
+    const [directoryCache, setDirectoryCache] = useState<Record<string, FileObject[]>>({});
+    const [expandedDirectories, setExpandedDirectories] = useState<Set<string>>(new Set());
     const [filesLoading, setFilesLoading] = useState(true);
     const [fileFilter, setFileFilter] = useState('');
 
@@ -123,8 +131,8 @@ export default function ServerFilesIDEPage({
     const appLogo = settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png';
 
     const fullPath = useMemo(
-        () => (currentFileName ? joinPath(currentDirectory || '/', currentFileName) : ''),
-        [currentDirectory, currentFileName],
+        () => (currentFileName ? joinPath(currentFileDirectory || '/', currentFileName) : ''),
+        [currentFileDirectory, currentFileName],
     );
 
     const hasUnsavedChanges = useMemo(() => content !== originalContent, [content, originalContent]);
@@ -135,19 +143,29 @@ export default function ServerFilesIDEPage({
         return files.filter((f) => f.name.toLowerCase().includes(lower));
     }, [files, fileFilter]);
 
-    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; file: FileObject } | null>(null);
+    const [contextMenu, setContextMenu] = useState<{
+        x: number;
+        y: number;
+        file: FileObject;
+        directory: string;
+    } | null>(null);
 
     const fetchDirectory = useCallback(
         async (directory: string) => {
             if (!uuidShort || !canRead) return;
             setFilesLoading(true);
             try {
-                const data = await filesApi.getFiles(uuidShort, directory || '/');
+                const dir = normalizeDirectory(directory || '/');
+                const data = await filesApi.getFiles(uuidShort, dir || '/');
                 const sorted = [...data].sort((a, b) => {
                     if (a.isFile === b.isFile) return a.name.localeCompare(b.name);
                     return a.isFile ? 1 : -1; // folders first
                 });
                 setFiles(sorted);
+                setDirectoryCache((prev) => ({
+                    ...prev,
+                    [dir]: sorted,
+                }));
             } catch (error) {
                 console.error(error);
                 toast.error(t('files.editor.load_error'));
@@ -242,20 +260,31 @@ export default function ServerFilesIDEPage({
         editorRef.current = editor;
     };
 
-    const handleOpenFile = async (file: FileObject) => {
+    const handleOpenFile = async (file: FileObject, directoryOverride?: string) => {
+        // Only handles files; folders are controlled by the tree expand/collapse logic
+        if (!file.isFile) return;
         setContextMenu(null);
-        if (!file.isFile) {
-            // Navigate into folder
-            if (!confirmNavigationIfDirty()) return;
-            setCurrentDirectory(joinPath(currentDirectory || '/', file.name));
-            setCurrentFileName(null);
-            setContent('');
-            setOriginalContent('');
-            return;
-        }
-
         if (!confirmNavigationIfDirty()) return;
+        const parentDir = normalizeDirectory(directoryOverride || currentDirectory || '/');
+        setCurrentFileDirectory(parentDir);
         setCurrentFileName(file.name);
+
+        // Update URL so the current file is reflected in the query params
+        try {
+            const params = new URLSearchParams();
+            if (parentDir && parentDir !== '/') {
+                params.set('directory', parentDir);
+            }
+            params.set('file', file.name);
+            const query = params.toString();
+            router.replace(
+                query
+                    ? `/server/${uuidShort}/files/ide?${query}`
+                    : `/server/${uuidShort}/files/ide`,
+            );
+        } catch {
+            // Ignore URL update errors, editor should still function
+        }
     };
 
     const handleGoUp = () => {
@@ -346,7 +375,76 @@ export default function ServerFilesIDEPage({
                         </Button>
                     </div>
                     <div className='px-3 py-2 border-b border-border/30 flex flex-col gap-1'>
-                        <div className='text-[11px] text-muted-foreground truncate'>
+                        <div
+                            className='text-[11px] text-muted-foreground truncate'
+                            onDragOver={(e) => {
+                                e.preventDefault();
+                            }}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const raw =
+                                    e.dataTransfer?.getData('application/x-feather-file') ||
+                                    e.dataTransfer?.getData('text/plain');
+                                if (!raw) return;
+                                try {
+                                    const parsed = JSON.parse(raw) as {
+                                        path: string;
+                                        name: string;
+                                        isFile: boolean;
+                                    };
+                                    const sourcePath = normalizeDirectory(parsed.path);
+                                    if (!sourcePath) return;
+
+                                    // Drop on the path label moves into the visible "main" directory.
+                                    const destDir = normalizeDirectory(currentDirectory || '/');
+
+                                    // Prevent moving a directory into itself or its descendants
+                                    if (
+                                        !parsed.isFile &&
+                                        (destDir === sourcePath || destDir.startsWith(sourcePath + '/'))
+                                    ) {
+                                        return;
+                                    }
+
+                                    void (async () => {
+                                        try {
+                                            const root = '/';
+                                            const fromRel = sourcePath.startsWith('/')
+                                                ? sourcePath.slice(1)
+                                                : sourcePath;
+                                            const fullTarget = joinPath(destDir || '/', parsed.name);
+                                            const toRel = fullTarget.replace(/^\/+/, '');
+
+                                            await filesApi.moveFile(uuidShort, root, [{ from: fromRel, to: toRel }]);
+
+                                            const currentFullPath =
+                                                currentFileName && currentFileDirectory
+                                                    ? normalizeDirectory(
+                                                          joinPath(currentFileDirectory, currentFileName),
+                                                      )
+                                                    : '';
+                                            if (currentFullPath && currentFullPath === sourcePath) {
+                                                setCurrentFileName(null);
+                                                setContent('');
+                                                setOriginalContent('');
+                                            }
+
+                                            const sourceParent = getParentDirectory(sourcePath);
+                                            await Promise.all([
+                                                fetchDirectory(sourceParent),
+                                                fetchDirectory(destDir || '/'),
+                                            ]);
+                                        } catch (error) {
+                                            console.error(error);
+                                            toast.error(t('files.editor.save_error'));
+                                        }
+                                    })();
+                                } catch {
+                                    // ignore malformed payloads
+                                }
+                            }}
+                        >
                             {currentDirectory || '/'}
                         </div>
                         <div className='flex items-center gap-2'>
@@ -404,91 +502,371 @@ export default function ServerFilesIDEPage({
                             </Button>
                         </div>
                     </div>
-                    <div className='flex-1 overflow-auto custom-scrollbar'>
-                        {filesLoading ? (
-                            <div className='p-4 text-xs text-muted-foreground flex items-center gap-2'>
-                                <Loader2 className='h-3 w-3 animate-spin' />
-                                {t('servers.loading')}
-                            </div>
-                        ) : filteredFiles.length === 0 ? (
-                            <div className='p-4 text-xs text-muted-foreground'>
-                                {t('files.list.empty_description')}
-                            </div>
-                        ) : (
-                            <ul className='p-2 space-y-0.5 text-sm'>
-                                {filteredFiles.map((file) => {
-                                    const isActive = file.isFile && file.name === currentFileName;
+                    <div
+                        className='flex-1 overflow-auto custom-scrollbar'
+                        onDragOver={(e) => {
+                            // Allow dropping anywhere in the sidebar to move into the visible main directory
+                            e.preventDefault();
+                        }}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            const raw =
+                                e.dataTransfer?.getData('application/x-feather-file') ||
+                                e.dataTransfer?.getData('text/plain');
+                            if (!raw) return;
+                            try {
+                                const parsed = JSON.parse(raw) as {
+                                    path: string;
+                                    name: string;
+                                    isFile: boolean;
+                                };
+                                const sourcePath = normalizeDirectory(parsed.path);
+                                if (!sourcePath) return;
+
+                                const destDir = normalizeDirectory(currentDirectory || '/');
+
+                                // Prevent moving a directory into itself or its descendants
+                                if (
+                                    !parsed.isFile &&
+                                    (destDir === sourcePath || destDir.startsWith(sourcePath + '/'))
+                                ) {
+                                    return;
+                                }
+
+                                void (async () => {
+                                    try {
+                                        const root = '/';
+                                        const fromRel = sourcePath.startsWith('/') ? sourcePath.slice(1) : sourcePath;
+                                        const fullTarget = joinPath(destDir || '/', parsed.name);
+                                        const toRel = fullTarget.replace(/^\/+/, '');
+
+                                        await filesApi.moveFile(uuidShort, root, [{ from: fromRel, to: toRel }]);
+
+                                        const currentFullPath =
+                                            currentFileName && currentFileDirectory
+                                                ? normalizeDirectory(
+                                                      joinPath(currentFileDirectory, currentFileName),
+                                                  )
+                                                : '';
+                                        if (currentFullPath && currentFullPath === sourcePath) {
+                                            setCurrentFileName(null);
+                                            setContent('');
+                                            setOriginalContent('');
+                                        }
+
+                                        const sourceParent = getParentDirectory(sourcePath);
+                                        await Promise.all([
+                                            fetchDirectory(sourceParent),
+                                            fetchDirectory(destDir || '/'),
+                                        ]);
+                                    } catch (error) {
+                                        console.error(error);
+                                        toast.error(t('files.editor.save_error'));
+                                    }
+                                })();
+                            } catch {
+                                // ignore malformed payloads
+                            }
+                        }}
+                    >
+                        {fileFilter.trim() ? (
+                            filesLoading ? (
+                                <div className='p-4 text-xs text-muted-foreground flex items-center gap-2'>
+                                    <Loader2 className='h-3 w-3 animate-spin' />
+                                    {t('servers.loading')}
+                                </div>
+                            ) : filteredFiles.length === 0 ? (
+                                <div className='p-4 text-xs text-muted-foreground'>
+                                    {t('files.list.empty_description')}
+                                </div>
+                            ) : (
+                                <ul className='p-2 space-y-0.5 text-sm'>
+                                    {filteredFiles.map((file) => {
+                                        const isActive = file.isFile && file.name === currentFileName;
+                                        return (
+                                            <li key={file.name}>
+                                                <button
+                                                    type='button'
+                                                    onClick={() => {
+                                                        if (file.isFile) {
+                                                            void handleOpenFile(file);
+                                                        } else {
+                                                            // In search mode, clicking a folder navigates into it
+                                                            if (!confirmNavigationIfDirty()) return;
+                                                            const base = normalizeDirectory(currentDirectory || '/');
+                                                            const nextDir = joinPath(base || '/', file.name);
+                                                            setCurrentDirectory(nextDir);
+                                                            setExpandedDirectories((prev) => {
+                                                                const next = new Set(prev);
+                                                                next.add(normalizeDirectory(nextDir));
+                                                                return next;
+                                                            });
+                                                            void fetchDirectory(nextDir);
+                                                            setFileFilter('');
+                                                        }
+                                                    }}
+                                                    onContextMenu={(e) => {
+                                                        e.preventDefault();
+                                                        setContextMenu({
+                                                            x: e.clientX,
+                                                            y: e.clientY,
+                                                            file,
+                                                            directory: normalizeDirectory(currentDirectory || '/'),
+                                                        });
+                                                    }}
+                                                    className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors ${
+                                                        isActive
+                                                            ? 'bg-primary/10 text-primary'
+                                                            : 'hover:bg-muted text-foreground'
+                                                    }`}
+                                                >
+                                                    {file.isFile ? (
+                                                        <FileText className='h-4 w-4 text-muted-foreground' />
+                                                    ) : (
+                                                        <Folder className='h-4 w-4 text-muted-foreground' />
+                                                    )}
+                                                    <span className='truncate flex-1'>{file.name}</span>
+                                                    {!file.isFile && <ChevronRight className='h-3 w-3 opacity-40' />}
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            )
+                        ) : (() => {
+                            const rootDir = normalizeDirectory(currentDirectory || '/');
+                            const rootFiles = directoryCache[rootDir] || files;
+
+                            if (filesLoading && rootFiles.length === 0) {
+                                return (
+                                    <div className='p-4 text-xs text-muted-foreground flex items-center gap-2'>
+                                        <Loader2 className='h-3 w-3 animate-spin' />
+                                        {t('servers.loading')}
+                                    </div>
+                                );
+                            }
+
+                            if (!rootFiles || rootFiles.length === 0) {
+                                return (
+                                    <div className='p-4 text-xs text-muted-foreground'>
+                                        {t('files.list.empty_description')}
+                                    </div>
+                                );
+                            }
+
+                            const renderDirectory = (directory: string, level: number) => {
+                                const dirKey = normalizeDirectory(directory || '/');
+                                const entries = directoryCache[dirKey] || (dirKey === rootDir ? rootFiles : []);
+
+                                if (!entries || entries.length === 0) return null;
+
+                                return entries.map((file) => {
                                     const isFolder = !file.isFile;
+                                    const entryPath = normalizeDirectory(joinPath(dirKey || '/', file.name));
+                                    const isExpanded = expandedDirectories.has(entryPath);
+                                    const isActiveFile =
+                                        file.isFile && !!fullPath && entryPath === normalizeDirectory(fullPath);
+
                                     return (
-                                        <li key={file.name}>
+                                        <li key={entryPath}>
                                             <button
                                                 type='button'
-                                                onClick={() => handleOpenFile(file)}
+                                                draggable
+                                                onDragStart={(e) => {
+                                                    const payload = JSON.stringify({
+                                                        path: entryPath,
+                                                        name: file.name,
+                                                        isFile: file.isFile,
+                                                    });
+                                                    e.dataTransfer?.setData('application/x-feather-file', payload);
+                                                    e.dataTransfer?.setData('text/plain', payload);
+                                                }}
+                                                onDragOver={(e) => {
+                                                    e.preventDefault();
+                                                }}
+                                                onDrop={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    const raw =
+                                                        e.dataTransfer?.getData('application/x-feather-file') ||
+                                                        e.dataTransfer?.getData('text/plain');
+                                                    if (!raw) return;
+                                                    try {
+                                                        const parsed = JSON.parse(raw) as {
+                                                            path: string;
+                                                            name: string;
+                                                            isFile: boolean;
+                                                        };
+                                                        const sourcePath = normalizeDirectory(parsed.path);
+                                                        if (!sourcePath) return;
+
+                                                        // If dropping on a folder row, move into that folder.
+                                                        // If dropping on a file row, move into the parent directory (dirKey).
+                                                        const destDir = isFolder ? entryPath : dirKey;
+
+                                                        if (!destDir || !sourcePath || destDir === sourcePath) return;
+
+                                                        // Prevent moving a directory into itself or its descendants
+                                                        if (
+                                                            !parsed.isFile &&
+                                                            destDir.startsWith(sourcePath + '/')
+                                                        ) {
+                                                            return;
+                                                        }
+
+                                                        void (async () => {
+                                                            try {
+                                                                const root = '/';
+                                                                const fromRel = sourcePath.startsWith('/')
+                                                                    ? sourcePath.slice(1)
+                                                                    : sourcePath;
+                                                                const fullTarget = joinPath(destDir, parsed.name);
+                                                                const toRel = fullTarget.replace(/^\/+/, '');
+
+                                                                await filesApi.moveFile(uuidShort, root, [
+                                                                    { from: fromRel, to: toRel },
+                                                                ]);
+
+                                                                const activePath = fullPath
+                                                                    ? normalizeDirectory(fullPath)
+                                                                    : '';
+                                                                if (activePath && activePath === sourcePath) {
+                                                                    setCurrentFileName(null);
+                                                                    setContent('');
+                                                                    setOriginalContent('');
+                                                                }
+
+                                                                const sourceParent = getParentDirectory(sourcePath);
+                                                                await Promise.all([
+                                                                    fetchDirectory(sourceParent),
+                                                                    fetchDirectory(destDir),
+                                                                ]);
+                                                            } catch (error) {
+                                                                console.error(error);
+                                                                toast.error(t('files.editor.save_error'));
+                                                            }
+                                                        })();
+                                                    } catch {
+                                                        // ignore malformed payloads
+                                                    }
+                                                }}
+                                                onClick={() =>
+                                                    isFolder
+                                                        ? setExpandedDirectories((prev) => {
+                                                              const next = new Set(prev);
+                                                              if (isExpanded) {
+                                                                  next.delete(entryPath);
+                                                              } else {
+                                                                  next.add(entryPath);
+                                                                  if (!directoryCache[entryPath]) {
+                                                                      void fetchDirectory(entryPath);
+                                                                  }
+                                                              }
+                                                              return next;
+                                                          })
+                                                        : handleOpenFile(file, dirKey)
+                                                }
                                                 onContextMenu={(e) => {
                                                     e.preventDefault();
                                                     setContextMenu({
                                                         x: e.clientX,
                                                         y: e.clientY,
                                                         file,
+                                                        directory: dirKey,
                                                     });
                                                 }}
-                                                draggable
-                                                onDragStart={(e) => {
-                                                    e.dataTransfer?.setData('text/plain', file.name);
-                                                }}
-                                                onDragOver={(e) => {
-                                                    if (isFolder) {
-                                                        e.preventDefault();
-                                                    }
-                                                }}
-                                                onDrop={(e) => {
-                                                    e.preventDefault();
-                                                    const draggedName = e.dataTransfer?.getData('text/plain');
-                                                    if (!draggedName || !isFolder || draggedName === file.name) return;
-                                                    // Move dragged item into this folder
-                                                    void (async () => {
-                                                        try {
-                                                            const root = currentDirectory || '/';
-                                                            await filesApi.moveFile(uuidShort, root, [
-                                                                {
-                                                                    from: draggedName,
-                                                                    to: `${file.name}/${draggedName}`.replace(
-                                                                        /\/\//g,
-                                                                        '/',
-                                                                    ),
-                                                                },
-                                                            ]);
-                                                            if (draggedName === currentFileName) {
-                                                                setCurrentFileName(null);
-                                                                setContent('');
-                                                                setOriginalContent('');
-                                                            }
-                                                            await fetchDirectory(root);
-                                                        } catch (error) {
-                                                            console.error(error);
-                                                            toast.error(t('files.editor.save_error'));
-                                                        }
-                                                    })();
-                                                }}
                                                 className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors ${
-                                                    isActive
+                                                    isActiveFile
                                                         ? 'bg-primary/10 text-primary'
                                                         : 'hover:bg-muted text-foreground'
                                                 }`}
+                                                style={{ paddingLeft: 8 + level * 12 }}
                                             >
-                                                {file.isFile ? (
-                                                    <FileText className='h-4 w-4 text-muted-foreground' />
-                                                ) : (
+                                                {isFolder ? (
                                                     <Folder className='h-4 w-4 text-muted-foreground' />
+                                                ) : (
+                                                    <FileText className='h-4 w-4 text-muted-foreground' />
                                                 )}
                                                 <span className='truncate flex-1'>{file.name}</span>
-                                                {!file.isFile && <ChevronRight className='h-3 w-3 opacity-40' />}
+                                                {isFolder && (
+                                                    <div className='flex items-center gap-1'>
+                                                        <button
+                                                            type='button'
+                                                            className='p-0.5 rounded hover:bg-muted text-muted-foreground'
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const root = entryPath || '/';
+                                                                const name = window.prompt(
+                                                                    t('files.toolbar.new_file'),
+                                                                    'new-file.txt',
+                                                                );
+                                                                if (!name) return;
+                                                                const targetPath = joinPath(root, name);
+                                                                void (async () => {
+                                                                    try {
+                                                                        await filesApi.saveFileContent(
+                                                                            uuidShort,
+                                                                            targetPath,
+                                                                            '',
+                                                                        );
+                                                                        await fetchDirectory(root);
+                                                                    } catch (error) {
+                                                                        console.error(error);
+                                                                        toast.error(t('files.editor.save_error'));
+                                                                    }
+                                                                })();
+                                                            }}
+                                                        >
+                                                            <FileText className='h-3 w-3' />
+                                                        </button>
+                                                        <button
+                                                            type='button'
+                                                            className='p-0.5 rounded hover:bg-muted text-muted-foreground'
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const root = entryPath || '/';
+                                                                const name = window.prompt(
+                                                                    t('files.toolbar.new_folder'),
+                                                                    'new-folder',
+                                                                );
+                                                                if (!name) return;
+                                                                void (async () => {
+                                                                    try {
+                                                                        await filesApi.createFolder(
+                                                                            uuidShort,
+                                                                            root,
+                                                                            name,
+                                                                        );
+                                                                        await fetchDirectory(root);
+                                                                    } catch (error) {
+                                                                        console.error(error);
+                                                                        toast.error(t('files.messages.upload_failed'));
+                                                                    }
+                                                                })();
+                                                            }}
+                                                        >
+                                                            <Folder className='h-3 w-3' />
+                                                        </button>
+                                                        <ChevronRight
+                                                            className={`h-3 w-3 opacity-40 transition-transform ${
+                                                                isExpanded ? 'rotate-90' : ''
+                                                            }`}
+                                                        />
+                                                    </div>
+                                                )}
                                             </button>
+                                            {isFolder && isExpanded && (
+                                                <ul className='space-y-0.5'>
+                                                    {renderDirectory(entryPath, level + 1)}
+                                                </ul>
+                                            )}
                                         </li>
                                     );
-                                })}
-                            </ul>
-                        )}
+                                });
+                            };
+
+                            return <ul className='p-2 space-y-0.5 text-sm'>{renderDirectory(rootDir, 0)}</ul>;
+                        })()}
                     </div>
                     <div className='px-3 py-2 border-t border-border/50 flex items-center justify-between'>
                         <Button
@@ -609,17 +987,38 @@ export default function ServerFilesIDEPage({
                     <button
                         type='button'
                         className='w-full px-3 py-1.5 text-left hover:bg-muted'
-                        onClick={() => handleOpenFile(contextMenu.file)}
+                        onClick={() => {
+                            if (contextMenu.file.isFile) {
+                                void handleOpenFile(contextMenu.file, contextMenu.directory);
+                            } else {
+                                const dirPath = normalizeDirectory(
+                                    joinPath(contextMenu.directory || '/', contextMenu.file.name),
+                                );
+                                setExpandedDirectories((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(dirPath)) {
+                                        next.delete(dirPath);
+                                    } else {
+                                        next.add(dirPath);
+                                        if (!directoryCache[dirPath]) {
+                                            void fetchDirectory(dirPath);
+                                        }
+                                    }
+                                    return next;
+                                });
+                            }
+                            setContextMenu(null);
+                        }}
                     >
-                        {contextMenu.file.isFile ? t('common.open') : t('common.open')}
+                        {t('common.view')}
                     </button>
                     <button
                         type='button'
                         className='w-full px-3 py-1.5 text-left hover:bg-muted'
                         onClick={async () => {
-                            const root = currentDirectory || '/';
+                            const root = contextMenu.directory || currentDirectory || '/';
                             const name = window.prompt(
-                                t('files.dialogs.rename.title'),
+                                t('common.edit'),
                                 contextMenu.file.name,
                             );
                             setContextMenu(null);
@@ -629,27 +1028,25 @@ export default function ServerFilesIDEPage({
                                     { from: contextMenu.file.name, to: name },
                                 ]);
                                 if (currentFileName === contextMenu.file.name) {
+                                    // Just update the name and keep current editor content;
+                                    // future saves will use the new fullPath.
                                     setCurrentFileName(name);
-                                    await fetchContent();
-                                } else {
-                                    await fetchDirectory(root);
                                 }
+                                await fetchDirectory(root);
                             } catch (error) {
                                 console.error(error);
                                 toast.error(t('files.editor.save_error'));
                             }
                         }}
                     >
-                        {t('files.dialogs.rename.rename')}
+                        {t('common.edit')}
                     </button>
                     <button
                         type='button'
                         className='w-full px-3 py-1.5 text-left text-destructive hover:bg-destructive/10'
                         onClick={async () => {
-                            const root = currentDirectory || '/';
-                            const ok = window.confirm(
-                                t('files.dialogs.delete.confirm_single', { name: contextMenu.file.name }),
-                            );
+                            const root = contextMenu.directory || currentDirectory || '/';
+                            const ok = window.confirm(t('common.delete_confirm_description'));
                             setContextMenu(null);
                             if (!ok) return;
                             try {
@@ -666,21 +1063,45 @@ export default function ServerFilesIDEPage({
                             }
                         }}
                     >
-                        {t('files.toolbar.delete', { defaultValue: 'Delete' })}
+                        {t('files.dialogs.delete.delete')}
                     </button>
                     <button
                         type='button'
                         className='w-full px-3 py-1.5 text-left hover:bg-muted'
                         onClick={async () => {
+                            const baseDir = contextMenu.directory || currentDirectory || '/';
                             const root = contextMenu.file.isFile
-                                ? currentDirectory || '/'
-                                : joinPath(currentDirectory || '/', contextMenu.file.name);
+                                ? baseDir || '/'
+                                : joinPath(baseDir || '/', contextMenu.file.name);
+                            setContextMenu(null);
+                            const name = window.prompt(t('files.toolbar.new_file'), 'new-file.txt');
+                            if (!name) return;
+                            const targetPath = joinPath(root, name);
+                            try {
+                                await filesApi.saveFileContent(uuidShort, targetPath, '');
+                                await fetchDirectory(root);
+                            } catch (error) {
+                                console.error(error);
+                                toast.error(t('files.editor.save_error'));
+                            }
+                        }}
+                    >
+                        {t('files.toolbar.new_file')}
+                    </button>
+                    <button
+                        type='button'
+                        className='w-full px-3 py-1.5 text-left hover:bg-muted'
+                        onClick={async () => {
+                            const baseDir = contextMenu.directory || currentDirectory || '/';
+                            const root = contextMenu.file.isFile
+                                ? baseDir || '/'
+                                : joinPath(baseDir || '/', contextMenu.file.name);
                             setContextMenu(null);
                             const name = window.prompt(t('files.toolbar.new_folder'), 'new-folder');
                             if (!name) return;
                             try {
                                 await filesApi.createFolder(uuidShort, root, name);
-                                await fetchDirectory(currentDirectory || '/');
+                                await fetchDirectory(root);
                             } catch (error) {
                                 console.error(error);
                                 toast.error(t('files.messages.upload_failed'));
