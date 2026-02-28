@@ -738,7 +738,7 @@ export default function ServersPage() {
                                                         disabled={!pagination.has_prev || loading}
                                                         className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
                                                     >
-                                                        <ChevronLeft className='h-5 w-5' />
+                                                        <ChevronLeft className='h-4 w-4' />
                                                         {t('common.previous')}
                                                     </button>
                                                     <span className='text-sm font-medium'>
@@ -753,7 +753,7 @@ export default function ServersPage() {
                                                         className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
                                                     >
                                                         {t('common.next')}
-                                                        <ChevronRight className='h-5 w-5' />
+                                                        <ChevronRight className='h-4 w-4' />
                                                     </button>
                                                 </div>
                                             )}
