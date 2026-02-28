@@ -65,12 +65,24 @@ async function collectFilesFromDataTransfer(dt: DataTransfer): Promise<FileWithP
         } else if (entry.isDirectory) {
             const dir = entry as FileSystemDirectoryEntry;
             const reader = dir.createReader();
-            const entries = await new Promise<FileSystemEntry[]>((resolve, reject) => {
-                reader.readEntries(resolve, reject);
-            });
             const dirName = basePath ? `${basePath}/${dir.name}` : dir.name;
-            for (const child of entries) {
-                await readEntry(child as FileSystemFileEntry | FileSystemDirectoryEntry, dirName);
+
+            // `readEntries` may return entries in batches; keep reading until no more entries are returned.
+            // See: FileSystemDirectoryReader.readEntries HTML5 File API behavior.
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+                const entries = await new Promise<FileSystemEntry[]>((resolve, reject) => {
+                    reader.readEntries(resolve, reject);
+                });
+                if (!entries.length) {
+                    break;
+                }
+                for (const child of entries) {
+                    await readEntry(
+                        child as FileSystemFileEntry | FileSystemDirectoryEntry,
+                        dirName,
+                    );
+                }
             }
         }
     };
