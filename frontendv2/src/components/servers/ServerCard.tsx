@@ -312,7 +312,7 @@ export function ServerCard({
                                         ))}
                                         {folders.length === 0 && (
                                             <div className='px-4 py-2 text-sm text-muted-foreground italic'>
-                                                No folders created
+                                                {t('servers.noFolders')}
                                             </div>
                                         )}
                                     </div>
