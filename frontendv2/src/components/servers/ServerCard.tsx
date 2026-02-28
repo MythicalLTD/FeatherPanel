@@ -289,7 +289,7 @@ export function ServerCard({
                                 ) : (
                                     <div className='px-1 py-1'>
                                         <div className='px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
-                                            Move to Folder
+                                            {t('servers.moveToFolder')}
                                         </div>
                                         {folders.map((folder) => (
                                             <MenuItem key={folder.id}>
