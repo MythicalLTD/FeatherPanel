@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 /*
 This file is part of FeatherPanel.
 
@@ -57,6 +58,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { copyToClipboard, formatFileSize } from '@/lib/utils';
 
 interface Category {
@@ -397,7 +399,74 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
 
                                 {previewMode ? (
                                     <div className='prose prose-invert max-w-none min-h-[400px] p-6 rounded-2xl bg-muted/30 border border-border/50'>
-                                        <ReactMarkdown>{form.content}</ReactMarkdown>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                p: ({ children }) => (
+                                                    <p className='leading-relaxed mb-4 text-muted-foreground/90'>{children}</p>
+                                                ),
+                                                code: ({ children }) => (
+                                                    <code className='bg-muted px-1.5 py-0.5 rounded text-primary font-mono text-sm'>
+                                                        {children}
+                                                    </code>
+                                                ),
+                                                pre: ({ children }) => (
+                                                    <pre className='bg-muted/50 p-4 rounded-xl border border-border/50 overflow-x-auto my-6'>
+                                                        {children}
+                                                    </pre>
+                                                ),
+                                                blockquote: ({ children }) => (
+                                                    <blockquote className='border-l-4 border-primary/30 pl-4 italic text-muted-foreground my-6'>
+                                                        {children}
+                                                    </blockquote>
+                                                ),
+                                                img: ({ node, ...props }) => (
+                                                    <img
+                                                        {...props}
+                                                        alt={props.alt || ''}
+                                                        className='rounded-xl border border-border/50 shadow-md my-8 mx-auto block max-w-full'
+                                                    />
+                                                ),
+                                                a: ({ node, href, children, ...props }) => {
+                                                    if (href && /\.(png|jpe?g|gif|webp|svg|bmp|ico)(\?.*)?$/i.test(href)) {
+                                                        return (
+                                                            <img
+                                                                src={href}
+                                                                alt={typeof children === 'string' ? children : ''}
+                                                                className='rounded-xl border border-border/50 shadow-md my-8 mx-auto block max-w-full'
+                                                            />
+                                                        );
+                                                    }
+                                                    return (
+                                                        <a {...props} href={href} className='text-primary hover:underline font-medium'>
+                                                            {children}
+                                                        </a>
+                                                    );
+                                                },
+                                                table: ({ children }) => (
+                                                    <div className='overflow-x-auto my-6'>
+                                                        <table className='w-full border-collapse text-sm'>{children}</table>
+                                                    </div>
+                                                ),
+                                                thead: ({ children }) => (
+                                                    <thead className='bg-muted/50'>{children}</thead>
+                                                ),
+                                                tbody: ({ children }) => (
+                                                    <tbody className='divide-y divide-border/50'>{children}</tbody>
+                                                ),
+                                                tr: ({ children }) => (
+                                                    <tr className='border-b border-border/50 hover:bg-muted/30 transition-colors'>{children}</tr>
+                                                ),
+                                                th: ({ children }) => (
+                                                    <th className='px-4 py-3 text-left font-semibold text-foreground border border-border/50'>{children}</th>
+                                                ),
+                                                td: ({ children }) => (
+                                                    <td className='px-4 py-3 text-muted-foreground border border-border/50'>{children}</td>
+                                                ),
+                                            }}
+                                        >
+                                            {form.content}
+                                        </ReactMarkdown>
                                     </div>
                                 ) : (
                                     <textarea
@@ -484,7 +553,10 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                                             size='icon'
                                                             className='h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity'
                                                             onClick={() => {
-                                                                const md = `[${att.file_name}](${att.file_path})`;
+                                                                const isImage = att.file_type.startsWith('image/');
+                                                                const md = isImage
+                                                                    ? `![${att.file_name}](${att.file_path})`
+                                                                    : `[${att.file_name}](${att.file_path})`;
                                                                 copyToClipboard(md, t);
                                                             }}
                                                         >

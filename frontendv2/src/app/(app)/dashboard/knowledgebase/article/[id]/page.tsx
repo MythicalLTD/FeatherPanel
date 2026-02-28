@@ -25,6 +25,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -134,6 +135,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                 <div className='p-8'>
                     <div className='prose prose-blue dark:prose-invert max-w-none'>
                         <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
                             components={{
                                 p: ({ children }) => (
                                     <p className='leading-relaxed mb-4 text-muted-foreground/90'>{children}</p>
@@ -153,19 +155,48 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                         {children}
                                     </blockquote>
                                 ),
-
                                 img: ({ node, ...props }) => (
                                     <img
                                         {...props}
                                         alt={props.alt || ''}
-                                        className='rounded-xl border border-border/50 shadow-md my-8 mx-auto'
+                                        className='rounded-xl border border-border/50 shadow-md my-8 mx-auto block max-w-full'
                                     />
                                 ),
-
-                                a: ({ node, ...props }) => (
-                                    <a {...props} className='text-primary hover:underline font-medium'>
-                                        {props.children}
-                                    </a>
+                                a: ({ node, href, children, ...props }) => {
+                                    if (href && /\.(png|jpe?g|gif|webp|svg|bmp|ico)(\?.*)?$/i.test(href)) {
+                                        return (
+                                            <img
+                                                src={href}
+                                                alt={typeof children === 'string' ? children : ''}
+                                                className='rounded-xl border border-border/50 shadow-md my-8 mx-auto block max-w-full'
+                                            />
+                                        );
+                                    }
+                                    return (
+                                        <a {...props} href={href} className='text-primary hover:underline font-medium'>
+                                            {children}
+                                        </a>
+                                    );
+                                },
+                                table: ({ children }) => (
+                                    <div className='overflow-x-auto my-6'>
+                                        <table className='w-full border-collapse text-sm'>{children}</table>
+                                    </div>
+                                ),
+                                thead: ({ children }) => (
+                                    <thead className='bg-muted/50'>{children}</thead>
+                                ),
+                                tbody: ({ children }) => (
+                                    <tbody className='divide-y divide-border/50'>{children}</tbody>
+                                ),
+                                tr: ({ children }) => (
+                                    <tr className='border-b border-border/50 hover:bg-muted/30 transition-colors'>{children}</tr>
+                                ),
+                                th: ({ children }) => (
+                                    <th className='px-4 py-3 text-left font-semibold text-foreground border border-border/50'>{children}</th>
+                                ),
+                                td: ({ children }) => (
+                                    <td className='px-4 py-3 text-muted-foreground border border-border/50'>{children}</td>
                                 ),
                             }}
                         >

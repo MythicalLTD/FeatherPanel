@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.3.1 STABLE
+
+### Fixed
+
+- The file manager upload button now allows you to choose between uploading files or folders, offering greater flexibility and convenience. by @nayskutzu
+- Fixed an issue where the server list index did not display in the correct visual order (Z position) by @nayskutzu
+- Image embedding and display within markdown is now fully functional. by @nayskutzu
+
+### Added
+
+- Full support for tables in markdown, enabling rich and structured content formatting. by @nayskutzu
+
+
 ## v1.3.0 STABLE
 
 ### Improved
