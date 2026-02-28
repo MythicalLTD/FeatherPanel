@@ -27,6 +27,22 @@ export type MotionLevel = 'full' | 'reduced' | 'none';
 /** UI font family preference. */
 type FontFamily = 'system' | 'inter' | 'rounded';
 
+function parseAndClamp(
+    value: string | null,
+    min: number,
+    max: number,
+    defaultValue: number,
+): number {
+    if (value == null) {
+        return defaultValue;
+    }
+    const parsed = parseInt(value, 10);
+    if (Number.isNaN(parsed)) {
+        return defaultValue;
+    }
+    return Math.min(max, Math.max(min, parsed));
+}
+
 interface ThemeContextType {
     theme: Theme;
     accentColor: string;
@@ -131,8 +147,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 : 'aurora',
         );
         setBackgroundImageState(savedBgImage || '');
-        setBackdropBlurState(savedBlur != null ? Math.min(24, Math.max(0, parseInt(savedBlur, 10) || 0)) : 0);
-        setBackdropDarkenState(savedDarken != null ? Math.min(100, Math.max(0, parseInt(savedDarken, 10) || 0)) : 0);
+        setBackdropBlurState(parseAndClamp(savedBlur, 0, 24, 0));
+        setBackdropDarkenState(parseAndClamp(savedDarken, 0, 100, 0));
         setBackgroundImageFitState(savedFit === 'contain' || savedFit === 'fill' ? savedFit : 'cover');
         const initialMotion: MotionLevel =
             savedMotion === 'full' || savedMotion === 'reduced' || savedMotion === 'none'
@@ -177,10 +193,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Apply admin-enforced defaults/locks from public settings (if present).
     // Note: we now enforce locks inside setter functions and initial state;
     // this effect only ensures settings are loaded before user interaction.
-    useEffect(() => {
-        if (!mounted || !settings) return;
-        // No-op: locks are respected in setters.
-    }, [mounted, settings]);
 
     useEffect(() => {
         if (!mounted || typeof document === 'undefined') return;
@@ -209,15 +221,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
 
     const setBackgroundAnimatedVariant = (variant: BackgroundAnimatedVariant) => {
-        // Background animated variant is implicitly controlled by background type lock;
-        // still allow variant changes unless background type itself is locked away from aurora.
-        if (settings?.app_background_type_lock === 'true' && backgroundType === 'aurora') {
-            // When locked to aurora, allow changing variant within aurora family.
-            setBackgroundAnimatedVariantState(variant);
-            localStorage.setItem('backgroundAnimatedVariant', variant);
-            return;
-        }
-        // If background type is not aurora, variants are irrelevant but safe to store.
+        // If admin locked background type, also prevent changing the animated variant.
+        if (settings?.app_background_type_lock === 'true') return;
+
         setBackgroundAnimatedVariantState(variant);
         localStorage.setItem('backgroundAnimatedVariant', variant);
     };
@@ -263,7 +269,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
 
     const toggleTheme = () => {
-        setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
+        const nextTheme: Theme = theme === 'dark' ? 'light' : 'dark';
+        setTheme(nextTheme);
     };
 
     return (
