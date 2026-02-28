@@ -1851,6 +1851,8 @@
 			"new_folder": "New Folder",
 			"pull": "Pull",
 			"upload": "Upload",
+			"upload_files": "Upload files",
+			"upload_folders": "Upload folder(s)",
 			"ignored_content": "Ignored Content",
 			"wipe_all": "Wipe All"
 		},

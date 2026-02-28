@@ -209,6 +209,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
             const url = `/api/user/servers/${uuidShort}/download-file?path=${encodeURIComponent(path)}`;
             window.open(url, '_blank');
+            setActionFile(null);
         } catch {
             toast.error(t('files.messages.failed_download'));
         }
@@ -247,15 +248,22 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
+    const folderInputRef = useRef<HTMLInputElement>(null);
+
     useEffect(() => {
-        if (fileInputRef.current) {
-            fileInputRef.current.setAttribute('webkitdirectory', 'true');
-            fileInputRef.current.setAttribute('directory', 'true');
+        const el = folderInputRef.current;
+        if (el) {
+            el.setAttribute('webkitdirectory', 'true');
+            el.setAttribute('directory', 'true');
         }
     }, []);
 
-    const handleUploadClick = () => {
+    const handleUploadFiles = () => {
         fileInputRef.current?.click();
+    };
+
+    const handleUploadFolders = () => {
+        folderInputRef.current?.click();
     };
 
     const ensureDirectoryExists = React.useCallback(
@@ -537,22 +545,31 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     onRefresh={refresh}
                     onCreateFile={() => setCreateFileOpen(true)}
                     onCreateFolder={() => setCreateFolderOpen(true)}
-                    onUpload={handleUploadClick}
-                    onDeleteSelected={() => setDeleteOpen(true)}
+                    onUploadFiles={handleUploadFiles}
+                    onUploadFolders={handleUploadFolders}
+                    onDeleteSelected={() => {
+                        setActionFile(null);
+                        setDeleteOpen(true);
+                    }}
                     onArchiveSelected={() => handleCompress(selectedFiles)}
                     onClearSelection={() => setSelectedFiles([])}
                     onPullFile={() => setPullFileOpen(true)}
                     onWipeAll={() => setWipeAllOpen(true)}
                     onIgnoredContent={() => setIgnoredOpen(true)}
                     onMoveSelected={() => {
+                        setActionFile(null);
                         setMoveCopyAction('move');
                         setMoveCopyOpen(true);
                     }}
                     onCopySelected={() => {
+                        setActionFile(null);
                         setMoveCopyAction('copy');
                         setMoveCopyOpen(true);
                     }}
-                    onPermissionsSelected={() => setPermissionsOpen(true)}
+                    onPermissionsSelected={() => {
+                        setActionFile(null);
+                        setPermissionsOpen(true);
+                    }}
                     onOpenInIDE={() => {
                         const idePath = `/server/${uuidShort}/files/ide?directory=${encodeURIComponent(
                             currentDirectory || '/',
@@ -814,7 +831,20 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 <WidgetRenderer widgets={getWidgets('server-files', 'after-files-list')} />
             </div>
 
-            <input type='file' ref={fileInputRef} className='hidden' onChange={handleFileChange} multiple />
+            <input
+                type='file'
+                ref={fileInputRef}
+                className='hidden'
+                onChange={handleFileChange}
+                multiple
+                accept='*'
+            />
+            <input
+                type='file'
+                ref={folderInputRef}
+                className='hidden'
+                onChange={handleFileChange}
+            />
 
             {isDragging && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-primary/20 backdrop-blur-md border-4 border-dashed border-primary animate-in fade-in zoom-in duration-300 pointer-events-none'>
