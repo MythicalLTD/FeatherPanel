@@ -347,6 +347,16 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         [uuidShort, refresh, t, ensureDirectoryExists],
     );
 
+    let uploadIdCounter = 0;
+
+    const generateUploadId = (): string => {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return crypto.randomUUID();
+        }
+        uploadIdCounter += 1;
+        return `upload-${Date.now()}-${uploadIdCounter}`;
+    };
+
     const addToUploadQueue = React.useCallback(
         (files: File[]) => {
             const baseDirectory = currentDirectory || '/';
@@ -386,7 +396,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 const targetDirectory = joinDirectories(baseDirectory, subDirectory);
 
                 return {
-                    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                    id: generateUploadId(),
                     file,
                     progress: 0,
                     status: 'pending',
