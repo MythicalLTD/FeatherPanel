@@ -177,10 +177,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Apply admin-enforced defaults/locks from public settings (if present).
     // Note: we now enforce locks inside setter functions and initial state;
     // this effect only ensures settings are loaded before user interaction.
-    useEffect(() => {
-        if (!mounted || !settings) return;
-        // No-op: locks are respected in setters.
-    }, [mounted, settings]);
 
     useEffect(() => {
         if (!mounted || typeof document === 'undefined') return;
