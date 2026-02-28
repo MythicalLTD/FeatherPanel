@@ -209,15 +209,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
 
     const setBackgroundAnimatedVariant = (variant: BackgroundAnimatedVariant) => {
-        // Background animated variant is implicitly controlled by background type lock;
-        // still allow variant changes unless background type itself is locked away from aurora.
-        if (settings?.app_background_type_lock === 'true' && backgroundType === 'aurora') {
-            // When locked to aurora, allow changing variant within aurora family.
-            setBackgroundAnimatedVariantState(variant);
-            localStorage.setItem('backgroundAnimatedVariant', variant);
-            return;
-        }
-        // If background type is not aurora, variants are irrelevant but safe to store.
+        // If admin locked background type, also prevent changing the animated variant.
+        if (settings?.app_background_type_lock === 'true') return;
+
         setBackgroundAnimatedVariantState(variant);
         localStorage.setItem('backgroundAnimatedVariant', variant);
     };
