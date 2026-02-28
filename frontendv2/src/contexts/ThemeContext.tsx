@@ -27,12 +27,7 @@ export type MotionLevel = 'full' | 'reduced' | 'none';
 /** UI font family preference. */
 type FontFamily = 'system' | 'inter' | 'rounded';
 
-function parseAndClamp(
-    value: string | null,
-    min: number,
-    max: number,
-    defaultValue: number,
-): number {
+function parseAndClamp(value: string | null, min: number, max: number, defaultValue: number): number {
     if (value == null) {
         return defaultValue;
     }

@@ -200,7 +200,8 @@ export function FileActionToolbar({
                                 <span className='hidden xs:inline'>{t('files.toolbar.pull')}</span>
                             </Button>
 
-                            {canCreate && (onUpload || onUploadFiles || onUploadFolders) &&
+                            {canCreate &&
+                                (onUpload || onUploadFiles || onUploadFolders) &&
                                 (onUploadFiles || onUploadFolders ? (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger

@@ -183,20 +183,24 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                         <table className='w-full border-collapse text-sm'>{children}</table>
                                     </div>
                                 ),
-                                thead: ({ children }) => (
-                                    <thead className='bg-muted/50'>{children}</thead>
-                                ),
+                                thead: ({ children }) => <thead className='bg-muted/50'>{children}</thead>,
                                 tbody: ({ children }) => (
                                     <tbody className='divide-y divide-border/50'>{children}</tbody>
                                 ),
                                 tr: ({ children }) => (
-                                    <tr className='border-b border-border/50 hover:bg-muted/30 transition-colors'>{children}</tr>
+                                    <tr className='border-b border-border/50 hover:bg-muted/30 transition-colors'>
+                                        {children}
+                                    </tr>
                                 ),
                                 th: ({ children }) => (
-                                    <th className='px-4 py-3 text-left font-semibold text-foreground border border-border/50'>{children}</th>
+                                    <th className='px-4 py-3 text-left font-semibold text-foreground border border-border/50'>
+                                        {children}
+                                    </th>
                                 ),
                                 td: ({ children }) => (
-                                    <td className='px-4 py-3 text-muted-foreground border border-border/50'>{children}</td>
+                                    <td className='px-4 py-3 text-muted-foreground border border-border/50'>
+                                        {children}
+                                    </td>
                                 ),
                             }}
                         >

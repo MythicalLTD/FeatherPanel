@@ -69,7 +69,7 @@ async function collectFilesFromDataTransfer(dt: DataTransfer): Promise<FileWithP
 
             // `readEntries` may return entries in batches; keep reading until no more entries are returned.
             // See: FileSystemDirectoryReader.readEntries HTML5 File API behavior.
-            // eslint-disable-next-line no-constant-condition
+
             while (true) {
                 const entries = await new Promise<FileSystemEntry[]>((resolve, reject) => {
                     reader.readEntries(resolve, reject);
@@ -78,10 +78,7 @@ async function collectFilesFromDataTransfer(dt: DataTransfer): Promise<FileWithP
                     break;
                 }
                 for (const child of entries) {
-                    await readEntry(
-                        child as FileSystemFileEntry | FileSystemDirectoryEntry,
-                        dirName,
-                    );
+                    await readEntry(child as FileSystemFileEntry | FileSystemDirectoryEntry, dirName);
                 }
             }
         }
@@ -857,20 +854,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 <WidgetRenderer widgets={getWidgets('server-files', 'after-files-list')} />
             </div>
 
-            <input
-                type='file'
-                ref={fileInputRef}
-                className='hidden'
-                onChange={handleFileChange}
-                multiple
-                accept='*'
-            />
-            <input
-                type='file'
-                ref={folderInputRef}
-                className='hidden'
-                onChange={handleFileChange}
-            />
+            <input type='file' ref={fileInputRef} className='hidden' onChange={handleFileChange} multiple accept='*' />
+            <input type='file' ref={folderInputRef} className='hidden' onChange={handleFileChange} />
 
             {isDragging && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-primary/20 backdrop-blur-md border-4 border-dashed border-primary animate-in fade-in zoom-in duration-300 pointer-events-none'>

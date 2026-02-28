@@ -403,7 +403,9 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                             remarkPlugins={[remarkGfm]}
                                             components={{
                                                 p: ({ children }) => (
-                                                    <p className='leading-relaxed mb-4 text-muted-foreground/90'>{children}</p>
+                                                    <p className='leading-relaxed mb-4 text-muted-foreground/90'>
+                                                        {children}
+                                                    </p>
                                                 ),
                                                 code: ({ children }) => (
                                                     <code className='bg-muted px-1.5 py-0.5 rounded text-primary font-mono text-sm'>
@@ -428,7 +430,10 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                                     />
                                                 ),
                                                 a: ({ node, href, children, ...props }) => {
-                                                    if (href && /\.(png|jpe?g|gif|webp|svg|bmp|ico)(\?.*)?$/i.test(href)) {
+                                                    if (
+                                                        href &&
+                                                        /\.(png|jpe?g|gif|webp|svg|bmp|ico)(\?.*)?$/i.test(href)
+                                                    ) {
                                                         return (
                                                             <img
                                                                 src={href}
@@ -438,14 +443,20 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                                         );
                                                     }
                                                     return (
-                                                        <a {...props} href={href} className='text-primary hover:underline font-medium'>
+                                                        <a
+                                                            {...props}
+                                                            href={href}
+                                                            className='text-primary hover:underline font-medium'
+                                                        >
                                                             {children}
                                                         </a>
                                                     );
                                                 },
                                                 table: ({ children }) => (
                                                     <div className='overflow-x-auto my-6'>
-                                                        <table className='w-full border-collapse text-sm'>{children}</table>
+                                                        <table className='w-full border-collapse text-sm'>
+                                                            {children}
+                                                        </table>
                                                     </div>
                                                 ),
                                                 thead: ({ children }) => (
@@ -455,13 +466,19 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                                     <tbody className='divide-y divide-border/50'>{children}</tbody>
                                                 ),
                                                 tr: ({ children }) => (
-                                                    <tr className='border-b border-border/50 hover:bg-muted/30 transition-colors'>{children}</tr>
+                                                    <tr className='border-b border-border/50 hover:bg-muted/30 transition-colors'>
+                                                        {children}
+                                                    </tr>
                                                 ),
                                                 th: ({ children }) => (
-                                                    <th className='px-4 py-3 text-left font-semibold text-foreground border border-border/50'>{children}</th>
+                                                    <th className='px-4 py-3 text-left font-semibold text-foreground border border-border/50'>
+                                                        {children}
+                                                    </th>
                                                 ),
                                                 td: ({ children }) => (
-                                                    <td className='px-4 py-3 text-muted-foreground border border-border/50'>{children}</td>
+                                                    <td className='px-4 py-3 text-muted-foreground border border-border/50'>
+                                                        {children}
+                                                    </td>
                                                 ),
                                             }}
                                         >
