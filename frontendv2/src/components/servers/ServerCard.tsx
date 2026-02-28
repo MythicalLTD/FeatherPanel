@@ -229,7 +229,7 @@ export function ServerCard({
                             className='absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105'
                             style={{ backgroundImage: `url(${server.spell.banner})` }}
                         />
-                        <div className='absolute inset-0 bg-linear-to-t from-card via-card/60 to-transparent' />
+                        <div className='absolute inset-0 bg-gradient-to-t from-card via-card/60 to-transparent' />
                     </div>
                 )}
                 {isConnected && status === 'running' && (
