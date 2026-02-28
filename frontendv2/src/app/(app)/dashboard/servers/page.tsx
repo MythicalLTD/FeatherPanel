@@ -384,7 +384,10 @@ export default function ServersPage() {
                                     leaveFrom='opacity-100'
                                     leaveTo='opacity-0'
                                 >
-                                    <ListboxOptions className='absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-popover border border-border py-1 focus:outline-none text-sm'>
+                                    <ListboxOptions
+                                        anchor='bottom start'
+                                        className='z-50 [--anchor-gap:4px] min-w-[var(--anchor-width)] max-h-60 overflow-auto rounded-xl bg-popover border border-border py-1 focus:outline-none text-sm'
+                                    >
                                         {sortOptions.map((option) => (
                                             <ListboxOption
                                                 key={option.id}
