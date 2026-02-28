@@ -1,5 +1,4 @@
 /* eslint-disable @next/next/no-img-element */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /*
 This file is part of FeatherPanel.
 
@@ -17,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useEffect, use } from 'react';
 import axios from 'axios';
 import { FileText, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
