@@ -200,8 +200,8 @@ export function FileActionToolbar({
                                 <span className='hidden xs:inline'>{t('files.toolbar.pull')}</span>
                             </Button>
 
-                            {canCreate &&
-                                (onUploadFiles && onUploadFolders ? (
+                            {canCreate && (onUpload || onUploadFiles || onUploadFolders) &&
+                                (onUploadFiles || onUploadFolders ? (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger
                                             as={Button}
@@ -214,14 +214,18 @@ export function FileActionToolbar({
                                             <ChevronDown className='ml-2 h-4 w-4 opacity-70' />
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align='start'>
-                                            <DropdownMenuItem onClick={onUploadFiles}>
-                                                <FileUp className='mr-2 h-4 w-4' />
-                                                {t('files.toolbar.upload_files')}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={onUploadFolders}>
-                                                <FolderUp className='mr-2 h-4 w-4' />
-                                                {t('files.toolbar.upload_folders')}
-                                            </DropdownMenuItem>
+                                            {onUploadFiles && (
+                                                <DropdownMenuItem onClick={onUploadFiles}>
+                                                    <FileUp className='mr-2 h-4 w-4' />
+                                                    {t('files.toolbar.upload_files')}
+                                                </DropdownMenuItem>
+                                            )}
+                                            {onUploadFolders && (
+                                                <DropdownMenuItem onClick={onUploadFolders}>
+                                                    <FolderUp className='mr-2 h-4 w-4' />
+                                                    {t('files.toolbar.upload_folders')}
+                                                </DropdownMenuItem>
+                                            )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 ) : (
