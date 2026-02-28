@@ -282,7 +282,7 @@ export function ServerCard({
                                                 )}
                                             >
                                                 <FolderMinus className='h-4 w-4' />
-                                                Remove from Folder
+                                                {t('servers.removeFromFolder')}
                                             </button>
                                         )}
                                     </MenuItem>
