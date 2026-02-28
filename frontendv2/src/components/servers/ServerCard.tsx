@@ -219,7 +219,15 @@ export function ServerCard({
                         onToggleSelect && onToggleSelect();
                     }}
                 >
-                    <Checkbox checked={selected} onCheckedChange={() => {}} className='h-4 w-4 bg-card/80' />
+                    <Checkbox
+                        checked={selected}
+                        onCheckedChange={() => {
+                            // Ensure the checkbox itself can toggle selection
+                            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                            onToggleSelect && onToggleSelect();
+                        }}
+                        className='h-4 w-4 bg-card/80'
+                    />
                 </div>
             )}
             <Link href={serverUrl} className='relative block cursor-pointer'>
@@ -229,7 +237,7 @@ export function ServerCard({
                             className='absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105'
                             style={{ backgroundImage: `url(${server.spell.banner})` }}
                         />
-                        <div className='absolute inset-0 bg-linear-to-t from-card via-card/60 to-transparent' />
+                        <div className='absolute inset-0 bg-gradient-to-t from-card via-card/60 to-transparent' />
                     </div>
                 )}
                 {isConnected && status === 'running' && (
@@ -282,14 +290,14 @@ export function ServerCard({
                                                 )}
                                             >
                                                 <FolderMinus className='h-4 w-4' />
-                                                Remove from Folder
+                                                {t('servers.removeFromFolder')}
                                             </button>
                                         )}
                                     </MenuItem>
                                 ) : (
                                     <div className='px-1 py-1'>
                                         <div className='px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
-                                            Move to Folder
+                                            {t('servers.moveToFolder')}
                                         </div>
                                         {folders.map((folder) => (
                                             <MenuItem key={folder.id}>
@@ -312,7 +320,7 @@ export function ServerCard({
                                         ))}
                                         {folders.length === 0 && (
                                             <div className='px-4 py-2 text-sm text-muted-foreground italic'>
-                                                No folders created
+                                                {t('servers.noFolders')}
                                             </div>
                                         )}
                                     </div>
