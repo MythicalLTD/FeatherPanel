@@ -65,12 +65,24 @@ async function collectFilesFromDataTransfer(dt: DataTransfer): Promise<FileWithP
         } else if (entry.isDirectory) {
             const dir = entry as FileSystemDirectoryEntry;
             const reader = dir.createReader();
-            const entries = await new Promise<FileSystemEntry[]>((resolve, reject) => {
-                reader.readEntries(resolve, reject);
-            });
             const dirName = basePath ? `${basePath}/${dir.name}` : dir.name;
-            for (const child of entries) {
-                await readEntry(child as FileSystemFileEntry | FileSystemDirectoryEntry, dirName);
+
+            // `readEntries` may return entries in batches; keep reading until no more entries are returned.
+            // See: FileSystemDirectoryReader.readEntries HTML5 File API behavior.
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+                const entries = await new Promise<FileSystemEntry[]>((resolve, reject) => {
+                    reader.readEntries(resolve, reject);
+                });
+                if (!entries.length) {
+                    break;
+                }
+                for (const child of entries) {
+                    await readEntry(
+                        child as FileSystemFileEntry | FileSystemDirectoryEntry,
+                        dirName,
+                    );
+                }
             }
         }
     };
@@ -323,8 +335,10 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     const updated = prev.map((u) =>
                         u.id === next.id ? { ...u, status: 'done' as const, progress: 100 } : u,
                     );
-                    const hasPending = updated.some((u) => u.status === 'pending');
-                    if (hasPending) setTimeout(() => processUploadQueue(updated, setUploadQueue), 0);
+                    // If there are still pending uploads, try to process the next one.
+                    if (updated.some((u) => u.status === 'pending')) {
+                        processUploadQueue(updated, setUploadQueue);
+                    }
                     return updated;
                 });
                 refresh();
@@ -336,8 +350,10 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     const updated = prev.map((u) =>
                         u.id === next.id ? { ...u, status: 'error' as const, error: message } : u,
                     );
-                    const hasPending = updated.some((u) => u.status === 'pending');
-                    if (hasPending) setTimeout(() => processUploadQueue(updated, setUploadQueue), 0);
+                    // If there are still pending uploads, try to process the next one.
+                    if (updated.some((u) => u.status === 'pending')) {
+                        processUploadQueue(updated, setUploadQueue);
+                    }
                     return updated;
                 });
             } finally {
@@ -346,6 +362,16 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         },
         [uuidShort, refresh, t, ensureDirectoryExists],
     );
+
+    let uploadIdCounter = 0;
+
+    const generateUploadId = (): string => {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return crypto.randomUUID();
+        }
+        uploadIdCounter += 1;
+        return `upload-${Date.now()}-${uploadIdCounter}`;
+    };
 
     const addToUploadQueue = React.useCallback(
         (files: File[]) => {
@@ -386,7 +412,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 const targetDirectory = joinDirectories(baseDirectory, subDirectory);
 
                 return {
-                    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                    id: generateUploadId(),
                     file,
                     progress: 0,
                     status: 'pending',
