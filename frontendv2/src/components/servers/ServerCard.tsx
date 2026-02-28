@@ -219,7 +219,15 @@ export function ServerCard({
                         onToggleSelect && onToggleSelect();
                     }}
                 >
-                    <Checkbox checked={selected} onCheckedChange={() => {}} className='h-4 w-4 bg-card/80' />
+                    <Checkbox
+                        checked={selected}
+                        onCheckedChange={() => {
+                            // Ensure the checkbox itself can toggle selection
+                            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                            onToggleSelect && onToggleSelect();
+                        }}
+                        className='h-4 w-4 bg-card/80'
+                    />
                 </div>
             )}
             <Link href={serverUrl} className='relative block cursor-pointer'>
