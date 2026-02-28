@@ -27,6 +27,22 @@ export type MotionLevel = 'full' | 'reduced' | 'none';
 /** UI font family preference. */
 type FontFamily = 'system' | 'inter' | 'rounded';
 
+function parseAndClamp(
+    value: string | null,
+    min: number,
+    max: number,
+    defaultValue: number,
+): number {
+    if (value == null) {
+        return defaultValue;
+    }
+    const parsed = parseInt(value, 10);
+    if (Number.isNaN(parsed)) {
+        return defaultValue;
+    }
+    return Math.min(max, Math.max(min, parsed));
+}
+
 interface ThemeContextType {
     theme: Theme;
     accentColor: string;
@@ -131,8 +147,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 : 'aurora',
         );
         setBackgroundImageState(savedBgImage || '');
-        setBackdropBlurState(savedBlur != null ? Math.min(24, Math.max(0, parseInt(savedBlur, 10) || 0)) : 0);
-        setBackdropDarkenState(savedDarken != null ? Math.min(100, Math.max(0, parseInt(savedDarken, 10) || 0)) : 0);
+        setBackdropBlurState(parseAndClamp(savedBlur, 0, 24, 0));
+        setBackdropDarkenState(parseAndClamp(savedDarken, 0, 100, 0));
         setBackgroundImageFitState(savedFit === 'contain' || savedFit === 'fill' ? savedFit : 'cover');
         const initialMotion: MotionLevel =
             savedMotion === 'full' || savedMotion === 'reduced' || savedMotion === 'none'
