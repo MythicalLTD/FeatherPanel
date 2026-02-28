@@ -323,8 +323,10 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     const updated = prev.map((u) =>
                         u.id === next.id ? { ...u, status: 'done' as const, progress: 100 } : u,
                     );
-                    const hasPending = updated.some((u) => u.status === 'pending');
-                    if (hasPending) setTimeout(() => processUploadQueue(updated, setUploadQueue), 0);
+                    // If there are still pending uploads, try to process the next one.
+                    if (updated.some((u) => u.status === 'pending')) {
+                        processUploadQueue(updated, setUploadQueue);
+                    }
                     return updated;
                 });
                 refresh();
@@ -336,8 +338,10 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     const updated = prev.map((u) =>
                         u.id === next.id ? { ...u, status: 'error' as const, error: message } : u,
                     );
-                    const hasPending = updated.some((u) => u.status === 'pending');
-                    if (hasPending) setTimeout(() => processUploadQueue(updated, setUploadQueue), 0);
+                    // If there are still pending uploads, try to process the next one.
+                    if (updated.some((u) => u.status === 'pending')) {
+                        processUploadQueue(updated, setUploadQueue);
+                    }
                     return updated;
                 });
             } finally {
