@@ -20,6 +20,8 @@ import {
     Trash2,
     FolderPlus,
     FilePlus,
+    FileUp,
+    FolderUp,
     Download,
     Archive,
     Settings,
@@ -28,6 +30,7 @@ import {
     ShieldCheck,
     MoreVertical,
     Boxes,
+    ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -44,7 +47,10 @@ interface FileActionToolbarProps {
     onRefresh: () => void;
     onCreateFile: () => void;
     onCreateFolder: () => void;
-    onUpload: () => void;
+    /** Single upload action (legacy). If both onUploadFiles and onUploadFolders are set, they are used instead. */
+    onUpload?: () => void;
+    onUploadFiles?: () => void;
+    onUploadFolders?: () => void;
     onDeleteSelected: () => void;
     onArchiveSelected: () => void;
     onClearSelection: () => void;
@@ -67,6 +73,8 @@ export function FileActionToolbar({
     onCreateFile,
     onCreateFolder,
     onUpload,
+    onUploadFiles,
+    onUploadFolders,
     onDeleteSelected,
     onArchiveSelected,
     onClearSelection,
@@ -192,17 +200,45 @@ export function FileActionToolbar({
                                 <span className='hidden xs:inline'>{t('files.toolbar.pull')}</span>
                             </Button>
 
-                            {canCreate && (
-                                <Button
-                                    variant='default'
-                                    size='sm'
-                                    onClick={onUpload}
-                                    className='h-9 px-6 shadow-sm font-semibold'
-                                >
-                                    <Upload className='mr-2 h-4 w-4' />
-                                    {t('files.toolbar.upload')}
-                                </Button>
-                            )}
+                            {canCreate && (onUpload || onUploadFiles || onUploadFolders) &&
+                                (onUploadFiles || onUploadFolders ? (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger
+                                            as={Button}
+                                            variant='default'
+                                            size='sm'
+                                            className='h-9 px-6 shadow-sm font-semibold'
+                                        >
+                                            <Upload className='mr-2 h-4 w-4' />
+                                            {t('files.toolbar.upload')}
+                                            <ChevronDown className='ml-2 h-4 w-4 opacity-70' />
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align='start'>
+                                            {onUploadFiles && (
+                                                <DropdownMenuItem onClick={onUploadFiles}>
+                                                    <FileUp className='mr-2 h-4 w-4' />
+                                                    {t('files.toolbar.upload_files')}
+                                                </DropdownMenuItem>
+                                            )}
+                                            {onUploadFolders && (
+                                                <DropdownMenuItem onClick={onUploadFolders}>
+                                                    <FolderUp className='mr-2 h-4 w-4' />
+                                                    {t('files.toolbar.upload_folders')}
+                                                </DropdownMenuItem>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                ) : (
+                                    <Button
+                                        variant='default'
+                                        size='sm'
+                                        onClick={onUpload}
+                                        className='h-9 px-6 shadow-sm font-semibold'
+                                    >
+                                        <Upload className='mr-2 h-4 w-4' />
+                                        {t('files.toolbar.upload')}
+                                    </Button>
+                                ))}
 
                             <Button
                                 variant='ghost'
