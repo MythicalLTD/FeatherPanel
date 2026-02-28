@@ -34,6 +34,18 @@ interface Category {
     name: string;
 }
 
+function isSafeImageUrl(url: string): boolean {
+    try {
+        // Support both absolute and relative URLs
+        const parsed = new URL(url, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+        // Only allow http(s) protocols for image sources
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+        // If the URL cannot be parsed, treat it as unsafe
+        return false;
+    }
+}
+
 interface Attachment {
     id: number;
     file_name: string;
@@ -163,15 +175,26 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                     />
                                 ),
                                 a: ({ node, href, children, ...props }) => {
-                                    if (href && /\.(png|jpe?g|gif|webp|svg|bmp|ico)(\?.*)?$/i.test(href)) {
+                                    const isImageLink =
+                                        typeof href === 'string' &&
+                                        /\.(png|jpe?g|gif|webp|svg|bmp|ico)(\?.*)?$/i.test(href);
+
+                                    if (href && isImageLink && isSafeImageUrl(href)) {
+                                        const altText =
+                                            typeof children === 'string'
+                                                ? children
+                                                : Array.isArray(children)
+                                                ? children.join(' ')
+                                                : '';
                                         return (
                                             <img
                                                 src={href}
-                                                alt={typeof children === 'string' ? children : ''}
+                                                alt={altText}
                                                 className='rounded-xl border border-border/50 shadow-md my-8 mx-auto block max-w-full'
                                             />
                                         );
                                     }
+
                                     return (
                                         <a {...props} href={href} className='text-primary hover:underline font-medium'>
                                             {children}
