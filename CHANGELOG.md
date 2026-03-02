@@ -9,6 +9,7 @@
 - Image embedding and display within markdown is now fully functional. by @nayskutzu
 - Resolved issues with Discord account linking and unlinking for a smoother user experience. by @nayskutzu
 - Fixed an issue where OIDC user accounts were sometimes not created because the remember token could be null. by @nayskutzu
+- Resolved several issues where scheduled cron jobs could fall out of sync during loop iterations, ensuring more reliable and consistent execution. by @nayskutzu
 
 ### Added
 

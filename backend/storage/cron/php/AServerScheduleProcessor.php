@@ -212,6 +212,12 @@ class AServerScheduleProcessor implements TimeTask
 
         foreach ($tasks as $task) {
             try {
+                $offset = (int) ($task['time_offset'] ?? 0);
+                if ($offset > 0) {
+                    MinecraftColorCodeSupport::sendOutputWithNewLine('&eWaiting ' . $offset . 's before task: ' . $task['action'] . ' (Sequence: ' . $task['sequence_id'] . ')');
+                    sleep($offset);
+                }
+
                 $this->executeTask($task, $server);
                 ++$executedTasks;
                 MinecraftColorCodeSupport::sendOutputWithNewLine('&aExecuted task: ' . $task['action'] . ' (Sequence: ' . $task['sequence_id'] . ')');
