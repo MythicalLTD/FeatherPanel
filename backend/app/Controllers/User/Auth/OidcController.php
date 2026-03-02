@@ -383,6 +383,7 @@ class OidcController
                 'email' => $emailValue,
                 'password' => $hashedPassword,
                 'uuid' => $uuid,
+                'remember_token' => User::generateAccountToken(),
                 'oidc_provider' => $providerId,
                 'oidc_subject' => $subject,
                 'oidc_email' => $emailValue,

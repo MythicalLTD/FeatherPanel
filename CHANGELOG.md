@@ -8,6 +8,7 @@
 - Fixed an issue where the server list index did not display in the correct visual order (Z position) by @nayskutzu
 - Image embedding and display within markdown is now fully functional. by @nayskutzu
 - Resolved issues with Discord account linking and unlinking for a smoother user experience. by @nayskutzu
+- Fixed an issue where OIDC user accounts were sometimes not created because the remember token could be null. by @nayskutzu
 
 ### Added
 
