@@ -177,7 +177,7 @@ return function (RouteCollection $routes): void {
         'user-auth-discord'
     );
 
-    App::getInstance(true)->registerApiRoute(
+    App::getInstance(true)->registerAuthRoute(
         $routes,
         'discord-unlink',
         '/api/user/auth/discord/unlink',

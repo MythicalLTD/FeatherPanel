@@ -30,11 +30,11 @@ define('APP_LOGS_DIR', APP_STORAGE_DIR . 'logs');
 define('APP_ADDONS_DIR', APP_STORAGE_DIR . 'addons');
 define('APP_SOURCECODE_DIR', APP_DIR . 'app');
 define('APP_ROUTES_DIR', APP_SOURCECODE_DIR . '/Api');
-define('APP_DEBUG', false);
+define('APP_DEBUG', true);
 define('SYSTEM_OS_NAME', gethostname() . '/' . PHP_OS_FAMILY);
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
-define('APP_VERSION', 'v1.3.0');
+define('APP_VERSION', 'v1.3.1');
 define('APP_UPSTREAM', 'stable');
 define('REQUEST_ID', uniqid());
 

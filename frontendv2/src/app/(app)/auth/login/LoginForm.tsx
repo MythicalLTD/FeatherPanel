@@ -132,6 +132,8 @@ export default function LoginForm() {
 
     const [isSsoLogin, setIsSsoLogin] = useState(false);
     const [ssoStatus, setSsoStatus] = useState('');
+    const [discordLinkToken, setDiscordLinkToken] = useState<string | null>(null);
+    const [isDiscordLogin, setIsDiscordLogin] = useState(false);
 
     useState(() => {
         const ssoToken = searchParams.get('sso_token');
@@ -139,6 +141,38 @@ export default function LoginForm() {
             handleSsoLogin(ssoToken);
         }
     });
+
+    useEffect(() => {
+        const discordToken = searchParams.get('discord_token');
+        if (discordToken) {
+            setIsDiscordLogin(true);
+            setLoading(true);
+            authApi
+                .login({ discord_token: discordToken })
+                .then(async (response) => {
+                    if (response.success) {
+                        setSuccess(response.message || t('auth.loginSuccess'));
+                        await fetchSession(true);
+                        const redirect = searchParams.get('redirect');
+                        location.href = redirect && redirect.startsWith('/') ? redirect : '/dashboard';
+                    } else {
+                        setIsDiscordLogin(false);
+                        setError(response.message || t('common.error'));
+                    }
+                })
+                .catch((err: { response?: { data?: { message?: string } } }) => {
+                    setIsDiscordLogin(false);
+                    setError(err.response?.data?.message || t('common.error'));
+                })
+                .finally(() => setLoading(false));
+        }
+
+        const linkToken = searchParams.get('discord_link_token');
+        if (linkToken) {
+            setDiscordLinkToken(linkToken);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     async function handleSsoLogin(token: string) {
         if (isSsoLogin) return;
@@ -176,6 +210,46 @@ export default function LoginForm() {
             setLoading(false);
         }
     }
+
+    const handleDiscordLink = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        if (!form.username_or_email || !form.password) {
+            setError(t('validation.fill_all_fields'));
+            return;
+        }
+
+        if (!discordLinkToken) {
+            setError(t('common.error'));
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const response = await authApi.linkDiscord({
+                token: discordLinkToken,
+                username_or_email: form.username_or_email,
+                password: form.password,
+            });
+
+            if (response.success) {
+                setSuccess(t('auth.discordLinking.success'));
+                setTimeout(() => {
+                    location.href = '/dashboard';
+                }, 1500);
+            } else {
+                setError(response.message || t('common.error'));
+            }
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } };
+            setError(error.response?.data?.message || t('common.error'));
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleDiscordLogin = () => {
         window.location.href = '/api/user/auth/discord/login';
@@ -219,12 +293,14 @@ export default function LoginForm() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-top')} />
 
-            {!isSsoLogin && (
+            {!isSsoLogin && !isDiscordLogin && (
                 <div className='text-center space-y-2'>
                     <h2 className='text-2xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent'>
-                        {t('auth.login.title')}
+                        {discordLinkToken ? t('auth.discordLinking.title') : t('auth.login.title')}
                     </h2>
-                    <p className='text-sm text-muted-foreground'>{t('auth.login.subtitle')}</p>
+                    <p className='text-sm text-muted-foreground'>
+                        {discordLinkToken ? t('auth.discordLinking.subtitle') : t('auth.login.subtitle')}
+                    </p>
                 </div>
             )}
 
@@ -241,6 +317,77 @@ export default function LoginForm() {
                         </div>
                     )}
                 </div>
+            ) : isDiscordLogin ? (
+                <div className='flex flex-col items-center gap-4 py-6'>
+                    <div className='flex items-center gap-3'>
+                        <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent'></div>
+                        <span className='text-muted-foreground'>{t('auth.discordLoggingIn')}</span>
+                    </div>
+                    <p className='text-xs text-muted-foreground text-center'>{t('auth.ssoPleaseWait')}</p>
+                    {error && (
+                        <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in w-full text-center'>
+                            {error}
+                        </div>
+                    )}
+                </div>
+            ) : discordLinkToken ? (
+                <>
+                    <form onSubmit={handleDiscordLink} className='space-y-5'>
+                        <Input
+                            label={t('auth.login.username')}
+                            type='text'
+                            value={form.username_or_email || ''}
+                            onChange={(e) => setForm({ ...form, username_or_email: e.target.value })}
+                            required
+                            autoComplete='username'
+                            icon={<Mail className='h-5 w-5' />}
+                            placeholder={t('auth.login.username')}
+                        />
+
+                        <Input
+                            label={t('auth.login.password')}
+                            type='password'
+                            value={form.password}
+                            onChange={(e) => setForm({ ...form, password: e.target.value })}
+                            required
+                            autoComplete='current-password'
+                            icon={<Lock className='h-5 w-5' />}
+                            placeholder={t('auth.login.password')}
+                        />
+
+                        <Button type='submit' className='w-full group' loading={loading}>
+                            {!loading && (
+                                <>
+                                    {t('auth.discordLinking.submit')}
+                                    <ArrowRight className='ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform' />
+                                </>
+                            )}
+                        </Button>
+
+                        <Button
+                            type='button'
+                            variant='outline'
+                            className='w-full'
+                            onClick={() => {
+                                setDiscordLinkToken(null);
+                                router.replace('/auth/login');
+                            }}
+                        >
+                            {t('auth.discordLinking.cancel')}
+                        </Button>
+
+                        {error && (
+                            <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in'>
+                                {error}
+                            </div>
+                        )}
+                        {success && (
+                            <div className='p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm animate-fade-in'>
+                                {success}
+                            </div>
+                        )}
+                    </form>
+                </>
             ) : (
                 <>
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-before-form')} />

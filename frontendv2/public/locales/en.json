@@ -77,7 +77,15 @@
 		"logout": {},
 		"loginSuccess": "Login successful",
 		"ssoLoggingIn": "Logging in via SSO...",
-		"ssoPleaseWait": "Please wait while we log you in..."
+		"ssoPleaseWait": "Please wait while we log you in...",
+		"discordLoggingIn": "Logging in via Discord...",
+		"discordLinking": {
+			"title": "Link your Discord account",
+			"subtitle": "Enter your FeatherPanel credentials to link your Discord account",
+			"submit": "Link Account",
+			"success": "Discord account linked successfully! Redirecting...",
+			"cancel": "Cancel"
+		}
 	},
 	"errors": {
 		"404": {
