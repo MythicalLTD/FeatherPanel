@@ -1,0 +1,1 @@
+ALTER TABLE `featherpanel_locations` ADD `type` ENUM('game', 'vps', 'web') NOT NULL DEFAULT 'game' AFTER `name`;

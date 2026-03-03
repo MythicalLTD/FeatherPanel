@@ -10,6 +10,8 @@
 - Resolved issues with Discord account linking and unlinking for a smoother user experience. by @nayskutzu
 - Fixed an issue where OIDC user accounts were sometimes not created because the remember token could be null. by @nayskutzu
 - Resolved several issues where scheduled cron jobs could fall out of sync during loop iterations, ensuring more reliable and consistent execution. by @nayskutzu
+- Resolved an issue where bold text in guides (knowledge base) remained unreadable in light mode, ensuring proper contrast and visibility. by @nayskutzu
+
 
 ### Added
 

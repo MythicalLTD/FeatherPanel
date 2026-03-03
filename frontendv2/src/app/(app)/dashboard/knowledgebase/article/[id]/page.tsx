@@ -202,6 +202,9 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                         {children}
                                     </td>
                                 ),
+                                strong: ({ children }) => (
+                                    <strong className='font-semibold text-foreground'>{children}</strong>
+                                ),
                             }}
                         >
                             {article.content}

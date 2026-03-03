@@ -398,7 +398,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                 </div>
 
                                 {previewMode ? (
-                                    <div className='prose prose-invert max-w-none min-h-[400px] p-6 rounded-2xl bg-muted/30 border border-border/50'>
+                                    <div className='prose dark:prose-invert max-w-none min-h-[400px] p-6 rounded-2xl bg-muted/30 border border-border/50'>
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={{
@@ -479,6 +479,11 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                                     <td className='px-4 py-3 text-muted-foreground border border-border/50'>
                                                         {children}
                                                     </td>
+                                                ),
+                                                strong: ({ children }) => (
+                                                    <strong className='font-semibold text-foreground'>
+                                                        {children}
+                                                    </strong>
                                                 ),
                                             }}
                                         >
