@@ -17,6 +17,8 @@
 
 - Full support for tables in markdown, enabling rich and structured content formatting. by @nayskutzu
 - Added dedicated API endpoints for banning and unbanning users, providing clear and documented functionality for user management. by @nayskutzu
+- Added the option to trigger schedules to run immediately on the next cron tick for greater control and flexibility. by @nayskutzu
+- Seamless export and import functionality for schedules, empowering users to easily back up, transfer, or restore their schedules as needed. by @nayskutzu
 
 ## v1.3.0 STABLE
 

@@ -19,6 +19,7 @@ namespace App\Controllers\User\Server;
 
 use App\App;
 use App\Chat\Node;
+use App\Chat\Task;
 use App\Chat\Server;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
@@ -906,6 +907,375 @@ class ServerScheduleController
         });
 
         return ApiResponse::success(array_values($serverSchedules));
+    }
+
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/run',
+        summary: 'Run schedule now',
+        description: 'Trigger a schedule to run on the next cron tick by setting its next run time to the past. The schedule must not already be processing.',
+        tags: ['User - Server Schedules'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Schedule queued to run on next cron tick'),
+            new OA\Response(response: 400, description: 'Bad request - Schedule is already processing or has no tasks'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or schedule not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to queue schedule'),
+        ]
+    )]
+    public function runNow(Request $request, string $serverUuid, int $scheduleId): Response
+    {
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_UPDATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        $schedule = ServerSchedule::getScheduleById($scheduleId);
+        if (!$schedule) {
+            return ApiResponse::error('Schedule not found', 'SCHEDULE_NOT_FOUND', 404);
+        }
+
+        if ($schedule['server_id'] != $server['id']) {
+            return ApiResponse::error('Schedule not found', 'SCHEDULE_NOT_FOUND', 404);
+        }
+
+        if ($schedule['is_processing']) {
+            return ApiResponse::error('Schedule is already processing', 'SCHEDULE_ALREADY_PROCESSING', 400);
+        }
+
+        $tasks = Task::getTasksByScheduleId($scheduleId);
+        if (empty($tasks)) {
+            return ApiResponse::error('Schedule has no tasks to run', 'SCHEDULE_NO_TASKS', 400);
+        }
+
+        $pastTime = date('Y-m-d H:i:s', time() - 60);
+        if (!ServerSchedule::updateSchedule($scheduleId, ['next_run_at' => $pastTime])) {
+            return ApiResponse::error('Failed to queue schedule', 'RUN_NOW_FAILED', 500);
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'schedule_run_now', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $schedule['name'],
+        ], $user);
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerScheduleEvent::onServerScheduleUpdated(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'schedule_id' => $scheduleId,
+                ]
+            );
+        }
+
+        return ApiResponse::success([], 'Schedule queued to run on the next cron tick', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/export',
+        summary: 'Export schedule',
+        description: 'Export a schedule and all its tasks as a JSON payload that can be imported into another server.',
+        tags: ['User - Server Schedules'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Schedule exported successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'name', type: 'string', description: 'Schedule name'),
+                        new OA\Property(property: 'cron_minute', type: 'string'),
+                        new OA\Property(property: 'cron_hour', type: 'string'),
+                        new OA\Property(property: 'cron_day_of_month', type: 'string'),
+                        new OA\Property(property: 'cron_month', type: 'string'),
+                        new OA\Property(property: 'cron_day_of_week', type: 'string'),
+                        new OA\Property(property: 'is_active', type: 'boolean'),
+                        new OA\Property(property: 'only_when_online', type: 'boolean'),
+                        new OA\Property(property: 'tasks', type: 'array', items: new OA\Items(type: 'object')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or schedule not found'),
+        ]
+    )]
+    public function exportSchedule(Request $request, string $serverUuid, int $scheduleId): Response
+    {
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        $schedule = ServerSchedule::getScheduleById($scheduleId);
+        if (!$schedule) {
+            return ApiResponse::error('Schedule not found', 'SCHEDULE_NOT_FOUND', 404);
+        }
+
+        if ($schedule['server_id'] != $server['id']) {
+            return ApiResponse::error('Schedule not found', 'SCHEDULE_NOT_FOUND', 404);
+        }
+
+        $tasks = Task::getTasksByScheduleId($scheduleId);
+        $exportedTasks = array_map(function (array $task): array {
+            return [
+                'sequence_id' => $task['sequence_id'],
+                'action' => $task['action'],
+                'payload' => $task['payload'],
+                'time_offset' => $task['time_offset'],
+                'continue_on_failure' => (bool) $task['continue_on_failure'],
+            ];
+        }, $tasks);
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'schedule_exported', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $schedule['name'],
+        ], $user);
+
+        return ApiResponse::success([
+            'name' => $schedule['name'],
+            'cron_minute' => $schedule['cron_minute'],
+            'cron_hour' => $schedule['cron_hour'],
+            'cron_day_of_month' => $schedule['cron_day_of_month'],
+            'cron_month' => $schedule['cron_month'],
+            'cron_day_of_week' => $schedule['cron_day_of_week'],
+            'is_active' => (bool) $schedule['is_active'],
+            'only_when_online' => (bool) $schedule['only_when_online'],
+            'tasks' => $exportedTasks,
+        ], 'Schedule exported successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/schedules/import',
+        summary: 'Import schedule',
+        description: 'Import a schedule and its tasks from a previously exported JSON payload.',
+        tags: ['User - Server Schedules'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', description: 'Schedule name (overrides exported name)'),
+                    new OA\Property(property: 'cron_minute', type: 'string'),
+                    new OA\Property(property: 'cron_hour', type: 'string'),
+                    new OA\Property(property: 'cron_day_of_month', type: 'string'),
+                    new OA\Property(property: 'cron_month', type: 'string'),
+                    new OA\Property(property: 'cron_day_of_week', type: 'string'),
+                    new OA\Property(property: 'is_active', type: 'boolean'),
+                    new OA\Property(property: 'only_when_online', type: 'boolean'),
+                    new OA\Property(property: 'tasks', type: 'array', items: new OA\Items(type: 'object')),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Schedule imported successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', description: 'Created schedule ID'),
+                        new OA\Property(property: 'name', type: 'string', description: 'Schedule name'),
+                        new OA\Property(property: 'tasks_imported', type: 'integer', description: 'Number of tasks imported'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid cron expression, or invalid task data'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to import schedule'),
+        ]
+    )]
+    public function importSchedule(Request $request, string $serverUuid): Response
+    {
+        $config = App::getInstance(true)->getConfig();
+        if ($config->getSetting(ConfigInterface::SERVER_ALLOW_SCHEDULES, 'true') == 'false') {
+            return ApiResponse::error('Schedules are disabled on this host. Please contact your administrator to enable this feature.', 'SCHEDULES_NOT_ALLOWED', 403);
+        }
+
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_CREATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        $body = json_decode($request->getContent(), true);
+        if (!$body) {
+            return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
+        }
+
+        $required = ['name', 'cron_day_of_week', 'cron_month', 'cron_day_of_month', 'cron_hour', 'cron_minute'];
+        foreach ($required as $field) {
+            if (!isset($body[$field]) || trim((string) $body[$field]) === '') {
+                return ApiResponse::error("Missing required field: {$field}", 'MISSING_REQUIRED_FIELD', 400);
+            }
+        }
+
+        if (
+            !ServerSchedule::validateCronExpression(
+                $body['cron_day_of_week'],
+                $body['cron_month'],
+                $body['cron_day_of_month'],
+                $body['cron_hour'],
+                $body['cron_minute']
+            )
+        ) {
+            return ApiResponse::error('Invalid cron expression', 'INVALID_CRON_EXPRESSION', 400);
+        }
+
+        $tasks = $body['tasks'] ?? [];
+        if (!is_array($tasks)) {
+            return ApiResponse::error('Tasks must be an array', 'INVALID_TASKS', 400);
+        }
+
+        $validActions = ['power', 'start', 'stop', 'restart', 'kill', 'backup', 'command', 'install', 'update'];
+        foreach ($tasks as $index => $task) {
+            if (!isset($task['action']) || !in_array($task['action'], $validActions, true)) {
+                return ApiResponse::error("Task at index {$index} has an invalid or missing action", 'INVALID_TASK_ACTION', 400);
+            }
+            if (!isset($task['payload'])) {
+                return ApiResponse::error("Task at index {$index} is missing payload", 'MISSING_TASK_PAYLOAD', 400);
+            }
+            if (!isset($task['sequence_id']) || !is_numeric($task['sequence_id'])) {
+                return ApiResponse::error("Task at index {$index} has an invalid sequence_id", 'INVALID_TASK_SEQUENCE', 400);
+            }
+        }
+
+        $nextRunAt = ServerSchedule::calculateNextRunTime(
+            $body['cron_day_of_week'],
+            $body['cron_month'],
+            $body['cron_day_of_month'],
+            $body['cron_hour'],
+            $body['cron_minute']
+        );
+
+        $scheduleId = ServerSchedule::createSchedule([
+            'server_id' => $server['id'],
+            'name' => $body['name'],
+            'cron_day_of_week' => $body['cron_day_of_week'],
+            'cron_month' => $body['cron_month'],
+            'cron_day_of_month' => $body['cron_day_of_month'],
+            'cron_hour' => $body['cron_hour'],
+            'cron_minute' => $body['cron_minute'],
+            'is_active' => isset($body['is_active']) ? (int) $body['is_active'] : 1,
+            'is_processing' => 0,
+            'only_when_online' => isset($body['only_when_online']) ? (int) $body['only_when_online'] : 0,
+            'next_run_at' => $nextRunAt,
+        ]);
+
+        if (!$scheduleId) {
+            return ApiResponse::error('Failed to create schedule', 'CREATION_FAILED', 500);
+        }
+
+        $tasksImported = 0;
+        foreach ($tasks as $task) {
+            $taskId = Task::createTask([
+                'schedule_id' => $scheduleId,
+                'sequence_id' => (int) $task['sequence_id'],
+                'action' => $task['action'],
+                'payload' => $task['payload'],
+                'time_offset' => (int) ($task['time_offset'] ?? 0),
+                'is_queued' => 0,
+                'continue_on_failure' => (int) ($task['continue_on_failure'] ?? 0),
+            ]);
+            if ($taskId) {
+                ++$tasksImported;
+            }
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'schedule_imported', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $body['name'],
+            'tasks_imported' => $tasksImported,
+        ], $user);
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerScheduleEvent::onServerScheduleCreated(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'schedule_id' => $scheduleId,
+                ]
+            );
+        }
+
+        return ApiResponse::success([
+            'id' => $scheduleId,
+            'name' => $body['name'],
+            'tasks_imported' => $tasksImported,
+        ], 'Schedule imported successfully', 201);
     }
 
     /**

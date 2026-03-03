@@ -33,6 +33,9 @@ import {
     ChevronRight,
     Lock,
     Loader2,
+    Play,
+    Download,
+    Upload,
 } from 'lucide-react';
 
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -78,6 +81,13 @@ export default function ServerSchedulesPage() {
     const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
     const [selectedSchedule, setSelectedSchedule] = React.useState<Schedule | null>(null);
     const [deleting, setDeleting] = React.useState(false);
+
+    const [runningNow, setRunningNow] = React.useState<number | null>(null);
+    const [exporting, setExporting] = React.useState<number | null>(null);
+    const [isImportOpen, setIsImportOpen] = React.useState(false);
+    const [importJson, setImportJson] = React.useState('');
+    const [importing, setImporting] = React.useState(false);
+    const importFileRef = React.useRef<HTMLInputElement>(null);
 
     const fetchData = React.useCallback(
         async (page = 1) => {
@@ -151,6 +161,87 @@ export default function ServerSchedulesPage() {
             const axiosError = error as AxiosError<{ message: string }>;
             const msg = axiosError.response?.data?.message || t('serverSchedules.toggleFailed');
             toast.error(msg);
+        }
+    };
+
+    const handleRunNow = async (schedule: Schedule) => {
+        setRunningNow(schedule.id);
+        try {
+            const { data } = await axios.post(`/api/user/servers/${uuidShort}/schedules/${schedule.id}/run`);
+            if (data?.success) {
+                toast.success('Schedule queued – it will run on the next cron tick');
+                fetchData(pagination.current_page);
+            } else {
+                toast.error(data?.message || 'Failed to run schedule');
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message: string }>;
+            toast.error(axiosError.response?.data?.message || 'Failed to run schedule');
+        } finally {
+            setRunningNow(null);
+        }
+    };
+
+    const handleExport = async (schedule: Schedule) => {
+        setExporting(schedule.id);
+        try {
+            const { data } = await axios.get(`/api/user/servers/${uuidShort}/schedules/${schedule.id}/export`);
+            if (data?.success) {
+                const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `schedule-${schedule.name.replace(/\s+/g, '-').toLowerCase()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success('Schedule exported');
+            } else {
+                toast.error(data?.message || 'Failed to export schedule');
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message: string }>;
+            toast.error(axiosError.response?.data?.message || 'Failed to export schedule');
+        } finally {
+            setExporting(null);
+        }
+    };
+
+    const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => setImportJson(ev.target?.result as string);
+        reader.readAsText(file);
+    };
+
+    const handleImport = async () => {
+        if (!importJson.trim()) {
+            toast.error('Please provide a JSON payload to import');
+            return;
+        }
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(importJson);
+        } catch {
+            toast.error('Invalid JSON – please check the file or paste');
+            return;
+        }
+        setImporting(true);
+        try {
+            const { data } = await axios.post(`/api/user/servers/${uuidShort}/schedules/import`, parsed);
+            if (data?.success) {
+                toast.success(`Schedule imported with ${data.data.tasks_imported} task(s)`);
+                setIsImportOpen(false);
+                setImportJson('');
+                fetchData(1);
+            } else {
+                toast.error(data?.message || 'Failed to import schedule');
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message: string }>;
+            toast.error(axiosError.response?.data?.message || 'Failed to import schedule');
+        } finally {
+            setImporting(false);
         }
     };
 
@@ -237,6 +328,20 @@ export default function ServerSchedulesPage() {
                             <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
                             {t('common.refresh')}
                         </Button>
+                        {canCreate && (
+                            <Button
+                                size='default'
+                                variant='glass'
+                                onClick={() => {
+                                    setImportJson('');
+                                    setIsImportOpen(true);
+                                }}
+                                disabled={loading}
+                            >
+                                <Upload className='h-5 w-5 mr-2' />
+                                Import
+                            </Button>
+                        )}
                         {canCreate && (
                             <Button
                                 size='default'
@@ -365,6 +470,34 @@ export default function ServerSchedulesPage() {
                                         </Button>
                                         {canUpdate && (
                                             <Button
+                                                variant='glass'
+                                                size='sm'
+                                                disabled={runningNow === schedule.id || schedule.is_processing}
+                                                onClick={() => handleRunNow(schedule)}
+                                            >
+                                                {runningNow === schedule.id ? (
+                                                    <Loader2 className='h-3.5 w-3.5 mr-1.5 animate-spin' />
+                                                ) : (
+                                                    <Play className='h-3.5 w-3.5 mr-1.5' />
+                                                )}
+                                                <span className='hidden sm:inline'>Run Now</span>
+                                            </Button>
+                                        )}
+                                        <Button
+                                            variant='glass'
+                                            size='sm'
+                                            disabled={exporting === schedule.id}
+                                            onClick={() => handleExport(schedule)}
+                                        >
+                                            {exporting === schedule.id ? (
+                                                <Loader2 className='h-3.5 w-3.5 mr-1.5 animate-spin' />
+                                            ) : (
+                                                <Download className='h-3.5 w-3.5 mr-1.5' />
+                                            )}
+                                            <span className='hidden sm:inline'>Export</span>
+                                        </Button>
+                                        {canUpdate && (
+                                            <Button
                                                 variant={schedule.is_active ? 'warning' : 'default'}
                                                 size='sm'
                                                 onClick={() => handleToggle(schedule)}
@@ -447,6 +580,69 @@ export default function ServerSchedulesPage() {
                         )}
                         {t('common.delete')}
                     </Button>
+                </div>
+            </HeadlessModal>
+
+            <HeadlessModal
+                isOpen={isImportOpen}
+                onClose={() => {
+                    if (!importing) {
+                        setIsImportOpen(false);
+                        setImportJson('');
+                    }
+                }}
+                title='Import Schedule'
+                description='Upload a previously exported schedule JSON file or paste the JSON directly.'
+            >
+                <div className='flex flex-col gap-4 pt-2'>
+                    <div
+                        className='flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-6 cursor-pointer hover:border-white/20 transition-colors'
+                        onClick={() => importFileRef.current?.click()}
+                    >
+                        <Upload className='h-8 w-8 text-muted-foreground' />
+                        <p className='text-sm text-muted-foreground'>
+                            Click to upload a <span className='font-mono'>.json</span> file
+                        </p>
+                        <input
+                            ref={importFileRef}
+                            type='file'
+                            accept='application/json,.json'
+                            className='hidden'
+                            onChange={handleImportFileChange}
+                        />
+                    </div>
+                    <div className='flex items-center gap-3 text-xs text-muted-foreground'>
+                        <div className='flex-1 h-px bg-white/10' />
+                        <span>or paste JSON</span>
+                        <div className='flex-1 h-px bg-white/10' />
+                    </div>
+                    <textarea
+                        className='w-full min-h-[160px] rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none'
+                        placeholder='{"name": "My Schedule", "cron_minute": "0", ...}'
+                        value={importJson}
+                        onChange={(e) => setImportJson(e.target.value)}
+                        disabled={importing}
+                    />
+                    <div className='flex justify-end gap-2'>
+                        <Button
+                            variant='outline'
+                            onClick={() => {
+                                setIsImportOpen(false);
+                                setImportJson('');
+                            }}
+                            disabled={importing}
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button variant='default' onClick={handleImport} disabled={importing || !importJson.trim()}>
+                            {importing ? (
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                            ) : (
+                                <Upload className='mr-2 h-4 w-4' />
+                            )}
+                            Import Schedule
+                        </Button>
+                    </div>
                 </div>
             </HeadlessModal>
         </div>

@@ -203,4 +203,75 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(30), // Default: Admin can override in ratelimit.json
         'user-server-schedules'
     );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-run-schedule-now',
+        '/api/user/servers/{uuidShort}/schedules/{scheduleId}/run',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            $scheduleId = $args['scheduleId'] ?? null;
+            if (!$uuidShort || !$scheduleId) {
+                return ApiResponse::error('Missing or invalid UUID short or schedule ID', 'INVALID_PARAMETERS', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerScheduleController())->runNow($request, $server['uuid'], (int) $scheduleId);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-schedules'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-export-schedule',
+        '/api/user/servers/{uuidShort}/schedules/{scheduleId}/export',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            $scheduleId = $args['scheduleId'] ?? null;
+            if (!$uuidShort || !$scheduleId) {
+                return ApiResponse::error('Missing or invalid UUID short or schedule ID', 'INVALID_PARAMETERS', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerScheduleController())->exportSchedule($request, $server['uuid'], (int) $scheduleId);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-schedules'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-import-schedule',
+        '/api/user/servers/{uuidShort}/schedules/import',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerScheduleController())->importSchedule($request, $server['uuid']);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-schedules'
+    );
 };
