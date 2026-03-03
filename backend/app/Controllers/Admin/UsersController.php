@@ -1189,4 +1189,160 @@ class UsersController
             'expires_in' => $expiresInMinutes,
         ], 'SSO token created successfully', 200);
     }
+
+    #[OA\Post(
+        path: '/api/admin/users/{uuid}/ban',
+        summary: 'Ban a user',
+        description: 'Ban a user account. The user will be immediately blocked from all authenticated endpoints and receive a suspension email notification.',
+        tags: ['Admin - Users'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'User UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'User banned successfully'),
+            new OA\Response(response: 400, description: 'Bad request - User is already banned or demo mode restriction'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'User not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to ban user'),
+        ]
+    )]
+    public function ban(Request $request, string $uuid): Response
+    {
+        $user = User::getUserByUuid($uuid);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        if ($user['banned'] === 'true') {
+            return ApiResponse::error('User is already banned', 'USER_ALREADY_BANNED', 400);
+        }
+
+        $app = App::getInstance(true);
+        if ($app->isDemoMode()) {
+            if ($user['id'] === 1 || $user['id'] === 2) {
+                return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+            }
+        }
+
+        $updated = User::updateUser($user['uuid'], ['banned' => 'true']);
+        if (!$updated) {
+            return ApiResponse::error('Failed to ban user', 'FAILED_TO_BAN_USER', 500);
+        }
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserEvent::onUserUpdated(),
+                [
+                    'user' => $user,
+                    'updated_data' => ['banned' => 'true'],
+                    'updated_by' => $request->get('user'),
+                ]
+            );
+        }
+
+        $config = $app->getConfig();
+        AccountBanned::send([
+            'email' => $user['email'],
+            'subject' => 'Your account has been suspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+            'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+            'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+            'first_name' => $user['first_name'],
+            'last_name' => $user['last_name'],
+            'username' => $user['username'],
+            'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+            'uuid' => $user['uuid'],
+            'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+            'suspension_time' => date('Y-m-d H:i:s'),
+        ]);
+
+        $app->getLogger()->info('User ' . $user['uuid'] . ' banned by ' . ($request->get('user')['uuid'] ?? 'unknown'));
+
+        return ApiResponse::success([], 'User banned successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/users/{uuid}/unban',
+        summary: 'Unban a user',
+        description: 'Unban a user account. The user will regain access to all authenticated endpoints and receive an unsuspension email notification.',
+        tags: ['Admin - Users'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'User UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'User unbanned successfully'),
+            new OA\Response(response: 400, description: 'Bad request - User is not banned or demo mode restriction'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'User not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to unban user'),
+        ]
+    )]
+    public function unban(Request $request, string $uuid): Response
+    {
+        $user = User::getUserByUuid($uuid);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        if ($user['banned'] !== 'true') {
+            return ApiResponse::error('User is not banned', 'USER_NOT_BANNED', 400);
+        }
+
+        $app = App::getInstance(true);
+        if ($app->isDemoMode()) {
+            if ($user['id'] === 1 || $user['id'] === 2) {
+                return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+            }
+        }
+
+        $updated = User::updateUser($user['uuid'], ['banned' => 'false']);
+        if (!$updated) {
+            return ApiResponse::error('Failed to unban user', 'FAILED_TO_UNBAN_USER', 500);
+        }
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserEvent::onUserUpdated(),
+                [
+                    'user' => $user,
+                    'updated_data' => ['banned' => 'false'],
+                    'updated_by' => $request->get('user'),
+                ]
+            );
+        }
+
+        $config = $app->getConfig();
+        AccountUnBanned::send([
+            'email' => $user['email'],
+            'subject' => 'Your account has been unsuspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+            'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+            'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+            'first_name' => $user['first_name'],
+            'last_name' => $user['last_name'],
+            'username' => $user['username'],
+            'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+            'uuid' => $user['uuid'],
+            'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+            'unsuspension_time' => date('Y-m-d H:i:s'),
+        ]);
+
+        $app->getLogger()->info('User ' . $user['uuid'] . ' unbanned by ' . ($request->get('user')['uuid'] ?? 'unknown'));
+
+        return ApiResponse::success([], 'User unbanned successfully', 200);
+    }
 }

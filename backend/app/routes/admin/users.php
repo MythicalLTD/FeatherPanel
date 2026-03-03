@@ -145,4 +145,34 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_USERS_EDIT,
         ['POST']
     );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-ban',
+        '/api/admin/users/{uuid}/ban',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new UsersController())->ban($request, $uuid);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['POST']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-unban',
+        '/api/admin/users/{uuid}/unban',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new UsersController())->unban($request, $uuid);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['POST']
+    );
 };

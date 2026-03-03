@@ -16,6 +16,7 @@
 ### Added
 
 - Full support for tables in markdown, enabling rich and structured content formatting. by @nayskutzu
+- Added dedicated API endpoints for banning and unbanning users, providing clear and documented functionality for user management. by @nayskutzu
 
 ## v1.3.0 STABLE
 
