@@ -92,6 +92,7 @@ class LocationsControllerTest extends TestCase
             'name' => 'Test Location',
             'description' => 'Unit test location',
             'ip_address' => '127.0.0.1',
+			'type' => 'game',	
             'country' => 'Testland',
         ];
         $request = Request::create('/api/admin/locations', 'PUT', [], [], [], [], json_encode($payload));
