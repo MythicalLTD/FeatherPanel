@@ -1064,6 +1064,481 @@ class ServerDatabaseController
         ], 'Connection test completed', 200);
     }
 
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/databases/{databaseId}/export',
+        summary: 'Export database as SQL dump',
+        description: 'Generate a SQL dump of the database including CREATE TABLE statements and INSERT data. Requires database.view_password permission. Only supported for MySQL/MariaDB databases.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'databaseId',
+                in: 'path',
+                description: 'Database ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SQL dump generated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'sql', type: 'string', description: 'SQL dump content'),
+                        new OA\Property(property: 'filename', type: 'string', description: 'Suggested filename'),
+                        new OA\Property(property: 'table_count', type: 'integer', description: 'Number of tables exported'),
+                        new OA\Property(property: 'exported_at', type: 'string', description: 'Export timestamp'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Unsupported database type'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Requires database.view_password permission'),
+            new OA\Response(response: 404, description: 'Server or database not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to generate dump'),
+        ]
+    )]
+    public function exportDatabase(Request $request, string $serverUuid, int $databaseId): Response
+    {
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $user = $request->get('user');
+        $canViewPassword = \App\Helpers\SubuserPermissionChecker::hasPermission(
+            $user['id'],
+            $server['id'],
+            SubuserPermissions::DATABASE_VIEW_PASSWORD
+        );
+        if (!$canViewPassword) {
+            return ApiResponse::error('Insufficient permissions to export database', 'FORBIDDEN', 403);
+        }
+
+        $database = ServerDatabase::getServerDatabaseWithDetails($databaseId);
+        if (!$database || $database['server_id'] != $server['id']) {
+            return ApiResponse::error('Database not found', 'DATABASE_NOT_FOUND', 404);
+        }
+
+        if (!in_array($database['database_type'], ['mysql', 'mariadb'])) {
+            return ApiResponse::error(
+                'SQL dump export is only supported for MySQL/MariaDB databases',
+                'UNSUPPORTED_DATABASE_TYPE',
+                400
+            );
+        }
+
+        try {
+            $options = [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::ATTR_TIMEOUT => 30];
+            $dbPort = (int) $database['database_port'];
+            $dsn = "mysql:host={$database['database_host']};port={$dbPort};dbname={$database['database']};charset=utf8mb4";
+            $pdo = new \PDO($dsn, $database['username'], $database['password'], $options);
+
+            $exportedAt = date('Y-m-d H:i:s');
+            $lines = [
+                '-- FeatherPanel SQL Dump',
+                "-- Database: {$database['database']}",
+                "-- Generated: {$exportedAt}",
+                "-- Host: {$database['database_host']}:{$database['database_port']}",
+                '',
+                'SET FOREIGN_KEY_CHECKS=0;',
+                "SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO';",
+                "SET time_zone='+00:00';",
+                '',
+            ];
+
+            $tables = $pdo->query('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN);
+            $tableCount = count($tables);
+
+            foreach ($tables as $table) {
+                $safeTable = $this->quoteIdentifierMySQL($table);
+
+                $lines[] = "-- Table: {$table}";
+                $lines[] = "DROP TABLE IF EXISTS {$safeTable};";
+
+                $createRow = $pdo->query("SHOW CREATE TABLE {$safeTable}")->fetch(\PDO::FETCH_NUM);
+                $lines[] = $createRow[1] . ';';
+                $lines[] = '';
+
+                $rows = $pdo->query("SELECT * FROM {$safeTable} LIMIT 10000")->fetchAll(\PDO::FETCH_ASSOC);
+                if (!empty($rows)) {
+                    $columns = '(' . implode(', ', array_map(fn ($c) => $this->quoteIdentifierMySQL($c), array_keys($rows[0]))) . ')';
+                    $chunks = array_chunk($rows, 250);
+                    foreach ($chunks as $chunk) {
+                        $valuesList = array_map(function (array $row) use ($pdo): string {
+                            $vals = array_map(function ($v) use ($pdo): string {
+                                if ($v === null) {
+                                    return 'NULL';
+                                }
+
+                                return $pdo->quote((string) $v);
+                            }, array_values($row));
+
+                            return '(' . implode(', ', $vals) . ')';
+                        }, $chunk);
+                        $lines[] = "INSERT INTO {$safeTable} {$columns} VALUES";
+                        $lines[] = implode(",\n", $valuesList) . ';';
+                    }
+                    $lines[] = '';
+                }
+            }
+
+            $lines[] = 'SET FOREIGN_KEY_CHECKS=1;';
+
+            $sql = implode("\n", $lines);
+
+            $node = Node::getNodeById($server['node_id']);
+            if ($node) {
+                $this->logActivity($server, $node, 'database_exported', [
+                    'database_id' => $databaseId,
+                    'database_name' => $database['database'],
+                    'table_count' => $tableCount,
+                ], $user);
+            }
+
+            $filename = $database['database'] . '_' . date('Y-m-d_H-i-s') . '.sql';
+
+            return ApiResponse::success([
+                'sql' => $sql,
+                'filename' => $filename,
+                'table_count' => $tableCount,
+                'exported_at' => $exportedAt,
+            ], 'Database exported successfully', 200);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to export database: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to export database: ' . $e->getMessage(), 'EXPORT_FAILED', 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/databases/{databaseId}/import',
+        summary: 'Import SQL dump into database',
+        description: 'Execute a SQL dump against the database. Requires database.view_password permission. Statements are executed sequentially; execution stops on the first error by default.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'databaseId',
+                in: 'path',
+                description: 'Database ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'sql', type: 'string', description: 'SQL content to import'),
+                    new OA\Property(property: 'ignore_errors', type: 'boolean', nullable: true, description: 'Continue on errors (default: false)', default: false),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SQL import completed',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'executed_statements', type: 'integer', description: 'Number of statements executed'),
+                        new OA\Property(property: 'errors', type: 'array', items: new OA\Items(type: 'string'), description: 'List of errors encountered'),
+                        new OA\Property(property: 'success', type: 'boolean', description: 'Whether all statements succeeded'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing SQL or unsupported database type'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Requires database.view_password permission'),
+            new OA\Response(response: 404, description: 'Server or database not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function importDatabase(Request $request, string $serverUuid, int $databaseId): Response
+    {
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $user = $request->get('user');
+        $canViewPassword = \App\Helpers\SubuserPermissionChecker::hasPermission(
+            $user['id'],
+            $server['id'],
+            SubuserPermissions::DATABASE_VIEW_PASSWORD
+        );
+        if (!$canViewPassword) {
+            return ApiResponse::error('Insufficient permissions to import into database', 'FORBIDDEN', 403);
+        }
+
+        $database = ServerDatabase::getServerDatabaseWithDetails($databaseId);
+        if (!$database || $database['server_id'] != $server['id']) {
+            return ApiResponse::error('Database not found', 'DATABASE_NOT_FOUND', 404);
+        }
+
+        if (!in_array($database['database_type'], ['mysql', 'mariadb', 'postgresql'])) {
+            return ApiResponse::error(
+                'SQL import is not supported for database type: ' . $database['database_type'],
+                'UNSUPPORTED_DATABASE_TYPE',
+                400
+            );
+        }
+
+        $body = json_decode($request->getContent(), true);
+        if (!$body || empty($body['sql'])) {
+            return ApiResponse::error('Missing SQL content', 'MISSING_SQL', 400);
+        }
+
+        $sql = $body['sql'];
+        $ignoreErrors = (bool) ($body['ignore_errors'] ?? false);
+
+        if (strlen($sql) > 50 * 1024 * 1024) {
+            return ApiResponse::error('SQL content exceeds 50 MB limit', 'SQL_TOO_LARGE', 400);
+        }
+
+        try {
+            $dbPort = (int) $database['database_port'];
+
+            if (in_array($database['database_type'], ['mysql', 'mariadb'])) {
+                $options = [
+                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                    \PDO::ATTR_TIMEOUT => 60,
+                    \PDO::MYSQL_ATTR_MULTI_STATEMENTS => false,
+                ];
+                $dsn = "mysql:host={$database['database_host']};port={$dbPort};dbname={$database['database']};charset=utf8mb4";
+            } else {
+                $options = [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::ATTR_TIMEOUT => 60];
+                $dsn = "pgsql:host={$database['database_host']};port={$dbPort};dbname={$database['database']}";
+            }
+
+            $pdo = new \PDO($dsn, $database['username'], $database['password'], $options);
+
+            $statements = $this->splitSqlStatements($sql);
+            $executed = 0;
+            $errors = [];
+
+            foreach ($statements as $statement) {
+                $statement = trim($statement);
+                if ($statement === '' || str_starts_with($statement, '--') || str_starts_with($statement, '#')) {
+                    continue;
+                }
+                if ($this->isDangerousStatement($statement)) {
+                    $errors[] = 'Blocked dangerous statement: ' . mb_substr($statement, 0, 120);
+                    if (!$ignoreErrors) {
+                        break;
+                    }
+                    continue;
+                }
+                try {
+                    $pdo->exec($statement);
+                    ++$executed;
+                } catch (\PDOException $e) {
+                    $errors[] = $e->getMessage();
+                    if (!$ignoreErrors) {
+                        break;
+                    }
+                }
+            }
+
+            $node = Node::getNodeById($server['node_id']);
+            if ($node) {
+                $this->logActivity($server, $node, 'database_imported', [
+                    'database_id' => $databaseId,
+                    'database_name' => $database['database'],
+                    'executed_statements' => $executed,
+                    'errors' => count($errors),
+                ], $user);
+            }
+
+            return ApiResponse::success([
+                'executed_statements' => $executed,
+                'errors' => $errors,
+                'success' => empty($errors),
+            ], 'SQL import completed', 200);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to import database: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to import database: ' . $e->getMessage(), 'IMPORT_FAILED', 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/databases/{databaseId}/query',
+        summary: 'Run a SQL query',
+        description: 'Execute a SQL query against the database and return results. Requires database.view_password permission. SELECT queries return rows (max 500); DML queries return affected row count.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'databaseId',
+                in: 'path',
+                description: 'Database ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'query', type: 'string', description: 'SQL query to execute'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Query executed successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'type', type: 'string', enum: ['select', 'dml'], description: 'Query type'),
+                        new OA\Property(property: 'columns', type: 'array', items: new OA\Items(type: 'string'), nullable: true, description: 'Column names (for SELECT)'),
+                        new OA\Property(property: 'rows', type: 'array', items: new OA\Items(type: 'array'), nullable: true, description: 'Result rows as arrays (for SELECT)'),
+                        new OA\Property(property: 'row_count', type: 'integer', nullable: true, description: 'Number of rows returned (for SELECT)'),
+                        new OA\Property(property: 'affected_rows', type: 'integer', nullable: true, description: 'Number of rows affected (for DML)'),
+                        new OA\Property(property: 'truncated', type: 'boolean', description: 'Whether the result was truncated to 500 rows'),
+                        new OA\Property(property: 'execution_time_ms', type: 'number', description: 'Query execution time in milliseconds'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or empty query'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Requires database.view_password permission'),
+            new OA\Response(response: 404, description: 'Server or database not found'),
+            new OA\Response(response: 422, description: 'Query execution error'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function runQuery(Request $request, string $serverUuid, int $databaseId): Response
+    {
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $user = $request->get('user');
+        $canViewPassword = \App\Helpers\SubuserPermissionChecker::hasPermission(
+            $user['id'],
+            $server['id'],
+            SubuserPermissions::DATABASE_VIEW_PASSWORD
+        );
+        if (!$canViewPassword) {
+            return ApiResponse::error('Insufficient permissions to run queries', 'FORBIDDEN', 403);
+        }
+
+        $database = ServerDatabase::getServerDatabaseWithDetails($databaseId);
+        if (!$database || $database['server_id'] != $server['id']) {
+            return ApiResponse::error('Database not found', 'DATABASE_NOT_FOUND', 404);
+        }
+
+        if (!in_array($database['database_type'], ['mysql', 'mariadb', 'postgresql'])) {
+            return ApiResponse::error(
+                'Query execution is not supported for database type: ' . $database['database_type'],
+                'UNSUPPORTED_DATABASE_TYPE',
+                400
+            );
+        }
+
+        $body = json_decode($request->getContent(), true);
+        $query = trim($body['query'] ?? '');
+        if ($query === '') {
+            return ApiResponse::error('Missing query', 'MISSING_QUERY', 400);
+        }
+
+        if ($this->isDangerousStatement($query)) {
+            return ApiResponse::error(
+                'Query contains a blocked statement (LOAD DATA INFILE / INTO OUTFILE / INTO DUMPFILE / LOAD_FILE)',
+                'DANGEROUS_QUERY',
+                400
+            );
+        }
+
+        try {
+            $dbPort = (int) $database['database_port'];
+
+            if (in_array($database['database_type'], ['mysql', 'mariadb'])) {
+                $options = [
+                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                    \PDO::ATTR_TIMEOUT => 30,
+                    \PDO::MYSQL_ATTR_MULTI_STATEMENTS => false,
+                ];
+                $dsn = "mysql:host={$database['database_host']};port={$dbPort};dbname={$database['database']};charset=utf8mb4";
+            } else {
+                $options = [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::ATTR_TIMEOUT => 30];
+                $dsn = "pgsql:host={$database['database_host']};port={$dbPort};dbname={$database['database']}";
+            }
+
+            $pdo = new \PDO($dsn, $database['username'], $database['password'], $options);
+
+            $startTime = microtime(true);
+            $stmt = $pdo->query($query);
+            $executionMs = round((microtime(true) - $startTime) * 1000, 2);
+
+            $node = Node::getNodeById($server['node_id']);
+            if ($node) {
+                $this->logActivity($server, $node, 'database_query_run', [
+                    'database_id' => $databaseId,
+                    'database_name' => $database['database'],
+                    'query_preview' => mb_substr($query, 0, 200),
+                ], $user);
+            }
+
+            $columnCount = $stmt->columnCount();
+            if ($columnCount > 0) {
+                $columns = [];
+                for ($i = 0; $i < $columnCount; ++$i) {
+                    $meta = $stmt->getColumnMeta($i);
+                    $columns[] = $meta['name'] ?? "col{$i}";
+                }
+
+                $allRows = $stmt->fetchAll(\PDO::FETCH_NUM);
+                $truncated = count($allRows) > 500;
+                $rows = $truncated ? array_slice($allRows, 0, 500) : $allRows;
+
+                return ApiResponse::success([
+                    'type' => 'select',
+                    'columns' => $columns,
+                    'rows' => $rows,
+                    'row_count' => count($rows),
+                    'truncated' => $truncated,
+                    'execution_time_ms' => $executionMs,
+                ], 'Query executed successfully', 200);
+            }
+
+            return ApiResponse::success([
+                'type' => 'dml',
+                'affected_rows' => $stmt->rowCount(),
+                'truncated' => false,
+                'execution_time_ms' => $executionMs,
+            ], 'Query executed successfully', 200);
+        } catch (\PDOException $e) {
+            return ApiResponse::error('Query error: ' . $e->getMessage(), 'QUERY_ERROR', 422);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to run database query: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to run query: ' . $e->getMessage(), 'QUERY_FAILED', 500);
+        }
+    }
+
     /**
      * Centralized check using ServerGateway with current request user.
      */
@@ -1326,6 +1801,118 @@ class ServerDatabaseController
     private function quoteIdentifierMySQL(string $identifier): string
     {
         return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    /**
+     * Returns true if the SQL statement uses dangerous filesystem-access
+     * capabilities (LOAD DATA INFILE, INTO OUTFILE, INTO DUMPFILE, LOAD_FILE).
+     * These are blocked as defence-in-depth even though the per-server
+     * database user should not hold the MySQL FILE privilege.
+     */
+    private function isDangerousStatement(string $sql): bool
+    {
+        $normalised = strtoupper(preg_replace('/\s+/', ' ', trim($sql)));
+        $patterns = [
+            'LOAD DATA ',
+            'LOAD_FILE(',
+            'INTO OUTFILE',
+            'INTO DUMPFILE',
+        ];
+        foreach ($patterns as $pattern) {
+            if (str_contains($normalised, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Split a SQL file into individual statements, handling strings and comments.
+     *
+     * @param string $sql The SQL content to split
+     *
+     * @return array Array of individual SQL statements
+     */
+    private function splitSqlStatements(string $sql): array
+    {
+        $statements = [];
+        $current = '';
+        $inSingleQuote = false;
+        $inDoubleQuote = false;
+        $inLineComment = false;
+        $inBlockComment = false;
+        $len = strlen($sql);
+
+        for ($i = 0; $i < $len; ++$i) {
+            $char = $sql[$i];
+            $next = $i + 1 < $len ? $sql[$i + 1] : '';
+
+            if ($inLineComment) {
+                if ($char === "\n") {
+                    $inLineComment = false;
+                }
+                continue;
+            }
+
+            if ($inBlockComment) {
+                if ($char === '*' && $next === '/') {
+                    $inBlockComment = false;
+                    ++$i;
+                }
+                continue;
+            }
+
+            if (!$inSingleQuote && !$inDoubleQuote) {
+                if ($char === '-' && $next === '-') {
+                    $inLineComment = true;
+                    ++$i;
+                    continue;
+                }
+                if ($char === '#') {
+                    $inLineComment = true;
+                    continue;
+                }
+                if ($char === '/' && $next === '*') {
+                    $inBlockComment = true;
+                    ++$i;
+                    continue;
+                }
+            }
+
+            if ($char === "'" && !$inDoubleQuote) {
+                if ($inSingleQuote && $next === "'") {
+                    $current .= $char;
+                    ++$i;
+                    continue;
+                }
+                $inSingleQuote = !$inSingleQuote;
+            } elseif ($char === '"' && !$inSingleQuote) {
+                if ($inDoubleQuote && $next === '"') {
+                    $current .= $char;
+                    ++$i;
+                    continue;
+                }
+                $inDoubleQuote = !$inDoubleQuote;
+            }
+
+            if ($char === ';' && !$inSingleQuote && !$inDoubleQuote) {
+                $stmt = trim($current);
+                if ($stmt !== '') {
+                    $statements[] = $stmt;
+                }
+                $current = '';
+            } else {
+                $current .= $char;
+            }
+        }
+
+        $last = trim($current);
+        if ($last !== '') {
+            $statements[] = $last;
+        }
+
+        return $statements;
     }
 
     /**

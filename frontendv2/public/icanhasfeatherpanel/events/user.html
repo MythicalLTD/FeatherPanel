@@ -268,7 +268,7 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> array user data, array updated data, array updated by.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> updated_by, updated_data, user</p>
+  <p class="muted"><strong>Data keys:</strong> banned, updated_by, updated_data, user</p>
 
   <h3>Emitted From</h3>
   <ul>
@@ -281,9 +281,9 @@ use App\Plugins\Events\Events\UserEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(UserEvent::onUserUpdated(), function ($updatedBy, $updatedData, $user) {
+    $evt->on(UserEvent::onUserUpdated(), function ($banned, $updatedBy, $updatedData, $user) {
         // Handle featherpanel:user:updated
-        // Data keys: updated_by, updated_data, user
+        // Data keys: banned, updated_by, updated_data, user
     });
 }</code></pre>
 </article>

@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios from 'axios';
 import {
@@ -36,6 +36,13 @@ import {
     Server as ServerIcon,
     Globe,
     AlertTriangle,
+    Download,
+    Upload,
+    Terminal,
+    Play,
+    CheckCircle2,
+    XCircle,
+    Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -110,6 +117,38 @@ export default function ServerDatabasesPage() {
         remote: '%',
         max_connections: 0,
     });
+
+    // Export
+    const [exportingId, setExportingId] = useState<number | null>(null);
+
+    // Import
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
+    const [importTargetDb, setImportTargetDb] = useState<Database | null>(null);
+    const [importSql, setImportSql] = useState('');
+    const [importIgnoreErrors, setImportIgnoreErrors] = useState(false);
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<{
+        executed_statements: number;
+        errors: string[];
+        success: boolean;
+    } | null>(null);
+    const importFileRef = useRef<HTMLInputElement>(null);
+
+    // Query
+    const [queryDialogOpen, setQueryDialogOpen] = useState(false);
+    const [queryTargetDb, setQueryTargetDb] = useState<Database | null>(null);
+    const [queryText, setQueryText] = useState('');
+    const [runningQuery, setRunningQuery] = useState(false);
+    const [queryResult, setQueryResult] = useState<{
+        type: 'select' | 'dml';
+        columns?: string[];
+        rows?: unknown[][];
+        row_count?: number;
+        affected_rows?: number;
+        truncated?: boolean;
+        execution_time_ms?: number;
+    } | null>(null);
+    const [queryError, setQueryError] = useState<string | null>(null);
 
     const fetchDatabases = useCallback(
         async (page = pagination.current_page) => {
@@ -293,6 +332,111 @@ export default function ServerDatabasesPage() {
         }
     };
 
+    const handleExportDatabase = async (db: Database) => {
+        setExportingId(db.id);
+        try {
+            const { data } = await axios.get(`/api/user/servers/${uuidShort}/databases/${db.id}/export`);
+            if (data?.success) {
+                const blob = new Blob([data.data.sql], { type: 'application/sql' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = data.data.filename || `${db.database}.sql`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success(t('serverDatabases.exportSuccess', { count: String(data.data.table_count) }));
+            } else {
+                toast.error(data?.message || t('serverDatabases.exportFailed'));
+            }
+        } catch (error) {
+            const axiosError = error as { response?: { data?: { message?: string } } };
+            toast.error(axiosError?.response?.data?.message || t('serverDatabases.exportFailed'));
+        } finally {
+            setExportingId(null);
+        }
+    };
+
+    const openImportDialog = (db: Database) => {
+        setImportTargetDb(db);
+        setImportSql('');
+        setImportIgnoreErrors(false);
+        setImportResult(null);
+        setImportDialogOpen(true);
+    };
+
+    const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => setImportSql(ev.target?.result as string);
+        reader.readAsText(file);
+    };
+
+    const handleImportDatabase = async () => {
+        if (!importTargetDb || !importSql.trim()) {
+            toast.error(t('serverDatabases.importEmptyPayload'));
+            return;
+        }
+        setImporting(true);
+        setImportResult(null);
+        try {
+            const { data } = await axios.post(`/api/user/servers/${uuidShort}/databases/${importTargetDb.id}/import`, {
+                sql: importSql,
+                ignore_errors: importIgnoreErrors,
+            });
+            if (data?.success) {
+                setImportResult(data.data);
+                if (data.data.success) {
+                    toast.success(t('serverDatabases.importSuccess', { count: String(data.data.executed_statements) }));
+                } else {
+                    toast.warning(
+                        t('serverDatabases.importCompleteWithErrors', { count: String(data.data.errors.length) }),
+                    );
+                }
+            } else {
+                toast.error(data?.message || t('serverDatabases.importFailed'));
+            }
+        } catch (error) {
+            const axiosError = error as { response?: { data?: { message?: string } } };
+            toast.error(axiosError?.response?.data?.message || t('serverDatabases.importFailed'));
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    const openQueryDialog = (db: Database) => {
+        setQueryTargetDb(db);
+        setQueryText('');
+        setQueryResult(null);
+        setQueryError(null);
+        setQueryDialogOpen(true);
+    };
+
+    const handleRunQuery = async () => {
+        if (!queryTargetDb || !queryText.trim()) {
+            toast.error(t('serverDatabases.queryEmptyPayload'));
+            return;
+        }
+        setRunningQuery(true);
+        setQueryResult(null);
+        setQueryError(null);
+        try {
+            const { data } = await axios.post(`/api/user/servers/${uuidShort}/databases/${queryTargetDb.id}/query`, {
+                query: queryText,
+            });
+            if (data?.success) {
+                setQueryResult(data.data);
+            } else {
+                setQueryError(data?.message || t('serverDatabases.queryFailed'));
+            }
+        } catch (error) {
+            const axiosError = error as { response?: { data?: { message?: string } } };
+            setQueryError(axiosError?.response?.data?.message || t('serverDatabases.queryFailed'));
+        } finally {
+            setRunningQuery(false);
+        }
+    };
+
     const copyToClipboard = (text: string) => copyUtil(text, t);
 
     if (loading && databases.length === 0) {
@@ -445,7 +589,7 @@ export default function ServerDatabasesPage() {
                                         {db.remote === '%' ? (
                                             <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1.5'>
                                                 <Globe className='h-3 w-3' />
-                                                All Hosts
+                                                {t('serverDatabases.allHosts')}
                                             </span>
                                         ) : (
                                             <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-muted border border-border/50 font-mono text-muted-foreground'>
@@ -498,6 +642,39 @@ export default function ServerDatabasesPage() {
                                                                 <span className='font-bold'>phpMyAdmin</span>
                                                             </DropdownMenuItem>
                                                         )}
+                                                        <DropdownMenuSeparator className='bg-border/40 my-1' />
+                                                        <DropdownMenuItem
+                                                            onClick={() => handleExportDatabase(db)}
+                                                            disabled={exportingId === db.id}
+                                                            className='flex items-center gap-3 p-3 rounded-xl cursor-pointer'
+                                                        >
+                                                            {exportingId === db.id ? (
+                                                                <Loader2 className='h-4 w-4 animate-spin text-emerald-500' />
+                                                            ) : (
+                                                                <Download className='h-4 w-4 text-emerald-500' />
+                                                            )}
+                                                            <span className='font-bold'>
+                                                                {t('serverDatabases.exportSql')}
+                                                            </span>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={() => openImportDialog(db)}
+                                                            className='flex items-center gap-3 p-3 rounded-xl cursor-pointer'
+                                                        >
+                                                            <Upload className='h-4 w-4 text-amber-500' />
+                                                            <span className='font-bold'>
+                                                                {t('serverDatabases.importSql')}
+                                                            </span>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={() => openQueryDialog(db)}
+                                                            className='flex items-center gap-3 p-3 rounded-xl cursor-pointer'
+                                                        >
+                                                            <Terminal className='h-4 w-4 text-violet-500' />
+                                                            <span className='font-bold'>
+                                                                {t('serverDatabases.runQuery')}
+                                                            </span>
+                                                        </DropdownMenuItem>
                                                     </>
                                                 )}
                                                 {canDelete && (
@@ -734,7 +911,7 @@ export default function ServerDatabasesPage() {
                                 {t('serverDatabases.rememberChoice')}
                             </label>
                             <p className='text-[10px] opacity-40 font-bold uppercase tracking-tighter'>
-                                Skip this warning in the future
+                                {t('serverDatabases.skipWarningInFuture')}
                             </p>
                         </div>
                     </div>
@@ -943,6 +1120,318 @@ export default function ServerDatabasesPage() {
                     </DialogFooter>
                 </div>
             </Dialog>
+            {/* Import SQL Dialog */}
+            <Dialog
+                open={importDialogOpen}
+                onClose={() => {
+                    if (!importing) {
+                        setImportDialogOpen(false);
+                        setImportResult(null);
+                    }
+                }}
+                className='max-w-2xl'
+            >
+                <div className='space-y-6 p-2'>
+                    <DialogHeader>
+                        <div className='flex items-center gap-4'>
+                            <div className='h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20'>
+                                <Upload className='h-6 w-6 text-amber-500' />
+                            </div>
+                            <div className='space-y-0.5'>
+                                <DialogTitle className='text-xl font-bold leading-none'>
+                                    {t('serverDatabases.importSqlTitle')}
+                                </DialogTitle>
+                                <DialogDescription className='text-sm opacity-70'>
+                                    {importTargetDb?.database}
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    {importResult ? (
+                        <div className='space-y-4'>
+                            <div
+                                className={`flex items-start gap-4 p-5 rounded-2xl border ${importResult.success ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}
+                            >
+                                {importResult.success ? (
+                                    <CheckCircle2 className='h-6 w-6 text-emerald-500 flex-shrink-0 mt-0.5' />
+                                ) : (
+                                    <XCircle className='h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5' />
+                                )}
+                                <div>
+                                    <p className='font-bold text-sm'>
+                                        {importResult.success
+                                            ? t('serverDatabases.importSuccessLabel')
+                                            : t('serverDatabases.importCompleteWithErrorsLabel')}
+                                    </p>
+                                    <p className='text-sm opacity-70'>
+                                        {t('serverDatabases.statementsExecuted', {
+                                            count: String(importResult.executed_statements),
+                                        })}
+                                    </p>
+                                </div>
+                            </div>
+                            {importResult.errors.length > 0 && (
+                                <div className='rounded-xl border border-destructive/20 bg-destructive/5 p-4 space-y-2 max-h-48 overflow-y-auto'>
+                                    <p className='text-xs font-black uppercase tracking-wider text-destructive/70'>
+                                        {t('serverDatabases.errorsHeader')}
+                                    </p>
+                                    {importResult.errors.map((err, i) => (
+                                        <p key={i} className='text-xs font-mono text-destructive/80'>
+                                            {err}
+                                        </p>
+                                    ))}
+                                </div>
+                            )}
+                            <DialogFooter className='border-t border-border/40 pt-4'>
+                                <Button
+                                    onClick={() => {
+                                        setImportResult(null);
+                                        setImportSql('');
+                                    }}
+                                    variant='ghost'
+                                    className='flex-1 h-12 rounded-xl font-bold'
+                                >
+                                    {t('serverDatabases.importAgain')}
+                                </Button>
+                                <Button
+                                    onClick={() => setImportDialogOpen(false)}
+                                    className='flex-1 h-12 rounded-xl font-bold'
+                                >
+                                    {t('common.close')}
+                                </Button>
+                            </DialogFooter>
+                        </div>
+                    ) : (
+                        <>
+                            <div
+                                className='flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-5 cursor-pointer hover:border-white/20 transition-colors'
+                                onClick={() => importFileRef.current?.click()}
+                            >
+                                <Upload className='h-7 w-7 text-muted-foreground' />
+                                <p className='text-sm text-muted-foreground'>{t('serverDatabases.clickToUploadSql')}</p>
+                                <input
+                                    ref={importFileRef}
+                                    type='file'
+                                    accept='.sql,text/plain'
+                                    className='hidden'
+                                    onChange={handleImportFileChange}
+                                />
+                            </div>
+                            <div className='flex items-center gap-3 text-xs text-muted-foreground'>
+                                <div className='flex-1 h-px bg-white/10' />
+                                <span>{t('serverDatabases.orPasteSql')}</span>
+                                <div className='flex-1 h-px bg-white/10' />
+                            </div>
+                            <textarea
+                                className='w-full min-h-[160px] rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none'
+                                placeholder='-- Paste your SQL here...'
+                                value={importSql}
+                                onChange={(e) => setImportSql(e.target.value)}
+                                disabled={importing}
+                            />
+                            <div
+                                className='flex items-center gap-3 p-4 rounded-xl border border-border/40 bg-card/50 cursor-pointer hover:bg-accent/30 transition-colors'
+                                onClick={() => setImportIgnoreErrors(!importIgnoreErrors)}
+                            >
+                                <input
+                                    type='checkbox'
+                                    checked={importIgnoreErrors}
+                                    onChange={() => setImportIgnoreErrors(!importIgnoreErrors)}
+                                    className='h-4 w-4 accent-primary'
+                                />
+                                <div>
+                                    <p className='text-sm font-bold'>{t('serverDatabases.continueOnErrors')}</p>
+                                    <p className='text-xs text-muted-foreground'>
+                                        {t('serverDatabases.continueOnErrorsHelp')}
+                                    </p>
+                                </div>
+                            </div>
+                            <DialogFooter className='border-t border-border/40 pt-4 gap-3'>
+                                <Button
+                                    variant='ghost'
+                                    onClick={() => setImportDialogOpen(false)}
+                                    disabled={importing}
+                                    className='flex-1 h-12 rounded-xl font-bold'
+                                >
+                                    {t('common.cancel')}
+                                </Button>
+                                <Button
+                                    onClick={handleImportDatabase}
+                                    disabled={importing || !importSql.trim()}
+                                    className='flex-1 h-12 rounded-xl font-bold'
+                                >
+                                    {importing ? (
+                                        <Loader2 className='h-5 w-5 animate-spin' />
+                                    ) : (
+                                        <>
+                                            <Upload className='h-4 w-4 mr-2' />
+                                            {t('serverDatabases.import')}
+                                        </>
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
+                </div>
+            </Dialog>
+
+            {/* Run Query Dialog */}
+            <Dialog
+                open={queryDialogOpen}
+                onClose={() => {
+                    if (!runningQuery) setQueryDialogOpen(false);
+                }}
+                className='max-w-4xl'
+            >
+                <div className='space-y-5 p-2'>
+                    <DialogHeader>
+                        <div className='flex items-center gap-4'>
+                            <div className='h-12 w-12 rounded-xl bg-violet-500/10 flex items-center justify-center border border-violet-500/20'>
+                                <Terminal className='h-6 w-6 text-violet-500' />
+                            </div>
+                            <div className='space-y-0.5'>
+                                <DialogTitle className='text-xl font-bold leading-none'>
+                                    {t('serverDatabases.runQueryTitle')}
+                                </DialogTitle>
+                                <DialogDescription className='text-sm opacity-70'>
+                                    {queryTargetDb?.database}
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <div className='relative'>
+                        <textarea
+                            className='w-full min-h-[120px] rounded-xl border border-white/10 bg-[#0d0d0d] p-4 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/50 resize-none'
+                            placeholder='SELECT * FROM your_table LIMIT 10;'
+                            value={queryText}
+                            onChange={(e) => setQueryText(e.target.value)}
+                            disabled={runningQuery}
+                            onKeyDown={(e) => {
+                                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleRunQuery();
+                                }
+                            }}
+                        />
+                        <Button
+                            size='sm'
+                            onClick={handleRunQuery}
+                            disabled={runningQuery || !queryText.trim()}
+                            className='absolute bottom-3 right-3 h-8 gap-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg font-bold text-xs'
+                        >
+                            {runningQuery ? (
+                                <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                            ) : (
+                                <Play className='h-3.5 w-3.5' />
+                            )}
+                            {runningQuery ? t('serverDatabases.running') : t('serverDatabases.runWithShortcut')}
+                        </Button>
+                    </div>
+
+                    {queryError && (
+                        <div className='flex items-start gap-3 p-4 rounded-xl border border-destructive/20 bg-destructive/5'>
+                            <XCircle className='h-5 w-5 text-destructive flex-shrink-0 mt-0.5' />
+                            <p className='text-sm font-mono text-destructive/90'>{queryError}</p>
+                        </div>
+                    )}
+
+                    {queryResult && (
+                        <div className='space-y-3'>
+                            <div className='flex items-center gap-4 text-xs text-muted-foreground'>
+                                <span className='flex items-center gap-1.5'>
+                                    <Clock className='h-3.5 w-3.5' />
+                                    {queryResult.execution_time_ms}ms
+                                </span>
+                                {queryResult.type === 'select' ? (
+                                    <span className='flex items-center gap-1.5'>
+                                        <CheckCircle2 className='h-3.5 w-3.5 text-emerald-500' />
+                                        {t('serverDatabases.rowsReturned', { count: String(queryResult.row_count) })}
+                                        {queryResult.truncated && (
+                                            <span className='text-amber-500 font-bold'>
+                                                {t('serverDatabases.truncatedTo', { limit: '500' })}
+                                            </span>
+                                        )}
+                                    </span>
+                                ) : (
+                                    <span className='flex items-center gap-1.5'>
+                                        <CheckCircle2 className='h-3.5 w-3.5 text-emerald-500' />
+                                        {t('serverDatabases.rowsAffected', {
+                                            count: String(queryResult.affected_rows),
+                                        })}
+                                    </span>
+                                )}
+                            </div>
+
+                            {queryResult.type === 'select' && queryResult.columns && queryResult.rows && (
+                                <div className='rounded-xl border border-border/40 overflow-auto max-h-[340px]'>
+                                    <table className='w-full text-xs border-collapse'>
+                                        <thead className='sticky top-0 bg-card z-10'>
+                                            <tr>
+                                                {queryResult.columns.map((col, i) => (
+                                                    <th
+                                                        key={i}
+                                                        className='px-3 py-2 text-left font-black text-muted-foreground uppercase tracking-wider border-b border-border/40 whitespace-nowrap'
+                                                    >
+                                                        {col}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {queryResult.rows.map((row, ri) => (
+                                                <tr
+                                                    key={ri}
+                                                    className='border-b border-border/20 hover:bg-white/5 transition-colors'
+                                                >
+                                                    {(row as unknown[]).map((cell, ci) => (
+                                                        <td
+                                                            key={ci}
+                                                            className='px-3 py-2 font-mono whitespace-nowrap max-w-[240px] truncate'
+                                                        >
+                                                            {cell === null ? (
+                                                                <span className='text-muted-foreground italic'>
+                                                                    NULL
+                                                                </span>
+                                                            ) : (
+                                                                String(cell)
+                                                            )}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {queryResult.type === 'dml' && (
+                                <div className='flex items-center gap-3 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5'>
+                                    <CheckCircle2 className='h-5 w-5 text-emerald-500' />
+                                    <p className='text-sm font-bold text-emerald-500'>
+                                        {t('serverDatabases.queryExecuted', {
+                                            count: String(queryResult.affected_rows),
+                                        })}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <DialogFooter className='border-t border-border/40 pt-4'>
+                        <Button
+                            variant='ghost'
+                            onClick={() => setQueryDialogOpen(false)}
+                            disabled={runningQuery}
+                            className='h-12 px-8 rounded-xl font-bold'
+                        >
+                            {t('common.close')}
+                        </Button>
+                    </DialogFooter>
+                </div>
+            </Dialog>
+
             <WidgetRenderer widgets={getWidgets('server-databases', 'bottom-of-page')} />
         </div>
     );

@@ -209,6 +209,81 @@ return function (RouteCollection $routes): void {
         'user-server-databases'
     );
 
+    // Export a database as SQL dump
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-databases-export',
+        '/api/user/servers/{uuidShort}/databases/{databaseId}/export',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            $databaseId = $args['databaseId'] ?? null;
+            if (!$uuidShort || !$databaseId || !is_numeric($databaseId)) {
+                return ApiResponse::error('Missing or invalid parameters', 'INVALID_PARAMETERS', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerDatabaseController())->exportDatabase($request, $server['uuid'], (int) $databaseId);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-server-databases'
+    );
+
+    // Import SQL into a database
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-databases-import',
+        '/api/user/servers/{uuidShort}/databases/{databaseId}/import',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            $databaseId = $args['databaseId'] ?? null;
+            if (!$uuidShort || !$databaseId || !is_numeric($databaseId)) {
+                return ApiResponse::error('Missing or invalid parameters', 'INVALID_PARAMETERS', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerDatabaseController())->importDatabase($request, $server['uuid'], (int) $databaseId);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-server-databases'
+    );
+
+    // Run a SQL query against a database
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-databases-query',
+        '/api/user/servers/{uuidShort}/databases/{databaseId}/query',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            $databaseId = $args['databaseId'] ?? null;
+            if (!$uuidShort || !$databaseId || !is_numeric($databaseId)) {
+                return ApiResponse::error('Missing or invalid parameters', 'INVALID_PARAMETERS', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerDatabaseController())->runQuery($request, $server['uuid'], (int) $databaseId);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-databases'
+    );
+
     // Check if phpMyAdmin is installed
     App::getInstance(true)->registerServerRoute(
         $routes,

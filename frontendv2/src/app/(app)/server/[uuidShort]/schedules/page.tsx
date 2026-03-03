@@ -169,14 +169,14 @@ export default function ServerSchedulesPage() {
         try {
             const { data } = await axios.post(`/api/user/servers/${uuidShort}/schedules/${schedule.id}/run`);
             if (data?.success) {
-                toast.success('Schedule queued – it will run on the next cron tick');
+                toast.success(t('serverSchedules.runQueued'));
                 fetchData(pagination.current_page);
             } else {
-                toast.error(data?.message || 'Failed to run schedule');
+                toast.error(data?.message || t('serverSchedules.runFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to run schedule');
+            toast.error(axiosError.response?.data?.message || t('serverSchedules.runFailed'));
         } finally {
             setRunningNow(null);
         }
@@ -194,13 +194,13 @@ export default function ServerSchedulesPage() {
                 a.download = `schedule-${schedule.name.replace(/\s+/g, '-').toLowerCase()}.json`;
                 a.click();
                 URL.revokeObjectURL(url);
-                toast.success('Schedule exported');
+                toast.success(t('serverSchedules.exportSuccess'));
             } else {
-                toast.error(data?.message || 'Failed to export schedule');
+                toast.error(data?.message || t('serverSchedules.exportFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to export schedule');
+            toast.error(axiosError.response?.data?.message || t('serverSchedules.exportFailed'));
         } finally {
             setExporting(null);
         }
@@ -216,30 +216,30 @@ export default function ServerSchedulesPage() {
 
     const handleImport = async () => {
         if (!importJson.trim()) {
-            toast.error('Please provide a JSON payload to import');
+            toast.error(t('serverSchedules.importEmptyPayload'));
             return;
         }
         let parsed: unknown;
         try {
             parsed = JSON.parse(importJson);
         } catch {
-            toast.error('Invalid JSON – please check the file or paste');
+            toast.error(t('serverSchedules.importInvalidJson'));
             return;
         }
         setImporting(true);
         try {
             const { data } = await axios.post(`/api/user/servers/${uuidShort}/schedules/import`, parsed);
             if (data?.success) {
-                toast.success(`Schedule imported with ${data.data.tasks_imported} task(s)`);
+                toast.success(t('serverSchedules.importSuccess', { count: String(data.data.tasks_imported) }));
                 setIsImportOpen(false);
                 setImportJson('');
                 fetchData(1);
             } else {
-                toast.error(data?.message || 'Failed to import schedule');
+                toast.error(data?.message || t('serverSchedules.importFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to import schedule');
+            toast.error(axiosError.response?.data?.message || t('serverSchedules.importFailed'));
         } finally {
             setImporting(false);
         }
@@ -339,7 +339,7 @@ export default function ServerSchedulesPage() {
                                 disabled={loading}
                             >
                                 <Upload className='h-5 w-5 mr-2' />
-                                Import
+                                {t('serverSchedules.import')}
                             </Button>
                         )}
                         {canCreate && (
@@ -428,7 +428,8 @@ export default function ServerSchedulesPage() {
                                             {schedule.next_run_at && (
                                                 <span className='flex items-center gap-1.5 px-2 py-1'>
                                                     <CalendarClock className='h-3 w-3' />
-                                                    Next: {new Date(schedule.next_run_at).toLocaleString()}
+                                                    {t('serverSchedules.nextRun')}{' '}
+                                                    {new Date(schedule.next_run_at).toLocaleString()}
                                                 </span>
                                             )}
                                         </div>
@@ -472,7 +473,7 @@ export default function ServerSchedulesPage() {
                                             <Button
                                                 variant='glass'
                                                 size='sm'
-                                                disabled={runningNow === schedule.id || schedule.is_processing}
+                                                disabled={runningNow === schedule.id || !!schedule.is_processing}
                                                 onClick={() => handleRunNow(schedule)}
                                             >
                                                 {runningNow === schedule.id ? (
@@ -480,7 +481,7 @@ export default function ServerSchedulesPage() {
                                                 ) : (
                                                     <Play className='h-3.5 w-3.5 mr-1.5' />
                                                 )}
-                                                <span className='hidden sm:inline'>Run Now</span>
+                                                <span className='hidden sm:inline'>{t('serverSchedules.runNow')}</span>
                                             </Button>
                                         )}
                                         <Button
@@ -494,7 +495,7 @@ export default function ServerSchedulesPage() {
                                             ) : (
                                                 <Download className='h-3.5 w-3.5 mr-1.5' />
                                             )}
-                                            <span className='hidden sm:inline'>Export</span>
+                                            <span className='hidden sm:inline'>{t('serverSchedules.export')}</span>
                                         </Button>
                                         {canUpdate && (
                                             <Button
@@ -529,7 +530,11 @@ export default function ServerSchedulesPage() {
                     {pagination.total > pagination.per_page && (
                         <div className='flex items-center justify-between gap-3 pt-4 border-t border-white/5'>
                             <div className='text-xs text-muted-foreground'>
-                                Showing {pagination.from}-{pagination.to} of {pagination.total}
+                                {t('serverSchedules.showing', {
+                                    from: String(pagination.from),
+                                    to: String(pagination.to),
+                                    total: String(pagination.total),
+                                })}
                             </div>
                             <div className='flex items-center gap-2'>
                                 <Button
@@ -591,8 +596,8 @@ export default function ServerSchedulesPage() {
                         setImportJson('');
                     }
                 }}
-                title='Import Schedule'
-                description='Upload a previously exported schedule JSON file or paste the JSON directly.'
+                title={t('serverSchedules.importScheduleTitle')}
+                description={t('serverSchedules.importScheduleDescription')}
             >
                 <div className='flex flex-col gap-4 pt-2'>
                     <div
@@ -600,9 +605,7 @@ export default function ServerSchedulesPage() {
                         onClick={() => importFileRef.current?.click()}
                     >
                         <Upload className='h-8 w-8 text-muted-foreground' />
-                        <p className='text-sm text-muted-foreground'>
-                            Click to upload a <span className='font-mono'>.json</span> file
-                        </p>
+                        <p className='text-sm text-muted-foreground'>{t('serverSchedules.clickToUploadJson')}</p>
                         <input
                             ref={importFileRef}
                             type='file'
@@ -613,7 +616,7 @@ export default function ServerSchedulesPage() {
                     </div>
                     <div className='flex items-center gap-3 text-xs text-muted-foreground'>
                         <div className='flex-1 h-px bg-white/10' />
-                        <span>or paste JSON</span>
+                        <span>{t('serverSchedules.orPasteJson')}</span>
                         <div className='flex-1 h-px bg-white/10' />
                     </div>
                     <textarea
@@ -640,7 +643,7 @@ export default function ServerSchedulesPage() {
                             ) : (
                                 <Upload className='mr-2 h-4 w-4' />
                             )}
-                            Import Schedule
+                            {t('serverSchedules.importScheduleButton')}
                         </Button>
                     </div>
                 </div>
