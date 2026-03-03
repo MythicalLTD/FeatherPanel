@@ -35,6 +35,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Location name'),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Location description'),
         new OA\Property(property: 'flag_code', type: 'string', nullable: true, description: 'ISO 3166-1 alpha-2 country code for flag display'),
+        new OA\Property(property: 'type', type: 'string', enum: ['game', 'vps', 'web'], description: 'Location purpose type (immutable after creation)'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
     ]
@@ -56,11 +57,12 @@ use Symfony\Component\HttpFoundation\Response;
 #[OA\Schema(
     schema: 'LocationCreate',
     type: 'object',
-    required: ['name'],
+    required: ['name', 'type'],
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Location name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Location description'),
         new OA\Property(property: 'flag_code', type: 'string', nullable: true, description: 'ISO 3166-1 alpha-2 country code (e.g., "us", "ua") for flag display'),
+        new OA\Property(property: 'type', type: 'string', enum: ['game', 'vps', 'web'], description: 'Location purpose: game hosting, VPS/VDS, or web hosting (immutable after creation)'),
         new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional location ID (useful for migrations from other platforms)'),
     ]
 )]
@@ -71,6 +73,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Location name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Location description'),
         new OA\Property(property: 'flag_code', type: 'string', nullable: true, description: 'ISO 3166-1 alpha-2 country code (e.g., "us", "ua") for flag display. Set to null to remove the flag.'),
+        new OA\Property(property: 'type', type: 'string', enum: ['game', 'vps', 'web'], description: 'Location purpose: game hosting, VPS/VDS, or web hosting (immutable after creation)'),
     ]
 )]
 class LocationsController
@@ -255,6 +258,13 @@ class LocationsController
         if (strlen($data['name']) < 2 || strlen($data['name']) > 255) {
             return ApiResponse::error('Name must be between 2 and 255 characters', 'INVALID_DATA_LENGTH');
         }
+        $validTypes = ['game', 'vps', 'web'];
+        if (empty($data['type'])) {
+            return ApiResponse::error('Location type is required', 'MISSING_REQUIRED_FIELDS');
+        }
+        if (!in_array($data['type'], $validTypes, true)) {
+            return ApiResponse::error('Invalid location type. Must be one of: ' . implode(', ', $validTypes), 'INVALID_DATA_TYPE');
+        }
         if (isset($data['id'])) {
             if (!is_int($data['id']) && !ctype_digit((string) $data['id'])) {
                 return ApiResponse::error('ID must be an integer', 'INVALID_DATA_TYPE');
@@ -348,6 +358,16 @@ class LocationsController
         if (isset($data['id'])) {
             unset($data['id']);
         }
+
+        // Type is immutable after creation
+        if (isset($data['type']) && $data['type'] !== $location['type']) {
+            return ApiResponse::error(
+                'Location type cannot be changed after creation.',
+                'TYPE_IMMUTABLE',
+                400
+            );
+        }
+
         if (isset($data['name'])) {
             if (!is_string($data['name'])) {
                 return ApiResponse::error('Name must be a string', 'INVALID_DATA_TYPE');
@@ -361,7 +381,6 @@ class LocationsController
         }
         if (isset($data['flag_code'])) {
             if ($data['flag_code'] === null) {
-                // Explicitly set to null to clear the flag
                 $data['flag_code'] = null;
             } else {
                 if (!is_string($data['flag_code'])) {
@@ -371,6 +390,12 @@ class LocationsController
                 if ($data['flag_code'] === '') {
                     $data['flag_code'] = null;
                 }
+            }
+        }
+        if (isset($data['type'])) {
+            $validTypes = ['game', 'vps', 'web'];
+            if (!in_array($data['type'], $validTypes, true)) {
+                return ApiResponse::error('Invalid location type. Must be one of: ' . implode(', ', $validTypes), 'INVALID_DATA_TYPE');
             }
         }
         $success = Location::update($id, $data);

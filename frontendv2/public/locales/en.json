@@ -2839,7 +2839,29 @@
 				"name": "Name",
 				"description": "Description",
 				"flag": "Country Flag (Optional)",
-				"flag_none": "None"
+				"flag_none": "None",
+				"type": "Location Type",
+				"type_description": "Each location serves one infrastructure type only. The type is permanent and cannot be changed after creation.",
+				"type_immutable_notice": "Location type is permanent and was set when this location was created."
+			},
+			"type": {
+				"game": {
+					"label": "Game Hosting",
+					"description": "Managed by FeatherWings (Wings)",
+					"badge": "Game"
+				},
+				"vps": {
+					"label": "VDS / VPS",
+					"description": "Managed by Proxmox (PVE)",
+					"badge": "VPS",
+					"coming_soon": "Coming Soon"
+				},
+				"web": {
+					"label": "Web Hosting",
+					"description": "Managed by FeatherFly (WebHosting)",
+					"badge": "Web",
+					"coming_soon": "Coming Soon"
+				}
 			},
 			"actions": {
 				"edit": "Edit location",

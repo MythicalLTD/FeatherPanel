@@ -87,10 +87,13 @@ class Location
 
     public static function create(array $data): int | false
     {
-        $fields = ['name', 'description', 'flag_code'];
+        $fields = ['name', 'description', 'flag_code', 'type'];
         $insert = [];
         foreach ($fields as $field) {
             $insert[$field] = $data[$field] ?? null;
+        }
+        if (empty($insert['type'])) {
+            $insert['type'] = 'game';
         }
 
         // Handle optional ID for migrations
@@ -114,7 +117,7 @@ class Location
 
     public static function update(int $id, array $data): bool
     {
-        $fields = ['name', 'description', 'flag_code'];
+        $fields = ['name', 'description', 'flag_code', 'type'];
         $set = [];
         $params = ['id' => $id];
         foreach ($fields as $field) {

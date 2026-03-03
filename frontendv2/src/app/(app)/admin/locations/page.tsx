@@ -1,7 +1,7 @@
 /*
 This file is part of FeatherPanel.
 
-Copyright (C) 2025 MythicalSystems Studios
+Copyright (C) 2025 MythicalSystems Studio
 Copyright (C) 2025 FeatherPanel Contributors
 Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
 
@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import {
     Globe,
     Plus,
@@ -44,14 +45,22 @@ import {
     MapPin,
     Flag,
     Rocket,
+    Gamepad2,
+    MonitorDot,
+    LayoutTemplate,
+    Lock,
+    Info,
 } from 'lucide-react';
 import NextImage from 'next/image';
+
+type LocationType = 'game' | 'vps' | 'web';
 
 interface Location {
     id: number;
     name: string;
     description?: string;
     flag_code?: string | null;
+    type: LocationType;
     created_at: string;
     updated_at: string;
 }
@@ -63,6 +72,165 @@ interface Pagination {
     totalPages: number;
     hasNext: boolean;
     hasPrev: boolean;
+}
+
+/** Set to false to allow selecting VPS and Web hosting (Proxmox / FeatherFly). */
+const GAME_HOSTING_ONLY = true;
+
+const LOCATION_TYPES: {
+    value: LocationType;
+    icon: React.ComponentType<{ className?: string }>;
+    colorClass: string;
+    selectedBorderClass: string;
+    selectedBgClass: string;
+    badgeClass: string;
+    comingSoon: boolean;
+}[] = [
+    {
+        value: 'game',
+        icon: Gamepad2,
+        colorClass: 'text-emerald-500',
+        selectedBorderClass: 'border-emerald-500/60',
+        selectedBgClass: 'bg-emerald-500/10',
+        badgeClass: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+        comingSoon: false,
+    },
+    {
+        value: 'vps',
+        icon: MonitorDot,
+        colorClass: 'text-blue-500',
+        selectedBorderClass: 'border-blue-500/60',
+        selectedBgClass: 'bg-blue-500/10',
+        badgeClass: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+        comingSoon: GAME_HOSTING_ONLY,
+    },
+    {
+        value: 'web',
+        icon: LayoutTemplate,
+        colorClass: 'text-violet-500',
+        selectedBorderClass: 'border-violet-500/60',
+        selectedBgClass: 'bg-violet-500/10',
+        badgeClass: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+        comingSoon: GAME_HOSTING_ONLY,
+    },
+];
+
+function TypeSelector({
+    value,
+    onChange,
+    readOnly = false,
+}: {
+    value: LocationType;
+    onChange: (v: LocationType) => void;
+    readOnly?: boolean;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <div className='space-y-2'>
+            <div className='grid grid-cols-3 gap-3'>
+                {LOCATION_TYPES.map((opt) => {
+                    const Icon = opt.icon;
+                    const selected = value === opt.value;
+                    const isDisabled = readOnly || !!opt.comingSoon;
+
+                    return (
+                        <button
+                            key={opt.value}
+                            type='button'
+                            onClick={() => {
+                                if (!isDisabled) onChange(opt.value);
+                            }}
+                            disabled={isDisabled}
+                            className={cn(
+                                'relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-all duration-150',
+                                isDisabled ? 'cursor-not-allowed' : 'cursor-pointer',
+                                selected && !isDisabled
+                                    ? `${opt.selectedBorderClass} ${opt.selectedBgClass}`
+                                    : selected && isDisabled
+                                      ? `${opt.selectedBorderClass} ${opt.selectedBgClass} opacity-75`
+                                      : !isDisabled
+                                        ? 'border-border/40 bg-card/50 hover:border-border hover:bg-card'
+                                        : 'border-border/20 bg-card/20 opacity-50',
+                            )}
+                        >
+                            <div
+                                className={cn(
+                                    'h-9 w-9 rounded-lg flex items-center justify-center',
+                                    selected
+                                        ? `${opt.selectedBgClass} border ${opt.selectedBorderClass}`
+                                        : 'bg-muted/50',
+                                )}
+                            >
+                                <Icon
+                                    className={cn(
+                                        'h-5 w-5',
+                                        selected ? opt.colorClass : 'text-muted-foreground',
+                                    )}
+                                />
+                            </div>
+                            <div>
+                                <p
+                                    className={cn(
+                                        'text-xs font-bold leading-tight',
+                                        selected ? opt.colorClass : 'text-foreground',
+                                    )}
+                                >
+                                    {t(`admin.locations.type.${opt.value}.label`)}
+                                </p>
+                                <p className='text-[10px] text-muted-foreground mt-0.5 leading-tight'>
+                                    {t(`admin.locations.type.${opt.value}.description`)}
+                                </p>
+                            </div>
+
+                            {opt.comingSoon && !readOnly && (
+                                <span className='absolute inset-0 rounded-xl flex items-end justify-center pb-2 bg-background/30 backdrop-blur-[1px]'>
+                                    <span className='inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-muted-foreground/80 bg-card/80 border border-border/40 rounded-full px-2 py-0.5'>
+                                        <Lock className='h-2.5 w-2.5' />
+                                        {t(`admin.locations.type.${opt.value}.coming_soon`)}
+                                    </span>
+                                </span>
+                            )}
+
+                            {selected && !isDisabled && (
+                                <span className={cn('absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-emerald-500')} />
+                            )}
+
+                            {readOnly && selected && (
+                                <span className='absolute top-1.5 right-1.5'>
+                                    <Lock className='h-3 w-3 text-muted-foreground/60' />
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+            {readOnly && (
+                <p className='text-[11px] text-muted-foreground flex items-center gap-1.5'>
+                    <Info className='h-3 w-3 flex-shrink-0' />
+                    {t('admin.locations.form.type_immutable_notice')}
+                </p>
+            )}
+        </div>
+    );
+}
+
+function TypeBadge({ type }: { type: LocationType }) {
+    const { t } = useTranslation();
+    const cfg = LOCATION_TYPES.find((x) => x.value === type);
+    if (!cfg) return null;
+    const Icon = cfg.icon;
+    return (
+        <span
+            className={cn(
+                'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border',
+                cfg.badgeClass,
+            )}
+        >
+            <Icon className='h-2.5 w-2.5' />
+            {t(`admin.locations.type.${type}.badge`)}
+        </span>
+    );
 }
 
 export default function LocationsPage() {
@@ -84,16 +252,26 @@ export default function LocationsPage() {
 
     const [editOpen, setEditOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
-
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
-
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [editForm, setEditForm] = useState({ name: '', description: '', flag_code: '' });
-    const [createForm, setCreateForm] = useState({ name: '', description: '', flag_code: '' });
+
+    const [editForm, setEditForm] = useState<{
+        name: string;
+        description: string;
+        flag_code: string;
+        type: LocationType;
+    }>({ name: '', description: '', flag_code: '', type: 'game' });
+
+    const [createForm, setCreateForm] = useState<{
+        name: string;
+        description: string;
+        flag_code: string;
+        type: LocationType;
+    }>({ name: '', description: '', flag_code: '', type: 'game' });
+
     const [refreshKey, setRefreshKey] = useState(0);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
-
     const [countryCodes, setCountryCodes] = useState<Record<string, string>>({});
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-locations');
@@ -116,14 +294,13 @@ export default function LocationsPage() {
         const fetchCountryCodes = async () => {
             try {
                 const { data } = await axios.get('/api/system/country-codes');
-                if (data && data.success && data.data?.country_codes) {
+                if (data?.success && data.data?.country_codes) {
                     const sorted = Object.entries(data.data.country_codes as Record<string, string>).sort((a, b) =>
                         a[1].localeCompare(b[1]),
                     );
                     setCountryCodes(Object.fromEntries(sorted) as Record<string, string>);
                 }
-            } catch (error) {
-                console.error('Error fetching country codes:', error);
+            } catch {
                 toast.error(t('admin.locations.messages.country_codes_failed'));
             }
         };
@@ -141,48 +318,43 @@ export default function LocationsPage() {
                         search: debouncedSearchQuery || undefined,
                     },
                 });
-
                 setLocations(data.data.locations || []);
-                const apiPagination = data.data.pagination;
+                const p = data.data.pagination;
                 setPagination({
-                    page: apiPagination.current_page,
-                    pageSize: apiPagination.per_page,
-                    total: apiPagination.total_records,
-                    totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
-                    hasNext: apiPagination.has_next,
-                    hasPrev: apiPagination.has_prev,
+                    page: p.current_page,
+                    pageSize: p.per_page,
+                    total: p.total_records,
+                    totalPages: Math.ceil(p.total_records / p.per_page),
+                    hasNext: p.has_next,
+                    hasPrev: p.has_prev,
                 });
-            } catch (error) {
-                console.error('Error fetching locations:', error);
+            } catch {
                 toast.error(t('admin.locations.messages.fetch_failed'));
             } finally {
                 setLoading(false);
             }
         };
-
         fetchLocations();
     }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t]);
 
     const handleEdit = async (location: Location) => {
         try {
             const { data } = await axios.get(`/api/admin/locations/${location.id}`);
-            const loc = data.data.location;
+            const loc = data.data.location as Location;
             setEditingLocation(loc);
             setEditForm({
                 name: loc.name || '',
                 description: loc.description || '',
                 flag_code: loc.flag_code || '__NONE__',
+                type: (loc.type as LocationType) || 'game',
             });
             setEditOpen(true);
-        } catch (error) {
-            console.error('Error fetching location:', error);
+        } catch {
             toast.error(t('admin.locations.messages.fetch_details_failed'));
         }
     };
 
-    const handleDelete = (location: Location) => {
-        setConfirmDeleteId(location.id);
-    };
+    const handleDelete = (location: Location) => setConfirmDeleteId(location.id);
 
     const confirmDelete = async (location: Location) => {
         setDeleting(true);
@@ -192,7 +364,6 @@ export default function LocationsPage() {
             setRefreshKey((prev) => prev + 1);
             setConfirmDeleteId(null);
         } catch (error) {
-            console.error('Error deleting location:', error);
             if (isAxiosError(error) && error.response?.data?.message) {
                 toast.error(error.response.data.message);
             } else {
@@ -207,21 +378,18 @@ export default function LocationsPage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const createData: { name: string; description?: string; flag_code?: string | null } = {
+            const payload = {
                 name: createForm.name,
+                type: createForm.type,
+                ...(createForm.description ? { description: createForm.description } : {}),
+                flag_code: createForm.flag_code === '__NONE__' ? null : createForm.flag_code || null,
             };
-            if (createForm.description) {
-                createData.description = createForm.description;
-            }
-            createData.flag_code = createForm.flag_code === '__NONE__' ? null : createForm.flag_code || null;
-
-            await axios.put('/api/admin/locations', createData);
+            await axios.put('/api/admin/locations', payload);
             toast.success(t('admin.locations.messages.created'));
             setCreateOpen(false);
-            setCreateForm({ name: '', description: '', flag_code: '' });
+            setCreateForm({ name: '', description: '', flag_code: '', type: 'game' });
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
-            console.error('Error creating location:', error);
             if (isAxiosError(error) && error.response?.data?.message) {
                 toast.error(error.response.data.message);
             } else {
@@ -237,20 +405,16 @@ export default function LocationsPage() {
         if (!editingLocation) return;
         setIsSubmitting(true);
         try {
-            const patchData: { name: string; description?: string; flag_code?: string | null } = {
+            const payload = {
                 name: editForm.name,
+                ...(editForm.description !== undefined ? { description: editForm.description || undefined } : {}),
+                flag_code: editForm.flag_code === '__NONE__' ? null : editForm.flag_code || null,
             };
-            if (editForm.description !== undefined) {
-                patchData.description = editForm.description || undefined;
-            }
-            patchData.flag_code = editForm.flag_code === '__NONE__' ? null : editForm.flag_code || null;
-
-            await axios.patch(`/api/admin/locations/${editingLocation.id}`, patchData);
+            await axios.patch(`/api/admin/locations/${editingLocation.id}`, payload);
             toast.success(t('admin.locations.messages.updated'));
             setEditOpen(false);
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
-            console.error('Error updating location:', error);
             if (isAxiosError(error) && error.response?.data?.message) {
                 toast.error(error.response.data.message);
             } else {
@@ -347,6 +511,7 @@ export default function LocationsPage() {
                             title={location.name}
                             subtitle={new Date(location.created_at).toLocaleDateString()}
                             icon={Globe}
+                            badges={<TypeBadge type={location.type ?? 'game'} />}
                             description={
                                 <div className='flex items-center gap-2 text-sm text-muted-foreground mt-1'>
                                     {location.flag_code && (
@@ -475,6 +640,7 @@ export default function LocationsPage() {
                 </PageCard>
             </div>
 
+            {/* Edit Sheet */}
             <Sheet open={editOpen} onOpenChange={setEditOpen}>
                 <SheetContent>
                     <SheetHeader>
@@ -485,7 +651,7 @@ export default function LocationsPage() {
                                 : ''}
                         </SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleUpdate} className='space-y-4 mt-6'>
+                    <form onSubmit={handleUpdate} className='space-y-5 mt-6'>
                         <div className='space-y-2'>
                             <Label htmlFor='edit-name'>{t('admin.locations.form.name')} *</Label>
                             <Input
@@ -518,6 +684,14 @@ export default function LocationsPage() {
                                 ))}
                             </Select>
                         </div>
+                        <div className='space-y-2'>
+                            <Label>{t('admin.locations.form.type')}</Label>
+                            <TypeSelector
+                                value={editForm.type}
+                                onChange={(v) => setEditForm({ ...editForm, type: v })}
+                                readOnly
+                            />
+                        </div>
                         <SheetFooter>
                             <Button type='button' variant='outline' onClick={() => setEditOpen(false)}>
                                 {t('common.cancel')}
@@ -530,13 +704,14 @@ export default function LocationsPage() {
                 </SheetContent>
             </Sheet>
 
+            {/* Create Sheet */}
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <SheetContent>
                     <SheetHeader>
                         <SheetTitle>{t('admin.locations.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.locations.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='space-y-4 mt-6'>
+                    <form onSubmit={handleCreate} className='space-y-5 mt-6'>
                         <div className='space-y-2'>
                             <Label htmlFor='create-name'>{t('admin.locations.form.name')} *</Label>
                             <Input
@@ -568,6 +743,16 @@ export default function LocationsPage() {
                                     </option>
                                 ))}
                             </Select>
+                        </div>
+                        <div className='space-y-2'>
+                            <Label>{t('admin.locations.form.type')} *</Label>
+                            <p className='text-xs text-muted-foreground'>
+                                {t('admin.locations.form.type_description')}
+                            </p>
+                            <TypeSelector
+                                value={createForm.type}
+                                onChange={(v) => setCreateForm({ ...createForm, type: v })}
+                            />
                         </div>
                         <SheetFooter>
                             <Button type='button' variant='outline' onClick={() => setCreateOpen(false)}>
