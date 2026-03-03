@@ -27,14 +27,21 @@ import { Home, RefreshCw } from 'lucide-react';
 /** Detect errors caused by stale cached assets after a new deploy (chunk load failures). */
 function isStaleVersionError(error: Error): boolean {
     const msg = (error?.message || '').toLowerCase();
+    const name = (error?.name || '').toLowerCase();
     return (
+        name.includes('chunkloaderror') ||
         msg.includes('loading chunk') ||
         msg.includes('chunkloaderror') ||
         msg.includes('failed to fetch dynamically imported module') ||
         msg.includes('importing a module script failed') ||
         msg.includes('loading css chunk') ||
         msg.includes('error loading dynamically imported module') ||
-        msg.includes('load failed')
+        msg.includes('load failed') ||
+        msg.includes('networkerror when attempting to fetch resource') ||
+        msg.includes('failed to load resource') ||
+        msg.includes('unable to preload css') ||
+        msg.includes('error: loading chunk') ||
+        msg.includes('dynamically imported module')
     );
 }
 
@@ -53,7 +60,14 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 
     useEffect(() => {
         console.error(error);
-    }, [error]);
+        if (staleVersion) {
+            const alreadyRefreshed = sessionStorage.getItem('stale-refresh-attempted');
+            if (!alreadyRefreshed) {
+                sessionStorage.setItem('stale-refresh-attempted', '1');
+                hardRefresh();
+            }
+        }
+    }, [error, staleVersion]);
 
     const themeGradient =
         'linear-gradient(135deg, hsl(var(--primary) / 0.12) 0%, hsl(var(--primary) / 0.04) 50%, hsl(var(--primary) / 0.12) 100%)';

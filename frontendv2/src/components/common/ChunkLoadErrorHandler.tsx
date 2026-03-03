@@ -22,14 +22,21 @@ const STALE_RELOAD_KEY = 'featherpanel_chunk_reload';
 function isStaleChunkError(reason: unknown): boolean {
     if (reason instanceof Error) {
         const msg = (reason.message || '').toLowerCase();
+        const name = (reason.name || '').toLowerCase();
         return (
+            name.includes('chunkloaderror') ||
             msg.includes('loading chunk') ||
             msg.includes('chunkloaderror') ||
             msg.includes('failed to fetch dynamically imported module') ||
             msg.includes('importing a module script failed') ||
             msg.includes('loading css chunk') ||
             msg.includes('error loading dynamically imported module') ||
-            msg.includes('load failed')
+            msg.includes('load failed') ||
+            msg.includes('networkerror when attempting to fetch resource') ||
+            msg.includes('failed to load resource') ||
+            msg.includes('unable to preload css') ||
+            msg.includes('error: loading chunk') ||
+            msg.includes('dynamically imported module')
         );
     }
     if (typeof reason === 'string') {

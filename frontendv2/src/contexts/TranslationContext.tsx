@@ -37,7 +37,7 @@ const TranslationContext = createContext<TranslationContextType | undefined>(und
 
 const DEFAULT_LOCALE = 'en';
 const PRIMARY_LOCALE = 'en';
-const CACHE_VERSION = '1.1';
+const CACHE_VERSION = '1.2';
 
 export function TranslationProvider({ children }: { children: ReactNode }) {
     const [locale, setLocaleState] = useState(() => {
