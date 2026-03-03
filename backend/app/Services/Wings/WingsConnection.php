@@ -481,6 +481,9 @@ class WingsConnection
                 }
 
                 throw new WingsConnectionException('Request failed: ' . $e->getMessage());
+            } catch (WingsRequestException | WingsAuthenticationException $e) {
+                // HTTP-level errors (404, 401, 403, etc.) should never be retried.
+                throw $e;
             } catch (\Exception $e) {
                 $lastException = $e;
 
@@ -646,8 +649,7 @@ class WingsConnection
         return strpos($message, 'Could not resolve host') !== false
             || strpos($message, 'Name or service not known') !== false
             || strpos($message, 'Temporary failure in name resolution') !== false
-            || strpos($message, 'cURL error 6') !== false
-            || strpos($message, 'cURL error 7') !== false;
+            || strpos($message, 'cURL error 6') !== false;
     }
 
     /**

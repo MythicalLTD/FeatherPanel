@@ -18,6 +18,7 @@
 namespace App\Services\Wings\Services;
 
 use App\Services\Wings\WingsConnection;
+use App\Services\Wings\Exceptions\WingsRequestException;
 
 /**
  * System Service for Wings API.
@@ -311,10 +312,34 @@ class SystemService
 
     /**
      * Get system utilization information.
+     *
+     * Falls back to basic system info when the Wings daemon does not expose
+     * the /api/system/utilization endpoint (standard Pterodactyl Wings).
      */
     public function getSystemUtilization(): array
     {
-        return $this->connection->get('/api/system/utilization');
+        try {
+            return $this->connection->get('/api/system/utilization');
+        } catch (WingsRequestException $e) {
+            // The utilization endpoint is a FeatherPanel-specific Wings extension.
+            // If Wings returns 404 for it, fall back to /api/system so the node
+            // is still reported as healthy with whatever data is available.
+            $systemInfo = $this->connection->get('/api/system?v=2');
+
+            return [
+                'memory_total'    => $systemInfo['system']['memory_bytes'] ?? 0,
+                'memory_used'     => 0,
+                'swap_total'      => 0,
+                'swap_used'       => 0,
+                'disk_total'      => 0,
+                'disk_used'       => 0,
+                'cpu_percent'     => 0.0,
+                'load_average1'   => 0.0,
+                'load_average5'   => 0.0,
+                'load_average15'  => 0.0,
+                'disk_details'    => [],
+            ];
+        }
     }
 
     /**

@@ -11,7 +11,7 @@
 - Fixed an issue where OIDC user accounts were sometimes not created because the remember token could be null. by @nayskutzu
 - Resolved several issues where scheduled cron jobs could fall out of sync during loop iterations, ensuring more reliable and consistent execution. by @nayskutzu
 - Resolved an issue where bold text in guides (knowledge base) remained unreadable in light mode, ensuring proper contrast and visibility. by @nayskutzu
-
+- Resolved issues with node synchronization, ensuring accurate and reliable node status reporting. by @nayskutzu
 
 ### Added
 
