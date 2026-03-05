@@ -11,6 +11,11 @@
 
 - Initial infrastructure implemented for upcoming Proxmox VM support. by @nayskutzu
 
+### Improved
+
+- Enhanced the server list page with a significantly cleaner and more intuitive user experience. by @nayskutzu
+
+
 ## v1.3.1 STABLE
 
 ### Fixed

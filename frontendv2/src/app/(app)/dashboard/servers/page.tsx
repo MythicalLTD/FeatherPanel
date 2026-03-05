@@ -26,9 +26,7 @@ import { useServersState } from '@/hooks/useServersState';
 import { useFolders } from '@/hooks/useFolders';
 import { useTranslation } from '@/contexts/TranslationContext';
 import {
-    Tab,
     TabGroup,
-    TabList,
     TabPanel,
     TabPanels,
     Switch,
@@ -352,138 +350,133 @@ export default function ServersPage() {
                 <WidgetRenderer widgets={getWidgets('dashboard-servers', 'after-header')} />
             </div>
 
-            <div className='flex flex-col gap-4 p-4 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
-                <div className='flex-1 w-full'>
+            <div className='flex flex-col gap-3 p-3 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
+                <div className='flex items-center gap-2'>
                     <input
                         type='text'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t('servers.searchPlaceholder')}
-                        className='w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all'
+                        className='flex-1 min-w-0 px-4 py-2 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all text-sm'
                     />
+
+                    <Listbox value={selectedSortOption} onChange={(option) => setSelectedSort(option.id)}>
+                        <div className='relative shrink-0'>
+                            <ListboxButton className='relative cursor-pointer rounded-xl bg-background py-2 pl-3 pr-8 text-left border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm whitespace-nowrap'>
+                                <span className='flex items-center gap-2'>
+                                    <Filter className='h-4 w-4 text-muted-foreground shrink-0' />
+                                    <span className='hidden sm:block truncate'>{selectedSortOption.name}</span>
+                                </span>
+                                <span className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2'>
+                                    <ChevronsUpDown className='h-4 w-4 text-muted-foreground' />
+                                </span>
+                            </ListboxButton>
+                            <Transition
+                                as={Fragment}
+                                leave='transition ease-in duration-100'
+                                leaveFrom='opacity-100'
+                                leaveTo='opacity-0'
+                            >
+                                <ListboxOptions
+                                    anchor='bottom end'
+                                    className='z-50 [--anchor-gap:4px] min-w-[160px] max-h-60 overflow-auto rounded-xl bg-popover border border-border py-1 focus:outline-none text-sm'
+                                >
+                                    {sortOptions.map((option) => (
+                                        <ListboxOption
+                                            key={option.id}
+                                            value={option}
+                                            className={({ focus }) =>
+                                                cn(
+                                                    'relative cursor-pointer select-none py-2 pl-9 pr-4 transition-colors',
+                                                    focus ? 'bg-primary/10 text-primary' : 'text-foreground',
+                                                )
+                                            }
+                                        >
+                                            {({ selected }) => (
+                                                <>
+                                                    <span
+                                                        className={cn(
+                                                            'block truncate',
+                                                            selected ? 'font-semibold' : 'font-normal',
+                                                        )}
+                                                    >
+                                                        {option.name}
+                                                    </span>
+                                                    {selected && (
+                                                        <span className='absolute inset-y-0 left-0 flex items-center pl-3 text-primary'>
+                                                            <Check className='h-4 w-4' />
+                                                        </span>
+                                                    )}
+                                                </>
+                                            )}
+                                        </ListboxOption>
+                                    ))}
+                                </ListboxOptions>
+                            </Transition>
+                        </div>
+                    </Listbox>
+
+                    <RadioGroup
+                        value={selectedLayoutOption}
+                        onChange={(option) => setSelectedLayout(option.id as 'grid' | 'list')}
+                        className='shrink-0'
+                    >
+                        <div className='flex gap-1 p-1 bg-background rounded-xl border border-border'>
+                            {layoutOptions.map((option) => (
+                                <RadioGroupOption
+                                    key={option.id}
+                                    value={option}
+                                    className={({ checked }) =>
+                                        cn(
+                                            'flex items-center justify-center cursor-pointer rounded-lg px-2.5 py-1 transition-all',
+                                            checked
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                                        )
+                                    }
+                                >
+                                    {() => (
+                                        <div className='flex items-center gap-1.5'>
+                                            <option.icon className='h-4 w-4' />
+                                            <span className='sr-only sm:not-sr-only sm:text-xs font-medium'>
+                                                {option.name}
+                                            </span>
+                                        </div>
+                                    )}
+                                </RadioGroupOption>
+                            ))}
+                        </div>
+                    </RadioGroup>
+
+                    <div
+                        className='flex items-center gap-2 cursor-pointer shrink-0'
+                        onClick={() => setShowOnlyRunning(!showOnlyRunning)}
+                    >
+                        <Switch
+                            checked={showOnlyRunning}
+                            onChange={setShowOnlyRunning}
+                            className='group relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 data-checked:bg-green-500 bg-muted shrink-0'
+                        >
+                            <span className='inline-block h-3 w-3 transform rounded-full bg-white transition-transform group-data-checked:translate-x-4 translate-x-1' />
+                        </Switch>
+                        <span className='hidden sm:block text-sm font-medium whitespace-nowrap'>{t('servers.runningOnly')}</span>
+                    </div>
+
+                    <button
+                        onClick={() =>
+                            serverScope === 'all'
+                                ? void fetchAllOtherServers(pagination.current_page)
+                                : fetchServers()
+                        }
+                        disabled={loading}
+                        className='shrink-0 p-2 bg-background border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-50'
+                        title={t('servers.refresh')}
+                    >
+                        <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+                    </button>
                 </div>
 
                 <WidgetRenderer widgets={getWidgets('dashboard-servers', 'before-server-list')} />
-
-                <div className='flex flex-col sm:flex-row gap-4'>
-                    <div className='grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-4 flex-1'>
-                        <Listbox value={selectedSortOption} onChange={(option) => setSelectedSort(option.id)}>
-                            <div className='relative w-full sm:w-auto min-w-[140px]'>
-                                <ListboxButton className='relative w-full cursor-pointer rounded-xl bg-background py-2.5 pl-3 pr-8 text-left border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm'>
-                                    <span className='flex items-center gap-2'>
-                                        <Filter className='h-4 w-4 text-muted-foreground shrink-0' />
-                                        <span className='block truncate'>{selectedSortOption.name}</span>
-                                    </span>
-                                    <span className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2'>
-                                        <ChevronsUpDown className='h-4 w-4 text-muted-foreground' />
-                                    </span>
-                                </ListboxButton>
-                                <Transition
-                                    as={Fragment}
-                                    leave='transition ease-in duration-100'
-                                    leaveFrom='opacity-100'
-                                    leaveTo='opacity-0'
-                                >
-                                    <ListboxOptions
-                                        anchor='bottom start'
-                                        className='z-50 [--anchor-gap:4px] min-w-[var(--anchor-width)] max-h-60 overflow-auto rounded-xl bg-popover border border-border py-1 focus:outline-none text-sm'
-                                    >
-                                        {sortOptions.map((option) => (
-                                            <ListboxOption
-                                                key={option.id}
-                                                value={option}
-                                                className={({ focus }) =>
-                                                    cn(
-                                                        'relative cursor-pointer select-none py-2 pl-9 pr-4 transition-colors',
-                                                        focus ? 'bg-primary/10 text-primary' : 'text-foreground',
-                                                    )
-                                                }
-                                            >
-                                                {({ selected }) => (
-                                                    <>
-                                                        <span
-                                                            className={cn(
-                                                                'block truncate',
-                                                                selected ? 'font-semibold' : 'font-normal',
-                                                            )}
-                                                        >
-                                                            {option.name}
-                                                        </span>
-                                                        {selected && (
-                                                            <span className='absolute inset-y-0 left-0 flex items-center pl-3 text-primary'>
-                                                                <Check className='h-4 w-4' />
-                                                            </span>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </ListboxOption>
-                                        ))}
-                                    </ListboxOptions>
-                                </Transition>
-                            </div>
-                        </Listbox>
-
-                        <RadioGroup
-                            value={selectedLayoutOption}
-                            onChange={(option) => setSelectedLayout(option.id as 'grid' | 'list')}
-                        >
-                            <div className='flex h-full gap-1 p-1 bg-background rounded-xl border border-border'>
-                                {layoutOptions.map((option) => (
-                                    <RadioGroupOption
-                                        key={option.id}
-                                        value={option}
-                                        className={({ checked }) =>
-                                            cn(
-                                                'flex-1 flex items-center justify-center cursor-pointer rounded-lg px-3 transition-all',
-                                                checked
-                                                    ? 'bg-primary text-primary-foreground '
-                                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                                            )
-                                        }
-                                    >
-                                        {() => (
-                                            <div className='flex items-center gap-2'>
-                                                <option.icon className='h-4 w-4' />
-                                                <span className='sr-only sm:not-sr-only sm:text-sm font-medium'>
-                                                    {option.name}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </RadioGroupOption>
-                                ))}
-                            </div>
-                        </RadioGroup>
-                    </div>
-
-                    <div className='flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-4 sm:pt-0 border-border'>
-                        <div
-                            className='flex items-center gap-2 cursor-pointer'
-                            onClick={() => setShowOnlyRunning(!showOnlyRunning)}
-                        >
-                            <Switch
-                                checked={showOnlyRunning}
-                                onChange={setShowOnlyRunning}
-                                className='group relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 data-checked:bg-green-500 bg-muted shrink-0'
-                            >
-                                <span className='inline-block h-3 w-3 transform rounded-full bg-white transition-transform group-data-checked:translate-x-4 translate-x-1' />
-                            </Switch>
-                            <span className='text-sm font-medium whitespace-nowrap'>{t('servers.runningOnly')}</span>
-                        </div>
-
-                        <button
-                            onClick={() =>
-                                serverScope === 'all'
-                                    ? void fetchAllOtherServers(pagination.current_page)
-                                    : fetchServers()
-                            }
-                            disabled={loading}
-                            className='p-2.5 bg-background border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-50'
-                            title={t('servers.refresh')}
-                        >
-                            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-                        </button>
-                    </div>
-                </div>
                 {filteredServers.length > 0 && (
                     <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-border bg-card/60 px-4 py-3 mt-1'>
                         <div className='flex items-center gap-2 text-sm'>
@@ -570,35 +563,77 @@ export default function ServersPage() {
 
             {!loading && !error && (
                 <>
-                    {canViewAllServers && (
-                        <div className='flex gap-2 p-1 bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 w-fit mb-6'>
-                            <button
-                                type='button'
-                                onClick={() => setServerScope('mine')}
-                                className={cn(
-                                    'px-6 py-3 text-sm font-semibold rounded-lg transition-all',
-                                    serverScope === 'mine'
-                                        ? 'bg-primary text-primary-foreground '
-                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                                )}
-                            >
-                                {t('servers.myServers')}
-                            </button>
-                            <button
-                                type='button'
-                                onClick={() => setServerScope('all')}
-                                className={cn(
-                                    'px-6 py-3 text-sm font-semibold rounded-lg transition-all',
-                                    serverScope === 'all'
-                                        ? 'bg-primary text-primary-foreground '
-                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                                )}
-                            >
-                                {t('servers.allServersAdmin')} ({serverScope === 'all' ? pagination.total_records : '…'}
-                                )
-                            </button>
+                    <div className='flex items-center justify-between gap-2'>
+                        <div className='flex items-center gap-2 flex-wrap'>
+                            {canViewAllServers && (
+                                <div className='flex gap-1 p-1 bg-card/50 backdrop-blur-xl rounded-xl border border-border/50'>
+                                    <button
+                                        type='button'
+                                        onClick={() => setServerScope('mine')}
+                                        className={cn(
+                                            'px-4 py-2 text-sm font-semibold rounded-lg transition-all',
+                                            serverScope === 'mine'
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                                        )}
+                                    >
+                                        {t('servers.myServers')}
+                                    </button>
+                                    <button
+                                        type='button'
+                                        onClick={() => setServerScope('all')}
+                                        className={cn(
+                                            'px-4 py-2 text-sm font-semibold rounded-lg transition-all',
+                                            serverScope === 'all'
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                                        )}
+                                    >
+                                        {t('servers.allServersAdmin')} ({serverScope === 'all' ? pagination.total_records : '…'})
+                                    </button>
+                                </div>
+                            )}
+
+                            {serverScope === 'mine' && (
+                                <div className='flex gap-1 p-1 bg-card/50 backdrop-blur-xl rounded-xl border border-border/50'>
+                                    <button
+                                        type='button'
+                                        onClick={() => setViewMode('all')}
+                                        className={cn(
+                                            'px-4 py-2 text-sm font-semibold rounded-lg transition-all',
+                                            viewMode === 'all'
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                                        )}
+                                    >
+                                        {t('servers.allServers')} ({pagination.total_records})
+                                    </button>
+                                    <button
+                                        type='button'
+                                        onClick={() => setViewMode('folders')}
+                                        className={cn(
+                                            'px-4 py-2 text-sm font-semibold rounded-lg transition-all',
+                                            viewMode === 'folders'
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                                        )}
+                                    >
+                                        {t('servers.byFolder')}
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        {serverScope === 'mine' && viewMode === 'folders' && (
+                            <button
+                                onClick={openCreateFolder}
+                                className='flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors shrink-0'
+                            >
+                                <FolderPlus className='h-4 w-4' />
+                                <span className='hidden sm:inline'>{t('servers.createFolder')}</span>
+                            </button>
+                        )}
+                    </div>
 
                     {serverScope === 'all' ? (
                         <div className='space-y-6'>
@@ -698,34 +733,7 @@ export default function ServersPage() {
                             selectedIndex={viewMode === 'all' ? 0 : 1}
                             onChange={(index) => setViewMode(index === 0 ? 'all' : 'folders')}
                         >
-                            <TabList className='flex gap-2 p-1 bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 w-fit'>
-                                <Tab
-                                    className={({ selected }) =>
-                                        cn(
-                                            'px-6 py-3 text-sm font-semibold rounded-lg transition-all focus:outline-none',
-                                            selected
-                                                ? 'bg-primary text-primary-foreground '
-                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                                        )
-                                    }
-                                >
-                                    {t('servers.allServers')} ({pagination.total_records})
-                                </Tab>
-                                <Tab
-                                    className={({ selected }) =>
-                                        cn(
-                                            'px-6 py-3 text-sm font-semibold rounded-lg transition-all focus:outline-none',
-                                            selected
-                                                ? 'bg-primary text-primary-foreground '
-                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                                        )
-                                    }
-                                >
-                                    {t('servers.byFolder')}
-                                </Tab>
-                            </TabList>
-
-                            <TabPanels className='mt-6'>
+                            <TabPanels className='mt-2'>
                                 <TabPanel>
                                     {filteredServers.length === 0 ? (
                                         <EmptyState searchQuery={searchQuery} t={t} />
@@ -834,14 +842,6 @@ export default function ServersPage() {
                                                 </p>
                                             </div>
                                         )}
-
-                                        <button
-                                            onClick={openCreateFolder}
-                                            className='flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors'
-                                        >
-                                            <FolderPlus className='h-5 w-5' />
-                                            {t('servers.createFolder')}
-                                        </button>
 
                                         {serversByFolder.map((folder) => (
                                             <div key={folder.id} className='space-y-4'>
