@@ -3711,6 +3711,7 @@ if [ -f /etc/os-release ]; then
 	confirm="n"
 	has_ssl="false"
 	panel_domain=""
+	PANEL_SSL_CHOICE=""
 
 	# Handle operations based on component and action
 	if [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "1" ]; then
@@ -3971,6 +3972,10 @@ if [ -f /etc/os-release ]; then
 				fi
 			done
 			log_info "Domain set to: $panel_domain"
+			echo ""
+			echo -e "${YELLOW}${BOLD}Using SSL (HTTPS) is strongly recommended, especially for production installs.${NC}"
+			echo -e "${BLUE}An SSL certificate can be created automatically using Let's Encrypt.${NC}"
+			prompt "${BOLD}Do you want to use SSL (HTTPS) for this domain?${NC} ${BLUE}(recommended) (y/n)${NC}: " PANEL_SSL_CHOICE
 			;;
 		4)
 			# Direct Access (home hosting / no domain)
@@ -4209,15 +4214,17 @@ if [ -f /etc/os-release ]; then
 			log_info "This will be the main domain for your FeatherPanel (not a subdirectory like /panel)."
 
 			# Ask if user wants to set up SSL certificate
-			setup_ssl_during_install=""
-			if [ -t 1 ]; then clear; fi
-			print_banner
-			draw_hr
-			echo -e "${BOLD}${YELLOW}SSL Certificate Setup${NC}"
-			draw_hr
-			echo -e "${BLUE}Would you like to create an SSL certificate for $panel_domain now?${NC}"
-			echo -e "${BLUE}This will set up HTTPS access automatically.${NC}"
-			prompt "${BOLD}Create SSL certificate?${NC} ${BLUE}(y/n)${NC}: " setup_ssl_during_install
+			setup_ssl_during_install="${PANEL_SSL_CHOICE:-}"
+			if [ -z "$setup_ssl_during_install" ]; then
+				if [ -t 1 ]; then clear; fi
+				print_banner
+				draw_hr
+				echo -e "${BOLD}${YELLOW}SSL Certificate Setup${NC}"
+				draw_hr
+				echo -e "${BLUE}Would you like to create an SSL certificate for $panel_domain now?${NC}"
+				echo -e "${BLUE}This will set up HTTPS access automatically and is strongly recommended.${NC}"
+				prompt "${BOLD}Create SSL certificate?${NC} ${BLUE}(y/n)${NC}: " setup_ssl_during_install
+			fi
 
 			ssl_created=false
 			has_ssl="false"

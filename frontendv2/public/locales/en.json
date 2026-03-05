@@ -830,6 +830,7 @@
 			"locations_and_nodes": "Locations & Nodes",
 			"locations": "Locations",
 			"nodes": "Nodes",
+			"vdsNodes": "Nodes (VDS)",
 			"nodeDatabases": "Node Databases",
 			"nodeStatus": "Node Status",
 			"subdomains": "Subdomains",
@@ -2888,6 +2889,116 @@
 					"step1": "Click Create Location above to add your first location.",
 					"step2": "After creating, a Nodes button appears next to row actions.",
 					"step3": "Click Nodes to add and manage nodes for that location."
+				}
+			}
+		},
+		"vdsNodes": {
+			"title": "Nodes (VDS)",
+			"description": "Connect and manage Proxmox nodes for VPS / VDS virtualization.",
+			"viewAndManage": "View and manage VDS nodes in the location: {location}.",
+			"search_placeholder": "Search VDS nodes by name or FQDN...",
+			"form": {
+				"create_title": "Create VDS Node",
+				"create_description": "Connect a new Proxmox hypervisor to FeatherPanel using a PVE API token.",
+				"create_short": "Create VDS Node",
+				"edit_title": "Edit VDS Node",
+				"edit_description": "Update Proxmox connection details, location and network settings.",
+				"basic_details": "Basic Details",
+				"proxmox": "Proxmox API Access",
+				"network": "Network & SSL",
+				"name": "Display Name",
+				"name_required": "A display name is required",
+				"description": "Description",
+				"description_placeholder": "Optional description for this VDS node",
+				"location": "VPS Location",
+				"location_required": "A VPS location is required",
+				"select_location": "Select a VPS location for this node",
+				"select_location_description": "Only locations of type VPS can be used for VDS nodes.",
+				"search_locations": "Search VPS locations...",
+				"no_locations_found": "No VPS locations found. Make sure you created locations of type VPS.",
+				"user": "Proxmox User",
+				"user_required": "A Proxmox user is required",
+				"token_id": "Token ID",
+				"token_id_required": "A token ID is required",
+				"secret": "Token Secret",
+				"secret_required": "A token secret is required",
+				"fqdn": "Proxmox Hostname / IP",
+				"fqdn_required": "A Proxmox hostname or IP is required",
+				"fqdn_invalid": "Please enter a valid hostname or IP",
+				"scheme": "Scheme",
+				"port": "Port",
+				"port_invalid": "Port must be a valid TCP port (1-65535)",
+				"tls_no_verify": "TLS Verification",
+				"tls_no_verify_false": "Verify TLS certificates (recommended)",
+				"tls_no_verify_true": "Skip TLS verification (only for testing or labs)",
+				"timeout": "Timeout (seconds)",
+				"timeout_invalid": "Timeout must be a positive number of seconds",
+				"submit_create": "Create VDS Node",
+				"submit_save": "Save Changes",
+				"http_advanced": "Advanced HTTP Options",
+				"headers": "Custom Headers",
+				"headers_help": "Optional HTTP headers to send with each Proxmox API request (for proxies, extra auth, etc.).",
+				"headers_key_placeholder": "Header name (e.g. X-Forwarded-Host)",
+				"headers_value_placeholder": "Header value",
+				"headers_add": "Add header",
+				"params": "Query Parameters",
+				"params_help": "Optional query parameters to append to Proxmox API requests.",
+				"params_key_placeholder": "Parameter name",
+				"params_value_placeholder": "Parameter value",
+				"params_add": "Add parameter"
+			},
+			"health": {
+				"online": "Online",
+				"offline": "Offline",
+				"unknown": "Unknown",
+				"refresh": "Refresh connection status"
+			},
+			"connection": {
+				"online": "Online",
+				"offline": "Offline",
+				"unknown": "Unknown"
+			},
+			"messages": {
+				"fetch_failed": "Failed to fetch VDS nodes",
+				"created": "VDS node created successfully",
+				"create_failed": "Failed to create VDS node",
+				"update_success": "VDS node updated successfully",
+				"update_failed": "Failed to update VDS node",
+				"delete_success": "VDS node deleted successfully",
+				"delete_failed": "Failed to delete VDS node",
+				"connection_ok": "Connection to Proxmox node successful",
+				"connection_failed": "Failed to test connection to Proxmox node",
+				"connection_check_failed": "Failed to test connections for all Proxmox nodes"
+			},
+			"health.refresh": "Refresh connection status",
+			"actions": {
+				"test_connection": "Test connection",
+				"filter_by_location": "Filter by location",
+				"edit": "Edit VDS node",
+				"delete": "Delete VDS node",
+				"confirm_delete": "Confirm delete",
+				"cancel_delete": "Cancel"
+			},
+			"no_results": "No VDS nodes found",
+			"help": {
+				"what": {
+					"title": "What are VDS Nodes?",
+					"description": "VDS nodes in FeatherPanel map to your Proxmox hypervisors and allow you to provision and manage virtual machines."
+				},
+				"utility": {
+					"title": "How are they used?",
+					"connect": "Connect Proxmox clusters to FeatherPanel using API tokens.",
+					"monitor": "Monitor basic connectivity to each hypervisor from the panel.",
+					"mapLocations": "Bind each VDS node to a VPS location so customers know where their VMs live."
+				},
+				"locations": {
+					"title": "VPS Locations",
+					"description": "Only locations marked as type \"VPS\" can be used for VDS nodes to keep game and VPS capacity clearly separated."
+				},
+				"proxmox": {
+					"title": "Proxmox Integration",
+					"p1": "FeatherPanel talks to Proxmox using PVE API tokens over HTTPS, so your credentials never need to be entered directly on each node.",
+					"p2": "Use the connection test action to quickly verify that your token, host, and SSL configuration are valid."
 				}
 			}
 		},
@@ -6010,6 +6121,26 @@
 					"reset": "Configuration reset to defaults",
 					"resetFailed": "Failed to reset configuration"
 				}
+			},
+			"ips": {
+				"title": "IP Pool",
+				"add_title": "Add IP to this node",
+				"ip_placeholder": "IP address (v4 or v6)",
+				"cidr_placeholder": "CIDR (/32)",
+				"gateway_placeholder": "Gateway (optional)",
+				"notes_placeholder": "Notes",
+				"add_button": "Add IP",
+				"list_title": "Configured IPs",
+				"empty": "No IPs configured for this node yet.",
+				"primary_badge": "PRIMARY",
+				"ip_required": "An IP address is required",
+				"ip_invalid": "Please enter a valid IPv4 or IPv6 address",
+				"cidr_invalid": "CIDR must be between 0 and 128",
+				"gateway_invalid": "Please enter a valid gateway IP",
+				"create_failed": "Failed to create IP",
+				"delete_failed": "Failed to delete IP",
+				"set_primary": "Set primary",
+				"primary_failed": "Failed to set primary IP"
 			}
 		}
 	},

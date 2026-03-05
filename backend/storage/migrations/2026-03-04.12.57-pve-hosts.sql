@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS `featherpanel_vm_nodes` (
+	`id` int(11) NOT NULL AUTO_INCREMENT,
+	`name` varchar(255) NOT NULL,
+	`description` text DEFAULT NULL,
+	`location_id` int(11) NOT NULL,
+	`fqdn` varchar(255) NOT NULL,
+	`scheme` varchar(255) NOT NULL DEFAULT 'https',
+	`port` int(11) NOT NULL,
+	`user` text NOT NULL,
+	`token_id` text NOT NULL,
+	`secret` text NOT NULL,
+	`tls_no_verify` enum('true','false') NOT NULL DEFAULT 'false',
+	`timeout` int(11) NOT NULL DEFAULT 60,
+	`addional_headers` text DEFAULT NULL,
+	`additional_params` text DEFAULT NULL,
+	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`),
+	KEY `featherpanel_vm_nodes_location_id_foreign` (`location_id`),
+	CONSTRAINT `featherpanel_vm_nodes_location_id_foreign` FOREIGN KEY (`location_id`) REFERENCES `featherpanel_locations` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

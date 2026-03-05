@@ -75,7 +75,7 @@ interface Pagination {
 }
 
 /** Set to false to allow selecting VPS and Web hosting (Proxmox / FeatherFly). */
-const GAME_HOSTING_ONLY = true;
+const GAME_HOSTING_ONLY = false;
 
 const LOCATION_TYPES: {
     value: LocationType;
