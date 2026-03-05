@@ -77,6 +77,52 @@ class Proxmox
     }
 
     /**
+     * Fetch Proxmox version information from /api2/json/version.
+     *
+     * @return array{ok: bool, data: array<string, mixed>|null, error: string|null}
+     */
+    public function getVersion(): array
+    {
+        try {
+            $response = $this->client->get('/api2/json/version');
+            $body = json_decode((string) $response->getBody(), true);
+            $data = (is_array($body) && isset($body['data'])) ? $body['data'] : null;
+
+            return ['ok' => true, 'data' => $data, 'error' => null];
+        } catch (GuzzleException $e) {
+            App::getInstance(true)->getLogger()->error(
+                'Proxmox getVersion failed: ' . $e->getMessage()
+            );
+
+            return ['ok' => false, 'data' => null, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Fetch all PVE cluster nodes from /api2/json/nodes.
+     *
+     * @return array{ok: bool, nodes: array<int, mixed>, error: string|null}
+     */
+    public function getNodes(): array
+    {
+        try {
+            $response = $this->client->get('/api2/json/nodes');
+            $body = json_decode((string) $response->getBody(), true);
+            $nodes = (is_array($body) && isset($body['data']) && is_array($body['data']))
+                ? $body['data']
+                : [];
+
+            return ['ok' => true, 'nodes' => $nodes, 'error' => null];
+        } catch (GuzzleException $e) {
+            App::getInstance(true)->getLogger()->error(
+                'Proxmox getNodes failed: ' . $e->getMessage()
+            );
+
+            return ['ok' => false, 'nodes' => [], 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
      * Perform a lightweight connectivity check against /nodes.
      *
      * @param array<string, string> $extraHeaders additional headers to send for this check

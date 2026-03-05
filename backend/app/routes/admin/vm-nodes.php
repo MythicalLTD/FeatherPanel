@@ -109,6 +109,22 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-vm-nodes-info',
+        '/api/admin/vm-nodes/{id}/info',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->getInfo($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-vm-nodes-ips-index',
         '/api/admin/vm-nodes/{id}/ips',
         function (Request $request, array $args) {

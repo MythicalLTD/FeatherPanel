@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /*
 This file is part of FeatherPanel.
- 
-Copyright (C) 2025 MythicalSystems Studios
+
+Copyright (C) 2025 MythicalSystems Studio
 Copyright (C) 2025 FeatherPanel Contributors
 Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
 
@@ -21,28 +20,20 @@ import { useRouter, useParams } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { Textarea } from '@/components/featherui/Textarea';
-import { Select } from '@/components/ui/select-native';
-import { Label } from '@/components/ui/label';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import {
-    Server,
-    ArrowLeft,
-    Save,
-    RefreshCw,
-    Search as SearchIcon,
-    MapPin,
-    ChevronLeft,
-    ChevronRight,
-    Plus,
-    Trash2,
-} from 'lucide-react';
+import { Server, ArrowLeft, Save, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+
+import { DetailsTab } from './DetailsTab';
+import { ConnectionTab } from './ConnectionTab';
+import { AdvancedTab } from './AdvancedTab';
+import { IpPoolTab } from './IpPoolTab';
+import { InfoTab } from './InfoTab';
 
 interface Location {
     id: number;
@@ -51,13 +42,17 @@ interface Location {
     type: 'game' | 'vps' | 'web';
 }
 
-interface VmNode {
-    id: number;
+export interface KVPair {
+    key: string;
+    value: string;
+}
+
+export interface VdsNodeForm {
     name: string;
-    description: string | null;
-    location_id: number;
+    description: string;
+    location_id: string;
     fqdn: string;
-    scheme: string;
+    scheme: 'http' | 'https';
     port: number;
     user: string;
     token_id: string;
@@ -70,1003 +65,358 @@ export default function EditVdsNodePage() {
     const { t } = useTranslation();
     const router = useRouter();
     const params = useParams();
-    const id = params.id as string;
+    const id = params?.id as string;
 
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [testing, setTesting] = useState(false);
-
-    const [locations, setLocations] = useState<Location[]>([]);
-    const [locationModalOpen, setLocationModalOpen] = useState(false);
-    const [selectedLocationName, setSelectedLocationName] = useState<string>('');
-    const [locationSearch, setLocationSearch] = useState('');
-    const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
-    const [locationPagination, setLocationPagination] = useState({
-        current_page: 1,
-        per_page: 10,
-        total_records: 0,
-        total_pages: 0,
-        has_next: false,
-        has_prev: false,
-    });
-
-    const [form, setForm] = useState({
+    const [form, setForm] = useState<VdsNodeForm>({
         name: '',
         description: '',
-        fqdn: '',
         location_id: '',
+        fqdn: '',
         scheme: 'https',
         port: 8006,
         user: '',
         token_id: '',
         secret: '',
-        tls_no_verify: 'false' as 'true' | 'false',
+        tls_no_verify: 'false',
         timeout: 60,
     });
-
-    const [extraHeaders, setExtraHeaders] = useState<Array<{ key: string; value: string }>>([]);
-    const [extraParams, setExtraParams] = useState<Array<{ key: string; value: string }>>([]);
-
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [saving, setSaving] = useState(false);
+    const [loadingNode, setLoadingNode] = useState(true);
+    const [nodeName, setNodeName] = useState('');
 
-    const [connectionState, setConnectionState] = useState<'idle' | 'ok' | 'error'>('idle');
-    const [connectionMessage, setConnectionMessage] = useState<string | null>(null);
-    const [connectionPayload, setConnectionPayload] = useState<unknown | null>(null);
+    const [headers, setHeaders] = useState<KVPair[]>([]);
+    const [queryParams, setQueryParams] = useState<KVPair[]>([]);
 
-    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vds-nodes-edit');
+    const [locations, setLocations] = useState<Location[]>([]);
+    const [locationSearch, setLocationSearch] = useState('');
+    const [locationModalOpen, setLocationModalOpen] = useState(false);
+    const [selectedLocationName, setSelectedLocationName] = useState('');
 
-    type VmIp = {
-        id: number;
-        vm_node_id: number;
-        ip: string;
-        cidr: number | null;
-        gateway: string | null;
-        is_primary: 'true' | 'false';
-        notes: string | null;
-    };
+    const [connectionTesting, setConnectionTesting] = useState(false);
+    const [connectionResult, setConnectionResult] = useState<{
+        ok: boolean;
+        message: string;
+        payload?: unknown;
+    } | null>(null);
 
-    const [ips, setIps] = useState<VmIp[]>([]);
-    const [ipsLoading, setIpsLoading] = useState(false);
-    const [ipForm, setIpForm] = useState<{ ip: string; cidr: string; gateway: string; notes: string }>({
-        ip: '',
-        cidr: '',
-        gateway: '',
-        notes: '',
-    });
-    const [ipErrors, setIpErrors] = useState<Record<string, string>>({});
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vds-node-edit');
 
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    const fetchVmNode = useCallback(async () => {
-        setLoading(true);
-        try {
-            const { data } = await axios.get(`/api/admin/vm-nodes/${id}`);
-            const node = data.data.vm_node as VmNode;
-            setForm({
-                name: node.name,
-                description: node.description || '',
-                fqdn: node.fqdn,
-                location_id: node.location_id.toString(),
-                scheme: node.scheme,
-                port: node.port,
-                user: node.user,
-                token_id: node.token_id,
-                secret: node.secret,
-                tls_no_verify: node.tls_no_verify,
-                timeout: node.timeout,
-            });
-
-            // Parse advanced HTTP options (JSON stored in DB)
-            const headersArray: Array<{ key: string; value: string }> = [];
-            if (typeof (node as any).addional_headers === 'string' && (node as any).addional_headers !== '') {
-                try {
-                    const parsed = JSON.parse((node as any).addional_headers);
-                    if (parsed && typeof parsed === 'object') {
-                        Object.entries(parsed as Record<string, unknown>).forEach(([k, v]) => {
-                            headersArray.push({ key: k, value: String(v) });
-                        });
-                    }
-                } catch (e) {
-                    console.error('Failed to parse VM node headers JSON', e);
-                }
-            }
-            setExtraHeaders(headersArray);
-
-            const paramsArray: Array<{ key: string; value: string }> = [];
-            if (typeof (node as any).additional_params === 'string' && (node as any).additional_params !== '') {
-                try {
-                    const parsed = JSON.parse((node as any).additional_params);
-                    if (parsed && typeof parsed === 'object') {
-                        Object.entries(parsed as Record<string, unknown>).forEach(([k, v]) => {
-                            paramsArray.push({ key: k, value: String(v) });
-                        });
-                    }
-                } catch (e) {
-                    console.error('Failed to parse VM node params JSON', e);
-                }
-            }
-            setExtraParams(paramsArray);
-
-            if (node.location_id) {
-                try {
-                    const locationRes = await axios.get(`/api/admin/locations/${node.location_id}`);
-                    if (locationRes.data?.data?.location) {
-                        setSelectedLocationName(locationRes.data.data.location.name);
-                    }
-                } catch (e) {
-                    console.error('Error fetching location for VDS node:', e);
-                }
-            }
-        } catch (error) {
-            console.error('Error fetching VDS node:', error);
-            toast.error(t('admin.vdsNodes.messages.fetch_failed'));
-            router.push('/admin/vds-nodes');
-        } finally {
-            setLoading(false);
-        }
-    }, [id, router, t]);
-
-    const loadIps = useCallback(async () => {
-        setIpsLoading(true);
-        try {
-            const { data } = await axios.get(`/api/admin/vm-nodes/${id}/ips`);
-            const list = (data.data?.ips || []) as VmIp[];
-            setIps(list);
-        } catch (error) {
-            console.error('Error fetching VM node IPs:', error);
-        } finally {
-            setIpsLoading(false);
-        }
-    }, [id]);
-
-    useEffect(() => {
-        fetchVmNode();
-        loadIps();
-    }, [fetchVmNode, loadIps]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedLocationSearch(locationSearch);
-            setLocationPagination((prev) => ({ ...prev, current_page: 1 }));
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [locationSearch]);
-
     const fetchLocations = useCallback(async () => {
         try {
-            const currentPage = locationPagination.current_page;
-            const perPage = locationPagination.per_page;
-
-            const { data } = await axios.get('/api/admin/locations', {
-                params: {
-                    page: currentPage,
-                    limit: perPage,
-                    search: debouncedLocationSearch || undefined,
-                },
-            });
-
-            const allLocations = (data.data.locations || []) as Location[];
-            const vpsLocations = allLocations.filter((l) => l.type === 'vps');
-            setLocations(vpsLocations);
-
-            if (data.data.pagination) {
-                setLocationPagination((prev) => ({
-                    ...prev,
-                    ...data.data.pagination,
-                }));
-            }
-        } catch (error) {
-            console.error('Error fetching locations:', error);
+            const { data } = await axios.get('/api/admin/locations');
+            const all: Location[] = data.data?.locations ?? data.data ?? [];
+            setLocations(all.filter((l) => l.type === 'vps'));
+        } catch {
+            toast.error(t('admin.vdsNodes.errors.fetch_locations_failed'));
         }
-    }, [locationPagination.current_page, locationPagination.per_page, debouncedLocationSearch]);
+    }, [t]);
 
     useEffect(() => {
-        if (locationModalOpen) {
-            fetchLocations();
-        }
-    }, [locationModalOpen, locationPagination.current_page, debouncedLocationSearch, fetchLocations]);
+        const loadNode = async () => {
+            setLoadingNode(true);
+            try {
+                // Load node and locations in parallel
+                const [nodeRes, locRes] = await Promise.all([
+                    axios.get(`/api/admin/vm-nodes/${id}`),
+                    axios.get('/api/admin/locations'),
+                ]);
 
-    const validate = useCallback(() => {
-        const newErrors: Record<string, string> = {};
+                // API wraps the node under data.data.vm_node
+                const node = nodeRes.data.data?.vm_node ?? nodeRes.data.data;
 
-        if (!form.name.trim()) newErrors.name = t('admin.vdsNodes.form.name_required');
-        if (!form.fqdn.trim()) {
-            newErrors.fqdn = t('admin.vdsNodes.form.fqdn_required');
-        } else {
-            const fqdnRegex =
-                /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-            if (!fqdnRegex.test(form.fqdn)) {
-                newErrors.fqdn = t('admin.vdsNodes.form.fqdn_invalid');
+                // Build VPS locations list
+                const allLocs: Location[] = locRes.data.data?.locations ?? locRes.data.data ?? [];
+                const vpsLocs = allLocs.filter((l: Location) => l.type === 'vps');
+                setLocations(vpsLocs);
+
+                // Resolve location name from the fetched list
+                const matchedLoc = vpsLocs.find((l: Location) => l.id === node.location_id);
+                if (matchedLoc) setSelectedLocationName(matchedLoc.name);
+
+                setNodeName(node.name);
+                setForm({
+                    name: node.name ?? '',
+                    description: node.description ?? '',
+                    location_id: String(node.location_id ?? ''),
+                    fqdn: node.fqdn ?? '',
+                    scheme: (node.scheme as 'http' | 'https') ?? 'https',
+                    port: node.port ?? 8006,
+                    user: node.user ?? '',
+                    token_id: node.token_id ?? '',
+                    secret: '',
+                    tls_no_verify: (node.tls_no_verify as 'true' | 'false') ?? 'false',
+                    timeout: node.timeout ?? 60,
+                });
+
+                if (node.addional_headers) {
+                    try {
+                        const parsed = JSON.parse(node.addional_headers);
+                        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                            setHeaders(Object.entries(parsed).map(([key, value]) => ({ key, value: String(value) })));
+                        }
+                    } catch {}
+                }
+                if (node.additional_params) {
+                    try {
+                        const parsed = JSON.parse(node.additional_params);
+                        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                            setQueryParams(
+                                Object.entries(parsed).map(([key, value]) => ({ key, value: String(value) })),
+                            );
+                        }
+                    } catch {}
+                }
+            } catch {
+                toast.error(t('admin.vdsNodes.errors.fetch_failed'));
+                router.push('/admin/vds-nodes');
+            } finally {
+                setLoadingNode(false);
             }
-        }
+        };
+        loadNode();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
-        if (!form.location_id) newErrors.location_id = t('admin.vdsNodes.form.location_required');
-        if (!form.user.trim()) newErrors.user = t('admin.vdsNodes.form.user_required');
-        if (!form.token_id.trim()) newErrors.token_id = t('admin.vdsNodes.form.token_id_required');
-
-        if (!form.port || form.port < 1 || form.port > 65535) {
-            newErrors.port = t('admin.vdsNodes.form.port_invalid');
-        }
-
-        if (!form.timeout || form.timeout < 1) {
-            newErrors.timeout = t('admin.vdsNodes.form.timeout_invalid');
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    }, [form, t]);
-
-    const validateIpForm = useCallback(() => {
-        const newErrors: Record<string, string> = {};
-        if (!ipForm.ip.trim()) {
-            newErrors.ip = t('admin.vdsNodes.ips.ip_required');
-        } else if (!/^([0-9a-fA-F:.]+)$/.test(ipForm.ip.trim())) {
-            newErrors.ip = t('admin.vdsNodes.ips.ip_invalid');
-        }
-        if (ipForm.cidr) {
-            const cidrNum = Number(ipForm.cidr);
-            if (Number.isNaN(cidrNum) || cidrNum < 0 || cidrNum > 128) {
-                newErrors.cidr = t('admin.vdsNodes.ips.cidr_invalid');
-            }
-        }
-        if (ipForm.gateway && !/^([0-9a-fA-F:.]+)$/.test(ipForm.gateway.trim())) {
-            newErrors.gateway = t('admin.vdsNodes.ips.gateway_invalid');
-        }
-        setIpErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    }, [ipForm, t]);
-
-    const handleSave = async (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        if (!validate()) return;
-
+    const handleSave = async () => {
         setSaving(true);
+        setErrors({});
         try {
-            const headerObject: Record<string, string> = {};
-            extraHeaders.forEach(({ key, value }) => {
-                const trimmedKey = key.trim();
-                if (trimmedKey !== '') {
-                    headerObject[trimmedKey] = value;
-                }
-            });
+            const headersMap: Record<string, string> = {};
+            headers.filter((h) => h.key).forEach((h) => (headersMap[h.key] = h.value));
+            const paramsMap: Record<string, string> = {};
+            queryParams.filter((p) => p.key).forEach((p) => (paramsMap[p.key] = p.value));
 
-            const paramsObject: Record<string, string> = {};
-            extraParams.forEach(({ key, value }) => {
-                const trimmedKey = key.trim();
-                if (trimmedKey !== '') {
-                    paramsObject[trimmedKey] = value;
-                }
-            });
-
-            const submitData = {
+            const payload: Record<string, unknown> = {
                 ...form,
-                location_id: parseInt(form.location_id),
-                port: Number(form.port),
-                timeout: Number(form.timeout),
-                addional_headers: Object.keys(headerObject).length > 0 ? JSON.stringify(headerObject) : null,
-                additional_params: Object.keys(paramsObject).length > 0 ? JSON.stringify(paramsObject) : null,
+                addional_headers: Object.keys(headersMap).length ? JSON.stringify(headersMap) : null,
+                additional_params: Object.keys(paramsMap).length ? JSON.stringify(paramsMap) : null,
             };
+            if (!form.secret) delete payload.secret;
 
-            await axios.patch(`/api/admin/vm-nodes/${id}`, submitData);
-            toast.success(t('admin.vdsNodes.messages.update_success'));
-            fetchVmNode();
-            loadIps();
+            await axios.patch(`/api/admin/vm-nodes/${id}`, payload);
+            setNodeName(form.name);
+            toast.success(t('admin.vdsNodes.messages.updated'));
         } catch (error) {
-            console.error('Error updating VDS node:', error);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
+            if (isAxiosError(error) && error.response?.data?.errors) {
+                const fieldErrors: Record<string, string> = {};
+                for (const err of error.response.data.errors) {
+                    if (err.field) fieldErrors[err.field] = err.detail;
+                }
+                setErrors(fieldErrors);
+                toast.error(t('admin.vdsNodes.errors.validation_failed'));
             } else {
-                toast.error(t('admin.vdsNodes.messages.update_failed'));
+                toast.error(t('admin.vdsNodes.errors.save_failed'));
             }
         } finally {
             setSaving(false);
         }
     };
 
-    const handleAddIp = async () => {
-        if (!validateIpForm()) return;
-
-        try {
-            const payload = {
-                ip: ipForm.ip.trim(),
-                cidr: ipForm.cidr ? Number(ipForm.cidr) : null,
-                gateway: ipForm.gateway ? ipForm.gateway.trim() : null,
-                notes: ipForm.notes.trim() || null,
-            };
-            await axios.put(`/api/admin/vm-nodes/${id}/ips`, payload);
-            setIpForm({ ip: '', cidr: '', gateway: '', notes: '' });
-            setIpErrors({});
-            loadIps();
-        } catch (error) {
-            console.error('Error creating VM node IP:', error);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.vdsNodes.ips.create_failed'));
-            }
-        }
-    };
-
-    const handleDeleteIp = async (ipId: number) => {
-        try {
-            await axios.delete(`/api/admin/vm-nodes/${id}/ips/${ipId}`);
-            loadIps();
-        } catch (error) {
-            console.error('Error deleting VM node IP:', error);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.vdsNodes.ips.delete_failed'));
-            }
-        }
-    };
-
-    const handleSetPrimaryIp = async (ipId: number) => {
-        try {
-            await axios.post(`/api/admin/vm-nodes/${id}/ips/${ipId}/primary`);
-            loadIps();
-        } catch (error) {
-            console.error('Error setting primary VM node IP:', error);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.vdsNodes.ips.primary_failed'));
-            }
-        }
-    };
-
     const handleTestConnection = async () => {
-        setTesting(true);
-        setConnectionState('idle');
-        setConnectionMessage(null);
-        setConnectionPayload(null);
-
+        setConnectionTesting(true);
+        setConnectionResult(null);
         try {
-            const { data } = await axios.get(`/api/admin/vm-nodes/${id}/test-connection`);
-
-            const ok = data.data?.ok ?? false;
-            const payload = data.data ?? data;
-            setConnectionPayload(payload);
-
-            if (ok) {
-                setConnectionState('ok');
-                setConnectionMessage(data.message ?? t('admin.vdsNodes.messages.connection_ok'));
+            const { data } = await axios.post(`/api/admin/vm-nodes/${id}/test-connection`);
+            if (data.success && data.data?.ok) {
+                setConnectionResult({
+                    ok: true,
+                    message: t('admin.vdsNodes.connection.success', {
+                        count: String(data.data.nodes?.length ?? 0),
+                        ms: String(data.data.duration_ms ?? 0),
+                    }),
+                    payload: data.data,
+                });
             } else {
-                setConnectionState('error');
-                const messageFromBackend =
-                    data.data?.error || data.error || data.message || t('admin.vdsNodes.messages.connection_failed');
-                setConnectionMessage(messageFromBackend);
+                setConnectionResult({
+                    ok: false,
+                    message: data.message ?? data.error_message ?? t('admin.vdsNodes.connection.failed'),
+                    payload: data.data,
+                });
             }
         } catch (error) {
-            console.error('Error testing connection:', error);
-            setConnectionState('error');
-
-            if (isAxiosError(error) && error.response) {
-                const respData: any = error.response.data ?? {};
-                setConnectionPayload(respData);
-
-                const status = error.response.status;
-                const statusText = error.response.statusText;
-                const backendMessage = respData.error || respData.message;
-
-                const msg =
-                    backendMessage ||
-                    `${status} ${statusText || ''}`.trim() ||
-                    t('admin.vdsNodes.messages.connection_failed');
-
-                setConnectionMessage(msg);
-            } else {
-                setConnectionPayload(null);
-                setConnectionMessage(t('admin.vdsNodes.messages.connection_failed'));
-            }
+            const errMsg = isAxiosError(error)
+                ? (error.response?.data?.message ?? error.message)
+                : t('admin.vdsNodes.connection.failed');
+            const payload = isAxiosError(error) ? error.response?.data?.data : undefined;
+            setConnectionResult({ ok: false, message: errMsg, payload });
         } finally {
-            setTesting(false);
+            setConnectionTesting(false);
         }
     };
 
-    if (loading) {
+    const filteredLocations = locations.filter(
+        (l) =>
+            l.name.toLowerCase().includes(locationSearch.toLowerCase()) ||
+            l.description?.toLowerCase().includes(locationSearch.toLowerCase()),
+    );
+
+    if (loadingNode) {
         return (
-            <div className='flex items-center justify-center p-12'>
-                <RefreshCw className='w-6 h-6 animate-spin text-primary' />
+            <div className='flex items-center justify-center min-h-[60vh]'>
+                <RefreshCw className='h-8 w-8 animate-spin text-primary' />
             </div>
         );
     }
 
     return (
-        <div className='max-w-5xl mx-auto py-8 px-4 space-y-8'>
-            <WidgetRenderer
-                widgets={getWidgets('admin-vds-nodes-edit', 'top-of-page')}
-                context={{ id: id as string }}
-            />
-
+        <div className='space-y-6'>
             <PageHeader
-                title={t('admin.vdsNodes.form.edit_title')}
-                description={t('admin.vdsNodes.form.edit_description')}
+                title={nodeName || t('admin.vdsNodes.edit.title')}
+                description={t('admin.vdsNodes.edit.description')}
                 icon={Server}
                 actions={
-                    <div className='flex gap-2'>
-                        <Button variant='outline' onClick={() => router.back()}>
+                    <div className='flex items-center gap-3'>
+                        <Button variant='outline' size='sm' onClick={() => router.push('/admin/vds-nodes')}>
                             <ArrowLeft className='h-4 w-4 mr-2' />
                             {t('common.back')}
                         </Button>
-                        <Button variant='outline' onClick={handleTestConnection} loading={testing}>
-                            <RefreshCw className='h-4 w-4 mr-2' />
-                            {t('admin.vdsNodes.health.refresh')}
+                        <Button variant='outline' size='sm' onClick={handleTestConnection} loading={connectionTesting}>
+                            <Wifi className='h-4 w-4 mr-2' />
+                            {t('admin.vdsNodes.connection.test_button')}
                         </Button>
-                        <Button onClick={handleSave} loading={saving}>
+                        <Button size='sm' onClick={handleSave} loading={saving}>
                             <Save className='h-4 w-4 mr-2' />
-                            {t('admin.vdsNodes.form.submit_save')}
+                            {t('common.save')}
                         </Button>
                     </div>
                 }
             />
 
-            {connectionState !== 'idle' && (
+            {connectionResult && (
                 <div
-                    className={`rounded-2xl border-2 px-5 py-4 shadow-sm transition-colors ${
-                        connectionState === 'ok'
-                            ? 'border-emerald-500/70 bg-emerald-500/5'
-                            : 'border-red-500/70 bg-red-500/5'
+                    className={`rounded-2xl border-2 px-5 py-4 space-y-3 ${
+                        connectionResult.ok ? 'border-green-500/40 bg-green-500/5' : 'border-red-500/40 bg-red-500/5'
                     }`}
                 >
-                    <div className='flex items-start gap-3'>
-                        <div
-                            className={`mt-1 h-3 w-3 rounded-full ${
-                                connectionState === 'ok' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
+                    <div className='flex items-center gap-3'>
+                        {connectionResult.ok ? (
+                            <Wifi className='h-5 w-5 text-green-500 shrink-0' />
+                        ) : (
+                            <WifiOff className='h-5 w-5 text-red-500 shrink-0' />
+                        )}
+                        <p
+                            className={`font-semibold text-sm ${
+                                connectionResult.ok ? 'text-green-600' : 'text-red-600'
                             }`}
-                        />
-                        <div className='flex-1 space-y-2'>
-                            <div className='flex items-center justify-between gap-3'>
-                                <div>
-                                    <p className='text-sm font-semibold uppercase tracking-wide'>
-                                        {connectionState === 'ok'
-                                            ? t('admin.vdsNodes.health.online')
-                                            : t('admin.vdsNodes.health.offline')}
-                                    </p>
-                                    {connectionMessage && (
-                                        <p className='text-sm mt-1 text-foreground'>{connectionMessage}</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {connectionPayload && typeof connectionPayload === 'object' ? (
-                                <div className='mt-2 rounded-xl bg-background/80 border border-border/60 max-h-64 overflow-auto'>
-                                    <pre className='text-xs font-mono p-3 whitespace-pre-wrap break-all'>
-                                        {JSON.stringify(connectionPayload ?? {}, null, 2)}
-                                    </pre>
-                                </div>
-                            ) : null}
-                        </div>
+                        >
+                            {connectionResult.message}
+                        </p>
                     </div>
+                    {connectionResult.payload !== undefined && connectionResult.payload !== null && (
+                        <pre className='text-[11px] text-muted-foreground bg-background/60 border border-border/50 rounded-xl p-3 overflow-auto max-h-64 font-mono leading-relaxed whitespace-pre-wrap break-all'>
+                            {JSON.stringify(connectionResult.payload, null, 2)}
+                        </pre>
+                    )}
                 </div>
             )}
 
-            <WidgetRenderer
-                widgets={getWidgets('admin-vds-nodes-edit', 'after-header')}
-                context={{ id: id as string }}
-            />
+            <WidgetRenderer widgets={getWidgets('admin-vds-node-edit', 'top-of-page')} context={{ id }} />
 
-            <form onSubmit={handleSave} className='space-y-8'>
-                <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-                    <div className='space-y-8'>
-                        <PageCard title={t('admin.vdsNodes.form.basic_details')} icon={Server}>
-                            <div className='space-y-6'>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.name')}</Label>
-                                    <Input
-                                        value={form.name}
-                                        onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                        error={!!errors.name}
-                                    />
-                                    {errors.name && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
-                                            {errors.name}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.description')}
-                                    </Label>
-                                    <Textarea
-                                        value={form.description}
-                                        onChange={(e) => setForm({ ...form, description: e.target.value })}
-                                        className='min-h-[100px]'
-                                    />
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.location')}</Label>
-                                    <div className='flex gap-2'>
-                                        <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
-                                            {form.location_id && selectedLocationName ? (
-                                                <div className='flex items-center gap-2'>
-                                                    <MapPin className='h-4 w-4 text-primary' />
-                                                    <span className='font-medium text-foreground'>
-                                                        {selectedLocationName}
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <span className='text-muted-foreground'>
-                                                    {t('admin.vdsNodes.form.select_location')}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <Button
-                                            type='button'
-                                            size='icon'
-                                            onClick={() => {
-                                                fetchLocations();
-                                                setLocationModalOpen(true);
-                                            }}
-                                        >
-                                            <SearchIcon className='h-4 w-4' />
-                                        </Button>
-                                    </div>
-                                    {errors.location_id && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
-                                            {errors.location_id}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </PageCard>
+            <Tabs defaultValue='details' className='space-y-6'>
+                <TabsList className='w-full justify-start h-auto p-1 bg-muted/40 rounded-xl flex-wrap gap-1'>
+                    <TabsTrigger value='details' className='rounded-lg px-4 py-2 text-sm'>
+                        {t('admin.vdsNodes.tabs.details')}
+                    </TabsTrigger>
+                    <TabsTrigger value='connection' className='rounded-lg px-4 py-2 text-sm'>
+                        {t('admin.vdsNodes.tabs.connection')}
+                    </TabsTrigger>
+                    <TabsTrigger value='advanced' className='rounded-lg px-4 py-2 text-sm'>
+                        {t('admin.vdsNodes.tabs.advanced')}
+                    </TabsTrigger>
+                    <TabsTrigger value='ip-pool' className='rounded-lg px-4 py-2 text-sm'>
+                        {t('admin.vdsNodes.tabs.ip_pool')}
+                    </TabsTrigger>
+                    <TabsTrigger value='info' className='rounded-lg px-4 py-2 text-sm'>
+                        {t('admin.vdsNodes.tabs.info')}
+                    </TabsTrigger>
+                </TabsList>
 
-                        <PageCard title={t('admin.vdsNodes.form.proxmox')} icon={Server}>
-                            <div className='space-y-6'>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.user')}</Label>
-                                    <Input
-                                        value={form.user}
-                                        onChange={(e) => setForm({ ...form, user: e.target.value })}
-                                        error={!!errors.user}
-                                    />
-                                    {errors.user && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
-                                            {errors.user}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.token_id')}</Label>
-                                    <Input
-                                        value={form.token_id}
-                                        onChange={(e) => setForm({ ...form, token_id: e.target.value })}
-                                        error={!!errors.token_id}
-                                    />
-                                    {errors.token_id && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
-                                            {errors.token_id}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.secret')}</Label>
-                                    <Input
-                                        type='password'
-                                        value={form.secret}
-                                        onChange={(e) => setForm({ ...form, secret: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                        </PageCard>
-                    </div>
+                <TabsContent value='details' className='mt-0'>
+                    <DetailsTab
+                        form={form}
+                        setForm={setForm}
+                        errors={errors}
+                        selectedLocationName={selectedLocationName}
+                        setLocationModalOpen={setLocationModalOpen}
+                        fetchLocations={fetchLocations}
+                    />
+                </TabsContent>
 
-                    <div className='space-y-8'>
-                        <PageCard title={t('admin.vdsNodes.form.network')} icon={Server}>
-                            <div className='space-y-6'>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.fqdn')}</Label>
-                                    <Input
-                                        value={form.fqdn}
-                                        onChange={(e) => setForm({ ...form, fqdn: e.target.value })}
-                                        error={!!errors.fqdn}
-                                    />
-                                    {errors.fqdn && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
-                                            {errors.fqdn}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className='grid grid-cols-2 gap-4'>
-                                    <div className='space-y-2'>
-                                        <Label className='text-sm font-semibold'>
-                                            {t('admin.vdsNodes.form.scheme')}
-                                        </Label>
-                                        <Select
-                                            value={form.scheme}
-                                            onChange={(e) =>
-                                                setForm({
-                                                    ...form,
-                                                    scheme: e.target.value as 'http' | 'https',
-                                                })
-                                            }
-                                        >
-                                            <option value='https'>HTTPS</option>
-                                            <option value='http'>HTTP</option>
-                                        </Select>
-                                    </div>
-                                    <div className='space-y-2'>
-                                        <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.port')}</Label>
-                                        <Input
-                                            type='number'
-                                            value={form.port}
-                                            onChange={(e) =>
-                                                setForm({
-                                                    ...form,
-                                                    port: parseInt(e.target.value, 10) || 0,
-                                                })
-                                            }
-                                            error={!!errors.port}
-                                        />
-                                        {errors.port && (
-                                            <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
-                                                {errors.port}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.tls_no_verify')}
-                                    </Label>
-                                    <Select
-                                        value={form.tls_no_verify}
-                                        onChange={(e) =>
-                                            setForm({
-                                                ...form,
-                                                tls_no_verify: e.target.value as 'true' | 'false',
-                                            })
-                                        }
-                                    >
-                                        <option value='false'>{t('admin.vdsNodes.form.tls_no_verify_false')}</option>
-                                        <option value='true'>{t('admin.vdsNodes.form.tls_no_verify_true')}</option>
-                                    </Select>
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.timeout')}</Label>
-                                    <Input
-                                        type='number'
-                                        value={form.timeout}
-                                        onChange={(e) =>
-                                            setForm({
-                                                ...form,
-                                                timeout: parseInt(e.target.value, 10) || 0,
-                                            })
-                                        }
-                                        error={!!errors.timeout}
-                                    />
-                                    {errors.timeout && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
-                                            {errors.timeout}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </PageCard>
+                <TabsContent value='connection' className='mt-0'>
+                    <ConnectionTab form={form} setForm={setForm} errors={errors} />
+                </TabsContent>
 
-                        <PageCard title={t('admin.vdsNodes.form.http_advanced')} icon={Server}>
-                            <div className='space-y-6'>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.headers')}</Label>
-                                    <p className='text-xs text-muted-foreground'>
-                                        {t('admin.vdsNodes.form.headers_help')}
-                                    </p>
-                                    <div className='space-y-2'>
-                                        {extraHeaders.map((row, index) => (
-                                            <div key={index} className='flex gap-2'>
-                                                <Input
-                                                    placeholder={t('admin.vdsNodes.form.headers_key_placeholder')}
-                                                    value={row.key}
-                                                    onChange={(e) => {
-                                                        const next = [...extraHeaders];
-                                                        next[index] = { ...next[index], key: e.target.value };
-                                                        setExtraHeaders(next);
-                                                    }}
-                                                />
-                                                <Input
-                                                    placeholder={t('admin.vdsNodes.form.headers_value_placeholder')}
-                                                    value={row.value}
-                                                    onChange={(e) => {
-                                                        const next = [...extraHeaders];
-                                                        next[index] = { ...next[index], value: e.target.value };
-                                                        setExtraHeaders(next);
-                                                    }}
-                                                />
-                                                <Button
-                                                    type='button'
-                                                    size='icon'
-                                                    variant='ghost'
-                                                    onClick={() =>
-                                                        setExtraHeaders((rows) => rows.filter((_, i) => i !== index))
-                                                    }
-                                                >
-                                                    <Trash2 className='h-4 w-4' />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                        <Button
-                                            type='button'
-                                            variant='outline'
-                                            size='sm'
-                                            onClick={() => setExtraHeaders((rows) => [...rows, { key: '', value: '' }])}
-                                            className='mt-1'
-                                        >
-                                            <Plus className='h-4 w-4 mr-2' />
-                                            {t('admin.vdsNodes.form.headers_add')}
-                                        </Button>
-                                    </div>
-                                </div>
+                <TabsContent value='advanced' className='mt-0'>
+                    <AdvancedTab
+                        headers={headers}
+                        params={queryParams}
+                        onHeaderChange={(i, f, v) =>
+                            setHeaders((prev) => prev.map((h, idx) => (idx === i ? { ...h, [f]: v } : h)))
+                        }
+                        onAddHeader={() => setHeaders((prev) => [...prev, { key: '', value: '' }])}
+                        onRemoveHeader={(i) => setHeaders((prev) => prev.filter((_, idx) => idx !== i))}
+                        onParamChange={(i, f, v) =>
+                            setQueryParams((prev) => prev.map((p, idx) => (idx === i ? { ...p, [f]: v } : p)))
+                        }
+                        onAddParam={() => setQueryParams((prev) => [...prev, { key: '', value: '' }])}
+                        onRemoveParam={(i) => setQueryParams((prev) => prev.filter((_, idx) => idx !== i))}
+                    />
+                </TabsContent>
 
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.params')}</Label>
-                                    <p className='text-xs text-muted-foreground'>
-                                        {t('admin.vdsNodes.form.params_help')}
-                                    </p>
-                                    <div className='space-y-2'>
-                                        {extraParams.map((row, index) => (
-                                            <div key={index} className='flex gap-2'>
-                                                <Input
-                                                    placeholder={t('admin.vdsNodes.form.params_key_placeholder')}
-                                                    value={row.key}
-                                                    onChange={(e) => {
-                                                        const next = [...extraParams];
-                                                        next[index] = { ...next[index], key: e.target.value };
-                                                        setExtraParams(next);
-                                                    }}
-                                                />
-                                                <Input
-                                                    placeholder={t('admin.vdsNodes.form.params_value_placeholder')}
-                                                    value={row.value}
-                                                    onChange={(e) => {
-                                                        const next = [...extraParams];
-                                                        next[index] = { ...next[index], value: e.target.value };
-                                                        setExtraParams(next);
-                                                    }}
-                                                />
-                                                <Button
-                                                    type='button'
-                                                    size='icon'
-                                                    variant='ghost'
-                                                    onClick={() =>
-                                                        setExtraParams((rows) => rows.filter((_, i) => i !== index))
-                                                    }
-                                                >
-                                                    <Trash2 className='h-4 w-4' />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                        <Button
-                                            type='button'
-                                            variant='outline'
-                                            size='sm'
-                                            onClick={() => setExtraParams((rows) => [...rows, { key: '', value: '' }])}
-                                            className='mt-1'
-                                        >
-                                            <Plus className='h-4 w-4 mr-2' />
-                                            {t('admin.vdsNodes.form.params_add')}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </PageCard>
+                <TabsContent value='ip-pool' className='mt-0'>
+                    <IpPoolTab nodeId={id} nodeName={nodeName} />
+                </TabsContent>
 
-                        <PageCard title={t('admin.vdsNodes.ips.title')} icon={Server}>
-                            <div className='space-y-4'>
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.add_title')}</Label>
-                                    <div className='grid grid-cols-1 sm:grid-cols-4 gap-3'>
-                                        <div className='space-y-1'>
-                                            <Input
-                                                placeholder={t('admin.vdsNodes.ips.ip_placeholder')}
-                                                value={ipForm.ip}
-                                                onChange={(e) => setIpForm({ ...ipForm, ip: e.target.value })}
-                                                error={!!ipErrors.ip}
-                                            />
-                                            {ipErrors.ip && (
-                                                <p className='text-[10px] uppercase font-bold text-red-500 mt-0.5'>
-                                                    {ipErrors.ip}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className='space-y-1'>
-                                            <Input
-                                                placeholder={t('admin.vdsNodes.ips.cidr_placeholder')}
-                                                value={ipForm.cidr}
-                                                onChange={(e) => setIpForm({ ...ipForm, cidr: e.target.value })}
-                                                error={!!ipErrors.cidr}
-                                            />
-                                            {ipErrors.cidr && (
-                                                <p className='text-[10px] uppercase font-bold text-red-500 mt-0.5'>
-                                                    {ipErrors.cidr}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className='space-y-1'>
-                                            <Input
-                                                placeholder={t('admin.vdsNodes.ips.gateway_placeholder')}
-                                                value={ipForm.gateway}
-                                                onChange={(e) => setIpForm({ ...ipForm, gateway: e.target.value })}
-                                                error={!!ipErrors.gateway}
-                                            />
-                                            {ipErrors.gateway && (
-                                                <p className='text-[10px] uppercase font-bold text-red-500 mt-0.5'>
-                                                    {ipErrors.gateway}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className='space-y-1'>
-                                            <Input
-                                                placeholder={t('admin.vdsNodes.ips.notes_placeholder')}
-                                                value={ipForm.notes}
-                                                onChange={(e) => setIpForm({ ...ipForm, notes: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className='flex justify-end'>
-                                        <Button type='button' size='sm' onClick={handleAddIp}>
-                                            {t('admin.vdsNodes.ips.add_button')}
-                                        </Button>
-                                    </div>
-                                </div>
+                <TabsContent value='info' className='mt-0'>
+                    <InfoTab nodeId={id} nodeName={nodeName} />
+                </TabsContent>
+            </Tabs>
 
-                                <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.ips.list_title')}
-                                    </Label>
-                                    <div className='rounded-xl border border-border/60 divide-y divide-border/60 bg-background/60'>
-                                        {ipsLoading ? (
-                                            <div className='flex items-center justify-center py-6'>
-                                                <RefreshCw className='h-4 w-4 animate-spin text-muted-foreground' />
-                                            </div>
-                                        ) : ips.length === 0 ? (
-                                            <div className='py-4 px-3 text-xs text-muted-foreground'>
-                                                {t('admin.vdsNodes.ips.empty')}
-                                            </div>
-                                        ) : (
-                                            ips.map((ip) => (
-                                                <div
-                                                    key={ip.id}
-                                                    className='flex items-center justify-between gap-3 py-2.5 px-3 text-xs'
-                                                >
-                                                    <div className='flex flex-col gap-0.5'>
-                                                        <span className='font-mono text-sm'>
-                                                            {ip.ip}
-                                                            {ip.cidr !== null ? `/${ip.cidr}` : ''}
-                                                        </span>
-                                                        <div className='flex flex-wrap gap-2 text-[11px] text-muted-foreground'>
-                                                            {ip.gateway && (
-                                                                <span>
-                                                                    gw:{' '}
-                                                                    <span className='font-mono text-[11px]'>
-                                                                        {ip.gateway}
-                                                                    </span>
-                                                                </span>
-                                                            )}
-                                                            {ip.notes && <span>{ip.notes}</span>}
-                                                        </div>
-                                                    </div>
-                                                    <div className='flex items-center gap-2'>
-                                                        {ip.is_primary === 'true' ? (
-                                                            <span className='px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/30'>
-                                                                {t('admin.vdsNodes.ips.primary_badge')}
-                                                            </span>
-                                                        ) : (
-                                                            <Button
-                                                                type='button'
-                                                                variant='outline'
-                                                                onClick={() => handleSetPrimaryIp(ip.id)}
-                                                            >
-                                                                {t('admin.vdsNodes.ips.set_primary')}
-                                                            </Button>
-                                                        )}
-                                                        <Button
-                                                            type='button'
-                                                            size='icon'
-                                                            variant='ghost'
-                                                            className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                                            onClick={() => handleDeleteIp(ip.id)}
-                                                        >
-                                                            <Trash2 className='h-4 w-4' />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </PageCard>
-                    </div>
-                </div>
-            </form>
+            <WidgetRenderer widgets={getWidgets('admin-vds-node-edit', 'bottom-of-page')} context={{ id }} />
 
             <Sheet open={locationModalOpen} onOpenChange={setLocationModalOpen}>
-                <SheetContent className='sm:max-w-2xl'>
+                <SheetContent side='right' className='w-full max-w-md'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.vdsNodes.form.select_location')}</SheetTitle>
-                        <SheetDescription>{t('admin.vdsNodes.form.select_location_description')}</SheetDescription>
                     </SheetHeader>
-
                     <div className='mt-6 space-y-4'>
                         <div className='relative'>
-                            <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <RefreshCw className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
-                                placeholder={t('admin.vdsNodes.form.search_locations')}
+                                placeholder={t('admin.vdsNodes.form.search_location')}
                                 value={locationSearch}
                                 onChange={(e) => setLocationSearch(e.target.value)}
                                 className='pl-10'
                             />
                         </div>
-
-                        {locationPagination.total_pages > 1 && (
-                            <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_prev}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page - 1,
-                                        }))
-                                    }
-                                    className='gap-1 h-8'
-                                >
-                                    <ChevronLeft className='h-3 w-3' />
-                                    {t('common.previous')}
-                                </Button>
-                                <span className='text-xs font-medium'>
-                                    {locationPagination.current_page} / {locationPagination.total_pages}
-                                </span>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_next}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page + 1,
-                                        }))
-                                    }
-                                    className='gap-1 h-8'
-                                >
-                                    {t('common.next')}
-                                    <ChevronRight className='h-3 w-3' />
-                                </Button>
-                            </div>
-                        )}
-
-                        <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
-                            {locations.length === 0 ? (
-                                <div className='text-center py-8 text-muted-foreground'>
-                                    {t('admin.vdsNodes.form.no_locations_found')}
-                                </div>
+                        <div className='space-y-2 max-h-[60vh] overflow-y-auto'>
+                            {filteredLocations.length === 0 ? (
+                                <p className='text-sm text-muted-foreground italic text-center py-6'>
+                                    {t('admin.vdsNodes.form.no_locations')}
+                                </p>
                             ) : (
-                                locations.map((location) => (
+                                filteredLocations.map((loc) => (
                                     <button
-                                        key={location.id}
+                                        key={loc.id}
+                                        type='button'
                                         onClick={() => {
-                                            setForm((prev) => ({ ...prev, location_id: location.id.toString() }));
-                                            setSelectedLocationName(location.name);
+                                            setForm((f) => ({ ...f, location_id: String(loc.id) }));
+                                            setSelectedLocationName(loc.name);
                                             setLocationModalOpen(false);
                                         }}
-                                        className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                        className='w-full text-left px-4 py-3 rounded-xl border border-border/50 hover:bg-muted/40 transition-colors'
                                     >
-                                        <div className='flex items-start gap-3'>
-                                            <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
-                                                <MapPin className='h-5 w-5 text-primary' />
+                                        <div className='font-medium text-sm'>{loc.name}</div>
+                                        {loc.description && (
+                                            <div className='text-xs text-muted-foreground mt-0.5'>
+                                                {loc.description}
                                             </div>
-                                            <div className='flex-1 min-w-0'>
-                                                <div className='font-medium'>{location.name}</div>
-                                                {location.description && (
-                                                    <div className='text-sm text-muted-foreground mt-1'>
-                                                        {location.description}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+                                        )}
                                     </button>
                                 ))
                             )}
@@ -1074,11 +424,6 @@ export default function EditVdsNodePage() {
                     </div>
                 </SheetContent>
             </Sheet>
-
-            <WidgetRenderer
-                widgets={getWidgets('admin-vds-nodes-edit', 'bottom-of-page')}
-                context={{ id: id as string }}
-            />
         </div>
     );
 }

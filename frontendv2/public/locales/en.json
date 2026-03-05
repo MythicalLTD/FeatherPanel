@@ -2897,6 +2897,38 @@
 			"description": "Connect and manage Proxmox nodes for VPS / VDS virtualization.",
 			"viewAndManage": "View and manage VDS nodes in the location: {location}.",
 			"search_placeholder": "Search VDS nodes by name or FQDN...",
+			"tabs": {
+				"details": "Details",
+				"connection": "Connection",
+				"advanced": "Advanced",
+				"ip_pool": "IP Pool",
+				"info": "Info"
+			},
+			"info": {
+				"version_title": "Proxmox VE Version",
+				"version_description": "Live version information fetched directly from \"{name}\".",
+				"version_fetch_failed": "Failed to retrieve version from Proxmox.",
+				"nodes_title": "Cluster Nodes",
+				"nodes_description": "All hypervisor nodes visible from this Proxmox endpoint.",
+				"nodes_fetch_failed": "Failed to retrieve node list from Proxmox.",
+				"no_nodes": "No nodes returned by Proxmox.",
+				"pve_version": "Full Version",
+				"pve_release": "Release",
+				"pve_repoid": "Commit ID",
+				"pve_console": "Default Console",
+				"pve_console_default": "not set",
+				"col_node": "Node",
+				"col_status": "Status",
+				"col_cpu": "CPU",
+				"col_memory": "Memory",
+				"col_disk": "Disk",
+				"col_uptime": "Uptime",
+				"last_fetched": "Last refreshed at {time}"
+			},
+			"edit": {
+				"title": "Edit VDS Node",
+				"description": "Update Proxmox connection details, location and IP pool."
+			},
 			"form": {
 				"create_title": "Create VDS Node",
 				"create_description": "Connect a new Proxmox hypervisor to FeatherPanel using a PVE API token.",
@@ -2914,13 +2946,18 @@
 				"location_required": "A VPS location is required",
 				"select_location": "Select a VPS location for this node",
 				"select_location_description": "Only locations of type VPS can be used for VDS nodes.",
+				"search_location": "Search VPS locations...",
 				"search_locations": "Search VPS locations...",
+				"no_locations": "No VPS locations found. Create a location of type VPS first.",
 				"no_locations_found": "No VPS locations found. Make sure you created locations of type VPS.",
 				"user": "Proxmox User",
+				"user_help": "The user name in Proxmox, e.g. root@pam or apiuser@pve.",
 				"user_required": "A Proxmox user is required",
 				"token_id": "Token ID",
+				"token_id_help": "The API token identifier, e.g. mytoken (without the user prefix).",
 				"token_id_required": "A token ID is required",
 				"secret": "Token Secret",
+				"secret_help": "Leave blank to keep the existing secret unchanged.",
 				"secret_required": "A token secret is required",
 				"fqdn": "Proxmox Hostname / IP",
 				"fqdn_required": "A Proxmox hostname or IP is required",
@@ -2947,6 +2984,20 @@
 				"params_value_placeholder": "Parameter value",
 				"params_add": "Add parameter"
 			},
+			"advanced": {
+				"headers_title": "Custom Request Headers",
+				"headers_description": "Inject additional HTTP headers into every Proxmox API request — useful for reverse-proxy authentication or custom routing.",
+				"params_title": "Custom Query Parameters",
+				"params_description": "Append extra query string parameters to every Proxmox API request.",
+				"no_headers": "No custom headers configured.",
+				"no_params": "No custom query parameters configured.",
+				"key_placeholder": "Key",
+				"value_placeholder": "Value",
+				"add_header": "Add Header",
+				"add_param": "Add Parameter",
+				"warning_title": "Caution",
+				"warning_text": "Custom headers and parameters are sent with every API request to this Proxmox node. Only add entries you trust and understand, as they could affect authentication or API behaviour."
+			},
 			"health": {
 				"online": "Online",
 				"offline": "Offline",
@@ -2956,12 +3007,16 @@
 			"connection": {
 				"online": "Online",
 				"offline": "Offline",
-				"unknown": "Unknown"
+				"unknown": "Unknown",
+				"test_button": "Test Connection",
+				"success": "Connected — {count} node(s) returned in {ms}ms.",
+				"failed": "Connection failed."
 			},
 			"messages": {
 				"fetch_failed": "Failed to fetch VDS nodes",
 				"created": "VDS node created successfully",
 				"create_failed": "Failed to create VDS node",
+				"updated": "VDS node updated successfully",
 				"update_success": "VDS node updated successfully",
 				"update_failed": "Failed to update VDS node",
 				"delete_success": "VDS node deleted successfully",
@@ -2969,6 +3024,12 @@
 				"connection_ok": "Connection to Proxmox node successful",
 				"connection_failed": "Failed to test connection to Proxmox node",
 				"connection_check_failed": "Failed to test connections for all Proxmox nodes"
+			},
+			"errors": {
+				"fetch_failed": "Failed to load VDS node details.",
+				"fetch_locations_failed": "Failed to load VPS locations.",
+				"validation_failed": "Please fix the validation errors and try again.",
+				"save_failed": "Failed to save VDS node changes."
 			},
 			"health.refresh": "Refresh connection status",
 			"actions": {
@@ -2999,6 +3060,53 @@
 					"title": "Proxmox Integration",
 					"p1": "FeatherPanel talks to Proxmox using PVE API tokens over HTTPS, so your credentials never need to be entered directly on each node.",
 					"p2": "Use the connection test action to quickly verify that your token, host, and SSL configuration are valid."
+				}
+			},
+			"ips": {
+				"title": "IP Pool",
+				"description": "IP addresses configured on node \"{name}\".",
+				"add_button": "Add IP",
+				"search_placeholder": "Filter by IP, gateway or notes...",
+				"empty": "No IPs configured for this node yet.",
+				"no_results": "No IPs match your search.",
+				"notes_placeholder": "Optional notes about this IP",
+				"col_ip": "IP Address",
+				"col_cidr": "CIDR",
+				"col_gateway": "Gateway",
+				"col_notes": "Notes",
+				"primary_badge": "PRIMARY",
+				"set_primary": "Set as primary",
+				"primary_success": "Primary IP updated successfully.",
+				"primary_failed": "Failed to set primary IP.",
+				"fetch_failed": "Failed to load IP pool.",
+				"add_success": "IP added successfully.",
+				"add_failed": "Failed to add IP.",
+				"update_success": "IP updated successfully.",
+				"update_failed": "Failed to update IP.",
+				"delete_success": "IP deleted successfully.",
+				"delete_failed": "Failed to delete IP.",
+				"confirm_delete_title": "Delete IP?",
+				"confirm_delete_description": "This IP will be permanently removed from the node's IP pool. This action cannot be undone.",
+				"create": {
+					"title": "Add IP Address",
+					"description": "Add a new IP address to this node's IP pool."
+				},
+				"edit": {
+					"title": "Edit IP Address",
+					"description": "Update metadata for {ip}.",
+					"ip_immutable": "The IP address cannot be changed. Delete and re-add to use a different address."
+				},
+				"errors": {
+					"ip_required": "An IP address is required.",
+					"ip_invalid": "Please enter a valid IPv4 address.",
+					"cidr_invalid": "CIDR prefix length must be between 0 and 32.",
+					"gateway_invalid": "Please enter a valid gateway IPv4 address."
+				},
+				"help": {
+					"what_are_ips": "What is the IP Pool?",
+					"what_are_ips_text": "The IP pool lists all public IP addresses available on this Proxmox node. These IPs can be assigned to virtual machines when provisioning.",
+					"primary_ip": "Primary IP",
+					"primary_ip_text": "The primary IP is the default outbound address for the node. Only one IP can be marked as primary at a time — click the star icon on any row to change it."
 				}
 			}
 		},
@@ -6121,30 +6229,10 @@
 					"reset": "Configuration reset to defaults",
 					"resetFailed": "Failed to reset configuration"
 				}
-			},
-			"ips": {
-				"title": "IP Pool",
-				"add_title": "Add IP to this node",
-				"ip_placeholder": "IP address (v4 or v6)",
-				"cidr_placeholder": "CIDR (/32)",
-				"gateway_placeholder": "Gateway (optional)",
-				"notes_placeholder": "Notes",
-				"add_button": "Add IP",
-				"list_title": "Configured IPs",
-				"empty": "No IPs configured for this node yet.",
-				"primary_badge": "PRIMARY",
-				"ip_required": "An IP address is required",
-				"ip_invalid": "Please enter a valid IPv4 or IPv6 address",
-				"cidr_invalid": "CIDR must be between 0 and 128",
-				"gateway_invalid": "Please enter a valid gateway IP",
-				"create_failed": "Failed to create IP",
-				"delete_failed": "Failed to delete IP",
-				"set_primary": "Set primary",
-				"primary_failed": "Failed to set primary IP"
-			}
 		}
-	},
-	"landing": {
+	}
+},
+"landing": {
 		"hero": {
 			"title": "FeatherPanel"
 		}

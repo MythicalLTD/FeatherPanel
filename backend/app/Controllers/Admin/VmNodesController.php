@@ -658,6 +658,47 @@ class VmNodesController
         }
     }
 
+    public function getInfo(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
+
+            $client = new Proxmox(
+                $vmNode['fqdn'],
+                (int) $vmNode['port'],
+                $vmNode['scheme'],
+                $vmNode['user'],
+                $vmNode['token_id'],
+                $vmNode['secret'],
+                $tlsNoVerify,
+                (int) ($vmNode['timeout'] ?? 10),
+            );
+
+            $versionResult = $client->getVersion();
+            $nodesResult = $client->getNodes();
+
+            return ApiResponse::success([
+                'version' => $versionResult['data'],
+                'version_ok' => $versionResult['ok'],
+                'version_error' => $versionResult['error'],
+                'nodes' => $nodesResult['nodes'],
+                'nodes_ok' => $nodesResult['ok'],
+                'nodes_error' => $nodesResult['error'],
+            ], 'Proxmox info fetched', 200);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox getInfo failed for ID ' . $id . ': ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to fetch Proxmox info', 'PROXMOX_INFO_FAILED', 500, [
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     #[OA\Get(
         path: '/api/admin/vm-nodes/{id}/ips',
         summary: 'List IPs for a VM node',
