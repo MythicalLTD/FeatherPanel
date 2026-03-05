@@ -371,7 +371,9 @@ export default function VdsNodesPage() {
                                         <Button
                                             size='sm'
                                             variant='ghost'
-                                            onClick={() => router.push(`/admin/vds-nodes?location_id=${node.location_id}`)}
+                                            onClick={() =>
+                                                router.push(`/admin/vds-nodes?location_id=${node.location_id}`)
+                                            }
                                             title={t('admin.vdsNodes.actions.filter_by_location')}
                                         >
                                             <MapPin className='h-4 w-4' />
@@ -469,4 +471,3 @@ export default function VdsNodesPage() {
         </div>
     );
 }
-

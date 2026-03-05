@@ -222,11 +222,8 @@ export default function CreateVdsNodePage() {
             <WidgetRenderer widgets={getWidgets('admin-vds-nodes-create', 'top-of-page')} />
 
             <PageHeader
-                title={t('admin.vdsNodes.form.create_title', 'Create VDS Node')}
-                description={t(
-                    'admin.vdsNodes.form.create_description',
-                    'Connect a new Proxmox hypervisor to FeatherPanel.',
-                )}
+                title={t('admin.vdsNodes.form.create_title')}
+                description={t('admin.vdsNodes.form.create_description')}
                 icon={Server}
                 actions={
                     <Button variant='outline' onClick={() => router.back()}>
@@ -241,12 +238,10 @@ export default function CreateVdsNodePage() {
             <form onSubmit={handleSubmit} className='space-y-8 mt-8'>
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
                     <div className='space-y-8'>
-                        <PageCard title={t('admin.vdsNodes.form.basic_details', 'Basic Details')} icon={Server}>
+                        <PageCard title={t('admin.vdsNodes.form.basic_details')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.name', 'Display Name')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.name')}</Label>
                                     <Input
                                         placeholder='Proxmox Node A'
                                         value={form.name}
@@ -254,27 +249,24 @@ export default function CreateVdsNodePage() {
                                         error={!!errors.name}
                                     />
                                     {errors.name && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>{errors.name}</p>
+                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                            {errors.name}
+                                        </p>
                                     )}
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.description', 'Description')}
+                                        {t('admin.vdsNodes.form.description')}
                                     </Label>
                                     <Textarea
-                                        placeholder={t(
-                                            'admin.vdsNodes.form.description_placeholder',
-                                            'Optional description for this VDS node',
-                                        )}
+                                        placeholder={t('admin.vdsNodes.form.description_placeholder')}
                                         value={form.description}
                                         onChange={(e) => setForm({ ...form, description: e.target.value })}
                                         className='min-h-[100px]'
                                     />
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.location', 'VPS Location')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.location')}</Label>
                                     <div className='flex gap-2'>
                                         <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
                                             {form.location_id && selectedLocationName ? (
@@ -286,10 +278,7 @@ export default function CreateVdsNodePage() {
                                                 </div>
                                             ) : (
                                                 <span className='text-muted-foreground'>
-                                                    {t(
-                                                        'admin.vdsNodes.form.select_location',
-                                                        'Select a VPS location for this node',
-                                                    )}
+                                                    {t('admin.vdsNodes.form.select_location')}
                                                 </span>
                                             )}
                                         </div>
@@ -313,12 +302,10 @@ export default function CreateVdsNodePage() {
                             </div>
                         </PageCard>
 
-                        <PageCard title={t('admin.vdsNodes.form.proxmox', 'Proxmox API Access')} icon={Server}>
+                        <PageCard title={t('admin.vdsNodes.form.proxmox')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.user', 'Proxmox User')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.user')}</Label>
                                     <Input
                                         placeholder='root@pam'
                                         value={form.user}
@@ -332,9 +319,7 @@ export default function CreateVdsNodePage() {
                                     )}
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.token_id', 'Token ID')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.token_id')}</Label>
                                     <Input
                                         placeholder='mytokenid'
                                         value={form.token_id}
@@ -348,9 +333,7 @@ export default function CreateVdsNodePage() {
                                     )}
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.secret', 'Token Secret')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.secret')}</Label>
                                     <Input
                                         type='password'
                                         placeholder='********'
@@ -369,12 +352,10 @@ export default function CreateVdsNodePage() {
                     </div>
 
                     <div className='space-y-8'>
-                        <PageCard title={t('admin.vdsNodes.form.network', 'Network & SSL')} icon={Server}>
+                        <PageCard title={t('admin.vdsNodes.form.network')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.fqdn', 'Proxmox Hostname / IP')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.fqdn')}</Label>
                                     <Input
                                         placeholder='proxmox.example.com'
                                         value={form.fqdn}
@@ -390,7 +371,7 @@ export default function CreateVdsNodePage() {
                                 <div className='grid grid-cols-2 gap-4'>
                                     <div className='space-y-2'>
                                         <Label className='text-sm font-semibold'>
-                                            {t('admin.vdsNodes.form.scheme', 'Scheme')}
+                                            {t('admin.vdsNodes.form.scheme')}
                                         </Label>
                                         <Select
                                             value={form.scheme}
@@ -406,9 +387,7 @@ export default function CreateVdsNodePage() {
                                         </Select>
                                     </div>
                                     <div className='space-y-2'>
-                                        <Label className='text-sm font-semibold'>
-                                            {t('admin.vdsNodes.form.port', 'Port')}
-                                        </Label>
+                                        <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.port')}</Label>
                                         <Input
                                             type='number'
                                             value={form.port}
@@ -429,7 +408,7 @@ export default function CreateVdsNodePage() {
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.tls_no_verify', 'TLS Verification')}
+                                        {t('admin.vdsNodes.form.tls_no_verify')}
                                     </Label>
                                     <Select
                                         value={form.tls_no_verify}
@@ -440,24 +419,12 @@ export default function CreateVdsNodePage() {
                                             })
                                         }
                                     >
-                                        <option value='false'>
-                                            {t(
-                                                'admin.vdsNodes.form.tls_no_verify_false',
-                                                'Verify TLS certificates (recommended)',
-                                            )}
-                                        </option>
-                                        <option value='true'>
-                                            {t(
-                                                'admin.vdsNodes.form.tls_no_verify_true',
-                                                'Skip verification (only for testing)',
-                                            )}
-                                        </option>
+                                        <option value='false'>{t('admin.vdsNodes.form.tls_no_verify_false')}</option>
+                                        <option value='true'>{t('admin.vdsNodes.form.tls_no_verify_true')}</option>
                                     </Select>
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.timeout', 'Timeout (seconds)')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.timeout')}</Label>
                                     <Input
                                         type='number'
                                         value={form.timeout}
@@ -478,29 +445,18 @@ export default function CreateVdsNodePage() {
                             </div>
                         </PageCard>
 
-                        <PageCard
-                            title={t('admin.vdsNodes.form.http_advanced', 'Advanced HTTP Options')}
-                            icon={Server}
-                        >
+                        <PageCard title={t('admin.vdsNodes.form.http_advanced')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.headers', 'Custom Headers')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.headers')}</Label>
                                     <p className='text-xs text-muted-foreground'>
-                                        {t(
-                                            'admin.vdsNodes.form.headers_help',
-                                            'Optional HTTP headers to send with each Proxmox API request (for proxies, extra auth, etc.).',
-                                        )}
+                                        {t('admin.vdsNodes.form.headers_help')}
                                     </p>
                                     <div className='space-y-2'>
                                         {extraHeaders.map((row, index) => (
                                             <div key={index} className='flex gap-2'>
                                                 <Input
-                                                    placeholder={t(
-                                                        'admin.vdsNodes.form.headers_key_placeholder',
-                                                        'Header name (e.g. X-Forwarded-Host)',
-                                                    )}
+                                                    placeholder={t('admin.vdsNodes.form.headers_key_placeholder')}
                                                     value={row.key}
                                                     onChange={(e) => {
                                                         const next = [...extraHeaders];
@@ -509,10 +465,7 @@ export default function CreateVdsNodePage() {
                                                     }}
                                                 />
                                                 <Input
-                                                    placeholder={t(
-                                                        'admin.vdsNodes.form.headers_value_placeholder',
-                                                        'Header value',
-                                                    )}
+                                                    placeholder={t('admin.vdsNodes.form.headers_value_placeholder')}
                                                     value={row.value}
                                                     onChange={(e) => {
                                                         const next = [...extraHeaders];
@@ -540,29 +493,21 @@ export default function CreateVdsNodePage() {
                                             className='mt-1'
                                         >
                                             <Plus className='h-4 w-4 mr-2' />
-                                            {t('admin.vdsNodes.form.headers_add', 'Add header')}
+                                            {t('admin.vdsNodes.form.headers_add')}
                                         </Button>
                                     </div>
                                 </div>
 
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.params', 'Query Parameters')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.params')}</Label>
                                     <p className='text-xs text-muted-foreground'>
-                                        {t(
-                                            'admin.vdsNodes.form.params_help',
-                                            'Optional query parameters to append to Proxmox API requests.',
-                                        )}
+                                        {t('admin.vdsNodes.form.params_help')}
                                     </p>
                                     <div className='space-y-2'>
                                         {extraParams.map((row, index) => (
                                             <div key={index} className='flex gap-2'>
                                                 <Input
-                                                    placeholder={t(
-                                                        'admin.vdsNodes.form.params_key_placeholder',
-                                                        'Parameter name',
-                                                    )}
+                                                    placeholder={t('admin.vdsNodes.form.params_key_placeholder')}
                                                     value={row.key}
                                                     onChange={(e) => {
                                                         const next = [...extraParams];
@@ -571,10 +516,7 @@ export default function CreateVdsNodePage() {
                                                     }}
                                                 />
                                                 <Input
-                                                    placeholder={t(
-                                                        'admin.vdsNodes.form.params_value_placeholder',
-                                                        'Parameter value',
-                                                    )}
+                                                    placeholder={t('admin.vdsNodes.form.params_value_placeholder')}
                                                     value={row.value}
                                                     onChange={(e) => {
                                                         const next = [...extraParams];
@@ -602,7 +544,7 @@ export default function CreateVdsNodePage() {
                                             className='mt-1'
                                         >
                                             <Plus className='h-4 w-4 mr-2' />
-                                            {t('admin.vdsNodes.form.params_add', 'Add parameter')}
+                                            {t('admin.vdsNodes.form.params_add')}
                                         </Button>
                                     </div>
                                 </div>
@@ -618,7 +560,7 @@ export default function CreateVdsNodePage() {
                         className='w-full sm:w-auto min-w-[200px] h-14 text-lg bg-primary hover:bg-primary/90 transition-all'
                     >
                         <Save className='h-5 w-5 mr-3' />
-                        {t('admin.vdsNodes.form.submit_create', 'Create VDS Node')}
+                        {t('admin.vdsNodes.form.submit_create')}
                     </Button>
                 </div>
             </form>
@@ -626,25 +568,15 @@ export default function CreateVdsNodePage() {
             <Sheet open={locationModalOpen} onOpenChange={setLocationModalOpen}>
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
-                        <SheetTitle>
-                            {t('admin.vdsNodes.form.select_location', 'Select VPS Location')}
-                        </SheetTitle>
-                        <SheetDescription>
-                            {t(
-                                'admin.vdsNodes.form.select_location_description',
-                                'Choose a location that is marked as VPS-only.',
-                            )}
-                        </SheetDescription>
+                        <SheetTitle>{t('admin.vdsNodes.form.select_location')}</SheetTitle>
+                        <SheetDescription>{t('admin.vdsNodes.form.select_location_description')}</SheetDescription>
                     </SheetHeader>
 
                     <div className='mt-6 space-y-4'>
                         <div className='relative'>
                             <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
-                                placeholder={t(
-                                    'admin.vdsNodes.form.search_locations',
-                                    'Search VPS locations...',
-                                )}
+                                placeholder={t('admin.vdsNodes.form.search_locations')}
                                 value={locationSearch}
                                 onChange={(e) => setLocationSearch(e.target.value)}
                                 className='pl-10'
@@ -692,10 +624,7 @@ export default function CreateVdsNodePage() {
                         <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                             {locations.length === 0 ? (
                                 <div className='text-center py-8 text-muted-foreground'>
-                                    {t(
-                                        'admin.vdsNodes.form.no_locations_found',
-                                        'No VPS locations found. Make sure you created locations of type VPS.',
-                                    )}
+                                    {t('admin.vdsNodes.form.no_locations_found')}
                                 </div>
                             ) : (
                                 locations.map((location) => (
@@ -733,4 +662,3 @@ export default function CreateVdsNodePage() {
         </div>
     );
 }
-

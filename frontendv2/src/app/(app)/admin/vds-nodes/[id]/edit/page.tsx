@@ -432,17 +432,11 @@ export default function EditVdsNodePage() {
 
             if (ok) {
                 setConnectionState('ok');
-                setConnectionMessage(
-                    data.message ??
-                        t('admin.vdsNodes.messages.connection_ok'),
-                );
+                setConnectionMessage(data.message ?? t('admin.vdsNodes.messages.connection_ok'));
             } else {
                 setConnectionState('error');
                 const messageFromBackend =
-                    data.data?.error ||
-                    data.error ||
-                    data.message ||
-                    t('admin.vdsNodes.messages.connection_failed');
+                    data.data?.error || data.error || data.message || t('admin.vdsNodes.messages.connection_failed');
                 setConnectionMessage(messageFromBackend);
             }
         } catch (error) {
@@ -465,9 +459,7 @@ export default function EditVdsNodePage() {
                 setConnectionMessage(msg);
             } else {
                 setConnectionPayload(null);
-                setConnectionMessage(
-                    t('admin.vdsNodes.messages.connection_failed'),
-                );
+                setConnectionMessage(t('admin.vdsNodes.messages.connection_failed'));
             }
         } finally {
             setTesting(false);
@@ -491,9 +483,7 @@ export default function EditVdsNodePage() {
 
             <PageHeader
                 title={t('admin.vdsNodes.form.edit_title')}
-                description={t(
-                    'admin.vdsNodes.form.edit_description',
-                )}
+                description={t('admin.vdsNodes.form.edit_description')}
                 icon={Server}
                 actions={
                     <div className='flex gap-2'>
@@ -548,7 +538,6 @@ export default function EditVdsNodePage() {
                                     </pre>
                                 </div>
                             ) : null}
-
                         </div>
                     </div>
                 </div>
@@ -565,16 +554,16 @@ export default function EditVdsNodePage() {
                         <PageCard title={t('admin.vdsNodes.form.basic_details')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.name')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.name')}</Label>
                                     <Input
                                         value={form.name}
                                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                                         error={!!errors.name}
                                     />
                                     {errors.name && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>{errors.name}</p>
+                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                            {errors.name}
+                                        </p>
                                     )}
                                 </div>
                                 <div className='space-y-2'>
@@ -588,9 +577,7 @@ export default function EditVdsNodePage() {
                                     />
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.location')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.location')}</Label>
                                     <div className='flex gap-2'>
                                         <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
                                             {form.location_id && selectedLocationName ? (
@@ -602,9 +589,7 @@ export default function EditVdsNodePage() {
                                                 </div>
                                             ) : (
                                                 <span className='text-muted-foreground'>
-                                                    {t(
-                                                        'admin.vdsNodes.form.select_location'
-                                                    )}
+                                                    {t('admin.vdsNodes.form.select_location')}
                                                 </span>
                                             )}
                                         </div>
@@ -631,9 +616,7 @@ export default function EditVdsNodePage() {
                         <PageCard title={t('admin.vdsNodes.form.proxmox')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.user')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.user')}</Label>
                                     <Input
                                         value={form.user}
                                         onChange={(e) => setForm({ ...form, user: e.target.value })}
@@ -646,9 +629,7 @@ export default function EditVdsNodePage() {
                                     )}
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.token_id')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.token_id')}</Label>
                                     <Input
                                         value={form.token_id}
                                         onChange={(e) => setForm({ ...form, token_id: e.target.value })}
@@ -661,9 +642,7 @@ export default function EditVdsNodePage() {
                                     )}
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.secret')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.secret')}</Label>
                                     <Input
                                         type='password'
                                         value={form.secret}
@@ -678,9 +657,7 @@ export default function EditVdsNodePage() {
                         <PageCard title={t('admin.vdsNodes.form.network')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.fqdn')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.fqdn')}</Label>
                                     <Input
                                         value={form.fqdn}
                                         onChange={(e) => setForm({ ...form, fqdn: e.target.value })}
@@ -711,9 +688,7 @@ export default function EditVdsNodePage() {
                                         </Select>
                                     </div>
                                     <div className='space-y-2'>
-                                        <Label className='text-sm font-semibold'>
-                                            {t('admin.vdsNodes.form.port')}
-                                        </Label>
+                                        <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.port')}</Label>
                                         <Input
                                             type='number'
                                             value={form.port}
@@ -745,22 +720,12 @@ export default function EditVdsNodePage() {
                                             })
                                         }
                                     >
-                                        <option value='false'>
-                                            {t(
-                                                'admin.vdsNodes.form.tls_no_verify_false'
-                                            )}
-                                        </option>
-                                        <option value='true'>
-                                            {t(
-                                                'admin.vdsNodes.form.tls_no_verify_true'
-                                            )}
-                                        </option>
+                                        <option value='false'>{t('admin.vdsNodes.form.tls_no_verify_false')}</option>
+                                        <option value='true'>{t('admin.vdsNodes.form.tls_no_verify_true')}</option>
                                     </Select>
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.timeout')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.timeout')}</Label>
                                     <Input
                                         type='number'
                                         value={form.timeout}
@@ -781,27 +746,18 @@ export default function EditVdsNodePage() {
                             </div>
                         </PageCard>
 
-                        <PageCard
-                            title={t('admin.vdsNodes.form.http_advanced')}
-                            icon={Server}
-                        >
+                        <PageCard title={t('admin.vdsNodes.form.http_advanced')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        	{t('admin.vdsNodes.form.headers')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.headers')}</Label>
                                     <p className='text-xs text-muted-foreground'>
-                                        {t(
-                                            'admin.vdsNodes.form.headers_help'
-                                        )}
+                                        {t('admin.vdsNodes.form.headers_help')}
                                     </p>
                                     <div className='space-y-2'>
                                         {extraHeaders.map((row, index) => (
                                             <div key={index} className='flex gap-2'>
                                                 <Input
-                                                    placeholder={t(
-                                                        'admin.vdsNodes.form.headers_key_placeholder',
-                                                    )}
+                                                    placeholder={t('admin.vdsNodes.form.headers_key_placeholder')}
                                                     value={row.key}
                                                     onChange={(e) => {
                                                         const next = [...extraHeaders];
@@ -810,9 +766,7 @@ export default function EditVdsNodePage() {
                                                     }}
                                                 />
                                                 <Input
-                                                    placeholder={t(
-                                                        'admin.vdsNodes.form.headers_value_placeholder',
-                                                    )}
+                                                    placeholder={t('admin.vdsNodes.form.headers_value_placeholder')}
                                                     value={row.value}
                                                     onChange={(e) => {
                                                         const next = [...extraHeaders];
@@ -846,21 +800,15 @@ export default function EditVdsNodePage() {
                                 </div>
 
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.params')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.params')}</Label>
                                     <p className='text-xs text-muted-foreground'>
-                                        {t(
-                                            'admin.vdsNodes.form.params_help'
-                                        )}
+                                        {t('admin.vdsNodes.form.params_help')}
                                     </p>
                                     <div className='space-y-2'>
                                         {extraParams.map((row, index) => (
                                             <div key={index} className='flex gap-2'>
                                                 <Input
-                                                    placeholder={t(
-                                                        'admin.vdsNodes.form.params_key_placeholder',
-                                                    )}
+                                                    placeholder={t('admin.vdsNodes.form.params_key_placeholder')}
                                                     value={row.key}
                                                     onChange={(e) => {
                                                         const next = [...extraParams];
@@ -869,9 +817,7 @@ export default function EditVdsNodePage() {
                                                     }}
                                                 />
                                                 <Input
-                                                    placeholder={t(
-                                                        'admin.vdsNodes.form.params_value_placeholder'	
-                                                    )}
+                                                    placeholder={t('admin.vdsNodes.form.params_value_placeholder')}
                                                     value={row.value}
                                                     onChange={(e) => {
                                                         const next = [...extraParams];
@@ -909,15 +855,11 @@ export default function EditVdsNodePage() {
                         <PageCard title={t('admin.vdsNodes.ips.title')} icon={Server}>
                             <div className='space-y-4'>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.ips.add_title')}
-                                    </Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.add_title')}</Label>
                                     <div className='grid grid-cols-1 sm:grid-cols-4 gap-3'>
                                         <div className='space-y-1'>
                                             <Input
-                                                placeholder={t(
-                                                    'admin.vdsNodes.ips.ip_placeholder'
-                                                )}
+                                                placeholder={t('admin.vdsNodes.ips.ip_placeholder')}
                                                 value={ipForm.ip}
                                                 onChange={(e) => setIpForm({ ...ipForm, ip: e.target.value })}
                                                 error={!!ipErrors.ip}
@@ -943,9 +885,7 @@ export default function EditVdsNodePage() {
                                         </div>
                                         <div className='space-y-1'>
                                             <Input
-                                                placeholder={t(
-                                                    'admin.vdsNodes.ips.gateway_placeholder'
-                                                )}
+                                                placeholder={t('admin.vdsNodes.ips.gateway_placeholder')}
                                                 value={ipForm.gateway}
                                                 onChange={(e) => setIpForm({ ...ipForm, gateway: e.target.value })}
                                                 error={!!ipErrors.gateway}
@@ -1045,23 +985,15 @@ export default function EditVdsNodePage() {
             <Sheet open={locationModalOpen} onOpenChange={setLocationModalOpen}>
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
-                        <SheetTitle>
-                            {t('admin.vdsNodes.form.select_location')}
-                        </SheetTitle>
-                        <SheetDescription>
-                            {t(
-                                'admin.vdsNodes.form.select_location_description'
-                            )}
-                        </SheetDescription>
+                        <SheetTitle>{t('admin.vdsNodes.form.select_location')}</SheetTitle>
+                        <SheetDescription>{t('admin.vdsNodes.form.select_location_description')}</SheetDescription>
                     </SheetHeader>
 
                     <div className='mt-6 space-y-4'>
                         <div className='relative'>
                             <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
-                                placeholder={t(
-                                    'admin.vdsNodes.form.search_locations',
-                                )}
+                                placeholder={t('admin.vdsNodes.form.search_locations')}
                                 value={locationSearch}
                                 onChange={(e) => setLocationSearch(e.target.value)}
                                 className='pl-10'
@@ -1109,9 +1041,7 @@ export default function EditVdsNodePage() {
                         <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                             {locations.length === 0 ? (
                                 <div className='text-center py-8 text-muted-foreground'>
-                                    {t(
-                                        'admin.vdsNodes.form.no_locations_found'
-                                    )}
+                                    {t('admin.vdsNodes.form.no_locations_found')}
                                 </div>
                             ) : (
                                 locations.map((location) => (
@@ -1152,4 +1082,3 @@ export default function EditVdsNodePage() {
         </div>
     );
 }
-

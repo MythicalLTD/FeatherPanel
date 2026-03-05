@@ -162,12 +162,7 @@ function TypeSelector({
                                         : 'bg-muted/50',
                                 )}
                             >
-                                <Icon
-                                    className={cn(
-                                        'h-5 w-5',
-                                        selected ? opt.colorClass : 'text-muted-foreground',
-                                    )}
-                                />
+                                <Icon className={cn('h-5 w-5', selected ? opt.colorClass : 'text-muted-foreground')} />
                             </div>
                             <div>
                                 <p
@@ -193,7 +188,9 @@ function TypeSelector({
                             )}
 
                             {selected && !isDisabled && (
-                                <span className={cn('absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-emerald-500')} />
+                                <span
+                                    className={cn('absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-emerald-500')}
+                                />
                             )}
 
                             {readOnly && selected && (
