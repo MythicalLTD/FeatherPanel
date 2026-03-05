@@ -5193,6 +5193,27 @@ if [ -f /etc/os-release ]; then
 		install_wings
 		log_success "Wings installation finished. See log at $LOG_FILE"
 		log_info "Configure /etc/featherpanel/config.yml with your Panel URL and, if using a domain, SSL certificate paths (or use IP/self-signed for home hosting)."
+
+		# Offer to create an SSL certificate for Wings immediately
+		echo ""
+		draw_hr
+		echo -e "${BOLD}${YELLOW}Wings SSL Certificate (Optional)${NC}"
+		draw_hr
+		echo -e "${BLUE}You can secure your Wings node with a real SSL certificate now.${NC}"
+		echo -e "${BLUE}This is recommended if your node will be accessed over the Internet with a domain.${NC}"
+		echo ""
+		create_wings_ssl_now=""
+		prompt "${BOLD}Create an SSL certificate for Wings now?${NC} ${BLUE}(y/n)${NC}: " create_wings_ssl_now
+		if [[ "$create_wings_ssl_now" =~ ^[yY]$ ]]; then
+			if create_wings_ssl_certificate; then
+				log_success "Wings SSL certificate creation finished. See log at $LOG_FILE"
+			else
+				log_error "Wings SSL certificate creation failed. See log at $LOG_FILE"
+				log_warn "You can run the installer again and choose Wings → Create SSL Certificate (option 4) later."
+			fi
+		else
+			log_info "Skipping automatic Wings SSL certificate creation. You can create it later via Wings → Create SSL Certificate."
+		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
 		# Wings Uninstall
 		if [ ! -f /usr/local/bin/featherwings ]; then
