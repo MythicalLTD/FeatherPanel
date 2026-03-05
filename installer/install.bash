@@ -243,7 +243,7 @@ print_banner() {
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 
-	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.0.1${NC}"
+	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.0.4${NC}"
 
 	echo -e "${CYAN}${BOLD}┌────────────────────────────────────────────────────────────┐${NC}"
 	echo -e "${CYAN}${BOLD}${NC}  🌐 Website:  ${BLUE}www.mythical.systems${NC}           ${CYAN}${BOLD}${NC}"
@@ -335,6 +335,9 @@ show_main_menu() {
 	echo -e "  ${BLUE}[2]${NC} ${BOLD}Wings${NC} ${BLUE}(Game Server Daemon)${NC}"
 	echo -e "  ${CYAN}[3]${NC} ${BOLD}CLI${NC} ${BLUE}(Migration & Server Management)${NC}"
 	echo -e "  ${YELLOW}[4]${NC} ${BOLD}SSL Certificates${NC} ${BLUE}(Let's Encrypt)${NC}"
+	echo -e "  ${MAGENTA}[5]${NC} ${BOLD}Databases${NC} ${BLUE}(Remote MySQL/MariaDB Hosts)${NC}"
+	echo -e "  ${MAGENTA}[6]${NC} ${BOLD}Proxmox Agent (DHCP)${NC} ${BLUE}(Virtual Machines)${NC} ${YELLOW}[Coming Soon]${NC}"
+	echo -e "  ${MAGENTA}[7]${NC} ${BOLD}FeatherFly Daemon${NC} ${BLUE}(WebHosting Daemon)${NC} ${YELLOW}[Coming Soon]${NC}"
 	draw_hr
 }
 
@@ -450,6 +453,21 @@ show_wings_menu() {
 	echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Create SSL Certificate${NC}"
 	echo -e "     ${BLUE}→ Optional: use for domain-based nodes (Let's Encrypt)${NC}"
 	echo -e "     ${BLUE}→ Skip if home hosting; you can use self-signed or IP in config${NC}"
+	echo ""
+	draw_hr
+}
+
+show_databases_menu() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "Database Operations" "$CYAN"
+	draw_hr
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Remote Databases Setup${NC}"
+	echo -e "     ${BLUE}→ Configure MySQL/MariaDB to accept remote connections${NC}"
+	echo -e "     ${BLUE}→ Optionally open firewall port 3306 for external access${NC}"
+	echo -e "     ${BLUE}→ Create '${BOLD}featherworker${NC}' superuser for FeatherPanel database hosts${NC}"
 	echo ""
 	draw_hr
 }
@@ -1944,11 +1962,211 @@ EOF
 	log_info "Example: featherpanel help"
 }
 
+# Detect whether FeatherPanel appears to be installed on this system
+is_featherpanel_installed() {
+	# Core installation directory indicators
+	if [ -d /var/www/featherpanel ]; then
+		if [ -f /var/www/featherpanel/docker-compose.yml ] || [ -f /var/www/featherpanel/.installed ]; then
+			return 0
+		fi
+	fi
+
+	# Docker containers/volumes (covers cases where .installed was removed)
+	if command -v docker >/dev/null 2>&1; then
+		if sudo docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q '^featherpanel_'; then
+			return 0
+		fi
+		if sudo docker volume ls --format '{{.Name}}' 2>/dev/null | grep -q '^featherpanel_'; then
+			return 0
+		fi
+	fi
+
+	return 1
+}
+
+# Remote MySQL/MariaDB host helper (for nodes / Remote Databases)
+setup_remote_mysql_host() {
+	print_banner
+	draw_hr
+	print_centered "Remote Databases – MySQL/MariaDB Helper" "$CYAN"
+	draw_hr
+	echo ""
+	echo -e "  ${BLUE}This helper will:${NC}"
+	echo -e "  ${CYAN}•${NC} Allow MySQL/MariaDB to listen on all interfaces (0.0.0.0)"
+	echo -e "  ${CYAN}•${NC} Optionally open port 3306 in your firewall"
+	echo -e "  ${CYAN}•${NC} Create a '${BOLD}featherworker${NC}' superuser for FeatherPanel to manage databases"
+	echo ""
+	echo -e "  ${YELLOW}Note:${NC} This is required if your nodes connect from other servers."
+	echo ""
+	draw_hr
+
+	local proceed=""
+	prompt "${BOLD}Continue with Remote Database setup now?${NC} ${BLUE}(y/n)${NC}: " proceed
+	if [[ ! "$proceed" =~ ^[yY]$ ]]; then
+		echo -e "${GREEN}Skipping Remote Database helper.${NC}"
+		return 0
+	fi
+
+	# Detect MySQL/MariaDB service and config file
+	local db_service=""
+	local db_conf=""
+
+	if systemctl list-unit-files 2>/dev/null | grep -q "^mariadb\.service"; then
+		db_service="mariadb"
+	elif systemctl list-unit-files 2>/dev/null | grep -q "^mysql\.service"; then
+		db_service="mysql"
+	fi
+
+	if [ -z "$db_service" ]; then
+		echo ""
+		draw_hr
+		echo -e "${YELLOW}${BOLD}MySQL/MariaDB Not Detected${NC}"
+		draw_hr
+		echo -e "${BLUE}MariaDB is required to configure a Remote Database host on this server.${NC}"
+		echo -e "${BLUE}The installer can install MariaDB server for you now (Debian/Ubuntu).${NC}"
+		echo ""
+		install_mariadb_now=""
+		prompt "${BOLD}Install MariaDB server now?${NC} ${BLUE}(y/n)${NC}: " install_mariadb_now
+		if [[ ! "$install_mariadb_now" =~ ^[yY]$ ]]; then
+			log_warn "Remote Database setup cancelled – no database server installed."
+			return 1
+		fi
+
+		log_step "Installing MariaDB server (this may take a minute)..."
+		if ! install_packages mariadb-server; then
+			log_error "Failed to install MariaDB server. Configure it manually and re-run this helper."
+			return 1
+		fi
+
+		db_service="mariadb"
+	fi
+
+	# Common config paths
+	for path in \
+		"/etc/mysql/mariadb.conf.d/50-server.cnf" \
+		"/etc/mysql/mysql.conf.d/mysqld.cnf" \
+		"/etc/mysql/my.cnf"; do
+		if [ -f "$path" ]; then
+			db_conf="$path"
+			break
+		fi
+	done
+
+	if [ -z "$db_conf" ]; then
+		log_warn "Could not find MySQL/MariaDB config file automatically."
+		prompt "${BOLD}Enter full path to your MySQL/MariaDB config file${NC} ${BLUE}(mysqld.cnf or 50-server.cnf)${NC}: " db_conf
+		if [ -z "$db_conf" ] || [ ! -f "$db_conf" ]; then
+			log_error "Config file not found: $db_conf"
+			return 1
+		fi
+	fi
+
+	log_info "Using database service: $db_service"
+	log_info "Using config file: $db_conf"
+
+	# Backup config
+	if [ ! -f "${db_conf}.featherpanel.bak" ]; then
+		sudo cp "$db_conf" "${db_conf}.featherpanel.bak" 2>>"$LOG_FILE" || true
+	fi
+
+	log_step "Enabling remote access (bind-address = 0.0.0.0)..."
+
+	# Ensure bind-address is 0.0.0.0 under [mysqld]
+	if grep -q "bind-address" "$db_conf" 2>/dev/null; then
+		sudo sed -i 's/^[[:space:]]*bind-address.*/bind-address = 0.0.0.0/' "$db_conf"
+	else
+		# Append under [mysqld] section if present, otherwise at end
+		if grep -q "^\[mysqld\]" "$db_conf" 2>/dev/null; then
+			sudo sed -i '/^\[mysqld\]/a bind-address = 0.0.0.0' "$db_conf"
+		else
+			echo -e "\n[mysqld]\nbind-address = 0.0.0.0" | sudo tee -a "$db_conf" >/dev/null
+		fi
+	fi
+
+	if sudo systemctl restart "$db_service" 2>>"$LOG_FILE"; then
+		log_success "Database service restarted with bind-address = 0.0.0.0"
+	else
+		log_error "Failed to restart $db_service. Check your config and logs."
+		return 1
+	fi
+
+	# Open firewall port if requested
+	local open_fw=""
+	prompt "${BOLD}Open MySQL port 3306 in your firewall for remote access?${NC} ${BLUE}(y/n)${NC}: " open_fw
+	if [[ "$open_fw" =~ ^[yY]$ ]]; then
+		if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
+			log_info "Allowing 3306/tcp via ufw..."
+			sudo ufw allow 3306/tcp >>"$LOG_FILE" 2>&1 || log_warn "Failed to update ufw rules for 3306"
+		elif command -v firewall-cmd >/dev/null 2>&1; then
+			log_info "Allowing 3306/tcp via firewalld..."
+			sudo firewall-cmd --add-service=mysql --permanent >>"$LOG_FILE" 2>&1 || \
+				sudo firewall-cmd --add-port=3306/tcp --permanent >>"$LOG_FILE" 2>&1 || true
+			sudo firewall-cmd --reload >>"$LOG_FILE" 2>&1 || true
+		else
+			log_warn "No supported firewall tool detected (ufw/firewalld)."
+			log_info "If you use iptables or another firewall, open port 3306/tcp manually."
+		fi
+	else
+		log_info "Leaving firewall rules unchanged. Ensure port 3306 is reachable from your nodes."
+	fi
+
+	# Prepare MySQL client command as root
+	log_step "Creating 'featherworker' MySQL user for Remote Databases..."
+	local MYSQL_CMD=""
+
+	if sudo mysql -e "SELECT 1" >/dev/null 2>&1; then
+		MYSQL_CMD="sudo mysql"
+	else
+		local MYSQL_ROOT_PASSWORD=""
+		prompt_secret "${BOLD}Enter MySQL/MariaDB root password${NC}: " MYSQL_ROOT_PASSWORD
+		MYSQL_CMD="mysql -u root -p${MYSQL_ROOT_PASSWORD}"
+	fi
+
+	# Generate strong random password (letters + digits only to avoid quoting issues)
+	local FEATHERWORKER_PASS
+	FEATHERWORKER_PASS=$(tr -dc 'A-Za-z0-9' </dev/urandom 2>/dev/null | head -c 32)
+
+	# Create user and grant full privileges
+	$MYSQL_CMD <<EOF 2>>"$LOG_FILE"
+CREATE USER IF NOT EXISTS 'featherworker'@'%' IDENTIFIED BY '${FEATHERWORKER_PASS}';
+GRANT ALL PRIVILEGES ON *.* TO 'featherworker'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+EOF
+
+	if [ $? -ne 0 ]; then
+		log_error "Failed to create or grant privileges to 'featherworker' user."
+		log_info "Check MySQL/MariaDB logs and credentials, then try again."
+		return 1
+	fi
+
+	log_success "Remote Database host configured successfully."
+	echo ""
+	draw_hr
+	print_centered "Remote Database Credentials" "$CYAN"
+	draw_hr
+	echo ""
+	# Try to detect a useful public IP to show instead of a placeholder
+	local DB_HOST_DISPLAY="YOUR_DATABASE_SERVER_IP"
+	detect_public_ips || true
+	if [ -n "${PUBLIC_IPV4:-}" ]; then
+		DB_HOST_DISPLAY="$PUBLIC_IPV4"
+	fi
+	echo -e "  ${BLUE}Host (for Panel Database Host):${NC} ${CYAN}${DB_HOST_DISPLAY}${NC}"
+	echo -e "  ${BLUE}Port:${NC} ${CYAN}3306${NC}"
+	echo -e "  ${BLUE}Username:${NC} ${CYAN}featherworker${NC}"
+	echo -e "  ${BLUE}Password:${NC} ${CYAN}${FEATHERWORKER_PASS}${NC}"
+	echo ""
+	echo -e "  ${YELLOW}Important:${NC} Add this host in the Panel under ${BOLD}Admin → Database Hosts${NC}"
+	echo -e "  ${YELLOW}Warning:${NC} This user has global privileges. Keep the password secret."
+	echo ""
+	draw_hr
+}
+
 # Backup management functions
 create_backup() {
 	log_step "Creating FeatherPanel backup..."
 
-	if [ ! -f /var/www/featherpanel/.installed ]; then
+	if ! is_featherpanel_installed; then
 		log_error "FeatherPanel is not installed. Nothing to backup."
 		return 1
 	fi
@@ -2132,7 +2350,7 @@ list_backups() {
 restore_backup() {
 	log_step "Restoring FeatherPanel from backup..."
 
-	if [ ! -f /var/www/featherpanel/.installed ]; then
+	if ! is_featherpanel_installed; then
 		log_error "FeatherPanel is not installed. Please install first before restoring."
 		return 1
 	fi
@@ -2407,7 +2625,7 @@ delete_backup() {
 export_migration() {
 	log_step "Creating migration package for FeatherPanel..."
 
-	if [ ! -f /var/www/featherpanel/.installed ]; then
+	if ! is_featherpanel_installed; then
 		log_error "FeatherPanel is not installed. Nothing to export."
 		return 1
 	fi
@@ -3550,14 +3768,17 @@ if [ -f /etc/os-release ]; then
 	wings) COMPONENT_TYPE="2" ;;
 	cli) COMPONENT_TYPE="3" ;;
 	ssl) COMPONENT_TYPE="4" ;;
+	db | databases) COMPONENT_TYPE="5" ;;
+	proxmox) COMPONENT_TYPE="6" ;;
+	featherfly) COMPONENT_TYPE="7" ;;
 	*) COMPONENT_TYPE="" ;;
 	esac
 
-	while [[ ! "$COMPONENT_TYPE" =~ ^[1-4]$ ]]; do
+	while [[ ! "$COMPONENT_TYPE" =~ ^[1-7]$ ]]; do
 		show_main_menu
-		prompt "${BOLD}Enter component${NC} ${BLUE}(1/2/3/4)${NC}: " COMPONENT_TYPE
-		if [[ ! "$COMPONENT_TYPE" =~ ^[1-4]$ ]]; then
-			echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC}, ${YELLOW}2${NC}, ${YELLOW}3${NC} or ${YELLOW}4${NC}."
+		prompt "${BOLD}Enter component${NC} ${BLUE}(1/2/3/4/5/6/7)${NC}: " COMPONENT_TYPE
+		if [[ ! "$COMPONENT_TYPE" =~ ^[1-7]$ ]]; then
+			echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC}, ${YELLOW}2${NC}, ${YELLOW}3${NC}, ${YELLOW}4${NC}, ${YELLOW}5${NC}, ${YELLOW}6${NC} or ${YELLOW}7${NC}."
 			sleep 1
 		fi
 	done
@@ -3664,7 +3885,7 @@ if [ -f /etc/os-release ]; then
 				exit 0
 			fi
 		fi
-	else
+	elif [ "$COMPONENT_TYPE" = "4" ]; then
 		# SSL operations
 		while [[ ! "$INST_TYPE" =~ ^[1-5]$ ]]; do
 			show_ssl_menu
@@ -3678,6 +3899,37 @@ if [ -f /etc/os-release ]; then
 				sleep 2
 			fi
 		done
+	elif [ "$COMPONENT_TYPE" = "5" ]; then
+		# Database operations
+		while [[ ! "$INST_TYPE" =~ ^[1]$ ]]; do
+			show_databases_menu
+			echo ""
+			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1)${NC}: " INST_TYPE
+			if [[ ! "$INST_TYPE" =~ ^[1]$ ]]; then
+				echo ""
+				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Remote Databases Setup)${NC}"
+				echo ""
+				sleep 2
+			fi
+		done
+	elif [ "$COMPONENT_TYPE" = "6" ] || [ "$COMPONENT_TYPE" = "7" ]; then
+		# Proxmox Agent / FeatherFly Daemon – Coming Soon
+		if [ -t 1 ]; then clear; fi
+		print_banner
+		draw_hr
+		print_centered "Coming Soon" "$YELLOW"
+		draw_hr
+		echo ""
+		if [ "$COMPONENT_TYPE" = "6" ]; then
+			echo -e "  ${BLUE}Proxmox Agent (DHCP) for virtual machines is currently in development.${NC}"
+		else
+			echo -e "  ${BLUE}FeatherFly Daemon (WebHosting Daemon) is currently in development.${NC}"
+		fi
+		echo -e "  ${YELLOW}This feature is not yet available in this installer build.${NC}"
+		echo ""
+		draw_hr
+		exit 0
 	fi
 
 	# Environment overrides for non-interactive mode
@@ -3685,6 +3937,7 @@ if [ -f /etc/os-release ]; then
 	install) INST_TYPE="1" ;;
 	uninstall) INST_TYPE="2" ;;
 	update) INST_TYPE="3" ;;
+	db_remote) COMPONENT_TYPE="5"; INST_TYPE="1" ;;
 	*) ;;
 	esac
 
@@ -4427,6 +4680,29 @@ if [ -f /etc/os-release ]; then
 		# Install global featherpanel command
 		install_featherpanel_command
 
+		# Optional: guide user through Remote Database (MySQL/MariaDB) host setup
+		if command -v mysql >/dev/null 2>&1 || command -v mariadb >/dev/null 2>&1 || \
+			systemctl list-unit-files 2>/dev/null | grep -qE '^(mysql|mariadb)\.service'; then
+			echo ""
+			draw_hr
+			print_centered "Remote Databases (Optional)" "$CYAN"
+			draw_hr
+			echo ""
+			echo -e "  ${BLUE}FeatherPanel can manage databases on a separate MySQL/MariaDB host for your nodes.${NC}"
+			echo -e "  ${BLUE}The Remote Databases helper can:${NC}"
+			echo -e "    ${CYAN}•${NC} Enable external access on MySQL/MariaDB (0.0.0.0)"
+			echo -e "    ${CYAN}•${NC} Open port 3306 in your firewall (if supported)"
+			echo -e "    ${CYAN}•${NC} Create a '${BOLD}featherworker${NC}' superuser for automatic database creation"
+			echo ""
+			setup_remote_db=""
+			prompt "${BOLD}Run Remote Databases setup now for this server?${NC} ${BLUE}(y/n)${NC}: " setup_remote_db
+			if [[ "$setup_remote_db" =~ ^[yY]$ ]]; then
+				setup_remote_mysql_host || log_warn "Remote Database helper encountered an error. You can run it again later."
+			else
+				log_info "Skipping Remote Database helper. You can configure it manually or add later."
+			fi
+		fi
+
 		# Get public IP for access information
 		PUBLIC_IP=$(curl -s ifconfig.me 2>/dev/null || curl -s ipinfo.io/ip 2>/dev/null || echo "Unable to detect")
 
@@ -4515,10 +4791,10 @@ if [ -f /etc/os-release ]; then
 		log_info "Installation log saved at: $LOG_FILE"
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "2" ]; then
 		# Panel Uninstall
-		if [ ! -f /var/www/featherpanel/.installed ]; then
-			echo "FeatherPanel does not appear to be installed. Nothing to uninstall."
-			exit 0
-		fi
+	if ! is_featherpanel_installed; then
+		echo "FeatherPanel does not appear to be installed. Nothing to uninstall."
+		exit 0
+	fi
 		prompt "Are you sure you want to uninstall the Docker-based installation? (y/n): " confirm
 		if [ "$confirm" = "y" ]; then
 			uninstall_docker
@@ -4528,10 +4804,10 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "3" ]; then
 		# Panel Update
-		if [ ! -f /var/www/featherpanel/.installed ]; then
-			echo "FeatherPanel does not appear to be installed. Nothing to update."
-			exit 0
-		fi
+	if ! is_featherpanel_installed; then
+		echo "FeatherPanel does not appear to be installed. Nothing to update."
+		exit 0
+	fi
 
 		# Check current installation type BEFORE doing anything
 		CURRENT_IS_DEV=false
@@ -5002,6 +5278,14 @@ if [ -f /etc/os-release ]; then
 		# SSL - Install acme.sh
 		install_acme_sh
 		log_success "acme.sh installation finished. See log at $LOG_FILE"
+	elif [ "$COMPONENT_TYPE" = "5" ] && [ "$INST_TYPE" = "1" ]; then
+		# Databases - Remote MySQL/MariaDB setup
+		if setup_remote_mysql_host; then
+			log_success "Remote Database host setup completed. See log at $LOG_FILE"
+		else
+			log_error "Remote Database host setup failed. See log at $LOG_FILE"
+			exit 1
+		fi
 	else
 		log_error "Invalid component or operation selected."
 		exit 1
