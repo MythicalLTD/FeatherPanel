@@ -18,13 +18,13 @@
 namespace App\Controllers\Admin;
 
 use App\App;
-use App\Chat\VmNode;
 use App\Chat\VmIp;
-use App\Chat\Location;
+use App\Chat\VmNode;
 use App\Chat\Activity;
+use App\Chat\Location;
 use App\Helpers\ApiResponse;
-use App\Services\Proxmox\Proxmox;
 use OpenApi\Attributes as OA;
+use App\Services\Proxmox\Proxmox;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -1025,4 +1025,3 @@ class VmNodesController
         return ApiResponse::success(['ip' => $updated], 'VM node primary IP updated successfully', 200);
     }
 }
-

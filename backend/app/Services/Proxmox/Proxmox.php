@@ -34,14 +34,14 @@ class Proxmox
     private string $tokenHeader;
 
     /**
-     * @param string $host         Proxmox hostname or IP
-     * @param int    $port         Proxmox API port (default 8006, or 443 if proxied)
-     * @param string $scheme       http or https
-     * @param string $user         Proxmox user, e.g. root@pam or apiuser@pve
-     * @param string $tokenId      Token ID (part after user, before = in PVEAPIToken)
-     * @param string $secret       Token secret
-     * @param bool   $tlsNoVerify  Whether to skip TLS verification
-     * @param int    $timeout      Timeout in seconds
+     * @param string $host Proxmox hostname or IP
+     * @param int $port Proxmox API port (default 8006, or 443 if proxied)
+     * @param string $scheme http or https
+     * @param string $user Proxmox user, e.g. root@pam or apiuser@pve
+     * @param string $tokenId Token ID (part after user, before = in PVEAPIToken)
+     * @param string $secret Token secret
+     * @param bool $tlsNoVerify Whether to skip TLS verification
+     * @param int $timeout Timeout in seconds
      */
     public function __construct(
         string $host,
@@ -79,8 +79,8 @@ class Proxmox
     /**
      * Perform a lightweight connectivity check against /nodes.
      *
-     * @param array<string, string> $extraHeaders Additional headers to send for this check.
-     * @param array<string, string|int|float> $extraQuery Additional query parameters to send.
+     * @param array<string, string> $extraHeaders additional headers to send for this check
+     * @param array<string, string|int|float> $extraQuery additional query parameters to send
      *
      * @return array{
      *     ok: bool,
@@ -166,4 +166,3 @@ class Proxmox
         }
     }
 }
-

@@ -24,7 +24,7 @@ class PluginFlagsTest extends TestCase
     protected function setUp(): void
     {
         if (!defined('APP_DEBUG')) {
-            define('APP_DEBUG', true);
+            define('APP_DEBUG', false);
         }
         App::getInstance(false, true, true);
     }

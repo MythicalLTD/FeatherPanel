@@ -200,7 +200,16 @@ support_hint() {
 upload_logs_on_fail() {
 	if command -v curl >/dev/null 2>&1; then
 		log_info "Uploading logs to mclo.gs for diagnostics..."
-		RESPONSE=$(curl -s -X POST --data-urlencode "content@${LOG_FILE}" "https://api.featherpanel.com/1/log")
+		# To avoid size limits and prioritize the most recent activity,
+		# upload only the last 4000 lines of the log (or the whole file if smaller).
+		if command -v tail >/dev/null 2>&1; then
+			TAIL_FILE="${LOG_FILE}.tail.tmp"
+			tail -n 4000 "$LOG_FILE" >"$TAIL_FILE" 2>/dev/null || cp "$LOG_FILE" "$TAIL_FILE" 2>/dev/null || true
+			RESPONSE=$(curl -s -X POST --data-urlencode "content@${TAIL_FILE}" "https://api.featherpanel.com/1/log")
+			rm -f "$TAIL_FILE" 2>/dev/null || true
+		else
+			RESPONSE=$(curl -s -X POST --data-urlencode "content@${LOG_FILE}" "https://api.featherpanel.com/1/log")
+		fi
 
 		# Parse JSON response
 		SUCCESS=$(echo "$RESPONSE" | grep -o '"success":[^,]*' | cut -d':' -f2 | tr -d '"' 2>/dev/null)
@@ -3759,6 +3768,9 @@ if [ -f /etc/os-release ]; then
 			fi
 			log_warn "User chose to continue with incompatible virtualization: $virt_warning"
 			log_warn "Installation may fail - Docker may not work on this platform"
+			# Allow the installer to continue even if the Docker stack cannot start,
+			# so we can still configure things like reverse proxies and SSL.
+			ALLOW_BROKEN_STACK=true
 		fi
 	}
 
@@ -3965,6 +3977,7 @@ if [ -f /etc/os-release ]; then
 	has_ssl="false"
 	panel_domain=""
 	PANEL_SSL_CHOICE=""
+	ALLOW_BROKEN_STACK=false
 
 	# Handle operations based on component and action
 	if [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "1" ]; then
@@ -4381,7 +4394,7 @@ if [ -f /etc/os-release ]; then
 			echo -e "${RED}${BOLD}Container Start Failure${NC}"
 			draw_hr
 
-			# Check Docker logs for common errors
+            # Check Docker logs for common errors
 			log_info "Checking Docker container logs..."
 			if command -v docker >/dev/null 2>&1; then
 				cd /var/www/featherpanel || true
@@ -4416,8 +4429,14 @@ if [ -f /etc/os-release ]; then
 			echo -e "  ${CYAN}•${NC} Container status: ${BOLD}sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps${NC}"
 			echo -e "  ${CYAN}•${NC} Installation log: ${BOLD}$LOG_FILE${NC}"
 			draw_hr
-			upload_logs_on_fail
-			exit 1
+
+			if [ "$ALLOW_BROKEN_STACK" = "true" ] && [ -n "$REVERSE_PROXY_TYPE" ] && [ "$REVERSE_PROXY_TYPE" != "none" ]; then
+				log_warn "Continuing despite container start failure (incompatible virtualization)."
+				log_warn "Reverse proxy and SSL setup will continue, but the Panel containers are not running."
+			else
+				upload_logs_on_fail
+				exit 1
+			fi
 		fi
 
 		# Verify containers are actually running
@@ -4435,8 +4454,14 @@ if [ -f /etc/os-release ]; then
 			sudo docker compose -f /var/www/featherpanel/docker-compose.yml logs --tail=30
 			echo ""
 			draw_hr
-			upload_logs_on_fail
-			exit 1
+
+			if [ "$ALLOW_BROKEN_STACK" = "true" ] && [ -n "$REVERSE_PROXY_TYPE" ] && [ "$REVERSE_PROXY_TYPE" != "none" ]; then
+				log_warn "Continuing despite unhealthy containers (incompatible virtualization)."
+				log_warn "Reverse proxy and SSL setup will continue, but the Panel containers may not be running."
+			else
+				upload_logs_on_fail
+				exit 1
+			fi
 		fi
 
 		if [[ "$CF_TUNNEL_SETUP" =~ ^[yY]$ ]]; then

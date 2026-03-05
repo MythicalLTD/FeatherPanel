@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /*
 This file is part of FeatherPanel.
  
@@ -300,18 +301,18 @@ export default function EditVdsNodePage() {
     const validateIpForm = useCallback(() => {
         const newErrors: Record<string, string> = {};
         if (!ipForm.ip.trim()) {
-            newErrors.ip = t('admin.vdsNodes.ips.ip_required', 'An IP address is required');
+            newErrors.ip = t('admin.vdsNodes.ips.ip_required');
         } else if (!/^([0-9a-fA-F:.]+)$/.test(ipForm.ip.trim())) {
-            newErrors.ip = t('admin.vdsNodes.ips.ip_invalid', 'Please enter a valid IPv4 or IPv6 address');
+            newErrors.ip = t('admin.vdsNodes.ips.ip_invalid');
         }
         if (ipForm.cidr) {
             const cidrNum = Number(ipForm.cidr);
             if (Number.isNaN(cidrNum) || cidrNum < 0 || cidrNum > 128) {
-                newErrors.cidr = t('admin.vdsNodes.ips.cidr_invalid', 'CIDR must be between 0 and 128');
+                newErrors.cidr = t('admin.vdsNodes.ips.cidr_invalid');
             }
         }
         if (ipForm.gateway && !/^([0-9a-fA-F:.]+)$/.test(ipForm.gateway.trim())) {
-            newErrors.gateway = t('admin.vdsNodes.ips.gateway_invalid', 'Please enter a valid gateway IP');
+            newErrors.gateway = t('admin.vdsNodes.ips.gateway_invalid');
         }
         setIpErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -349,7 +350,7 @@ export default function EditVdsNodePage() {
             };
 
             await axios.patch(`/api/admin/vm-nodes/${id}`, submitData);
-            toast.success(t('admin.vdsNodes.messages.update_success', 'VDS node updated successfully'));
+            toast.success(t('admin.vdsNodes.messages.update_success'));
             fetchVmNode();
             loadIps();
         } catch (error) {
@@ -357,7 +358,7 @@ export default function EditVdsNodePage() {
             if (isAxiosError(error) && error.response?.data?.message) {
                 toast.error(error.response.data.message);
             } else {
-                toast.error(t('admin.vdsNodes.messages.update_failed', 'Failed to update VDS node'));
+                toast.error(t('admin.vdsNodes.messages.update_failed'));
             }
         } finally {
             setSaving(false);
@@ -383,7 +384,7 @@ export default function EditVdsNodePage() {
             if (isAxiosError(error) && error.response?.data?.message) {
                 toast.error(error.response.data.message);
             } else {
-                toast.error(t('admin.vdsNodes.ips.create_failed', 'Failed to create IP'));
+                toast.error(t('admin.vdsNodes.ips.create_failed'));
             }
         }
     };
@@ -397,7 +398,7 @@ export default function EditVdsNodePage() {
             if (isAxiosError(error) && error.response?.data?.message) {
                 toast.error(error.response.data.message);
             } else {
-                toast.error(t('admin.vdsNodes.ips.delete_failed', 'Failed to delete IP'));
+                toast.error(t('admin.vdsNodes.ips.delete_failed'));
             }
         }
     };
@@ -411,7 +412,7 @@ export default function EditVdsNodePage() {
             if (isAxiosError(error) && error.response?.data?.message) {
                 toast.error(error.response.data.message);
             } else {
-                toast.error(t('admin.vdsNodes.ips.primary_failed', 'Failed to set primary IP'));
+                toast.error(t('admin.vdsNodes.ips.primary_failed'));
             }
         }
     };
@@ -433,7 +434,7 @@ export default function EditVdsNodePage() {
                 setConnectionState('ok');
                 setConnectionMessage(
                     data.message ??
-                        t('admin.vdsNodes.messages.connection_ok', 'Connection to Proxmox node successful'),
+                        t('admin.vdsNodes.messages.connection_ok'),
                 );
             } else {
                 setConnectionState('error');
@@ -441,7 +442,7 @@ export default function EditVdsNodePage() {
                     data.data?.error ||
                     data.error ||
                     data.message ||
-                    t('admin.vdsNodes.messages.connection_failed', 'Failed to connect to Proxmox node');
+                    t('admin.vdsNodes.messages.connection_failed');
                 setConnectionMessage(messageFromBackend);
             }
         } catch (error) {
@@ -459,13 +460,13 @@ export default function EditVdsNodePage() {
                 const msg =
                     backendMessage ||
                     `${status} ${statusText || ''}`.trim() ||
-                    t('admin.vdsNodes.messages.connection_failed', 'Failed to connect to Proxmox node');
+                    t('admin.vdsNodes.messages.connection_failed');
 
                 setConnectionMessage(msg);
             } else {
                 setConnectionPayload(null);
                 setConnectionMessage(
-                    t('admin.vdsNodes.messages.connection_failed', 'Failed to connect to Proxmox node'),
+                    t('admin.vdsNodes.messages.connection_failed'),
                 );
             }
         } finally {
@@ -489,10 +490,9 @@ export default function EditVdsNodePage() {
             />
 
             <PageHeader
-                title={t('admin.vdsNodes.form.edit_title', 'Edit VDS Node')}
+                title={t('admin.vdsNodes.form.edit_title')}
                 description={t(
                     'admin.vdsNodes.form.edit_description',
-                    'Update Proxmox connection settings and test connectivity.',
                 )}
                 icon={Server}
                 actions={
@@ -503,11 +503,11 @@ export default function EditVdsNodePage() {
                         </Button>
                         <Button variant='outline' onClick={handleTestConnection} loading={testing}>
                             <RefreshCw className='h-4 w-4 mr-2' />
-                            {t('admin.vdsNodes.health.refresh', 'Test Connection')}
+                            {t('admin.vdsNodes.health.refresh')}
                         </Button>
                         <Button onClick={handleSave} loading={saving}>
                             <Save className='h-4 w-4 mr-2' />
-                            {t('admin.vdsNodes.form.submit_save', 'Save Changes')}
+                            {t('admin.vdsNodes.form.submit_save')}
                         </Button>
                     </div>
                 }
@@ -532,8 +532,8 @@ export default function EditVdsNodePage() {
                                 <div>
                                     <p className='text-sm font-semibold uppercase tracking-wide'>
                                         {connectionState === 'ok'
-                                            ? t('admin.vdsNodes.health.online', 'Online')
-                                            : t('admin.vdsNodes.health.offline', 'Offline')}
+                                            ? t('admin.vdsNodes.health.online')
+                                            : t('admin.vdsNodes.health.offline')}
                                     </p>
                                     {connectionMessage && (
                                         <p className='text-sm mt-1 text-foreground'>{connectionMessage}</p>
@@ -541,13 +541,14 @@ export default function EditVdsNodePage() {
                                 </div>
                             </div>
 
-                            {connectionPayload && (
+                            {connectionPayload && typeof connectionPayload === 'object' ? (
                                 <div className='mt-2 rounded-xl bg-background/80 border border-border/60 max-h-64 overflow-auto'>
                                     <pre className='text-xs font-mono p-3 whitespace-pre-wrap break-all'>
-                                        {JSON.stringify(connectionPayload, null, 2)}
+                                        {JSON.stringify(connectionPayload ?? {}, null, 2)}
                                     </pre>
                                 </div>
-                            )}
+                            ) : null}
+
                         </div>
                     </div>
                 </div>
@@ -561,11 +562,11 @@ export default function EditVdsNodePage() {
             <form onSubmit={handleSave} className='space-y-8'>
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
                     <div className='space-y-8'>
-                        <PageCard title={t('admin.vdsNodes.form.basic_details', 'Basic Details')} icon={Server}>
+                        <PageCard title={t('admin.vdsNodes.form.basic_details')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.name', 'Display Name')}
+                                        {t('admin.vdsNodes.form.name')}
                                     </Label>
                                     <Input
                                         value={form.name}
@@ -578,7 +579,7 @@ export default function EditVdsNodePage() {
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.description', 'Description')}
+                                        {t('admin.vdsNodes.form.description')}
                                     </Label>
                                     <Textarea
                                         value={form.description}
@@ -588,7 +589,7 @@ export default function EditVdsNodePage() {
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.location', 'VPS Location')}
+                                        {t('admin.vdsNodes.form.location')}
                                     </Label>
                                     <div className='flex gap-2'>
                                         <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
@@ -602,8 +603,7 @@ export default function EditVdsNodePage() {
                                             ) : (
                                                 <span className='text-muted-foreground'>
                                                     {t(
-                                                        'admin.vdsNodes.form.select_location',
-                                                        'Select a VPS location for this node',
+                                                        'admin.vdsNodes.form.select_location'
                                                     )}
                                                 </span>
                                             )}
@@ -628,11 +628,11 @@ export default function EditVdsNodePage() {
                             </div>
                         </PageCard>
 
-                        <PageCard title={t('admin.vdsNodes.form.proxmox', 'Proxmox API Access')} icon={Server}>
+                        <PageCard title={t('admin.vdsNodes.form.proxmox')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.user', 'Proxmox User')}
+                                        {t('admin.vdsNodes.form.user')}
                                     </Label>
                                     <Input
                                         value={form.user}
@@ -647,7 +647,7 @@ export default function EditVdsNodePage() {
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.token_id', 'Token ID')}
+                                        {t('admin.vdsNodes.form.token_id')}
                                     </Label>
                                     <Input
                                         value={form.token_id}
@@ -662,7 +662,7 @@ export default function EditVdsNodePage() {
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.secret', 'Token Secret')}
+                                        {t('admin.vdsNodes.form.secret')}
                                     </Label>
                                     <Input
                                         type='password'
@@ -675,11 +675,11 @@ export default function EditVdsNodePage() {
                     </div>
 
                     <div className='space-y-8'>
-                        <PageCard title={t('admin.vdsNodes.form.network', 'Network & SSL')} icon={Server}>
+                        <PageCard title={t('admin.vdsNodes.form.network')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.fqdn', 'Proxmox Hostname / IP')}
+                                        {t('admin.vdsNodes.form.fqdn')}
                                     </Label>
                                     <Input
                                         value={form.fqdn}
@@ -695,7 +695,7 @@ export default function EditVdsNodePage() {
                                 <div className='grid grid-cols-2 gap-4'>
                                     <div className='space-y-2'>
                                         <Label className='text-sm font-semibold'>
-                                            {t('admin.vdsNodes.form.scheme', 'Scheme')}
+                                            {t('admin.vdsNodes.form.scheme')}
                                         </Label>
                                         <Select
                                             value={form.scheme}
@@ -712,7 +712,7 @@ export default function EditVdsNodePage() {
                                     </div>
                                     <div className='space-y-2'>
                                         <Label className='text-sm font-semibold'>
-                                            {t('admin.vdsNodes.form.port', 'Port')}
+                                            {t('admin.vdsNodes.form.port')}
                                         </Label>
                                         <Input
                                             type='number'
@@ -734,7 +734,7 @@ export default function EditVdsNodePage() {
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.tls_no_verify', 'TLS Verification')}
+                                        {t('admin.vdsNodes.form.tls_no_verify')}
                                     </Label>
                                     <Select
                                         value={form.tls_no_verify}
@@ -747,21 +747,19 @@ export default function EditVdsNodePage() {
                                     >
                                         <option value='false'>
                                             {t(
-                                                'admin.vdsNodes.form.tls_no_verify_false',
-                                                'Verify TLS certificates (recommended)',
+                                                'admin.vdsNodes.form.tls_no_verify_false'
                                             )}
                                         </option>
                                         <option value='true'>
                                             {t(
-                                                'admin.vdsNodes.form.tls_no_verify_true',
-                                                'Skip verification (only for testing)',
+                                                'admin.vdsNodes.form.tls_no_verify_true'
                                             )}
                                         </option>
                                     </Select>
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.timeout', 'Timeout (seconds)')}
+                                        {t('admin.vdsNodes.form.timeout')}
                                     </Label>
                                     <Input
                                         type='number'
@@ -784,18 +782,17 @@ export default function EditVdsNodePage() {
                         </PageCard>
 
                         <PageCard
-                            title={t('admin.vdsNodes.form.http_advanced', 'Advanced HTTP Options')}
+                            title={t('admin.vdsNodes.form.http_advanced')}
                             icon={Server}
                         >
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.headers', 'Custom Headers')}
+                                        	{t('admin.vdsNodes.form.headers')}
                                     </Label>
                                     <p className='text-xs text-muted-foreground'>
                                         {t(
-                                            'admin.vdsNodes.form.headers_help',
-                                            'Optional HTTP headers to send with each Proxmox API request (for proxies, extra auth, etc.).',
+                                            'admin.vdsNodes.form.headers_help'
                                         )}
                                     </p>
                                     <div className='space-y-2'>
@@ -804,7 +801,6 @@ export default function EditVdsNodePage() {
                                                 <Input
                                                     placeholder={t(
                                                         'admin.vdsNodes.form.headers_key_placeholder',
-                                                        'Header name (e.g. X-Forwarded-Host)',
                                                     )}
                                                     value={row.key}
                                                     onChange={(e) => {
@@ -816,7 +812,6 @@ export default function EditVdsNodePage() {
                                                 <Input
                                                     placeholder={t(
                                                         'admin.vdsNodes.form.headers_value_placeholder',
-                                                        'Header value',
                                                     )}
                                                     value={row.value}
                                                     onChange={(e) => {
@@ -845,19 +840,18 @@ export default function EditVdsNodePage() {
                                             className='mt-1'
                                         >
                                             <Plus className='h-4 w-4 mr-2' />
-                                            {t('admin.vdsNodes.form.headers_add', 'Add header')}
+                                            {t('admin.vdsNodes.form.headers_add')}
                                         </Button>
                                     </div>
                                 </div>
 
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.form.params', 'Query Parameters')}
+                                        {t('admin.vdsNodes.form.params')}
                                     </Label>
                                     <p className='text-xs text-muted-foreground'>
                                         {t(
-                                            'admin.vdsNodes.form.params_help',
-                                            'Optional query parameters to append to Proxmox API requests.',
+                                            'admin.vdsNodes.form.params_help'
                                         )}
                                     </p>
                                     <div className='space-y-2'>
@@ -866,7 +860,6 @@ export default function EditVdsNodePage() {
                                                 <Input
                                                     placeholder={t(
                                                         'admin.vdsNodes.form.params_key_placeholder',
-                                                        'Parameter name',
                                                     )}
                                                     value={row.key}
                                                     onChange={(e) => {
@@ -877,8 +870,7 @@ export default function EditVdsNodePage() {
                                                 />
                                                 <Input
                                                     placeholder={t(
-                                                        'admin.vdsNodes.form.params_value_placeholder',
-                                                        'Parameter value',
+                                                        'admin.vdsNodes.form.params_value_placeholder'	
                                                     )}
                                                     value={row.value}
                                                     onChange={(e) => {
@@ -907,25 +899,24 @@ export default function EditVdsNodePage() {
                                             className='mt-1'
                                         >
                                             <Plus className='h-4 w-4 mr-2' />
-                                            {t('admin.vdsNodes.form.params_add', 'Add parameter')}
+                                            {t('admin.vdsNodes.form.params_add')}
                                         </Button>
                                     </div>
                                 </div>
                             </div>
                         </PageCard>
 
-                        <PageCard title={t('admin.vdsNodes.ips.title', 'IP Pool')} icon={Server}>
+                        <PageCard title={t('admin.vdsNodes.ips.title')} icon={Server}>
                             <div className='space-y-4'>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.ips.add_title', 'Add IP to this node')}
+                                        {t('admin.vdsNodes.ips.add_title')}
                                     </Label>
                                     <div className='grid grid-cols-1 sm:grid-cols-4 gap-3'>
                                         <div className='space-y-1'>
                                             <Input
                                                 placeholder={t(
-                                                    'admin.vdsNodes.ips.ip_placeholder',
-                                                    'IP address (v4 or v6)',
+                                                    'admin.vdsNodes.ips.ip_placeholder'
                                                 )}
                                                 value={ipForm.ip}
                                                 onChange={(e) => setIpForm({ ...ipForm, ip: e.target.value })}
@@ -939,7 +930,7 @@ export default function EditVdsNodePage() {
                                         </div>
                                         <div className='space-y-1'>
                                             <Input
-                                                placeholder={t('admin.vdsNodes.ips.cidr_placeholder', 'CIDR (/32)')}
+                                                placeholder={t('admin.vdsNodes.ips.cidr_placeholder')}
                                                 value={ipForm.cidr}
                                                 onChange={(e) => setIpForm({ ...ipForm, cidr: e.target.value })}
                                                 error={!!ipErrors.cidr}
@@ -953,8 +944,7 @@ export default function EditVdsNodePage() {
                                         <div className='space-y-1'>
                                             <Input
                                                 placeholder={t(
-                                                    'admin.vdsNodes.ips.gateway_placeholder',
-                                                    'Gateway (optional)',
+                                                    'admin.vdsNodes.ips.gateway_placeholder'
                                                 )}
                                                 value={ipForm.gateway}
                                                 onChange={(e) => setIpForm({ ...ipForm, gateway: e.target.value })}
@@ -968,7 +958,7 @@ export default function EditVdsNodePage() {
                                         </div>
                                         <div className='space-y-1'>
                                             <Input
-                                                placeholder={t('admin.vdsNodes.ips.notes_placeholder', 'Notes')}
+                                                placeholder={t('admin.vdsNodes.ips.notes_placeholder')}
                                                 value={ipForm.notes}
                                                 onChange={(e) => setIpForm({ ...ipForm, notes: e.target.value })}
                                             />
@@ -976,14 +966,14 @@ export default function EditVdsNodePage() {
                                     </div>
                                     <div className='flex justify-end'>
                                         <Button type='button' size='sm' onClick={handleAddIp}>
-                                            {t('admin.vdsNodes.ips.add_button', 'Add IP')}
+                                            {t('admin.vdsNodes.ips.add_button')}
                                         </Button>
                                     </div>
                                 </div>
 
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>
-                                        {t('admin.vdsNodes.ips.list_title', 'Configured IPs')}
+                                        {t('admin.vdsNodes.ips.list_title')}
                                     </Label>
                                     <div className='rounded-xl border border-border/60 divide-y divide-border/60 bg-background/60'>
                                         {ipsLoading ? (
@@ -992,7 +982,7 @@ export default function EditVdsNodePage() {
                                             </div>
                                         ) : ips.length === 0 ? (
                                             <div className='py-4 px-3 text-xs text-muted-foreground'>
-                                                {t('admin.vdsNodes.ips.empty', 'No IPs configured for this node yet.')}
+                                                {t('admin.vdsNodes.ips.empty')}
                                             </div>
                                         ) : (
                                             ips.map((ip) => (
@@ -1020,16 +1010,15 @@ export default function EditVdsNodePage() {
                                                     <div className='flex items-center gap-2'>
                                                         {ip.is_primary === 'true' ? (
                                                             <span className='px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/30'>
-                                                                {t('admin.vdsNodes.ips.primary_badge', 'PRIMARY')}
+                                                                {t('admin.vdsNodes.ips.primary_badge')}
                                                             </span>
                                                         ) : (
                                                             <Button
                                                                 type='button'
-                                                                size='xs'
                                                                 variant='outline'
                                                                 onClick={() => handleSetPrimaryIp(ip.id)}
                                                             >
-                                                                {t('admin.vdsNodes.ips.set_primary', 'Set primary')}
+                                                                {t('admin.vdsNodes.ips.set_primary')}
                                                             </Button>
                                                         )}
                                                         <Button
@@ -1057,12 +1046,11 @@ export default function EditVdsNodePage() {
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
                         <SheetTitle>
-                            {t('admin.vdsNodes.form.select_location', 'Select VPS Location')}
+                            {t('admin.vdsNodes.form.select_location')}
                         </SheetTitle>
                         <SheetDescription>
                             {t(
-                                'admin.vdsNodes.form.select_location_description',
-                                'Choose a location that is marked as VPS-only.',
+                                'admin.vdsNodes.form.select_location_description'
                             )}
                         </SheetDescription>
                     </SheetHeader>
@@ -1073,7 +1061,6 @@ export default function EditVdsNodePage() {
                             <Input
                                 placeholder={t(
                                     'admin.vdsNodes.form.search_locations',
-                                    'Search VPS locations...',
                                 )}
                                 value={locationSearch}
                                 onChange={(e) => setLocationSearch(e.target.value)}
@@ -1123,8 +1110,7 @@ export default function EditVdsNodePage() {
                             {locations.length === 0 ? (
                                 <div className='text-center py-8 text-muted-foreground'>
                                     {t(
-                                        'admin.vdsNodes.form.no_locations_found',
-                                        'No VPS locations found. Make sure you created locations of type VPS.',
+                                        'admin.vdsNodes.form.no_locations_found'
                                     )}
                                 </div>
                             ) : (

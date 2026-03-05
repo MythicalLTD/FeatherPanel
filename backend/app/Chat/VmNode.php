@@ -57,7 +57,7 @@ class VmNode
      * Validate required fields and types for VM node creation/update.
      *
      * @param array<string, mixed> $data
-     * @param array<int, string>   $requiredFields
+     * @param array<int, string> $requiredFields
      *
      * @return array<int, string> Validation error messages (empty if ok)
      */
@@ -115,7 +115,7 @@ class VmNode
      *
      * @return int|false The new VM node ID or false on failure
      */
-    public static function createVmNode(array $data): int|false
+    public static function createVmNode(array $data): int | false
     {
         $required = [
             'name',
@@ -189,7 +189,7 @@ class VmNode
      *
      * @param array<string, mixed> $data
      */
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         return self::createVmNode($data);
     }
@@ -474,4 +474,3 @@ class VmNode
         return $row;
     }
 }
-

@@ -49,7 +49,7 @@ class VmIp
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         $required = ['vm_node_id', 'ip'];
         foreach ($required as $field) {
@@ -267,4 +267,3 @@ class VmIp
         }
     }
 }
-

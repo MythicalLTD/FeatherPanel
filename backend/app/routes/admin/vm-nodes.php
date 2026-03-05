@@ -190,4 +190,3 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 };
-
