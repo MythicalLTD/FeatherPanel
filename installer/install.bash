@@ -3952,6 +3952,10 @@ if [ -f /etc/os-release ]; then
 				fi
 			done
 			log_info "Domain set to: $panel_domain"
+			echo ""
+			echo -e "${YELLOW}${BOLD}Using SSL (HTTPS) is strongly recommended, especially for production installs.${NC}"
+			echo -e "${BLUE}An SSL certificate can be created automatically using Let's Encrypt.${NC}"
+			prompt "${BOLD}Do you want to use SSL (HTTPS) for this domain?${NC} ${BLUE}(recommended) (y/n)${NC}: " PANEL_SSL_CHOICE
 			;;
 		3)
 			# Apache2 Reverse Proxy
