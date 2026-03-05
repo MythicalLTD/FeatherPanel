@@ -1,5 +1,16 @@
 # Changelog
 
+
+## v1.3.2 STABLE
+
+### Fixed
+
+- Fixed an issue where translations appeared to exist after an update, but were actually missing. by @nayskutzu
+
+### Added
+
+- Initial infrastructure implemented for upcoming Proxmox VM support. by @nayskutzu
+
 ## v1.3.1 STABLE
 
 ### Fixed

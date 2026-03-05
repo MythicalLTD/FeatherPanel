@@ -52,8 +52,10 @@ class TranslationsController
                     continue;
                 }
 
-                if (preg_match('/^([a-z]{2}(?:-[A-Z]{2})?)\.json$/', $file, $matches)) {
-                    $code = $matches[1];
+                // Match language files in a case-insensitive way so codes like
+                // "ru-ru.json" are not accidentally skipped.
+                if (preg_match('/^([a-z]{2}(?:-[A-Z]{2})?)\.json$/i', $file, $matches)) {
+                    $code = strtolower($matches[1]);
                     $filePath = $translationsDir . '/' . $file;
                     // null means all enabled, otherwise check if in array
                     $isEnabled = $enabledLanguages === null || in_array($code, $enabledLanguages);
