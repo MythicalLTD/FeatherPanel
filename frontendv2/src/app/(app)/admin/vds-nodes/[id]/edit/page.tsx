@@ -33,6 +33,7 @@ import { DetailsTab } from './DetailsTab';
 import { ConnectionTab } from './ConnectionTab';
 import { AdvancedTab } from './AdvancedTab';
 import { IpPoolTab } from './IpPoolTab';
+import { PlansTab } from './PlansTab';
 import { InfoTab } from './InfoTab';
 
 interface Location {
@@ -331,6 +332,9 @@ export default function EditVdsNodePage() {
                     <TabsTrigger value='ip-pool' className='rounded-lg px-4 py-2 text-sm'>
                         {t('admin.vdsNodes.tabs.ip_pool')}
                     </TabsTrigger>
+                    <TabsTrigger value='plans' className='rounded-lg px-4 py-2 text-sm'>
+                        {t('admin.vdsNodes.tabs.plans')}
+                    </TabsTrigger>
                     <TabsTrigger value='info' className='rounded-lg px-4 py-2 text-sm'>
                         {t('admin.vdsNodes.tabs.info')}
                     </TabsTrigger>
@@ -370,6 +374,10 @@ export default function EditVdsNodePage() {
 
                 <TabsContent value='ip-pool' className='mt-0'>
                     <IpPoolTab nodeId={id} nodeName={nodeName} />
+                </TabsContent>
+
+                <TabsContent value='plans' className='mt-0'>
+                    <PlansTab nodeId={id} nodeName={nodeName} />
                 </TabsContent>
 
                 <TabsContent value='info' className='mt-0'>

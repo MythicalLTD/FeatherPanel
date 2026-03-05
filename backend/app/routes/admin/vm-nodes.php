@@ -104,7 +104,7 @@ return function (RouteCollection $routes): void {
             return (new VmNodesController())->testConnection($request, (int) $id);
         },
         Permissions::ADMIN_NODES_VIEW,
-        ['GET']
+        ['GET', 'POST']
     );
 
     App::getInstance(true)->registerAdminRoute(

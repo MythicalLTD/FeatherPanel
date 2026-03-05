@@ -189,7 +189,12 @@
 			"showing": "Showing {from} - {to} of {total} results",
 			"page": "Page {current} of {total}"
 		},
-		"primary": "Primary"
+		"primary": "Primary",
+		"active": "Active",
+		"inactive": "Inactive",
+		"enabled": "Enabled",
+		"disabled": "Disabled",
+		"save_changes": "Save Changes"
 	},
 	"branding": {
 		"running_on": "Running on {name} {version}",
@@ -831,6 +836,7 @@
 			"locations": "Locations",
 			"nodes": "Nodes",
 			"vdsNodes": "Nodes (VDS)",
+			"vmPlans": "VM Plans",
 			"nodeDatabases": "Node Databases",
 			"nodeStatus": "Node Status",
 			"subdomains": "Subdomains",
@@ -2902,7 +2908,8 @@
 				"connection": "Connection",
 				"advanced": "Advanced",
 				"ip_pool": "IP Pool",
-				"info": "Info"
+				"info": "Info",
+				"plans": "Plans"
 			},
 			"info": {
 				"version_title": "Proxmox VE Version",
@@ -3107,6 +3114,103 @@
 					"what_are_ips_text": "The IP pool lists all public IP addresses available on this Proxmox node. These IPs can be assigned to virtual machines when provisioning.",
 					"primary_ip": "Primary IP",
 					"primary_ip_text": "The primary IP is the default outbound address for the node. Only one IP can be marked as primary at a time — click the star icon on any row to change it."
+				}
+			},
+			"plans": {
+				"description": "Manage VM and container hardware plans available on {name}."
+			}
+		},
+		"vmPlans": {
+			"title": "VM Plans",
+			"description": "Define hardware specs and resource limits for virtual machines and containers.",
+			"search_placeholder": "Search plans by name or type…",
+			"table": {
+				"title": "Plans",
+				"col_name": "Name",
+				"col_type": "Type",
+				"col_instances": "Instances",
+				"col_actions": "Actions"
+			},
+			"empty": {
+				"title": "No plans yet",
+				"description": "Create your first VM plan to start provisioning VMs and containers.",
+				"no_results": "No plans match your search."
+			},
+			"actions": {
+				"create": "New Plan",
+				"edit": "Edit",
+				"delete": "Delete",
+				"cancel": "Cancel"
+			},
+			"sheet": {
+				"create_title": "Create VM Plan",
+				"create_description": "Define the hardware specs for a new VM or LXC container plan.",
+				"edit_title": "Edit VM Plan",
+				"edit_description": "Update hardware specs for this plan.",
+				"section_basic": "Basic Information",
+				"section_cpu": "CPU",
+				"section_memory": "Memory",
+				"section_storage": "Storage",
+				"section_network": "Network",
+				"section_options": "Options"
+			},
+			"fields": {
+				"name": "Plan Name",
+				"description": "Description",
+				"description_placeholder": "Optional description",
+				"vm_type": "VM Type",
+				"is_active": "Status",
+				"cpus": "Sockets",
+				"cores": "Cores per socket",
+				"cpu_type": "CPU Type",
+				"memory": "RAM (MB)",
+				"swap": "Swap (MB)",
+				"disk": "Disk Size (GB)",
+				"storage": "Storage Pool",
+				"disk_type": "Disk Type",
+				"disk_format": "Disk Format",
+				"bridge": "Bridge",
+				"vlan_id": "VLAN ID",
+				"net_model": "NIC Model",
+				"net_rate": "Rate Limit (MB/s, 0=unlimited)",
+				"bandwidth": "Monthly Bandwidth (GB, 0=unlimited)",
+				"on_boot": "Start on Boot",
+				"firewall": "Firewall",
+				"unprivileged": "Unprivileged Container"
+			},
+			"success": {
+				"created": "VM plan created successfully.",
+				"updated": "VM plan updated successfully.",
+				"deleted": "VM plan deleted."
+			},
+			"errors": {
+				"fetch_failed": "Failed to load VM plans.",
+				"name_required": "Plan name is required.",
+				"plan_in_use": "This plan is assigned to one or more instances and cannot be deleted."
+			},
+			"stats": {
+				"plans_total": "Total Plans",
+				"instances_total": "Total Instances",
+				"running": "Running",
+				"stopped": "Stopped",
+				"instances": "instances"
+			},
+			"spec": {
+				"sockets": "sockets",
+				"cores": "cores"
+			},
+			"help": {
+				"what": {
+					"title": "What are VM Plans?",
+					"description": "VM Plans define the hardware specifications (CPU, RAM, disk, network) that will be applied when provisioning a virtual machine or container on a Proxmox node."
+				},
+				"qemu": {
+					"title": "QEMU/KVM Virtual Machines",
+					"description": "Full hardware virtualisation — runs any OS. Supports CPU passthrough, live migration, snapshots, and nested virtualisation."
+				},
+				"lxc": {
+					"title": "LXC Containers",
+					"description": "OS-level containers sharing the host kernel. Lower overhead than full VMs, faster boot times, and more efficient for Linux workloads."
 				}
 			}
 		},
@@ -6229,10 +6333,10 @@
 					"reset": "Configuration reset to defaults",
 					"resetFailed": "Failed to reset configuration"
 				}
+			}
 		}
-	}
-},
-"landing": {
+	},
+	"landing": {
 		"hero": {
 			"title": "FeatherPanel"
 		}
