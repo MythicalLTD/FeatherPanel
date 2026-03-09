@@ -212,7 +212,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                 </div>
                 <div className='flex gap-2'>
                     <Button
-                        onClick={() => window.open('/icanhasfeatherpanel/api', '_blank')}
+                        onClick={() => window.open('/icanhasfeatherpanel/api/index.html', '_blank')}
                         variant='outline'
                         size='sm'
                     >

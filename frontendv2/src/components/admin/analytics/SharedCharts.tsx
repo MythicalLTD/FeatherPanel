@@ -29,6 +29,7 @@ import {
     YAxis,
     CartesianGrid,
 } from 'recharts';
+import type { ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useTranslation } from '@/contexts/TranslationContext';
 
@@ -116,10 +117,14 @@ export function NodeResourceChart({ title, description, data }: NodeResourceChar
                                 color: 'hsl(var(--foreground))',
                             }}
                             itemStyle={{ color: 'hsl(var(--foreground))' }}
-                            formatter={(value: number | string | Array<number | string> | undefined) => [
-                                typeof value === 'number' ? `${value.toFixed(1)}%` : value,
-                                '',
-                            ]}
+                            formatter={(value: ValueType | undefined) =>
+                                [
+                                    typeof value === 'number'
+                                        ? `${value.toFixed(1)}%`
+                                        : value,
+                                    '',
+                                ] as [string | (string | number)[] | undefined, string]
+                            }
                         />
                         <Legend />
                         <Bar

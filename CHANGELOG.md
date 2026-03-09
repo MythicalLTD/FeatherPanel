@@ -6,6 +6,7 @@
 ### Fixed
 
 - Fixed an issue where translations appeared to exist after an update, but were actually missing. by @nayskutzu
+- Corrected the API documentation route to ensure proper access. by @nayskutzu
 
 ### Added
 
