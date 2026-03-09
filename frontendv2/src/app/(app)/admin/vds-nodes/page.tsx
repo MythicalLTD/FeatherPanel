@@ -467,6 +467,7 @@ export default function VdsNodesPage() {
                 </div>
             </PageCard>
 
+    
             <WidgetRenderer widgets={getWidgets('admin-vm-nodes', 'bottom-of-page')} />
         </div>
     );

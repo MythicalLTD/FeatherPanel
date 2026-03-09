@@ -20,9 +20,9 @@ namespace App\Controllers\Admin;
 use App\App;
 use App\Chat\VmIp;
 use App\Chat\VmNode;
-use App\Chat\VmTemplate;
 use App\Chat\Activity;
 use App\Chat\Location;
+use App\Chat\VmTemplate;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Services\Proxmox\Proxmox;
@@ -725,9 +725,11 @@ class VmNodesController
             if (!$result['ok']) {
                 return ApiResponse::error($result['error'] ?? 'Failed to list VMs', 'PROXMOX_LIST_FAILED', 502, $result);
             }
+
             return ApiResponse::success(['vms' => $result['vms']], 'Proxmox VMs fetched', 200);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox listVms failed for node ' . $id . ': ' . $e->getMessage());
+
             return ApiResponse::error('Failed to list Proxmox VMs: ' . $e->getMessage(), 'PROXMOX_LIST_FAILED', 500);
         }
     }
@@ -766,9 +768,11 @@ class VmNodesController
             if (!$result['ok']) {
                 return ApiResponse::error($result['error'] ?? 'Failed to fetch bridges', 'PROXMOX_ERROR', 502);
             }
+
             return ApiResponse::success(['bridges' => $result['bridges']], 'Bridges fetched', 200);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox getBridges failed for node ' . $id . ': ' . $e->getMessage());
+
             return ApiResponse::error('Failed to fetch bridges: ' . $e->getMessage(), 'PROXMOX_ERROR', 500);
         }
     }
@@ -807,9 +811,11 @@ class VmNodesController
             if (!$result['ok']) {
                 return ApiResponse::error($result['error'] ?? 'Failed to fetch storage', 'PROXMOX_ERROR', 502);
             }
+
             return ApiResponse::success(['storage' => $result['storage']], 'Storage list fetched', 200);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox getStorage failed for node ' . $id . ': ' . $e->getMessage());
+
             return ApiResponse::error('Failed to fetch storage: ' . $e->getMessage(), 'PROXMOX_ERROR', 500);
         }
     }
@@ -1247,6 +1253,7 @@ class VmNodesController
                 'vm_node_id'    => $id,
                 'is_active'     => $data['is_active'] ?? 'true',
             ]);
+
             return ApiResponse::success(['template' => $created], 'Template created successfully', 201);
         } catch (\Throwable $e) {
             return ApiResponse::error($e->getMessage(), 'CREATE_FAILED', 400);
@@ -1268,6 +1275,7 @@ class VmNodesController
             return ApiResponse::error('Template VMID must be a number', 'INVALID_TEMPLATE_FILE', 400);
         }
         $updated = VmTemplate::update($templateId, $data);
+
         return $updated
             ? ApiResponse::success(['template' => $updated], 'Template updated successfully', 200)
             : ApiResponse::error('Update failed', 'UPDATE_FAILED', 400);
@@ -1283,6 +1291,7 @@ class VmNodesController
             return ApiResponse::error('Template not found', 'TEMPLATE_NOT_FOUND', 404);
         }
         $deleted = VmTemplate::delete($templateId);
+
         return $deleted
             ? ApiResponse::success(null, 'Template deleted successfully', 200)
             : ApiResponse::error('Delete failed', 'DELETE_FAILED', 400);

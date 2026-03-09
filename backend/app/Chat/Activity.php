@@ -84,7 +84,7 @@ class Activity
      *
      * @param string $contextLike e.g. '%my-vm%'
      * @param string[] $names e.g. ['vm_instance_create', 'vm_instance_update', 'vm_instance_delete']
-     * @param int $limit
+     *
      * @return array<int, array<string, mixed>>
      */
     public static function getActivitiesByContextLikeAndNameIn(string $contextLike, array $names, int $limit = 50): array

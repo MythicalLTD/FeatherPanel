@@ -18,17 +18,17 @@
 namespace App\Controllers\Admin;
 
 use App\App;
-use App\Chat\Activity;
-use App\Chat\Database;
-use App\Chat\VmCreationPending;
-use App\Chat\VmInstance;
 use App\Chat\VmIp;
 use App\Chat\VmNode;
+use App\Chat\Activity;
+use App\Chat\Database;
+use App\Chat\VmInstance;
 use App\Chat\VmTemplate;
-use App\CloudFlare\CloudFlareRealIP;
-use App\Config\ConfigInterface;
 use App\Helpers\ApiResponse;
+use App\Chat\VmCreationPending;
+use App\Config\ConfigInterface;
 use App\Services\Proxmox\Proxmox;
+use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -147,7 +147,24 @@ class VmInstancesController
         }
 
         $userUuid = isset($data['user_uuid']) && is_string($data['user_uuid']) ? trim($data['user_uuid']) : null;
-        $notes = isset($data['notes']) && is_string($data['notes']) ? trim($data['notes']) : null;
+
+        $notesRaw = isset($data['notes']) && is_string($data['notes']) ? trim($data['notes']) : null;
+        $ciUserInput = isset($data['ci_user']) && is_string($data['ci_user']) ? trim($data['ci_user']) : null;
+        $ciPasswordInput = isset($data['ci_password']) && is_string($data['ci_password']) ? trim($data['ci_password']) : null;
+        if ($vmType === 'qemu') {
+            if ($ciUserInput === null || $ciUserInput === '') {
+                return ApiResponse::error('Cloud-init user (ci_user) is required for KVM templates', 'VALIDATION_FAILED', 400);
+            }
+            if ($ciPasswordInput === null || $ciPasswordInput === '') {
+                return ApiResponse::error('Cloud-init password (ci_password) is required for KVM templates', 'VALIDATION_FAILED', 400);
+            }
+        }
+        $metaNotes = [
+            'notes' => $notesRaw,
+            'ci_user' => $ciUserInput,
+            'ci_password' => $ciPasswordInput,
+        ];
+        $notes = json_encode($metaNotes, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         try {
             $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
@@ -250,6 +267,20 @@ class VmInstancesController
             return ApiResponse::error('Creation not found or already completed', 'NOT_FOUND', 404);
         }
 
+        // Unpack notes/ci metadata (we JSON-encode notes + ci_user + ci_password into notes column).
+        $rawNotes = $pending['notes'] ?? null;
+        $ciUserFromPending = null;
+        $ciPasswordFromPending = null;
+        $userNotesForInstance = $rawNotes;
+        if (is_string($rawNotes) && $rawNotes !== '' && $rawNotes[0] === '{') {
+            $decoded = json_decode($rawNotes, true);
+            if (is_array($decoded)) {
+                $userNotesForInstance = isset($decoded['notes']) && is_string($decoded['notes']) ? $decoded['notes'] : null;
+                $ciUserFromPending = isset($decoded['ci_user']) && is_string($decoded['ci_user']) ? trim($decoded['ci_user']) : null;
+                $ciPasswordFromPending = isset($decoded['ci_password']) && is_string($decoded['ci_password']) ? trim($decoded['ci_password']) : null;
+            }
+        }
+
         $vmNode = VmNode::getVmNodeById((int) $pending['vm_node_id']);
         if (!$vmNode) {
             VmCreationPending::deleteByCreationId($creationId);
@@ -321,6 +352,44 @@ class VmInstancesController
         $cores = (int) ($pending['cores'] ?? 1);
         $onBoot = !empty($pending['on_boot']);
 
+        // Final cloud-init credentials for KVM branch; used later in response.
+        $finalCiUser = null;
+        $finalCiPassword = null;
+
+        // If this is a QEMU VM and requested disk size is larger than the current disk,
+        // grow scsi0 to the desired size (in GB) at Proxmox level. Never try to shrink.
+        if ($vmType === 'qemu') {
+            $requestedDiskGb = isset($pending['disk']) ? (int) $pending['disk'] : 0;
+            if ($requestedDiskGb > 0) {
+                $currentSizeGb = null;
+                $currentConfig = $client->getVmConfig($pending['target_node'], (int) $pending['vmid'], 'qemu');
+                if ($currentConfig['ok'] && isset($currentConfig['config']['scsi0']) && is_string($currentConfig['config']['scsi0'])) {
+                    $scsi0 = $currentConfig['config']['scsi0'];
+                    $parts = explode(',', $scsi0);
+                    foreach ($parts as $part) {
+                        $part = trim($part);
+                        if (str_starts_with($part, 'size=')) {
+                            $sizeVal = substr($part, 5);
+                            // Common Proxmox format: "32G"
+                            if (preg_match('/^(\d+)([GgMm])?$/', $sizeVal, $m)) {
+                                $num = (int) $m[1];
+                                $unit = isset($m[2]) ? strtolower($m[2]) : 'g';
+                                $currentSizeGb = $unit === 'm' ? (int) ceil($num / 1024) : $num;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                if ($currentSizeGb !== null && $requestedDiskGb > $currentSizeGb) {
+                    $resizeRes = $client->resizeQemuDisk($pending['target_node'], (int) $pending['vmid'], 'scsi0', $requestedDiskGb . 'G');
+                    if (!$resizeRes['ok']) {
+                        App::getInstance(true)->getLogger()->warning('QEMU disk resize failed (continuing): ' . ($resizeRes['error'] ?? 'unknown'));
+                    }
+                }
+            }
+        }
+
         if ($vmType === 'lxc') {
             // Purge any network config from the clone (template IP), then set our own in two steps so LXC gets the right IP
             $deleteNetKeys = [];
@@ -370,6 +439,11 @@ class VmInstancesController
             if ($gateway !== '') {
                 $ipconfig0 .= ',gw=' . $gateway;
             }
+
+            // Use ci_user/ci_password from pending if provided, otherwise sane defaults.
+            $finalCiUser = $ciUserFromPending ?: 'debian';
+            $finalCiPassword = $ciPasswordFromPending ?: bin2hex(random_bytes(6));
+
             $config = [
                 'memory' => $memory,
                 'sockets' => $cpus,
@@ -377,6 +451,11 @@ class VmInstancesController
                 'nameserver' => '1.1.1.1 8.8.8.8',
                 'ipconfig0' => $ipconfig0,
                 'onboot' => $onBoot ? 1 : 0,
+                // Ensure the VM actually boots from the cloud image on scsi0, not from the (empty) cloud-init CD or net.
+                'boot' => 'order=scsi0',
+                // Cloud-init user and password so admins can log in immediately.
+                'ciuser' => $finalCiUser,
+                'cipassword' => $finalCiPassword,
             ];
             $configResult = $client->setVmConfig($pending['target_node'], (int) $pending['vmid'], 'qemu', $config);
             if (!$configResult['ok']) {
@@ -401,7 +480,7 @@ class VmInstancesController
                 'subnet_mask' => null,
                 'gateway' => $ip['gateway'] ?? null,
                 'vm_ip_id' => $pending['vm_ip_id'] ? (int) $pending['vm_ip_id'] : null,
-                'notes' => $pending['notes'],
+                'notes' => $userNotesForInstance,
             ];
             $instance = VmInstance::create($instanceData, $pdo);
             if (!$instance) {
@@ -448,6 +527,9 @@ class VmInstancesController
         return ApiResponse::success([
             'status'   => 'active',
             'instance' => $instance,
+            // Expose cloud-init login for KVM-based VMs so the creator can see it once.
+            'ci_user' => $vmType === 'lxc' ? null : $finalCiUser,
+            'ci_password' => $vmType === 'lxc' ? null : $finalCiPassword,
         ], 'VM instance created successfully', 200);
     }
 
@@ -525,6 +607,7 @@ class VmInstancesController
                 );
             } catch (\Throwable $e) {
                 App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
                 return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
             }
 
@@ -996,6 +1079,7 @@ class VmInstancesController
             );
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
         $node = $instance['pve_node'] ?? '';
@@ -1068,6 +1152,7 @@ class VmInstancesController
             );
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
         $node = $instance['pve_node'] ?? '';
@@ -1264,6 +1349,7 @@ class VmInstancesController
             $s = substr($s, 0, 63);
             $s = rtrim($s, '-');
         }
+
         return $s !== '' ? $s : 'vm-' . time();
     }
 }

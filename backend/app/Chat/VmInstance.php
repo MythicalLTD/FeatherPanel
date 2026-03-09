@@ -3,7 +3,7 @@
 /*
  * This file is part of FeatherPanel.
  *
- * Copyright (C) 2025 MythicalSystems Studio
+ * Copyright (C) 2025 MythicalSystems Studios
  * Copyright (C) 2025 FeatherPanel Contributors
  * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
  *
@@ -16,8 +16,6 @@
  */
 
 namespace App\Chat;
-
-use App\App;
 
 class VmInstance
 {
@@ -37,12 +35,12 @@ class VmInstance
         $params = [];
 
         if (!empty($search)) {
-            $where = "WHERE i.hostname LIKE :search
+            $where = 'WHERE i.hostname LIKE :search
                    OR i.ip_address LIKE :search
                    OR i.pve_node LIKE :search
                    OR CAST(i.vmid AS CHAR) LIKE :search
                    OR u.username LIKE :search
-                   OR u.email LIKE :search";
+                   OR u.email LIKE :search';
             $params['search'] = '%' . $search . '%';
         }
 
@@ -92,7 +90,7 @@ class VmInstance
             return null;
         }
         $pdo = $pdo ?? Database::getPdoConnection();
-        $stmt = $pdo->prepare("
+        $stmt = $pdo->prepare('
             SELECT
                 i.*,
                 n.name  AS node_name,
@@ -111,7 +109,7 @@ class VmInstance
             LEFT JOIN featherpanel_users u    ON u.uuid = i.user_uuid
             LEFT JOIN featherpanel_vm_ips ip  ON ip.id = i.vm_ip_id
             WHERE i.id = :id LIMIT 1
-        ");
+        ');
         $stmt->execute(['id' => $id]);
 
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
@@ -134,12 +132,12 @@ class VmInstance
         $params = [];
 
         if (!empty($search)) {
-            $where = "WHERE i.hostname LIKE :search
+            $where = 'WHERE i.hostname LIKE :search
                    OR i.ip_address LIKE :search
                    OR i.pve_node LIKE :search
                    OR CAST(i.vmid AS CHAR) LIKE :search
                    OR u.username LIKE :search
-                   OR u.email LIKE :search";
+                   OR u.email LIKE :search';
             $params['search'] = '%' . $search . '%';
         }
 

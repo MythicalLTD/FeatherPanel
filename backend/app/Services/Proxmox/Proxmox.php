@@ -129,6 +129,7 @@ class Proxmox
      * GET /api2/json/nodes/{node}/network with type=bridge.
      *
      * @param string $node Proxmox node name (e.g. pve)
+     *
      * @return array{ok: bool, bridges: array<int, string>, error: string|null}
      */
     public function getBridges(string $node): array
@@ -155,6 +156,7 @@ class Proxmox
      * GET /api2/json/nodes/{node}/storage; filter by content containing "images".
      *
      * @param string $node Proxmox node name (e.g. pve)
+     *
      * @return array{ok: bool, storage: array<int, string>, error: string|null}
      */
     public function getStorage(string $node): array
@@ -270,10 +272,11 @@ class Proxmox
     }
 
     /**
-     * Raw GET request to Proxmox API. Path must start with /api2/json/
+     * Raw GET request to Proxmox API. Path must start with /api2/json/.
      *
      * @param string $path e.g. /api2/json/cluster/nextid
      * @param array<string, string|int> $query
+     *
      * @return array{ok: bool, data: mixed, error: string|null}
      */
     public function apiGet(string $path, array $query = []): array
@@ -297,6 +300,7 @@ class Proxmox
      *
      * @param string $path e.g. /api2/json/nodes/pve/qemu/100/clone
      * @param array<string, mixed> $body
+     *
      * @return array{ok: bool, data: mixed, error: string|null}
      */
     public function apiPost(string $path, array $body = []): array
@@ -319,6 +323,7 @@ class Proxmox
      *
      * @param string $path e.g. /api2/json/nodes/pve/lxc/100/config
      * @param array<string, mixed> $body Form params (delete, net0, memory, etc.)
+     *
      * @return array{ok: bool, data: mixed, error: string|null}
      */
     public function apiPut(string $path, array $body = []): array
@@ -341,6 +346,7 @@ class Proxmox
      *
      * @param string $path e.g. /api2/json/nodes/pve/qemu/100
      * @param array<string, string|int> $query
+     *
      * @return array{ok: bool, data: mixed, error: string|null}
      */
     public function apiDelete(string $path, array $query = []): array
@@ -382,13 +388,14 @@ class Proxmox
         $list = $this->listVms();
         if (!$list['ok'] || !is_array($list['vms'])) {
             $err = $list['error'] ?? $result['error'] ?? 'Could not get next VMID';
+
             return ['ok' => false, 'vmid' => null, 'error' => $err];
         }
         $used = [];
         foreach ($list['vms'] as $vm) {
             $used[(int) $vm['vmid']] = true;
         }
-        for ($id = $minVmid; $id <= 999999; $id++) {
+        for ($id = $minVmid; $id <= 999999; ++$id) {
             if (!isset($used[$id])) {
                 return ['ok' => true, 'vmid' => $id, 'error' => null];
             }
@@ -405,6 +412,7 @@ class Proxmox
      * @param int $newid New VM ID
      * @param string $name New VM name
      * @param string|null $target Target node (default same as node)
+     *
      * @return array{ok: bool, upid: string|null, error: string|null}
      */
     public function cloneQemu(string $node, int $templateVmid, int $newid, string $name, ?string $target = null): array
@@ -440,6 +448,7 @@ class Proxmox
      * @param string $hostname New container hostname
      * @param string|null $target Target node (default same as node)
      * @param string|null $storage Target storage for full clone (e.g. local); required for full clone
+     *
      * @return array{ok: bool, upid: string|null, error: string|null}
      */
     public function cloneLxc(string $node, int $templateVmid, int $newid, string $hostname, ?string $target = null, ?string $storage = null): array
@@ -490,6 +499,7 @@ class Proxmox
      *
      * @param int $maxWaitSec Max seconds to wait
      * @param int $intervalSec Seconds between polls
+     *
      * @return array{ok: bool, error: string|null}
      */
     public function waitTask(string $node, string $upid, int $maxWaitSec = 300, int $intervalSec = 5): array
@@ -532,11 +542,12 @@ class Proxmox
 
     /**
      * Get current VM/container status and resource usage (CPU, memory, disk, network).
-     * GET /api2/json/nodes/{node}/{qemu|lxc}/{vmid}/status/current
+     * GET /api2/json/nodes/{node}/{qemu|lxc}/{vmid}/status/current.
      *
      * @param string $node Proxmox node name
      * @param int $vmid VMID
      * @param 'qemu'|'lxc' $vmType
+     *
      * @return array{ok: bool, status: array<string, mixed>|null, error: string|null}
      */
     public function getVmStatusCurrent(string $node, int $vmid, string $vmType): array
@@ -554,9 +565,10 @@ class Proxmox
 
     /**
      * Create a VNC proxy for a QEMU VM or LXC container (for noVNC console). Ticket is valid ~40 seconds.
-     * POST /api2/json/nodes/{node}/qemu|lxc/{vmid}/vncproxy
+     * POST /api2/json/nodes/{node}/qemu|lxc/{vmid}/vncproxy.
      *
      * @param 'qemu'|'lxc' $vmType
+     *
      * @return array{ok: bool, ticket: string|null, port: int|null, cert: string|null, error: string|null}
      */
     public function createVncProxy(string $node, int $vmid, string $vmType = 'qemu'): array
@@ -616,6 +628,7 @@ class Proxmox
      * Create a Proxmox user (for temporary console access). Requires User.Modify.
      *
      * @param int|null $expire Unix timestamp when the user expires (optional)
+     *
      * @return array{ok: bool, error: string|null}
      */
     public function createUser(string $userid, string $password, ?int $expire = null): array
@@ -666,6 +679,7 @@ class Proxmox
      *
      * @param array<string, mixed> $config Keys as Proxmox expects (memory, sockets, cores, ipconfig0, net0, etc.)
      * @param array<int, string> $deleteKeys Optional keys to remove from config (e.g. ['net0'] to purge template IP)
+     *
      * @return array{ok: bool, error: string|null}
      */
     public function setVmConfig(string $node, int $vmid, string $vmType, array $config, array $deleteKeys = []): array
@@ -675,7 +689,6 @@ class Proxmox
         if (!empty($deleteKeys)) {
             $body['delete'] = implode(',', $deleteKeys);
         }
-        // Proxmox expects PUT for config updates (LXC in particular); POST may not apply correctly
         $result = $this->apiPut($path, $body);
 
         return ['ok' => $result['ok'], 'error' => $result['error'] ?? null];
@@ -695,9 +708,23 @@ class Proxmox
     }
 
     /**
+     * Resize a QEMU VM disk (e.g. scsi0). Size format: absolute "64G" or relative "+32G".
+     *
+     * @return array{ok: bool, error: string|null}
+     */
+    public function resizeQemuDisk(string $node, int $vmid, string $disk, string $size): array
+    {
+        $path = sprintf('/api2/json/nodes/%s/qemu/%d/resize', $node, $vmid);
+        $result = $this->apiPut($path, ['disk' => $disk, 'size' => $size]);
+
+        return ['ok' => $result['ok'], 'error' => $result['error'] ?? null];
+    }
+
+    /**
      * Start a VM or container.
      *
      * @param 'qemu'|'lxc' $vmType
+     *
      * @return array{ok: bool, error: string|null}
      */
     public function startVm(string $node, int $vmid, string $vmType): array
@@ -712,6 +739,7 @@ class Proxmox
      * Stop a VM or container (hard stop).
      *
      * @param 'qemu'|'lxc' $vmType
+     *
      * @return array{ok: bool, error: string|null}
      */
     public function stopVm(string $node, int $vmid, string $vmType): array
@@ -726,6 +754,7 @@ class Proxmox
      * Delete a VM or container from Proxmox.
      *
      * @param 'qemu'|'lxc' $vmType
+     *
      * @return array{ok: bool, error: string|null}
      */
     public function deleteVm(string $node, int $vmid, string $vmType): array

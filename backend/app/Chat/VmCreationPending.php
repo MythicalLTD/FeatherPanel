@@ -30,6 +30,7 @@ class VmCreationPending
             VALUES
                 (:creation_id, :upid, :target_node, :vmid, :hostname, :vm_node_id, :plan_id, :template_id, :vm_ip_id, :user_uuid, :notes, :vm_type, :memory, :cpus, :cores, :disk, :storage, :bridge, :on_boot)
         ');
+
         return $stmt->execute([
             'creation_id'  => $data['creation_id'],
             'upid'         => $data['upid'],

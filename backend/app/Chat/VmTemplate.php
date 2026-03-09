@@ -3,7 +3,7 @@
 /*
  * This file is part of FeatherPanel.
  *
- * Copyright (C) 2025 MythicalSystems Studio
+ * Copyright (C) 2025 MythicalSystems Studios
  * Copyright (C) 2025 FeatherPanel Contributors
  * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
  *
@@ -16,8 +16,6 @@
  */
 
 namespace App\Chat;
-
-use App\App;
 
 class VmTemplate
 {
