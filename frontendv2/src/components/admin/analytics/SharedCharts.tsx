@@ -118,12 +118,10 @@ export function NodeResourceChart({ title, description, data }: NodeResourceChar
                             }}
                             itemStyle={{ color: 'hsl(var(--foreground))' }}
                             formatter={(value: ValueType | undefined) =>
-                                [
-                                    typeof value === 'number'
-                                        ? `${value.toFixed(1)}%`
-                                        : value,
-                                    '',
-                                ] as [string | (string | number)[] | undefined, string]
+                                [typeof value === 'number' ? `${value.toFixed(1)}%` : value, ''] as [
+                                    string | (string | number)[] | undefined,
+                                    string,
+                                ]
                             }
                         />
                         <Legend />
