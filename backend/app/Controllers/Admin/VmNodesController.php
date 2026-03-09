@@ -20,6 +20,7 @@ namespace App\Controllers\Admin;
 use App\App;
 use App\Chat\VmIp;
 use App\Chat\VmNode;
+use App\Chat\VmTemplate;
 use App\Chat\Activity;
 use App\Chat\Location;
 use App\Helpers\ApiResponse;
@@ -699,6 +700,120 @@ class VmNodesController
         }
     }
 
+    /**
+     * GET /api/admin/vm-nodes/{id}/proxmox-vms — List all VMs (and templates) from Proxmox for template picker.
+     */
+    public function proxmoxVms(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        try {
+            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
+            $client = new Proxmox(
+                $vmNode['fqdn'],
+                (int) $vmNode['port'],
+                $vmNode['scheme'],
+                $vmNode['user'],
+                $vmNode['token_id'],
+                $vmNode['secret'],
+                $tlsNoVerify,
+                (int) ($vmNode['timeout'] ?? 10),
+            );
+            $result = $client->listVms();
+            if (!$result['ok']) {
+                return ApiResponse::error($result['error'] ?? 'Failed to list VMs', 'PROXMOX_LIST_FAILED', 502, $result);
+            }
+            return ApiResponse::success(['vms' => $result['vms']], 'Proxmox VMs fetched', 200);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox listVms failed for node ' . $id . ': ' . $e->getMessage());
+            return ApiResponse::error('Failed to list Proxmox VMs: ' . $e->getMessage(), 'PROXMOX_LIST_FAILED', 500);
+        }
+    }
+
+    /**
+     * GET /api/admin/vm-nodes/{id}/bridges — List Proxmox bridge interfaces for VM network selection.
+     */
+    public function bridges(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        try {
+            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
+            $client = new Proxmox(
+                $vmNode['fqdn'],
+                (int) $vmNode['port'],
+                $vmNode['scheme'],
+                $vmNode['user'],
+                $vmNode['token_id'],
+                $vmNode['secret'],
+                $tlsNoVerify,
+                (int) ($vmNode['timeout'] ?? 10),
+            );
+            $nodesResult = $client->getNodes();
+            if (!$nodesResult['ok'] || empty($nodesResult['nodes'])) {
+                return ApiResponse::error(
+                    'Could not get Proxmox nodes: ' . ($nodesResult['error'] ?? 'unknown'),
+                    'PROXMOX_ERROR',
+                    502,
+                );
+            }
+            $pveNode = (string) $nodesResult['nodes'][0]['node'];
+            $result = $client->getBridges($pveNode);
+            if (!$result['ok']) {
+                return ApiResponse::error($result['error'] ?? 'Failed to fetch bridges', 'PROXMOX_ERROR', 502);
+            }
+            return ApiResponse::success(['bridges' => $result['bridges']], 'Bridges fetched', 200);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox getBridges failed for node ' . $id . ': ' . $e->getMessage());
+            return ApiResponse::error('Failed to fetch bridges: ' . $e->getMessage(), 'PROXMOX_ERROR', 500);
+        }
+    }
+
+    /**
+     * GET /api/admin/vm-nodes/{id}/storage — List Proxmox storage (for VM disk) that supports images/rootdir.
+     */
+    public function storage(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        try {
+            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
+            $client = new Proxmox(
+                $vmNode['fqdn'],
+                (int) $vmNode['port'],
+                $vmNode['scheme'],
+                $vmNode['user'],
+                $vmNode['token_id'],
+                $vmNode['secret'],
+                $tlsNoVerify,
+                (int) ($vmNode['timeout'] ?? 10),
+            );
+            $nodesResult = $client->getNodes();
+            if (!$nodesResult['ok'] || empty($nodesResult['nodes'])) {
+                return ApiResponse::error(
+                    'Could not get Proxmox nodes: ' . ($nodesResult['error'] ?? 'unknown'),
+                    'PROXMOX_ERROR',
+                    502,
+                );
+            }
+            $pveNode = (string) $nodesResult['nodes'][0]['node'];
+            $result = $client->getStorage($pveNode);
+            if (!$result['ok']) {
+                return ApiResponse::error($result['error'] ?? 'Failed to fetch storage', 'PROXMOX_ERROR', 502);
+            }
+            return ApiResponse::success(['storage' => $result['storage']], 'Storage list fetched', 200);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox getStorage failed for node ' . $id . ': ' . $e->getMessage());
+            return ApiResponse::error('Failed to fetch storage: ' . $e->getMessage(), 'PROXMOX_ERROR', 500);
+        }
+    }
+
     #[OA\Get(
         path: '/api/admin/vm-nodes/{id}/ips',
         summary: 'List IPs for a VM node',
@@ -767,6 +882,11 @@ class VmNodesController
 
         $offset = ($page - 1) * $limit;
         $ips = VmIp::getByVmNodeId($id, $limit, $offset);
+        $inUseIds = VmIp::getInUseIpIdsForNode($id);
+        foreach ($ips as &$ip) {
+            $ip['in_use'] = in_array((int) $ip['id'], $inUseIds, true);
+        }
+        unset($ip);
         $total = VmIp::countByVmNodeId($id);
         $totalPages = (int) ceil($total / $limit);
         $from = $total === 0 ? 0 : $offset + 1;
@@ -1064,5 +1184,107 @@ class VmNodesController
         ]);
 
         return ApiResponse::success(['ip' => $updated], 'VM node primary IP updated successfully', 200);
+    }
+
+    /**
+     * GET /api/admin/vm-nodes/{id}/free-ips — IPs not assigned to any VM instance.
+     */
+    public function freeIps(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        $ips = VmIp::getFreeIpsForNode($id);
+
+        return ApiResponse::success(['free_ips' => $ips], 'Free IPs fetched successfully', 200);
+    }
+
+    /**
+     * GET /api/admin/vm-nodes/{id}/templates — VM templates for this node (for create-server form).
+     */
+    public function templates(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        $templates = VmTemplate::getByNodeId($id);
+        $guestType = $request->query->get('guest_type');
+        if ($guestType === 'qemu' || $guestType === 'lxc') {
+            $templates = array_values(array_filter($templates, static fn ($t) => ($t['guest_type'] ?? 'qemu') === $guestType));
+        }
+
+        return ApiResponse::success(['templates' => $templates], 'Templates fetched successfully', 200);
+    }
+
+    /**
+     * POST /api/admin/vm-nodes/{id}/templates — Create a VM template for this node.
+     */
+    public function createTemplate(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        $content = $request->getContent();
+        $data = is_string($content) && $content !== '' ? (json_decode($content, true) ?? []) : $request->request->all();
+        if (empty(trim((string) ($data['name'] ?? '')))) {
+            return ApiResponse::error('Template name is required', 'INVALID_INPUT', 400);
+        }
+        $templateFile = isset($data['template_file']) ? trim((string) $data['template_file']) : null;
+        if ($templateFile === '' || !ctype_digit($templateFile)) {
+            return ApiResponse::error('Template VMID (template_file) is required and must be a number', 'INVALID_TEMPLATE_FILE', 400);
+        }
+        try {
+            $created = VmTemplate::create([
+                'name'          => $data['name'],
+                'description'   => $data['description'] ?? null,
+                'guest_type'   => $data['guest_type'] ?? 'qemu',
+                'os_type'       => $data['os_type'] ?? null,
+                'storage'       => $data['storage'] ?? 'local',
+                'template_file' => $templateFile,
+                'vm_node_id'    => $id,
+                'is_active'     => $data['is_active'] ?? 'true',
+            ]);
+            return ApiResponse::success(['template' => $created], 'Template created successfully', 201);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 'CREATE_FAILED', 400);
+        }
+    }
+
+    /**
+     * PATCH /api/admin/vm-templates/{id} — Update a VM template.
+     */
+    public function updateTemplate(Request $request, int $templateId): Response
+    {
+        $template = VmTemplate::getById($templateId);
+        if (!$template) {
+            return ApiResponse::error('Template not found', 'TEMPLATE_NOT_FOUND', 404);
+        }
+        $content = $request->getContent();
+        $data = is_string($content) && $content !== '' ? (json_decode($content, true) ?? []) : $request->request->all();
+        if (array_key_exists('template_file', $data) && (!ctype_digit(trim((string) $data['template_file'])) || trim((string) $data['template_file']) === '')) {
+            return ApiResponse::error('Template VMID must be a number', 'INVALID_TEMPLATE_FILE', 400);
+        }
+        $updated = VmTemplate::update($templateId, $data);
+        return $updated
+            ? ApiResponse::success(['template' => $updated], 'Template updated successfully', 200)
+            : ApiResponse::error('Update failed', 'UPDATE_FAILED', 400);
+    }
+
+    /**
+     * DELETE /api/admin/vm-templates/{id} — Delete a VM template.
+     */
+    public function deleteTemplate(Request $request, int $templateId): Response
+    {
+        $template = VmTemplate::getById($templateId);
+        if (!$template) {
+            return ApiResponse::error('Template not found', 'TEMPLATE_NOT_FOUND', 404);
+        }
+        $deleted = VmTemplate::delete($templateId);
+        return $deleted
+            ? ApiResponse::success(null, 'Template deleted successfully', 200)
+            : ApiResponse::error('Delete failed', 'DELETE_FAILED', 400);
     }
 }

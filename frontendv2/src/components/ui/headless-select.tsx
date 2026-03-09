@@ -80,7 +80,13 @@ export function HeadlessSelect({
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img src={selectedOption.image} alt='' className='h-5 w-5 rounded object-cover' />
                         )}
-                        <span className={clsx('font-medium', selectedOption ? 'text-foreground' : '')}>
+                        <span
+                            className={clsx(
+                                selectedOption
+                                    ? 'font-semibold text-foreground tabular-nums'
+                                    : 'font-medium text-muted-foreground',
+                            )}
+                        >
                             {selectedOption ? selectedOption.name : placeholder}
                         </span>
                     </span>

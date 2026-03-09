@@ -120,7 +120,7 @@ export const getAdminNavigationItems = (
         },
 
         {
-            id: 'admin-servers',
+            id: 'admin-servers-parent',
             name: t('navigation.items.servers'),
             title: t('navigation.items.servers'),
             url: '/admin/servers',
@@ -129,6 +129,30 @@ export const getAdminNavigationItems = (
             category: 'admin',
             permission: Permissions.ADMIN_SERVERS_VIEW,
             group: 'infrastructure',
+            children: [
+                {
+                    id: 'admin-servers',
+                    name: t('navigation.items.servers'),
+                    title: t('navigation.items.servers'),
+                    url: '/admin/servers',
+                    icon: Server,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_SERVERS_VIEW,
+                    group: 'infrastructure',
+                },
+                {
+                    id: 'admin-vm-instances',
+                    name: t('navigation.items.virtualServersVds'),
+                    title: t('navigation.items.virtualServersVds'),
+                    url: '/admin/vm-instances',
+                    icon: Server,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_NODES_VIEW,
+                    group: 'infrastructure',
+                },
+            ],
         },
         {
             id: 'admin-locations-parent',

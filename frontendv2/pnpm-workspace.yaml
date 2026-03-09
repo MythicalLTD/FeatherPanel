@@ -3,6 +3,7 @@ onlyBuiltDependencies:
   - '@tree-sitter-grammars/tree-sitter-yaml'
   - core-js
   - core-js-pure
+  - esbuild
   - sharp
   - tree-sitter
   - tree-sitter-json

@@ -37,6 +37,7 @@ interface VmIp {
     notes: string | null;
     created_at: string;
     updated_at: string;
+    in_use?: boolean;
 }
 
 interface IpPoolTabProps {
@@ -301,6 +302,9 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                     <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
                                         {t('admin.vdsNodes.ips.col_notes')}
                                     </th>
+                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                        {t('admin.vdsNodes.ips.col_status')}
+                                    </th>
                                     <th className='px-4 py-3 text-right font-medium text-muted-foreground'>
                                         {t('common.actions')}
                                     </th>
@@ -309,13 +313,13 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                             <tbody className='divide-y divide-border/50'>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={6} className='px-4 py-8 text-center'>
+                                        <td colSpan={7} className='px-4 py-8 text-center'>
                                             <Loader2 className='h-6 w-6 animate-spin mx-auto text-primary' />
                                         </td>
                                     </tr>
                                 ) : filteredIps.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className='px-4 py-8 text-center text-muted-foreground italic'>
+                                        <td colSpan={7} className='px-4 py-8 text-center text-muted-foreground italic'>
                                             {searchQuery
                                                 ? t('admin.vdsNodes.ips.no_results')
                                                 : t('admin.vdsNodes.ips.empty')}
@@ -331,7 +335,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                 <div className='flex items-center gap-2'>
                                                     <span className='font-mono'>{ip.ip}</span>
                                                     {ip.is_primary === 'true' && (
-                                                        <span className='px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold uppercase rounded-full border border-primary/30'>
+                                                        <span className='px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase rounded-full border border-amber-500/30' title={t('admin.vdsNodes.ips.primary_proxmox_help')}>
                                                             {t('admin.vdsNodes.ips.primary_badge')}
                                                         </span>
                                                     )}
@@ -345,6 +349,15 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                             </td>
                                             <td className='px-4 py-3 text-muted-foreground truncate max-w-[180px]'>
                                                 {ip.notes || '-'}
+                                            </td>
+                                            <td className='px-4 py-3'>
+                                                {ip.in_use ? (
+                                                    <span className='px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-medium rounded-full border border-blue-500/30'>
+                                                        {t('admin.vdsNodes.ips.in_use_badge')}
+                                                    </span>
+                                                ) : (
+                                                    <span className='text-muted-foreground text-xs'>{t('admin.vdsNodes.ips.available')}</span>
+                                                )}
                                             </td>
                                             <td className='px-4 py-3 text-right'>
                                                 <div className='flex items-center justify-end gap-1'>
@@ -381,6 +394,8 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                                 variant='destructive'
                                                                 size='sm'
                                                                 onClick={() => handleDelete(ip.id)}
+                                                                disabled={ip.in_use}
+                                                                title={ip.in_use ? t('admin.vdsNodes.ips.cannot_delete_in_use') : undefined}
                                                             >
                                                                 {t('common.confirm')}
                                                             </Button>
@@ -397,7 +412,9 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                             variant='ghost'
                                                             size='sm'
                                                             className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                                            onClick={() => setDeleteConfirmId(ip.id)}
+                                                            onClick={() => !ip.in_use && setDeleteConfirmId(ip.id)}
+                                                            disabled={ip.in_use}
+                                                            title={ip.in_use ? t('admin.vdsNodes.ips.cannot_delete_in_use') : t('common.delete')}
                                                         >
                                                             <Trash2 className='h-4 w-4' />
                                                         </Button>

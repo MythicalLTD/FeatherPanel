@@ -1,0 +1,629 @@
+/*
+This file is part of FeatherPanel.
+
+Copyright (C) 2025 MythicalSystems Studios
+Copyright (C) 2025 FeatherPanel Contributors
+Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+See the LICENSE file or <https://www.gnu.org/licenses/>.
+*/
+
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import axios from 'axios';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { PageHeader } from '@/components/featherui/PageHeader';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { toast } from 'sonner';
+import { Server, ArrowLeft, Loader2, Wifi, Cpu, HardDrive, History, Search as SearchIcon } from 'lucide-react';
+
+import { DetailsTab } from './DetailsTab';
+import { HistoryTab } from './HistoryTab';
+import { NetworkTab } from './NetworkTab';
+import { ResourcesTab } from './ResourcesTab';
+import { DisksTab } from './DisksTab';
+import type { OwnerUser, FreeIp, NetworkRow } from './types';
+
+export default function VmInstanceEditPage() {
+    const { t } = useTranslation();
+    const router = useRouter();
+    const params = useParams();
+    const id = Number(params?.id);
+
+    const [instance, setInstance] = useState<Record<string, unknown> | null>(null);
+    const [config, setConfig] = useState<Record<string, unknown> | null>(null);
+    const [freeIps, setFreeIps] = useState<FreeIp[]>([]);
+    const [hostname, setHostname] = useState('');
+    const [notes, setNotes] = useState('');
+    const [selectedOwner, setSelectedOwner] = useState<OwnerUser | null>(null);
+    const [vmIpId, setVmIpId] = useState<number | null>(null);
+    const [memory, setMemory] = useState(512);
+    const [cpus, setCpus] = useState(1);
+    const [cores, setCores] = useState(1);
+    const [onBoot, setOnBoot] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [ownerModalOpen, setOwnerModalOpen] = useState(false);
+    const [owners, setOwners] = useState<OwnerUser[]>([]);
+    const [ownerSearch, setOwnerSearch] = useState('');
+    const [ownerPagination, setOwnerPagination] = useState({
+        current_page: 1,
+        per_page: 10,
+        total_records: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false,
+    });
+    const [resizeDisk, setResizeDisk] = useState('');
+    const [resizeSize, setResizeSize] = useState('');
+    const [resizing, setResizing] = useState(false);
+    const [activeTab, setActiveTab] = useState('details');
+    const [savingTab, setSavingTab] = useState<string | null>(null);
+    const [networks, setNetworks] = useState<NetworkRow[]>([]);
+    const [removedNetKeys, setRemovedNetKeys] = useState<Set<string>>(new Set());
+    const [newNetworkRow, setNewNetworkRow] = useState<NetworkRow | null>(null);
+    const [newDiskStorage, setNewDiskStorage] = useState('local-lvm');
+    const [newDiskSizeGb, setNewDiskSizeGb] = useState(10);
+    const [newDiskPath, setNewDiskPath] = useState('');
+    const [creatingDisk, setCreatingDisk] = useState(false);
+    const [deletingDisk, setDeletingDisk] = useState<string | null>(null);
+    const [bridges, setBridges] = useState<string[]>([]);
+    const [storageList, setStorageList] = useState<string[]>([]);
+    const [dnsNameserver, setDnsNameserver] = useState('');
+    const [dnsSearchDomain, setDnsSearchDomain] = useState('');
+
+    const vmType = (instance?.vm_type as string) ?? 'qemu';
+    const isLxc = vmType === 'lxc';
+    const nodeId = instance ? Number((instance as Record<string, unknown>).vm_node_id) : 0;
+
+    const fetchInstance = useCallback(async () => {
+        if (!id || Number.isNaN(id)) return;
+        const res = await axios.get(`/api/admin/vm-instances/${id}`);
+        const inst = res.data.data?.instance as Record<string, unknown>;
+        if (inst) {
+            setInstance(inst);
+            setHostname((inst.hostname as string) ?? '');
+            setNotes((inst.notes as string) ?? '');
+            setVmIpId(inst.vm_ip_id != null ? Number(inst.vm_ip_id) : null);
+            const uuid = (inst.user_uuid as string) ?? '';
+            if (uuid) {
+                setSelectedOwner({
+                    id: 0,
+                    uuid,
+                    username: (inst.user_username as string) ?? '',
+                    email: (inst.user_email as string) ?? '',
+                });
+            } else {
+                setSelectedOwner(null);
+            }
+        }
+    }, [id]);
+
+    const fetchConfig = useCallback(async (inst?: Record<string, unknown> | null) => {
+        if (!id || Number.isNaN(id)) return;
+        try {
+            const res = await axios.get(`/api/admin/vm-instances/${id}/config`);
+            const cfg = res.data.data?.config as Record<string, unknown>;
+            if (cfg) {
+                setConfig(cfg);
+                setMemory(Number(cfg.memory) || 512);
+                setOnBoot((cfg.onboot as number) === 1);
+                setDnsNameserver((cfg.nameserver as string) ?? '');
+                setDnsSearchDomain((cfg.searchdomain as string) ?? '');
+                const lxc = (inst ?? instance)?.vm_type === 'lxc';
+                if (lxc) {
+                    const c = Number(cfg.cores) || 1;
+                    setCores(c);
+                    setCpus(1);
+                } else {
+                    setCpus(Number(cfg.sockets) || 1);
+                    setCores(Number(cfg.cores) || 1);
+                }
+            }
+        } catch {
+            setConfig(null);
+        }
+    }, [id, instance]);
+
+    useEffect(() => {
+        if (!id || Number.isNaN(id)) {
+            router.replace('/admin/vm-instances');
+            return;
+        }
+        axios
+            .get(`/api/admin/vm-instances/${id}`)
+            .then((res) => {
+                const inst = res.data.data?.instance as Record<string, unknown>;
+                if (inst) {
+                    setInstance(inst);
+                    setHostname((inst.hostname as string) ?? '');
+                    setNotes((inst.notes as string) ?? '');
+                    setVmIpId(inst.vm_ip_id != null ? Number(inst.vm_ip_id) : null);
+                    const uuid = (inst.user_uuid as string) ?? '';
+                    if (uuid) {
+                        setSelectedOwner({
+                            id: 0,
+                            uuid,
+                            username: (inst.user_username as string) ?? '',
+                            email: (inst.user_email as string) ?? '',
+                        });
+                    } else {
+                        setSelectedOwner(null);
+                    }
+                }
+            })
+            .catch(() => toast.error(t('admin.vmInstances.errors.fetch_failed')))
+            .finally(() => setLoading(false));
+    }, [id, router, t]);
+
+    useEffect(() => {
+        if (!id || !instance) return;
+        fetchConfig(instance as Record<string, unknown>);
+    }, [id, instance, fetchConfig]);
+
+    // Sync networks from Proxmox config (LXC)
+    useEffect(() => {
+        if (!config || !isLxc || !instance) return;
+        const netKeys = (Object.keys(config) as string[]).filter((k) => /^net\d+$/.test(k)).sort();
+        const list = [...freeIps];
+        const curId = instance.vm_ip_id != null ? Number(instance.vm_ip_id) : null;
+        const curIp = instance.ip_address as string | undefined;
+        if (curId != null && curIp && !list.some((i) => i.id === curId)) {
+            list.unshift({ id: curId, ip: curIp, cidr: null, gateway: null });
+        }
+        const arr: NetworkRow[] = netKeys.map((key) => {
+            const val = String(config[key] ?? '');
+            const ipMatch = val.match(/ip=([^/,\s]+)/);
+            const ip = ipMatch ? ipMatch[1] : '';
+            const bridgeMatch = val.match(/bridge=([^,\s]+)/);
+            const bridge = bridgeMatch ? bridgeMatch[1] : 'vmbr0';
+            const found = list.find((o) => o.ip === ip);
+            return { key, vm_ip_id: found ? found.id : null, bridge };
+        });
+        setNetworks(arr);
+        setRemovedNetKeys(new Set());
+        setNewNetworkRow(null);
+    }, [config, isLxc, instance, freeIps]);
+
+    useEffect(() => {
+        if (nodeId <= 0) {
+            setFreeIps([]);
+            setBridges([]);
+            setStorageList([]);
+            return;
+        }
+        axios
+            .get(`/api/admin/vm-nodes/${nodeId}/free-ips`)
+            .then((res) => {
+                const list = (res.data.data?.free_ips ?? []) as FreeIp[];
+                setFreeIps(list);
+            })
+            .catch(() => setFreeIps([]));
+        axios
+            .get(`/api/admin/vm-nodes/${nodeId}/bridges`)
+            .then((res) => {
+                setBridges((res.data.data?.bridges ?? []) as string[]);
+            })
+            .catch(() => setBridges([]));
+        axios
+            .get(`/api/admin/vm-nodes/${nodeId}/storage`)
+            .then((res) => {
+                setStorageList((res.data.data?.storage ?? []) as string[]);
+            })
+            .catch(() => setStorageList([]));
+    }, [nodeId]);
+
+    const fetchOwners = useCallback(async () => {
+        try {
+            const { data } = await axios.get('/api/admin/users', {
+                params: {
+                    search: ownerSearch,
+                    page: ownerPagination.current_page,
+                    limit: ownerPagination.per_page,
+                },
+            });
+            setOwners((data.data?.users ?? []) as OwnerUser[]);
+            if (data.data?.pagination) {
+                setOwnerPagination((prev) => ({ ...prev, ...data.data.pagination }));
+            }
+        } catch {
+            toast.error(t('admin.vmInstances.errors.fetch_failed'));
+        }
+    }, [ownerSearch, ownerPagination.current_page, ownerPagination.per_page, t]);
+
+    useEffect(() => {
+        if (ownerModalOpen) {
+            const timer = setTimeout(() => fetchOwners(), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [ownerModalOpen, ownerSearch, ownerPagination.current_page, fetchOwners]);
+
+    // IPs already assigned to this instance (so we don't show them as "available" in other rows)
+    const assignedIpMap = (() => {
+        const map: Record<number, string> = {};
+        if (instance?.vm_ip_id != null && instance?.ip_address) {
+            map[Number(instance.vm_ip_id)] = String(instance.ip_address);
+        }
+        networks.forEach((n) => {
+            const val = String(config?.[n.key] ?? '');
+            const m = val.match(/ip=([^/,\s]+)/);
+            if (m && n.vm_ip_id != null) map[n.vm_ip_id] = m[1];
+        });
+        return map;
+    })();
+
+    // Per-row IP options: only free IPs + this row's current assignment (so we can keep it)
+    const getRowIpOptions = (row: NetworkRow): FreeIp[] => {
+        const list = [...freeIps];
+        if (row.vm_ip_id != null && assignedIpMap[row.vm_ip_id] && !freeIps.some((i) => i.id === row.vm_ip_id)) {
+            list.unshift({
+                id: row.vm_ip_id,
+                ip: assignedIpMap[row.vm_ip_id],
+                cidr: null,
+                gateway: null,
+            });
+        }
+        return list;
+    };
+
+    const ipOptionsQemu = (() => {
+        const list = [...freeIps];
+        const curId = instance?.vm_ip_id != null ? Number(instance.vm_ip_id) : null;
+        const curIp = instance?.ip_address as string | undefined;
+        if (curId != null && curIp && !list.some((i) => i.id === curId)) {
+            list.unshift({ id: curId, ip: curIp, cidr: null, gateway: null });
+        }
+        return list;
+    })();
+
+    const handleSaveDetails = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSavingTab('details');
+        try {
+            const payload: Record<string, unknown> = {
+                hostname: hostname || null,
+                notes: notes || null,
+                user_uuid: selectedOwner?.uuid ?? null,
+            };
+            if (isLxc) {
+                payload.nameserver = dnsNameserver.trim() || undefined;
+                payload.searchdomain = dnsSearchDomain.trim() || undefined;
+            }
+            await axios.patch(`/api/admin/vm-instances/${id}`, payload);
+            toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
+            await fetchInstance();
+            if (isLxc) await fetchConfig(instance as Record<string, unknown>);
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg);
+        } finally {
+            setSavingTab(null);
+        }
+    };
+
+    const handleSaveNetwork = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSavingTab('network');
+        try {
+            if (isLxc && (networks.length > 0 || newNetworkRow)) {
+                const kept = networks
+                    .filter((n) => !removedNetKeys.has(n.key) && n.vm_ip_id != null)
+                    .map((n) => ({ key: n.key, vm_ip_id: n.vm_ip_id!, bridge: n.bridge || undefined }));
+                if (newNetworkRow?.vm_ip_id) {
+                    kept.push({
+                        key: newNetworkRow.key,
+                        vm_ip_id: newNetworkRow.vm_ip_id,
+                        bridge: newNetworkRow.bridge || undefined,
+                    });
+                }
+                kept.sort((a, b) => a.key.localeCompare(b.key, 'en', { numeric: true }));
+                await axios.patch(`/api/admin/vm-instances/${id}`, { networks: kept });
+            } else {
+                await axios.patch(`/api/admin/vm-instances/${id}`, { vm_ip_id: vmIpId ?? null });
+            }
+            toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
+            await fetchInstance();
+            await fetchConfig();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg);
+        } finally {
+            setSavingTab(null);
+        }
+    };
+
+    const handleSaveResources = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSavingTab('resources');
+        try {
+            await axios.patch(`/api/admin/vm-instances/${id}`, {
+                memory,
+                cpus,
+                cores,
+                on_boot: onBoot,
+            });
+            toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
+            await fetchConfig();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg);
+        } finally {
+            setSavingTab(null);
+        }
+    };
+
+    const handleResizeDisk = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!resizeDisk || !resizeSize.trim()) {
+            toast.error('Select a disk and enter size (e.g. +5G)');
+            return;
+        }
+        setResizing(true);
+        try {
+            await axios.post(`/api/admin/vm-instances/${id}/resize-disk`, {
+                disk: resizeDisk,
+                size: resizeSize.trim(),
+            });
+            toast.success(t('admin.vmInstances.resize_success') ?? 'Disk resized successfully.');
+            setResizeSize('');
+            await fetchConfig();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg);
+        } finally {
+            setResizing(false);
+        }
+    };
+
+    const handleCreateDisk = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newDiskSizeGb < 1) {
+            toast.error(t('admin.vmInstances.disk_size_min') ?? 'Size must be at least 1 GB');
+            return;
+        }
+        setCreatingDisk(true);
+        try {
+            await axios.post(`/api/admin/vm-instances/${id}/disks`, {
+                storage: newDiskStorage,
+                size_gb: newDiskSizeGb,
+                path: newDiskPath.trim() || undefined,
+            });
+            toast.success(t('admin.vmInstances.disk_added') ?? 'Disk added successfully.');
+            setNewDiskPath('');
+            await fetchConfig();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg);
+        } finally {
+            setCreatingDisk(false);
+        }
+    };
+
+    const handleDeleteDisk = async (key: string) => {
+        if (!/^mp\d+$/.test(key)) return;
+        setDeletingDisk(key);
+        try {
+            await axios.delete(`/api/admin/vm-instances/${id}/disks/${key}`);
+            toast.success(t('admin.vmInstances.disk_removed') ?? 'Disk removed.');
+            await fetchConfig();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg);
+        } finally {
+            setDeletingDisk(null);
+        }
+    };
+
+    const diskKeys = config
+        ? (Object.keys(config) as string[]).filter((k) => k === 'rootfs' || /^mp\d+$/.test(k))
+        : [];
+
+    if (loading || !instance) {
+        return (
+            <div className='flex items-center justify-center min-h-[200px]'>
+                <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+            </div>
+        );
+    }
+
+    const editTabs = [
+        { id: 'details', label: t('admin.vmInstances.edit_tabs.details') ?? 'Details', icon: Server },
+        { id: 'network', label: t('admin.vmInstances.edit_tabs.network') ?? 'Network', icon: Wifi },
+        { id: 'resources', label: t('admin.vmInstances.edit_tabs.resources') ?? 'Resources', icon: Cpu },
+        ...(isLxc ? [{ id: 'disks', label: t('admin.vmInstances.edit_tabs.disks') ?? 'Disks', icon: HardDrive }] : []),
+        { id: 'history', label: t('admin.vmInstances.edit_tabs.history') ?? 'Task history', icon: History },
+    ] as const;
+
+    return (
+        <div className='space-y-6'>
+            <PageHeader
+                title={t('admin.vmInstances.edit') ?? 'Edit VM instance'}
+                description={t('admin.vmInstances.edit_desc') ?? 'Update hostname, notes, owner, IP, resources, and disks'}
+                icon={Server}
+                actions={
+                    <Button variant='outline' size='sm' onClick={() => router.push(`/admin/vm-instances/${id}`)}>
+                        <ArrowLeft className='h-4 w-4 mr-2' />
+                        {t('common.back')}
+                    </Button>
+                }
+            />
+
+            <Tabs
+                value={activeTab}
+                onValueChange={(v) => setActiveTab(v)}
+                orientation='vertical'
+                className='w-full flex flex-col md:flex-row gap-6'
+            >
+                <aside className='w-full md:w-64 shrink-0 overflow-x-auto md:overflow-visible pb-2 md:pb-0'>
+                    <TabsList className='flex flex-row md:flex-col h-auto w-max md:w-full bg-card/30 border border-border/50 p-2 rounded-2xl gap-2 md:gap-1'>
+                        {editTabs.map((tab) => {
+                            const Icon = tab.icon;
+                            return (
+                                <TabsTrigger
+                                    key={tab.id}
+                                    value={tab.id}
+                                    className='w-auto md:w-full justify-start px-4 py-3 h-auto text-sm md:text-base font-normal data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-medium transition-all rounded-xl border border-transparent data-[state=active]:border-primary/10 whitespace-nowrap'
+                                >
+                                    <Icon className='h-4 w-4 mr-3 shrink-0' />
+                                    {tab.label}
+                                </TabsTrigger>
+                            );
+                        })}
+                    </TabsList>
+                </aside>
+
+                <div className='flex-1 space-y-6 min-w-0'>
+                    <TabsContent value='details' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                        <DetailsTab
+                            hostname={hostname}
+                            setHostname={setHostname}
+                            notes={notes}
+                            setNotes={setNotes}
+                            selectedOwner={selectedOwner}
+                            setSelectedOwner={setSelectedOwner}
+                            onOpenOwnerModal={() => {
+                                setOwnerSearch('');
+                                setOwnerPagination((p) => ({ ...p, current_page: 1 }));
+                                setOwnerModalOpen(true);
+                            }}
+                            onSave={handleSaveDetails}
+                            saving={savingTab === 'details'}
+                            isLxc={isLxc}
+                            dnsNameserver={dnsNameserver}
+                            setDnsNameserver={setDnsNameserver}
+                            dnsSearchDomain={dnsSearchDomain}
+                            setDnsSearchDomain={setDnsSearchDomain}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value='network' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                        <NetworkTab
+                            isLxc={isLxc}
+                            instance={instance}
+                            networks={networks}
+                            setNetworks={setNetworks}
+                            removedNetKeys={removedNetKeys}
+                            setRemovedNetKeys={setRemovedNetKeys}
+                            newNetworkRow={newNetworkRow}
+                            setNewNetworkRow={setNewNetworkRow}
+                            freeIps={freeIps}
+                            bridges={bridges}
+                            vmIpId={vmIpId}
+                            setVmIpId={setVmIpId}
+                            config={config}
+                            assignedIpMap={assignedIpMap}
+                            getRowIpOptions={getRowIpOptions}
+                            ipOptionsQemu={ipOptionsQemu}
+                            onSave={handleSaveNetwork}
+                            saving={savingTab === 'network'}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value='resources' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                        <ResourcesTab
+                            config={config}
+                            memory={memory}
+                            setMemory={setMemory}
+                            cpus={cpus}
+                            setCpus={setCpus}
+                            cores={cores}
+                            setCores={setCores}
+                            onBoot={onBoot}
+                            setOnBoot={setOnBoot}
+                            onSave={handleSaveResources}
+                            saving={savingTab === 'resources'}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value='history' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                        <HistoryTab instanceId={id} />
+                    </TabsContent>
+
+                    {isLxc && (
+                        <TabsContent value='disks' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <DisksTab
+                                config={config}
+                                diskKeys={diskKeys}
+                                storageList={storageList}
+                                newDiskStorage={newDiskStorage}
+                                setNewDiskStorage={setNewDiskStorage}
+                                newDiskSizeGb={newDiskSizeGb}
+                                setNewDiskSizeGb={setNewDiskSizeGb}
+                                newDiskPath={newDiskPath}
+                                setNewDiskPath={setNewDiskPath}
+                                resizeDisk={resizeDisk}
+                                setResizeDisk={setResizeDisk}
+                                resizeSize={resizeSize}
+                                setResizeSize={setResizeSize}
+                                onCreateDisk={handleCreateDisk}
+                                onResizeDisk={handleResizeDisk}
+                                onDeleteDisk={handleDeleteDisk}
+                                creatingDisk={creatingDisk}
+                                resizing={resizing}
+                                deletingDisk={deletingDisk}
+                            />
+                        </TabsContent>
+                    )}
+                </div>
+            </Tabs>
+
+            <Sheet open={ownerModalOpen} onOpenChange={setOwnerModalOpen}>
+                <SheetContent className='sm:max-w-2xl'>
+                    <SheetHeader>
+                        <SheetTitle>{t('admin.vmInstances.select_owner') ?? 'Select owner'}</SheetTitle>
+                        <SheetDescription>
+                            {ownerPagination.total_records > 0
+                                ? `Showing ${ownerPagination.total_records} users`
+                                : t('common.search')}
+                        </SheetDescription>
+                    </SheetHeader>
+                    <div className='mt-6 space-y-4'>
+                        <div className='relative'>
+                            <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <Input
+                                placeholder={t('common.search') ?? 'Search'}
+                                value={ownerSearch}
+                                onChange={(e) => {
+                                    setOwnerSearch(e.target.value);
+                                    setOwnerPagination((p) => ({ ...p, current_page: 1 }));
+                                }}
+                                className='pl-10'
+                            />
+                        </div>
+                        <div className='space-y-2 max-h-[60vh] overflow-y-auto'>
+                            {owners.length === 0 ? (
+                                <p className='text-center py-6 text-muted-foreground'>{t('common.no_results')}</p>
+                            ) : (
+                                owners.map((user) => (
+                                    <button
+                                        key={user.id}
+                                        type='button'
+                                        onClick={() => {
+                                            setSelectedOwner(user);
+                                            setOwnerModalOpen(false);
+                                        }}
+                                        className='w-full p-3 rounded-xl border border-border/50 hover:border-primary hover:bg-primary/5 text-left'
+                                    >
+                                        <div className='flex flex-col'>
+                                            <span className='font-semibold'>{user.username}</span>
+                                            <span className='text-xs text-muted-foreground'>{user.email}</span>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </SheetContent>
+            </Sheet>
+        </div>
+    );
+}

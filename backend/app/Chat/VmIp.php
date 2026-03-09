@@ -49,6 +49,47 @@ class VmIp
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
+    /**
+     * Get IPs for a VM node that are not assigned to any VM instance (free pool).
+     * Excludes the primary IP (Proxmox host) so it is never offered for VM assignment.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getFreeIpsForNode(int $vmNodeId): array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('
+            SELECT ip.* FROM ' . self::$table . ' ip
+            WHERE ip.vm_node_id = :vm_node_id
+            AND ip.is_primary = \'false\'
+            AND ip.id NOT IN (
+                SELECT vm_ip_id FROM featherpanel_vm_instances
+                WHERE vm_ip_id IS NOT NULL
+            )
+            ORDER BY ip.ip ASC
+        ');
+        $stmt->execute(['vm_node_id' => $vmNodeId]);
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Get IP IDs that are assigned to a VM instance (in use) for a given node.
+     *
+     * @return array<int, int>
+     */
+    public static function getInUseIpIdsForNode(int $vmNodeId): array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('
+            SELECT DISTINCT vm_ip_id FROM featherpanel_vm_instances
+            WHERE vm_node_id = :vm_node_id AND vm_ip_id IS NOT NULL
+        ');
+        $stmt->execute(['vm_node_id' => $vmNodeId]);
+
+        return array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
     public static function create(array $data): int | false
     {
         $required = ['vm_node_id', 'ip'];

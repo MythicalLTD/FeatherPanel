@@ -51,11 +51,11 @@ class VmInstance
                 i.*,
                 n.name  AS node_name,
                 n.fqdn  AS node_fqdn,
-                p.name  AS plan_name,
-                p.memory AS plan_memory,
-                p.cpus  AS plan_cpus,
-                p.cores AS plan_cores,
-                p.disk  AS plan_disk,
+                NULL    AS plan_name,
+                NULL    AS plan_memory,
+                NULL    AS plan_cpus,
+                NULL    AS plan_cores,
+                NULL    AS plan_disk,
                 u.username    AS user_username,
                 u.email       AS user_email,
                 u.first_name  AS user_first_name,
@@ -66,7 +66,6 @@ class VmInstance
                 ip.gateway    AS ip_pool_gateway
             FROM featherpanel_vm_instances i
             LEFT JOIN featherpanel_vm_nodes n     ON n.id  = i.vm_node_id
-            LEFT JOIN featherpanel_vm_plans p     ON p.id  = i.plan_id
             LEFT JOIN featherpanel_users u        ON u.uuid = i.user_uuid
             LEFT JOIN featherpanel_vm_ips ip      ON ip.id = i.vm_ip_id
             $where
@@ -84,18 +83,21 @@ class VmInstance
         return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
     }
 
-    public static function getById(int $id): ?array
+    /**
+     * @param \PDO|null $pdo Optional connection (e.g. when inside a transaction)
+     */
+    public static function getById(int $id, ?\PDO $pdo = null): ?array
     {
         if ($id <= 0) {
             return null;
         }
-        $pdo = Database::getPdoConnection();
+        $pdo = $pdo ?? Database::getPdoConnection();
         $stmt = $pdo->prepare("
             SELECT
                 i.*,
                 n.name  AS node_name,
                 n.fqdn  AS node_fqdn,
-                p.name  AS plan_name,
+                NULL    AS plan_name,
                 u.username   AS user_username,
                 u.email      AS user_email,
                 u.first_name AS user_first_name,
@@ -106,7 +108,6 @@ class VmInstance
                 ip.gateway   AS ip_pool_gateway
             FROM featherpanel_vm_instances i
             LEFT JOIN featherpanel_vm_nodes n ON n.id  = i.vm_node_id
-            LEFT JOIN featherpanel_vm_plans p ON p.id  = i.plan_id
             LEFT JOIN featherpanel_users u    ON u.uuid = i.user_uuid
             LEFT JOIN featherpanel_vm_ips ip  ON ip.id = i.vm_ip_id
             WHERE i.id = :id LIMIT 1
@@ -167,22 +168,28 @@ class VmInstance
         return $result;
     }
 
-    public static function updateStatus(int $id, string $status): bool
+    /**
+     * @param \PDO|null $pdo Optional connection (e.g. when inside a transaction)
+     */
+    public static function updateStatus(int $id, string $status, ?\PDO $pdo = null): bool
     {
         $allowed = ['running', 'stopped', 'suspended', 'creating', 'deleting', 'error', 'unknown'];
         if (!in_array($status, $allowed, true)) {
             return false;
         }
-        $pdo = Database::getPdoConnection();
+        $pdo = $pdo ?? Database::getPdoConnection();
         $stmt = $pdo->prepare('UPDATE featherpanel_vm_instances SET status = :status WHERE id = :id');
         $stmt->execute(['status' => $status, 'id' => $id]);
 
         return $stmt->rowCount() > 0;
     }
 
-    public static function create(array $data): ?array
+    /**
+     * @param \PDO|null $pdo Optional connection (e.g. when inside a transaction)
+     */
+    public static function create(array $data, ?\PDO $pdo = null): ?array
     {
-        $pdo = Database::getPdoConnection();
+        $pdo = $pdo ?? Database::getPdoConnection();
         $stmt = $pdo->prepare('
             INSERT INTO featherpanel_vm_instances
                 (vmid, vm_node_id, user_uuid, pve_node, plan_id, template_id, vm_type,
@@ -209,7 +216,68 @@ class VmInstance
             'notes'       => $data['notes'] ?? null,
         ]);
 
-        return self::getById((int) $pdo->lastInsertId());
+        return self::getById((int) $pdo->lastInsertId(), $pdo);
+    }
+
+    /**
+     * Update instance fields. Only provided keys are updated.
+     * Allowed: hostname, notes, user_uuid, vm_ip_id (when set, ip_address and gateway are filled from VmIp).
+     *
+     * @param array<string, mixed> $data Allowed: hostname, notes, user_uuid, vm_ip_id
+     */
+    public static function update(int $id, array $data): bool
+    {
+        $allowed = ['hostname', 'notes', 'user_uuid', 'vm_ip_id'];
+        $updates = [];
+        $params = ['id' => $id];
+
+        foreach ($allowed as $key) {
+            if (!array_key_exists($key, $data)) {
+                continue;
+            }
+            if ($key === 'user_uuid') {
+                $val = $data[$key];
+                if ($val !== null && (!is_string($val) || trim($val) === '')) {
+                    continue;
+                }
+                $updates[] = 'user_uuid = :user_uuid';
+                $params['user_uuid'] = $val === null || trim((string) $val) === '' ? null : trim((string) $val);
+                continue;
+            }
+            if ($key === 'vm_ip_id') {
+                $ipId = $data[$key];
+                if ($ipId === null || $ipId === '') {
+                    $updates[] = 'vm_ip_id = NULL';
+                    $updates[] = 'ip_address = NULL';
+                    $updates[] = 'gateway = NULL';
+                } else {
+                    $ip = VmIp::getById((int) $ipId);
+                    if ($ip) {
+                        $updates[] = 'vm_ip_id = :vm_ip_id';
+                        $updates[] = 'ip_address = :ip_address';
+                        $updates[] = 'gateway = :gateway';
+                        $params['vm_ip_id'] = (int) $ipId;
+                        $params['ip_address'] = $ip['ip'] ?? null;
+                        $params['gateway'] = $ip['gateway'] ?? null;
+                    }
+                }
+                continue;
+            }
+            if ($key === 'hostname' || $key === 'notes') {
+                $updates[] = $key . ' = :' . $key;
+                $params[$key] = $data[$key] === null ? null : (is_string($data[$key]) ? trim($data[$key]) : $data[$key]);
+            }
+        }
+
+        if (empty($updates)) {
+            return true;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $sql = 'UPDATE featherpanel_vm_instances SET ' . implode(', ', $updates) . ' WHERE id = :id';
+        $stmt = $pdo->prepare($sql);
+
+        return $stmt->execute($params);
     }
 
     public static function delete(int $id): bool

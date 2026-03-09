@@ -29,6 +29,10 @@ interface ConfigInterface
     public const APP_LOGO_WHITE = 'app_logo_white';
     public const APP_LOGO_DARK = 'app_logo_dark';
     public const APP_SUPPORT_URL = 'app_support_url';
+    /** When true, VNC wss_url is built from APP_URL so the browser connects to the panel; reverse proxy must forward /vnc-proxy/ to Proxmox. */
+    public const VNC_PROXY_VIA_PANEL = 'vnc_proxy_via_panel';
+    /** When true, create a short-lived PVE user, grant console ACL, get ticket and return pve_redirect_url so the frontend can open Proxmox noVNC in the browser. */
+    public const VNC_USE_PVE_REDIRECT = 'vnc_use_pve_redirect';
     /**
      * Appearance / Branding.
      *

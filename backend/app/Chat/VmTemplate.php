@@ -84,6 +84,46 @@ class VmTemplate
         return self::getById((int) $pdo->lastInsertId());
     }
 
+    public static function update(int $id, array $data): ?array
+    {
+        $existing = self::getById($id);
+        if (!$existing) {
+            return null;
+        }
+        $name = array_key_exists('name', $data) ? trim((string) $data['name']) : $existing['name'];
+        $description = array_key_exists('description', $data) ? ($data['description'] === '' || $data['description'] === null ? null : (string) $data['description']) : $existing['description'];
+        $guestType = array_key_exists('guest_type', $data) ? (in_array($data['guest_type'], ['qemu', 'lxc'], true) ? $data['guest_type'] : $existing['guest_type']) : $existing['guest_type'];
+        $osType = array_key_exists('os_type', $data) ? ($data['os_type'] === '' || $data['os_type'] === null ? null : (string) $data['os_type']) : $existing['os_type'];
+        $storage = array_key_exists('storage', $data) ? (string) $data['storage'] : $existing['storage'];
+        $templateFile = array_key_exists('template_file', $data) ? ($data['template_file'] === '' || $data['template_file'] === null ? null : (string) $data['template_file']) : $existing['template_file'];
+        $isActive = array_key_exists('is_active', $data) ? (($data['is_active'] ?? 'true') === 'false' ? 'false' : 'true') : $existing['is_active'];
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('
+            UPDATE ' . self::$table . ' SET
+                name = :name,
+                description = :description,
+                guest_type = :guest_type,
+                os_type = :os_type,
+                storage = :storage,
+                template_file = :template_file,
+                is_active = :is_active
+            WHERE id = :id
+        ');
+        $stmt->execute([
+            'id' => $id,
+            'name' => $name,
+            'description' => $description,
+            'guest_type' => $guestType,
+            'os_type' => $osType,
+            'storage' => $storage,
+            'template_file' => $templateFile,
+            'is_active' => $isActive,
+        ]);
+
+        return $stmt->rowCount() >= 0 ? self::getById($id) : $existing;
+    }
+
     public static function delete(int $id): bool
     {
         $pdo = Database::getPdoConnection();

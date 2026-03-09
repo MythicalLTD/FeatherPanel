@@ -79,6 +79,29 @@ class Activity
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Get activities where context LIKE :contextLike and name IN :names (e.g. for VM instance history).
+     *
+     * @param string $contextLike e.g. '%my-vm%'
+     * @param string[] $names e.g. ['vm_instance_create', 'vm_instance_update', 'vm_instance_delete']
+     * @param int $limit
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getActivitiesByContextLikeAndNameIn(string $contextLike, array $names, int $limit = 50): array
+    {
+        if (empty($names)) {
+            return [];
+        }
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($names), '?'));
+        $sql = 'SELECT * FROM ' . self::$table . ' WHERE context LIKE ? AND name IN (' . $placeholders . ') ORDER BY created_at DESC LIMIT ' . (int) $limit;
+        $stmt = $pdo->prepare($sql);
+        $params = array_merge([$contextLike], $names);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
     public static function getCountByUserUuid(string $userUuid, ?string $search = null): int
     {
         $pdo = Database::getPdoConnection();

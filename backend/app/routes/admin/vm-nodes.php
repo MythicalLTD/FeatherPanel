@@ -205,4 +205,100 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_NODES_EDIT,
         ['POST']
     );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-free-ips',
+        '/api/admin/vm-nodes/{id}/free-ips',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->freeIps($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-proxmox-vms',
+        '/api/admin/vm-nodes/{id}/proxmox-vms',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->proxmoxVms($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-bridges',
+        '/api/admin/vm-nodes/{id}/bridges',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->bridges($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-storage',
+        '/api/admin/vm-nodes/{id}/storage',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->storage($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-templates',
+        '/api/admin/vm-nodes/{id}/templates',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->templates($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-templates-create',
+        '/api/admin/vm-nodes/{id}/templates',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->createTemplate($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
 };
