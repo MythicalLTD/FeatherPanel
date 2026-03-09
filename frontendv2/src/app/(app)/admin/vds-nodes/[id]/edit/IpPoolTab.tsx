@@ -335,7 +335,10 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                 <div className='flex items-center gap-2'>
                                                     <span className='font-mono'>{ip.ip}</span>
                                                     {ip.is_primary === 'true' && (
-                                                        <span className='px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase rounded-full border border-amber-500/30' title={t('admin.vdsNodes.ips.primary_proxmox_help')}>
+                                                        <span
+                                                            className='px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase rounded-full border border-amber-500/30'
+                                                            title={t('admin.vdsNodes.ips.primary_proxmox_help')}
+                                                        >
                                                             {t('admin.vdsNodes.ips.primary_badge')}
                                                         </span>
                                                     )}
@@ -356,7 +359,9 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                         {t('admin.vdsNodes.ips.in_use_badge')}
                                                     </span>
                                                 ) : (
-                                                    <span className='text-muted-foreground text-xs'>{t('admin.vdsNodes.ips.available')}</span>
+                                                    <span className='text-muted-foreground text-xs'>
+                                                        {t('admin.vdsNodes.ips.available')}
+                                                    </span>
                                                 )}
                                             </td>
                                             <td className='px-4 py-3 text-right'>
@@ -395,7 +400,11 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                                 size='sm'
                                                                 onClick={() => handleDelete(ip.id)}
                                                                 disabled={ip.in_use}
-                                                                title={ip.in_use ? t('admin.vdsNodes.ips.cannot_delete_in_use') : undefined}
+                                                                title={
+                                                                    ip.in_use
+                                                                        ? t('admin.vdsNodes.ips.cannot_delete_in_use')
+                                                                        : undefined
+                                                                }
                                                             >
                                                                 {t('common.confirm')}
                                                             </Button>
@@ -414,7 +423,11 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                             className='text-destructive hover:text-destructive hover:bg-destructive/10'
                                                             onClick={() => !ip.in_use && setDeleteConfirmId(ip.id)}
                                                             disabled={ip.in_use}
-                                                            title={ip.in_use ? t('admin.vdsNodes.ips.cannot_delete_in_use') : t('common.delete')}
+                                                            title={
+                                                                ip.in_use
+                                                                    ? t('admin.vdsNodes.ips.cannot_delete_in_use')
+                                                                    : t('common.delete')
+                                                            }
                                                         >
                                                             <Trash2 className='h-4 w-4' />
                                                         </Button>

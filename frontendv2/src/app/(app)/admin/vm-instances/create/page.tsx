@@ -241,12 +241,7 @@ export default function VmInstancesCreatePage() {
     const hostnameValid = hostname.trim().length > 0;
     const ownerSelected = selectedOwner != null;
     const ciFieldsValid = ciUser.trim().length > 0 && ciPassword.trim().length > 0;
-    const canCreate =
-        currentStep === totalSteps &&
-        canProceedStep1 &&
-        hostnameValid &&
-        ownerSelected &&
-        ciFieldsValid;
+    const canCreate = currentStep === totalSteps && canProceedStep1 && hostnameValid && ownerSelected && ciFieldsValid;
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -256,7 +251,9 @@ export default function VmInstancesCreatePage() {
     const handleCreate = async () => {
         if (currentStep !== totalSteps) return;
         if (!canProceedStep1) {
-            toast.error(t('admin.vmInstances.select_node_template') ?? 'Select a node, template, and ensure IPs are available');
+            toast.error(
+                t('admin.vmInstances.select_node_template') ?? 'Select a node, template, and ensure IPs are available',
+            );
             return;
         }
         if (templateId <= 0) {
@@ -411,14 +408,14 @@ export default function VmInstancesCreatePage() {
                                         ))}
                                     </Select>
                                     <p className='text-xs text-muted-foreground'>
-                                        {t('admin.vmInstances.node_help') ?? 'Proxmox node where the VM will be created.'}
+                                        {t('admin.vmInstances.node_help') ??
+                                            'Proxmox node where the VM will be created.'}
                                     </p>
                                 </div>
 
                                 {loadingMeta && (
                                     <p className='text-sm text-muted-foreground flex items-center gap-2'>
-                                        <Loader2 className='h-4 w-4 animate-spin' />{' '}
-                                        {t('common.loading') ?? 'Loading…'}
+                                        <Loader2 className='h-4 w-4 animate-spin' /> {t('common.loading') ?? 'Loading…'}
                                     </p>
                                 )}
 
@@ -439,7 +436,8 @@ export default function VmInstancesCreatePage() {
                                                 </option>
                                                 {templates.map((tpl) => (
                                                     <option key={tpl.id} value={tpl.id}>
-                                                        {tpl.name} {tpl.template_file ? `(VMID ${tpl.template_file})` : ''}{' '}
+                                                        {tpl.name}{' '}
+                                                        {tpl.template_file ? `(VMID ${tpl.template_file})` : ''}{' '}
                                                         {tpl.guest_type === 'lxc' ? 'LXC' : 'QEMU'}
                                                     </option>
                                                 ))}
@@ -474,7 +472,8 @@ export default function VmInstancesCreatePage() {
                                                 </p>
                                             )}
                                             <p className='text-xs text-muted-foreground'>
-                                                {t('admin.vmInstances.ip_help') ?? 'Leave on Auto to assign the first free IP from the node pool.'}
+                                                {t('admin.vmInstances.ip_help') ??
+                                                    'Leave on Auto to assign the first free IP from the node pool.'}
                                             </p>
                                         </div>
                                     </>
@@ -548,7 +547,8 @@ export default function VmInstancesCreatePage() {
                                     <Label>{t('admin.vmInstances.storage') ?? 'Storage'}</Label>
                                     {loadingStorage ? (
                                         <p className='text-sm text-muted-foreground flex items-center gap-2 py-2'>
-                                            <Loader2 className='h-4 w-4 animate-spin' /> {t('common.loading') ?? 'Loading…'}
+                                            <Loader2 className='h-4 w-4 animate-spin' />{' '}
+                                            {t('common.loading') ?? 'Loading…'}
                                         </p>
                                     ) : storageList.length > 0 ? (
                                         <Select
@@ -575,7 +575,8 @@ export default function VmInstancesCreatePage() {
                                     <Label>{t('admin.vmInstances.bridge') ?? 'Bridge'}</Label>
                                     {loadingBridges ? (
                                         <p className='text-sm text-muted-foreground flex items-center gap-2 py-2'>
-                                            <Loader2 className='h-4 w-4 animate-spin' /> {t('common.loading') ?? 'Loading…'}
+                                            <Loader2 className='h-4 w-4 animate-spin' />{' '}
+                                            {t('common.loading') ?? 'Loading…'}
                                         </p>
                                     ) : bridges.length > 0 ? (
                                         <Select
@@ -653,8 +654,8 @@ export default function VmInstancesCreatePage() {
                                             className='bg-muted/30 h-11'
                                         />
                                         <p className='text-xs text-muted-foreground'>
-                                            This user will be created inside the VM (cloud-init <code>ciuser</code>). On Debian/Ubuntu
-                                            images this user normally has passwordless sudo.
+                                            This user will be created inside the VM (cloud-init <code>ciuser</code>). On
+                                            Debian/Ubuntu images this user normally has passwordless sudo.
                                         </p>
                                     </div>
                                     <div className='space-y-3'>
@@ -670,8 +671,9 @@ export default function VmInstancesCreatePage() {
                                             className='bg-muted/30 h-11'
                                         />
                                         <p className='text-xs text-muted-foreground'>
-                                            This is written to cloud-init <code>cipassword</code> and lets you log in via console/SSH.
-                                            Store it somewhere safe; the panel only shows it during creation.
+                                            This is written to cloud-init <code>cipassword</code> and lets you log in
+                                            via console/SSH. Store it somewhere safe; the panel only shows it during
+                                            creation.
                                         </p>
                                     </div>
                                 </div>
@@ -799,9 +801,7 @@ export default function VmInstancesCreatePage() {
                         <SheetDescription>
                             {ownerPagination.total_records > 0
                                 ? t('common.showing', {
-                                      from: String(
-                                          (ownerPagination.current_page - 1) * ownerPagination.per_page + 1,
-                                      ),
+                                      from: String((ownerPagination.current_page - 1) * ownerPagination.per_page + 1),
                                       to: String(
                                           Math.min(
                                               ownerPagination.current_page * ownerPagination.per_page,

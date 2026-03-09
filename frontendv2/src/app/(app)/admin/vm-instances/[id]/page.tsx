@@ -42,7 +42,16 @@ import {
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const VNC_POPUP_WIDTH = 1024;
 const VNC_POPUP_HEIGHT = 768;
@@ -116,7 +125,9 @@ export default function VmInstanceViewPage() {
             const data = res.data?.data;
             const pveRedirectUrl = data?.pve_redirect_url as string | undefined;
             if (!pveRedirectUrl) {
-                toast.error('Proxmox console URL not available. Ensure the node API user has User.Modify and ACL.Modify.');
+                toast.error(
+                    'Proxmox console URL not available. Ensure the node API user has User.Modify and ACL.Modify.',
+                );
                 return;
             }
             openVncPopup(pveRedirectUrl);
@@ -222,7 +233,11 @@ export default function VmInstanceViewPage() {
                             <ArrowLeft className='h-4 w-4 mr-2' />
                             {t('common.back')}
                         </Button>
-                        <Button size='sm' variant='outline' onClick={() => router.push(`/admin/vm-instances/${id}/edit`)}>
+                        <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() => router.push(`/admin/vm-instances/${id}/edit`)}
+                        >
                             <Pencil className='h-4 w-4 mr-2' />
                             {t('common.edit')}
                         </Button>
@@ -232,7 +247,11 @@ export default function VmInstanceViewPage() {
                             disabled={poweringId !== null}
                             onClick={() => handlePower('start')}
                         >
-                            {poweringId === 'start' ? <Loader2 className='h-4 w-4 animate-spin mr-2' /> : <Play className='h-4 w-4 mr-2' />}
+                            {poweringId === 'start' ? (
+                                <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                            ) : (
+                                <Play className='h-4 w-4 mr-2' />
+                            )}
                             Start
                         </Button>
                         <Button
@@ -250,16 +269,19 @@ export default function VmInstanceViewPage() {
                             disabled={poweringId !== null}
                             onClick={() => handlePower('reboot')}
                         >
-                            {poweringId === 'reboot' ? <Loader2 className='h-4 w-4 animate-spin mr-2' /> : <RotateCw className='h-4 w-4 mr-2' />}
+                            {poweringId === 'reboot' ? (
+                                <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                            ) : (
+                                <RotateCw className='h-4 w-4 mr-2' />
+                            )}
                             Reboot
                         </Button>
-                        <Button
-                            size='sm'
-                            variant='outline'
-                            disabled={vncOpening}
-                            onClick={openVncConsole}
-                        >
-                            {vncOpening ? <Loader2 className='h-4 w-4 animate-spin mr-2' /> : <Monitor className='h-4 w-4 mr-2' />}
+                        <Button size='sm' variant='outline' disabled={vncOpening} onClick={openVncConsole}>
+                            {vncOpening ? (
+                                <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                            ) : (
+                                <Monitor className='h-4 w-4 mr-2' />
+                            )}
                             {t('admin.vmInstances.vnc_console') ?? 'VNC Console'}
                         </Button>
                         <Button size='sm' variant='destructive' onClick={() => setConfirmDelete(true)}>
@@ -290,14 +312,14 @@ export default function VmInstanceViewPage() {
                             {typeof usage.cpu === 'number' && (
                                 <div className='rounded-xl border border-border/50 bg-muted/20 p-3'>
                                     <div className='text-muted-foreground mb-1'>CPU</div>
-                                    <div className='font-semibold tabular-nums'>
-                                        {(usage.cpu * 100).toFixed(1)}%
-                                    </div>
+                                    <div className='font-semibold tabular-nums'>{(usage.cpu * 100).toFixed(1)}%</div>
                                 </div>
                             )}
                             {(usage.mem != null || usage.maxmem != null) && (
                                 <div className='rounded-xl border border-border/50 bg-muted/20 p-3'>
-                                    <div className='text-muted-foreground mb-1'>{t('admin.vmInstances.memory_used') ?? 'Memory'}</div>
+                                    <div className='text-muted-foreground mb-1'>
+                                        {t('admin.vmInstances.memory_used') ?? 'Memory'}
+                                    </div>
                                     <div className='font-semibold tabular-nums'>
                                         {usage.maxmem
                                             ? `${((usage.mem ?? 0) / 1024 / 1024).toFixed(0)} / ${(usage.maxmem / 1024 / 1024).toFixed(0)} MB`
@@ -307,17 +329,23 @@ export default function VmInstanceViewPage() {
                             )}
                             {(usage.disk != null || usage.maxdisk != null) && (usage.maxdisk ?? 0) > 0 && (
                                 <div className='rounded-xl border border-border/50 bg-muted/20 p-3'>
-                                    <div className='text-muted-foreground mb-1'>{t('admin.vmInstances.disk_used') ?? 'Disk'}</div>
+                                    <div className='text-muted-foreground mb-1'>
+                                        {t('admin.vmInstances.disk_used') ?? 'Disk'}
+                                    </div>
                                     <div className='font-semibold tabular-nums'>
-                                        {((usage.disk ?? 0) / 1024 / 1024 / 1024).toFixed(1)} / {(usage.maxdisk! / 1024 / 1024 / 1024).toFixed(1)} GB
+                                        {((usage.disk ?? 0) / 1024 / 1024 / 1024).toFixed(1)} /{' '}
+                                        {(usage.maxdisk! / 1024 / 1024 / 1024).toFixed(1)} GB
                                     </div>
                                 </div>
                             )}
                             {(usage.netin != null || usage.netout != null) && (
                                 <div className='rounded-xl border border-border/50 bg-muted/20 p-3'>
-                                    <div className='text-muted-foreground mb-1'>{t('admin.vmInstances.network') ?? 'Network'}</div>
+                                    <div className='text-muted-foreground mb-1'>
+                                        {t('admin.vmInstances.network') ?? 'Network'}
+                                    </div>
                                     <div className='font-semibold tabular-nums text-xs'>
-                                        ↓ {((usage.netin ?? 0) / 1024 / 1024).toFixed(1)} MB / ↑ {((usage.netout ?? 0) / 1024 / 1024).toFixed(1)} MB
+                                        ↓ {((usage.netin ?? 0) / 1024 / 1024).toFixed(1)} MB / ↑{' '}
+                                        {((usage.netout ?? 0) / 1024 / 1024).toFixed(1)} MB
                                     </div>
                                 </div>
                             )}
@@ -424,7 +452,9 @@ export default function VmInstanceViewPage() {
             <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>{t('admin.vmInstances.delete_confirm_title') ?? 'Delete VM instance?'}</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            {t('admin.vmInstances.delete_confirm_title') ?? 'Delete VM instance?'}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
                             {t('admin.vmInstances.delete_confirm_desc') ??
                                 'This will stop and remove the VM from Proxmox and delete the record. This cannot be undone.'}

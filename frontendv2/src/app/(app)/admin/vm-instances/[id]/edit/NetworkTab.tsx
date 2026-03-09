@@ -81,7 +81,8 @@ export function NetworkTab({
                                 .map((n) => {
                                     const rowIp =
                                         n.vm_ip_id != null
-                                            ? assignedIpMap[n.vm_ip_id] ?? getRowIpOptions(n).find((i) => i.id === n.vm_ip_id)?.ip
+                                            ? (assignedIpMap[n.vm_ip_id] ??
+                                              getRowIpOptions(n).find((i) => i.id === n.vm_ip_id)?.ip)
                                             : null;
                                     const ipOptions = getRowIpOptions(n).map((ip) => ({ id: ip.id, name: ip.ip }));
                                     return (
@@ -92,7 +93,10 @@ export function NetworkTab({
                                             <span className='font-mono text-sm w-12 shrink-0'>{n.key}</span>
                                             <div className='flex flex-col gap-1 min-w-[180px]'>
                                                 {rowIp && (
-                                                    <span className='text-foreground font-semibold text-base tabular-nums' title={rowIp}>
+                                                    <span
+                                                        className='text-foreground font-semibold text-base tabular-nums'
+                                                        title={rowIp}
+                                                    >
                                                         {rowIp}
                                                     </span>
                                                 )}
@@ -101,8 +105,10 @@ export function NetworkTab({
                                                     onChange={(v) =>
                                                         setNetworks((prev) =>
                                                             prev.map((r) =>
-                                                                r.key === n.key ? { ...r, vm_ip_id: v === '' ? null : Number(v) } : r
-                                                            )
+                                                                r.key === n.key
+                                                                    ? { ...r, vm_ip_id: v === '' ? null : Number(v) }
+                                                                    : r,
+                                                            ),
                                                         )
                                                     }
                                                     options={ipOptions}
@@ -114,7 +120,9 @@ export function NetworkTab({
                                                 value={n.bridge ?? 'vmbr0'}
                                                 onChange={(v) =>
                                                     setNetworks((prev) =>
-                                                        prev.map((r) => (r.key === n.key ? { ...r, bridge: String(v) } : r))
+                                                        prev.map((r) =>
+                                                            r.key === n.key ? { ...r, bridge: String(v) } : r,
+                                                        ),
                                                     )
                                                 }
                                                 options={bridgeOptions}
@@ -136,17 +144,20 @@ export function NetworkTab({
                                 <div className='flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 p-3 bg-primary/5'>
                                     <span className='font-mono text-sm w-12 shrink-0'>{newNetworkRow.key}</span>
                                     <div className='flex flex-col gap-1 min-w-[180px]'>
-                                        {newNetworkRow.vm_ip_id != null && (() => {
-                                            const ip = freeIps.find((i) => i.id === newNetworkRow!.vm_ip_id)?.ip;
-                                            return ip ? (
-                                                <span className='text-foreground font-semibold text-base tabular-nums'>{ip}</span>
-                                            ) : null;
-                                        })()}
+                                        {newNetworkRow.vm_ip_id != null &&
+                                            (() => {
+                                                const ip = freeIps.find((i) => i.id === newNetworkRow!.vm_ip_id)?.ip;
+                                                return ip ? (
+                                                    <span className='text-foreground font-semibold text-base tabular-nums'>
+                                                        {ip}
+                                                    </span>
+                                                ) : null;
+                                            })()}
                                         <HeadlessSelect
                                             value={newNetworkRow.vm_ip_id ?? ''}
                                             onChange={(v) =>
                                                 setNewNetworkRow((prev) =>
-                                                    prev ? { ...prev, vm_ip_id: v === '' ? null : Number(v) } : null
+                                                    prev ? { ...prev, vm_ip_id: v === '' ? null : Number(v) } : null,
                                                 )
                                             }
                                             options={freeIps.map((ip) => ({ id: ip.id, name: ip.ip }))}
@@ -178,7 +189,9 @@ export function NetworkTab({
                                 variant='outline'
                                 size='sm'
                                 onClick={() => {
-                                    const allKeys = [...networks.map((n) => n.key), newNetworkRow?.key].filter(Boolean) as string[];
+                                    const allKeys = [...networks.map((n) => n.key), newNetworkRow?.key].filter(
+                                        Boolean,
+                                    ) as string[];
                                     const indices = allKeys.map((k) => parseInt(k.replace(/\D/g, ''), 10));
                                     const next = 'net' + (indices.length ? Math.max(...indices) + 1 : 0);
                                     setNewNetworkRow({ key: next, vm_ip_id: null, bridge: bridges[0] || 'vmbr0' });

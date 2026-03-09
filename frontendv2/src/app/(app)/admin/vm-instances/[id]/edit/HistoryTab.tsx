@@ -82,7 +82,9 @@ export function HistoryTab({ instanceId }: HistoryTabProps) {
         <PageCard
             title={t('admin.vmInstances.edit_tabs.history') ?? 'Task history'}
             icon={History}
-            description={t('admin.vmInstances.history_desc') ?? 'Recent create, update, and delete events for this instance'}
+            description={
+                t('admin.vmInstances.history_desc') ?? 'Recent create, update, and delete events for this instance'
+            }
         >
             {loading ? (
                 <div className='flex items-center justify-center py-12'>
@@ -99,15 +101,11 @@ export function HistoryTab({ instanceId }: HistoryTabProps) {
                             key={a.id}
                             className='flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-border/50 bg-muted/20 px-4 py-3'
                         >
-                            <span className='font-medium text-foreground tabular-nums'>
-                                {formatDate(a.created_at)}
-                            </span>
+                            <span className='font-medium text-foreground tabular-nums'>{formatDate(a.created_at)}</span>
                             <span className='rounded-md bg-primary/10 px-2 py-0.5 text-sm font-medium text-primary'>
                                 {formatActivityName(a.name)}
                             </span>
-                            {a.context && (
-                                <span className='text-sm text-muted-foreground'>{a.context}</span>
-                            )}
+                            {a.context && <span className='text-sm text-muted-foreground'>{a.context}</span>}
                         </li>
                     ))}
                 </ul>

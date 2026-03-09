@@ -112,31 +112,34 @@ export default function VmInstanceEditPage() {
         }
     }, [id]);
 
-    const fetchConfig = useCallback(async (inst?: Record<string, unknown> | null) => {
-        if (!id || Number.isNaN(id)) return;
-        try {
-            const res = await axios.get(`/api/admin/vm-instances/${id}/config`);
-            const cfg = res.data.data?.config as Record<string, unknown>;
-            if (cfg) {
-                setConfig(cfg);
-                setMemory(Number(cfg.memory) || 512);
-                setOnBoot((cfg.onboot as number) === 1);
-                setDnsNameserver((cfg.nameserver as string) ?? '');
-                setDnsSearchDomain((cfg.searchdomain as string) ?? '');
-                const lxc = (inst ?? instance)?.vm_type === 'lxc';
-                if (lxc) {
-                    const c = Number(cfg.cores) || 1;
-                    setCores(c);
-                    setCpus(1);
-                } else {
-                    setCpus(Number(cfg.sockets) || 1);
-                    setCores(Number(cfg.cores) || 1);
+    const fetchConfig = useCallback(
+        async (inst?: Record<string, unknown> | null) => {
+            if (!id || Number.isNaN(id)) return;
+            try {
+                const res = await axios.get(`/api/admin/vm-instances/${id}/config`);
+                const cfg = res.data.data?.config as Record<string, unknown>;
+                if (cfg) {
+                    setConfig(cfg);
+                    setMemory(Number(cfg.memory) || 512);
+                    setOnBoot((cfg.onboot as number) === 1);
+                    setDnsNameserver((cfg.nameserver as string) ?? '');
+                    setDnsSearchDomain((cfg.searchdomain as string) ?? '');
+                    const lxc = (inst ?? instance)?.vm_type === 'lxc';
+                    if (lxc) {
+                        const c = Number(cfg.cores) || 1;
+                        setCores(c);
+                        setCpus(1);
+                    } else {
+                        setCpus(Number(cfg.sockets) || 1);
+                        setCores(Number(cfg.cores) || 1);
+                    }
                 }
+            } catch {
+                setConfig(null);
             }
-        } catch {
-            setConfig(null);
-        }
-    }, [id, instance]);
+        },
+        [id, instance],
+    );
 
     useEffect(() => {
         if (!id || Number.isNaN(id)) {
@@ -431,9 +434,7 @@ export default function VmInstanceEditPage() {
         }
     };
 
-    const diskKeys = config
-        ? (Object.keys(config) as string[]).filter((k) => k === 'rootfs' || /^mp\d+$/.test(k))
-        : [];
+    const diskKeys = config ? (Object.keys(config) as string[]).filter((k) => k === 'rootfs' || /^mp\d+$/.test(k)) : [];
 
     if (loading || !instance) {
         return (
@@ -457,7 +458,9 @@ export default function VmInstanceEditPage() {
 
             <PageHeader
                 title={t('admin.vmInstances.edit') ?? 'Edit VM instance'}
-                description={t('admin.vmInstances.edit_desc') ?? 'Update hostname, notes, owner, IP, resources, and disks'}
+                description={
+                    t('admin.vmInstances.edit_desc') ?? 'Update hostname, notes, owner, IP, resources, and disks'
+                }
                 icon={Server}
                 actions={
                     <Button variant='outline' size='sm' onClick={() => router.push(`/admin/vm-instances/${id}`)}>

@@ -67,7 +67,10 @@ export function DisksTab({
     deletingDisk,
 }: DisksTabProps) {
     const { t } = useTranslation();
-    const storageOptions = storageList.length > 0 ? storageList.map((s) => ({ id: s, name: s })) : [{ id: 'local-lvm', name: 'local-lvm' }];
+    const storageOptions =
+        storageList.length > 0
+            ? storageList.map((s) => ({ id: s, name: s }))
+            : [{ id: 'local-lvm', name: 'local-lvm' }];
     const diskOptions = diskKeys.map((k) => ({ id: k, name: k }));
 
     return (
@@ -105,7 +108,10 @@ export function DisksTab({
                         </ul>
                     </div>
                 )}
-                <form onSubmit={onCreateDisk} className='flex flex-wrap items-end gap-3 rounded-xl border border-border/50 p-4 bg-muted/10'>
+                <form
+                    onSubmit={onCreateDisk}
+                    className='flex flex-wrap items-end gap-3 rounded-xl border border-border/50 p-4 bg-muted/10'
+                >
                     <div className='min-w-[160px]'>
                         <Label className='text-xs'>{t('admin.vmInstances.disk_storage') ?? 'Storage'}</Label>
                         <HeadlessSelect

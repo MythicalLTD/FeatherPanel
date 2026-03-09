@@ -459,14 +459,14 @@ export default function ServersPage() {
                         >
                             <span className='inline-block h-3 w-3 transform rounded-full bg-white transition-transform group-data-checked:translate-x-4 translate-x-1' />
                         </Switch>
-                        <span className='hidden sm:block text-sm font-medium whitespace-nowrap'>{t('servers.runningOnly')}</span>
+                        <span className='hidden sm:block text-sm font-medium whitespace-nowrap'>
+                            {t('servers.runningOnly')}
+                        </span>
                     </div>
 
                     <button
                         onClick={() =>
-                            serverScope === 'all'
-                                ? void fetchAllOtherServers(pagination.current_page)
-                                : fetchServers()
+                            serverScope === 'all' ? void fetchAllOtherServers(pagination.current_page) : fetchServers()
                         }
                         disabled={loading}
                         className='shrink-0 p-2 bg-background border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-50'
@@ -589,7 +589,8 @@ export default function ServersPage() {
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                                         )}
                                     >
-                                        {t('servers.allServersAdmin')} ({serverScope === 'all' ? pagination.total_records : '…'})
+                                        {t('servers.allServersAdmin')} (
+                                        {serverScope === 'all' ? pagination.total_records : '…'})
                                     </button>
                                 </div>
                             )}

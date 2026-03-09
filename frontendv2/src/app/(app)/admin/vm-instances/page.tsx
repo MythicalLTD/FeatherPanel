@@ -206,7 +206,9 @@ export default function VmInstancesPage() {
             <WidgetRenderer widgets={getWidgets('admin-vm-instances', 'top-of-page')} />
 
             <PageHeader
-                title={t('navigation.items.virtualServersVds') ?? t('admin.vmInstances.title') ?? 'Virtual Servers (VDS)'}
+                title={
+                    t('navigation.items.virtualServersVds') ?? t('admin.vmInstances.title') ?? 'Virtual Servers (VDS)'
+                }
                 description={t('admin.vmInstances.description') ?? 'Manage VPS/VM instances on Proxmox nodes'}
                 icon={Server}
                 actions={
@@ -444,19 +446,13 @@ export default function VmInstancesPage() {
             <WidgetRenderer widgets={getWidgets('admin-vm-instances', 'bottom-of-page')} />
 
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                <PageCard
-                    title={t('admin.vmInstances.help.managing.title') ?? 'Managing VDS'}
-                    icon={Server}
-                >
+                <PageCard title={t('admin.vmInstances.help.managing.title') ?? 'Managing VDS'} icon={Server}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
                         {t('admin.vmInstances.help.managing.description') ??
                             'Create instances from VM Plans and templates. Assign an owner so the user sees the server in their panel. Use power actions or open the instance to view details and edit.'}
                     </p>
                 </PageCard>
-                <PageCard
-                    title={t('admin.vmInstances.help.resources.title') ?? 'Plans & resources'}
-                    icon={Layers}
-                >
+                <PageCard title={t('admin.vmInstances.help.resources.title') ?? 'Plans & resources'} icon={Layers}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
                         {t('admin.vmInstances.help.resources.description') ??
                             'Each instance uses a VM Plan (CPU, memory, disk). Templates are defined per VDS node. Configure plans and templates under VM Nodes (VDS Nodes) and VM Plans.'}
@@ -470,7 +466,7 @@ export default function VmInstancesPage() {
                     <ul className='text-sm text-muted-foreground leading-relaxed list-disc list-inside space-y-1'>
                         <li>
                             {t('admin.vmInstances.help.tips.item1') ??
-                                'Assign an owner when creating or editing so the VM appears under the user\'s servers.'}
+                                "Assign an owner when creating or editing so the VM appears under the user's servers."}
                         </li>
                         <li>
                             {t('admin.vmInstances.help.tips.item2') ??
