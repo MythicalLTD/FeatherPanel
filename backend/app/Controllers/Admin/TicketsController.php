@@ -414,11 +414,18 @@ class TicketsController
                 $message['user'] = null;
             }
 
-            // Get attachments for this message
+            // Get attachments for this message and normalize URLs
             $messageAttachments = TicketAttachment::getAll($ticket['id'], (int) $message['id']);
-            $baseUrl = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
+            $baseUrl = App::getInstance(true)->getConfig()->getSetting(
+                ConfigInterface::APP_URL,
+                'https://featherpanel.mythical.systems'
+            );
             foreach ($messageAttachments as &$attachment) {
-                $attachment['url'] = rtrim($baseUrl, '/') . $attachment['file_path'];
+                $filePath = $attachment['file_path'] ?? '';
+                // Normalize to "attachments/<filename>"
+                $filePath = ltrim((string) $filePath, '/');
+                $filePath = preg_replace('#^attachments/#', '', $filePath);
+                $attachment['url'] = rtrim($baseUrl, '/') . '/attachments/' . $filePath;
             }
             $message['attachments'] = $messageAttachments;
         }
@@ -786,6 +793,177 @@ class TicketsController
         }
 
         return ApiResponse::success([], 'Ticket deleted successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/tickets/{uuid}/close',
+        summary: 'Close ticket',
+        description: 'Mark a ticket as closed by setting its status to the "closed" status and updating closed_at.',
+        tags: ['Admin - Tickets'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'Ticket UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Ticket closed successfully'),
+            new OA\Response(response: 400, description: 'Bad request - Invalid UUID'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Ticket or status not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function close(Request $request, string $uuid): Response
+    {
+        if (!preg_match('/^[a-f0-9\-]{36}$/i', $uuid)) {
+            return ApiResponse::error('Invalid UUID format', 'INVALID_UUID_FORMAT', 400);
+        }
+
+        $ticket = Ticket::getByUuid($uuid);
+        if (!$ticket) {
+            return ApiResponse::error('Ticket not found', 'TICKET_NOT_FOUND', 404);
+        }
+
+        // Find "closed" status (case-insensitive match by name)
+        $statuses = TicketStatus::getAll(null, 100, 0);
+        $closedStatusId = null;
+        foreach ($statuses as $status) {
+            if (isset($status['name']) && strtolower((string) $status['name']) === 'closed') {
+                $closedStatusId = (int) $status['id'];
+                break;
+            }
+        }
+
+        if ($closedStatusId === null) {
+            return ApiResponse::error('Closed status not configured', 'STATUS_NOT_FOUND', 404);
+        }
+
+        $data = [
+            'status_id' => $closedStatusId,
+            'closed_at' => $ticket['closed_at'] ?: date('Y-m-d H:i:s'),
+        ];
+
+        $updated = Ticket::updateByUuid($uuid, $data);
+        if (!$updated) {
+            return ApiResponse::error('Failed to close ticket', 'UPDATE_FAILED', 500);
+        }
+
+        $currentUser = $request->get('user');
+        $updatedTicket = Ticket::getById($ticket['id']);
+
+        // Emit close-related events consistent with update()
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                TicketEvent::onTicketStatusChanged(),
+                [
+                    'ticket' => $updatedTicket,
+                    'old_status' => null,
+                    'new_status' => 'closed',
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+
+            $eventManager->emit(
+                TicketEvent::onTicketClosed(),
+                [
+                    'ticket' => $updatedTicket,
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+        }
+
+        return ApiResponse::success([], 'Ticket closed successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/tickets/{uuid}/reopen',
+        summary: 'Reopen ticket',
+        description: 'Reopen a previously closed ticket by setting its status to the "open" status and clearing closed_at.',
+        tags: ['Admin - Tickets'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'Ticket UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Ticket reopened successfully'),
+            new OA\Response(response: 400, description: 'Bad request - Invalid UUID'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Ticket or status not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function reopen(Request $request, string $uuid): Response
+    {
+        if (!preg_match('/^[a-f0-9\-]{36}$/i', $uuid)) {
+            return ApiResponse::error('Invalid UUID format', 'INVALID_UUID_FORMAT', 400);
+        }
+
+        $ticket = Ticket::getByUuid($uuid);
+        if (!$ticket) {
+            return ApiResponse::error('Ticket not found', 'TICKET_NOT_FOUND', 404);
+        }
+
+        // Find "open" status (case-insensitive match by name)
+        $statuses = TicketStatus::getAll(null, 100, 0);
+        $openStatusId = null;
+        foreach ($statuses as $status) {
+            if (isset($status['name']) && strtolower((string) $status['name']) === 'open') {
+                $openStatusId = (int) $status['id'];
+                break;
+            }
+        }
+
+        if ($openStatusId === null) {
+            return ApiResponse::error('Open status not configured', 'STATUS_NOT_FOUND', 404);
+        }
+
+        $data = [
+            'status_id' => $openStatusId,
+            'closed_at' => null,
+        ];
+
+        $updated = Ticket::updateByUuid($uuid, $data);
+        if (!$updated) {
+            return ApiResponse::error('Failed to reopen ticket', 'UPDATE_FAILED', 500);
+        }
+
+        $currentUser = $request->get('user');
+        $updatedTicket = Ticket::getById($ticket['id']);
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                TicketEvent::onTicketStatusChanged(),
+                [
+                    'ticket' => $updatedTicket,
+                    'old_status' => null,
+                    'new_status' => 'open',
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+
+            $eventManager->emit(
+                TicketEvent::onTicketReopened(),
+                [
+                    'ticket' => $updatedTicket,
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+        }
+
+        return ApiResponse::success([], 'Ticket reopened successfully', 200);
     }
 
     #[OA\Post(

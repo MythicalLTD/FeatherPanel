@@ -7,6 +7,9 @@
 
 - Fixed an issue where translations appeared to exist after an update, but were actually missing. by @nayskutzu
 - Corrected the API documentation route to ensure proper access. by @nayskutzu
+- Fixed an issue in the admin ticket viewer where image links in ticket messages were incorrectly formatted, resulting in links like `.eu69aecf4298b27_ticket_wait_your_turn.gif` instead of the correct `.eu/attachments/69aecf4298b27_ticket_wait_your_turn.gif`. by @nayskutzu
+- Fixed an issue preventing tickets from being closed when using the "Close" popup in the ticket viewer ("Failed to close ticket" error). The trash icon still worked, but this ensures tickets can now be closed from within the viewer as intended. by @nayskutzu
+
 
 ### Added
 

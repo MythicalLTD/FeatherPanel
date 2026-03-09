@@ -710,7 +710,7 @@ class TicketsController
             'ticket_id' => (int) $ticket['id'],
             'message_id' => $messageId,
             'file_name' => $originalName,
-            'file_path' => $filename,
+            'file_path' => 'attachments/' . $filename,
             'file_size' => $fileSize,
             'file_type' => $mimeType,
             'user_downloadable' => true,

@@ -442,6 +442,38 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-tickets-close',
+        '/api/admin/tickets/{uuid}/close',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new TicketsController())->close($request, $uuid);
+        },
+        Permissions::ADMIN_TICKETS_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-tickets-reopen',
+        '/api/admin/tickets/{uuid}/reopen',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new TicketsController())->reopen($request, $uuid);
+        },
+        Permissions::ADMIN_TICKETS_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-tickets-show',
         '/api/admin/tickets/{uuid}',
         function (Request $request, array $args) {
