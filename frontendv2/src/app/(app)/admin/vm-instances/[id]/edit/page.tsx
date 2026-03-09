@@ -26,6 +26,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { Server, ArrowLeft, Loader2, Wifi, Cpu, HardDrive, History, Search as SearchIcon } from 'lucide-react';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 import { DetailsTab } from './DetailsTab';
 import { HistoryTab } from './HistoryTab';
@@ -80,6 +82,8 @@ export default function VmInstanceEditPage() {
     const [storageList, setStorageList] = useState<string[]>([]);
     const [dnsNameserver, setDnsNameserver] = useState('');
     const [dnsSearchDomain, setDnsSearchDomain] = useState('');
+
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instance-edit');
 
     const vmType = (instance?.vm_type as string) ?? 'qemu';
     const isLxc = vmType === 'lxc';
@@ -285,6 +289,10 @@ export default function VmInstanceEditPage() {
         return list;
     })();
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     const handleSaveDetails = async (e: React.FormEvent) => {
         e.preventDefault();
         setSavingTab('details');
@@ -445,6 +453,8 @@ export default function VmInstanceEditPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-vm-instance-edit', 'top-of-page')} context={{ id }} />
+
             <PageHeader
                 title={t('admin.vmInstances.edit') ?? 'Edit VM instance'}
                 description={t('admin.vmInstances.edit_desc') ?? 'Update hostname, notes, owner, IP, resources, and disks'}
@@ -575,6 +585,8 @@ export default function VmInstanceEditPage() {
                     )}
                 </div>
             </Tabs>
+
+            <WidgetRenderer widgets={getWidgets('admin-vm-instance-edit', 'bottom-of-page')} context={{ id }} />
 
             <Sheet open={ownerModalOpen} onOpenChange={setOwnerModalOpen}>
                 <SheetContent className='sm:max-w-2xl'>

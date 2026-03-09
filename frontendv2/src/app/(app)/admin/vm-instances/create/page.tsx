@@ -28,6 +28,8 @@ import { StepIndicator } from '@/components/ui/step-indicator';
 import { Select } from '@/components/ui/select-native';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import {
     Server,
     Loader2,
@@ -134,6 +136,8 @@ export default function VmInstancesCreatePage() {
     const [ciUser, setCiUser] = useState('debian');
     const [ciPassword, setCiPassword] = useState('');
 
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instances-create');
+
     useEffect(() => {
         axios
             .get('/api/admin/vm-nodes', { params: { limit: 100 } })
@@ -141,6 +145,10 @@ export default function VmInstancesCreatePage() {
             .catch(() => toast.error(t('admin.vmInstances.errors.fetch_failed')))
             .finally(() => setLoadingPlans(false));
     }, [t]);
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     useEffect(() => {
         if (nodeId <= 0) {
@@ -349,6 +357,8 @@ export default function VmInstancesCreatePage() {
 
     return (
         <div className='max-w-5xl mx-auto pb-20'>
+            <WidgetRenderer widgets={getWidgets('admin-vm-instances-create', 'top-of-page')} />
+
             <PageHeader
                 title={t('admin.vmInstances.create') ?? 'Create VM instance'}
                 description={t('admin.vmInstances.create_desc') ?? 'Provision a new VPS from a plan and template'}
@@ -361,8 +371,16 @@ export default function VmInstancesCreatePage() {
                 }
             />
 
+            <WidgetRenderer widgets={getWidgets('admin-vm-instances-create', 'after-header')} />
+
             <div className='mt-8 mb-12 p-6 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
                 <StepIndicator steps={wizardSteps} currentStep={currentStep} />
+                {loadingPlans && (
+                    <p className='mt-4 text-sm text-muted-foreground flex items-center gap-2'>
+                        <Loader2 className='h-4 w-4 animate-spin' />
+                        {t('common.loading') ?? 'Loading nodes…'}
+                    </p>
+                )}
             </div>
 
             <form onSubmit={handleFormSubmit} className='min-h-[400px]'>
@@ -864,6 +882,8 @@ export default function VmInstancesCreatePage() {
                     </div>
                 </SheetContent>
             </Sheet>
+
+            <WidgetRenderer widgets={getWidgets('admin-vm-instances-create', 'bottom-of-page')} />
         </div>
     );
 }

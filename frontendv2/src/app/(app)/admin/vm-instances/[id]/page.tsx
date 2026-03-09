@@ -40,6 +40,8 @@ import {
     Monitor,
     Activity,
 } from 'lucide-react';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const VNC_POPUP_WIDTH = 1024;
@@ -104,6 +106,8 @@ export default function VmInstanceViewPage() {
     const [usageLoading, setUsageLoading] = useState(false);
     const [vncOpening, setVncOpening] = useState(false);
 
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instance-view');
+
     const openVncConsole = useCallback(async () => {
         if (!id || Number.isNaN(id)) return;
         setVncOpening(true);
@@ -135,6 +139,10 @@ export default function VmInstanceViewPage() {
             .finally(() => setLoading(false));
     }, [id, router, t]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     const fetchUsage = useCallback(() => {
         if (!id || Number.isNaN(id)) return;
         setUsageLoading(true);
@@ -153,7 +161,7 @@ export default function VmInstanceViewPage() {
         fetchUsage();
         const interval = setInterval(fetchUsage, instance.status === 'running' ? 20000 : 60000);
         return () => clearInterval(interval);
-    }, [instance?.id, instance?.status, fetchUsage]);
+    }, [instance, fetchUsage]);
 
     const handlePower = async (action: 'start' | 'stop' | 'reboot') => {
         setPoweringId(action);
@@ -202,6 +210,8 @@ export default function VmInstanceViewPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-vm-instance-view', 'top-of-page')} context={{ id }} />
+
             <PageHeader
                 title={instance.hostname ?? `VM ${instance.vmid}`}
                 description={`Proxmox VMID ${instance.vmid} · ${instance.node_name ?? '—'}`}
@@ -259,6 +269,8 @@ export default function VmInstanceViewPage() {
                     </div>
                 }
             />
+
+            <WidgetRenderer widgets={getWidgets('admin-vm-instance-view', 'after-header')} context={{ id }} />
 
             {(usage !== null || usageLoading) && (
                 <PageCard title={t('admin.vmInstances.resource_usage') ?? 'Resource usage'} icon={Activity}>
@@ -406,6 +418,8 @@ export default function VmInstanceViewPage() {
                     </div>
                 </PageCard>
             )}
+
+            <WidgetRenderer widgets={getWidgets('admin-vm-instance-view', 'bottom-of-page')} context={{ id }} />
 
             <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
                 <AlertDialogContent>

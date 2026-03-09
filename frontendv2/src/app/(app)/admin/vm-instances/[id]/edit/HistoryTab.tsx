@@ -60,7 +60,6 @@ export function HistoryTab({ instanceId }: HistoryTabProps) {
 
     useEffect(() => {
         let cancelled = false;
-        setLoading(true);
         axios
             .get(`/api/admin/vm-instances/${instanceId}/activities`, { params: { limit: 50 } })
             .then((res) => {

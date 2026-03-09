@@ -196,7 +196,7 @@ export default function VdsNodesPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, locationIdFilter, t]);
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, locationIdFilter, t, testAllConnections]);
 
     useEffect(() => {
         fetchVmNodes();

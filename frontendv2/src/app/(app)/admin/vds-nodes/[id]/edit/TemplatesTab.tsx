@@ -72,8 +72,6 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
     const [loadingProxmoxVms, setLoadingProxmoxVms] = useState(false);
     const [proxmoxVmsError, setProxmoxVmsError] = useState<string | null>(null);
 
-    const [helperVmid, setHelperVmid] = useState('');
-    const [helperConfig, setHelperConfig] = useState('');
 
     const loadTemplates = useCallback(async () => {
         setLoading(true);
@@ -171,23 +169,6 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
             setDeletingId(null);
         }
     };
-
-    const parsedScsiVolume = (() => {
-        if (!helperConfig) return null;
-        const lines = helperConfig.split('\n');
-        for (const raw of lines) {
-            const line = raw.trimStart();
-            if (line.startsWith('scsi0:')) {
-                const after = line.substring('scsi0:'.length).trim();
-                const firstPart = after.split(',')[0].trim();
-                if (firstPart && firstPart.includes(':')) {
-                    const [storageId] = firstPart.split(':');
-                    return { storageId, volume: firstPart };
-                }
-            }
-        }
-        return null;
-    })();
 
     return (
         <div className='space-y-6'>

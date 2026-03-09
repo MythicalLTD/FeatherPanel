@@ -23,6 +23,8 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -104,10 +106,16 @@ export default function VmInstancesPage() {
     const [deleting, setDeleting] = useState(false);
     const [poweringId, setPoweringId] = useState<number | null>(null);
 
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instances');
+
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500);
         return () => clearTimeout(timer);
     }, [searchQuery]);
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const fetchInstances = useCallback(async () => {
         setLoading(true);
@@ -195,6 +203,8 @@ export default function VmInstancesPage() {
 
     return (
         <div className='space-y-6'>
+            <WidgetRenderer widgets={getWidgets('admin-vm-instances', 'top-of-page')} />
+
             <PageHeader
                 title={t('navigation.items.virtualServersVds') ?? t('admin.vmInstances.title') ?? 'Virtual Servers (VDS)'}
                 description={t('admin.vmInstances.description') ?? 'Manage VPS/VM instances on Proxmox nodes'}
@@ -212,6 +222,8 @@ export default function VmInstancesPage() {
                 }
             />
 
+            <WidgetRenderer widgets={getWidgets('admin-vm-instances', 'after-header')} />
+
             <div className='flex flex-col gap-4 items-stretch bg-card/40 backdrop-blur-md p-4 rounded-2xl'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -223,6 +235,8 @@ export default function VmInstancesPage() {
                     />
                 </div>
             </div>
+
+            <WidgetRenderer widgets={getWidgets('admin-vm-instances', 'before-list')} />
 
             {totalPages > 1 && !loading && (
                 <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
@@ -426,6 +440,8 @@ export default function VmInstancesPage() {
                     )}
                 </>
             )}
+
+            <WidgetRenderer widgets={getWidgets('admin-vm-instances', 'bottom-of-page')} />
 
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
                 <PageCard
