@@ -29,14 +29,112 @@ use App\Chat\VmCreationPending;
 use App\Config\ConfigInterface;
 use App\Services\Proxmox\Proxmox;
 use App\CloudFlare\CloudFlareRealIP;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'VmInstance',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'VM Instance ID'),
+        new OA\Property(property: 'vmid', type: 'integer', description: 'Proxmox VMID'),
+        new OA\Property(property: 'vm_node_id', type: 'integer', description: 'VM Node ID'),
+        new OA\Property(property: 'user_uuid', type: 'string', nullable: true, description: 'User UUID'),
+        new OA\Property(property: 'pve_node', type: 'string', description: 'Proxmox node name'),
+        new OA\Property(property: 'plan_id', type: 'integer', nullable: true, description: 'Plan ID'),
+        new OA\Property(property: 'template_id', type: 'integer', nullable: true, description: 'Template ID'),
+        new OA\Property(property: 'vm_type', type: 'string', enum: ['qemu', 'lxc'], description: 'VM Type'),
+        new OA\Property(property: 'hostname', type: 'string', description: 'Hostname'),
+        new OA\Property(property: 'status', type: 'string', description: 'VM Status'),
+        new OA\Property(property: 'ip_address', type: 'string', description: 'IP Address'),
+        new OA\Property(property: 'subnet_mask', type: 'string', nullable: true, description: 'Subnet Mask'),
+        new OA\Property(property: 'gateway', type: 'string', nullable: true, description: 'Gateway'),
+        new OA\Property(property: 'vm_ip_id', type: 'integer', nullable: true, description: 'VM IP ID'),
+        new OA\Property(property: 'notes', type: 'string', nullable: true, description: 'Notes'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'VmInstancePagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total_records', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'total_pages', type: 'integer', description: 'Total number of pages'),
+        new OA\Property(property: 'has_next', type: 'boolean', description: 'Whether there is a next page'),
+        new OA\Property(property: 'has_prev', type: 'boolean', description: 'Whether there is a previous page'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'VmInstanceCreate',
+    type: 'object',
+    required: ['vm_node_id', 'template_id'],
+    properties: [
+        new OA\Property(property: 'vm_node_id', type: 'integer', description: 'VM Node ID'),
+        new OA\Property(property: 'template_id', type: 'integer', description: 'Template ID'),
+        new OA\Property(property: 'memory', type: 'integer', description: 'Memory in MB', default: 512),
+        new OA\Property(property: 'cpus', type: 'integer', description: 'Number of CPU sockets', default: 1),
+        new OA\Property(property: 'cores', type: 'integer', description: 'Number of CPU cores per socket', default: 1),
+        new OA\Property(property: 'disk', type: 'integer', description: 'Disk size in GB', default: 10),
+        new OA\Property(property: 'storage', type: 'string', description: 'Storage name', default: 'local'),
+        new OA\Property(property: 'bridge', type: 'string', description: 'Network bridge', default: 'vmbr0'),
+        new OA\Property(property: 'on_boot', type: 'integer', description: 'Start on boot', default: 1),
+        new OA\Property(property: 'hostname', type: 'string', nullable: true, description: 'Hostname'),
+        new OA\Property(property: 'vm_ip_id', type: 'integer', nullable: true, description: 'Specific IP ID to assign'),
+        new OA\Property(property: 'user_uuid', type: 'string', nullable: true, description: 'User UUID'),
+        new OA\Property(property: 'notes', type: 'string', nullable: true, description: 'Notes'),
+        new OA\Property(property: 'ci_user', type: 'string', nullable: true, description: 'Cloud-init user (required for KVM)'),
+        new OA\Property(property: 'ci_password', type: 'string', nullable: true, description: 'Cloud-init password (required for KVM)'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'VmInstanceUpdate',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'hostname', type: 'string', nullable: true, description: 'Hostname'),
+        new OA\Property(property: 'notes', type: 'string', nullable: true, description: 'Notes'),
+        new OA\Property(property: 'user_uuid', type: 'string', nullable: true, description: 'User UUID'),
+        new OA\Property(property: 'vm_ip_id', type: 'integer', nullable: true, description: 'VM IP ID'),
+        new OA\Property(property: 'memory', type: 'integer', nullable: true, description: 'Memory in MB'),
+        new OA\Property(property: 'cpus', type: 'integer', nullable: true, description: 'Number of CPUs'),
+        new OA\Property(property: 'cores', type: 'integer', nullable: true, description: 'Number of Cores'),
+        new OA\Property(property: 'on_boot', type: 'boolean', nullable: true, description: 'Start on boot'),
+        new OA\Property(property: 'networks', type: 'array', items: new OA\Items(type: 'object'), nullable: true, description: 'List of networks (LXC)'),
+        new OA\Property(property: 'nameserver', type: 'string', nullable: true, description: 'Nameserver (LXC)'),
+        new OA\Property(property: 'searchdomain', type: 'string', nullable: true, description: 'Search domain (LXC)'),
+    ]
+)]
 class VmInstancesController
 {
-    /**
-     * List VM instances with pagination and optional search.
-     */
+    #[OA\Get(
+        path: '/api/admin/vm-instances',
+        summary: 'List VM instances',
+        description: 'Get a paginated list of VM instances with optional search.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', description: 'Page number', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(name: 'limit', in: 'query', description: 'Records per page', required: false, schema: new OA\Schema(type: 'integer', default: 25)),
+            new OA\Parameter(name: 'search', in: 'query', description: 'Search term', required: false, schema: new OA\Schema(type: 'string'))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'VM instances retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'instances', type: 'array', items: new OA\Items(ref: '#/components/schemas/VmInstance')),
+                        new OA\Property(property: 'status_counts', type: 'object'),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/VmInstancePagination'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function index(Request $request): Response
     {
         $page   = max(1, (int) $request->query->get('page', 1));
@@ -62,10 +160,33 @@ class VmInstancesController
         ], 'VM instances fetched successfully', 200);
     }
 
-    /**
-     * Create a new VM instance (server) on a Proxmox node. Like normal servers: choose node, template, IP, and resources.
-     * Requires vm_node_id, template_id, memory, cpus, cores, disk. Optional: storage, bridge, on_boot, vm_ip_id, hostname, user_uuid, notes.
-     */
+    #[OA\Put(
+        path: '/api/admin/vm-instances',
+        summary: 'Create new VM instance',
+        description: 'Create a new VM instance (server) on a Proxmox node. Returns 202 with creation_id. Poll creation-status until active or failed.',
+        tags: ['Admin - VM Instances'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/VmInstanceCreate')
+        ),
+        responses: [
+            new OA\Response(
+                response: 202,
+                description: 'VM creation started',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'creation_id', type: 'string'),
+                        new OA\Property(property: 'message', type: 'string'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM node or template not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
     public function create(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
@@ -251,10 +372,35 @@ class VmInstancesController
         ], 'VM creation started', 202);
     }
 
-    /**
-     * Poll status of an async VM creation. When clone is done, runs config + start + DB insert in one go.
-     * Returns { status: 'cloning' | 'active' | 'failed', instance?, error? }.
-     */
+    #[OA\Get(
+        path: '/api/admin/vm-instances/creation-status/{creationId}',
+        summary: 'Poll VM creation status',
+        description: 'Poll status of an async VM creation. Returns status cloning, active, or failed.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'creationId', in: 'path', required: true, schema: new OA\Schema(type: 'string'))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Creation status',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', enum: ['cloning', 'active', 'failed']),
+                        new OA\Property(property: 'message', type: 'string', nullable: true),
+                        new OA\Property(property: 'error', type: 'string', nullable: true),
+                        new OA\Property(property: 'instance', ref: '#/components/schemas/VmInstance', nullable: true),
+                        new OA\Property(property: 'ci_user', type: 'string', nullable: true),
+                        new OA\Property(property: 'ci_password', type: 'string', nullable: true),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Missing creation_id'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 404, description: 'Creation not found or already completed'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
     public function creationStatus(Request $request, string $creationId): Response
     {
         $creationId = trim($creationId);
@@ -533,6 +679,29 @@ class VmInstancesController
         ], 'VM instance created successfully', 200);
     }
 
+    #[OA\Get(
+        path: '/api/admin/vm-instances/{id}',
+        summary: 'Get VM instance',
+        description: 'Get a single VM instance by ID.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'VM instance retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'instance', ref: '#/components/schemas/VmInstance'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+        ]
+    )]
     public function show(Request $request, int $id): Response
     {
         $instance = VmInstance::getById($id);
@@ -543,10 +712,36 @@ class VmInstancesController
         return ApiResponse::success(['instance' => $instance], 'VM instance fetched successfully', 200);
     }
 
-    /**
-     * Update instance: hostname, notes, user_uuid, vm_ip_id (DB), and optionally memory, cpus, cores, on_boot (Proxmox).
-     * When vm_ip_id is changed, Proxmox net0/ipconfig0 is updated to the new IP.
-     */
+    #[OA\Patch(
+        path: '/api/admin/vm-instances/{id}',
+        summary: 'Update VM instance',
+        description: 'Update instance: hostname, notes, user_uuid, vm_ip_id, memory, cpus, cores, on_boot, networks.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/VmInstanceUpdate')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'VM instance updated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'instance', ref: '#/components/schemas/VmInstance'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox update failed'),
+        ]
+    )]
     public function update(Request $request, int $id): Response
     {
         $admin = $request->get('user');
@@ -767,9 +962,31 @@ class VmInstancesController
         return ApiResponse::success(['instance' => VmInstance::getById($id)], 'VM instance updated successfully', 200);
     }
 
-    /**
-     * GET Proxmox config for this instance (memory, cores, net0, rootfs, onboot, etc.).
-     */
+    #[OA\Get(
+        path: '/api/admin/vm-instances/{id}/config',
+        summary: 'Get VM instance config',
+        description: 'GET Proxmox config for this instance.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Config fetched successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'config', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox error'),
+        ]
+    )]
     public function getConfig(Request $request, int $id): Response
     {
         $instance = VmInstance::getById($id);
@@ -812,9 +1029,31 @@ class VmInstancesController
         return ApiResponse::success(['config' => $result['config'] ?? []], 'Config fetched', 200);
     }
 
-    /**
-     * GET current VM/container status and resource usage (CPU, memory, disk, network) from Proxmox.
-     */
+    #[OA\Get(
+        path: '/api/admin/vm-instances/{id}/status',
+        summary: 'Get VM instance status',
+        description: 'GET current VM/container status and resource usage from Proxmox.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Status fetched successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox error'),
+        ]
+    )]
     public function getStatus(Request $request, int $id): Response
     {
         $instance = VmInstance::getById($id);
@@ -857,10 +1096,38 @@ class VmInstancesController
         return ApiResponse::success(['status' => $result['status'] ?? []], 'Status fetched', 200);
     }
 
-    /**
-     * GET VNC console ticket for QEMU VMs and LXC containers. Returns ticket and connection info for noVNC.
-     * Ticket expires in ~40 seconds; open the console page immediately after calling this.
-     */
+    #[OA\Get(
+        path: '/api/admin/vm-instances/{id}/vnc-ticket',
+        summary: 'Get VNC ticket',
+        description: 'GET VNC console ticket for QEMU VMs and LXC containers.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'VNC ticket created',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'ticket', type: 'string'),
+                        new OA\Property(property: 'port', type: 'integer'),
+                        new OA\Property(property: 'node', type: 'string'),
+                        new OA\Property(property: 'vmid', type: 'integer'),
+                        new OA\Property(property: 'host', type: 'string'),
+                        new OA\Property(property: 'port_api', type: 'integer'),
+                        new OA\Property(property: 'wss_url', type: 'string'),
+                        new OA\Property(property: 'pve_redirect_url', type: 'string', nullable: true),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'VNC proxy failed'),
+        ]
+    )]
     public function vncTicket(Request $request, int $id): Response
     {
         $instance = VmInstance::getById($id);
@@ -959,9 +1226,30 @@ class VmInstancesController
         return ApiResponse::success($payload, 'VNC ticket created (valid ~40s)', 200);
     }
 
-    /**
-     * GET activity/task history for this VM instance (create, update, delete events).
-     */
+    #[OA\Get(
+        path: '/api/admin/vm-instances/{id}/activities',
+        summary: 'Get VM instance activities',
+        description: 'GET activity/task history for this VM instance.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'limit', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 50))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Activities fetched successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+        ]
+    )]
     public function activities(Request $request, int $id): Response
     {
         $instance = VmInstance::getById($id);
@@ -982,9 +1270,41 @@ class VmInstancesController
         return ApiResponse::success(['activities' => $activities], 'Activities fetched', 200);
     }
 
-    /**
-     * POST resize LXC disk. Body: { "disk": "rootfs"|"mp0"|..., "size": "+5G"|"20G" }.
-     */
+    #[OA\Post(
+        path: '/api/admin/vm-instances/{id}/resize-disk',
+        summary: 'Resize LXC disk',
+        description: 'Resize LXC disk. Body must include "disk" and "size".',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'disk', type: 'string', description: 'Disk name e.g. rootfs or mp0'),
+                    new OA\Property(property: 'size', type: 'string', description: 'Size to add or absolute e.g. +5G or 20G'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Disk resized successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Resize failed'),
+        ]
+    )]
     public function resizeDisk(Request $request, int $id): Response
     {
         $instance = VmInstance::getById($id);
@@ -1038,9 +1358,43 @@ class VmInstancesController
         return ApiResponse::success(['message' => 'Disk resized'], 'Disk resized successfully', 200);
     }
 
-    /**
-     * POST add LXC mount point. Body: { "storage": "local-lvm", "size_gb": 10, "path": "/mnt/data" }.
-     */
+    #[OA\Post(
+        path: '/api/admin/vm-instances/{id}/disks',
+        summary: 'Create LXC disk',
+        description: 'POST add LXC mount point.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'storage', type: 'string', description: 'Storage name e.g. local-lvm'),
+                    new OA\Property(property: 'size_gb', type: 'integer', description: 'Size in GB'),
+                    new OA\Property(property: 'path', type: 'string', nullable: true, description: 'Mount point path e.g. /mnt/data'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Disk added successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'disk', type: 'string'),
+                        new OA\Property(property: 'config_key', type: 'string'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox update failed'),
+        ]
+    )]
     public function createDisk(Request $request, int $id): Response
     {
         $instance = VmInstance::getById($id);
@@ -1118,9 +1472,33 @@ class VmInstancesController
         return ApiResponse::success(['disk' => $nextKey, 'config_key' => $nextKey], 'Disk added successfully', 200);
     }
 
-    /**
-     * DELETE LXC mount point. Path: .../disks/{key} e.g. disks/mp1.
-     */
+    #[OA\Delete(
+        path: '/api/admin/vm-instances/{id}/disks/{key}',
+        summary: 'Delete LXC disk',
+        description: 'DELETE LXC mount point.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'key', in: 'path', required: true, schema: new OA\Schema(type: 'string', description: 'Disk key e.g. mp1'))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Disk removed successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'deleted', type: 'string'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox update failed'),
+        ]
+    )]
     public function deleteDisk(Request $request, int $id, string $key): Response
     {
         $instance = VmInstance::getById($id);
@@ -1172,9 +1550,39 @@ class VmInstancesController
         return ApiResponse::success(['deleted' => $key], 'Disk removed successfully', 200);
     }
 
-    /**
-     * Power action: start | stop | reboot.
-     */
+    #[OA\Post(
+        path: '/api/admin/vm-instances/{id}/power',
+        summary: 'Power action',
+        description: 'Power action: start | stop | reboot.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'action', type: 'string', enum: ['start', 'stop', 'reboot']),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Power action completed',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'instance', ref: '#/components/schemas/VmInstance'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error / Power failed'),
+        ]
+    )]
     public function power(Request $request, int $id): Response
     {
         $instance = VmInstance::getById($id);
@@ -1258,9 +1666,21 @@ class VmInstancesController
         return ApiResponse::success(['instance' => $instance], 'Power action completed', 200);
     }
 
-    /**
-     * Delete VM instance: stop on Proxmox (if running), delete from Proxmox, then remove from DB.
-     */
+    #[OA\Delete(
+        path: '/api/admin/vm-instances/{id}',
+        summary: 'Delete VM instance',
+        description: 'Delete VM instance: stop on Proxmox (if running), delete from Proxmox, then remove from DB.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'VM instance deleted successfully'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+        ]
+    )]
     public function delete(Request $request, int $id): Response
     {
         $admin = $request->get('user');
