@@ -37,7 +37,6 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class TranslationsController
 {
-	
     public function list(Request $request): Response
     {
         $translationsDir = APP_PUBLIC . '/translations';

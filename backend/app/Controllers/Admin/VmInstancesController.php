@@ -25,11 +25,11 @@ use App\Chat\Database;
 use App\Chat\VmInstance;
 use App\Chat\VmTemplate;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Chat\VmCreationPending;
 use App\Config\ConfigInterface;
 use App\Services\Proxmox\Proxmox;
 use App\CloudFlare\CloudFlareRealIP;
-use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -117,7 +117,7 @@ class VmInstancesController
         parameters: [
             new OA\Parameter(name: 'page', in: 'query', description: 'Page number', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
             new OA\Parameter(name: 'limit', in: 'query', description: 'Records per page', required: false, schema: new OA\Schema(type: 'integer', default: 25)),
-            new OA\Parameter(name: 'search', in: 'query', description: 'Search term', required: false, schema: new OA\Schema(type: 'string'))
+            new OA\Parameter(name: 'search', in: 'query', description: 'Search term', required: false, schema: new OA\Schema(type: 'string')),
         ],
         responses: [
             new OA\Response(
@@ -378,7 +378,7 @@ class VmInstancesController
         description: 'Poll status of an async VM creation. Returns status cloning, active, or failed.',
         tags: ['Admin - VM Instances'],
         parameters: [
-            new OA\Parameter(name: 'creationId', in: 'path', required: true, schema: new OA\Schema(type: 'string'))
+            new OA\Parameter(name: 'creationId', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
         ],
         responses: [
             new OA\Response(
@@ -685,7 +685,7 @@ class VmInstancesController
         description: 'Get a single VM instance by ID.',
         tags: ['Admin - VM Instances'],
         parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
             new OA\Response(
@@ -718,7 +718,7 @@ class VmInstancesController
         description: 'Update instance: hostname, notes, user_uuid, vm_ip_id, memory, cpus, cores, on_boot, networks.',
         tags: ['Admin - VM Instances'],
         parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         requestBody: new OA\RequestBody(
             required: true,
@@ -968,7 +968,7 @@ class VmInstancesController
         description: 'GET Proxmox config for this instance.',
         tags: ['Admin - VM Instances'],
         parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
             new OA\Response(
@@ -1035,7 +1035,7 @@ class VmInstancesController
         description: 'GET current VM/container status and resource usage from Proxmox.',
         tags: ['Admin - VM Instances'],
         parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
             new OA\Response(
@@ -1102,7 +1102,7 @@ class VmInstancesController
         description: 'GET VNC console ticket for QEMU VMs and LXC containers.',
         tags: ['Admin - VM Instances'],
         parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
             new OA\Response(
@@ -1233,7 +1233,7 @@ class VmInstancesController
         tags: ['Admin - VM Instances'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
-            new OA\Parameter(name: 'limit', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 50))
+            new OA\Parameter(name: 'limit', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 50)),
         ],
         responses: [
             new OA\Response(
@@ -1276,7 +1276,7 @@ class VmInstancesController
         description: 'Resize LXC disk. Body must include "disk" and "size".',
         tags: ['Admin - VM Instances'],
         parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         requestBody: new OA\RequestBody(
             required: true,
@@ -1364,7 +1364,7 @@ class VmInstancesController
         description: 'POST add LXC mount point.',
         tags: ['Admin - VM Instances'],
         parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         requestBody: new OA\RequestBody(
             required: true,
@@ -1479,7 +1479,7 @@ class VmInstancesController
         tags: ['Admin - VM Instances'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
-            new OA\Parameter(name: 'key', in: 'path', required: true, schema: new OA\Schema(type: 'string', description: 'Disk key e.g. mp1'))
+            new OA\Parameter(name: 'key', in: 'path', required: true, schema: new OA\Schema(type: 'string', description: 'Disk key e.g. mp1')),
         ],
         responses: [
             new OA\Response(
@@ -1556,7 +1556,7 @@ class VmInstancesController
         description: 'Power action: start | stop | reboot.',
         tags: ['Admin - VM Instances'],
         parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         requestBody: new OA\RequestBody(
             required: true,
@@ -1672,7 +1672,7 @@ class VmInstancesController
         description: 'Delete VM instance: stop on Proxmox (if running), delete from Proxmox, then remove from DB.',
         tags: ['Admin - VM Instances'],
         parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
             new OA\Response(response: 200, description: 'VM instance deleted successfully'),
