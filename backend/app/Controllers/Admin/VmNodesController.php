@@ -636,9 +636,11 @@ class VmNodesController
                 $vmNode['secret'],
                 $tlsNoVerify,
                 (int) ($vmNode['timeout'] ?? 10),
+                $extraHeaders,
+                $extraParams,
             );
 
-            $result = $client->testConnection($extraHeaders, $extraParams);
+            $result = $client->testConnection();
 
             if ($result['ok']) {
                 return ApiResponse::success($result, 'Connection to Proxmox VM node successful', 200);
@@ -669,6 +671,39 @@ class VmNodesController
         try {
             $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
 
+            $extraHeaders = [];
+            $extraParams = [];
+
+            if (!empty($vmNode['addional_headers']) && is_string($vmNode['addional_headers'])) {
+                $decoded = json_decode($vmNode['addional_headers'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraHeaders[$key] = (string) $value;
+                        }
+                    }
+                } else {
+                    App::getInstance(true)->getLogger()->warning(
+                        'VM node additional headers JSON is invalid for ID ' . $id
+                    );
+                }
+            }
+
+            if (!empty($vmNode['additional_params']) && is_string($vmNode['additional_params'])) {
+                $decoded = json_decode($vmNode['additional_params'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraParams[$key] = $value;
+                        }
+                    }
+                } else {
+                    App::getInstance(true)->getLogger()->warning(
+                        'VM node additional params JSON is invalid for ID ' . $id
+                    );
+                }
+            }
+
             $client = new Proxmox(
                 $vmNode['fqdn'],
                 (int) $vmNode['port'],
@@ -678,6 +713,8 @@ class VmNodesController
                 $vmNode['secret'],
                 $tlsNoVerify,
                 (int) ($vmNode['timeout'] ?? 10),
+                $extraHeaders,
+                $extraParams,
             );
 
             $versionResult = $client->getVersion();
@@ -711,6 +748,40 @@ class VmNodesController
         }
         try {
             $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
+
+            $extraHeaders = [];
+            $extraParams = [];
+
+            if (!empty($vmNode['addional_headers']) && is_string($vmNode['addional_headers'])) {
+                $decoded = json_decode($vmNode['addional_headers'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraHeaders[$key] = (string) $value;
+                        }
+                    }
+                } else {
+                    App::getInstance(true)->getLogger()->warning(
+                        'VM node additional headers JSON is invalid for ID ' . $id
+                    );
+                }
+            }
+
+            if (!empty($vmNode['additional_params']) && is_string($vmNode['additional_params'])) {
+                $decoded = json_decode($vmNode['additional_params'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraParams[$key] = $value;
+                        }
+                    }
+                } else {
+                    App::getInstance(true)->getLogger()->warning(
+                        'VM node additional params JSON is invalid for ID ' . $id
+                    );
+                }
+            }
+
             $client = new Proxmox(
                 $vmNode['fqdn'],
                 (int) $vmNode['port'],
@@ -720,6 +791,8 @@ class VmNodesController
                 $vmNode['secret'],
                 $tlsNoVerify,
                 (int) ($vmNode['timeout'] ?? 10),
+                $extraHeaders,
+                $extraParams,
             );
             $result = $client->listVms();
             if (!$result['ok']) {
@@ -745,6 +818,40 @@ class VmNodesController
         }
         try {
             $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
+
+            $extraHeaders = [];
+            $extraParams = [];
+
+            if (!empty($vmNode['addional_headers']) && is_string($vmNode['addional_headers'])) {
+                $decoded = json_decode($vmNode['addional_headers'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraHeaders[$key] = (string) $value;
+                        }
+                    }
+                } else {
+                    App::getInstance(true)->getLogger()->warning(
+                        'VM node additional headers JSON is invalid for ID ' . $id
+                    );
+                }
+            }
+
+            if (!empty($vmNode['additional_params']) && is_string($vmNode['additional_params'])) {
+                $decoded = json_decode($vmNode['additional_params'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraParams[$key] = $value;
+                        }
+                    }
+                } else {
+                    App::getInstance(true)->getLogger()->warning(
+                        'VM node additional params JSON is invalid for ID ' . $id
+                    );
+                }
+            }
+
             $client = new Proxmox(
                 $vmNode['fqdn'],
                 (int) $vmNode['port'],
@@ -754,6 +861,8 @@ class VmNodesController
                 $vmNode['secret'],
                 $tlsNoVerify,
                 (int) ($vmNode['timeout'] ?? 10),
+                $extraHeaders,
+                $extraParams,
             );
             $nodesResult = $client->getNodes();
             if (!$nodesResult['ok'] || empty($nodesResult['nodes'])) {
@@ -788,6 +897,40 @@ class VmNodesController
         }
         try {
             $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
+
+            $extraHeaders = [];
+            $extraParams = [];
+
+            if (!empty($vmNode['addional_headers']) && is_string($vmNode['addional_headers'])) {
+                $decoded = json_decode($vmNode['addional_headers'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraHeaders[$key] = (string) $value;
+                        }
+                    }
+                } else {
+                    App::getInstance(true)->getLogger()->warning(
+                        'VM node additional headers JSON is invalid for ID ' . $id
+                    );
+                }
+            }
+
+            if (!empty($vmNode['additional_params']) && is_string($vmNode['additional_params'])) {
+                $decoded = json_decode($vmNode['additional_params'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraParams[$key] = $value;
+                        }
+                    }
+                } else {
+                    App::getInstance(true)->getLogger()->warning(
+                        'VM node additional params JSON is invalid for ID ' . $id
+                    );
+                }
+            }
+
             $client = new Proxmox(
                 $vmNode['fqdn'],
                 (int) $vmNode['port'],
@@ -797,6 +940,8 @@ class VmNodesController
                 $vmNode['secret'],
                 $tlsNoVerify,
                 (int) ($vmNode['timeout'] ?? 10),
+                $extraHeaders,
+                $extraParams,
             );
             $nodesResult = $client->getNodes();
             if (!$nodesResult['ok'] || empty($nodesResult['nodes'])) {

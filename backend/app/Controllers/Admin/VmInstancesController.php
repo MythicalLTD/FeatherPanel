@@ -288,17 +288,7 @@ class VmInstancesController
         $notes = json_encode($metaNotes, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         try {
-            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-            $client = new Proxmox(
-                $vmNode['fqdn'],
-                (int) $vmNode['port'],
-                $vmNode['scheme'],
-                $vmNode['user'],
-                $vmNode['token_id'],
-                $vmNode['secret'],
-                $tlsNoVerify,
-                (int) ($vmNode['timeout'] ?? 60),
-            );
+            $client = self::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -435,17 +425,7 @@ class VmInstancesController
         }
 
         try {
-            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-            $client = new Proxmox(
-                $vmNode['fqdn'],
-                (int) $vmNode['port'],
-                $vmNode['scheme'],
-                $vmNode['user'],
-                $vmNode['token_id'],
-                $vmNode['secret'],
-                $tlsNoVerify,
-                (int) ($vmNode['timeout'] ?? 60),
-            );
+            $client = self::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -789,17 +769,7 @@ class VmInstancesController
                 return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
             }
             try {
-                $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-                $client = new Proxmox(
-                    $vmNode['fqdn'],
-                    (int) $vmNode['port'],
-                    $vmNode['scheme'],
-                    $vmNode['user'],
-                    $vmNode['token_id'],
-                    $vmNode['secret'],
-                    $tlsNoVerify,
-                    (int) ($vmNode['timeout'] ?? 60),
-                );
+                $client = self::buildProxmoxClientForNode($vmNode);
             } catch (\Throwable $e) {
                 App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -998,17 +968,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-            $client = new Proxmox(
-                $vmNode['fqdn'],
-                (int) $vmNode['port'],
-                $vmNode['scheme'],
-                $vmNode['user'],
-                $vmNode['token_id'],
-                $vmNode['secret'],
-                $tlsNoVerify,
-                (int) ($vmNode['timeout'] ?? 60),
-            );
+            $client = self::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
@@ -1065,17 +1025,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-            $client = new Proxmox(
-                $vmNode['fqdn'],
-                (int) $vmNode['port'],
-                $vmNode['scheme'],
-                $vmNode['user'],
-                $vmNode['token_id'],
-                $vmNode['secret'],
-                $tlsNoVerify,
-                (int) ($vmNode['timeout'] ?? 60),
-            );
+            $client = self::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
@@ -1140,17 +1090,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-            $client = new Proxmox(
-                $vmNode['fqdn'],
-                (int) $vmNode['port'],
-                $vmNode['scheme'],
-                $vmNode['user'],
-                $vmNode['token_id'],
-                $vmNode['secret'],
-                $tlsNoVerify,
-                (int) ($vmNode['timeout'] ?? 60),
-            );
+            $client = self::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
@@ -1328,17 +1268,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-            $client = new Proxmox(
-                $vmNode['fqdn'],
-                (int) $vmNode['port'],
-                $vmNode['scheme'],
-                $vmNode['user'],
-                $vmNode['token_id'],
-                $vmNode['secret'],
-                $tlsNoVerify,
-                (int) ($vmNode['timeout'] ?? 60),
-            );
+            $client = self::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
@@ -1420,17 +1350,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-            $client = new Proxmox(
-                $vmNode['fqdn'],
-                (int) $vmNode['port'],
-                $vmNode['scheme'],
-                $vmNode['user'],
-                $vmNode['token_id'],
-                $vmNode['secret'],
-                $tlsNoVerify,
-                (int) ($vmNode['timeout'] ?? 60),
-            );
+            $client = self::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -1517,17 +1437,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-            $client = new Proxmox(
-                $vmNode['fqdn'],
-                (int) $vmNode['port'],
-                $vmNode['scheme'],
-                $vmNode['user'],
-                $vmNode['token_id'],
-                $vmNode['secret'],
-                $tlsNoVerify,
-                (int) ($vmNode['timeout'] ?? 60),
-            );
+            $client = self::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -1605,17 +1515,7 @@ class VmInstancesController
         }
 
         try {
-            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-            $client = new Proxmox(
-                $vmNode['fqdn'],
-                (int) $vmNode['port'],
-                $vmNode['scheme'],
-                $vmNode['user'],
-                $vmNode['token_id'],
-                $vmNode['secret'],
-                $tlsNoVerify,
-                (int) ($vmNode['timeout'] ?? 60),
-            );
+            $client = self::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
@@ -1771,5 +1671,61 @@ class VmInstancesController
         }
 
         return $s !== '' ? $s : 'vm-' . time();
+    }
+
+    /**
+     * Build a Proxmox client for the given VM node, including any additional headers/params.
+     *
+     * @param array<string, mixed> $vmNode
+     */
+    private static function buildProxmoxClientForNode(array $vmNode): Proxmox
+    {
+        $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
+
+        $extraHeaders = [];
+        $extraParams = [];
+
+        if (!empty($vmNode['addional_headers']) && is_string($vmNode['addional_headers'])) {
+            $decoded = json_decode($vmNode['addional_headers'], true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $key => $value) {
+                    if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                        $extraHeaders[$key] = (string) $value;
+                    }
+                }
+            } else {
+                App::getInstance(true)->getLogger()->warning(
+                    'VM node additional headers JSON is invalid for ID ' . ($vmNode['id'] ?? 'unknown')
+                );
+            }
+        }
+
+        if (!empty($vmNode['additional_params']) && is_string($vmNode['additional_params'])) {
+            $decoded = json_decode($vmNode['additional_params'], true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $key => $value) {
+                    if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                        $extraParams[$key] = $value;
+                    }
+                }
+            } else {
+                App::getInstance(true)->getLogger()->warning(
+                    'VM node additional params JSON is invalid for ID ' . ($vmNode['id'] ?? 'unknown')
+                );
+            }
+        }
+
+        return new Proxmox(
+            $vmNode['fqdn'],
+            (int) $vmNode['port'],
+            $vmNode['scheme'],
+            $vmNode['user'],
+            $vmNode['token_id'],
+            $vmNode['secret'],
+            $tlsNoVerify,
+            (int) ($vmNode['timeout'] ?? 60),
+            $extraHeaders,
+            $extraParams,
+        );
     }
 }

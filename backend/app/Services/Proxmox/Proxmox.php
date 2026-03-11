@@ -33,6 +33,10 @@ class Proxmox
     private string $baseUrl;
     private string $tokenHeader;
     private bool $tlsNoVerify;
+    /** @var array<string, string> */
+    private array $defaultExtraHeaders;
+    /** @var array<string, string|int|float> */
+    private array $defaultExtraQuery;
 
     /**
      * @param string $host Proxmox hostname or IP
@@ -43,6 +47,8 @@ class Proxmox
      * @param string $secret Token secret
      * @param bool $tlsNoVerify Whether to skip TLS verification
      * @param int $timeout Timeout in seconds
+     * @param array<string, string> $defaultExtraHeaders Default extra headers to send with every request (e.g. X-Forwarded-For)
+     * @param array<string, string|int|float> $defaultExtraQuery Default extra query parameters to send with every request
      */
     public function __construct(
         string $host,
@@ -53,11 +59,15 @@ class Proxmox
         string $secret,
         bool $tlsNoVerify,
         int $timeout = 10,
+        array $defaultExtraHeaders = [],
+        array $defaultExtraQuery = [],
     ) {
         // Keep base_uri at the host/port only; always send full API paths in requests.
         // This avoids Guzzle path resolution quirks that were dropping the /json formatter segment.
         $this->baseUrl = sprintf('%s://%s:%d', $scheme, $host, $port);
         $this->tlsNoVerify = $tlsNoVerify;
+        $this->defaultExtraHeaders = $defaultExtraHeaders;
+        $this->defaultExtraQuery = $defaultExtraQuery;
 
         $this->tokenHeader = sprintf(
             'PVEAPIToken=%s!%s=%s',
@@ -66,15 +76,17 @@ class Proxmox
             $secret,
         );
 
+        $baseHeaders = [
+            'Authorization' => $this->tokenHeader,
+            'Accept' => 'application/json',
+            'User-Agent' => 'FeatherPanel-Proxmox-Client',
+        ];
+
         $this->client = new Client([
             'base_uri' => $this->baseUrl,
             'timeout' => $timeout,
             'verify' => !$tlsNoVerify,
-            'headers' => [
-                'Authorization' => $this->tokenHeader,
-                'Accept' => 'application/json',
-                'User-Agent' => 'FeatherPanel-Proxmox-Client',
-            ],
+            'headers' => array_merge($baseHeaders, $this->defaultExtraHeaders),
         ]);
     }
 
@@ -200,12 +212,14 @@ class Proxmox
         try {
             $start = microtime(true);
 
-            $options = [];
-            if (!empty($extraQuery)) {
-                $options['query'] = $extraQuery;
+            $mergedQuery = $this->defaultExtraQuery;
+            foreach ($extraQuery as $key => $value) {
+                $mergedQuery[$key] = $value;
             }
-            if (!empty($extraHeaders)) {
-                $options['headers'] = $extraHeaders;
+
+            $options = [];
+            if (!empty($mergedQuery)) {
+                $options['query'] = $mergedQuery;
             }
 
             // Always use the full Proxmox API path with the json formatter.
@@ -282,7 +296,15 @@ class Proxmox
     public function apiGet(string $path, array $query = []): array
     {
         try {
-            $options = empty($query) ? [] : ['query' => $query];
+            $mergedQuery = $this->defaultExtraQuery;
+            foreach ($query as $key => $value) {
+                $mergedQuery[$key] = $value;
+            }
+
+            $options = [];
+            if (!empty($mergedQuery)) {
+                $options['query'] = $mergedQuery;
+            }
             $response = $this->client->get($path, $options);
             $body = json_decode((string) $response->getBody(), true);
             $data = is_array($body) && array_key_exists('data', $body) ? $body['data'] : $body;
@@ -306,7 +328,12 @@ class Proxmox
     public function apiPost(string $path, array $body = []): array
     {
         try {
-            $response = $this->client->post($path, ['form_params' => $body]);
+            $options = ['form_params' => $body];
+            if (!empty($this->defaultExtraQuery)) {
+                $options['query'] = $this->defaultExtraQuery;
+            }
+
+            $response = $this->client->post($path, $options);
             $resBody = json_decode((string) $response->getBody(), true);
             $data = is_array($resBody) && array_key_exists('data', $resBody) ? $resBody['data'] : $resBody;
 
@@ -329,7 +356,12 @@ class Proxmox
     public function apiPut(string $path, array $body = []): array
     {
         try {
-            $response = $this->client->put($path, ['form_params' => $body]);
+            $options = ['form_params' => $body];
+            if (!empty($this->defaultExtraQuery)) {
+                $options['query'] = $this->defaultExtraQuery;
+            }
+
+            $response = $this->client->put($path, $options);
             $resBody = json_decode((string) $response->getBody(), true);
             $data = is_array($resBody) && array_key_exists('data', $resBody) ? $resBody['data'] : $resBody;
 
@@ -352,7 +384,15 @@ class Proxmox
     public function apiDelete(string $path, array $query = []): array
     {
         try {
-            $options = empty($query) ? [] : ['query' => $query];
+            $mergedQuery = $this->defaultExtraQuery;
+            foreach ($query as $key => $value) {
+                $mergedQuery[$key] = $value;
+            }
+
+            $options = [];
+            if (!empty($mergedQuery)) {
+                $options['query'] = $mergedQuery;
+            }
             $response = $this->client->delete($path, $options);
             $resBody = json_decode((string) $response->getBody(), true);
             $data = is_array($resBody) && array_key_exists('data', $resBody) ? $resBody['data'] : $resBody;
