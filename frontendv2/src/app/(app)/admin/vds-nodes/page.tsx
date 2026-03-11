@@ -29,7 +29,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
-import { Server, Search, RefreshCw, Trash2, ChevronLeft, ChevronRight, MapPin, Shield, Network } from 'lucide-react';
+import { Server, Search, RefreshCw, Trash2, ChevronLeft, ChevronRight, MapPin, Shield, Network, Pencil, HeartHandshakeIcon } from 'lucide-react';
 
 interface VmNode {
     id: number;
@@ -358,7 +358,7 @@ export default function VdsNodesPage() {
                                             onClick={() => testConnection(node.id)}
                                             title={t('admin.vdsNodes.actions.test_connection')}
                                         >
-                                            <Network className='h-4 w-4' />
+                                            <HeartHandshakeIcon className='h-4 w-4' />
                                         </Button>
                                         <Button
                                             size='sm'
@@ -366,17 +366,7 @@ export default function VdsNodesPage() {
                                             onClick={() => router.push(`/admin/vds-nodes/${node.id}/edit`)}
                                             title={t('admin.vdsNodes.actions.edit')}
                                         >
-                                            <Server className='h-4 w-4' />
-                                        </Button>
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            onClick={() =>
-                                                router.push(`/admin/vds-nodes?location_id=${node.location_id}`)
-                                            }
-                                            title={t('admin.vdsNodes.actions.filter_by_location')}
-                                        >
-                                            <MapPin className='h-4 w-4' />
+                                            <Pencil className='h-4 w-4' />
                                         </Button>
                                         {confirmDeleteId === node.id ? (
                                             <>
