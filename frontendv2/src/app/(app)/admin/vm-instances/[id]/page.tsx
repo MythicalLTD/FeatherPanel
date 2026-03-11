@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { BackupsSection } from './BackupsSection';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -73,7 +74,6 @@ interface VmInstance {
     node_name: string | null;
     plan_name: string | null;
     status: string;
-    vm_type?: string;
     ip_address: string | null;
     ip_pool_address?: string | null;
     gateway?: string | null;
@@ -431,7 +431,9 @@ export default function VmInstanceViewPage() {
                 <PageCard title={t('admin.vmInstances.details') ?? 'Details'} icon={Server}>
                     <dl className='space-y-3 text-sm'>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>Status</dt>
+                            <dt className='text-muted-foreground'>
+                                {t('admin.vmInstances.details_status') ?? 'Status'}
+                            </dt>
                             <dd>
                                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusClass}`}>
                                     {instance.status}
@@ -439,19 +441,27 @@ export default function VmInstanceViewPage() {
                             </dd>
                         </div>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>VMID</dt>
+                            <dt className='text-muted-foreground'>
+                                {t('admin.vmInstances.details_vmid') ?? 'VMID'}
+                            </dt>
                             <dd className='font-mono'>{instance.vmid}</dd>
                         </div>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>Node</dt>
+                            <dt className='text-muted-foreground'>
+                                {t('admin.vmInstances.details_node') ?? 'Node'}
+                            </dt>
                             <dd>{instance.node_name ?? '—'}</dd>
                         </div>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>Plan</dt>
+                            <dt className='text-muted-foreground'>
+                                {t('admin.vmInstances.details_plan') ?? 'Plan'}
+                            </dt>
                             <dd>{instance.plan_name ?? '—'}</dd>
                         </div>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>Created</dt>
+                            <dt className='text-muted-foreground'>
+                                {t('admin.vmInstances.details_created') ?? 'Created'}
+                            </dt>
                             <dd className='flex items-center gap-1'>
                                 <Calendar className='h-3.5 w-3.5' />
                                 {instance.created_at ? new Date(instance.created_at).toLocaleString() : '—'}
@@ -459,7 +469,9 @@ export default function VmInstanceViewPage() {
                         </div>
                         {instance.notes && (
                             <div>
-                                <dt className='text-muted-foreground mb-1'>Notes</dt>
+                                <dt className='text-muted-foreground mb-1'>
+                                    {t('admin.vmInstances.details_notes') ?? 'Notes'}
+                                </dt>
                                 <dd className='text-muted-foreground'>{instance.notes}</dd>
                             </div>
                         )}
@@ -468,15 +480,21 @@ export default function VmInstanceViewPage() {
                 <PageCard title={t('admin.vmInstances.network') ?? 'Network'} icon={Network}>
                     <dl className='space-y-3 text-sm'>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>IP</dt>
+                            <dt className='text-muted-foreground'>
+                                {t('admin.vmInstances.network_ip_label') ?? 'IP'}
+                            </dt>
                             <dd className='font-mono'>{instance.ip_pool_address ?? instance.ip_address ?? '—'}</dd>
                         </div>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>Gateway</dt>
+                            <dt className='text-muted-foreground'>
+                                {t('admin.vmInstances.network_gateway_label') ?? 'Gateway'}
+                            </dt>
                             <dd className='font-mono'>{instance.gateway ?? '—'}</dd>
                         </div>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>Owner</dt>
+                            <dt className='text-muted-foreground'>
+                                {t('admin.vmInstances.owner_label') ?? 'Owner'}
+                            </dt>
                             <dd className='flex items-center gap-1'>
                                 {instance.user_username ? (
                                     <>
@@ -501,24 +519,30 @@ export default function VmInstanceViewPage() {
                         {instance.plan_cpus != null && (
                             <span className='flex items-center gap-2'>
                                 <Cpu className='h-4 w-4 text-muted-foreground' />
-                                {instance.plan_cpus} CPU / {instance.plan_cores ?? '?'} cores
+                                {instance.plan_cpus}{' '}
+                                {t('admin.vmInstances.cpu_label') ?? 'CPU'} / {instance.plan_cores ?? '?'}{' '}
+                                {t('admin.vmInstances.cores_label') ?? 'cores'}
                             </span>
                         )}
                         {instance.plan_memory != null && (
                             <span className='flex items-center gap-2'>
                                 <Server className='h-4 w-4 text-muted-foreground' />
-                                {instance.plan_memory} MB RAM
+                                {instance.plan_memory}{' '}
+                                {t('common.mb') ?? 'MB'} {t('admin.vmInstances.ram_label') ?? 'RAM'}
                             </span>
                         )}
                         {instance.plan_disk != null && (
                             <span className='flex items-center gap-2'>
                                 <HardDrive className='h-4 w-4 text-muted-foreground' />
-                                {instance.plan_disk} GB disk
+                                {instance.plan_disk}{' '}
+                                {t('common.gb') ?? 'GB'} {t('admin.vmInstances.disk_label') ?? 'disk'}
                             </span>
                         )}
                     </div>
                 </PageCard>
             )}
+
+            <BackupsSection instanceId={id} />
 
             <WidgetRenderer widgets={getWidgets('admin-vm-instance-view', 'bottom-of-page')} context={{ id }} />
 

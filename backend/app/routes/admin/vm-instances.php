@@ -266,6 +266,129 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 
+    // ── Backup routes ────────────────────────────────────────────────────
+
+    // List backups
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-backups-list',
+        '/api/admin/vm-instances/{id}/backups',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->listBackups($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
+    // Create backup (async)
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-backup-create',
+        '/api/admin/vm-instances/{id}/backups',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->createBackup($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
+
+    // Poll backup task status
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-backup-status',
+        '/api/admin/vm-instances/backup-status/{backupId}',
+        function (Request $request, array $args) {
+            $backupId = $args['backupId'] ?? '';
+            if (empty($backupId)) {
+                return ApiResponse::error('Missing backupId', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->backupStatus($request, (string) $backupId);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
+    // Delete a backup volume
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-backup-delete',
+        '/api/admin/vm-instances/{id}/backups',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->deleteBackupVolume($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['DELETE']
+    );
+
+    // Start async restore from backup
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-restore-backup',
+        '/api/admin/vm-instances/{id}/backups/restore',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->restoreBackup($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
+
+    // Poll restore task status
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-restore-status',
+        '/api/admin/vm-instances/restore-status/{restoreId}',
+        function (Request $request, array $args) {
+            $restoreId = $args['restoreId'] ?? '';
+            if (empty($restoreId)) {
+                return ApiResponse::error('Missing restoreId', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->restoreBackupStatus($request, (string) $restoreId);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
+    // Set backup limit
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-backup-limit',
+        '/api/admin/vm-instances/{id}/backup-limit',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->setBackupLimit($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['PATCH']
+    );
+
+    // ── End backup routes ─────────────────────────────────────────────────
+
     // Delete VM instance
     App::getInstance(true)->registerAdminRoute(
         $routes,

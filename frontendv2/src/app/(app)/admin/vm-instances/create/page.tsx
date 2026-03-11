@@ -135,6 +135,7 @@ export default function VmInstancesCreatePage() {
 
     const [ciUser, setCiUser] = useState('debian');
     const [ciPassword, setCiPassword] = useState('');
+    const [backupLimit, setBackupLimit] = useState(5);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instances-create');
 
@@ -296,6 +297,7 @@ export default function VmInstancesCreatePage() {
                 hostname: hostname.trim(),
                 ci_user: ciUser.trim(),
                 ci_password: ciPassword,
+                backup_limit: backupLimit,
             };
             if (vmIpId != null && vmIpId > 0) payload.vm_ip_id = vmIpId;
             if (selectedOwner?.uuid) payload.user_uuid = selectedOwner.uuid;
@@ -608,6 +610,25 @@ export default function VmInstancesCreatePage() {
                                     onChange={(e) => setOnBoot(e.target.checked)}
                                     className='h-4 w-4 rounded border-border'
                                 />
+                            </div>
+                            <div className='grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6'>
+                                <div className='space-y-3'>
+                                    <Label className='flex items-center gap-1.5'>
+                                        <Database className='h-4 w-4' />
+                                        {t('admin.vmInstances.backups.limit_label_create') ?? 'Backup limit'}
+                                    </Label>
+                                    <Input
+                                        type='number'
+                                        min={0}
+                                        max={100}
+                                        value={backupLimit}
+                                        onChange={(e) => setBackupLimit(Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0)))}
+                                        className='bg-muted/30 h-11'
+                                    />
+                                    <p className='text-xs text-muted-foreground'>
+                                        {t('admin.vmInstances.backups.limit_help') ?? 'Maximum number of backups allowed for this instance (0 = no backups).'}
+                                    </p>
+                                </div>
                             </div>
                         </PageCard>
                     </div>

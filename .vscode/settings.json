@@ -220,7 +220,7 @@
     "editor.defaultFormatter": "inferrinizzard.prettier-sql-vscode"
   },
   "[php]": {
-    "editor.defaultFormatter": "junstyle.php-cs-fixer"
+    "editor.defaultFormatter": "DEVSENSE.phptools-vscode"
   },
   "[xml]": {
     "editor.defaultFormatter": "redhat.vscode-xml"

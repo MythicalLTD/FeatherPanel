@@ -847,6 +847,151 @@ class Proxmox
     }
 
     /**
+     * Get storages on a node that support backup content type.
+     *
+     * @return array{ok: bool, storages: array<int, string>, error: string|null}
+     */
+    public function getBackupStorages(string $node): array
+    {
+        $path = '/api2/json/nodes/' . $node . '/storage';
+        $result = $this->apiGet($path);
+        if (!$result['ok'] || !is_array($result['data'])) {
+            return ['ok' => false, 'storages' => [], 'error' => $result['error'] ?? 'Failed to fetch storage'];
+        }
+        $storages = [];
+        foreach ($result['data'] as $entry) {
+            if (strpos((string) ($entry['content'] ?? ''), 'backup') !== false) {
+                $name = $entry['storage'] ?? null;
+                if (is_string($name) && $name !== '') {
+                    $storages[] = $name;
+                }
+            }
+        }
+
+        return ['ok' => true, 'storages' => $storages, 'error' => null];
+    }
+
+    /**
+     * List backup volumes for a specific VMID across all backup-capable storages on a node.
+     *
+     * @return array{ok: bool, backups: array<int, mixed>, storages: array<int, string>, error: string|null}
+     */
+    public function listVmBackups(string $node, int $vmid): array
+    {
+        $storagesResult = $this->getBackupStorages($node);
+        if (!$storagesResult['ok']) {
+            return ['ok' => false, 'backups' => [], 'storages' => [], 'error' => $storagesResult['error']];
+        }
+        $storages = $storagesResult['storages'];
+        $backups = [];
+        foreach ($storages as $storage) {
+            $path = sprintf('/api2/json/nodes/%s/storage/%s/content', $node, $storage);
+            $result = $this->apiGet($path, ['content' => 'backup', 'vmid' => $vmid]);
+            if ($result['ok'] && is_array($result['data'])) {
+                foreach ($result['data'] as $item) {
+                    $item['storage'] = $storage;
+                    $backups[] = $item;
+                }
+            }
+        }
+        usort($backups, static fn ($a, $b) => (int) ($b['ctime'] ?? 0) <=> (int) ($a['ctime'] ?? 0));
+
+        return ['ok' => true, 'backups' => $backups, 'storages' => $storages, 'error' => null];
+    }
+
+    /**
+     * Create a VM/container backup via vzdump. Returns UPID.
+     *
+     * @return array{ok: bool, upid: string|null, error: string|null}
+     */
+    public function createVmBackup(string $node, int $vmid, string $storage, string $compress = 'zstd', string $mode = 'snapshot'): array
+    {
+        $path = sprintf('/api2/json/nodes/%s/vzdump', $node);
+        $result = $this->apiPost($path, [
+            'vmid'     => $vmid,
+            'storage'  => $storage,
+            'compress' => $compress,
+            'mode'     => $mode,
+            'remove'   => 0,
+        ]);
+        if (!$result['ok']) {
+            return ['ok' => false, 'upid' => null, 'error' => $result['error']];
+        }
+        $upid = is_string($result['data']) ? trim($result['data']) : null;
+        if ($upid === null || $upid === '') {
+            return ['ok' => false, 'upid' => null, 'error' => 'Backup did not return UPID'];
+        }
+
+        return ['ok' => true, 'upid' => $upid, 'error' => null];
+    }
+
+    /**
+     * Delete a backup volume from Proxmox storage.
+     *
+     * @return array{ok: bool, error: string|null}
+     */
+    public function deleteBackupVolume(string $node, string $storage, string $volid): array
+    {
+        $encodedVolid = rawurlencode($volid);
+        $path = sprintf('/api2/json/nodes/%s/storage/%s/content/%s', $node, $storage, $encodedVolid);
+        $result = $this->apiDelete($path);
+
+        return ['ok' => $result['ok'], 'error' => $result['error'] ?? null];
+    }
+
+    /**
+     * Restore a QEMU VM from a vzdump backup in-place (same VMID, force=1). Returns UPID.
+     *
+     * @return array{ok: bool, upid: string|null, error: string|null}
+     */
+    public function restoreQemuFromBackup(string $node, int $vmid, string $archive, string $storage): array
+    {
+        $path = sprintf('/api2/json/nodes/%s/qemu', $node);
+        $result = $this->apiPost($path, [
+            'vmid'    => $vmid,
+            'archive' => $archive,
+            'storage' => $storage,
+            'force'   => 1,
+            'unique'  => 0,
+        ]);
+        if (!$result['ok']) {
+            return ['ok' => false, 'upid' => null, 'error' => $result['error']];
+        }
+        $upid = is_string($result['data']) ? trim($result['data']) : null;
+        if ($upid === null || $upid === '') {
+            return ['ok' => false, 'upid' => null, 'error' => 'Restore did not return UPID'];
+        }
+
+        return ['ok' => true, 'upid' => $upid, 'error' => null];
+    }
+
+    /**
+     * Restore an LXC container from a vzdump backup in-place (same VMID, restore=1, force=1). Returns UPID.
+     *
+     * @return array{ok: bool, upid: string|null, error: string|null}
+     */
+    public function restoreLxcFromBackup(string $node, int $vmid, string $archive, string $storage): array
+    {
+        $path = sprintf('/api2/json/nodes/%s/lxc', $node);
+        $result = $this->apiPost($path, [
+            'vmid'       => $vmid,
+            'ostemplate' => $archive,
+            'storage'    => $storage,
+            'restore'    => 1,
+            'force'      => 1,
+        ]);
+        if (!$result['ok']) {
+            return ['ok' => false, 'upid' => null, 'error' => $result['error']];
+        }
+        $upid = is_string($result['data']) ? trim($result['data']) : null;
+        if ($upid === null || $upid === '') {
+            return ['ok' => false, 'upid' => null, 'error' => 'Restore did not return UPID'];
+        }
+
+        return ['ok' => true, 'upid' => $upid, 'error' => null];
+    }
+
+    /**
      * List all VMs (and templates) from cluster resources for dropdown/selection.
      * Returns array of { vmid, name, node, template, type }.
      *

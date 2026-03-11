@@ -191,27 +191,28 @@ class VmInstance
         $stmt = $pdo->prepare('
             INSERT INTO featherpanel_vm_instances
                 (vmid, vm_node_id, user_uuid, pve_node, plan_id, template_id, vm_type,
-                 hostname, status, ip_address, ip6_prefix, subnet_mask, gateway, vm_ip_id, notes)
+                 hostname, status, ip_address, ip6_prefix, subnet_mask, gateway, vm_ip_id, notes, backup_limit)
             VALUES
                 (:vmid, :vm_node_id, :user_uuid, :pve_node, :plan_id, :template_id, :vm_type,
-                 :hostname, :status, :ip_address, :ip6_prefix, :subnet_mask, :gateway, :vm_ip_id, :notes)
+                 :hostname, :status, :ip_address, :ip6_prefix, :subnet_mask, :gateway, :vm_ip_id, :notes, :backup_limit)
         ');
         $stmt->execute([
-            'vmid'        => (int) $data['vmid'],
-            'vm_node_id'  => (int) $data['vm_node_id'],
-            'user_uuid'   => $data['user_uuid'] ?? null,
-            'pve_node'    => $data['pve_node'] ?? null,
-            'plan_id'     => isset($data['plan_id']) ? (int) $data['plan_id'] : null,
-            'template_id' => isset($data['template_id']) ? (int) $data['template_id'] : null,
-            'vm_type'     => in_array($data['vm_type'] ?? 'qemu', ['qemu', 'lxc'], true) ? $data['vm_type'] : 'qemu',
-            'hostname'    => $data['hostname'] ?? null,
-            'status'      => $data['status'] ?? 'unknown',
-            'ip_address'  => $data['ip_address'] ?? null,
-            'ip6_prefix'  => $data['ip6_prefix'] ?? null,
-            'subnet_mask' => $data['subnet_mask'] ?? null,
-            'gateway'     => $data['gateway'] ?? null,
-            'vm_ip_id'    => isset($data['vm_ip_id']) ? (int) $data['vm_ip_id'] : null,
-            'notes'       => $data['notes'] ?? null,
+            'vmid'         => (int) $data['vmid'],
+            'vm_node_id'   => (int) $data['vm_node_id'],
+            'user_uuid'    => $data['user_uuid'] ?? null,
+            'pve_node'     => $data['pve_node'] ?? null,
+            'plan_id'      => isset($data['plan_id']) ? (int) $data['plan_id'] : null,
+            'template_id'  => isset($data['template_id']) ? (int) $data['template_id'] : null,
+            'vm_type'      => in_array($data['vm_type'] ?? 'qemu', ['qemu', 'lxc'], true) ? $data['vm_type'] : 'qemu',
+            'hostname'     => $data['hostname'] ?? null,
+            'status'       => $data['status'] ?? 'unknown',
+            'ip_address'   => $data['ip_address'] ?? null,
+            'ip6_prefix'   => $data['ip6_prefix'] ?? null,
+            'subnet_mask'  => $data['subnet_mask'] ?? null,
+            'gateway'      => $data['gateway'] ?? null,
+            'vm_ip_id'     => isset($data['vm_ip_id']) ? (int) $data['vm_ip_id'] : null,
+            'notes'        => $data['notes'] ?? null,
+            'backup_limit' => isset($data['backup_limit']) ? (int) $data['backup_limit'] : 5,
         ]);
 
         return self::getById((int) $pdo->lastInsertId(), $pdo);

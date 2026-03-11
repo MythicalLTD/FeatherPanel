@@ -246,6 +246,7 @@ class VmInstancesController
         $storage = isset($data['storage']) && is_string($data['storage']) && $data['storage'] !== '' ? trim($data['storage']) : 'local';
         $bridge = isset($data['bridge']) && is_string($data['bridge']) && $data['bridge'] !== '' ? trim($data['bridge']) : 'vmbr0';
         $onBoot = isset($data['on_boot']) ? (int) (bool) $data['on_boot'] : 1;
+        $backupLimit = isset($data['backup_limit']) && is_numeric($data['backup_limit']) ? max(0, min(100, (int) $data['backup_limit'])) : 5;
 
         $hostnameRaw = isset($data['hostname']) && is_string($data['hostname']) ? trim($data['hostname']) : null;
         $hostname = self::sanitizeHostnameForProxmox($hostnameRaw);
@@ -356,6 +357,7 @@ class VmInstancesController
             'storage'      => $storage,
             'bridge'       => $bridge,
             'on_boot'      => $onBoot,
+            'backup_limit' => $backupLimit,
         ]);
         if (!$saved) {
             return ApiResponse::error('Failed to save creation pending record', 'DB_ERROR', 500);
@@ -610,8 +612,9 @@ class VmInstancesController
                 'ip_address' => $ip['ip'],
                 'subnet_mask' => null,
                 'gateway' => $ip['gateway'] ?? null,
-                'vm_ip_id' => $pending['vm_ip_id'] ? (int) $pending['vm_ip_id'] : null,
-                'notes' => $userNotesForInstance,
+                'vm_ip_id'     => $pending['vm_ip_id'] ? (int) $pending['vm_ip_id'] : null,
+                'notes'        => $userNotesForInstance,
+                'backup_limit' => isset($pending['backup_limit']) ? (int) $pending['backup_limit'] : 5,
             ];
             $instance = VmInstance::create($instanceData, $pdo);
             if (!$instance) {
@@ -2155,7 +2158,9 @@ class VmInstancesController
                             if (preg_match('/^(\d+)([GgMmTt])?$/', $sv, $m)) {
                                 $n = (int) $m[1];
                                 $u = strtolower($m[2] ?? 'g');
-                                $templateDiskGb = match ($u) { 'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n };
+                                $templateDiskGb = match ($u) {
+                                    'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n
+                                };
                             }
                             break;
                         }
@@ -2195,7 +2200,9 @@ class VmInstancesController
                             if (preg_match('/^(\d+)([GgMmTt])?$/', $sv, $m)) {
                                 $n = (int) $m[1];
                                 $u = strtolower($m[2] ?? 'g');
-                                $templateDiskGb = match ($u) { 'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n };
+                                $templateDiskGb = match ($u) {
+                                    'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n
+                                };
                             }
                             break;
                         }
@@ -2262,6 +2269,677 @@ class VmInstancesController
             'status'   => 'active',
             'instance' => $instance,
         ], 'VM reinstalled successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/admin/vm-instances/{id}/backups',
+        summary: 'List VM backups',
+        description: 'List vzdump backups for a specific VM or container on its Proxmox node.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Backups listed',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'backups', type: 'array', items: new OA\Items(type: 'object')),
+                        new OA\Property(property: 'backup_limit', type: 'integer'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance or node not found'),
+            new OA\Response(response: 500, description: 'Proxmox error'),
+        ]
+    )]
+    public function listBackups(Request $request, int $id): Response
+    {
+        $instance = VmInstance::getById($id);
+        if (!$instance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        try {
+            $client = self::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node = $instance['pve_node'] ?? '';
+        $vmid = (int) $instance['vmid'];
+
+        $result = $client->listVmBackups($node, $vmid);
+        if (!$result['ok']) {
+            return ApiResponse::error($result['error'] ?? 'Failed to list backups', 'PROXMOX_ERROR', 500);
+        }
+
+        return ApiResponse::success([
+            'backups'      => $result['backups'],
+            'storages'     => $result['storages'] ?? [],
+            'backup_limit' => (int) ($instance['backup_limit'] ?? 5),
+        ], 'Backups listed', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/vm-instances/{id}/backups',
+        summary: 'Create VM backup',
+        description: 'Start an async vzdump backup for a VM or container. Returns 202 with backup_id; poll backup-status until done or failed.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'storage', type: 'string', nullable: true, description: 'Proxmox storage for the backup (optional, defaults to first backup-capable storage)'),
+                    new OA\Property(property: 'compress', type: 'string', nullable: true, description: 'Compression method (zstd, lzo, gzip, 0)', default: 'zstd'),
+                    new OA\Property(property: 'mode', type: 'string', nullable: true, description: 'Backup mode (snapshot, suspend, stop)', default: 'snapshot'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 202,
+                description: 'Backup started',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'backup_id', type: 'string'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance or node not found'),
+            new OA\Response(response: 422, description: 'Backup limit reached'),
+            new OA\Response(response: 500, description: 'Proxmox error'),
+        ]
+    )]
+    public function createBackup(Request $request, int $id): Response
+    {
+        $instance = VmInstance::getById($id);
+        if (!$instance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        try {
+            $client = self::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $data     = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+        }
+        $storage  = is_string($data['storage'] ?? null) ? trim($data['storage']) : '';
+        $compress = is_string($data['compress'] ?? null) ? trim($data['compress']) : 'zstd';
+        $mode     = is_string($data['mode'] ?? null) ? trim($data['mode']) : 'snapshot';
+        $node     = $instance['pve_node'] ?? '';
+        $vmid     = (int) $instance['vmid'];
+        $vmType   = $instance['vm_type'] ?? 'qemu';
+
+        if ($storage === '') {
+            $storagesRes = $client->getBackupStorages($node);
+            if (!$storagesRes['ok'] || empty($storagesRes['storages'])) {
+                return ApiResponse::error('No backup-capable storage found on node', 'NO_BACKUP_STORAGE', 400);
+            }
+            $storage = $storagesRes['storages'][0];
+        }
+
+        $backupLimit = (int) ($instance['backup_limit'] ?? 5);
+        $existing    = $client->listVmBackups($node, $vmid);
+        if ($existing['ok'] && count($existing['backups']) >= $backupLimit) {
+            return ApiResponse::error(
+                'Backup limit reached (' . $backupLimit . '). Delete an existing backup first.',
+                'BACKUP_LIMIT_REACHED',
+                422
+            );
+        }
+
+        if ($vmType === 'lxc' && $mode === 'snapshot') {
+            $mode = 'suspend';
+        }
+
+        $result = $client->createVmBackup($node, $vmid, $storage, $compress, $mode);
+        if (!$result['ok']) {
+            return ApiResponse::error($result['error'] ?? 'Failed to create backup', 'PROXMOX_ERROR', 500);
+        }
+
+        $backupId = bin2hex(random_bytes(16));
+        $meta = json_encode([
+            'type'        => 'backup',
+            'instance_id' => $id,
+            'vmid'        => $vmid,
+            'node'        => $node,
+            'storage'     => $storage,
+        ], JSON_UNESCAPED_SLASHES);
+
+        $targetNode = $node !== '' ? $node : (string) ($instance['pve_node'] ?? '');
+        $hostname   = (string) ($instance['hostname'] ?? ('vm-' . $vmid));
+        $vmNodeId   = (int) ($instance['vm_node_id'] ?? 0);
+        $planId     = isset($instance['plan_id']) && (int) $instance['plan_id'] > 0 ? (int) $instance['plan_id'] : null;
+        $backupLimitForPending = $backupLimit;
+
+        VmCreationPending::create([
+            'creation_id'  => $backupId,
+            'upid'         => $result['upid'],
+            'target_node'  => $targetNode,
+            'vmid'         => $vmid,
+            'hostname'     => $hostname,
+            'vm_node_id'   => $vmNodeId,
+            'plan_id'      => $planId,
+            'template_id'  => isset($instance['template_id']) ? (int) $instance['template_id'] : null,
+            'vm_ip_id'     => isset($instance['vm_ip_id']) ? (int) $instance['vm_ip_id'] : null,
+            'user_uuid'    => $instance['user_uuid'] ?? null,
+            'notes'        => $meta,
+            'vm_type'      => $vmType,
+            // Resource fields are required by schema but not used for backup tasks; keep sane defaults.
+            'memory'       => 512,
+            'cpus'         => 1,
+            'cores'        => 1,
+            'disk'         => 10,
+            'storage'      => $storage,
+            'bridge'       => 'vmbr0',
+            'on_boot'      => 1,
+            'backup_limit' => $backupLimitForPending,
+        ]);
+
+        $admin = $request->get('user');
+        Activity::createActivity([
+            'user_uuid'  => $admin['uuid'] ?? null,
+            'name'       => 'vm_instance_backup_start',
+            'context'    => 'Backup started for instance ID ' . $id . ' (vmid ' . $vmid . ')',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success(['backup_id' => $backupId], 'Backup started', 202);
+    }
+
+    #[OA\Get(
+        path: '/api/admin/vm-instances/backup-status/{backupId}',
+        summary: 'Poll VM backup status',
+        description: 'Poll status of an async vzdump backup. Returns running, done, or failed.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'backupId', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Backup status',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', enum: ['running', 'done', 'failed']),
+                        new OA\Property(property: 'error', type: 'string', nullable: true),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Missing or invalid backupId'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 404, description: 'Backup task or instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function backupStatus(Request $request, string $backupId): Response
+    {
+        $pending = VmCreationPending::getByCreationId($backupId);
+        if (!$pending) {
+            return ApiResponse::error('Backup task not found', 'NOT_FOUND', 404);
+        }
+
+        $meta = json_decode($pending['notes'] ?? '{}', true);
+        if (!is_array($meta) || ($meta['type'] ?? '') !== 'backup') {
+            return ApiResponse::error('Invalid backup task', 'INVALID_TASK', 400);
+        }
+
+        $instanceId = (int) ($meta['instance_id'] ?? 0);
+        $instance   = VmInstance::getById($instanceId);
+        if (!$instance) {
+            VmCreationPending::deleteByCreationId($backupId);
+
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        try {
+            $client = self::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node = $meta['node'] ?? ($instance['pve_node'] ?? '');
+        $upid = $pending['upid'] ?? '';
+
+        $taskResult = $client->getTaskStatus($node, $upid);
+        if (!$taskResult['ok']) {
+            return ApiResponse::success(['status' => 'running'], 'Backup in progress', 200);
+        }
+
+        $taskStatus = $taskResult['data']['status'] ?? '';
+        $exitStatus = $taskResult['data']['exitstatus'] ?? '';
+
+        if ($taskStatus !== 'stopped') {
+            return ApiResponse::success(['status' => 'running'], 'Backup in progress', 200);
+        }
+
+        VmCreationPending::deleteByCreationId($backupId);
+
+        if ($exitStatus !== 'OK') {
+            return ApiResponse::success(['status' => 'failed', 'error' => 'Backup task exited with: ' . $exitStatus], 'Backup failed', 200);
+        }
+
+        $admin = $request->get('user');
+        Activity::createActivity([
+            'user_uuid'  => $admin['uuid'] ?? null,
+            'name'       => 'vm_instance_backup_done',
+            'context'    => 'Backup completed for instance ID ' . $instanceId,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success(['status' => 'done'], 'Backup completed', 200);
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/vm-instances/{id}/backups',
+        summary: 'Delete VM backup',
+        description: 'Delete a single vzdump backup volume belonging to a VM or container.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'volid', type: 'string', description: 'Proxmox backup volume ID'),
+                    new OA\Property(property: 'storage', type: 'string', description: 'Proxmox storage name'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Backup deleted'),
+            new OA\Response(response: 400, description: 'Missing volid or storage'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Backup does not belong to this VM'),
+            new OA\Response(response: 404, description: 'VM instance or node not found'),
+            new OA\Response(response: 500, description: 'Proxmox error'),
+        ]
+    )]
+    public function deleteBackupVolume(Request $request, int $id): Response
+    {
+        $instance = VmInstance::getById($id);
+        if (!$instance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        try {
+            $client = self::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $data    = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+        }
+        $volid   = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
+        $storage = is_string($data['storage'] ?? null) ? trim($data['storage']) : '';
+
+        if ($volid === '' || $storage === '') {
+            return ApiResponse::error('volid and storage are required', 'MISSING_PARAMS', 400);
+        }
+
+        $vmid = (int) $instance['vmid'];
+        if (strpos($volid, (string) $vmid) === false) {
+            return ApiResponse::error('This backup does not belong to this VM', 'FORBIDDEN', 403);
+        }
+
+        $node   = $instance['pve_node'] ?? '';
+        $result = $client->deleteBackupVolume($node, $storage, $volid);
+        if (!$result['ok']) {
+            return ApiResponse::error($result['error'] ?? 'Failed to delete backup', 'PROXMOX_ERROR', 500);
+        }
+
+        $admin = $request->get('user');
+        Activity::createActivity([
+            'user_uuid'  => $admin['uuid'] ?? null,
+            'name'       => 'vm_instance_backup_delete',
+            'context'    => 'Deleted backup ' . $volid . ' for instance ID ' . $id,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([], 'Backup deleted', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/vm-instances/{id}/backups/restore',
+        summary: 'Restore VM from backup',
+        description: 'Start an async restore of a VM or container from a vzdump backup. Returns 202 with restore_id; poll restore-status until active or failed.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'volid', type: 'string', description: 'Proxmox backup volume ID'),
+                    new OA\Property(property: 'storage', type: 'string', description: 'Proxmox storage name'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 202,
+                description: 'Restore started',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'restore_id', type: 'string'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Missing volid or storage'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance or node not found'),
+            new OA\Response(response: 500, description: 'Proxmox error'),
+        ]
+    )]
+    public function restoreBackup(Request $request, int $id): Response
+    {
+        $instance = VmInstance::getById($id);
+        if (!$instance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        try {
+            $client = self::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $data    = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+        }
+        $volid   = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
+        $storage = is_string($data['storage'] ?? null) ? trim($data['storage']) : '';
+
+        if ($volid === '' || $storage === '') {
+            return ApiResponse::error('volid and storage are required', 'MISSING_PARAMS', 400);
+        }
+
+        $vmid   = (int) $instance['vmid'];
+        $node   = $instance['pve_node'] ?? '';
+        $vmType = $instance['vm_type'] ?? 'qemu';
+
+        $stopResult = $client->stopVm($node, $vmid, $vmType);
+        if (!$stopResult['ok']) {
+            App::getInstance(true)->getLogger()->warning(
+                'RestoreBackup: could not stop VM ' . $vmid . ' before restore: ' . ($stopResult['error'] ?? 'unknown')
+            );
+        }
+        sleep(3);
+
+        if ($vmType === 'qemu') {
+            $result = $client->restoreQemuFromBackup($node, $vmid, $volid, $storage);
+        } else {
+            $result = $client->restoreLxcFromBackup($node, $vmid, $volid, $storage);
+        }
+
+        if (!$result['ok']) {
+            return ApiResponse::error($result['error'] ?? 'Failed to start restore', 'PROXMOX_ERROR', 500);
+        }
+
+        $restoreId = bin2hex(random_bytes(16));
+        $meta = json_encode([
+            'type'        => 'restore_backup',
+            'instance_id' => $id,
+            'vmid'        => $vmid,
+            'node'        => $node,
+            'storage'     => $storage,
+            'volid'       => $volid,
+            'vm_type'     => $vmType,
+        ], JSON_UNESCAPED_SLASHES);
+
+        $targetNode = $node !== '' ? $node : (string) ($instance['pve_node'] ?? '');
+        $hostname   = (string) ($instance['hostname'] ?? ('vm-' . $vmid));
+        $vmNodeId   = (int) ($instance['vm_node_id'] ?? 0);
+        $planId     = isset($instance['plan_id']) && (int) $instance['plan_id'] > 0 ? (int) $instance['plan_id'] : null;
+        $backupLimitForPending = (int) ($instance['backup_limit'] ?? 5);
+
+        VmCreationPending::create([
+            'creation_id'  => $restoreId,
+            'upid'         => $result['upid'],
+            'target_node'  => $targetNode,
+            'vmid'         => $vmid,
+            'hostname'     => $hostname,
+            'vm_node_id'   => $vmNodeId,
+            'plan_id'      => $planId,
+            'template_id'  => isset($instance['template_id']) ? (int) $instance['template_id'] : null,
+            'vm_ip_id'     => isset($instance['vm_ip_id']) ? (int) $instance['vm_ip_id'] : null,
+            'user_uuid'    => $instance['user_uuid'] ?? null,
+            'notes'        => $meta,
+            'vm_type'      => $vmType,
+            'memory'       => 512,
+            'cpus'         => 1,
+            'cores'        => 1,
+            'disk'         => 10,
+            'storage'      => $storage,
+            'bridge'       => 'vmbr0',
+            'on_boot'      => 1,
+            'backup_limit' => $backupLimitForPending,
+        ]);
+
+        $admin = $request->get('user');
+        Activity::createActivity([
+            'user_uuid'  => $admin['uuid'] ?? null,
+            'name'       => 'vm_instance_restore_start',
+            'context'    => 'Restore started for instance ID ' . $id . ' from ' . $volid,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success(['restore_id' => $restoreId], 'Restore started', 202);
+    }
+
+    #[OA\Get(
+        path: '/api/admin/vm-instances/restore-status/{restoreId}',
+        summary: 'Poll VM restore status',
+        description: 'Poll status of an async restore from backup. Returns restoring, active, or failed.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'restoreId', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Restore status',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', enum: ['restoring', 'active', 'failed']),
+                        new OA\Property(property: 'instance', ref: '#/components/schemas/VmInstance', nullable: true),
+                        new OA\Property(property: 'error', type: 'string', nullable: true),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Missing or invalid restoreId'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 404, description: 'Restore task or instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function restoreBackupStatus(Request $request, string $restoreId): Response
+    {
+        $pending = VmCreationPending::getByCreationId($restoreId);
+        if (!$pending) {
+            return ApiResponse::error('Restore task not found', 'NOT_FOUND', 404);
+        }
+
+        $meta = json_decode($pending['notes'] ?? '{}', true);
+        if (!is_array($meta) || ($meta['type'] ?? '') !== 'restore_backup') {
+            return ApiResponse::error('Invalid restore task', 'INVALID_TASK', 400);
+        }
+
+        $instanceId = (int) ($meta['instance_id'] ?? 0);
+        $instance   = VmInstance::getById($instanceId);
+        if (!$instance) {
+            VmCreationPending::deleteByCreationId($restoreId);
+
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        try {
+            $client = self::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node   = $meta['node'] ?? ($instance['pve_node'] ?? '');
+        $vmid   = (int) ($meta['vmid'] ?? $instance['vmid']);
+        $vmType = $meta['vm_type'] ?? ($instance['vm_type'] ?? 'qemu');
+        $upid   = $pending['upid'] ?? '';
+
+        $taskResult = $client->getTaskStatus($node, $upid);
+        if (!$taskResult['ok']) {
+            return ApiResponse::success(['status' => 'restoring'], 'Restore in progress', 200);
+        }
+
+        $taskStatus = $taskResult['data']['status'] ?? '';
+        $exitStatus = $taskResult['data']['exitstatus'] ?? '';
+
+        if ($taskStatus !== 'stopped') {
+            return ApiResponse::success(['status' => 'restoring'], 'Restore in progress', 200);
+        }
+
+        VmCreationPending::deleteByCreationId($restoreId);
+
+        if ($exitStatus !== 'OK') {
+            return ApiResponse::success(['status' => 'failed', 'error' => 'Restore task exited with: ' . $exitStatus], 'Restore failed', 200);
+        }
+
+        $startResult = $client->startVm($node, $vmid, $vmType);
+        $finalStatus = $startResult['ok'] ? 'running' : 'stopped';
+
+        try {
+            $pdo  = Database::getPdoConnection();
+            $stmt = $pdo->prepare('UPDATE featherpanel_vm_instances SET status = :status WHERE id = :id');
+            $stmt->execute(['status' => $finalStatus, 'id' => $instanceId]);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('RestoreBackup: failed to update DB status: ' . $e->getMessage());
+        }
+
+        $admin = $request->get('user');
+        Activity::createActivity([
+            'user_uuid'  => $admin['uuid'] ?? null,
+            'name'       => 'vm_instance_restore_done',
+            'context'    => 'Restore completed for instance ID ' . $instanceId . ' (vmid ' . $vmid . ')',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success(['status' => 'active', 'instance' => $instance], 'Restore completed', 200);
+    }
+
+    #[OA\Patch(
+        path: '/api/admin/vm-instances/{id}/backup-limit',
+        summary: 'Set VM backup limit',
+        description: 'Update the maximum number of backups allowed for a VM instance.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'limit', type: 'integer', description: 'Maximum number of backups (0–100)'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Backup limit updated',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'backup_limit', type: 'integer'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Invalid limit'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function setBackupLimit(Request $request, int $id): Response
+    {
+        $instance = VmInstance::getById($id);
+        if (!$instance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+
+        $data  = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+        }
+        $limit = isset($data['limit']) && is_numeric($data['limit']) ? (int) $data['limit'] : null;
+        if ($limit === null || $limit < 0 || $limit > 100) {
+            return ApiResponse::error('limit must be an integer between 0 and 100', 'INVALID_LIMIT', 400);
+        }
+
+        try {
+            $pdo  = Database::getPdoConnection();
+            $stmt = $pdo->prepare('UPDATE featherpanel_vm_instances SET backup_limit = :limit WHERE id = :id');
+            $stmt->execute(['limit' => $limit, 'id' => $id]);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to update backup limit', 'DB_ERROR', 500);
+        }
+
+        $admin = $request->get('user');
+        Activity::createActivity([
+            'user_uuid'  => $admin['uuid'] ?? null,
+            'name'       => 'vm_instance_backup_limit_set',
+            'context'    => 'Backup limit set to ' . $limit . ' for instance ID ' . $id,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success(['backup_limit' => $limit], 'Backup limit updated', 200);
     }
 
     #[OA\Delete(

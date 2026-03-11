@@ -26,9 +26,9 @@ class VmCreationPending
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('
             INSERT INTO ' . self::$table . '
-                (creation_id, upid, target_node, vmid, hostname, vm_node_id, plan_id, template_id, vm_ip_id, user_uuid, notes, vm_type, memory, cpus, cores, disk, storage, bridge, on_boot)
+                (creation_id, upid, target_node, vmid, hostname, vm_node_id, plan_id, template_id, vm_ip_id, user_uuid, notes, vm_type, memory, cpus, cores, disk, storage, bridge, on_boot, backup_limit)
             VALUES
-                (:creation_id, :upid, :target_node, :vmid, :hostname, :vm_node_id, :plan_id, :template_id, :vm_ip_id, :user_uuid, :notes, :vm_type, :memory, :cpus, :cores, :disk, :storage, :bridge, :on_boot)
+                (:creation_id, :upid, :target_node, :vmid, :hostname, :vm_node_id, :plan_id, :template_id, :vm_ip_id, :user_uuid, :notes, :vm_type, :memory, :cpus, :cores, :disk, :storage, :bridge, :on_boot, :backup_limit)
         ');
 
         return $stmt->execute([
@@ -51,6 +51,7 @@ class VmCreationPending
             'storage'      => $data['storage'] ?? 'local',
             'bridge'       => $data['bridge'] ?? 'vmbr0',
             'on_boot'      => isset($data['on_boot']) ? (int) (bool) $data['on_boot'] : 1,
+            'backup_limit' => isset($data['backup_limit']) ? max(0, min(100, (int) $data['backup_limit'])) : 5,
         ]);
     }
 
