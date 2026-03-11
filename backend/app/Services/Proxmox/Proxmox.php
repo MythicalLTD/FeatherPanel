@@ -806,6 +806,27 @@ class Proxmox
     }
 
     /**
+     * Unlink one or more QEMU disks (e.g. scsi1, unused0) from a VM.
+     * For attached disks, this moves them to an unused slot; for unused slots it deletes the disk.
+     *
+     * @param array<int, string> $ids e.g. ['scsi1'] or ['unused0']
+     *
+     * @return array{ok: bool, error: string|null}
+     */
+    public function unlinkQemuDisks(string $node, int $vmid, array $ids): array
+    {
+        if (empty($ids)) {
+            return ['ok' => true, 'error' => null];
+        }
+
+        $path = sprintf('/api2/json/nodes/%s/qemu/%d/unlink', $node, $vmid);
+        $idlist = implode(',', $ids);
+        $result = $this->apiPut($path, ['idlist' => $idlist]);
+
+        return ['ok' => $result['ok'], 'error' => $result['error'] ?? null];
+    }
+
+    /**
      * Find which node hosts a given VMID (from cluster resources).
      *
      * @return array{ok: bool, node: string|null, error: string|null}

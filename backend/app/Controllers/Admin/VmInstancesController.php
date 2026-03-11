@@ -938,13 +938,49 @@ class VmInstancesController
                     : null;
                 if ($efiEnabled === true && !isset($curQemuConfig['efidisk0'])) {
                     $storageName = $efiStorage !== null && $efiStorage !== '' ? $efiStorage : 'local-lvm';
-                    // Let Proxmox allocate a small EFI disk on the target storage.
-                    $config['efidisk0'] = $storageName . ':4M';
+                    // Let Proxmox allocate an EFI disk (special-case size handling, value "0" per qm docs).
+                    $config['efidisk0'] = $storageName . ':0,efitype=4m,pre-enrolled-keys=1';
                     if (!isset($config['bios'])) {
                         $config['bios'] = 'ovmf';
                     }
                 } elseif ($efiEnabled === false && isset($curQemuConfig['efidisk0'])) {
-                    $deleteKeys[] = 'efidisk0';
+                    // Fully delete EFI disk: unlink efidisk0, then matching unusedN.
+                    $efiVolRef = null;
+                    if (is_string($curQemuConfig['efidisk0'])) {
+                        $parts = explode(',', $curQemuConfig['efidisk0']);
+                        $efiVolRef = trim($parts[0]);
+                    }
+                    $unlinkEfi = $client->unlinkQemuDisks($node, (int) $instance['vmid'], ['efidisk0']);
+                    if (!$unlinkEfi['ok']) {
+                        App::getInstance(true)->getLogger()->warning(
+                            'Failed to unlink EFI disk efidisk0 for VM ' . $instance['vmid'] . ': ' . ($unlinkEfi['error'] ?? 'unknown')
+                        );
+                    } elseif ($efiVolRef !== null && $efiVolRef !== '') {
+                        $cfgAfter = $client->getVmConfig($node, (int) $instance['vmid'], 'qemu');
+                        if ($cfgAfter['ok'] && is_array($cfgAfter['config'] ?? null)) {
+                            /** @var array<string, mixed> $cfgArrAfter */
+                            $cfgArrAfter = $cfgAfter['config'];
+                            $unusedKey = null;
+                            foreach ($cfgArrAfter as $cfgKey => $value) {
+                                if (!is_string($cfgKey) || !preg_match('/^unused\d+$/', $cfgKey)) {
+                                    continue;
+                                }
+                                $val = is_string($value) ? $value : '';
+                                if ($val !== '' && str_starts_with($val, $efiVolRef)) {
+                                    $unusedKey = $cfgKey;
+                                    break;
+                                }
+                            }
+                            if ($unusedKey !== null) {
+                                $unlinkUnused = $client->unlinkQemuDisks($node, (int) $instance['vmid'], [$unusedKey]);
+                                if (!$unlinkUnused['ok']) {
+                                    App::getInstance(true)->getLogger()->warning(
+                                        'Failed to destroy unused EFI disk ' . $unusedKey . ' for VM ' . $instance['vmid'] . ': ' . ($unlinkUnused['error'] ?? 'unknown')
+                                    );
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // TPM state disk: tpmstate0 (v2.0)
@@ -953,11 +989,47 @@ class VmInstancesController
                     ? trim($proxmoxUpdate['tpm_storage'])
                     : null;
                 if ($tpmEnabled === true && !isset($curQemuConfig['tpmstate0'])) {
+                    // Match Proxmox UI behaviour: storage:1,format=qcow2,version=v2.0
                     $storageName = $tpmStorage !== null && $tpmStorage !== '' ? $tpmStorage : 'local-lvm';
-                    // Let Proxmox allocate a fresh TPM state volume on the target storage.
-                    $config['tpmstate0'] = $storageName . ':4M,version=v2.0';
+                    $config['tpmstate0'] = $storageName . ':1,format=qcow2,version=v2.0';
                 } elseif ($tpmEnabled === false && isset($curQemuConfig['tpmstate0'])) {
-                    $deleteKeys[] = 'tpmstate0';
+                    // Fully delete TPM state disk: unlink tpmstate0, then matching unusedN.
+                    $tpmVolRef = null;
+                    if (is_string($curQemuConfig['tpmstate0'])) {
+                        $parts = explode(',', $curQemuConfig['tpmstate0']);
+                        $tpmVolRef = trim($parts[0]);
+                    }
+                    $unlinkTpm = $client->unlinkQemuDisks($node, (int) $instance['vmid'], ['tpmstate0']);
+                    if (!$unlinkTpm['ok']) {
+                        App::getInstance(true)->getLogger()->warning(
+                            'Failed to unlink TPM disk tpmstate0 for VM ' . $instance['vmid'] . ': ' . ($unlinkTpm['error'] ?? 'unknown')
+                        );
+                    } elseif ($tpmVolRef !== null && $tpmVolRef !== '') {
+                        $cfgAfter = $client->getVmConfig($node, (int) $instance['vmid'], 'qemu');
+                        if ($cfgAfter['ok'] && is_array($cfgAfter['config'] ?? null)) {
+                            /** @var array<string, mixed> $cfgArrAfter */
+                            $cfgArrAfter = $cfgAfter['config'];
+                            $unusedKey = null;
+                            foreach ($cfgArrAfter as $cfgKey => $value) {
+                                if (!is_string($cfgKey) || !preg_match('/^unused\d+$/', $cfgKey)) {
+                                    continue;
+                                }
+                                $val = is_string($value) ? $value : '';
+                                if ($val !== '' && str_starts_with($val, $tpmVolRef)) {
+                                    $unusedKey = $cfgKey;
+                                    break;
+                                }
+                            }
+                            if ($unusedKey !== null) {
+                                $unlinkUnused = $client->unlinkQemuDisks($node, (int) $instance['vmid'], [$unusedKey]);
+                                if (!$unlinkUnused['ok']) {
+                                    App::getInstance(true)->getLogger()->warning(
+                                        'Failed to destroy unused TPM disk ' . $unusedKey . ' for VM ' . $instance['vmid'] . ': ' . ($unlinkUnused['error'] ?? 'unknown')
+                                    );
+                                }
+                            }
+                        }
+                    }
                 }
             } elseif ($vmType === 'lxc') {
                 if ($cpus !== null && $cores !== null) {
@@ -1570,9 +1642,56 @@ class VmInstancesController
             return ApiResponse::error('This disk is protected (primary OS/cloud-init) and cannot be deleted', 'PROTECTED_DISK', 400);
         }
 
-        $res = $client->setVmConfig($node, (int) $instance['vmid'], $vmType, [], [$key]);
-        if (!$res['ok']) {
-            return ApiResponse::error('Failed to remove disk: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+        if ($vmType === 'lxc') {
+            $res = $client->setVmConfig($node, (int) $instance['vmid'], 'lxc', [], [$key]);
+            if (!$res['ok']) {
+                return ApiResponse::error('Failed to remove disk: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+            }
+
+            return ApiResponse::success(['deleted' => $key], 'Disk removed successfully', 200);
+        }
+
+        // QEMU: fully delete the disk, not just mark it as unused.
+        // 1) Remember the underlying volume reference of this disk (storage:vmid/..).
+        $volRef = null;
+        if (isset($curConfig[$key]) && is_string($curConfig[$key])) {
+            $parts = explode(',', $curConfig[$key]);
+            $volRef = trim($parts[0]);
+        }
+
+        // 2) Unlink the disk from the VM config (moves it to unusedN).
+        $unlink1 = $client->unlinkQemuDisks($node, (int) $instance['vmid'], [$key]);
+        if (!$unlink1['ok']) {
+            return ApiResponse::error('Failed to unlink disk: ' . ($unlink1['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+        }
+
+        // 3) If we know the volume reference, find the matching unusedN entry and unlink again to destroy it.
+        if ($volRef !== null && $volRef !== '') {
+            $cfg2 = $client->getVmConfig($node, (int) $instance['vmid'], 'qemu');
+            if ($cfg2['ok'] && is_array($cfg2['config'] ?? null)) {
+                /** @var array<string, mixed> $cfgArr2 */
+                $cfgArr2 = $cfg2['config'];
+                $unusedKey = null;
+                foreach ($cfgArr2 as $cfgKey => $value) {
+                    if (!is_string($cfgKey) || !preg_match('/^unused\d+$/', $cfgKey)) {
+                        continue;
+                    }
+                    $val = is_string($value) ? $value : '';
+                    if ($val !== '' && str_starts_with($val, $volRef)) {
+                        $unusedKey = $cfgKey;
+                        break;
+                    }
+                }
+                if ($unusedKey !== null) {
+                    $unlink2 = $client->unlinkQemuDisks($node, (int) $instance['vmid'], [$unusedKey]);
+                    if (!$unlink2['ok']) {
+                        // Disk is detached but not fully deleted; log and continue.
+                        App::getInstance(true)->getLogger()->warning(
+                            'Failed to destroy unused disk ' . $unusedKey . ' for VM ' . $instance['vmid'] . ': ' . ($unlink2['error'] ?? 'unknown')
+                        );
+                    }
+                }
+            }
         }
 
         return ApiResponse::success(['deleted' => $key], 'Disk removed successfully', 200);
