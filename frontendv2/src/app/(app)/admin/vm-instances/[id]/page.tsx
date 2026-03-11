@@ -85,6 +85,7 @@ interface VmInstance {
     plan_disk?: number;
     created_at: string;
     notes?: string | null;
+    vm_type?: string | null;
 }
 
 interface VmStatus {
@@ -114,6 +115,10 @@ export default function VmInstanceViewPage() {
     const [usage, setUsage] = useState<VmStatus | null>(null);
     const [usageLoading, setUsageLoading] = useState(false);
     const [vncOpening, setVncOpening] = useState(false);
+    const [reinstalling, setReinstalling] = useState(false);
+    const [confirmReinstall, setConfirmReinstall] = useState(false);
+    const [ciUser, setCiUser] = useState('');
+    const [ciPassword, setCiPassword] = useState('');
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instance-view');
 
@@ -204,6 +209,61 @@ export default function VmInstanceViewPage() {
         }
     };
 
+    const handleReinstall = async () => {
+        setReinstalling(true);
+        setConfirmReinstall(false);
+        try {
+            const payload: Record<string, unknown> = {};
+            if (instance?.vm_type === 'qemu') {
+                payload.ci_user = ciUser.trim();
+                payload.ci_password = ciPassword.trim();
+            }
+            const startRes = await axios.post(`/api/admin/vm-instances/${id}/reinstall`, payload);
+            const reinstallId = startRes.data?.data?.reinstall_id as string | undefined;
+            if (!reinstallId) {
+                toast.error('Reinstall did not return a reinstall_id');
+                setReinstalling(false);
+                return;
+            }
+
+            // Poll until active or failed (same pattern as VM creation).
+            const MAX_POLLS = 120; // 6 minutes at 3s interval
+            let polls = 0;
+            const poll = async (): Promise<void> => {
+                if (polls >= MAX_POLLS) {
+                    toast.error('Reinstall timed out waiting for clone to finish');
+                    setReinstalling(false);
+                    return;
+                }
+                polls++;
+                try {
+                    const statusRes = await axios.get(`/api/admin/vm-instances/reinstall-status/${reinstallId}`);
+                    const s = statusRes.data?.data;
+                    if (s?.status === 'active') {
+                        toast.success(t('admin.vmInstances.reinstall_success') ?? 'VM reinstalled from template');
+                        const { data: fresh } = await axios.get(`/api/admin/vm-instances/${id}`);
+                        setInstance(fresh.data?.instance ?? null);
+                        setReinstalling(false);
+                        return;
+                    }
+                    if (s?.status === 'failed') {
+                        toast.error(s?.error ?? 'Reinstall failed');
+                        setReinstalling(false);
+                        return;
+                    }
+                } catch {
+                    // Ignore transient polling errors — keep polling.
+                }
+                setTimeout(() => { void poll(); }, 3000);
+            };
+            void poll();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg);
+            setReinstalling(false);
+        }
+    };
+
     const statusClass =
         instance?.status === 'running'
             ? 'bg-green-500/10 text-green-600'
@@ -283,6 +343,19 @@ export default function VmInstanceViewPage() {
                                 <Monitor className='h-4 w-4 mr-2' />
                             )}
                             {t('admin.vmInstances.vnc_console') ?? 'VNC Console'}
+                        </Button>
+                        <Button
+                            size='sm'
+                            variant='outline'
+                            disabled={reinstalling}
+                            onClick={() => !reinstalling && setConfirmReinstall(true)}
+                        >
+                            {reinstalling ? (
+                                <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                            ) : (
+                                <RotateCw className='h-4 w-4 mr-2' />
+                            )}
+                            {reinstalling ? (t('common.processing') ?? 'Reinstalling…') : (t('admin.vmInstances.reinstall') ?? 'Reinstall')}
                         </Button>
                         <Button size='sm' variant='destructive' onClick={() => setConfirmDelete(true)}>
                             <Trash2 className='h-4 w-4 mr-2' />
@@ -475,6 +548,62 @@ export default function VmInstanceViewPage() {
                             ) : (
                                 t('common.delete')
                             )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={confirmReinstall} onOpenChange={setConfirmReinstall}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t('admin.vmInstances.reinstall_confirm_title') ?? 'Reinstall VM instance?'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('admin.vmInstances.reinstall_confirm_desc') ??
+                                'This will delete the current VM from Proxmox and clone a fresh one from the original template, keeping the same owner and IP. All data on this VM will be lost.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    {instance?.vm_type === 'qemu' && (
+                        <div className='space-y-3 py-2'>
+                            <p className='text-sm text-muted-foreground'>
+                                {t('admin.vmInstances.reinstall_ci_help') ??
+                                    'Enter a new cloud-init username and password for the reinstalled VM.'}
+                            </p>
+                            <div className='space-y-1'>
+                                <label className='block text-xs font-medium'>
+                                    {t('admin.vmInstances.reinstall_ci_user') ?? 'Cloud-init username'}
+                                </label>
+                                <input
+                                    type='text'
+                                    className='w-full h-9 rounded-md border border-border bg-muted/40 px-2 text-sm'
+                                    value={ciUser}
+                                    onChange={(e) => setCiUser(e.target.value)}
+                                    placeholder='debian'
+                                />
+                            </div>
+                            <div className='space-y-1'>
+                                <label className='block text-xs font-medium'>
+                                    {t('admin.vmInstances.reinstall_ci_password') ?? 'Cloud-init password'}
+                                </label>
+                                <input
+                                    type='password'
+                                    className='w-full h-9 rounded-md border border-border bg-muted/40 px-2 text-sm'
+                                    value={ciPassword}
+                                    onChange={(e) => setCiPassword(e.target.value)}
+                                    placeholder='********'
+                                />
+                            </div>
+                        </div>
+                    )}
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={reinstalling}>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleReinstall}
+                            disabled={reinstalling}
+                            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                        >
+                            {t('admin.vmInstances.reinstall') ?? 'Reinstall'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

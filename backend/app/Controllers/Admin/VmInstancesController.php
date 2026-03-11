@@ -1803,6 +1803,467 @@ class VmInstancesController
         return ApiResponse::success(['instance' => $instance], 'Power action completed', 200);
     }
 
+    #[OA\Post(
+        path: '/api/admin/vm-instances/{id}/reinstall',
+        summary: 'Start async VM reinstall',
+        description: 'Kicks off a full reinstall by cloning a fresh VM from the original template. Returns 202 with a reinstall_id immediately. Poll reinstall-status/{reinstallId} until status is active or failed.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 202,
+                description: 'Reinstall clone started',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'reinstall_id', type: 'string'),
+                        new OA\Property(property: 'message', type: 'string'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance or template not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function reinstall(Request $request, int $id): Response
+    {
+        $admin = $request->get('user');
+        $instance = VmInstance::getById($id);
+        if (!$instance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        if (empty($instance['template_id'])) {
+            return ApiResponse::error('Cannot reinstall: instance has no template_id', 'NO_TEMPLATE', 400);
+        }
+        $template = VmTemplate::getById((int) $instance['template_id']);
+        if (!$template) {
+            return ApiResponse::error('Template not found for this instance', 'TEMPLATE_NOT_FOUND', 404);
+        }
+        $templateFile = $template['template_file'] ?? '';
+        if ($templateFile === '' || !ctype_digit((string) $templateFile)) {
+            return ApiResponse::error('Template must have a valid template VMID (template_file)', 'INVALID_TEMPLATE', 400);
+        }
+        $templateVmid = (int) $templateFile;
+
+        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        $vmType = ($instance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
+
+        $ciUser = null;
+        $ciPassword = null;
+        if ($vmType === 'qemu') {
+            $ciUser = isset($data['ci_user']) && is_string($data['ci_user']) ? trim($data['ci_user']) : null;
+            $ciPassword = isset($data['ci_password']) && is_string($data['ci_password']) ? trim($data['ci_password']) : null;
+            if ($ciUser === null || $ciUser === '' || $ciPassword === null || $ciPassword === '') {
+                return ApiResponse::error(
+                    'Cloud-init username and password (ci_user, ci_password) are required to reinstall KVM/QEMU VMs',
+                    'VALIDATION_FAILED',
+                    400
+                );
+            }
+        }
+
+        $oldVmid = (int) $instance['vmid'];
+
+        try {
+            $client = self::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node = $instance['pve_node'] ?? '';
+        if ($node === '') {
+            $find = $client->findNodeByVmid($oldVmid);
+            $node = $find['ok'] ? $find['node'] : null;
+        }
+        if ($node === null || $node === '') {
+            return ApiResponse::error('Could not determine Proxmox node for this VM', 'NODE_UNKNOWN', 500);
+        }
+
+        $findTemplate = $client->findNodeByVmid($templateVmid);
+        $templateNode = $findTemplate['ok'] ? $findTemplate['node'] : $node;
+
+        // Snapshot current resource config so we can re-apply it after the fresh clone.
+        $savedMemory = 512;
+        $savedCpus   = 1;
+        $savedCores  = 1;
+        $savedDiskGb = 0; // 0 = don't resize (template disk is already correct size or larger)
+        $currentCfg  = $client->getVmConfig($node, $oldVmid, $vmType);
+        if ($currentCfg['ok'] && is_array($currentCfg['config'])) {
+            $cfg = $currentCfg['config'];
+            if (isset($cfg['memory']) && is_numeric($cfg['memory'])) {
+                $savedMemory = (int) $cfg['memory'];
+            }
+            if ($vmType === 'qemu') {
+                if (isset($cfg['sockets']) && is_numeric($cfg['sockets'])) {
+                    $savedCpus = (int) $cfg['sockets'];
+                }
+                if (isset($cfg['cores']) && is_numeric($cfg['cores'])) {
+                    $savedCores = (int) $cfg['cores'];
+                }
+                if (isset($cfg['scsi0']) && is_string($cfg['scsi0'])) {
+                    foreach (explode(',', $cfg['scsi0']) as $part) {
+                        $part = trim($part);
+                        if (str_starts_with($part, 'size=')) {
+                            $sizeVal = substr($part, 5);
+                            if (preg_match('/^(\d+)([GgMmTt])?$/', $sizeVal, $m)) {
+                                $num  = (int) $m[1];
+                                $unit = strtolower($m[2] ?? 'g');
+                                $savedDiskGb = match ($unit) {
+                                    'm' => (int) ceil($num / 1024),
+                                    't' => $num * 1024,
+                                    default => $num,
+                                };
+                            }
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // LXC: cores field holds total CPU count
+                if (isset($cfg['cores']) && is_numeric($cfg['cores'])) {
+                    $savedCores = (int) $cfg['cores'];
+                    $savedCpus  = $savedCores;
+                }
+                if (isset($cfg['rootfs']) && is_string($cfg['rootfs'])) {
+                    foreach (explode(',', $cfg['rootfs']) as $part) {
+                        $part = trim($part);
+                        if (str_starts_with($part, 'size=')) {
+                            $sizeVal = substr($part, 5);
+                            if (preg_match('/^(\d+)([GgMmTt])?$/', $sizeVal, $m)) {
+                                $num  = (int) $m[1];
+                                $unit = strtolower($m[2] ?? 'g');
+                                $savedDiskGb = match ($unit) {
+                                    'm' => (int) ceil($num / 1024),
+                                    't' => $num * 1024,
+                                    default => $num,
+                                };
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        $nextResult = $client->getNextVmid(100);
+        if (!$nextResult['ok'] || $nextResult['vmid'] === null) {
+            return ApiResponse::error(
+                'Could not get next VMID: ' . ($nextResult['error'] ?? 'unknown'),
+                'PROXMOX_ERROR',
+                500
+            );
+        }
+        $newVmid = $nextResult['vmid'];
+
+        if ($vmType === 'qemu') {
+            $clone = $client->cloneQemu($templateNode, $templateVmid, $newVmid, (string) ($instance['hostname'] ?? 'vm-' . $newVmid), $node);
+        } else {
+            $clone = $client->cloneLxc($templateNode, $templateVmid, $newVmid, (string) ($instance['hostname'] ?? 'ct-' . $newVmid), $node, (string) ($vmNode['default_storage'] ?? 'local'));
+        }
+        if (!$clone['ok'] || empty($clone['upid'])) {
+            return ApiResponse::error('Clone failed: ' . ($clone['error'] ?? 'unknown'), 'CLONE_FAILED', 500);
+        }
+
+        $ipId = !empty($instance['vm_ip_id']) ? (int) $instance['vm_ip_id'] : null;
+        $ip = $ipId ? VmIp::getById($ipId) : null;
+
+        $reinstallMeta = json_encode([
+            'type'        => 'reinstall',
+            'old_vmid'    => $oldVmid,
+            'instance_id' => $id,
+            'ci_user'     => $ciUser,
+            'ci_password' => $ciPassword,
+            'ip_address'  => $ip['ip'] ?? ($instance['ip_address'] ?? null),
+            'ip_cidr'     => $ip ? (int) ($ip['cidr'] ?? 24) : 24,
+            'gateway'     => $ip['gateway'] ?? ($instance['gateway'] ?? null),
+            'memory'      => $savedMemory,
+            'cpus'        => $savedCpus,
+            'cores'       => $savedCores,
+            'disk_gb'     => $savedDiskGb,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        $reinstallId = bin2hex(random_bytes(16));
+        $saved = VmCreationPending::create([
+            'creation_id' => $reinstallId,
+            'upid'        => $clone['upid'],
+            'target_node' => $node,
+            'vmid'        => $newVmid,
+            'hostname'    => $instance['hostname'] ?? 'vm-' . $newVmid,
+            'vm_node_id'  => (int) $instance['vm_node_id'],
+            'plan_id'     => null,
+            'template_id' => $instance['template_id'] ? (int) $instance['template_id'] : null,
+            'vm_ip_id'    => $ipId,
+            'user_uuid'   => $instance['user_uuid'] ?? null,
+            'notes'       => $reinstallMeta,
+            'vm_type'     => $vmType,
+            'memory'      => 512,
+            'cpus'        => 1,
+            'cores'       => 1,
+            'disk'        => 10,
+            'storage'     => 'local',
+            'bridge'      => 'vmbr0',
+            'on_boot'     => 0,
+        ]);
+        if (!$saved) {
+            $client->deleteVm($node, $newVmid, $vmType);
+
+            return ApiResponse::error('Failed to save reinstall pending record', 'DB_ERROR', 500);
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'vm_instance_reinstall_start',
+            'context' => 'Started reinstall for VM instance: ' . ($instance['hostname'] ?? $id) . ' (vmid ' . $oldVmid . ' → ' . $newVmid . ')',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'reinstall_id' => $reinstallId,
+            'message'      => 'Reinstall clone started. Poll reinstall-status until active or failed.',
+        ], 'VM reinstall started', 202);
+    }
+
+    /**
+     * GET /api/admin/vm-instances/reinstall-status/{reinstallId}
+     * Poll until status = active | failed.
+     */
+    public function reinstallStatus(Request $request, string $reinstallId): Response
+    {
+        $reinstallId = trim($reinstallId);
+        if ($reinstallId === '') {
+            return ApiResponse::error('Missing reinstall_id', 'INVALID_ID', 400);
+        }
+
+        $pending = VmCreationPending::getByCreationId($reinstallId);
+        if (!$pending) {
+            return ApiResponse::error('Reinstall not found or already completed', 'NOT_FOUND', 404);
+        }
+
+        $rawNotes = $pending['notes'] ?? null;
+        $reinstallMeta = [];
+        if (is_string($rawNotes) && $rawNotes !== '' && $rawNotes[0] === '{') {
+            $decoded = json_decode($rawNotes, true);
+            if (is_array($decoded) && ($decoded['type'] ?? '') === 'reinstall') {
+                $reinstallMeta = $decoded;
+            }
+        }
+        if (empty($reinstallMeta)) {
+            VmCreationPending::deleteByCreationId($reinstallId);
+
+            return ApiResponse::error('Invalid reinstall pending record', 'INVALID_RECORD', 500);
+        }
+
+        $vmNode = VmNode::getVmNodeById((int) $pending['vm_node_id']);
+        if (!$vmNode) {
+            VmCreationPending::deleteByCreationId($reinstallId);
+
+            return ApiResponse::error('VM node not found', 'NODE_NOT_FOUND', 500);
+        }
+
+        try {
+            $client = self::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox client build failed in reinstallStatus: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $taskResult = $client->getTaskStatus($pending['target_node'], $pending['upid']);
+        if (!$taskResult['ok'] || $taskResult['status'] !== 'stopped') {
+            return ApiResponse::success([
+                'status'  => 'cloning',
+                'message' => 'Clone in progress…',
+            ], 'Clone in progress', 200);
+        }
+
+        if (($taskResult['exitstatus'] ?? '') !== 'OK') {
+            $errMsg = $taskResult['error'] ?? ('Exit status: ' . ($taskResult['exitstatus'] ?? 'unknown'));
+            $client->deleteVm($pending['target_node'], (int) $pending['vmid'], $pending['vm_type'] === 'lxc' ? 'lxc' : 'qemu');
+            VmCreationPending::deleteByCreationId($reinstallId);
+
+            return ApiResponse::success([
+                'status' => 'failed',
+                'error'  => 'Clone failed: ' . $errMsg,
+            ], 'Reinstall clone failed', 200);
+        }
+
+        // Clone done — apply post-config, delete old VM, update DB.
+        $vmType    = $pending['vm_type'] === 'lxc' ? 'lxc' : 'qemu';
+        $newVmid   = (int) $pending['vmid'];
+        $node      = $pending['target_node'];
+        $oldVmid   = (int) ($reinstallMeta['old_vmid'] ?? 0);
+        $instanceId = (int) ($reinstallMeta['instance_id'] ?? 0);
+        $ciUser     = $reinstallMeta['ci_user'] ?? null;
+        $ciPassword = $reinstallMeta['ci_password'] ?? null;
+        $ipAddress  = $reinstallMeta['ip_address'] ?? null;
+        $ipCidr     = (int) ($reinstallMeta['ip_cidr'] ?? 24);
+        $gateway    = trim((string) ($reinstallMeta['gateway'] ?? ''));
+        $memory     = (int) ($reinstallMeta['memory'] ?? 512);
+        $cpus       = (int) ($reinstallMeta['cpus'] ?? 1);
+        $cores      = (int) ($reinstallMeta['cores'] ?? 1);
+        $diskGb     = (int) ($reinstallMeta['disk_gb'] ?? 0);
+
+        if ($vmType === 'lxc') {
+            $deleteNetKeys = [];
+            $getConfig = $client->getVmConfig($node, $newVmid, 'lxc');
+            if ($getConfig['ok'] && is_array($getConfig['config'] ?? null)) {
+                foreach (array_keys((array) $getConfig['config']) as $k) {
+                    if (preg_match('/^net\d+$/', (string) $k)) {
+                        $deleteNetKeys[] = (string) $k;
+                    }
+                }
+            }
+            if (!empty($deleteNetKeys)) {
+                $client->setVmConfig($node, $newVmid, 'lxc', [], $deleteNetKeys);
+            }
+            $net0 = 'name=eth0,bridge=vmbr0,ip=' . $ipAddress . '/' . $ipCidr;
+            if ($gateway !== '') {
+                $net0 .= ',gw=' . $gateway;
+            }
+            $client->setVmConfig($node, $newVmid, 'lxc', [
+                'nameserver' => '1.1.1.1 8.8.8.8',
+                'net0'       => $net0,
+                'memory'     => $memory,
+                'cores'      => $cores > 0 ? $cores : 1,
+                'onboot'     => 0,
+            ], []);
+            // Resize rootfs if client had more disk than the template default.
+            if ($diskGb > 0) {
+                $cfgAfter = $client->getVmConfig($node, $newVmid, 'lxc');
+                $templateDiskGb = 0;
+                if ($cfgAfter['ok'] && isset($cfgAfter['config']['rootfs']) && is_string($cfgAfter['config']['rootfs'])) {
+                    foreach (explode(',', $cfgAfter['config']['rootfs']) as $part) {
+                        $part = trim($part);
+                        if (str_starts_with($part, 'size=')) {
+                            $sv = substr($part, 5);
+                            if (preg_match('/^(\d+)([GgMmTt])?$/', $sv, $m)) {
+                                $n = (int) $m[1];
+                                $u = strtolower($m[2] ?? 'g');
+                                $templateDiskGb = match ($u) { 'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n };
+                            }
+                            break;
+                        }
+                    }
+                }
+                if ($diskGb > $templateDiskGb) {
+                    $resizeRes = $client->resizeContainerDisk($node, $newVmid, 'rootfs', $diskGb . 'G');
+                    if (!$resizeRes['ok']) {
+                        App::getInstance(true)->getLogger()->warning('Reinstall LXC rootfs resize failed: ' . ($resizeRes['error'] ?? 'unknown'));
+                    }
+                }
+            }
+        } else {
+            $ipconfig0 = 'ip=' . $ipAddress . '/' . $ipCidr;
+            if ($gateway !== '') {
+                $ipconfig0 .= ',gw=' . $gateway;
+            }
+            $client->setVmConfig($node, $newVmid, 'qemu', [
+                'nameserver' => '1.1.1.1 8.8.8.8',
+                'ipconfig0'  => $ipconfig0,
+                'boot'       => 'order=scsi0',
+                'memory'     => $memory,
+                'sockets'    => $cpus > 0 ? $cpus : 1,
+                'cores'      => $cores > 0 ? $cores : 1,
+                'ciuser'     => $ciUser ?? 'debian',
+                'cipassword' => $ciPassword ?? bin2hex(random_bytes(6)),
+            ], []);
+            // Resize scsi0 if the client had a larger disk than the template default.
+            if ($diskGb > 0) {
+                $cfgAfter = $client->getVmConfig($node, $newVmid, 'qemu');
+                $templateDiskGb = 0;
+                if ($cfgAfter['ok'] && isset($cfgAfter['config']['scsi0']) && is_string($cfgAfter['config']['scsi0'])) {
+                    foreach (explode(',', $cfgAfter['config']['scsi0']) as $part) {
+                        $part = trim($part);
+                        if (str_starts_with($part, 'size=')) {
+                            $sv = substr($part, 5);
+                            if (preg_match('/^(\d+)([GgMmTt])?$/', $sv, $m)) {
+                                $n = (int) $m[1];
+                                $u = strtolower($m[2] ?? 'g');
+                                $templateDiskGb = match ($u) { 'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n };
+                            }
+                            break;
+                        }
+                    }
+                }
+                if ($diskGb > $templateDiskGb) {
+                    $resizeRes = $client->resizeQemuDisk($node, $newVmid, 'scsi0', $diskGb . 'G');
+                    if (!$resizeRes['ok']) {
+                        App::getInstance(true)->getLogger()->warning('Reinstall QEMU scsi0 resize failed: ' . ($resizeRes['error'] ?? 'unknown'));
+                    }
+                }
+            }
+        }
+
+        // Stop then delete the old VM (best-effort).
+        if ($oldVmid > 0) {
+            $client->stopVm($node, $oldVmid, $vmType);
+            sleep(2);
+            $client->deleteVm($node, $oldVmid, $vmType);
+        }
+
+        // Start the freshly installed VM.
+        $startResult = $client->startVm($node, $newVmid, $vmType);
+        $finalStatus = $startResult['ok'] ? 'running' : 'stopped';
+        if (!$startResult['ok']) {
+            App::getInstance(true)->getLogger()->warning(
+                'Reinstall: failed to start new VM ' . $newVmid . ': ' . ($startResult['error'] ?? 'unknown')
+            );
+        }
+
+        // Update the panel DB record to point to the new VMID.
+        $instance = null;
+        if ($instanceId > 0) {
+            try {
+                $pdo = Database::getPdoConnection();
+                $stmt = $pdo->prepare(
+                    'UPDATE featherpanel_vm_instances SET vmid = :vmid, pve_node = :node, status = :status WHERE id = :id'
+                );
+                $stmt->execute([
+                    'vmid'   => $newVmid,
+                    'node'   => $node,
+                    'status' => $finalStatus,
+                    'id'     => $instanceId,
+                ]);
+                $instance = VmInstance::getById($instanceId);
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->error(
+                    'Failed to update VM instance DB after reinstall: ' . $e->getMessage()
+                );
+            }
+        }
+
+        VmCreationPending::deleteByCreationId($reinstallId);
+
+        $admin = $request->get('user');
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'vm_instance_reinstall_complete',
+            'context' => 'Reinstall completed for instance ID ' . $instanceId . ' (new vmid ' . $newVmid . ')',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'status'   => 'active',
+            'instance' => $instance,
+        ], 'VM reinstalled successfully', 200);
+    }
+
     #[OA\Delete(
         path: '/api/admin/vm-instances/{id}',
         summary: 'Delete VM instance',

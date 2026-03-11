@@ -232,6 +232,40 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
+    // Reinstall VM instance — starts async clone, returns 202 + reinstall_id
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-reinstall',
+        '/api/admin/vm-instances/{id}/reinstall',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->reinstall($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
+
+    // Poll async reinstall status
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-reinstall-status',
+        '/api/admin/vm-instances/reinstall-status/{reinstallId}',
+        function (Request $request, array $args) {
+            $reinstallId = $args['reinstallId'] ?? '';
+            if (empty($reinstallId)) {
+                return ApiResponse::error('Missing reinstall_id', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->reinstallStatus($request, (string) $reinstallId);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
     // Delete VM instance
     App::getInstance(true)->registerAdminRoute(
         $routes,
