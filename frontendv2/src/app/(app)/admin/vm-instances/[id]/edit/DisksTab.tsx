@@ -24,6 +24,7 @@ import { HeadlessSelect } from '@/components/ui/headless-select';
 import { HardDrive, Plus, Trash2 } from 'lucide-react';
 
 interface DisksTabProps {
+    isLxc?: boolean;
     config: Record<string, unknown> | null;
     diskKeys: string[];
     storageList: string[];
@@ -46,6 +47,7 @@ interface DisksTabProps {
 }
 
 export function DisksTab({
+    isLxc = true,
     config,
     diskKeys,
     storageList,
@@ -73,6 +75,30 @@ export function DisksTab({
             : [{ id: 'local-lvm', name: 'local-lvm' }];
     const diskOptions = diskKeys.map((k) => ({ id: k, name: k }));
 
+    // Compute protected disks so we do not show a delete action for risky devices
+    // (rootfs on LXC, primary boot disk, and cloud-init/cdrom drives).
+    const protectedKeys = new Set<string>();
+    if (isLxc) {
+        protectedKeys.add('rootfs');
+    } else {
+        const boot = String(config?.boot ?? '');
+        if (boot) {
+            const m = boot.match(/order=([^,;]+)/);
+            if (m && m[1]) {
+                const first = m[1].split(/[;:,]/)[0];
+                if (/^(scsi|virtio|sata|ide)\d+$/.test(first)) {
+                    protectedKeys.add(first);
+                }
+            }
+        }
+        diskKeys.forEach((k) => {
+            const val = String(config?.[k] ?? '');
+            if (val.includes('cloudinit') || val.includes('media=cdrom')) {
+                protectedKeys.add(k);
+            }
+        });
+    }
+
     return (
         <PageCard title={t('admin.vmInstances.edit_tabs.disks') ?? 'Disks'} icon={HardDrive}>
             <div className='space-y-6'>
@@ -89,7 +115,9 @@ export function DisksTab({
                                     <span className='text-foreground/90 truncate flex-1 min-w-0'>
                                         {String(config?.[k] ?? '')}
                                     </span>
-                                    {/^mp\d+$/.test(k) && (
+                                    {((/^mp\d+$/.test(k) && isLxc) ||
+                                        (/^(scsi|virtio|sata|ide)\d+$/.test(k) && !isLxc)) &&
+                                        !protectedKeys.has(k) && (
                                         <Button
                                             type='button'
                                             variant='ghost'
@@ -131,15 +159,19 @@ export function DisksTab({
                             className='mt-1 h-10 w-24 bg-muted/30 rounded-xl'
                         />
                     </div>
-                    <div>
-                        <Label className='text-xs'>{t('admin.vmInstances.disk_path') ?? 'Mount path (optional)'}</Label>
-                        <Input
-                            value={newDiskPath}
-                            onChange={(e) => setNewDiskPath(e.target.value)}
-                            placeholder='/mnt/data'
-                            className='mt-1 h-10 w-40 bg-muted/30 rounded-xl'
-                        />
-                    </div>
+                    {isLxc && (
+                        <div>
+                            <Label className='text-xs'>
+                                {t('admin.vmInstances.disk_path') ?? 'Mount path (optional)'}
+                            </Label>
+                            <Input
+                                value={newDiskPath}
+                                onChange={(e) => setNewDiskPath(e.target.value)}
+                                placeholder='/mnt/data'
+                                className='mt-1 h-10 w-40 bg-muted/30 rounded-xl'
+                            />
+                        </div>
+                    )}
                     <Button type='submit' size='sm' loading={creatingDisk}>
                         <Plus className='h-4 w-4 mr-2' />
                         {t('admin.vmInstances.add_disk') ?? 'Add disk'}

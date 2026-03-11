@@ -105,6 +105,11 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'networks', type: 'array', items: new OA\Items(type: 'object'), nullable: true, description: 'List of networks (LXC)'),
         new OA\Property(property: 'nameserver', type: 'string', nullable: true, description: 'Nameserver (LXC)'),
         new OA\Property(property: 'searchdomain', type: 'string', nullable: true, description: 'Search domain (LXC)'),
+        new OA\Property(property: 'bios', type: 'string', nullable: true, description: 'QEMU BIOS mode: seabios or ovmf (EFI)'),
+        new OA\Property(property: 'efi_enabled', type: 'boolean', nullable: true, description: 'Enable EFI disk (QEMU only)'),
+        new OA\Property(property: 'efi_storage', type: 'string', nullable: true, description: 'Storage for EFI disk (QEMU only)'),
+        new OA\Property(property: 'tpm_enabled', type: 'boolean', nullable: true, description: 'Enable TPM state disk (QEMU only)'),
+        new OA\Property(property: 'tpm_storage', type: 'string', nullable: true, description: 'Storage for TPM state disk (QEMU only)'),
     ]
 )]
 class VmInstancesController
@@ -737,7 +742,7 @@ class VmInstancesController
 
         $dbKeys = ['hostname', 'notes', 'user_uuid', 'vm_ip_id'];
         $dbUpdate = array_intersect_key($data, array_flip($dbKeys));
-        $proxmoxKeys = ['memory', 'cpus', 'cores', 'on_boot', 'vm_ip_id'];
+        $proxmoxKeys = ['memory', 'cpus', 'cores', 'on_boot', 'vm_ip_id', 'bios', 'efi_enabled', 'efi_storage', 'tpm_enabled', 'tpm_storage'];
         $proxmoxUpdate = array_intersect_key($data, array_flip($proxmoxKeys));
         $networks = isset($data['networks']) && is_array($data['networks']) ? $data['networks'] : null;
         if ($networks !== null && !empty($networks)) {
@@ -802,6 +807,17 @@ class VmInstancesController
 
             $config = [];
             $deleteKeys = [];
+
+            // Optional QEMU-only extras: BIOS mode, EFI disk, TPM state disk.
+            $curQemuConfig = [];
+            if ($vmType === 'qemu') {
+                $curCfgQemu = $client->getVmConfig($node, (int) $instance['vmid'], 'qemu');
+                if ($curCfgQemu['ok'] && is_array($curCfgQemu['config'] ?? null)) {
+                    /** @var array<string, mixed> $curQemuConfigTmp */
+                    $curQemuConfigTmp = $curCfgQemu['config'];
+                    $curQemuConfig = $curQemuConfigTmp;
+                }
+            }
 
             if ($vmType === 'lxc' && $networks !== null) {
                 $curCfg = $client->getVmConfig($node, (int) $instance['vmid'], 'lxc');
@@ -905,6 +921,43 @@ class VmInstancesController
                         $ipconfig0 .= ',gw=' . $gateway;
                     }
                     $config['ipconfig0'] = $ipconfig0;
+                }
+
+                // BIOS mode: seabios or ovmf
+                if (array_key_exists('bios', $data) && is_string($data['bios'])) {
+                    $bios = strtolower(trim($data['bios']));
+                    if (in_array($bios, ['seabios', 'ovmf'], true)) {
+                        $config['bios'] = $bios;
+                    }
+                }
+
+                // EFI disk: efidisk0
+                $efiEnabled = array_key_exists('efi_enabled', $data) ? (bool) $proxmoxUpdate['efi_enabled'] : null;
+                $efiStorage = isset($proxmoxUpdate['efi_storage']) && is_string($proxmoxUpdate['efi_storage'])
+                    ? trim($proxmoxUpdate['efi_storage'])
+                    : null;
+                if ($efiEnabled === true && !isset($curQemuConfig['efidisk0'])) {
+                    $storageName = $efiStorage !== null && $efiStorage !== '' ? $efiStorage : 'local-lvm';
+                    // Let Proxmox allocate a small EFI disk on the target storage.
+                    $config['efidisk0'] = $storageName . ':4M';
+                    if (!isset($config['bios'])) {
+                        $config['bios'] = 'ovmf';
+                    }
+                } elseif ($efiEnabled === false && isset($curQemuConfig['efidisk0'])) {
+                    $deleteKeys[] = 'efidisk0';
+                }
+
+                // TPM state disk: tpmstate0 (v2.0)
+                $tpmEnabled = array_key_exists('tpm_enabled', $data) ? (bool) $proxmoxUpdate['tpm_enabled'] : null;
+                $tpmStorage = isset($proxmoxUpdate['tpm_storage']) && is_string($proxmoxUpdate['tpm_storage'])
+                    ? trim($proxmoxUpdate['tpm_storage'])
+                    : null;
+                if ($tpmEnabled === true && !isset($curQemuConfig['tpmstate0'])) {
+                    $storageName = $tpmStorage !== null && $tpmStorage !== '' ? $tpmStorage : 'local-lvm';
+                    // Let Proxmox allocate a fresh TPM state volume on the target storage.
+                    $config['tpmstate0'] = $storageName . ':4M,version=v2.0';
+                } elseif ($tpmEnabled === false && isset($curQemuConfig['tpmstate0'])) {
+                    $deleteKeys[] = 'tpmstate0';
                 }
             } elseif ($vmType === 'lxc') {
                 if ($cpus !== null && $cores !== null) {
@@ -1212,8 +1265,8 @@ class VmInstancesController
 
     #[OA\Post(
         path: '/api/admin/vm-instances/{id}/resize-disk',
-        summary: 'Resize LXC disk',
-        description: 'Resize LXC disk. Body must include "disk" and "size".',
+        summary: 'Resize VM/container disk',
+        description: 'Resize a disk on an LXC container or QEMU VM. Body must include "disk" and "size".',
         tags: ['Admin - VM Instances'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -1251,17 +1304,25 @@ class VmInstancesController
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
-        if (($instance['vm_type'] ?? 'qemu') !== 'lxc') {
-            return ApiResponse::error('Disk resize is only supported for LXC containers', 'NOT_LXC', 400);
-        }
+        $vmType = ($instance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
         $data = json_decode($request->getContent(), true);
         if (!is_array($data) || empty($data['disk']) || empty($data['size'])) {
-            return ApiResponse::error('Request body must include "disk" and "size" (e.g. disk: "rootfs", size: "+5G")', 'VALIDATION_FAILED', 400);
+            return ApiResponse::error('Request body must include "disk" and "size" (e.g. disk: "rootfs" or "scsi0", size: "+5G")', 'VALIDATION_FAILED', 400);
         }
         $disk = (string) $data['disk'];
         $size = (string) $data['size'];
-        if (!preg_match('/^(rootfs|mp\d+)$/', $disk)) {
-            return ApiResponse::error('Invalid disk. Use rootfs or mp0, mp1, ...', 'INVALID_DISK', 400);
+        // Be forgiving: if user enters "20" or "+5" assume GB.
+        if (preg_match('/^\+?\d+$/', $size)) {
+            $size .= 'G';
+        }
+        if ($vmType === 'lxc') {
+            if (!preg_match('/^(rootfs|mp\d+)$/', $disk)) {
+                return ApiResponse::error('Invalid disk. Use rootfs or mp0, mp1, ...', 'INVALID_DISK', 400);
+            }
+        } else {
+            if (!preg_match('/^(scsi|virtio|sata|ide)\d+$/', $disk)) {
+                return ApiResponse::error('Invalid disk. Use scsi0, scsi1, virtio0, sata0, ide0, ...', 'INVALID_DISK', 400);
+            }
         }
         $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
         if (!$vmNode) {
@@ -1280,7 +1341,11 @@ class VmInstancesController
         if ($node === null || $node === '') {
             return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
         }
-        $res = $client->resizeContainerDisk($node, (int) $instance['vmid'], $disk, $size);
+        if ($vmType === 'lxc') {
+            $res = $client->resizeContainerDisk($node, (int) $instance['vmid'], $disk, $size);
+        } else {
+            $res = $client->resizeQemuDisk($node, (int) $instance['vmid'], $disk, $size);
+        }
         if (!$res['ok']) {
             return ApiResponse::error('Resize failed: ' . ($res['error'] ?? 'unknown'), 'RESIZE_FAILED', 502);
         }
@@ -1290,8 +1355,8 @@ class VmInstancesController
 
     #[OA\Post(
         path: '/api/admin/vm-instances/{id}/disks',
-        summary: 'Create LXC disk',
-        description: 'POST add LXC mount point.',
+        summary: 'Create VM/container disk',
+        description: 'Create an additional disk: LXC mount point or QEMU disk.',
         tags: ['Admin - VM Instances'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -1331,9 +1396,7 @@ class VmInstancesController
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
-        if (($instance['vm_type'] ?? 'qemu') !== 'lxc') {
-            return ApiResponse::error('Add disk is only supported for LXC containers', 'NOT_LXC', 400);
-        }
+        $vmType = ($instance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
         $data = json_decode($request->getContent(), true);
         if (!is_array($data) || empty($data['storage']) || !isset($data['size_gb'])) {
             return ApiResponse::error('Request body must include "storage" and "size_gb"', 'VALIDATION_FAILED', 400);
@@ -1365,26 +1428,42 @@ class VmInstancesController
             return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
         }
 
-        $result = $client->getVmConfig($node, (int) $instance['vmid'], 'lxc');
+        $result = $client->getVmConfig($node, (int) $instance['vmid'], $vmType);
         if (!$result['ok'] || !is_array($result['config'] ?? null)) {
             return ApiResponse::error('Failed to fetch config', 'PROXMOX_ERROR', 502);
         }
         $curConfig = $result['config'];
-        $mpIndex = -1;
-        foreach (array_keys($curConfig) as $k) {
-            if (preg_match('/^mp(\d+)$/', (string) $k, $m)) {
-                $idx = (int) $m[1];
-                if ($idx > $mpIndex) {
-                    $mpIndex = $idx;
+
+        if ($vmType === 'lxc') {
+            $mpIndex = -1;
+            foreach (array_keys($curConfig) as $k) {
+                if (preg_match('/^mp(\d+)$/', (string) $k, $m)) {
+                    $idx = (int) $m[1];
+                    if ($idx > $mpIndex) {
+                        $mpIndex = $idx;
+                    }
                 }
             }
+            $nextKey = 'mp' . ($mpIndex + 1);
+            $mpValue = $storage . ':' . $sizeGb;
+            if ($path !== '') {
+                $mpValue .= ',mp=' . $path;
+            }
+            $res = $client->setVmConfig($node, (int) $instance['vmid'], 'lxc', [$nextKey => $mpValue], []);
+        } else {
+            $diskIndex = -1;
+            foreach (array_keys($curConfig) as $k) {
+                if (preg_match('/^scsi(\d+)$/', (string) $k, $m)) {
+                    $idx = (int) $m[1];
+                    if ($idx > $diskIndex) {
+                        $diskIndex = $idx;
+                    }
+                }
+            }
+            $nextKey = 'scsi' . ($diskIndex + 1);
+            $diskValue = $storage . ':' . $sizeGb;
+            $res = $client->setVmConfig($node, (int) $instance['vmid'], 'qemu', [$nextKey => $diskValue], []);
         }
-        $nextKey = 'mp' . ($mpIndex + 1);
-        $mpValue = $storage . ':' . $sizeGb;
-        if ($path !== '') {
-            $mpValue .= ',mp=' . $path;
-        }
-        $res = $client->setVmConfig($node, (int) $instance['vmid'], 'lxc', [$nextKey => $mpValue], []);
         if (!$res['ok']) {
             return ApiResponse::error('Failed to add disk: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
         }
@@ -1394,8 +1473,8 @@ class VmInstancesController
 
     #[OA\Delete(
         path: '/api/admin/vm-instances/{id}/disks/{key}',
-        summary: 'Delete LXC disk',
-        description: 'DELETE LXC mount point.',
+        summary: 'Delete VM/container disk',
+        description: 'DELETE LXC mount point or QEMU disk.',
         tags: ['Admin - VM Instances'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -1425,12 +1504,7 @@ class VmInstancesController
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
-        if (($instance['vm_type'] ?? 'qemu') !== 'lxc') {
-            return ApiResponse::error('Delete disk is only supported for LXC containers', 'NOT_LXC', 400);
-        }
-        if ($key === 'rootfs' || !preg_match('/^mp\d+$/', $key)) {
-            return ApiResponse::error('Invalid disk key. Use mp0, mp1, ... (rootfs cannot be deleted)', 'INVALID_DISK', 400);
-        }
+        $vmType = ($instance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
 
         $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
         if (!$vmNode) {
@@ -1452,7 +1526,51 @@ class VmInstancesController
             return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
         }
 
-        $res = $client->setVmConfig($node, (int) $instance['vmid'], 'lxc', [], [$key]);
+        // Fetch current config so we can protect main OS disk and cloud-init drives.
+        $cfg = $client->getVmConfig($node, (int) $instance['vmid'], $vmType);
+        if (!$cfg['ok'] || !is_array($cfg['config'] ?? null)) {
+            return ApiResponse::error('Failed to fetch config', 'PROXMOX_ERROR', 502);
+        }
+        /** @var array<string, mixed> $curConfig */
+        $curConfig = $cfg['config'];
+
+        $protectedKeys = [];
+        if ($vmType === 'lxc') {
+            // Never allow deleting rootfs on containers.
+            $protectedKeys[] = 'rootfs';
+        } else {
+            // For QEMU: always protect scsi0 (primary OS disk on panel-created VMs),
+            // and any cloud-init / cdrom media. Additional disks (scsi1+, virtioN, etc.)
+            // remain deletable even if boot order in Proxmox points to them.
+            if (array_key_exists('scsi0', $curConfig)) {
+                $protectedKeys[] = 'scsi0';
+            }
+            foreach ($curConfig as $cfgKey => $value) {
+                if (!is_string($cfgKey) || !preg_match('/^(scsi|virtio|sata|ide)\d+$/', $cfgKey)) {
+                    continue;
+                }
+                $val = is_string($value) ? $value : '';
+                if ($val !== '' && (str_contains($val, 'cloudinit') || str_contains($val, 'media=cdrom'))) {
+                    $protectedKeys[] = $cfgKey;
+                }
+            }
+        }
+        $protectedKeys = array_values(array_unique($protectedKeys));
+
+        if ($vmType === 'lxc') {
+            if ($key === 'rootfs' || !preg_match('/^mp\d+$/', $key)) {
+                return ApiResponse::error('Invalid disk key. Use mp0, mp1, ... (rootfs cannot be deleted)', 'INVALID_DISK', 400);
+            }
+        } else {
+            if (!preg_match('/^(scsi|virtio|sata|ide)\d+$/', $key)) {
+                return ApiResponse::error('Invalid disk key. Use scsi1, scsi2, virtio0, sata0, ...', 'INVALID_DISK', 400);
+            }
+        }
+        if (in_array($key, $protectedKeys, true)) {
+            return ApiResponse::error('This disk is protected (primary OS/cloud-init) and cannot be deleted', 'PROTECTED_DISK', 400);
+        }
+
+        $res = $client->setVmConfig($node, (int) $instance['vmid'], $vmType, [], [$key]);
         if (!$res['ok']) {
             return ApiResponse::error('Failed to remove disk: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
         }

@@ -82,6 +82,11 @@ export default function VmInstanceEditPage() {
     const [storageList, setStorageList] = useState<string[]>([]);
     const [dnsNameserver, setDnsNameserver] = useState('');
     const [dnsSearchDomain, setDnsSearchDomain] = useState('');
+    const [biosMode, setBiosMode] = useState('seabios');
+    const [efiEnabled, setEfiEnabled] = useState(false);
+    const [efiStorage, setEfiStorage] = useState('');
+    const [tpmEnabled, setTpmEnabled] = useState(false);
+    const [tpmStorage, setTpmStorage] = useState('');
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instance-edit');
 
@@ -132,6 +137,27 @@ export default function VmInstanceEditPage() {
                     } else {
                         setCpus(Number(cfg.sockets) || 1);
                         setCores(Number(cfg.cores) || 1);
+                        // QEMU extras: BIOS, EFI, TPM
+                        const bios = (cfg.bios as string) ?? 'seabios';
+                        setBiosMode(bios === 'ovmf' ? 'ovmf' : 'seabios');
+                        const efiVal = (cfg.efidisk0 as string) ?? '';
+                        if (efiVal) {
+                            setEfiEnabled(true);
+                            const storage = efiVal.split(':')[0] || '';
+                            setEfiStorage(storage);
+                        } else {
+                            setEfiEnabled(false);
+                            setEfiStorage('');
+                        }
+                        const tpmVal = (cfg.tpmstate0 as string) ?? '';
+                        if (tpmVal) {
+                            setTpmEnabled(true);
+                            const storage = tpmVal.split(':')[0] || '';
+                            setTpmStorage(storage);
+                        } else {
+                            setTpmEnabled(false);
+                            setTpmStorage('');
+                        }
                     }
                 }
             } catch {
@@ -356,12 +382,24 @@ export default function VmInstanceEditPage() {
         e.preventDefault();
         setSavingTab('resources');
         try {
-            await axios.patch(`/api/admin/vm-instances/${id}`, {
+            const payload: Record<string, unknown> = {
                 memory,
                 cpus,
                 cores,
                 on_boot: onBoot,
-            });
+            };
+            if (!isLxc) {
+                payload.bios = biosMode;
+                payload.efi_enabled = efiEnabled;
+                payload.efi_storage = efiEnabled
+                    ? (efiStorage || storageList[0] || 'local-lvm')
+                    : undefined;
+                payload.tpm_enabled = tpmEnabled;
+                payload.tpm_storage = tpmEnabled
+                    ? (tpmStorage || storageList[0] || 'local-lvm')
+                    : undefined;
+            }
+            await axios.patch(`/api/admin/vm-instances/${id}`, payload);
             toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
             await fetchConfig();
         } catch (err) {
@@ -420,7 +458,12 @@ export default function VmInstanceEditPage() {
     };
 
     const handleDeleteDisk = async (key: string) => {
-        if (!/^mp\d+$/.test(key)) return;
+        // Validate disk key by VM type; UI should already filter, but keep a guard.
+        if (isLxc) {
+            if (!/^mp\d+$/.test(key)) return;
+        } else if (!/^(scsi|virtio|sata|ide)\d+$/.test(key)) {
+            return;
+        }
         setDeletingDisk(key);
         try {
             await axios.delete(`/api/admin/vm-instances/${id}/disks/${key}`);
@@ -434,7 +477,11 @@ export default function VmInstanceEditPage() {
         }
     };
 
-    const diskKeys = config ? (Object.keys(config) as string[]).filter((k) => k === 'rootfs' || /^mp\d+$/.test(k)) : [];
+    const diskKeys = config
+        ? (Object.keys(config) as string[]).filter((k) =>
+              isLxc ? k === 'rootfs' || /^mp\d+$/.test(k) : /^(scsi|virtio|sata|ide)\d+$/.test(k),
+          )
+        : [];
 
     if (loading || !instance) {
         return (
@@ -448,7 +495,9 @@ export default function VmInstanceEditPage() {
         { id: 'details', label: t('admin.vmInstances.edit_tabs.details') ?? 'Details', icon: Server },
         { id: 'network', label: t('admin.vmInstances.edit_tabs.network') ?? 'Network', icon: Wifi },
         { id: 'resources', label: t('admin.vmInstances.edit_tabs.resources') ?? 'Resources', icon: Cpu },
-        ...(isLxc ? [{ id: 'disks', label: t('admin.vmInstances.edit_tabs.disks') ?? 'Disks', icon: HardDrive }] : []),
+        ...((isLxc || vmType === 'qemu')
+            ? [{ id: 'disks', label: t('admin.vmInstances.edit_tabs.disks') ?? 'Disks', icon: HardDrive }]
+            : []),
         { id: 'history', label: t('admin.vmInstances.edit_tabs.history') ?? 'Task history', icon: History },
     ] as const;
 
@@ -552,6 +601,18 @@ export default function VmInstanceEditPage() {
                             setCores={setCores}
                             onBoot={onBoot}
                             setOnBoot={setOnBoot}
+                            isQemu={!isLxc}
+                            storageList={storageList}
+                            biosMode={biosMode}
+                            setBiosMode={setBiosMode}
+                            efiEnabled={efiEnabled}
+                            setEfiEnabled={setEfiEnabled}
+                            efiStorage={efiStorage}
+                            setEfiStorage={setEfiStorage}
+                            tpmEnabled={tpmEnabled}
+                            setTpmEnabled={setTpmEnabled}
+                            tpmStorage={tpmStorage}
+                            setTpmStorage={setTpmStorage}
                             onSave={handleSaveResources}
                             saving={savingTab === 'resources'}
                         />
@@ -561,9 +622,10 @@ export default function VmInstanceEditPage() {
                         <HistoryTab instanceId={id} />
                     </TabsContent>
 
-                    {isLxc && (
+                    {(isLxc || vmType === 'qemu') && (
                         <TabsContent value='disks' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
                             <DisksTab
+                                isLxc={isLxc}
                                 config={config}
                                 diskKeys={diskKeys}
                                 storageList={storageList}
