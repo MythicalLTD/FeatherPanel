@@ -41,14 +41,12 @@ class PluginProcessor
         }
 
         $logger = App::getInstance(true)->getLogger();
-        $logger->debug('Initializing event processor for plugin: ' . $identifier);
 
         try {
             // Get and validate plugin config
             $config = PluginHelper::getPluginConfig($identifier);
             if (empty($config)) {
                 $logger->warning('Invalid or empty config for plugin: ' . $identifier);
-
                 return null;
             }
 
@@ -70,9 +68,6 @@ class PluginProcessor
             // Create and cache instance
             $instance = new $eventClass();
             self::$pluginCache[$identifier] = $instance;
-
-            $logger->debug('Successfully initialized event processor for: ' . $identifier);
-
             return $instance;
         } catch (\Throwable $e) {
             $logger->error('Failed to initialize plugin event processor: ' . $e->getMessage(), false);
@@ -110,8 +105,6 @@ class PluginProcessor
     public static function process(string $identifier, PluginEvents $event): void
     {
         $logger = App::getInstance(true)->getLogger();
-        $logger->debug('Processing event for plugin: ' . $identifier);
-
         try {
             $processor = self::getEventProcessor($identifier);
             if ($processor === null) {
@@ -121,7 +114,6 @@ class PluginProcessor
             }
 
             $processor->processEvents($event);
-            $logger->debug('Successfully processed event for plugin: ' . $identifier);
         } catch (\Throwable $e) {
             $logger->error('Failed to process plugin event', false);
         }
@@ -145,8 +137,6 @@ class PluginProcessor
         }
 
         $logger = App::getInstance(true)->getLogger();
-        $logger->debug("Getting mixin '{$mixinId}' for plugin: {$identifier}");
-
         try {
             $mixin = MixinManager::getMixin($identifier, $mixinId);
 

@@ -217,6 +217,9 @@ export default function VmInstanceViewPage() {
             if (instance?.vm_type === 'qemu') {
                 payload.ci_user = ciUser.trim();
                 payload.ci_password = ciPassword.trim();
+            } else if (instance?.vm_type === 'lxc') {
+                // For LXC, we only need a root password.
+                payload.ci_password = ciPassword.trim();
             }
             const startRes = await axios.post(`/api/admin/vm-instances/${id}/reinstall`, payload);
             const reinstallId = startRes.data?.data?.reinstall_id as string | undefined;
@@ -588,27 +591,34 @@ export default function VmInstanceViewPage() {
                                 'This will delete the current VM from Proxmox and clone a fresh one from the original template, keeping the same owner and IP. All data on this VM will be lost.'}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    {instance?.vm_type === 'qemu' && (
+                    {instance && (
                         <div className='space-y-3 py-2'>
                             <p className='text-sm text-muted-foreground'>
-                                {t('admin.vmInstances.reinstall_ci_help') ??
-                                    'Enter a new cloud-init username and password for the reinstalled VM.'}
+                                {instance.vm_type === 'qemu'
+                                    ? t('admin.vmInstances.reinstall_ci_help') ??
+                                      'Enter a new cloud-init username and password for the reinstalled VM.'
+                                    : t('admin.vmInstances.reinstall_lxc_help') ??
+                                      'Enter a new root password for the reinstalled LXC container.'}
                             </p>
+                            {instance.vm_type === 'qemu' && (
+                                <div className='space-y-1'>
+                                    <label className='block text-xs font-medium'>
+                                        {t('admin.vmInstances.reinstall_ci_user') ?? 'Cloud-init username'}
+                                    </label>
+                                    <input
+                                        type='text'
+                                        className='w-full h-9 rounded-md border border-border bg-muted/40 px-2 text-sm'
+                                        value={ciUser}
+                                        onChange={(e) => setCiUser(e.target.value)}
+                                        placeholder='debian'
+                                    />
+                                </div>
+                            )}
                             <div className='space-y-1'>
                                 <label className='block text-xs font-medium'>
-                                    {t('admin.vmInstances.reinstall_ci_user') ?? 'Cloud-init username'}
-                                </label>
-                                <input
-                                    type='text'
-                                    className='w-full h-9 rounded-md border border-border bg-muted/40 px-2 text-sm'
-                                    value={ciUser}
-                                    onChange={(e) => setCiUser(e.target.value)}
-                                    placeholder='debian'
-                                />
-                            </div>
-                            <div className='space-y-1'>
-                                <label className='block text-xs font-medium'>
-                                    {t('admin.vmInstances.reinstall_ci_password') ?? 'Cloud-init password'}
+                                    {instance.vm_type === 'qemu'
+                                        ? t('admin.vmInstances.reinstall_ci_password') ?? 'Cloud-init password'
+                                        : t('admin.vmInstances.reinstall_lxc_password') ?? 'Root password'}
                                 </label>
                                 <input
                                     type='password'

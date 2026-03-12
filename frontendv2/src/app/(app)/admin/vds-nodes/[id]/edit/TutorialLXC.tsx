@@ -61,7 +61,10 @@ export function TutorialLXC() {
                     <code>{`apt update && apt install -y openssh-server curl
 # Ensure root login is allowed if you plan to use it (optional)
 # sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-# systemctl restart ssh`}</code>
+# systemctl restart ssh
+
+apt upgrade -y
+`}</code>
                 </pre>
 
                 <p className='font-medium'>4. Convert to Template</p>

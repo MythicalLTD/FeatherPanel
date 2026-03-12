@@ -787,7 +787,31 @@ class Proxmox
         $type = $vmType === 'lxc' ? 'lxc' : 'qemu';
         $path = sprintf('/api2/json/nodes/%s/%s/%d/status/stop', $node, $type, $vmid);
 
-        return $this->apiPost($path, []);
+        // Like deleteVm, stopping can hit transient lock timeouts; retry a few
+        // times for "can't lock file" errors, and treat "not running" as a
+        // successful no-op.
+        $lastError = null;
+        for ($i = 0; $i < 5; $i++) {
+            $result = $this->apiPost($path, []);
+            if ($result['ok']) {
+                return ['ok' => true, 'error' => null];
+            }
+
+            $err = (string) ($result['error'] ?? '');
+            $lastError = $err !== '' ? $err : $lastError;
+
+            if ($err !== '' && str_contains($err, 'not running')) {
+                return ['ok' => true, 'error' => null];
+            }
+
+            if ($err === '' || !str_contains($err, "can't lock file")) {
+                return ['ok' => false, 'error' => $err !== '' ? $err : null];
+            }
+
+            sleep(2);
+        }
+
+        return ['ok' => false, 'error' => $lastError ?? 'Failed to stop VM after retries'];
     }
 
     /**
@@ -802,7 +826,73 @@ class Proxmox
         $type = $vmType === 'lxc' ? 'lxc' : 'qemu';
         $path = sprintf('/api2/json/nodes/%s/%s/%d', $node, $type, $vmid);
 
-        return $this->apiDelete($path, ['purge' => 1]);
+        // Proxmox can transiently fail deletes with "can't lock file ... got timeout"
+        // if another task still holds the VM config lock. Retry a few times before
+        // giving up so old VMs/containers are cleaned up more reliably.
+        $lastError = null;
+        for ($i = 0; $i < 5; $i++) {
+            $result = $this->apiDelete($path, ['purge' => 1]);
+            if ($result['ok']) {
+                return ['ok' => true, 'error' => null];
+            }
+
+            $err = (string) ($result['error'] ?? '');
+            $lastError = $err !== '' ? $err : $lastError;
+
+            if ($err === '' || !str_contains($err, "can't lock file")) {
+                // Not a lock-timeout issue; don't spin on it.
+                return ['ok' => false, 'error' => $err !== '' ? $err : null];
+            }
+
+            // For lock timeouts, wait a bit and try again.
+            sleep(2);
+        }
+
+        return ['ok' => false, 'error' => $lastError ?? "Failed to delete $type $vmid after retries"];
+    }
+
+    /**
+     * Set the root password inside an LXC container.
+     *
+     * This uses the root-only /nodes/{node}/execute API to POST to the local
+     * /lxc/{vmid}/exec endpoint on that node, effectively running:
+     *
+     *   pct exec {vmid} -- sh -c 'echo "root:password" | chpasswd'
+     *
+     * The container must be running before this is called.
+     *
+     * @return array{ok: bool, error: string|null}
+     */
+    public function setLxcRootPassword(string $node, int $vmid, string $password): array
+    {
+        if ($password === '') {
+            return ['ok' => false, 'error' => 'Empty password'];
+        }
+
+        // Use /nodes/{node}/execute to POST to the node-local LXC exec endpoint.
+        // commands is a JSON-encoded array of { path, method, args } objects.
+        $script = sprintf('echo "root:%s" | chpasswd', str_replace('"', '\"', $password));
+        $commands = [
+            [
+                'path'   => sprintf('lxc/%d/exec', $vmid),
+                'method' => 'POST',
+                'args'   => [
+                    'command'    => 'sh',
+                    'extra-args' => ['-c', $script],
+                ],
+            ],
+        ];
+
+        $path = sprintf('/api2/json/nodes/%s/execute', $node);
+        $result = $this->apiPost($path, [
+            'commands' => json_encode($commands, JSON_UNESCAPED_SLASHES),
+        ]);
+
+        if (!$result['ok']) {
+            return ['ok' => false, 'error' => $result['error'] ?? 'exec failed'];
+        }
+
+        return ['ok' => true, 'error' => null];
     }
 
     /**

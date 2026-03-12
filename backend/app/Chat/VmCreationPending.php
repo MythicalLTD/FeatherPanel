@@ -32,12 +32,12 @@ class VmCreationPending
         ');
 
         return $stmt->execute([
-            'creation_id'  => $data['creation_id'],
-            'upid'         => $data['upid'],
-            'target_node'  => $data['target_node'],
-            'vmid'         => (int) $data['vmid'],
-            'hostname'     => $data['hostname'],
-            'vm_node_id'   => (int) $data['vm_node_id'],
+            'creation_id'  => $data['creation_id'] ?? '',
+            'upid'         => $data['upid'] ?? '',
+            'target_node'  => $data['target_node'] ?? '',
+            'vmid'         => isset($data['vmid']) ? (int) $data['vmid'] : 0,
+            'hostname'     => $data['hostname'] ?? null,
+            'vm_node_id'   => isset($data['vm_node_id']) ? (int) $data['vm_node_id'] : 0,
             'plan_id'      => isset($data['plan_id']) && $data['plan_id'] > 0 ? (int) $data['plan_id'] : null,
             'template_id'  => isset($data['template_id']) ? (int) $data['template_id'] : null,
             'vm_ip_id'     => isset($data['vm_ip_id']) ? (int) $data['vm_ip_id'] : null,

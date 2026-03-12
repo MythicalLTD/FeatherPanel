@@ -55,8 +55,6 @@ class PluginHelper
         $configPath = self::getPluginsDir() . '/' . $identifier . '/conf.yml';
 
         try {
-            $logger->debug('Getting plugin config for: ' . $identifier);
-
             if (!file_exists($configPath)) {
                 $logger->warning('Plugin config file not found: ' . $configPath);
 
@@ -70,8 +68,6 @@ class PluginHelper
 
                 return [];
             }
-
-            $logger->debug('Successfully loaded config for plugin: ' . $identifier);
 
             return $config;
         } catch (ParseException $e) {

@@ -202,7 +202,6 @@ class PluginManager
 
     private function loadPlugin(string $plugin, array $config, $eventManager): void
     {
-        $this->logger->debug('Plugin ' . $plugin . ' was loaded in the memory!');
         $this->plugins[] = $plugin;
         PluginProcessor::process($config['plugin']['identifier'], $eventManager);
     }
@@ -222,11 +221,6 @@ class PluginManager
             }
 
             $mixins = MixinManager::loadMixinsForPlugin($plugin);
-            $mixinCount = count($mixins);
-
-            if ($mixinCount > 0) {
-                $this->logger->debug("Loaded {$mixinCount} mixins for plugin: {$plugin}");
-            }
         } catch (\Throwable $e) {
             $this->logger->error("Failed to load mixins for plugin {$plugin}: " . $e->getMessage());
         }

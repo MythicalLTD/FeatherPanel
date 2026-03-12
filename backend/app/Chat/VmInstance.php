@@ -191,10 +191,12 @@ class VmInstance
         $stmt = $pdo->prepare('
             INSERT INTO featherpanel_vm_instances
                 (vmid, vm_node_id, user_uuid, pve_node, plan_id, template_id, vm_type,
-                 hostname, status, ip_address, ip6_prefix, subnet_mask, gateway, vm_ip_id, notes, backup_limit)
+                 hostname, status, ip_address, ip6_prefix, subnet_mask, gateway, vm_ip_id, notes, backup_limit,
+                 memory, cpus, cores, disk_gb, on_boot)
             VALUES
                 (:vmid, :vm_node_id, :user_uuid, :pve_node, :plan_id, :template_id, :vm_type,
-                 :hostname, :status, :ip_address, :ip6_prefix, :subnet_mask, :gateway, :vm_ip_id, :notes, :backup_limit)
+                 :hostname, :status, :ip_address, :ip6_prefix, :subnet_mask, :gateway, :vm_ip_id, :notes, :backup_limit,
+                 :memory, :cpus, :cores, :disk_gb, :on_boot)
         ');
         $stmt->execute([
             'vmid'         => (int) $data['vmid'],
@@ -213,6 +215,11 @@ class VmInstance
             'vm_ip_id'     => isset($data['vm_ip_id']) ? (int) $data['vm_ip_id'] : null,
             'notes'        => $data['notes'] ?? null,
             'backup_limit' => isset($data['backup_limit']) ? (int) $data['backup_limit'] : 5,
+            'memory'       => isset($data['memory']) ? (int) $data['memory'] : 512,
+            'cpus'         => isset($data['cpus']) ? (int) $data['cpus'] : 1,
+            'cores'        => isset($data['cores']) ? (int) $data['cores'] : 1,
+            'disk_gb'      => isset($data['disk_gb']) ? (int) $data['disk_gb'] : 10,
+            'on_boot'      => isset($data['on_boot']) ? (int) (bool) $data['on_boot'] : 1,
         ]);
 
         return self::getById((int) $pdo->lastInsertId(), $pdo);
@@ -220,13 +227,14 @@ class VmInstance
 
     /**
      * Update instance fields. Only provided keys are updated.
-     * Allowed: hostname, notes, user_uuid, vm_ip_id (when set, ip_address and gateway are filled from VmIp).
+     * Allowed: hostname, notes, user_uuid, vm_ip_id (when set, ip_address and gateway are filled from VmIp),
+     * and resource fields memory, cpus, cores, disk_gb, on_boot.
      *
-     * @param array<string, mixed> $data Allowed: hostname, notes, user_uuid, vm_ip_id
+     * @param array<string, mixed> $data
      */
     public static function update(int $id, array $data): bool
     {
-        $allowed = ['hostname', 'notes', 'user_uuid', 'vm_ip_id'];
+        $allowed = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'memory', 'cpus', 'cores', 'disk_gb', 'on_boot'];
         $updates = [];
         $params = ['id' => $id];
 
@@ -265,6 +273,20 @@ class VmInstance
             if ($key === 'hostname' || $key === 'notes') {
                 $updates[] = $key . ' = :' . $key;
                 $params[$key] = $data[$key] === null ? null : (is_string($data[$key]) ? trim($data[$key]) : $data[$key]);
+                continue;
+            }
+            if (in_array($key, ['memory', 'cpus', 'cores', 'disk_gb'], true)) {
+                $val = (int) $data[$key];
+                if ($val <= 0) {
+                    continue;
+                }
+                $updates[] = $key . ' = :' . $key;
+                $params[$key] = $val;
+                continue;
+            }
+            if ($key === 'on_boot') {
+                $updates[] = 'on_boot = :on_boot';
+                $params['on_boot'] = (int) (bool) $data['on_boot'];
             }
         }
 

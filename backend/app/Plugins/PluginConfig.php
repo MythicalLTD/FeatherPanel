@@ -60,7 +60,6 @@ class PluginConfig
      */
     public static function isValidIdentifier(string $identifier): bool
     {
-        App::getInstance(true)->getLogger()->debug('Checking identifier: ' . $identifier);
         if (empty($identifier)) {
             return false;
         }
@@ -68,8 +67,6 @@ class PluginConfig
             return false;
         }
         if (preg_match('/^[a-zA-Z0-9_]+$/', $identifier) === 1) {
-            App::getInstance(true)->getLogger()->debug('Plugin id is allowed: ' . $identifier);
-
             return true;
         }
         App::getInstance(true)->getLogger()->warning('Plugin id is not allowed: ' . $identifier);
@@ -140,8 +137,6 @@ class PluginConfig
             if (!self::validateOptionalFields($config, $config['identifier'])) {
                 return false;
             }
-
-            $app->getLogger()->debug('Done processing: ' . $config['name']);
 
             return true;
         } catch (\Exception $e) {

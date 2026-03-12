@@ -44,21 +44,17 @@ class PluginFlags
     {
         $app = \App\App::getInstance(true);
         try {
-            $app->getLogger()->debug('Processing plugin flags');
             $flagList = PluginFlags::getFlags();
             foreach ($flagList as $flag) {
                 if (in_array($flag, $flags)) {
-                    $app->getLogger()->debug('Valid flag: ' . $flag);
-
                     return true;
                 }
             }
-            $app->getLogger()->debug('Invalid flags: ' . implode(', ', $flags));
+            $app->getLogger()->error('Invalid flags: ' . implode(', ', $flags));
 
             return false;
         } catch (\Exception $e) {
             $app->getLogger()->error('Failed to validate flags: ' . $e->getMessage());
-
             return false;
         }
     }

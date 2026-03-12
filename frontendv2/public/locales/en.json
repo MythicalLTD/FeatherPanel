@@ -3334,6 +3334,8 @@
 			"reinstall_ci_help": "Enter a new cloud-init username and password for the reinstalled VM. These will be applied to the template's cloud-init config.",
 			"reinstall_ci_user": "Cloud-init username",
 			"reinstall_ci_password": "Cloud-init password",
+			"reinstall_lxc_help": "Enter a new root password for the reinstalled LXC container.",
+			"reinstall_lxc_password": "Root password",
 			"backups": {
 				"title": "Backups",
 				"limit_label_create": "Backup limit",

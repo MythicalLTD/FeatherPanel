@@ -23,6 +23,7 @@ use App\Chat\VmNode;
 use App\Chat\Activity;
 use App\Chat\Database;
 use App\Chat\VmInstance;
+use App\Chat\VmInstanceBackup;
 use App\Chat\VmTemplate;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -86,8 +87,8 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'vm_ip_id', type: 'integer', nullable: true, description: 'Specific IP ID to assign'),
         new OA\Property(property: 'user_uuid', type: 'string', nullable: true, description: 'User UUID'),
         new OA\Property(property: 'notes', type: 'string', nullable: true, description: 'Notes'),
-        new OA\Property(property: 'ci_user', type: 'string', nullable: true, description: 'Cloud-init user (required for KVM)'),
-        new OA\Property(property: 'ci_password', type: 'string', nullable: true, description: 'Cloud-init password (required for KVM)'),
+        new OA\Property(property: 'ci_user', type: 'string', nullable: true, description: 'Cloud-init user (required for KVM/QEMU)'),
+        new OA\Property(property: 'ci_password', type: 'string', nullable: true, description: 'Password for the VM. Required for KVM/QEMU (cloud-init) and for LXC root password.'),
     ]
 )]
 #[OA\Schema(
@@ -280,10 +281,14 @@ class VmInstancesController
         $ciPasswordInput = isset($data['ci_password']) && is_string($data['ci_password']) ? trim($data['ci_password']) : null;
         if ($vmType === 'qemu') {
             if ($ciUserInput === null || $ciUserInput === '') {
-                return ApiResponse::error('Cloud-init user (ci_user) is required for KVM templates', 'VALIDATION_FAILED', 400);
+                return ApiResponse::error('Cloud-init user (ci_user) is required for KVM/QEMU templates', 'VALIDATION_FAILED', 400);
             }
             if ($ciPasswordInput === null || $ciPasswordInput === '') {
-                return ApiResponse::error('Cloud-init password (ci_password) is required for KVM templates', 'VALIDATION_FAILED', 400);
+                return ApiResponse::error('Cloud-init password (ci_password) is required for KVM/QEMU templates', 'VALIDATION_FAILED', 400);
+            }
+        } elseif ($vmType === 'lxc') {
+            if ($ciPasswordInput === null || $ciPasswordInput === '') {
+                return ApiResponse::error('Root password (ci_password) is required for LXC containers', 'VALIDATION_FAILED', 400);
             }
         }
         $metaNotes = [
@@ -600,21 +605,26 @@ class VmInstancesController
         $pdo->beginTransaction();
         try {
             $instanceData = [
-                'vmid' => (int) $pending['vmid'],
-                'vm_node_id' => (int) $pending['vm_node_id'],
-                'user_uuid' => $pending['user_uuid'],
-                'pve_node' => $pending['target_node'],
-                'plan_id' => isset($pending['plan_id']) && $pending['plan_id'] > 0 ? (int) $pending['plan_id'] : null,
-                'template_id' => $pending['template_id'] ? (int) $pending['template_id'] : null,
-                'vm_type' => $vmType,
-                'hostname' => $pending['hostname'],
-                'status' => 'stopped',
-                'ip_address' => $ip['ip'],
-                'subnet_mask' => null,
-                'gateway' => $ip['gateway'] ?? null,
+                'vmid'         => (int) $pending['vmid'],
+                'vm_node_id'   => (int) $pending['vm_node_id'],
+                'user_uuid'    => $pending['user_uuid'],
+                'pve_node'     => $pending['target_node'],
+                'plan_id'      => isset($pending['plan_id']) && $pending['plan_id'] > 0 ? (int) $pending['plan_id'] : null,
+                'template_id'  => $pending['template_id'] ? (int) $pending['template_id'] : null,
+                'vm_type'      => $vmType,
+                'hostname'     => $pending['hostname'],
+                'status'       => 'stopped',
+                'ip_address'   => $ip['ip'],
+                'subnet_mask'  => null,
+                'gateway'      => $ip['gateway'] ?? null,
                 'vm_ip_id'     => $pending['vm_ip_id'] ? (int) $pending['vm_ip_id'] : null,
                 'notes'        => $userNotesForInstance,
                 'backup_limit' => isset($pending['backup_limit']) ? (int) $pending['backup_limit'] : 5,
+                'memory'       => (int) ($pending['memory'] ?? 512),
+                'cpus'         => (int) ($pending['cpus'] ?? 1),
+                'cores'        => (int) ($pending['cores'] ?? 1),
+                'disk_gb'      => (int) ($pending['disk'] ?? 10),
+                'on_boot'      => !empty($pending['on_boot']) ? 1 : 0,
             ];
             $instance = VmInstance::create($instanceData, $pdo);
             if (!$instance) {
@@ -631,6 +641,30 @@ class VmInstancesController
                 $startResult = $client->startVm($pending['target_node'], (int) $pending['vmid'], $vmType);
                 if ($startResult['ok']) {
                     VmInstance::updateStatus((int) $instance['id'], 'running', $pdo);
+                }
+
+                // For LXC, if a password was provided during creation, set the root password
+                // inside the container once it is actually up. Poll status/current until
+                // Proxmox reports "running" or we hit a timeout.
+                if ($vmType === 'lxc' && $ciPasswordFromPending !== null && $ciPasswordFromPending !== '') {
+                    $maxAttempts = 10;
+                    $attempt = 0;
+                    $node = $pending['target_node'];
+                    while ($attempt < $maxAttempts) {
+                        $attempt++;
+                        $st = $client->getVmStatusCurrent($node, (int) $pending['vmid'], 'lxc');
+                        if ($st['ok'] && isset($st['status']['status']) && $st['status']['status'] === 'running') {
+                            $pwRes = $client->setLxcRootPassword($node, (int) $pending['vmid'], $ciPasswordFromPending);
+                            if (!$pwRes['ok']) {
+                                App::getInstance(true)->getLogger()->warning(
+                                    'Failed to set LXC root password during creation: ' . ($pwRes['error'] ?? 'unknown')
+                                );
+                            }
+                            break;
+                        }
+                        // Short sleep between polls so we don't hammer the API.
+                        sleep(2);
+                    }
                 }
             }
             $pdo->commit();
@@ -882,15 +916,21 @@ class VmInstancesController
             }
             if ($memory !== null && $memory >= 128) {
                 $config['memory'] = $memory;
+                $dbUpdate['memory'] = $memory;
             }
             if ($onBoot !== null) {
                 $config['onboot'] = $onBoot ? 1 : 0;
+                $dbUpdate['on_boot'] = $onBoot;
             }
             if ($vmType === 'lxc' && $networks === null) {
                 if ($cpus !== null && $cores !== null) {
                     $config['cores'] = $cpus * $cores;
+                    $dbUpdate['cpus'] = $cpus;
+                    $dbUpdate['cores'] = $cores;
                 } elseif ($cores !== null) {
                     $config['cores'] = $cores;
+                    $dbUpdate['cores'] = $cores;
+                    $dbUpdate['cpus'] = $cores;
                 }
                 if ($ip) {
                     $cidr = isset($ip['cidr']) && $ip['cidr'] !== null ? (int) $ip['cidr'] : 24;
@@ -912,9 +952,11 @@ class VmInstancesController
             } elseif ($vmType === 'qemu') {
                 if ($cpus !== null) {
                     $config['sockets'] = $cpus;
+                    $dbUpdate['cpus'] = $cpus;
                 }
                 if ($cores !== null) {
                     $config['cores'] = $cores;
+                    $dbUpdate['cores'] = $cores;
                 }
                 if ($ip) {
                     $cidr = isset($ip['cidr']) && $ip['cidr'] !== null ? (int) $ip['cidr'] : 24;
@@ -1877,6 +1919,15 @@ class VmInstancesController
                     400
                 );
             }
+        } elseif ($vmType === 'lxc') {
+            $ciPassword = isset($data['ci_password']) && is_string($data['ci_password']) ? trim($data['ci_password']) : null;
+            if ($ciPassword === null || $ciPassword === '') {
+                return ApiResponse::error(
+                    'Root password (ci_password) is required to reinstall LXC containers',
+                    'VALIDATION_FAILED',
+                    400
+                );
+            }
         }
 
         $oldVmid = (int) $instance['vmid'];
@@ -1906,58 +1957,75 @@ class VmInstancesController
         $savedCpus   = 1;
         $savedCores  = 1;
         $savedDiskGb = 0; // 0 = don't resize (template disk is already correct size or larger)
-        $currentCfg  = $client->getVmConfig($node, $oldVmid, $vmType);
-        if ($currentCfg['ok'] && is_array($currentCfg['config'])) {
-            $cfg = $currentCfg['config'];
-            if (isset($cfg['memory']) && is_numeric($cfg['memory'])) {
-                $savedMemory = (int) $cfg['memory'];
-            }
-            if ($vmType === 'qemu') {
-                if (isset($cfg['sockets']) && is_numeric($cfg['sockets'])) {
-                    $savedCpus = (int) $cfg['sockets'];
+        // Prefer panel DB values for resources so we keep them in sync from the panel's
+        // point of view; fall back to Proxmox config only if missing.
+        $savedMemory = (int) ($instance['memory'] ?? $savedMemory);
+        $savedCpus   = (int) ($instance['cpus'] ?? $savedCpus);
+        $savedCores  = (int) ($instance['cores'] ?? $savedCores);
+        $savedDiskGb = (int) ($instance['disk_gb'] ?? $savedDiskGb);
+        $rootDiskKey = null;
+
+        if ($savedMemory <= 0 || $savedCpus <= 0 || $savedCores <= 0 || $savedDiskGb <= 0) {
+            $currentCfg  = $client->getVmConfig($node, $oldVmid, $vmType);
+            if ($currentCfg['ok'] && is_array($currentCfg['config'])) {
+                $cfg = $currentCfg['config'];
+                if ($savedMemory <= 0 && isset($cfg['memory']) && is_numeric($cfg['memory'])) {
+                    $savedMemory = (int) $cfg['memory'];
                 }
-                if (isset($cfg['cores']) && is_numeric($cfg['cores'])) {
-                    $savedCores = (int) $cfg['cores'];
-                }
-                if (isset($cfg['scsi0']) && is_string($cfg['scsi0'])) {
-                    foreach (explode(',', $cfg['scsi0']) as $part) {
-                        $part = trim($part);
-                        if (str_starts_with($part, 'size=')) {
-                            $sizeVal = substr($part, 5);
-                            if (preg_match('/^(\d+)([GgMmTt])?$/', $sizeVal, $m)) {
-                                $num  = (int) $m[1];
-                                $unit = strtolower($m[2] ?? 'g');
-                                $savedDiskGb = match ($unit) {
-                                    'm' => (int) ceil($num / 1024),
-                                    't' => $num * 1024,
-                                    default => $num,
-                                };
-                            }
+                if ($vmType === 'qemu') {
+                    if ($savedCpus <= 0 && isset($cfg['sockets']) && is_numeric($cfg['sockets'])) {
+                        $savedCpus = (int) $cfg['sockets'];
+                    }
+                    if ($savedCores <= 0 && isset($cfg['cores']) && is_numeric($cfg['cores'])) {
+                        $savedCores = (int) $cfg['cores'];
+                    }
+                    // Detect the primary system disk key (supports common buses like scsi, virtio, sata, ide).
+                    foreach (['scsi0', 'virtio0', 'sata0', 'ide0'] as $candidate) {
+                        if (isset($cfg[$candidate]) && is_string($cfg[$candidate])) {
+                            $rootDiskKey = $candidate;
                             break;
                         }
                     }
-                }
-            } else {
-                // LXC: cores field holds total CPU count
-                if (isset($cfg['cores']) && is_numeric($cfg['cores'])) {
-                    $savedCores = (int) $cfg['cores'];
-                    $savedCpus  = $savedCores;
-                }
-                if (isset($cfg['rootfs']) && is_string($cfg['rootfs'])) {
-                    foreach (explode(',', $cfg['rootfs']) as $part) {
-                        $part = trim($part);
-                        if (str_starts_with($part, 'size=')) {
-                            $sizeVal = substr($part, 5);
-                            if (preg_match('/^(\d+)([GgMmTt])?$/', $sizeVal, $m)) {
-                                $num  = (int) $m[1];
-                                $unit = strtolower($m[2] ?? 'g');
-                                $savedDiskGb = match ($unit) {
-                                    'm' => (int) ceil($num / 1024),
-                                    't' => $num * 1024,
-                                    default => $num,
-                                };
+                    if ($savedDiskGb <= 0 && $rootDiskKey !== null && isset($cfg[$rootDiskKey]) && is_string($cfg[$rootDiskKey])) {
+                        foreach (explode(',', $cfg[$rootDiskKey]) as $part) {
+                            $part = trim($part);
+                            if (str_starts_with($part, 'size=')) {
+                                $sizeVal = substr($part, 5);
+                                if (preg_match('/^(\d+)([GgMmTt])?$/', $sizeVal, $m)) {
+                                    $num  = (int) $m[1];
+                                    $unit = strtolower($m[2] ?? 'g');
+                                    $savedDiskGb = match ($unit) {
+                                        'm' => (int) ceil($num / 1024),
+                                        't' => $num * 1024,
+                                        default => $num,
+                                    };
+                                }
+                                break;
                             }
-                            break;
+                        }
+                    }
+                } else {
+                    // LXC: cores field holds total CPU count
+                    if (($savedCores <= 0 || $savedCpus <= 0) && isset($cfg['cores']) && is_numeric($cfg['cores'])) {
+                        $savedCores = (int) $cfg['cores'];
+                        $savedCpus  = $savedCores;
+                    }
+                    if ($savedDiskGb <= 0 && isset($cfg['rootfs']) && is_string($cfg['rootfs'])) {
+                        foreach (explode(',', $cfg['rootfs']) as $part) {
+                            $part = trim($part);
+                            if (str_starts_with($part, 'size=')) {
+                                $sizeVal = substr($part, 5);
+                                if (preg_match('/^(\d+)([GgMmTt])?$/', $sizeVal, $m)) {
+                                    $num  = (int) $m[1];
+                                    $unit = strtolower($m[2] ?? 'g');
+                                    $savedDiskGb = match ($unit) {
+                                        'm' => (int) ceil($num / 1024),
+                                        't' => $num * 1024,
+                                        default => $num,
+                                    };
+                                }
+                                break;
+                            }
                         }
                     }
                 }
@@ -1999,6 +2067,7 @@ class VmInstancesController
             'cpus'        => $savedCpus,
             'cores'       => $savedCores,
             'disk_gb'     => $savedDiskGb,
+            'root_disk'   => $rootDiskKey,
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         $reinstallId = bin2hex(random_bytes(16));
@@ -2121,6 +2190,7 @@ class VmInstancesController
         $cpus       = (int) ($reinstallMeta['cpus'] ?? 1);
         $cores      = (int) ($reinstallMeta['cores'] ?? 1);
         $diskGb     = (int) ($reinstallMeta['disk_gb'] ?? 0);
+        $rootDisk   = is_string($reinstallMeta['root_disk'] ?? null) ? (string) $reinstallMeta['root_disk'] : null;
 
         if ($vmType === 'lxc') {
             $deleteNetKeys = [];
@@ -2139,13 +2209,14 @@ class VmInstancesController
             if ($gateway !== '') {
                 $net0 .= ',gw=' . $gateway;
             }
-            $client->setVmConfig($node, $newVmid, 'lxc', [
+            $config = [
                 'nameserver' => '1.1.1.1 8.8.8.8',
                 'net0'       => $net0,
                 'memory'     => $memory,
                 'cores'      => $cores > 0 ? $cores : 1,
                 'onboot'     => 0,
-            ], []);
+            ];
+            $client->setVmConfig($node, $newVmid, 'lxc', $config, []);
             // Resize rootfs if client had more disk than the template default.
             if ($diskGb > 0) {
                 $cfgAfter = $client->getVmConfig($node, $newVmid, 'lxc');
@@ -2178,22 +2249,27 @@ class VmInstancesController
             if ($gateway !== '') {
                 $ipconfig0 .= ',gw=' . $gateway;
             }
+            // Default boot/disk bus to scsi0 if we did not detect a specific root disk key.
+            $bootDiskKey = $rootDisk ?? 'scsi0';
+            $bootOrder = 'order=' . $bootDiskKey;
+
             $client->setVmConfig($node, $newVmid, 'qemu', [
                 'nameserver' => '1.1.1.1 8.8.8.8',
                 'ipconfig0'  => $ipconfig0,
-                'boot'       => 'order=scsi0',
+                'boot'       => $bootOrder,
                 'memory'     => $memory,
                 'sockets'    => $cpus > 0 ? $cpus : 1,
                 'cores'      => $cores > 0 ? $cores : 1,
                 'ciuser'     => $ciUser ?? 'debian',
                 'cipassword' => $ciPassword ?? bin2hex(random_bytes(6)),
             ], []);
-            // Resize scsi0 if the client had a larger disk than the template default.
+            // Resize the primary disk (scsi0/virtio0/etc.) if the client had a larger disk than the template default.
             if ($diskGb > 0) {
                 $cfgAfter = $client->getVmConfig($node, $newVmid, 'qemu');
                 $templateDiskGb = 0;
-                if ($cfgAfter['ok'] && isset($cfgAfter['config']['scsi0']) && is_string($cfgAfter['config']['scsi0'])) {
-                    foreach (explode(',', $cfgAfter['config']['scsi0']) as $part) {
+                $diskKey = $bootDiskKey;
+                if ($cfgAfter['ok'] && isset($cfgAfter['config'][$diskKey]) && is_string($cfgAfter['config'][$diskKey])) {
+                    foreach (explode(',', $cfgAfter['config'][$diskKey]) as $part) {
                         $part = trim($part);
                         if (str_starts_with($part, 'size=')) {
                             $sv = substr($part, 5);
@@ -2209,11 +2285,20 @@ class VmInstancesController
                     }
                 }
                 if ($diskGb > $templateDiskGb) {
-                    $resizeRes = $client->resizeQemuDisk($node, $newVmid, 'scsi0', $diskGb . 'G');
+                    $resizeRes = $client->resizeQemuDisk($node, $newVmid, $diskKey, $diskGb . 'G');
                     if (!$resizeRes['ok']) {
                         App::getInstance(true)->getLogger()->warning('Reinstall QEMU scsi0 resize failed: ' . ($resizeRes['error'] ?? 'unknown'));
                     }
                 }
+            }
+        }
+
+        // If this instance had any tracked backups, purge them now since reinstall
+        // semantics are "wipe everything" for this VM instance.
+        if ($instanceId > 0) {
+            $instanceForBackups = VmInstance::getById($instanceId);
+            if ($instanceForBackups) {
+                self::deleteInstanceBackups($instanceForBackups, $client);
             }
         }
 
@@ -2231,6 +2316,25 @@ class VmInstancesController
             App::getInstance(true)->getLogger()->warning(
                 'Reinstall: failed to start new VM ' . $newVmid . ': ' . ($startResult['error'] ?? 'unknown')
             );
+        } elseif ($vmType === 'lxc' && $ciPassword !== null && $ciPassword !== '') {
+            // For LXC reinstall, wait until the container is reported as running before
+            // applying the new root password via exec.
+            $maxAttempts = 10;
+            $attempt = 0;
+            while ($attempt < $maxAttempts) {
+                $attempt++;
+                $st = $client->getVmStatusCurrent($node, $newVmid, 'lxc');
+                if ($st['ok'] && isset($st['status']['status']) && $st['status']['status'] === 'running') {
+                    $pwRes = $client->setLxcRootPassword($node, $newVmid, $ciPassword);
+                    if (!$pwRes['ok']) {
+                        App::getInstance(true)->getLogger()->warning(
+                            'Reinstall: failed to set LXC root password for VM ' . $newVmid . ': ' . ($pwRes['error'] ?? 'unknown')
+                        );
+                    }
+                    break;
+                }
+                sleep(2);
+            }
         }
 
         // Update the panel DB record to point to the new VMID.
@@ -2303,29 +2407,10 @@ class VmInstancesController
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
-        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
-        if (!$vmNode) {
-            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
-        }
-        try {
-            $client = self::buildProxmoxClientForNode($vmNode);
-        } catch (\Throwable $e) {
-            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
-        }
-
-        $node = $instance['pve_node'] ?? '';
-        $vmid = (int) $instance['vmid'];
-
-        $result = $client->listVmBackups($node, $vmid);
-        if (!$result['ok']) {
-            return ApiResponse::error($result['error'] ?? 'Failed to list backups', 'PROXMOX_ERROR', 500);
-        }
+        $backups = VmInstanceBackup::getBackupsByInstanceId((int) $instance['id']);
 
         return ApiResponse::success([
-            'backups'      => $result['backups'],
-            'storages'     => $result['storages'] ?? [],
+            'backups'      => $backups,
             'backup_limit' => (int) ($instance['backup_limit'] ?? 5),
         ], 'Backups listed', 200);
     }
@@ -2404,8 +2489,8 @@ class VmInstancesController
         }
 
         $backupLimit = (int) ($instance['backup_limit'] ?? 5);
-        $existing    = $client->listVmBackups($node, $vmid);
-        if ($existing['ok'] && count($existing['backups']) >= $backupLimit) {
+        $existingCount = VmInstanceBackup::countByInstanceId((int) $instance['id']);
+        if ($existingCount >= $backupLimit) {
             return ApiResponse::error(
                 'Backup limit reached (' . $backupLimit . '). Delete an existing backup first.',
                 'BACKUP_LIMIT_REACHED',
@@ -2546,7 +2631,51 @@ class VmInstancesController
         VmCreationPending::deleteByCreationId($backupId);
 
         if ($exitStatus !== 'OK') {
-            return ApiResponse::success(['status' => 'failed', 'error' => 'Backup task exited with: ' . $exitStatus], 'Backup failed', 200);
+            return ApiResponse::success(
+                ['status' => 'failed', 'error' => 'Backup task exited with: ' . $exitStatus],
+                'Backup failed',
+                200
+            );
+        }
+
+        // Backup finished successfully; resolve the created vzdump volume on Proxmox and
+        // persist a tracking row so we only ever list backups created via FeatherPanel.
+        $storageForBackup = is_string($meta['storage'] ?? null) ? (string) $meta['storage'] : '';
+        $nodeForBackup = $node !== '' ? $node : ($instance['pve_node'] ?? '');
+        $vmidForBackup = (int) $instance['vmid'];
+
+        if ($nodeForBackup !== '' && $vmidForBackup > 0 && $storageForBackup !== '') {
+            $list = $client->listVmBackups((string) $nodeForBackup, $vmidForBackup);
+            if ($list['ok'] && !empty($list['backups'])) {
+                $matching = array_values(array_filter(
+                    $list['backups'],
+                    static function (array $b) use ($storageForBackup): bool {
+                        return isset($b['storage']) && (string) $b['storage'] === $storageForBackup;
+                    }
+                ));
+
+                if (!empty($matching)) {
+                    // listVmBackups already returns backups sorted by ctime desc,
+                    // so the first item should be the one we just created.
+                    /** @var array<string, mixed> $latest */
+                    $latest = $matching[0];
+
+                    VmInstanceBackup::create([
+                        'vm_instance_id' => $instanceId,
+                        'vmid'           => $vmidForBackup,
+                        'storage'        => $storageForBackup,
+                        'volid'          => (string) ($latest['volid'] ?? ''),
+                        'size_bytes'     => isset($latest['size']) ? (int) $latest['size'] : 0,
+                        'ctime'          => isset($latest['ctime']) ? (int) $latest['ctime'] : 0,
+                        'format'         => isset($latest['format']) ? (string) $latest['format'] : null,
+                    ]);
+                } else {
+                    App::getInstance(true)->getLogger()->warning(
+                        'Backup finished but no matching vzdump volume found for instance ' . $instanceId .
+                        ' on storage ' . $storageForBackup
+                    );
+                }
+            }
         }
 
         $admin = $request->get('user');
@@ -2592,17 +2721,6 @@ class VmInstancesController
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
-        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
-        if (!$vmNode) {
-            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
-        }
-        try {
-            $client = self::buildProxmoxClientForNode($vmNode);
-        } catch (\Throwable $e) {
-            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
-        }
 
         $data    = json_decode($request->getContent(), true);
         if (!is_array($data)) {
@@ -2615,15 +2733,31 @@ class VmInstancesController
             return ApiResponse::error('volid and storage are required', 'MISSING_PARAMS', 400);
         }
 
-        $vmid = (int) $instance['vmid'];
-        if (strpos($volid, (string) $vmid) === false) {
+        $backup = VmInstanceBackup::getByInstanceAndVolid((int) $instance['id'], $volid);
+        if (!$backup) {
             return ApiResponse::error('This backup does not belong to this VM', 'FORBIDDEN', 403);
         }
 
-        $node   = $instance['pve_node'] ?? '';
-        $result = $client->deleteBackupVolume($node, $storage, $volid);
-        if (!$result['ok']) {
-            return ApiResponse::error($result['error'] ?? 'Failed to delete backup', 'PROXMOX_ERROR', 500);
+        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
+        if ($vmNode) {
+            try {
+                $client = self::buildProxmoxClientForNode($vmNode);
+                $node   = $instance['pve_node'] ?? '';
+                if ($node !== '') {
+                    $result = $client->deleteBackupVolume($node, (string) $backup['storage'], (string) $backup['volid']);
+                    if (!$result['ok']) {
+                        return ApiResponse::error($result['error'] ?? 'Failed to delete backup', 'PROXMOX_ERROR', 500);
+                    }
+                }
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
+                return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+            }
+        }
+
+        if (isset($backup['id']) && (int) $backup['id'] > 0) {
+            VmInstanceBackup::deleteById((int) $backup['id']);
         }
 
         $admin = $request->get('user');
@@ -2967,6 +3101,8 @@ class VmInstancesController
 
         $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
         if (!$vmNode) {
+            // Node is already gone; purge any tracked backups from DB and delete the instance row.
+            self::deleteInstanceBackups($instance, null);
             VmInstance::delete($id);
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
@@ -2991,6 +3127,9 @@ class VmInstancesController
                 (int) ($vmNode['timeout'] ?? 60),
             );
         } catch (\Throwable $e) {
+            // Proxmox is unreachable; still purge tracked backups from DB so they
+            // cannot be listed anymore, then delete the instance row.
+            self::deleteInstanceBackups($instance, null);
             VmInstance::delete($id);
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
@@ -3009,9 +3148,16 @@ class VmInstancesController
         }
         if ($node !== null && $node !== '') {
             $vmType = in_array($instance['vm_type'] ?? 'qemu', ['qemu', 'lxc'], true) ? $instance['vm_type'] : 'qemu';
+            // Always stop the VM/container first so we are not deleting a running guest.
             $client->stopVm($node, (int) $instance['vmid'], $vmType);
             sleep(2);
+            // After the guest is stopped, delete any tracked vzdump backups for this instance.
+            self::deleteInstanceBackups($instance, $client);
+            // Finally, remove the VM/container itself from Proxmox.
             $client->deleteVm($node, (int) $instance['vmid'], $vmType);
+        } else {
+            // We could not resolve a node, but still want to forget tracked backups in the DB.
+            self::deleteInstanceBackups($instance, null);
         }
 
         VmInstance::delete($id);
@@ -3047,6 +3193,48 @@ class VmInstancesController
         }
 
         return $s !== '' ? $s : 'vm-' . time();
+    }
+
+    /**
+     * Delete all tracked backups for a VM instance from Proxmox and the database.
+     *
+     * This is best-effort: failures to delete individual backup volumes are logged but do not
+     * block the overall VM delete/reinstall flow.
+     *
+     * @param array<string, mixed> $instance
+     */
+    private static function deleteInstanceBackups(array $instance, ?Proxmox $client = null): void
+    {
+        $instanceId = (int) ($instance['id'] ?? 0);
+        if ($instanceId <= 0) {
+            return;
+        }
+
+        $backups = VmInstanceBackup::getBackupsByInstanceId($instanceId);
+        if (empty($backups)) {
+            return;
+        }
+
+        $node = (string) ($instance['pve_node'] ?? '');
+
+        foreach ($backups as $backup) {
+            $volid = (string) ($backup['volid'] ?? '');
+            $storage = (string) ($backup['storage'] ?? '');
+
+            if ($client !== null && $node !== '' && $volid !== '' && $storage !== '') {
+                $res = $client->deleteBackupVolume($node, $storage, $volid);
+                if (!$res['ok']) {
+                    App::getInstance(true)->getLogger()->warning(
+                        'Failed to delete Proxmox backup volume for VM instance ' . $instanceId .
+                        ' volid=' . $volid . ' storage=' . $storage . ': ' . ($res['error'] ?? 'unknown')
+                    );
+                }
+            }
+
+            if (isset($backup['id']) && (int) $backup['id'] > 0) {
+                VmInstanceBackup::deleteById((int) $backup['id']);
+            }
+        }
     }
 
     /**
