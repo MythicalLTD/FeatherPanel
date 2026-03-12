@@ -100,7 +100,9 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
                     setSelectedStorage(stor[0]);
                 }
             } else {
-                const unique = [...new Set(((data.data?.backups as Backup[]) ?? []).map((b) => b.storage).filter(Boolean))];
+                const unique = [
+                    ...new Set(((data.data?.backups as Backup[]) ?? []).map((b) => b.storage).filter(Boolean)),
+                ];
                 setStorages(unique);
                 if (unique.length > 0 && !selectedStorage) {
                     setSelectedStorage(unique[0]);
@@ -155,18 +157,20 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
                         return;
                     }
                     if (s?.status === 'failed') {
-                        toast.error(s?.error ?? (t('admin.vmInstances.backups.create_failed') ?? 'Backup failed'));
+                        toast.error(s?.error ?? t('admin.vmInstances.backups.create_failed') ?? 'Backup failed');
                         setCreating(false);
                         return;
                     }
-                } catch { /* transient, keep polling */ }
-                setTimeout(() => { void poll(); }, 5000);
+                } catch {
+                    /* transient, keep polling */
+                }
+                setTimeout(() => {
+                    void poll();
+                }, 5000);
             };
             void poll();
         } catch (err) {
-            const msg = axios.isAxiosError(err)
-                ? (err.response?.data?.message ?? err.message)
-                : String(err);
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
             toast.error(msg);
             setCreating(false);
         }
@@ -183,9 +187,7 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
             toast.success(t('admin.vmInstances.backups.delete_success') ?? 'Backup deleted');
             await fetchBackups();
         } catch (err) {
-            const msg = axios.isAxiosError(err)
-                ? (err.response?.data?.message ?? err.message)
-                : String(err);
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
             toast.error(msg);
         } finally {
             setDeleting(null);
@@ -230,18 +232,20 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
                         return;
                     }
                     if (s?.status === 'failed') {
-                        toast.error(s?.error ?? (t('admin.vmInstances.backups.restore_failed') ?? 'Restore failed'));
+                        toast.error(s?.error ?? t('admin.vmInstances.backups.restore_failed') ?? 'Restore failed');
                         setRestoring(null);
                         return;
                     }
-                } catch { /* transient */ }
-                setTimeout(() => { void poll(); }, 5000);
+                } catch {
+                    /* transient */
+                }
+                setTimeout(() => {
+                    void poll();
+                }, 5000);
             };
             void poll();
         } catch (err) {
-            const msg = axios.isAxiosError(err)
-                ? (err.response?.data?.message ?? err.message)
-                : String(err);
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
             toast.error(msg);
             setRestoring(null);
         }
@@ -262,9 +266,7 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
             setEditingLimit(false);
             toast.success(t('admin.vmInstances.backups.limit_saved') ?? 'Backup limit updated');
         } catch (err) {
-            const msg = axios.isAxiosError(err)
-                ? (err.response?.data?.message ?? err.message)
-                : String(err);
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
             toast.error(msg);
         } finally {
             setSavingLimit(false);
@@ -372,7 +374,9 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
                                         value={selectedStorage || ''}
                                         onChange={(v) => setSelectedStorage(String(v))}
                                         options={storages.map((s) => ({ id: s, name: s }))}
-                                        placeholder={t('admin.vmInstances.backups.storage_placeholder') ?? 'Select storage…'}
+                                        placeholder={
+                                            t('admin.vmInstances.backups.storage_placeholder') ?? 'Select storage…'
+                                        }
                                         buttonClassName='h-9 w-full'
                                     />
                                 ) : (
@@ -393,7 +397,11 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
                                     value={compress}
                                     onChange={(v) => setCompress(String(v))}
                                     options={[
-                                        { id: 'zstd', name: t('admin.vmInstances.backups.compression_zstd') ?? 'zstd (recommended)' },
+                                        {
+                                            id: 'zstd',
+                                            name:
+                                                t('admin.vmInstances.backups.compression_zstd') ?? 'zstd (recommended)',
+                                        },
                                         { id: 'lzo', name: t('admin.vmInstances.backups.compression_lzo') ?? 'lzo' },
                                         { id: 'gzip', name: t('admin.vmInstances.backups.compression_gzip') ?? 'gzip' },
                                         { id: '0', name: t('admin.vmInstances.backups.compression_none') ?? 'None' },
@@ -442,9 +450,7 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
                                     <th className='pb-2 pr-4 font-medium'>
                                         {t('admin.vmInstances.backups.col_storage') ?? 'Storage'}
                                     </th>
-                                    <th className='pb-2 font-medium text-right'>
-                                        {t('common.actions') ?? 'Actions'}
-                                    </th>
+                                    <th className='pb-2 font-medium text-right'>{t('common.actions') ?? 'Actions'}</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-border/50'>
@@ -454,18 +460,14 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
                                     const date = new Date(backup.ctime * 1000);
                                     return (
                                         <tr key={backup.volid} className='group'>
-                                            <td className='py-2.5 pr-4 font-mono text-xs'>
-                                                {date.toLocaleString()}
-                                            </td>
+                                            <td className='py-2.5 pr-4 font-mono text-xs'>{date.toLocaleString()}</td>
                                             <td className='py-2.5 pr-4 tabular-nums'>
                                                 {formatBytes(backup.size ?? 0)}
                                             </td>
                                             <td className='py-2.5 pr-4 text-muted-foreground'>
                                                 {backup.format ?? '—'}
                                             </td>
-                                            <td className='py-2.5 pr-4 text-muted-foreground'>
-                                                {backup.storage}
-                                            </td>
+                                            <td className='py-2.5 pr-4 text-muted-foreground'>{backup.storage}</td>
                                             <td className='py-2.5 text-right'>
                                                 <div className='flex items-center justify-end gap-2'>
                                                     <Button
@@ -481,7 +483,8 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
                                                         )}
                                                         <span className='ml-1.5 hidden sm:inline'>
                                                             {isRestoring
-                                                                ? (t('admin.vmInstances.backups.restoring') ?? 'Restoring…')
+                                                                ? (t('admin.vmInstances.backups.restoring') ??
+                                                                  'Restoring…')
                                                                 : (t('admin.vmInstances.backups.restore') ?? 'Restore')}
                                                         </span>
                                                     </Button>
@@ -520,9 +523,7 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
                             {t('admin.vmInstances.backups.delete_confirm_desc') ??
                                 'This will permanently delete the backup file from storage. This cannot be undone.'}
                             {confirmDelete && (
-                                <span className='block mt-2 font-mono text-xs break-all'>
-                                    {confirmDelete.volid}
-                                </span>
+                                <span className='block mt-2 font-mono text-xs break-all'>{confirmDelete.volid}</span>
                             )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -549,9 +550,7 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
                             {t('admin.vmInstances.backups.restore_confirm_desc') ??
                                 'The VM will be stopped and overwritten with this backup. All current data will be replaced. The VM will start again after restore.'}
                             {confirmRestore && (
-                                <span className='block mt-2 font-mono text-xs break-all'>
-                                    {confirmRestore.volid}
-                                </span>
+                                <span className='block mt-2 font-mono text-xs break-all'>{confirmRestore.volid}</span>
                             )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>

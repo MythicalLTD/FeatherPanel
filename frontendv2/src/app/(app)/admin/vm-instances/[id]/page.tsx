@@ -259,7 +259,9 @@ export default function VmInstanceViewPage() {
                 } catch {
                     // Ignore transient polling errors — keep polling.
                 }
-                setTimeout(() => { void poll(); }, 3000);
+                setTimeout(() => {
+                    void poll();
+                }, 3000);
             };
             void poll();
         } catch (err) {
@@ -361,7 +363,9 @@ export default function VmInstanceViewPage() {
                             ) : (
                                 <RotateCw className='h-4 w-4 mr-2' />
                             )}
-                            {reinstalling ? (t('common.processing') ?? 'Reinstalling…') : (t('admin.vmInstances.reinstall') ?? 'Reinstall')}
+                            {reinstalling
+                                ? (t('common.processing') ?? 'Reinstalling…')
+                                : (t('admin.vmInstances.reinstall') ?? 'Reinstall')}
                         </Button>
                         <Button size='sm' variant='destructive' onClick={() => setConfirmDelete(true)}>
                             <Trash2 className='h-4 w-4 mr-2' />
@@ -447,21 +451,15 @@ export default function VmInstanceViewPage() {
                             </dd>
                         </div>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>
-                                {t('admin.vmInstances.details_vmid') ?? 'VMID'}
-                            </dt>
+                            <dt className='text-muted-foreground'>{t('admin.vmInstances.details_vmid') ?? 'VMID'}</dt>
                             <dd className='font-mono'>{instance.vmid}</dd>
                         </div>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>
-                                {t('admin.vmInstances.details_node') ?? 'Node'}
-                            </dt>
+                            <dt className='text-muted-foreground'>{t('admin.vmInstances.details_node') ?? 'Node'}</dt>
                             <dd>{instance.node_name ?? '—'}</dd>
                         </div>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>
-                                {t('admin.vmInstances.details_plan') ?? 'Plan'}
-                            </dt>
+                            <dt className='text-muted-foreground'>{t('admin.vmInstances.details_plan') ?? 'Plan'}</dt>
                             <dd>{instance.plan_name ?? '—'}</dd>
                         </div>
                         <div className='flex justify-between'>
@@ -491,8 +489,8 @@ export default function VmInstanceViewPage() {
                                             onClick={() => setShowLxcPassword((v) => !v)}
                                             title={
                                                 showLxcPassword
-                                                    ? t('admin.vmInstances.lxc_root_password_hide') ?? 'Hide password'
-                                                    : t('admin.vmInstances.lxc_root_password_show') ?? 'Show password'
+                                                    ? (t('admin.vmInstances.lxc_root_password_hide') ?? 'Hide password')
+                                                    : (t('admin.vmInstances.lxc_root_password_show') ?? 'Show password')
                                             }
                                         >
                                             {showLxcPassword ? (
@@ -547,9 +545,7 @@ export default function VmInstanceViewPage() {
                 <PageCard title={t('admin.vmInstances.network') ?? 'Network'} icon={Network}>
                     <dl className='space-y-3 text-sm'>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>
-                                {t('admin.vmInstances.network_ip_label') ?? 'IP'}
-                            </dt>
+                            <dt className='text-muted-foreground'>{t('admin.vmInstances.network_ip_label') ?? 'IP'}</dt>
                             <dd className='font-mono'>{instance.ip_pool_address ?? instance.ip_address ?? '—'}</dd>
                         </div>
                         <div className='flex justify-between'>
@@ -559,9 +555,7 @@ export default function VmInstanceViewPage() {
                             <dd className='font-mono'>{instance.gateway ?? '—'}</dd>
                         </div>
                         <div className='flex justify-between'>
-                            <dt className='text-muted-foreground'>
-                                {t('admin.vmInstances.owner_label') ?? 'Owner'}
-                            </dt>
+                            <dt className='text-muted-foreground'>{t('admin.vmInstances.owner_label') ?? 'Owner'}</dt>
                             <dd className='flex items-center gap-1'>
                                 {instance.user_username ? (
                                     <>
@@ -586,23 +580,22 @@ export default function VmInstanceViewPage() {
                         {instance.plan_cpus != null && (
                             <span className='flex items-center gap-2'>
                                 <Cpu className='h-4 w-4 text-muted-foreground' />
-                                {instance.plan_cpus}{' '}
-                                {t('admin.vmInstances.cpu_label') ?? 'CPU'} / {instance.plan_cores ?? '?'}{' '}
-                                {t('admin.vmInstances.cores_label') ?? 'cores'}
+                                {instance.plan_cpus} {t('admin.vmInstances.cpu_label') ?? 'CPU'} /{' '}
+                                {instance.plan_cores ?? '?'} {t('admin.vmInstances.cores_label') ?? 'cores'}
                             </span>
                         )}
                         {instance.plan_memory != null && (
                             <span className='flex items-center gap-2'>
                                 <Server className='h-4 w-4 text-muted-foreground' />
-                                {instance.plan_memory}{' '}
-                                {t('common.mb') ?? 'MB'} {t('admin.vmInstances.ram_label') ?? 'RAM'}
+                                {instance.plan_memory} {t('common.mb') ?? 'MB'}{' '}
+                                {t('admin.vmInstances.ram_label') ?? 'RAM'}
                             </span>
                         )}
                         {instance.plan_disk != null && (
                             <span className='flex items-center gap-2'>
                                 <HardDrive className='h-4 w-4 text-muted-foreground' />
-                                {instance.plan_disk}{' '}
-                                {t('common.gb') ?? 'GB'} {t('admin.vmInstances.disk_label') ?? 'disk'}
+                                {instance.plan_disk} {t('common.gb') ?? 'GB'}{' '}
+                                {t('admin.vmInstances.disk_label') ?? 'disk'}
                             </span>
                         )}
                     </div>
@@ -659,10 +652,10 @@ export default function VmInstanceViewPage() {
                         <div className='space-y-3 py-2'>
                             <p className='text-sm text-muted-foreground'>
                                 {instance.vm_type === 'qemu'
-                                    ? t('admin.vmInstances.reinstall_ci_help') ??
-                                      'Enter a new cloud-init username and password for the reinstalled VM.'
-                                    : t('admin.vmInstances.reinstall_lxc_help') ??
-                                      'LXC passwords are not managed by FeatherPanel. The template\'s default root password will continue to apply.'}
+                                    ? (t('admin.vmInstances.reinstall_ci_help') ??
+                                      'Enter a new cloud-init username and password for the reinstalled VM.')
+                                    : (t('admin.vmInstances.reinstall_lxc_help') ??
+                                      "LXC passwords are not managed by FeatherPanel. The template's default root password will continue to apply.")}
                             </p>
                             {instance.vm_type === 'qemu' && (
                                 <div className='space-y-1'>

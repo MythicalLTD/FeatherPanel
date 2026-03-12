@@ -47,6 +47,7 @@ class PluginProcessor
             $config = PluginHelper::getPluginConfig($identifier);
             if (empty($config)) {
                 $logger->warning('Invalid or empty config for plugin: ' . $identifier);
+
                 return null;
             }
 
@@ -68,6 +69,7 @@ class PluginProcessor
             // Create and cache instance
             $instance = new $eventClass();
             self::$pluginCache[$identifier] = $instance;
+
             return $instance;
         } catch (\Throwable $e) {
             $logger->error('Failed to initialize plugin event processor: ' . $e->getMessage(), false);

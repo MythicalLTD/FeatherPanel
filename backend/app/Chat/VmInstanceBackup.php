@@ -33,10 +33,8 @@ class VmInstanceBackup
      * Create a new VM instance backup row.
      *
      * @param array<string, mixed> $data
-     *
-     * @return int|false
      */
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         $required = ['vm_instance_id', 'vmid', 'storage', 'volid'];
         foreach ($required as $field) {
@@ -96,8 +94,6 @@ class VmInstanceBackup
 
     /**
      * Get all backups for a specific VM instance.
-     *
-     * @param int $vmInstanceId
      *
      * @return array<int, array<string, mixed>>
      */
@@ -190,4 +186,3 @@ class VmInstanceBackup
         return (int) $stmt->fetchColumn();
     }
 }
-

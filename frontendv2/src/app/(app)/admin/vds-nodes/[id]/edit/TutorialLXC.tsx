@@ -25,9 +25,10 @@ export function TutorialLXC() {
                     <ShieldAlert className='h-4 w-4' />
                     <AlertTitle>Security Warning</AlertTitle>
                     <AlertDescription>
-                        LXC containers are not recommended if you plan to provide public hosting services. They lack KVM 
-                        virtualization, which often causes issues with Docker and advanced networking. Additionally, 
-                        exploits that escape containers to reach the host are more common with LXC. We strongly advise using 
+                        LXC containers are not recommended if you plan to provide public hosting services. They lack KVM
+                        virtualization, which often causes issues with Docker and advanced networking. Additionally,
+                        exploits that escape containers to reach the host are more common with LXC. We strongly advise
+                        using
                         <strong>QEMU/KVM Virtual Machines</strong> for hosting.
                     </AlertDescription>
                 </Alert>
@@ -35,8 +36,8 @@ export function TutorialLXC() {
                 <p className='font-medium'>1. Download a Container Template</p>
                 <p>
                     In the Proxmox web interface, navigate to your storage (e.g., <code>local</code>), click on
-                    <code>CT Templates</code>, and then click <code>Templates</code>. Choose your preferred
-                    distribution (e.g., Debian 12, Ubuntu 24.04) and click <code>Download</code>.
+                    <code>CT Templates</code>, and then click <code>Templates</code>. Choose your preferred distribution
+                    (e.g., Debian 12, Ubuntu 24.04) and click <code>Download</code>.
                 </p>
 
                 <p className='font-medium'>2. Create the Container</p>
@@ -56,8 +57,8 @@ export function TutorialLXC() {
                         <span className='font-semibold'>CPU / Memory:</span> Keep defaults or adjust as needed.
                     </li>
                     <li>
-                        <span className='font-semibold'>Network:</span> Set <code>Bridge = vmbr0</code> and leave
-                        IP settings as <code>Static</code> (FeatherPanel will override these settings during cloning).
+                        <span className='font-semibold'>Network:</span> Set <code>Bridge = vmbr0</code> and leave IP
+                        settings as <code>Static</code> (FeatherPanel will override these settings during cloning).
                     </li>
                     <li>
                         <span className='font-semibold'>Confirm:</span> Review settings and click <code>Finish</code>.
@@ -86,8 +87,8 @@ apt upgrade -y
 
                 <p className='font-medium'>5. Hook into FeatherPanel</p>
                 <p>
-                    In the Templates tab of your VDS Node, add a new template using the VMID of the LXC template you just
-                    created. Ensure you select <code>LXC</code> as the Guest Type. FeatherPanel will now be able to
+                    In the Templates tab of your VDS Node, add a new template using the VMID of the LXC template you
+                    just created. Ensure you select <code>LXC</code> as the Guest Type. FeatherPanel will now be able to
                     clone this template when creating new LXC instances.
                 </p>
             </div>

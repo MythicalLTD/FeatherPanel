@@ -45,16 +45,16 @@ wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.i
                     </li>
                     <li>
                         <span className='font-semibold'>System tab:</span> <code>Machine = q35</code>,{' '}
-                        <code>BIOS = OVMF (UEFI)</code>. When asked, choose EFI storage (e.g. <code>local</code>)
-                        and tick <code>Qemu agent</code>.
+                        <code>BIOS = OVMF (UEFI)</code>. When asked, choose EFI storage (e.g. <code>local</code>) and
+                        tick <code>Qemu agent</code>.
                     </li>
                     <li>
                         <span className='font-semibold'>Disks tab:</span> leave the default disk so the wizard can
                         finish (we will remove the default <code>scsi0</code> after creation).
                     </li>
                     <li>
-                        <span className='font-semibold'>CPU tab:</span> set <code>Type = host</code>; keep
-                        sockets/cores at your preferred defaults.
+                        <span className='font-semibold'>CPU tab:</span> set <code>Type = host</code>; keep sockets/cores
+                        at your preferred defaults.
                     </li>
                     <li>
                         <span className='font-semibold'>Memory tab:</span> choose a reasonable default (e.g.
@@ -62,15 +62,14 @@ wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.i
                     </li>
                     <li>
                         <span className='font-semibold'>Network tab:</span>{' '}
-                        <code>Model = VirtIO (paravirtualized)</code>, bridge <code>vmbr0</code> (or your main
-                        bridge).
+                        <code>Model = VirtIO (paravirtualized)</code>, bridge <code>vmbr0</code> (or your main bridge).
                     </li>
                 </ul>
                 <p className='text-xs'>
                     After the VM is created, open its <code>Hardware</code> tab,{' '}
-                    <span className='font-semibold'>remove the default scsi0 disk</span>, and make sure you still
-                    have an EFI disk (<code>efidisk0</code>) and a free IDE slot for cloud-init (<code>ide2</code>).
-                    Then on the node shell run the commands below.{' '}
+                    <span className='font-semibold'>remove the default scsi0 disk</span>, and make sure you still have
+                    an EFI disk (<code>efidisk0</code>) and a free IDE slot for cloud-init (<code>ide2</code>). Then on
+                    the node shell run the commands below.{' '}
                     <span className='font-semibold text-foreground'>Do not literally type</span>{' '}
                     <code>&lt;storage&gt;</code> – replace it with your storage ID from <code>qm config</code> (for
                     example <code>local</code> or <code>local-lvm</code>).
@@ -102,16 +101,16 @@ qm set 9000 --serial0 socket --vga serial0`}</code>
                 <p className='text-xs'>
                     Next, open <code>Options → Boot order</code>. Uncheck <code>ide2</code> and <code>net0</code> as
                     boot devices and drag <code>scsi0</code> to the very top so it is the{' '}
-                    <span className='font-semibold'>only active boot entry</span>. This ensures the VM always boots
-                    from the main disk on <code>scsi0</code> and never from PXE or the cloud-init CD while still
-                    using the cloud-init drive on <code>ide2</code> for metadata.
+                    <span className='font-semibold'>only active boot entry</span>. This ensures the VM always boots from
+                    the main disk on <code>scsi0</code> and never from PXE or the cloud-init CD while still using the
+                    cloud-init drive on <code>ide2</code> for metadata.
                 </p>
                 <p className='text-xs'>
                     Go to <code>Hardware</code> and make sure you have an EFI disk (<code>efidisk0</code>) and a
                     <span className='font-semibold'> CloudInit drive</span> on <code>ide2</code>.{' '}
                     <span className='font-semibold text-foreground'>Do not remove the CloudInit drive</span> – it is
-                    required for FeatherPanel to inject IP, user, password and SSH keys. Finally, right‑click the VM
-                    in the tree, choose <code>Convert to template</code> and confirm. This gives you a ready‑to‑use
+                    required for FeatherPanel to inject IP, user, password and SSH keys. Finally, right‑click the VM in
+                    the tree, choose <code>Convert to template</code> and confirm. This gives you a ready‑to‑use
                     cloud-init template for that OS.
                 </p>
 
@@ -124,17 +123,16 @@ qm set 9000 --serial0 socket --vga serial0`}</code>
                     </li>
                     <li>
                         <span className='font-semibold'>OS tab:</span> again,{' '}
-                        <span className='font-semibold'>no ISO</span> (set CD/DVD to{' '}
-                        <code>Do not use any media</code>).
+                        <span className='font-semibold'>no ISO</span> (set CD/DVD to <code>Do not use any media</code>).
                     </li>
                     <li>
                         <span className='font-semibold'>System tab:</span> <code>Machine = q35</code>,{' '}
                         <code>BIOS = OVMF (UEFI)</code> with EFI storage, Qemu agent enabled.
                     </li>
                     <li>
-                        <span className='font-semibold'>Disks / CPU / Memory / Network:</span> same defaults as
-                        Debian; remove the default <code>scsi0</code> disk on <code>Hardware</code> after creation,
-                        keep VirtIO network.
+                        <span className='font-semibold'>Disks / CPU / Memory / Network:</span> same defaults as Debian;
+                        remove the default <code>scsi0</code> disk on <code>Hardware</code> after creation, keep VirtIO
+                        network.
                     </li>
                 </ul>
                 <p className='text-xs'>
@@ -163,26 +161,26 @@ qm set 9001 --serial0 socket --vga serial0`}</code>
                 <p className='text-xs'>
                     Next, open <code>Options → Boot order</code>. Uncheck <code>ide2</code> and <code>net0</code> as
                     boot devices and drag <code>scsi0</code> to the very top so it is the{' '}
-                    <span className='font-semibold'>only active boot entry</span>. This ensures the VM always boots
-                    from the main disk on <code>scsi0</code> and never from PXE or the cloud-init CD while still
-                    using the cloud-init drive on <code>ide2</code> for metadata.
+                    <span className='font-semibold'>only active boot entry</span>. This ensures the VM always boots from
+                    the main disk on <code>scsi0</code> and never from PXE or the cloud-init CD while still using the
+                    cloud-init drive on <code>ide2</code> for metadata.
                 </p>
                 <p className='text-xs'>
                     Go to <code>Hardware</code> and make sure you have an EFI disk (<code>efidisk0</code>) and a
                     <span className='font-semibold'> CloudInit drive</span> on <code>ide2</code>.{' '}
                     <span className='font-semibold text-foreground'>Do not remove the CloudInit drive</span> – it is
-                    required for FeatherPanel to inject IP, user, password and SSH keys. Finally, right‑click the VM
-                    in the tree, choose <code>Convert to template</code> and confirm. This gives you a ready‑to‑use
+                    required for FeatherPanel to inject IP, user, password and SSH keys. Finally, right‑click the VM in
+                    the tree, choose <code>Convert to template</code> and confirm. This gives you a ready‑to‑use
                     cloud-init template for that OS.
                 </p>
 
                 <p className='font-medium'>4. Hook into FeatherPanel</p>
                 <p>
-                    In your plans / products, use template ID <code>9000</code> for Debian 13 and <code>9001</code>{' '}
-                    for Ubuntu 24.04. FeatherPanel will clone these templates, apply cloud-init (IP, user, password
-                    / SSH keys) and the VNC Console button will open the Proxmox noVNC URL directly. These steps are
-                    written for official Debian/Ubuntu cloud-init images, but the same pattern generally works for
-                    other distros that ship proper cloud-init images and UEFI support.
+                    In your plans / products, use template ID <code>9000</code> for Debian 13 and <code>9001</code> for
+                    Ubuntu 24.04. FeatherPanel will clone these templates, apply cloud-init (IP, user, password / SSH
+                    keys) and the VNC Console button will open the Proxmox noVNC URL directly. These steps are written
+                    for official Debian/Ubuntu cloud-init images, but the same pattern generally works for other distros
+                    that ship proper cloud-init images and UEFI support.
                 </p>
 
                 <div className='bg-primary/5 rounded-lg border border-primary/20 p-4 mt-6'>
@@ -192,8 +190,8 @@ qm set 9001 --serial0 socket --vga serial0`}</code>
                     </p>
                     <p className='text-xs mt-1 text-muted-foreground'>
                         VMs (QEMU/KVM) provide the strongest isolation and best compatibility with modern workloads like
-                        Docker and complex networking. FeatherPanel developers and security experts recommend VMs over LXC
-                        for all commercial hosting applications to prevent container escapes and resource abuse.
+                        Docker and complex networking. FeatherPanel developers and security experts recommend VMs over
+                        LXC for all commercial hosting applications to prevent container escapes and resource abuse.
                     </p>
                 </div>
             </div>

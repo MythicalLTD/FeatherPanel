@@ -29,7 +29,19 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
-import { Server, Search, RefreshCw, Trash2, ChevronLeft, ChevronRight, MapPin, Shield, Network, Pencil, HeartHandshakeIcon } from 'lucide-react';
+import {
+    Server,
+    Search,
+    RefreshCw,
+    Trash2,
+    ChevronLeft,
+    ChevronRight,
+    MapPin,
+    Shield,
+    Network,
+    Pencil,
+    HeartHandshakeIcon,
+} from 'lucide-react';
 
 interface VmNode {
     id: number;

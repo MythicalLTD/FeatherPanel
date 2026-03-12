@@ -118,19 +118,19 @@ export function DisksTab({
                                     {((/^mp\d+$/.test(k) && isLxc) ||
                                         (/^(scsi|virtio|sata|ide)\d+$/.test(k) && !isLxc)) &&
                                         !protectedKeys.has(k) && (
-                                        <Button
-                                            type='button'
-                                            variant='ghost'
-                                            size='sm'
-                                            className='text-destructive hover:text-destructive'
-                                            onClick={() => onDeleteDisk(k)}
-                                            loading={deletingDisk === k}
-                                            disabled={!!deletingDisk}
-                                        >
-                                            <Trash2 className='h-4 w-4 mr-1' />
-                                            {t('common.delete') ?? 'Delete'}
-                                        </Button>
-                                    )}
+                                            <Button
+                                                type='button'
+                                                variant='ghost'
+                                                size='sm'
+                                                className='text-destructive hover:text-destructive'
+                                                onClick={() => onDeleteDisk(k)}
+                                                loading={deletingDisk === k}
+                                                disabled={!!deletingDisk}
+                                            >
+                                                <Trash2 className='h-4 w-4 mr-1' />
+                                                {t('common.delete') ?? 'Delete'}
+                                            </Button>
+                                        )}
                                 </li>
                             ))}
                         </ul>

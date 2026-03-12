@@ -256,7 +256,6 @@ class Proxmox
 
             // Try to extract as much detail as possible from the Proxmox reply.
             if (method_exists($e, 'getResponse')) {
-                /** @var mixed $e */
                 $response = $e->getResponse();
                 if ($response !== null) {
                     $statusCode = $response->getStatusCode();
@@ -829,7 +828,7 @@ class Proxmox
         // times for "can't lock file" errors, and treat "not running" as a
         // successful no-op.
         $lastError = null;
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 5; ++$i) {
             $result = $this->apiPost($path, []);
             if ($result['ok']) {
                 return ['ok' => true, 'error' => null];
@@ -868,7 +867,7 @@ class Proxmox
         // if another task still holds the VM config lock. Retry a few times before
         // giving up so old VMs/containers are cleaned up more reliably.
         $lastError = null;
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 5; ++$i) {
             $result = $this->apiDelete($path, ['purge' => 1]);
             if ($result['ok']) {
                 return ['ok' => true, 'error' => null];
@@ -888,7 +887,6 @@ class Proxmox
 
         return ['ok' => false, 'error' => $lastError ?? "Failed to delete $type $vmid after retries"];
     }
-
 
     /**
      * Unlink one or more QEMU disks (e.g. scsi1, unused0) from a VM.

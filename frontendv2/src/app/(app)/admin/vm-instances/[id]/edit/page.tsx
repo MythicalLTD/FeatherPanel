@@ -391,13 +391,9 @@ export default function VmInstanceEditPage() {
             if (!isLxc) {
                 payload.bios = biosMode;
                 payload.efi_enabled = efiEnabled;
-                payload.efi_storage = efiEnabled
-                    ? (efiStorage || storageList[0] || 'local-lvm')
-                    : undefined;
+                payload.efi_storage = efiEnabled ? efiStorage || storageList[0] || 'local-lvm' : undefined;
                 payload.tpm_enabled = tpmEnabled;
-                payload.tpm_storage = tpmEnabled
-                    ? (tpmStorage || storageList[0] || 'local-lvm')
-                    : undefined;
+                payload.tpm_storage = tpmEnabled ? tpmStorage || storageList[0] || 'local-lvm' : undefined;
             }
             await axios.patch(`/api/admin/vm-instances/${id}`, payload);
             toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
@@ -495,7 +491,7 @@ export default function VmInstanceEditPage() {
         { id: 'details', label: t('admin.vmInstances.edit_tabs.details') ?? 'Details', icon: Server },
         { id: 'network', label: t('admin.vmInstances.edit_tabs.network') ?? 'Network', icon: Wifi },
         { id: 'resources', label: t('admin.vmInstances.edit_tabs.resources') ?? 'Resources', icon: Cpu },
-        ...((isLxc || vmType === 'qemu')
+        ...(isLxc || vmType === 'qemu'
             ? [{ id: 'disks', label: t('admin.vmInstances.edit_tabs.disks') ?? 'Disks', icon: HardDrive }]
             : []),
         { id: 'history', label: t('admin.vmInstances.edit_tabs.history') ?? 'Task history', icon: History },

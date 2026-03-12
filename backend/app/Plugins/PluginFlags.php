@@ -55,6 +55,7 @@ class PluginFlags
             return false;
         } catch (\Exception $e) {
             $app->getLogger()->error('Failed to validate flags: ' . $e->getMessage());
+
             return false;
         }
     }

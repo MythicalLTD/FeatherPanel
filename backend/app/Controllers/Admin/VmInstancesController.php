@@ -23,10 +23,10 @@ use App\Chat\VmNode;
 use App\Chat\Activity;
 use App\Chat\Database;
 use App\Chat\VmInstance;
-use App\Chat\VmInstanceBackup;
 use App\Chat\VmTemplate;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Chat\VmInstanceBackup;
 use App\Chat\VmCreationPending;
 use App\Config\ConfigInterface;
 use App\Services\Proxmox\Proxmox;
@@ -2259,7 +2259,7 @@ class VmInstancesController
                                 $n = (int) $m[1];
                                 $u = strtolower($m[2] ?? 'g');
                                 $templateDiskGb = match ($u) {
-                                    'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n
+                                    'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n,
                                 };
                             }
                             break;
@@ -2311,7 +2311,7 @@ class VmInstancesController
                                 $n = (int) $m[1];
                                 $u = strtolower($m[2] ?? 'g');
                                 $templateDiskGb = match ($u) {
-                                    'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n
+                                    'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n,
                                 };
                             }
                             break;

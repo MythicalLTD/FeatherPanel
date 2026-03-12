@@ -244,10 +244,8 @@ export default function VmInstancesCreatePage() {
     const canProceedStep1 = nodeId > 0 && templateId > 0 && freeIps.length > 0;
     const hostnameValid = hostname.trim().length > 0;
     const ownerSelected = selectedOwner != null;
-    const ciFieldsValid =
-        isLxcTemplate || (ciUser.trim().length > 0 && ciPassword.trim().length > 0);
-    const canCreate =
-        currentStep === totalSteps && canProceedStep1 && hostnameValid && ownerSelected && ciFieldsValid;
+    const ciFieldsValid = isLxcTemplate || (ciUser.trim().length > 0 && ciPassword.trim().length > 0);
+    const canCreate = currentStep === totalSteps && canProceedStep1 && hostnameValid && ownerSelected && ciFieldsValid;
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -276,15 +274,11 @@ export default function VmInstancesCreatePage() {
         }
         if (!isLxcTemplate) {
             if (!ciUser.trim()) {
-                toast.error(
-                    t('admin.vmInstances.errors.ci_user_required') ?? 'Cloud-init username is required.',
-                );
+                toast.error(t('admin.vmInstances.errors.ci_user_required') ?? 'Cloud-init username is required.');
                 return;
             }
             if (!ciPassword.trim()) {
-                toast.error(
-                    t('admin.vmInstances.errors.ci_password_required') ?? 'Cloud-init password is required.',
-                );
+                toast.error(t('admin.vmInstances.errors.ci_password_required') ?? 'Cloud-init password is required.');
                 return;
             }
         }
@@ -635,11 +629,16 @@ export default function VmInstancesCreatePage() {
                                         min={0}
                                         max={100}
                                         value={backupLimit}
-                                        onChange={(e) => setBackupLimit(Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0)))}
+                                        onChange={(e) =>
+                                            setBackupLimit(
+                                                Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0)),
+                                            )
+                                        }
                                         className='bg-muted/30 h-11'
                                     />
                                     <p className='text-xs text-muted-foreground'>
-                                        {t('admin.vmInstances.backups.limit_help') ?? 'Maximum number of backups allowed for this instance (0 = no backups).'}
+                                        {t('admin.vmInstances.backups.limit_help') ??
+                                            'Maximum number of backups allowed for this instance (0 = no backups).'}
                                     </p>
                                 </div>
                             </div>
