@@ -88,7 +88,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'user_uuid', type: 'string', nullable: true, description: 'User UUID'),
         new OA\Property(property: 'notes', type: 'string', nullable: true, description: 'Notes'),
         new OA\Property(property: 'ci_user', type: 'string', nullable: true, description: 'Cloud-init user (required for KVM/QEMU)'),
-        new OA\Property(property: 'ci_password', type: 'string', nullable: true, description: 'Password for the VM. Required for KVM/QEMU (cloud-init) and for LXC root password.'),
+        new OA\Property(property: 'ci_password', type: 'string', nullable: true, description: 'Cloud-init password (required for KVM/QEMU). Not used for LXC.'),
     ]
 )]
 #[OA\Schema(
@@ -285,10 +285,6 @@ class VmInstancesController
             }
             if ($ciPasswordInput === null || $ciPasswordInput === '') {
                 return ApiResponse::error('Cloud-init password (ci_password) is required for KVM/QEMU templates', 'VALIDATION_FAILED', 400);
-            }
-        } elseif ($vmType === 'lxc') {
-            if ($ciPasswordInput === null || $ciPasswordInput === '') {
-                return ApiResponse::error('Root password (ci_password) is required for LXC containers', 'VALIDATION_FAILED', 400);
             }
         }
         $metaNotes = [
@@ -523,6 +519,11 @@ class VmInstancesController
                     $resizeRes = $client->resizeQemuDisk($pending['target_node'], (int) $pending['vmid'], 'scsi0', $requestedDiskGb . 'G');
                     if (!$resizeRes['ok']) {
                         App::getInstance(true)->getLogger()->warning('QEMU disk resize failed (continuing): ' . ($resizeRes['error'] ?? 'unknown'));
+                    } elseif (is_string($resizeRes['upid'] ?? null) && $resizeRes['upid'] !== '') {
+                        $wait = $client->waitTask($pending['target_node'], (string) $resizeRes['upid'], 600, 5);
+                        if (!$wait['ok']) {
+                            App::getInstance(true)->getLogger()->warning('QEMU disk resize task failed: ' . ($wait['error'] ?? 'unknown'));
+                        }
                     }
                 }
             }
@@ -571,6 +572,46 @@ class VmInstancesController
             );
             if (!$configResult['ok']) {
                 App::getInstance(true)->getLogger()->warning('LXC config update failed (continuing): ' . ($configResult['error'] ?? ''));
+            }
+
+            // If requested disk size is larger than current LXC rootfs, grow it to the desired size (GB).
+            $requestedDiskGb = isset($pending['disk']) ? (int) $pending['disk'] : 0;
+            if ($requestedDiskGb > 0 && $getConfig['ok'] && isset($getConfig['config']['rootfs']) && is_string($getConfig['config']['rootfs'])) {
+                $rootfs = $getConfig['config']['rootfs'];
+                $parts = explode(',', $rootfs);
+                $currentSizeGb = null;
+                foreach ($parts as $part) {
+                    $part = trim($part);
+                    if (str_starts_with($part, 'size=')) {
+                        $sizeVal = substr($part, 5);
+                        if (preg_match('/^(\d+)([GgMm])?$/', $sizeVal, $m)) {
+                            $num = (int) $m[1];
+                            $unit = isset($m[2]) ? strtolower($m[2]) : 'g';
+                            $currentSizeGb = $unit === 'm' ? (int) ceil($num / 1024) : $num;
+                        }
+                        break;
+                    }
+                }
+                if ($currentSizeGb !== null && $requestedDiskGb > $currentSizeGb) {
+                    $resizeRes = $client->resizeContainerDisk(
+                        $pending['target_node'],
+                        (int) $pending['vmid'],
+                        'rootfs',
+                        $requestedDiskGb . 'G',
+                    );
+                    if (!$resizeRes['ok']) {
+                        App::getInstance(true)->getLogger()->warning(
+                            'LXC disk resize failed (continuing): ' . ($resizeRes['error'] ?? 'unknown'),
+                        );
+                    } elseif (is_string($resizeRes['upid'] ?? null) && $resizeRes['upid'] !== '') {
+                        $wait = $client->waitTask($pending['target_node'], (string) $resizeRes['upid'], 600, 5);
+                        if (!$wait['ok']) {
+                            App::getInstance(true)->getLogger()->warning(
+                                'LXC disk resize task failed: ' . ($wait['error'] ?? 'unknown'),
+                            );
+                        }
+                    }
+                }
             }
         } else {
             $ipconfig0 = 'ip=' . $ip['ip'] . '/' . $cidr;
@@ -643,29 +684,7 @@ class VmInstancesController
                     VmInstance::updateStatus((int) $instance['id'], 'running', $pdo);
                 }
 
-                // For LXC, if a password was provided during creation, set the root password
-                // inside the container once it is actually up. Poll status/current until
-                // Proxmox reports "running" or we hit a timeout.
-                if ($vmType === 'lxc' && $ciPasswordFromPending !== null && $ciPasswordFromPending !== '') {
-                    $maxAttempts = 10;
-                    $attempt = 0;
-                    $node = $pending['target_node'];
-                    while ($attempt < $maxAttempts) {
-                        $attempt++;
-                        $st = $client->getVmStatusCurrent($node, (int) $pending['vmid'], 'lxc');
-                        if ($st['ok'] && isset($st['status']['status']) && $st['status']['status'] === 'running') {
-                            $pwRes = $client->setLxcRootPassword($node, (int) $pending['vmid'], $ciPasswordFromPending);
-                            if (!$pwRes['ok']) {
-                                App::getInstance(true)->getLogger()->warning(
-                                    'Failed to set LXC root password during creation: ' . ($pwRes['error'] ?? 'unknown')
-                                );
-                            }
-                            break;
-                        }
-                        // Short sleep between polls so we don't hammer the API.
-                        sleep(2);
-                    }
-                }
+                // For LXC we do not manage or change root passwords from FeatherPanel.
             }
             $pdo->commit();
         } catch (\Throwable $e) {
@@ -731,7 +750,20 @@ class VmInstancesController
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
 
-        return ApiResponse::success(['instance' => $instance], 'VM instance fetched successfully', 200);
+        $extra = [];
+        $vmType = ($instance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
+        if (!empty($instance['template_id']) && $vmType === 'lxc') {
+            $template = VmTemplate::getById((int) $instance['template_id']);
+            if ($template && !empty($template['lxc_root_password'])) {
+                $extra['lxc_root_password'] = (string) $template['lxc_root_password'];
+            }
+        }
+
+        return ApiResponse::success(
+            ['instance' => array_merge($instance, $extra)],
+            'VM instance fetched successfully',
+            200
+        );
     }
 
     #[OA\Patch(
@@ -1466,6 +1498,12 @@ class VmInstancesController
         if (!$res['ok']) {
             return ApiResponse::error('Resize failed: ' . ($res['error'] ?? 'unknown'), 'RESIZE_FAILED', 502);
         }
+        if (is_string($res['upid'] ?? null) && $res['upid'] !== '') {
+            $wait = $client->waitTask($node, (string) $res['upid'], 600, 5);
+            if (!$wait['ok']) {
+                return ApiResponse::error('Resize task failed: ' . ($wait['error'] ?? 'unknown'), 'RESIZE_FAILED', 502);
+            }
+        }
 
         return ApiResponse::success(['message' => 'Disk resized'], 'Disk resized successfully', 200);
     }
@@ -1919,15 +1957,6 @@ class VmInstancesController
                     400
                 );
             }
-        } elseif ($vmType === 'lxc') {
-            $ciPassword = isset($data['ci_password']) && is_string($data['ci_password']) ? trim($data['ci_password']) : null;
-            if ($ciPassword === null || $ciPassword === '') {
-                return ApiResponse::error(
-                    'Root password (ci_password) is required to reinstall LXC containers',
-                    'VALIDATION_FAILED',
-                    400
-                );
-            }
         }
 
         $oldVmid = (int) $instance['vmid'];
@@ -2241,6 +2270,11 @@ class VmInstancesController
                     $resizeRes = $client->resizeContainerDisk($node, $newVmid, 'rootfs', $diskGb . 'G');
                     if (!$resizeRes['ok']) {
                         App::getInstance(true)->getLogger()->warning('Reinstall LXC rootfs resize failed: ' . ($resizeRes['error'] ?? 'unknown'));
+                    } elseif (is_string($resizeRes['upid'] ?? null) && $resizeRes['upid'] !== '') {
+                        $wait = $client->waitTask($node, (string) $resizeRes['upid'], 600, 5);
+                        if (!$wait['ok']) {
+                            App::getInstance(true)->getLogger()->warning('Reinstall LXC rootfs resize task failed: ' . ($wait['error'] ?? 'unknown'));
+                        }
                     }
                 }
             }
@@ -2287,7 +2321,12 @@ class VmInstancesController
                 if ($diskGb > $templateDiskGb) {
                     $resizeRes = $client->resizeQemuDisk($node, $newVmid, $diskKey, $diskGb . 'G');
                     if (!$resizeRes['ok']) {
-                        App::getInstance(true)->getLogger()->warning('Reinstall QEMU scsi0 resize failed: ' . ($resizeRes['error'] ?? 'unknown'));
+                        App::getInstance(true)->getLogger()->warning('Reinstall QEMU disk resize failed: ' . ($resizeRes['error'] ?? 'unknown'));
+                    } elseif (is_string($resizeRes['upid'] ?? null) && $resizeRes['upid'] !== '') {
+                        $wait = $client->waitTask($node, (string) $resizeRes['upid'], 600, 5);
+                        if (!$wait['ok']) {
+                            App::getInstance(true)->getLogger()->warning('Reinstall QEMU disk resize task failed: ' . ($wait['error'] ?? 'unknown'));
+                        }
                     }
                 }
             }
@@ -2310,31 +2349,15 @@ class VmInstancesController
         }
 
         // Start the freshly installed VM.
+        // Give Proxmox a short window to finish any async operations (such as
+        // disk resize) before attempting to start the new guest.
+        sleep(2);
         $startResult = $client->startVm($node, $newVmid, $vmType);
         $finalStatus = $startResult['ok'] ? 'running' : 'stopped';
         if (!$startResult['ok']) {
             App::getInstance(true)->getLogger()->warning(
                 'Reinstall: failed to start new VM ' . $newVmid . ': ' . ($startResult['error'] ?? 'unknown')
             );
-        } elseif ($vmType === 'lxc' && $ciPassword !== null && $ciPassword !== '') {
-            // For LXC reinstall, wait until the container is reported as running before
-            // applying the new root password via exec.
-            $maxAttempts = 10;
-            $attempt = 0;
-            while ($attempt < $maxAttempts) {
-                $attempt++;
-                $st = $client->getVmStatusCurrent($node, $newVmid, 'lxc');
-                if ($st['ok'] && isset($st['status']['status']) && $st['status']['status'] === 'running') {
-                    $pwRes = $client->setLxcRootPassword($node, $newVmid, $ciPassword);
-                    if (!$pwRes['ok']) {
-                        App::getInstance(true)->getLogger()->warning(
-                            'Reinstall: failed to set LXC root password for VM ' . $newVmid . ': ' . ($pwRes['error'] ?? 'unknown')
-                        );
-                    }
-                    break;
-                }
-                sleep(2);
-            }
         }
 
         // Update the panel DB record to point to the new VMID.
@@ -3154,7 +3177,19 @@ class VmInstancesController
             // After the guest is stopped, delete any tracked vzdump backups for this instance.
             self::deleteInstanceBackups($instance, $client);
             // Finally, remove the VM/container itself from Proxmox.
-            $client->deleteVm($node, (int) $instance['vmid'], $vmType);
+            $deleteResult = $client->deleteVm($node, (int) $instance['vmid'], $vmType);
+            if (!$deleteResult['ok']) {
+                App::getInstance(true)->getLogger()->error(
+                    'Failed to delete VM/CT from Proxmox for instance ' . $id . ' (vmid ' . $instance['vmid'] . '): ' .
+                    ($deleteResult['error'] ?? 'unknown')
+                );
+
+                return ApiResponse::error(
+                    'Failed to delete VM from Proxmox: ' . ($deleteResult['error'] ?? 'unknown'),
+                    'PROXMOX_DELETE_FAILED',
+                    502
+                );
+            }
         } else {
             // We could not resolve a node, but still want to forget tracked backups in the DB.
             self::deleteInstanceBackups($instance, null);

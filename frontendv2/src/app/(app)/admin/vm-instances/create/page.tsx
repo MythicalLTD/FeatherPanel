@@ -139,6 +139,9 @@ export default function VmInstancesCreatePage() {
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instances-create');
 
+    const selectedTemplate = templates.find((tpl) => tpl.id === templateId) || null;
+    const isLxcTemplate = selectedTemplate?.guest_type === 'lxc';
+
     useEffect(() => {
         axios
             .get('/api/admin/vm-nodes', { params: { limit: 100 } })
@@ -241,8 +244,10 @@ export default function VmInstancesCreatePage() {
     const canProceedStep1 = nodeId > 0 && templateId > 0 && freeIps.length > 0;
     const hostnameValid = hostname.trim().length > 0;
     const ownerSelected = selectedOwner != null;
-    const ciFieldsValid = ciUser.trim().length > 0 && ciPassword.trim().length > 0;
-    const canCreate = currentStep === totalSteps && canProceedStep1 && hostnameValid && ownerSelected && ciFieldsValid;
+    const ciFieldsValid =
+        isLxcTemplate || (ciUser.trim().length > 0 && ciPassword.trim().length > 0);
+    const canCreate =
+        currentStep === totalSteps && canProceedStep1 && hostnameValid && ownerSelected && ciFieldsValid;
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -269,13 +274,19 @@ export default function VmInstancesCreatePage() {
             toast.error(t('admin.vmInstances.errors.hostname_required') ?? 'Hostname is required.');
             return;
         }
-        if (!ciUser.trim()) {
-            toast.error('Cloud-init username is required.');
-            return;
-        }
-        if (!ciPassword.trim()) {
-            toast.error('Cloud-init password is required.');
-            return;
+        if (!isLxcTemplate) {
+            if (!ciUser.trim()) {
+                toast.error(
+                    t('admin.vmInstances.errors.ci_user_required') ?? 'Cloud-init username is required.',
+                );
+                return;
+            }
+            if (!ciPassword.trim()) {
+                toast.error(
+                    t('admin.vmInstances.errors.ci_password_required') ?? 'Cloud-init password is required.',
+                );
+                return;
+            }
         }
         if (!selectedOwner) {
             toast.error(t('admin.vmInstances.errors.owner_required') ?? 'You must select an owner for this VM.');
@@ -295,10 +306,12 @@ export default function VmInstancesCreatePage() {
                 bridge: bridge || 'vmbr0',
                 on_boot: onBoot,
                 hostname: hostname.trim(),
-                ci_user: ciUser.trim(),
-                ci_password: ciPassword,
                 backup_limit: backupLimit,
             };
+            if (!isLxcTemplate) {
+                payload.ci_user = ciUser.trim();
+                payload.ci_password = ciPassword;
+            }
             if (vmIpId != null && vmIpId > 0) payload.vm_ip_id = vmIpId;
             if (selectedOwner?.uuid) payload.user_uuid = selectedOwner.uuid;
             const res = await axios.put('/api/admin/vm-instances', payload);
@@ -662,42 +675,43 @@ export default function VmInstancesCreatePage() {
                                     </p>
                                 </div>
 
-                                <div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
-                                    <div className='space-y-3'>
-                                        <Label className='flex items-center gap-1.5'>
-                                            Cloud-init user
-                                            <span className='text-red-500 font-bold'>*</span>
-                                        </Label>
-                                        <Input
-                                            value={ciUser}
-                                            onChange={(e) => setCiUser(e.target.value)}
-                                            placeholder='debian'
-                                            className='bg-muted/30 h-11'
-                                        />
-                                        <p className='text-xs text-muted-foreground'>
-                                            This user will be created inside the VM (cloud-init <code>ciuser</code>). On
-                                            Debian/Ubuntu images this user normally has passwordless sudo.
-                                        </p>
+                                {!isLxcTemplate && (
+                                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
+                                        <div className='space-y-3'>
+                                            <Label className='flex items-center gap-1.5'>
+                                                {t('admin.vmInstances.ci_user_label') ?? 'Cloud-init user'}
+                                                <span className='text-red-500 font-bold'>*</span>
+                                            </Label>
+                                            <Input
+                                                value={ciUser}
+                                                onChange={(e) => setCiUser(e.target.value)}
+                                                placeholder='debian'
+                                                className='bg-muted/30 h-11'
+                                            />
+                                            <p className='text-xs text-muted-foreground'>
+                                                {t('admin.vmInstances.ci_user_help') ??
+                                                    'This user will be created inside the VM as the cloud-init ciuser. On Debian/Ubuntu images this user normally has passwordless sudo.'}
+                                            </p>
+                                        </div>
+                                        <div className='space-y-3'>
+                                            <Label className='flex items-center gap-1.5'>
+                                                {t('admin.vmInstances.ci_password_label') ?? 'Cloud-init password'}
+                                                <span className='text-red-500 font-bold'>*</span>
+                                            </Label>
+                                            <Input
+                                                type='text'
+                                                value={ciPassword}
+                                                onChange={(e) => setCiPassword(e.target.value)}
+                                                placeholder='Strong password for VM login'
+                                                className='bg-muted/30 h-11'
+                                            />
+                                            <p className='text-xs text-muted-foreground'>
+                                                {t('admin.vmInstances.ci_password_help') ??
+                                                    'This is written to the cloud-init cipassword and lets you log in via console/SSH. Store it somewhere safe; the panel only shows it during creation.'}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className='space-y-3'>
-                                        <Label className='flex items-center gap-1.5'>
-                                            Cloud-init password
-                                            <span className='text-red-500 font-bold'>*</span>
-                                        </Label>
-                                        <Input
-                                            type='text'
-                                            value={ciPassword}
-                                            onChange={(e) => setCiPassword(e.target.value)}
-                                            placeholder='Strong password for VM login'
-                                            className='bg-muted/30 h-11'
-                                        />
-                                        <p className='text-xs text-muted-foreground'>
-                                            This is written to cloud-init <code>cipassword</code> and lets you log in
-                                            via console/SSH. Store it somewhere safe; the panel only shows it during
-                                            creation.
-                                        </p>
-                                    </div>
-                                </div>
+                                )}
 
                                 <div className='space-y-3'>
                                     <Label className='flex items-center gap-1.5'>

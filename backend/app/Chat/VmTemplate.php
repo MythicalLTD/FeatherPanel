@@ -61,12 +61,18 @@ class VmTemplate
             throw new \InvalidArgumentException(json_encode(['name' => 'Template name is required.']));
         }
 
+        $lxcRootPassword = null;
+        if (($data['guest_type'] ?? 'qemu') === 'lxc') {
+            $raw = $data['lxc_root_password'] ?? null;
+            $lxcRootPassword = $raw === '' ? null : $raw;
+        }
+
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('
             INSERT INTO ' . self::$table . '
-                (name, description, guest_type, os_type, storage, template_file, vm_node_id, is_active)
+                (name, description, guest_type, os_type, storage, template_file, vm_node_id, is_active, lxc_root_password)
             VALUES
-                (:name, :description, :guest_type, :os_type, :storage, :template_file, :vm_node_id, :is_active)
+                (:name, :description, :guest_type, :os_type, :storage, :template_file, :vm_node_id, :is_active, :lxc_root_password)
         ');
         $stmt->execute([
             'name'          => $data['name'],
@@ -77,6 +83,7 @@ class VmTemplate
             'template_file' => $data['template_file'] ?? null,
             'vm_node_id'    => isset($data['vm_node_id']) ? (int) $data['vm_node_id'] : null,
             'is_active'     => ($data['is_active'] ?? 'true') === 'false' ? 'false' : 'true',
+            'lxc_root_password' => $lxcRootPassword,
         ]);
 
         return self::getById((int) $pdo->lastInsertId());
@@ -96,6 +103,16 @@ class VmTemplate
         $templateFile = array_key_exists('template_file', $data) ? ($data['template_file'] === '' || $data['template_file'] === null ? null : (string) $data['template_file']) : $existing['template_file'];
         $isActive = array_key_exists('is_active', $data) ? (($data['is_active'] ?? 'true') === 'false' ? 'false' : 'true') : $existing['is_active'];
 
+        $lxcRootPassword = $existing['lxc_root_password'] ?? null;
+        if ($guestType === 'lxc') {
+            if (array_key_exists('lxc_root_password', $data)) {
+                $raw = $data['lxc_root_password'];
+                $lxcRootPassword = $raw === '' || $raw === null ? null : (string) $raw;
+            }
+        } else {
+            $lxcRootPassword = null;
+        }
+
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('
             UPDATE ' . self::$table . ' SET
@@ -105,7 +122,8 @@ class VmTemplate
                 os_type = :os_type,
                 storage = :storage,
                 template_file = :template_file,
-                is_active = :is_active
+                is_active = :is_active,
+                lxc_root_password = :lxc_root_password
             WHERE id = :id
         ');
         $stmt->execute([
@@ -117,6 +135,7 @@ class VmTemplate
             'storage' => $storage,
             'template_file' => $templateFile,
             'is_active' => $isActive,
+            'lxc_root_password' => $lxcRootPassword,
         ]);
 
         return $stmt->rowCount() >= 0 ? self::getById($id) : $existing;

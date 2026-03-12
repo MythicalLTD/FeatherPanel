@@ -2946,6 +2946,9 @@
 				"field_vmid_help": "The VMID of the template VM in Proxmox (right‑click VM → Convert to template first).",
 				"field_guest_type": "Guest type",
 				"field_description": "Description (optional)",
+				"field_lxc_root_password": "Default LXC root password",
+				"field_lxc_root_password_placeholder": "e.g. P@ssw0rd (shown to users after deploy)",
+				"field_lxc_root_password_help": "Informational only. FeatherPanel does not change the root password on the container; this value is just displayed to users as the default root password for LXC instances created from this template.",
 				"create_success": "Template added successfully.",
 				"create_failed": "Failed to add template.",
 				"delete_success": "Template deleted.",
@@ -3275,7 +3278,9 @@
 			"errors": {
 				"fetch_failed": "Failed to load VM instances.",
 				"hostname_required": "Hostname is required.",
-				"owner_required": "You must select an owner for this VM."
+				"owner_required": "You must select an owner for this VM.",
+				"ci_user_required": "Cloud-init username is required.",
+				"ci_password_required": "Cloud-init password is required."
 			},
 			"create_success": "VM instance created successfully.",
 			"creating_clone": "Cloning template…",
@@ -3336,6 +3341,16 @@
 			"reinstall_ci_password": "Cloud-init password",
 			"reinstall_lxc_help": "Enter a new root password for the reinstalled LXC container.",
 			"reinstall_lxc_password": "Root password",
+			"lxc_root_password_label": "Default LXC root password",
+			"lxc_root_password_help": "This is the informational root password stored on the LXC template. FeatherPanel does not change the password on the container; this is for you to show the default credentials to users.",
+			"lxc_root_password_show": "Show password",
+			"lxc_root_password_hide": "Hide password",
+			"lxc_root_password_copied": "Root password copied to clipboard.",
+			"lxc_root_password_copy_failed": "Failed to copy root password.",
+			"ci_user_label": "Cloud-init user",
+			"ci_user_help": "This user will be created inside the VM as the cloud-init ciuser. On Debian/Ubuntu images this user normally has passwordless sudo.",
+			"ci_password_label": "Cloud-init password",
+			"ci_password_help": "This is written to the cloud-init cipassword and lets you log in via console/SSH. Store it somewhere safe; the panel only shows it during creation.",
 			"backups": {
 				"title": "Backups",
 				"limit_label_create": "Backup limit",

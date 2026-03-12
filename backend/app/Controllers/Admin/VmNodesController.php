@@ -1389,14 +1389,15 @@ class VmNodesController
         }
         try {
             $created = VmTemplate::create([
-                'name'          => $data['name'],
-                'description'   => $data['description'] ?? null,
-                'guest_type'   => $data['guest_type'] ?? 'qemu',
-                'os_type'       => $data['os_type'] ?? null,
-                'storage'       => $data['storage'] ?? 'local',
-                'template_file' => $templateFile,
-                'vm_node_id'    => $id,
-                'is_active'     => $data['is_active'] ?? 'true',
+                'name'              => $data['name'],
+                'description'       => $data['description'] ?? null,
+                'guest_type'        => $data['guest_type'] ?? 'qemu',
+                'os_type'           => $data['os_type'] ?? null,
+                'storage'           => $data['storage'] ?? 'local',
+                'template_file'     => $templateFile,
+                'vm_node_id'        => $id,
+                'is_active'         => $data['is_active'] ?? 'true',
+                'lxc_root_password' => $data['lxc_root_password'] ?? null,
             ]);
 
             return ApiResponse::success(['template' => $created], 'Template created successfully', 201);

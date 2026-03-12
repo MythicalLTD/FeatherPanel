@@ -39,6 +39,9 @@ import {
     Calendar,
     Monitor,
     Activity,
+    Eye,
+    EyeOff,
+    Copy,
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -86,6 +89,7 @@ interface VmInstance {
     created_at: string;
     notes?: string | null;
     vm_type?: string | null;
+    lxc_root_password?: string | null;
 }
 
 interface VmStatus {
@@ -119,6 +123,7 @@ export default function VmInstanceViewPage() {
     const [confirmReinstall, setConfirmReinstall] = useState(false);
     const [ciUser, setCiUser] = useState('');
     const [ciPassword, setCiPassword] = useState('');
+    const [showLxcPassword, setShowLxcPassword] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instance-view');
 
@@ -217,9 +222,6 @@ export default function VmInstanceViewPage() {
             if (instance?.vm_type === 'qemu') {
                 payload.ci_user = ciUser.trim();
                 payload.ci_password = ciPassword.trim();
-            } else if (instance?.vm_type === 'lxc') {
-                // For LXC, we only need a root password.
-                payload.ci_password = ciPassword.trim();
             }
             const startRes = await axios.post(`/api/admin/vm-instances/${id}/reinstall`, payload);
             const reinstallId = startRes.data?.data?.reinstall_id as string | undefined;
@@ -267,10 +269,11 @@ export default function VmInstanceViewPage() {
         }
     };
 
+    const effectiveStatus = (usage?.status as string | undefined) ?? instance?.status ?? '';
     const statusClass =
-        instance?.status === 'running'
+        effectiveStatus === 'running'
             ? 'bg-green-500/10 text-green-600'
-            : instance?.status === 'stopped'
+            : effectiveStatus === 'stopped'
               ? 'bg-muted text-muted-foreground'
               : 'bg-amber-500/10 text-amber-600';
 
@@ -439,7 +442,7 @@ export default function VmInstanceViewPage() {
                             </dt>
                             <dd>
                                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusClass}`}>
-                                    {instance.status}
+                                    {effectiveStatus || instance.status}
                                 </span>
                             </dd>
                         </div>
@@ -470,6 +473,67 @@ export default function VmInstanceViewPage() {
                                 {instance.created_at ? new Date(instance.created_at).toLocaleString() : '—'}
                             </dd>
                         </div>
+                        {instance.vm_type === 'lxc' && instance.lxc_root_password && (
+                            <div>
+                                <dt className='text-muted-foreground mb-1'>
+                                    {t('admin.vmInstances.lxc_root_password_label') ?? 'Default LXC root password'}
+                                </dt>
+                                <dd className='text-sm'>
+                                    <div className='flex items-center gap-2'>
+                                        <span className='font-mono'>
+                                            {showLxcPassword ? instance.lxc_root_password : '••••••••'}
+                                        </span>
+                                        <Button
+                                            type='button'
+                                            size='icon'
+                                            variant='outline'
+                                            className='h-7 w-7'
+                                            onClick={() => setShowLxcPassword((v) => !v)}
+                                            title={
+                                                showLxcPassword
+                                                    ? t('admin.vmInstances.lxc_root_password_hide') ?? 'Hide password'
+                                                    : t('admin.vmInstances.lxc_root_password_show') ?? 'Show password'
+                                            }
+                                        >
+                                            {showLxcPassword ? (
+                                                <EyeOff className='h-3.5 w-3.5' />
+                                            ) : (
+                                                <Eye className='h-3.5 w-3.5' />
+                                            )}
+                                        </Button>
+                                        <Button
+                                            type='button'
+                                            size='icon'
+                                            variant='outline'
+                                            className='h-7 w-7'
+                                            onClick={async () => {
+                                                try {
+                                                    await navigator.clipboard.writeText(
+                                                        instance.lxc_root_password || '',
+                                                    );
+                                                    toast.success(
+                                                        t('admin.vmInstances.lxc_root_password_copied') ??
+                                                            'Root password copied to clipboard.',
+                                                    );
+                                                } catch {
+                                                    toast.error(
+                                                        t('admin.vmInstances.lxc_root_password_copy_failed') ??
+                                                            'Failed to copy root password.',
+                                                    );
+                                                }
+                                            }}
+                                            title={t('common.copy') ?? 'Copy'}
+                                        >
+                                            <Copy className='h-3.5 w-3.5' />
+                                        </Button>
+                                    </div>
+                                    <span className='block text-[11px] text-muted-foreground mt-1'>
+                                        {t('admin.vmInstances.lxc_root_password_help') ??
+                                            'Stored on the template as an informational default. FeatherPanel does not change the container password; this is for showing default credentials to users.'}
+                                    </span>
+                                </dd>
+                            </div>
+                        )}
                         {instance.notes && (
                             <div>
                                 <dt className='text-muted-foreground mb-1'>
@@ -598,7 +662,7 @@ export default function VmInstanceViewPage() {
                                     ? t('admin.vmInstances.reinstall_ci_help') ??
                                       'Enter a new cloud-init username and password for the reinstalled VM.'
                                     : t('admin.vmInstances.reinstall_lxc_help') ??
-                                      'Enter a new root password for the reinstalled LXC container.'}
+                                      'LXC passwords are not managed by FeatherPanel. The template\'s default root password will continue to apply.'}
                             </p>
                             {instance.vm_type === 'qemu' && (
                                 <div className='space-y-1'>
@@ -614,20 +678,20 @@ export default function VmInstanceViewPage() {
                                     />
                                 </div>
                             )}
-                            <div className='space-y-1'>
-                                <label className='block text-xs font-medium'>
-                                    {instance.vm_type === 'qemu'
-                                        ? t('admin.vmInstances.reinstall_ci_password') ?? 'Cloud-init password'
-                                        : t('admin.vmInstances.reinstall_lxc_password') ?? 'Root password'}
-                                </label>
-                                <input
-                                    type='password'
-                                    className='w-full h-9 rounded-md border border-border bg-muted/40 px-2 text-sm'
-                                    value={ciPassword}
-                                    onChange={(e) => setCiPassword(e.target.value)}
-                                    placeholder='********'
-                                />
-                            </div>
+                            {instance.vm_type === 'qemu' && (
+                                <div className='space-y-1'>
+                                    <label className='block text-xs font-medium'>
+                                        {t('admin.vmInstances.reinstall_ci_password') ?? 'Cloud-init password'}
+                                    </label>
+                                    <input
+                                        type='password'
+                                        className='w-full h-9 rounded-md border border-border bg-muted/40 px-2 text-sm'
+                                        value={ciPassword}
+                                        onChange={(e) => setCiPassword(e.target.value)}
+                                        placeholder='********'
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
                     <AlertDialogFooter>

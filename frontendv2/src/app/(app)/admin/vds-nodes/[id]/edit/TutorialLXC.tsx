@@ -13,13 +13,25 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import { Info } from 'lucide-react';
+import { Info, ShieldAlert } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export function TutorialLXC() {
     return (
         <PageCard title='How to create Proxmox LXC templates' icon={Info} className='mt-6'>
             <div className='text-sm text-muted-foreground space-y-4'>
+                <Alert variant='destructive'>
+                    <ShieldAlert className='h-4 w-4' />
+                    <AlertTitle>Security Warning</AlertTitle>
+                    <AlertDescription>
+                        LXC containers are not recommended if you plan to provide public hosting services. They lack KVM 
+                        virtualization, which often causes issues with Docker and advanced networking. Additionally, 
+                        exploits that escape containers to reach the host are more common with LXC. We strongly advise using 
+                        <strong>QEMU/KVM Virtual Machines</strong> for hosting.
+                    </AlertDescription>
+                </Alert>
+
                 <p className='font-medium'>1. Download a Container Template</p>
                 <p>
                     In the Proxmox web interface, navigate to your storage (e.g., <code>local</code>), click on

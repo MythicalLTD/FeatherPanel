@@ -256,6 +256,7 @@ class Proxmox
 
             // Try to extract as much detail as possible from the Proxmox reply.
             if (method_exists($e, 'getResponse')) {
+                /** @var mixed $e */
                 $response = $e->getResponse();
                 if ($response !== null) {
                     $statusCode = $response->getStatusCode();
@@ -325,7 +326,7 @@ class Proxmox
      *
      * @return array{ok: bool, data: mixed, error: string|null}
      */
-    public function apiPost(string $path, array $body = []): array
+    public function apiPost(string $path, array $body = [], bool $overrideAuth = false, array $extraHeaders = []): array
     {
         try {
             $options = ['form_params' => $body];
@@ -333,7 +334,20 @@ class Proxmox
                 $options['query'] = $this->defaultExtraQuery;
             }
 
-            $response = $this->client->post($path, $options);
+            if ($overrideAuth || !empty($extraHeaders)) {
+                $client = new Client([
+                    'base_uri' => $this->baseUrl,
+                    'timeout'  => 10,
+                    'verify'   => !$this->tlsNoVerify,
+                    'headers'  => array_merge([
+                        'Accept'     => 'application/json',
+                        'User-Agent' => 'FeatherPanel-Proxmox-Client',
+                    ], $extraHeaders),
+                ]);
+                $response = $client->post($path, $options);
+            } else {
+                $response = $this->client->post($path, $options);
+            }
             $resBody = json_decode((string) $response->getBody(), true);
             $data = is_array($resBody) && array_key_exists('data', $resBody) ? $resBody['data'] : $resBody;
 
@@ -636,23 +650,39 @@ class Proxmox
     public function getTicketWithPassword(string $username, string $password): array
     {
         try {
+            $baseHeaders = [
+                'Accept'     => 'application/json',
+                'User-Agent' => 'FeatherPanel-Proxmox-Client',
+            ];
             $loginClient = new Client([
                 'base_uri' => $this->baseUrl,
-                'timeout' => 15,
-                'verify' => !$this->tlsNoVerify,
-                'headers' => ['Accept' => 'application/json'],
+                'timeout'  => 15,
+                'verify'   => !$this->tlsNoVerify,
+                'headers'  => array_merge($baseHeaders, $this->defaultExtraHeaders),
             ]);
-            $response = $loginClient->post('/api2/json/access/ticket', [
+            $options = [
                 'form_params' => [
                     'username' => $username,
                     'password' => $password,
                 ],
-            ]);
-            $body = json_decode((string) $response->getBody(), true);
-            if (!is_array($body) || !isset($body['data'])) {
+            ];
+            if (!empty($this->defaultExtraQuery)) {
+                $options['query'] = $this->defaultExtraQuery;
+            }
+            $response = $loginClient->post('/api2/json/access/ticket', $options);
+            $bodyRaw = (string) $response->getBody();
+            $body = json_decode($bodyRaw, true);
+
+            // Handle both { "data": { "ticket": "..." } } and { "ticket": "..." }
+            $data = is_array($body) && isset($body['data']) ? $body['data'] : $body;
+
+            if (!is_array($data) || (!isset($data['ticket']) && !isset($data['CSRFPreventionToken']))) {
+                App::getInstance(true)->getLogger()->error(
+                    'Proxmox getTicketWithPassword: Invalid ticket response. Body: ' . substr($bodyRaw, 0, 1000)
+                );
+
                 return ['ok' => false, 'ticket' => null, 'csrf' => null, 'error' => 'Invalid ticket response'];
             }
-            $data = $body['data'];
             $ticket = isset($data['ticket']) ? (string) $data['ticket'] : null;
             $csrf = isset($data['CSRFPreventionToken']) ? (string) $data['CSRFPreventionToken'] : null;
 
@@ -737,27 +767,35 @@ class Proxmox
     /**
      * Resize an LXC container disk (e.g. rootfs, mp0). Size format: absolute "20G" or relative "+5G".
      *
-     * @return array{ok: bool, error: string|null}
+     * @return array{ok: bool, upid: string|null, error: string|null}
      */
     public function resizeContainerDisk(string $node, int $vmid, string $disk, string $size): array
     {
         $path = sprintf('/api2/json/nodes/%s/lxc/%d/resize', $node, $vmid);
         $result = $this->apiPut($path, ['disk' => $disk, 'size' => $size]);
+        if (!$result['ok']) {
+            return ['ok' => false, 'upid' => null, 'error' => $result['error'] ?? null];
+        }
+        $upid = is_string($result['data'] ?? null) ? trim((string) $result['data']) : null;
 
-        return ['ok' => $result['ok'], 'error' => $result['error'] ?? null];
+        return ['ok' => true, 'upid' => $upid, 'error' => null];
     }
 
     /**
      * Resize a QEMU VM disk (e.g. scsi0). Size format: absolute "64G" or relative "+32G".
      *
-     * @return array{ok: bool, error: string|null}
+     * @return array{ok: bool, upid: string|null, error: string|null}
      */
     public function resizeQemuDisk(string $node, int $vmid, string $disk, string $size): array
     {
         $path = sprintf('/api2/json/nodes/%s/qemu/%d/resize', $node, $vmid);
         $result = $this->apiPut($path, ['disk' => $disk, 'size' => $size]);
+        if (!$result['ok']) {
+            return ['ok' => false, 'upid' => null, 'error' => $result['error'] ?? null];
+        }
+        $upid = is_string($result['data'] ?? null) ? trim((string) $result['data']) : null;
 
-        return ['ok' => $result['ok'], 'error' => $result['error'] ?? null];
+        return ['ok' => true, 'upid' => $upid, 'error' => null];
     }
 
     /**
@@ -851,49 +889,6 @@ class Proxmox
         return ['ok' => false, 'error' => $lastError ?? "Failed to delete $type $vmid after retries"];
     }
 
-    /**
-     * Set the root password inside an LXC container.
-     *
-     * This uses the root-only /nodes/{node}/execute API to POST to the local
-     * /lxc/{vmid}/exec endpoint on that node, effectively running:
-     *
-     *   pct exec {vmid} -- sh -c 'echo "root:password" | chpasswd'
-     *
-     * The container must be running before this is called.
-     *
-     * @return array{ok: bool, error: string|null}
-     */
-    public function setLxcRootPassword(string $node, int $vmid, string $password): array
-    {
-        if ($password === '') {
-            return ['ok' => false, 'error' => 'Empty password'];
-        }
-
-        // Use /nodes/{node}/execute to POST to the node-local LXC exec endpoint.
-        // commands is a JSON-encoded array of { path, method, args } objects.
-        $script = sprintf('echo "root:%s" | chpasswd', str_replace('"', '\"', $password));
-        $commands = [
-            [
-                'path'   => sprintf('lxc/%d/exec', $vmid),
-                'method' => 'POST',
-                'args'   => [
-                    'command'    => 'sh',
-                    'extra-args' => ['-c', $script],
-                ],
-            ],
-        ];
-
-        $path = sprintf('/api2/json/nodes/%s/execute', $node);
-        $result = $this->apiPost($path, [
-            'commands' => json_encode($commands, JSON_UNESCAPED_SLASHES),
-        ]);
-
-        if (!$result['ok']) {
-            return ['ok' => false, 'error' => $result['error'] ?? 'exec failed'];
-        }
-
-        return ['ok' => true, 'error' => null];
-    }
 
     /**
      * Unlink one or more QEMU disks (e.g. scsi1, unused0) from a VM.

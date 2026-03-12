@@ -26,8 +26,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Select } from '@/components/ui/select-native';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Trash2, RefreshCw, Layers, Loader2, Monitor, Cpu } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, Layers, Loader2, Monitor, Cpu, ShieldAlert } from 'lucide-react';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { TutorialVM } from './TutorialVM';
 import { TutorialLXC } from './TutorialLXC';
 
@@ -41,6 +42,7 @@ interface VmTemplateRow {
     template_file: string | null;
     vm_node_id: number | null;
     is_active: string;
+    lxc_root_password?: string | null;
 }
 
 interface ProxmoxVm {
@@ -66,6 +68,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
         template_file: '',
         guest_type: 'qemu' as 'qemu' | 'lxc',
         description: '',
+        lxc_root_password: '',
     });
     const [creating, setCreating] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
@@ -121,6 +124,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                 template_file: String(vm.vmid),
                 name: vm.name,
                 guest_type: vm.type === 'lxc' ? 'lxc' : 'qemu',
+                lxc_root_password: '',
             }));
         }
     };
@@ -144,10 +148,14 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                 template_file: vmid,
                 guest_type: createForm.guest_type,
                 description: createForm.description.trim() || undefined,
+                lxc_root_password:
+                    createForm.guest_type === 'lxc' && createForm.lxc_root_password.trim()
+                        ? createForm.lxc_root_password
+                        : undefined,
             });
             toast.success(t('admin.vdsNodes.templates.create_success'));
             setCreateOpen(false);
-            setCreateForm({ name: '', template_file: '', guest_type: 'qemu', description: '' });
+            setCreateForm({ name: '', template_file: '', guest_type: 'qemu', description: '', lxc_root_password: '' });
             loadTemplates();
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
@@ -360,6 +368,16 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                 <option value='lxc'>LXC</option>
                             </Select>
                         </div>
+                        {createForm.guest_type === 'lxc' && (
+                            <Alert variant='warning' className='py-2 px-3'>
+                                <ShieldAlert className='h-4 w-4' />
+                                <AlertTitle className='text-xs'>Security Recommendation</AlertTitle>
+                                <AlertDescription className='text-[10px] leading-tight'>
+                                    LXC is not recommended for public hosting due to security risks and lack of KVM
+                                    virtualization. Use QEMU/KVM for better isolation and stability.
+                                </AlertDescription>
+                            </Alert>
+                        )}
                         <div>
                             <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_description')}</Label>
                             <Input
@@ -368,6 +386,28 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                 placeholder='Optional'
                             />
                         </div>
+                        {createForm.guest_type === 'lxc' && (
+                            <div>
+                                <Label className='mb-2 block'>
+                                    {t('admin.vdsNodes.templates.field_lxc_root_password') || 'Default root password'}
+                                </Label>
+                                <Input
+                                    type='text'
+                                    value={createForm.lxc_root_password}
+                                    onChange={(e) =>
+                                        setCreateForm((f) => ({ ...f, lxc_root_password: e.target.value }))
+                                    }
+                                    placeholder={
+                                        t('admin.vdsNodes.templates.field_lxc_root_password_placeholder') ||
+                                        'e.g. P@ssw0rd (shown to users after deploy)'
+                                    }
+                                />
+                                <p className='text-xs text-muted-foreground mt-1'>
+                                    {t('admin.vdsNodes.templates.field_lxc_root_password_help') ||
+                                        'Optional. Informational only — FeatherPanel does not change the root password on the container; this is just shown to users as the default password for this template.'}
+                                </p>
+                            </div>
+                        )}
                         <div className='flex justify-end gap-2 pt-2'>
                             <Button type='button' variant='outline' onClick={() => setCreateOpen(false)}>
                                 {t('common.cancel')}

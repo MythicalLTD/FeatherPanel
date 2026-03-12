@@ -13,7 +13,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import { Info } from 'lucide-react';
+import { Info, ShieldAlert } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 
 export function TutorialVM() {
@@ -184,6 +184,18 @@ qm set 9001 --serial0 socket --vga serial0`}</code>
                     written for official Debian/Ubuntu cloud-init images, but the same pattern generally works for
                     other distros that ship proper cloud-init images and UEFI support.
                 </p>
+
+                <div className='bg-primary/5 rounded-lg border border-primary/20 p-4 mt-6'>
+                    <p className='font-medium text-primary flex items-center gap-2'>
+                        <ShieldAlert className='h-4 w-4' />
+                        Best Practice: Why use VMs?
+                    </p>
+                    <p className='text-xs mt-1 text-muted-foreground'>
+                        VMs (QEMU/KVM) provide the strongest isolation and best compatibility with modern workloads like
+                        Docker and complex networking. FeatherPanel developers and security experts recommend VMs over LXC
+                        for all commercial hosting applications to prevent container escapes and resource abuse.
+                    </p>
+                </div>
             </div>
         </PageCard>
     );

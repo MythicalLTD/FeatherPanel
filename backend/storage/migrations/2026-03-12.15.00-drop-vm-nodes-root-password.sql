@@ -1,0 +1,3 @@
+ALTER TABLE `featherpanel_vm_nodes`
+    DROP COLUMN IF EXISTS `root_password`;
+
