@@ -2479,6 +2479,7 @@ class VmInstancesController
                     properties: [
                         new OA\Property(property: 'backups', type: 'array', items: new OA\Items(type: 'object')),
                         new OA\Property(property: 'backup_limit', type: 'integer'),
+                        new OA\Property(property: 'storages', type: 'array', items: new OA\Items(type: 'string'), description: 'Available backup storages from Proxmox'),
                     ]
                 )
             ),
@@ -2495,11 +2496,35 @@ class VmInstancesController
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
+        
         $backups = VmInstanceBackup::getBackupsByInstanceId((int) $instance['id']);
+        
+        // Fetch available backup storages from Proxmox node
+        $storages = [];
+        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
+        if ($vmNode) {
+            try {
+                $client = self::buildProxmoxClientForNode($vmNode);
+                $node = $instance['pve_node'] ?? '';
+                if ($node === '') {
+                    $find = $client->findNodeByVmid((int) $instance['vmid']);
+                    $node = $find['ok'] ? $find['node'] : null;
+                }
+                if ($node !== null && $node !== '') {
+                    $storagesRes = $client->getBackupStorages($node);
+                    if ($storagesRes['ok'] && !empty($storagesRes['storages'])) {
+                        $storages = $storagesRes['storages'];
+                    }
+                }
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->warning('Failed to fetch backup storages: ' . $e->getMessage());
+            }
+        }
 
         return ApiResponse::success([
             'backups'      => $backups,
             'backup_limit' => (int) ($instance['backup_limit'] ?? 5),
+            'storages'     => $storages,
         ], 'Backups listed', 200);
     }
 
