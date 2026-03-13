@@ -698,7 +698,7 @@ export default function VmInstancesCreatePage() {
                                                 <span className='text-red-500 font-bold'>*</span>
                                             </Label>
                                             <Input
-                                                type='text'
+                                                type='poassword'
                                                 value={ciPassword}
                                                 onChange={(e) => setCiPassword(e.target.value)}
                                                 placeholder='Strong password for VM login'
