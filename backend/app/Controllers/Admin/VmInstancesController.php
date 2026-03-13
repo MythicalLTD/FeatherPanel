@@ -556,12 +556,28 @@ class VmInstancesController
             if ($gateway !== '') {
                 $net0 .= ',gw=' . $gateway;
             }
+            
+            // Build description with detailed info for Proxmox notes
+            $descParts = ['FeatherPanel Managed VM'];
+            if (!empty($ip['ip'])) {
+                $descParts[] = 'IP: ' . $ip['ip'];
+            }
+            if (!empty($pending['hostname'])) {
+                $descParts[] = 'Hostname: ' . $pending['hostname'];
+            }
+            if (!empty($pending['user_uuid'])) {
+                $descParts[] = 'User: ' . $pending['user_uuid'];
+            }
+            $descParts[] = 'Created: ' . date('Y-m-d H:i:s');
+            
             $config = [
                 'memory' => $memory,
                 'cores' => $cpus * $cores,
                 'nameserver' => '1.1.1.1 8.8.8.8',
                 'net0' => $net0,
                 'onboot' => $onBoot ? 1 : 0,
+                'tags' => 'FeatherPanel-Managed',
+                'description' => implode(' | ', $descParts),
             ];
             $configResult = $client->setVmConfig(
                 $pending['target_node'],
@@ -623,6 +639,19 @@ class VmInstancesController
             $finalCiUser = $ciUserFromPending ?: 'debian';
             $finalCiPassword = $ciPasswordFromPending ?: bin2hex(random_bytes(6));
 
+            // Build description with detailed info for Proxmox notes
+            $descParts = ['FeatherPanel Managed VM'];
+            if (!empty($ip['ip'])) {
+                $descParts[] = 'IP: ' . $ip['ip'];
+            }
+            if (!empty($pending['hostname'])) {
+                $descParts[] = 'Hostname: ' . $pending['hostname'];
+            }
+            if (!empty($pending['user_uuid'])) {
+                $descParts[] = 'User: ' . $pending['user_uuid'];
+            }
+            $descParts[] = 'Created: ' . date('Y-m-d H:i:s');
+
             $config = [
                 'memory' => $memory,
                 'sockets' => $cpus,
@@ -635,6 +664,8 @@ class VmInstancesController
                 // Cloud-init user and password so admins can log in immediately.
                 'ciuser' => $finalCiUser,
                 'cipassword' => $finalCiPassword,
+                'tags' => 'FeatherPanel-Managed',
+                'description' => implode(' | ', $descParts),
             ];
             $configResult = $client->setVmConfig($pending['target_node'], (int) $pending['vmid'], 'qemu', $config);
             if (!$configResult['ok']) {
@@ -2238,12 +2269,28 @@ class VmInstancesController
             if ($gateway !== '') {
                 $net0 .= ',gw=' . $gateway;
             }
+            
+            // Build description with detailed info for Proxmox notes
+            $descParts = ['FeatherPanel Managed VM (Reinstalled)'];
+            if (!empty($ipAddress)) {
+                $descParts[] = 'IP: ' . $ipAddress;
+            }
+            if (!empty($pending['hostname'])) {
+                $descParts[] = 'Hostname: ' . $pending['hostname'];
+            }
+            if (!empty($pending['user_uuid'])) {
+                $descParts[] = 'User: ' . $pending['user_uuid'];
+            }
+            $descParts[] = 'Reinstalled: ' . date('Y-m-d H:i:s');
+            
             $config = [
                 'nameserver' => '1.1.1.1 8.8.8.8',
                 'net0'       => $net0,
                 'memory'     => $memory,
                 'cores'      => $cores > 0 ? $cores : 1,
                 'onboot'     => 0,
+                'tags'       => 'FeatherPanel-Managed',
+                'description' => implode(' | ', $descParts),
             ];
             $client->setVmConfig($node, $newVmid, 'lxc', $config, []);
             // Resize rootfs if client had more disk than the template default.
@@ -2287,6 +2334,19 @@ class VmInstancesController
             $bootDiskKey = $rootDisk ?? 'scsi0';
             $bootOrder = 'order=' . $bootDiskKey;
 
+            // Build description with detailed info for Proxmox notes
+            $descParts = ['FeatherPanel Managed VM (Reinstalled)'];
+            if (!empty($ipAddress)) {
+                $descParts[] = 'IP: ' . $ipAddress;
+            }
+            if (!empty($pending['hostname'])) {
+                $descParts[] = 'Hostname: ' . $pending['hostname'];
+            }
+            if (!empty($pending['user_uuid'])) {
+                $descParts[] = 'User: ' . $pending['user_uuid'];
+            }
+            $descParts[] = 'Reinstalled: ' . date('Y-m-d H:i:s');
+
             $client->setVmConfig($node, $newVmid, 'qemu', [
                 'nameserver' => '1.1.1.1 8.8.8.8',
                 'ipconfig0'  => $ipconfig0,
@@ -2296,6 +2356,8 @@ class VmInstancesController
                 'cores'      => $cores > 0 ? $cores : 1,
                 'ciuser'     => $ciUser ?? 'debian',
                 'cipassword' => $ciPassword ?? bin2hex(random_bytes(6)),
+                'tags'       => 'FeatherPanel-Managed',
+                'description' => implode(' | ', $descParts),
             ], []);
             // Resize the primary disk (scsi0/virtio0/etc.) if the client had a larger disk than the template default.
             if ($diskGb > 0) {
@@ -2332,11 +2394,14 @@ class VmInstancesController
             }
         }
 
-        // If this instance had any tracked backups, purge them now since reinstall
-        // semantics are "wipe everything" for this VM instance.
+        // CRITICAL: Delete ALL backups for this instance before reinstall.
+        // Reinstall = fresh start, old backups are incompatible with new VM.
         if ($instanceId > 0) {
             $instanceForBackups = VmInstance::getById($instanceId);
             if ($instanceForBackups) {
+                App::getInstance(true)->getLogger()->info(
+                    'Reinstall: Deleting all backups for instance ID ' . $instanceId . ' (vmid ' . $oldVmid . ')'
+                );
                 self::deleteInstanceBackups($instanceForBackups, $client);
             }
         }
