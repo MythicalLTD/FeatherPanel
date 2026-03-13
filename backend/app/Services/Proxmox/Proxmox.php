@@ -870,6 +870,22 @@ class Proxmox
         for ($i = 0; $i < 5; ++$i) {
             $result = $this->apiDelete($path, ['purge' => 1]);
             if ($result['ok']) {
+                // Many delete operations return an async UPID; wait for the task to finish so we
+                // can surface failures (e.g. "command failed") instead of assuming success.
+                $upid = is_string($result['data'] ?? null) ? trim((string) $result['data']) : null;
+                if ($upid !== null && $upid !== '') {
+                    $wait = $this->waitTask($node, $upid, 600, 5);
+                    if (!$wait['ok']) {
+                        return ['ok' => false, 'error' => $wait['error'] ?? 'Delete task failed'];
+                    }
+                    if (($wait['exitstatus'] ?? 'OK') !== 'OK') {
+                        return [
+                            'ok' => false,
+                            'error' => $wait['error'] ?? ('Exit status: ' . ($wait['exitstatus'] ?? 'unknown')),
+                        ];
+                    }
+                }
+
                 return ['ok' => true, 'error' => null];
             }
 
