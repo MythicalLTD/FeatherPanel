@@ -3138,20 +3138,8 @@ class VmInstancesController
         }
 
         try {
-            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-            $client = new Proxmox(
-                $vmNode['fqdn'],
-                (int) $vmNode['port'],
-                $vmNode['scheme'],
-                $vmNode['user'],
-                $vmNode['token_id'],
-                $vmNode['secret'],
-                $tlsNoVerify,
-                (int) ($vmNode['timeout'] ?? 60),
-            );
+			$client = self::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
-            // Proxmox is unreachable; still purge tracked backups from DB so they
-            // cannot be listed anymore, then delete the instance row.
             self::deleteInstanceBackups($instance, null);
             VmInstance::delete($id);
             Activity::createActivity([

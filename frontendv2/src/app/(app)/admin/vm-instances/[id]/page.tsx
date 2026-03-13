@@ -56,7 +56,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
+import { copyToClipboard } from '@/lib/utils';
 const VNC_POPUP_WIDTH = 1024;
 const VNC_POPUP_HEIGHT = 768;
 
@@ -504,22 +504,10 @@ export default function VmInstanceViewPage() {
                                             size='icon'
                                             variant='outline'
                                             className='h-7 w-7'
-                                            onClick={async () => {
-                                                try {
-                                                    await navigator.clipboard.writeText(
-                                                        instance.lxc_root_password || '',
-                                                    );
-                                                    toast.success(
-                                                        t('admin.vmInstances.lxc_root_password_copied') ??
-                                                            'Root password copied to clipboard.',
-                                                    );
-                                                } catch {
-                                                    toast.error(
-                                                        t('admin.vmInstances.lxc_root_password_copy_failed') ??
-                                                            'Failed to copy root password.',
-                                                    );
-                                                }
-                                            }}
+                                            onClick={
+												() =>
+                                                copyToClipboard(instance.lxc_root_password ?? "")
+											} 
                                             title={t('common.copy') ?? 'Copy'}
                                         >
                                             <Copy className='h-3.5 w-3.5' />
