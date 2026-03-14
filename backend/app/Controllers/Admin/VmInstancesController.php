@@ -31,6 +31,7 @@ use App\Chat\VmInstanceBackup;
 use App\Chat\VmCreationPending;
 use App\Config\ConfigInterface;
 use App\Services\Proxmox\Proxmox;
+use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -296,7 +297,7 @@ class VmInstancesController
         $notes = json_encode($metaNotes, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -434,7 +435,7 @@ class VmInstancesController
         }
 
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -883,7 +884,7 @@ class VmInstancesController
                 return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
             }
             try {
-                $client = self::buildProxmoxClientForNode($vmNode);
+                $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
             } catch (\Throwable $e) {
                 App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -1218,7 +1219,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
@@ -1275,7 +1276,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
@@ -1334,86 +1335,17 @@ class VmInstancesController
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
-        $vmType = ($instance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
         $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
         if (!$vmNode) {
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
-        try {
-            $client = self::buildProxmoxClientForNode($vmNode);
-        } catch (\Throwable $e) {
-            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
-        }
-        $node = $instance['pve_node'] ?? '';
-        if ($node === '') {
-            $find = $client->findNodeByVmid((int) $instance['vmid']);
-            $node = $find['ok'] ? $find['node'] : null;
-        }
-        if ($node === null || $node === '') {
-            return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
-        }
-        $vnc = $client->createVncProxy($node, (int) $instance['vmid'], $vmType);
-        if (!$vnc['ok'] || $vnc['ticket'] === null || $vnc['port'] === null) {
-            return ApiResponse::error('VNC proxy failed: ' . ($vnc['error'] ?? 'unknown'), 'VNC_PROXY_FAILED', 502);
-        }
-        $wssPath = sprintf('/api2/json/nodes/%s/%s/%d/vncwebsocket', $node, $vmType, (int) $instance['vmid']);
-        $wssQuery = 'port=' . $vnc['port'] . '&vncticket=' . rawurlencode($vnc['ticket']);
-        $host = $vmNode['fqdn'] ?? '';
-        $portApi = (int) ($vmNode['port'] ?? 8006);
 
-        $config = App::getInstance(true)->getConfig();
-        $usePanelProxy = $config->getSetting(ConfigInterface::VNC_PROXY_VIA_PANEL, 'false') === 'true';
-        if ($usePanelProxy) {
-            $appUrl = rtrim($config->getSetting(ConfigInterface::APP_URL, ''), '/');
-            if ($appUrl !== '') {
-                $panelScheme = (str_starts_with($appUrl, 'https:')) ? 'wss' : 'ws';
-                $panelHost = parse_url($appUrl, PHP_URL_HOST);
-                $panelPort = parse_url($appUrl, PHP_URL_PORT);
-                $wssUrl = $panelScheme . '://' . $panelHost . ($panelPort ? ':' . $panelPort : '') . '/vnc-proxy' . $wssPath . '?' . $wssQuery;
-            } else {
-                $usePanelProxy = false;
-            }
-        }
-        if (!$usePanelProxy) {
-            $scheme = ($vmNode['scheme'] ?? 'https') === 'https' ? 'wss' : 'ws';
-            $wssPort = $portApi > 0 ? $portApi : 8006;
-            $wssUrl = $scheme . '://' . $host . ':' . $wssPort . $wssPath . '?' . $wssQuery;
+        $result = VmInstanceUtil::createVncTicketPayload($instance, $vmNode, $id);
+        if (!$result['ok']) {
+            return ApiResponse::error($result['error'], $result['code'], $result['http_status']);
         }
 
-        $payload = [
-            'ticket' => $vnc['ticket'],
-            'port' => $vnc['port'],
-            'node' => $node,
-            'vmid' => (int) $instance['vmid'],
-            'host' => $host,
-            'port_api' => $portApi,
-            'wss_url' => $wssUrl,
-        ];
-
-        // Always try Proxmox noVNC redirect (temp user + ticket) so the popup opens on the Proxmox host, not the panel.
-        // If createUser/ACL/ticket fails (e.g. permissions), we fall back to wss_url (panel vnc_lite.html).
-        $tempUser = 'fp-console-' . $id . '-' . bin2hex(random_bytes(4)) . '@pve';
-        $tempPass = bin2hex(random_bytes(16));
-        $expire = time() + 300; // 5 minutes
-        $cr = $client->createUser($tempUser, $tempPass, $expire);
-        if ($cr['ok']) {
-            // Proxmox valid ACL path for VMs/containers is /vms/{vmid} (not /nodes/.../qemu|lcx/...).
-            $aclPath = '/vms/' . (int) $instance['vmid'];
-            $ar = $client->addAcl($aclPath, 'PVEVMUser', $tempUser);
-            if ($ar['ok']) {
-                $ticketResult = $client->getTicketWithPassword($tempUser, $tempPass);
-                if ($ticketResult['ok'] && $ticketResult['ticket'] !== null) {
-                    $scheme = ($vmNode['scheme'] ?? 'https') === 'https' ? 'https' : 'http';
-                    $pvePort = $portApi > 0 ? $portApi : 8006;
-                    $consoleType = $vmType === 'qemu' ? 'kvm' : 'lxc';
-                    $payload['pve_redirect_url'] = $scheme . '://' . $host . ':' . $pvePort . '/novnc/mgnovnc.html?novnc=1&token=' . rawurlencode($ticketResult['ticket'])
-                        . '&vmid=' . (int) $instance['vmid'] . '&node=' . rawurlencode($node) . '&console=' . $consoleType;
-                    // Do not delete the user here: Proxmox validates the ticket against the user when noVNC loads, so deleting causes 401. User has expire=5min so Proxmox will purge them.
-                }
-            }
-        }
-
-        return ApiResponse::success($payload, 'VNC ticket created (valid ~40s)', 200);
+        return ApiResponse::success($result['payload'], 'VNC ticket created (valid ~40s)', 200);
     }
 
     #[OA\Get(
@@ -1526,7 +1458,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
@@ -1616,7 +1548,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -1714,7 +1646,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -1884,7 +1816,7 @@ class VmInstancesController
         }
 
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
@@ -1982,218 +1914,25 @@ class VmInstancesController
             $data = [];
         }
 
-        if (empty($instance['template_id'])) {
-            return ApiResponse::error('Cannot reinstall: instance has no template_id', 'NO_TEMPLATE', 400);
-        }
-        $template = VmTemplate::getById((int) $instance['template_id']);
-        if (!$template) {
-            return ApiResponse::error('Template not found for this instance', 'TEMPLATE_NOT_FOUND', 404);
-        }
-        $templateFile = $template['template_file'] ?? '';
-        if ($templateFile === '' || !ctype_digit((string) $templateFile)) {
-            return ApiResponse::error('Template must have a valid template VMID (template_file)', 'INVALID_TEMPLATE', 400);
-        }
-        $templateVmid = (int) $templateFile;
-
-        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
-        if (!$vmNode) {
-            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
-        }
-
-        $vmType = ($instance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
-
-        $ciUser = null;
-        $ciPassword = null;
-        if ($vmType === 'qemu') {
-            $ciUser = isset($data['ci_user']) && is_string($data['ci_user']) ? trim($data['ci_user']) : null;
-            $ciPassword = isset($data['ci_password']) && is_string($data['ci_password']) ? trim($data['ci_password']) : null;
-            if ($ciUser === null || $ciUser === '' || $ciPassword === null || $ciPassword === '') {
-                return ApiResponse::error(
-                    'Cloud-init username and password (ci_user, ci_password) are required to reinstall KVM/QEMU VMs',
-                    'VALIDATION_FAILED',
-                    400
-                );
-            }
-        }
-
-        $oldVmid = (int) $instance['vmid'];
-
-        try {
-            $client = self::buildProxmoxClientForNode($vmNode);
-        } catch (\Throwable $e) {
-            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
-        }
-
-        $node = $instance['pve_node'] ?? '';
-        if ($node === '') {
-            $find = $client->findNodeByVmid($oldVmid);
-            $node = $find['ok'] ? $find['node'] : null;
-        }
-        if ($node === null || $node === '') {
-            return ApiResponse::error('Could not determine Proxmox node for this VM', 'NODE_UNKNOWN', 500);
-        }
-
-        $findTemplate = $client->findNodeByVmid($templateVmid);
-        $templateNode = $findTemplate['ok'] ? $findTemplate['node'] : $node;
-
-        // Snapshot current resource config so we can re-apply it after the fresh clone.
-        $savedMemory = 512;
-        $savedCpus   = 1;
-        $savedCores  = 1;
-        $savedDiskGb = 0; // 0 = don't resize (template disk is already correct size or larger)
-        // Prefer panel DB values for resources so we keep them in sync from the panel's
-        // point of view; fall back to Proxmox config only if missing.
-        $savedMemory = (int) ($instance['memory'] ?? $savedMemory);
-        $savedCpus   = (int) ($instance['cpus'] ?? $savedCpus);
-        $savedCores  = (int) ($instance['cores'] ?? $savedCores);
-        $savedDiskGb = (int) ($instance['disk_gb'] ?? $savedDiskGb);
-        $rootDiskKey = null;
-
-        if ($savedMemory <= 0 || $savedCpus <= 0 || $savedCores <= 0 || $savedDiskGb <= 0) {
-            $currentCfg  = $client->getVmConfig($node, $oldVmid, $vmType);
-            if ($currentCfg['ok'] && is_array($currentCfg['config'])) {
-                $cfg = $currentCfg['config'];
-                if ($savedMemory <= 0 && isset($cfg['memory']) && is_numeric($cfg['memory'])) {
-                    $savedMemory = (int) $cfg['memory'];
-                }
-                if ($vmType === 'qemu') {
-                    if ($savedCpus <= 0 && isset($cfg['sockets']) && is_numeric($cfg['sockets'])) {
-                        $savedCpus = (int) $cfg['sockets'];
-                    }
-                    if ($savedCores <= 0 && isset($cfg['cores']) && is_numeric($cfg['cores'])) {
-                        $savedCores = (int) $cfg['cores'];
-                    }
-                    // Detect the primary system disk key (supports common buses like scsi, virtio, sata, ide).
-                    foreach (['scsi0', 'virtio0', 'sata0', 'ide0'] as $candidate) {
-                        if (isset($cfg[$candidate]) && is_string($cfg[$candidate])) {
-                            $rootDiskKey = $candidate;
-                            break;
-                        }
-                    }
-                    if ($savedDiskGb <= 0 && $rootDiskKey !== null && isset($cfg[$rootDiskKey]) && is_string($cfg[$rootDiskKey])) {
-                        foreach (explode(',', $cfg[$rootDiskKey]) as $part) {
-                            $part = trim($part);
-                            if (str_starts_with($part, 'size=')) {
-                                $sizeVal = substr($part, 5);
-                                if (preg_match('/^(\d+)([GgMmTt])?$/', $sizeVal, $m)) {
-                                    $num  = (int) $m[1];
-                                    $unit = strtolower($m[2] ?? 'g');
-                                    $savedDiskGb = match ($unit) {
-                                        'm' => (int) ceil($num / 1024),
-                                        't' => $num * 1024,
-                                        default => $num,
-                                    };
-                                }
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    // LXC: cores field holds total CPU count
-                    if (($savedCores <= 0 || $savedCpus <= 0) && isset($cfg['cores']) && is_numeric($cfg['cores'])) {
-                        $savedCores = (int) $cfg['cores'];
-                        $savedCpus  = $savedCores;
-                    }
-                    if ($savedDiskGb <= 0 && isset($cfg['rootfs']) && is_string($cfg['rootfs'])) {
-                        foreach (explode(',', $cfg['rootfs']) as $part) {
-                            $part = trim($part);
-                            if (str_starts_with($part, 'size=')) {
-                                $sizeVal = substr($part, 5);
-                                if (preg_match('/^(\d+)([GgMmTt])?$/', $sizeVal, $m)) {
-                                    $num  = (int) $m[1];
-                                    $unit = strtolower($m[2] ?? 'g');
-                                    $savedDiskGb = match ($unit) {
-                                        'm' => (int) ceil($num / 1024),
-                                        't' => $num * 1024,
-                                        default => $num,
-                                    };
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        $nextResult = $client->getNextVmid(100);
-        if (!$nextResult['ok'] || $nextResult['vmid'] === null) {
+        $result = VmInstanceUtil::startReinstall($instance, $data);
+        if (!$result['ok']) {
             return ApiResponse::error(
-                'Could not get next VMID: ' . ($nextResult['error'] ?? 'unknown'),
-                'PROXMOX_ERROR',
-                500
+                $result['error'],
+                $result['code'],
+                $result['http_status']
             );
-        }
-        $newVmid = $nextResult['vmid'];
-
-        if ($vmType === 'qemu') {
-            $clone = $client->cloneQemu($templateNode, $templateVmid, $newVmid, (string) ($instance['hostname'] ?? 'vm-' . $newVmid), $node);
-        } else {
-            $clone = $client->cloneLxc($templateNode, $templateVmid, $newVmid, (string) ($instance['hostname'] ?? 'ct-' . $newVmid), $node, (string) ($vmNode['default_storage'] ?? 'local'));
-        }
-        if (!$clone['ok'] || empty($clone['upid'])) {
-            return ApiResponse::error('Clone failed: ' . ($clone['error'] ?? 'unknown'), 'CLONE_FAILED', 500);
-        }
-
-        $ipId = !empty($instance['vm_ip_id']) ? (int) $instance['vm_ip_id'] : null;
-        $ip = $ipId ? VmIp::getById($ipId) : null;
-
-        $reinstallMeta = json_encode([
-            'type'        => 'reinstall',
-            'old_vmid'    => $oldVmid,
-            'instance_id' => $id,
-            'ci_user'     => $ciUser,
-            'ci_password' => $ciPassword,
-            'ip_address'  => $ip['ip'] ?? ($instance['ip_address'] ?? null),
-            'ip_cidr'     => $ip ? (int) ($ip['cidr'] ?? 24) : 24,
-            'gateway'     => $ip['gateway'] ?? ($instance['gateway'] ?? null),
-            'memory'      => $savedMemory,
-            'cpus'        => $savedCpus,
-            'cores'       => $savedCores,
-            'disk_gb'     => $savedDiskGb,
-            'root_disk'   => $rootDiskKey,
-        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-
-        $reinstallId = bin2hex(random_bytes(16));
-        $saved = VmCreationPending::create([
-            'creation_id' => $reinstallId,
-            'upid'        => $clone['upid'],
-            'target_node' => $node,
-            'vmid'        => $newVmid,
-            'hostname'    => $instance['hostname'] ?? 'vm-' . $newVmid,
-            'vm_node_id'  => (int) $instance['vm_node_id'],
-            'plan_id'     => null,
-            'template_id' => $instance['template_id'] ? (int) $instance['template_id'] : null,
-            'vm_ip_id'    => $ipId,
-            'user_uuid'   => $instance['user_uuid'] ?? null,
-            'notes'       => $reinstallMeta,
-            'vm_type'     => $vmType,
-            'memory'      => 512,
-            'cpus'        => 1,
-            'cores'       => 1,
-            'disk'        => 10,
-            'storage'     => 'local',
-            'bridge'      => 'vmbr0',
-            'on_boot'     => 0,
-        ]);
-        if (!$saved) {
-            $client->deleteVm($node, $newVmid, $vmType);
-
-            return ApiResponse::error('Failed to save reinstall pending record', 'DB_ERROR', 500);
         }
 
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'vm_instance_reinstall_start',
-            'context' => 'Started reinstall for VM instance: ' . ($instance['hostname'] ?? $id) . ' (vmid ' . $oldVmid . ' → ' . $newVmid . ')',
+            'context' => 'Started reinstall for VM instance: ' . ($instance['hostname'] ?? $id),
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
         return ApiResponse::success([
-            'reinstall_id' => $reinstallId,
-            'message'      => 'Reinstall clone started. Poll reinstall-status until active or failed.',
+            'reinstall_id' => $result['reinstall_id'],
+            'message'      => $result['message'],
         ], 'VM reinstall started', 202);
     }
 
@@ -2235,7 +1974,7 @@ class VmInstancesController
         }
 
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed in reinstallStatus: ' . $e->getMessage());
 
@@ -2261,231 +2000,20 @@ class VmInstancesController
             ], 'Reinstall clone failed', 200);
         }
 
-        // Clone done — apply post-config, delete old VM, update DB.
-        $vmType    = $pending['vm_type'] === 'lxc' ? 'lxc' : 'qemu';
-        $newVmid   = (int) $pending['vmid'];
-        $node      = $pending['target_node'];
-        $oldVmid   = (int) ($reinstallMeta['old_vmid'] ?? 0);
         $instanceId = (int) ($reinstallMeta['instance_id'] ?? 0);
-        $ciUser     = $reinstallMeta['ci_user'] ?? null;
-        $ciPassword = $reinstallMeta['ci_password'] ?? null;
-        $ipAddress  = $reinstallMeta['ip_address'] ?? null;
-        $ipCidr     = (int) ($reinstallMeta['ip_cidr'] ?? 24);
-        $gateway    = trim((string) ($reinstallMeta['gateway'] ?? ''));
-        $memory     = (int) ($reinstallMeta['memory'] ?? 512);
-        $cpus       = (int) ($reinstallMeta['cpus'] ?? 1);
-        $cores      = (int) ($reinstallMeta['cores'] ?? 1);
-        $diskGb     = (int) ($reinstallMeta['disk_gb'] ?? 0);
-        $rootDisk   = is_string($reinstallMeta['root_disk'] ?? null) ? (string) $reinstallMeta['root_disk'] : null;
-
-        if ($vmType === 'lxc') {
-            $deleteNetKeys = [];
-            $getConfig = $client->getVmConfig($node, $newVmid, 'lxc');
-            if ($getConfig['ok'] && is_array($getConfig['config'] ?? null)) {
-                foreach (array_keys((array) $getConfig['config']) as $k) {
-                    if (preg_match('/^net\d+$/', (string) $k)) {
-                        $deleteNetKeys[] = (string) $k;
-                    }
-                }
-            }
-            if (!empty($deleteNetKeys)) {
-                $client->setVmConfig($node, $newVmid, 'lxc', [], $deleteNetKeys);
-            }
-            $net0 = 'name=eth0,bridge=vmbr0,ip=' . $ipAddress . '/' . $ipCidr;
-            if ($gateway !== '') {
-                $net0 .= ',gw=' . $gateway;
-            }
-            
-            // Build description with detailed info for Proxmox notes
-            $descParts = ['FeatherPanel Managed VM (Reinstalled)'];
-            if (!empty($ipAddress)) {
-                $descParts[] = 'IP: ' . $ipAddress;
-            }
-            if (!empty($pending['hostname'])) {
-                $descParts[] = 'Hostname: ' . $pending['hostname'];
-            }
-            if (!empty($pending['user_uuid'])) {
-                $descParts[] = 'User: ' . $pending['user_uuid'];
-            }
-            $descParts[] = 'Reinstalled: ' . date('Y-m-d H:i:s');
-            
-            $config = [
-                'nameserver' => '1.1.1.1 8.8.8.8',
-                'net0'       => $net0,
-                'memory'     => $memory,
-                'cores'      => $cores > 0 ? $cores : 1,
-                'onboot'     => 0,
-                'tags'       => 'FeatherPanel-Managed',
-                'description' => implode(' | ', $descParts),
-            ];
-            $client->setVmConfig($node, $newVmid, 'lxc', $config, []);
-            // Resize rootfs if client had more disk than the template default.
-            if ($diskGb > 0) {
-                $cfgAfter = $client->getVmConfig($node, $newVmid, 'lxc');
-                $templateDiskGb = 0;
-                if ($cfgAfter['ok'] && isset($cfgAfter['config']['rootfs']) && is_string($cfgAfter['config']['rootfs'])) {
-                    foreach (explode(',', $cfgAfter['config']['rootfs']) as $part) {
-                        $part = trim($part);
-                        if (str_starts_with($part, 'size=')) {
-                            $sv = substr($part, 5);
-                            if (preg_match('/^(\d+)([GgMmTt])?$/', $sv, $m)) {
-                                $n = (int) $m[1];
-                                $u = strtolower($m[2] ?? 'g');
-                                $templateDiskGb = match ($u) {
-                                    'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n,
-                                };
-                            }
-                            break;
-                        }
-                    }
-                }
-                if ($diskGb > $templateDiskGb) {
-                    $resizeRes = $client->resizeContainerDisk($node, $newVmid, 'rootfs', $diskGb . 'G');
-                    if (!$resizeRes['ok']) {
-                        App::getInstance(true)->getLogger()->warning('Reinstall LXC rootfs resize failed: ' . ($resizeRes['error'] ?? 'unknown'));
-                    } elseif (is_string($resizeRes['upid'] ?? null) && $resizeRes['upid'] !== '') {
-                        $wait = $client->waitTask($node, (string) $resizeRes['upid'], 600, 5);
-                        if (!$wait['ok']) {
-                            App::getInstance(true)->getLogger()->warning('Reinstall LXC rootfs resize task failed: ' . ($wait['error'] ?? 'unknown'));
-                        }
-                    }
-                }
-            }
-        } else {
-            $ipconfig0 = 'ip=' . $ipAddress . '/' . $ipCidr;
-            if ($gateway !== '') {
-                $ipconfig0 .= ',gw=' . $gateway;
-            }
-            // Default boot/disk bus to scsi0 if we did not detect a specific root disk key.
-            $bootDiskKey = $rootDisk ?? 'scsi0';
-            $bootOrder = 'order=' . $bootDiskKey;
-
-            // Build description with detailed info for Proxmox notes
-            $descParts = ['FeatherPanel Managed VM (Reinstalled)'];
-            if (!empty($ipAddress)) {
-                $descParts[] = 'IP: ' . $ipAddress;
-            }
-            if (!empty($pending['hostname'])) {
-                $descParts[] = 'Hostname: ' . $pending['hostname'];
-            }
-            if (!empty($pending['user_uuid'])) {
-                $descParts[] = 'User: ' . $pending['user_uuid'];
-            }
-            $descParts[] = 'Reinstalled: ' . date('Y-m-d H:i:s');
-
-            $client->setVmConfig($node, $newVmid, 'qemu', [
-                'nameserver' => '1.1.1.1 8.8.8.8',
-                'ipconfig0'  => $ipconfig0,
-                'boot'       => $bootOrder,
-                'memory'     => $memory,
-                'sockets'    => $cpus > 0 ? $cpus : 1,
-                'cores'      => $cores > 0 ? $cores : 1,
-                'ciuser'     => $ciUser ?? 'debian',
-                'cipassword' => $ciPassword ?? bin2hex(random_bytes(6)),
-                'tags'       => 'FeatherPanel-Managed',
-                'description' => implode(' | ', $descParts),
-            ], []);
-            // Resize the primary disk (scsi0/virtio0/etc.) if the client had a larger disk than the template default.
-            if ($diskGb > 0) {
-                $cfgAfter = $client->getVmConfig($node, $newVmid, 'qemu');
-                $templateDiskGb = 0;
-                $diskKey = $bootDiskKey;
-                if ($cfgAfter['ok'] && isset($cfgAfter['config'][$diskKey]) && is_string($cfgAfter['config'][$diskKey])) {
-                    foreach (explode(',', $cfgAfter['config'][$diskKey]) as $part) {
-                        $part = trim($part);
-                        if (str_starts_with($part, 'size=')) {
-                            $sv = substr($part, 5);
-                            if (preg_match('/^(\d+)([GgMmTt])?$/', $sv, $m)) {
-                                $n = (int) $m[1];
-                                $u = strtolower($m[2] ?? 'g');
-                                $templateDiskGb = match ($u) {
-                                    'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n,
-                                };
-                            }
-                            break;
-                        }
-                    }
-                }
-                if ($diskGb > $templateDiskGb) {
-                    $resizeRes = $client->resizeQemuDisk($node, $newVmid, $diskKey, $diskGb . 'G');
-                    if (!$resizeRes['ok']) {
-                        App::getInstance(true)->getLogger()->warning('Reinstall QEMU disk resize failed: ' . ($resizeRes['error'] ?? 'unknown'));
-                    } elseif (is_string($resizeRes['upid'] ?? null) && $resizeRes['upid'] !== '') {
-                        $wait = $client->waitTask($node, (string) $resizeRes['upid'], 600, 5);
-                        if (!$wait['ok']) {
-                            App::getInstance(true)->getLogger()->warning('Reinstall QEMU disk resize task failed: ' . ($wait['error'] ?? 'unknown'));
-                        }
-                    }
-                }
-            }
-        }
-
-        // CRITICAL: Delete ALL backups for this instance before reinstall.
-        // Reinstall = fresh start, old backups are incompatible with new VM.
-        if ($instanceId > 0) {
-            $instanceForBackups = VmInstance::getById($instanceId);
-            if ($instanceForBackups) {
-                App::getInstance(true)->getLogger()->info(
-                    'Reinstall: Deleting all backups for instance ID ' . $instanceId . ' (vmid ' . $oldVmid . ')'
-                );
-                self::deleteInstanceBackups($instanceForBackups, $client);
-            }
-        }
-
-        // Stop then delete the old VM (best-effort).
-        if ($oldVmid > 0) {
-            $client->stopVm($node, $oldVmid, $vmType);
-            sleep(2);
-            $client->deleteVm($node, $oldVmid, $vmType);
-        }
-
-        // Start the freshly installed VM.
-        // Give Proxmox a short window to finish any async operations (such as
-        // disk resize) before attempting to start the new guest.
-        sleep(2);
-        $startResult = $client->startVm($node, $newVmid, $vmType);
-        $finalStatus = $startResult['ok'] ? 'running' : 'stopped';
-        if (!$startResult['ok']) {
-            App::getInstance(true)->getLogger()->warning(
-                'Reinstall: failed to start new VM ' . $newVmid . ': ' . ($startResult['error'] ?? 'unknown')
-            );
-        }
-
-        // Update the panel DB record to point to the new VMID.
-        $instance = null;
-        if ($instanceId > 0) {
-            try {
-                $pdo = Database::getPdoConnection();
-                $stmt = $pdo->prepare(
-                    'UPDATE featherpanel_vm_instances SET vmid = :vmid, pve_node = :node, status = :status WHERE id = :id'
-                );
-                $stmt->execute([
-                    'vmid'   => $newVmid,
-                    'node'   => $node,
-                    'status' => $finalStatus,
-                    'id'     => $instanceId,
-                ]);
-                $instance = VmInstance::getById($instanceId);
-            } catch (\Throwable $e) {
-                App::getInstance(true)->getLogger()->error(
-                    'Failed to update VM instance DB after reinstall: ' . $e->getMessage()
-                );
-            }
-        }
-
-        VmCreationPending::deleteByCreationId($reinstallId);
+        $out = VmInstanceUtil::completeReinstallAfterClone($reinstallId, $pending, $reinstallMeta, $client);
 
         $admin = $request->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'vm_instance_reinstall_complete',
-            'context' => 'Reinstall completed for instance ID ' . $instanceId . ' (new vmid ' . $newVmid . ')',
+            'context' => 'Reinstall completed for instance ID ' . $instanceId . ' (new vmid ' . $out['new_vmid'] . ')',
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
         return ApiResponse::success([
             'status'   => 'active',
-            'instance' => $instance,
+            'instance' => $out['instance'],
         ], 'VM reinstalled successfully', 200);
     }
 
@@ -2530,7 +2058,7 @@ class VmInstancesController
         $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
         if ($vmNode) {
             try {
-                $client = self::buildProxmoxClientForNode($vmNode);
+                $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
                 $node = $instance['pve_node'] ?? '';
                 if ($node === '') {
                     $find = $client->findNodeByVmid((int) $instance['vmid']);
@@ -2601,7 +2129,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -2745,7 +2273,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -2880,7 +2408,7 @@ class VmInstancesController
         $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
         if ($vmNode) {
             try {
-                $client = self::buildProxmoxClientForNode($vmNode);
+                $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
                 $node   = $instance['pve_node'] ?? '';
                 if ($node !== '') {
                     $result = $client->deleteBackupVolume($node, (string) $backup['storage'], (string) $backup['volid']);
@@ -2955,7 +2483,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -3096,7 +2624,7 @@ class VmInstancesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
         try {
-            $client = self::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
@@ -3241,7 +2769,7 @@ class VmInstancesController
         $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
         if (!$vmNode) {
             // Node is already gone; purge any tracked backups from DB and delete the instance row.
-            self::deleteInstanceBackups($instance, null);
+            VmInstanceUtil::deleteInstanceBackups($instance, null);
             VmInstance::delete($id);
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
@@ -3254,9 +2782,9 @@ class VmInstancesController
         }
 
         try {
-			$client = self::buildProxmoxClientForNode($vmNode);
+			$client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
-            self::deleteInstanceBackups($instance, null);
+            VmInstanceUtil::deleteInstanceBackups($instance, null);
             VmInstance::delete($id);
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
@@ -3279,7 +2807,7 @@ class VmInstancesController
             $client->stopVm($node, (int) $instance['vmid'], $vmType);
             sleep(2);
             // After the guest is stopped, delete any tracked vzdump backups for this instance.
-            self::deleteInstanceBackups($instance, $client);
+            VmInstanceUtil::deleteInstanceBackups($instance, $client);
             // Finally, remove the VM/container itself from Proxmox.
             $deleteResult = $client->deleteVm($node, (int) $instance['vmid'], $vmType);
             if (!$deleteResult['ok']) {
@@ -3296,7 +2824,7 @@ class VmInstancesController
             }
         } else {
             // We could not resolve a node, but still want to forget tracked backups in the DB.
-            self::deleteInstanceBackups($instance, null);
+            VmInstanceUtil::deleteInstanceBackups($instance, null);
         }
 
         VmInstanceActivity::createActivity([
@@ -3342,101 +2870,4 @@ class VmInstancesController
         return $s !== '' ? $s : 'vm-' . time();
     }
 
-    /**
-     * Delete all tracked backups for a VM instance from Proxmox and the database.
-     *
-     * This is best-effort: failures to delete individual backup volumes are logged but do not
-     * block the overall VM delete/reinstall flow.
-     *
-     * @param array<string, mixed> $instance
-     */
-    private static function deleteInstanceBackups(array $instance, ?Proxmox $client = null): void
-    {
-        $instanceId = (int) ($instance['id'] ?? 0);
-        if ($instanceId <= 0) {
-            return;
-        }
-
-        $backups = VmInstanceBackup::getBackupsByInstanceId($instanceId);
-        if (empty($backups)) {
-            return;
-        }
-
-        $node = (string) ($instance['pve_node'] ?? '');
-
-        foreach ($backups as $backup) {
-            $volid = (string) ($backup['volid'] ?? '');
-            $storage = (string) ($backup['storage'] ?? '');
-
-            if ($client !== null && $node !== '' && $volid !== '' && $storage !== '') {
-                $res = $client->deleteBackupVolume($node, $storage, $volid);
-                if (!$res['ok']) {
-                    App::getInstance(true)->getLogger()->warning(
-                        'Failed to delete Proxmox backup volume for VM instance ' . $instanceId .
-                        ' volid=' . $volid . ' storage=' . $storage . ': ' . ($res['error'] ?? 'unknown')
-                    );
-                }
-            }
-
-            if (isset($backup['id']) && (int) $backup['id'] > 0) {
-                VmInstanceBackup::deleteById((int) $backup['id']);
-            }
-        }
-    }
-
-    /**
-     * Build a Proxmox client for the given VM node, including any additional headers/params.
-     *
-     * @param array<string, mixed> $vmNode
-     */
-    private static function buildProxmoxClientForNode(array $vmNode): Proxmox
-    {
-        $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
-
-        $extraHeaders = [];
-        $extraParams = [];
-
-        if (!empty($vmNode['addional_headers']) && is_string($vmNode['addional_headers'])) {
-            $decoded = json_decode($vmNode['addional_headers'], true);
-            if (is_array($decoded)) {
-                foreach ($decoded as $key => $value) {
-                    if (is_string($key) && (is_string($value) || is_numeric($value))) {
-                        $extraHeaders[$key] = (string) $value;
-                    }
-                }
-            } else {
-                App::getInstance(true)->getLogger()->warning(
-                    'VM node additional headers JSON is invalid for ID ' . ($vmNode['id'] ?? 'unknown')
-                );
-            }
-        }
-
-        if (!empty($vmNode['additional_params']) && is_string($vmNode['additional_params'])) {
-            $decoded = json_decode($vmNode['additional_params'], true);
-            if (is_array($decoded)) {
-                foreach ($decoded as $key => $value) {
-                    if (is_string($key) && (is_string($value) || is_numeric($value))) {
-                        $extraParams[$key] = $value;
-                    }
-                }
-            } else {
-                App::getInstance(true)->getLogger()->warning(
-                    'VM node additional params JSON is invalid for ID ' . ($vmNode['id'] ?? 'unknown')
-                );
-            }
-        }
-
-        return new Proxmox(
-            $vmNode['fqdn'],
-            (int) $vmNode['port'],
-            $vmNode['scheme'],
-            $vmNode['user'],
-            $vmNode['token_id'],
-            $vmNode['secret'],
-            $tlsNoVerify,
-            (int) ($vmNode['timeout'] ?? 60),
-            $extraHeaders,
-            $extraParams,
-        );
-    }
 }
