@@ -24,6 +24,8 @@ use App\Controllers\User\Vds\VmUserInstanceController;
 
 return function (RouteCollection $routes): void {
 
+    // ==================== CORE VM OPERATIONS ====================
+
     // Get all VM instances for the authenticated user
     App::getInstance(true)->registerAuthRoute(
         $routes,
@@ -104,4 +106,36 @@ return function (RouteCollection $routes): void {
         ['GET'],
         Rate::perMinute(10)
     );
+
+    // Start async VM reinstall (returns 202 + reinstall_id; poll reinstall-status until active or failed)
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-reinstall',
+        '/api/user/vm-instances/{id}/reinstall',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+            return (new VmUserInstanceController())->reinstall($request, $id);
+        },
+        'id',
+        ['POST'],
+        Rate::perMinute(5)
+    );
+
+    // Poll reinstall status (reinstall_id from start reinstall response)
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-vm-instance-reinstall-status',
+        '/api/user/vm-instances/reinstall-status/{reinstallId}',
+        function (Request $request, array $args) {
+            $reinstallId = isset($args['reinstallId']) ? trim((string) $args['reinstallId']) : '';
+            return (new VmUserInstanceController())->reinstallStatus($request, $reinstallId);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-vm-instances'
+    );
+
 };

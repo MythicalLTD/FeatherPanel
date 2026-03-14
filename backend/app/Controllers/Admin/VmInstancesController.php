@@ -23,6 +23,7 @@ use App\Chat\VmNode;
 use App\Chat\Activity;
 use App\Chat\Database;
 use App\Chat\VmInstance;
+use App\Chat\VmInstanceActivity;
 use App\Chat\VmTemplate;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -739,6 +740,14 @@ class VmInstancesController
             'context' => 'Created VM instance: ' . $pending['hostname'] . ' (vmid ' . $pending['vmid'] . ')',
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+        VmInstanceActivity::createActivity([
+            'vm_instance_id' => (int) $instance['id'],
+            'vm_node_id' => (int) $pending['vm_node_id'],
+            'user_id' => isset($admin['id']) ? (int) $admin['id'] : null,
+            'event' => 'vm:create',
+            'metadata' => ['hostname' => $pending['hostname'] ?? null, 'vmid' => $pending['vmid']],
+            'ip' => CloudFlareRealIP::getRealIP(),
+        ]);
 
         $instance = VmInstance::getById((int) $instance['id']);
 
@@ -1160,6 +1169,14 @@ class VmInstancesController
             'name' => 'vm_instance_update',
             'context' => 'Updated VM instance: ' . ($instance['hostname'] ?? $id),
             'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+        VmInstanceActivity::createActivity([
+            'vm_instance_id' => $id,
+            'vm_node_id' => (int) ($instance['vm_node_id'] ?? 0),
+            'user_id' => isset($admin['id']) ? (int) $admin['id'] : null,
+            'event' => 'vm:update',
+            'metadata' => ['hostname' => $instance['hostname'] ?? null],
+            'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
         return ApiResponse::success(['instance' => VmInstance::getById($id)], 'VM instance updated successfully', 200);
@@ -1846,6 +1863,7 @@ class VmInstancesController
     )]
     public function power(Request $request, int $id): Response
     {
+        $admin = $request->get('user');
         $instance = VmInstance::getById($id);
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
@@ -1913,6 +1931,14 @@ class VmInstancesController
         }
 
         $instance = VmInstance::getById($id);
+        VmInstanceActivity::createActivity([
+            'vm_instance_id' => $id,
+            'vm_node_id' => (int) ($instance['vm_node_id'] ?? 0),
+            'user_id' => isset($admin['id']) ? (int) $admin['id'] : null,
+            'event' => 'vm:power.' . $action,
+            'metadata' => ['hostname' => $instance['hostname'] ?? null],
+            'ip' => CloudFlareRealIP::getRealIP(),
+        ]);
 
         return ApiResponse::success(['instance' => $instance], 'Power action completed', 200);
     }
@@ -3273,6 +3299,14 @@ class VmInstancesController
             self::deleteInstanceBackups($instance, null);
         }
 
+        VmInstanceActivity::createActivity([
+            'vm_instance_id' => $id,
+            'vm_node_id' => (int) ($instance['vm_node_id'] ?? 0),
+            'user_id' => isset($admin['id']) ? (int) $admin['id'] : null,
+            'event' => 'vm:delete',
+            'metadata' => ['hostname' => $instance['hostname'] ?? null],
+            'ip' => CloudFlareRealIP::getRealIP(),
+        ]);
         VmInstance::delete($id);
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,

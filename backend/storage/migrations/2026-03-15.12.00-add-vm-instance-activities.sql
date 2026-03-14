@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS `featherpanel_vm_instance_activities` (
+	`id` int(11) NOT NULL AUTO_INCREMENT,
+	`vm_instance_id` int(11) NOT NULL,
+	`vm_node_id` int(11) NOT NULL,
+	`user_id` int(11) DEFAULT NULL,
+	`event` varchar(255) NOT NULL,
+	`metadata` text DEFAULT NULL,
+	`ip` varchar(45) DEFAULT NULL,
+	`timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`),
+	KEY `vm_instance_activities_vm_instance_id_foreign` (`vm_instance_id`),
+	KEY `vm_instance_activities_vm_node_id_foreign` (`vm_node_id`),
+	KEY `vm_instance_activities_user_id_foreign` (`user_id`),
+	KEY `vm_instance_activities_event_index` (`event`),
+	KEY `vm_instance_activities_timestamp_index` (`timestamp`),
+	CONSTRAINT `vm_instance_activities_vm_instance_id_foreign` FOREIGN KEY (`vm_instance_id`) REFERENCES `featherpanel_vm_instances` (`id`) ON DELETE CASCADE,
+	CONSTRAINT `vm_instance_activities_vm_node_id_foreign` FOREIGN KEY (`vm_node_id`) REFERENCES `featherpanel_vm_nodes` (`id`) ON DELETE CASCADE,
+	CONSTRAINT `vm_instance_activities_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `featherpanel_users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
