@@ -172,3 +172,8 @@ ADMIN_TICKET_ATTACHMENTS_MANAGE=admin.ticket_attachments.manage | Admin Ticket A
 
 ADMIN_TICKET_MESSAGES_VIEW=admin.ticket_messages.view | Admin Ticket Messages | View ticket messages
 ADMIN_TICKET_MESSAGES_MANAGE=admin.ticket_messages.manage | Admin Ticket Messages | Manage ticket messages
+
+# VM Instances Permissions
+ADMIN_VM_INSTANCES_VIEW=admin.vm_instances.view | Admin VM Instances | View VM instances
+ADMIN_VM_INSTANCES_EDIT=admin.vm_instances.edit | Admin VM Instances | Edit existing VM instances
+ADMIN_VM_INSTANCES_DELETE=admin.vm_instances.delete | Admin VM Instances | Delete VM instances
