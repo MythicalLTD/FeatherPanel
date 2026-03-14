@@ -309,64 +309,6 @@ export default function VmInstanceViewPage() {
                             <Pencil className='h-4 w-4 mr-2' />
                             {t('common.edit')}
                         </Button>
-                        <Button
-                            size='sm'
-                            variant='outline'
-                            disabled={poweringId !== null}
-                            onClick={() => handlePower('start')}
-                        >
-                            {poweringId === 'start' ? (
-                                <Loader2 className='h-4 w-4 animate-spin mr-2' />
-                            ) : (
-                                <Play className='h-4 w-4 mr-2' />
-                            )}
-                            Start
-                        </Button>
-                        <Button
-                            size='sm'
-                            variant='outline'
-                            disabled={poweringId !== null}
-                            onClick={() => handlePower('stop')}
-                        >
-                            <Square className='h-4 w-4 mr-2' />
-                            Stop
-                        </Button>
-                        <Button
-                            size='sm'
-                            variant='outline'
-                            disabled={poweringId !== null}
-                            onClick={() => handlePower('reboot')}
-                        >
-                            {poweringId === 'reboot' ? (
-                                <Loader2 className='h-4 w-4 animate-spin mr-2' />
-                            ) : (
-                                <RotateCw className='h-4 w-4 mr-2' />
-                            )}
-                            Reboot
-                        </Button>
-                        <Button size='sm' variant='outline' disabled={vncOpening} onClick={openVncConsole}>
-                            {vncOpening ? (
-                                <Loader2 className='h-4 w-4 animate-spin mr-2' />
-                            ) : (
-                                <Monitor className='h-4 w-4 mr-2' />
-                            )}
-                            {t('admin.vmInstances.vnc_console') ?? 'VNC Console'}
-                        </Button>
-                        <Button
-                            size='sm'
-                            variant='outline'
-                            disabled={reinstalling}
-                            onClick={() => !reinstalling && setConfirmReinstall(true)}
-                        >
-                            {reinstalling ? (
-                                <Loader2 className='h-4 w-4 animate-spin mr-2' />
-                            ) : (
-                                <RotateCw className='h-4 w-4 mr-2' />
-                            )}
-                            {reinstalling
-                                ? (t('common.processing') ?? 'Reinstalling…')
-                                : (t('admin.vmInstances.reinstall') ?? 'Reinstall')}
-                        </Button>
                         <Button size='sm' variant='destructive' onClick={() => setConfirmDelete(true)}>
                             <Trash2 className='h-4 w-4 mr-2' />
                             {t('common.delete')}
@@ -374,6 +316,78 @@ export default function VmInstanceViewPage() {
                     </div>
                 }
             />
+
+            <div className='flex flex-wrap items-center gap-3 p-6 rounded-2xl bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50'>
+                <Button
+                    size='lg'
+                    disabled={poweringId !== null}
+                    onClick={() => handlePower('start')}
+                    className='px-6 py-3 rounded-xl bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-600 font-black uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95'
+                >
+                    {poweringId === 'start' ? (
+                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                    ) : (
+                        <Play className='h-4 w-4 mr-2' />
+                    )}
+                    START
+                </Button>
+                <Button
+                    size='lg'
+                    disabled={poweringId !== null}
+                    onClick={() => handlePower('stop')}
+                    className='px-6 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 font-black uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95'
+                >
+                    {poweringId === 'stop' ? (
+                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                    ) : (
+                        <Square className='h-4 w-4 mr-2' />
+                    )}
+                    STOP
+                </Button>
+                <Button
+                    size='lg'
+                    disabled={poweringId !== null}
+                    onClick={() => handlePower('reboot')}
+                    className='px-6 py-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 font-black uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95'
+                >
+                    {poweringId === 'reboot' ? (
+                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                    ) : (
+                        <RotateCw className='h-4 w-4 mr-2' />
+                    )}
+                    REBOOT
+                </Button>
+                <Button
+                    size='lg'
+                    variant='outline'
+                    disabled={vncOpening}
+                    onClick={openVncConsole}
+                    className='px-6 py-3 rounded-xl transition-all hover:scale-105 active:scale-95'
+                >
+                    {vncOpening ? (
+                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                    ) : (
+                        <Monitor className='h-4 w-4 mr-2' />
+                    )}
+                    {t('admin.vmInstances.vnc_console') ?? 'VNC Console'}
+                </Button>
+                <Button
+                    size='lg'
+                    variant='outline'
+                    disabled={reinstalling}
+                    onClick={() => !reinstalling && setConfirmReinstall(true)}
+                    className='px-6 py-3 rounded-xl transition-all hover:scale-105 active:scale-95'
+                >
+                    {reinstalling ? (
+                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                    ) : (
+                        <RotateCw className='h-4 w-4 mr-2' />
+                    )}
+                    {reinstalling
+                        ? (t('common.processing') ?? 'Reinstalling…')
+                        : (t('admin.vmInstances.reinstall') ?? 'Reinstall')}
+                </Button>
+            </div>
 
             <WidgetRenderer widgets={getWidgets('admin-vm-instance-view', 'after-header')} context={{ id }} />
 
@@ -504,10 +518,7 @@ export default function VmInstanceViewPage() {
                                             size='icon'
                                             variant='outline'
                                             className='h-7 w-7'
-                                            onClick={
-												() =>
-                                                copyToClipboard(instance.lxc_root_password ?? "")
-											} 
+                                            onClick={() => copyToClipboard(instance.lxc_root_password ?? '')}
                                             title={t('common.copy') ?? 'Copy'}
                                         >
                                             <Copy className='h-3.5 w-3.5' />
