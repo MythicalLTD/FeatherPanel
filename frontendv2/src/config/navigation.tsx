@@ -835,6 +835,58 @@ export const getMainNavigationItems = (
             group: 'support',
         });
     }
+    return items;
+};
+
+export const getVdsNavigationItems = (
+    t: TFunction,
+    instanceId: string,
+): NavigationItem[] => {
+    const items: NavigationItem[] = [
+        {
+            id: 'vds-overview',
+            name: t('navigation.items.console') || 'Overview',
+            title: t('navigation.items.console') || 'Overview',
+            url: `/vds/${instanceId}`,
+            icon: SquareTerminal,
+            isActive: false,
+            category: 'server',
+            group: 'management',
+        },
+        {
+            id: 'vds-activities',
+            name: t('navigation.items.activities') || 'Activity Log',
+            title: t('navigation.items.activities') || 'Activity Log',
+            url: `/vds/${instanceId}/activities`,
+            icon: Clock,
+            isActive: false,
+            category: 'server',
+            group: 'management',
+            permission: 'activity.read',
+        },
+        {
+            id: 'vds-users',
+            name: t('navigation.items.users') || 'Subusers',
+            title: t('navigation.items.users') || 'Subusers',
+            url: `/vds/${instanceId}/users`,
+            icon: Users,
+            isActive: false,
+            category: 'server',
+            group: 'configuration',
+            permission: 'settings',
+        },
+        {
+            id: 'vds-settings',
+            name: t('navigation.items.settings') || 'Settings',
+            title: t('navigation.items.settings') || 'Settings',
+            url: `/vds/${instanceId}/settings`,
+            icon: Settings,
+            isActive: false,
+            category: 'server',
+            group: 'configuration',
+            permission: 'settings',
+        },
+    ];
 
     return items;
 };

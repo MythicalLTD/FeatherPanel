@@ -70,16 +70,16 @@ class VmUserSubuserController
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['user_id', 'permissions'],
+                required: ['email', 'permissions'],
                 properties: [
-                    new OA\Property(property: 'user_id', type: 'integer', description: 'Target user ID'),
+                    new OA\Property(property: 'email', type: 'string', description: 'Target user email'),
                     new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string'), description: 'e.g. power, console'),
                 ]
             )
         ),
         responses: [
             new OA\Response(response: 201, description: 'Subuser added', content: new OA\JsonContent(properties: [new OA\Property(property: 'subuser', type: 'object')])),
-            new OA\Response(response: 400, description: 'user_id and permissions required'),
+            new OA\Response(response: 400, description: 'email and permissions required'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Only the VM owner can add subusers'),
             new OA\Response(response: 404, description: 'VM instance not found'),
@@ -99,11 +99,21 @@ class VmUserSubuserController
         }
 
         $data = json_decode($request->getContent(), true);
-        $targetUserId = (int) ($data['user_id'] ?? 0);
+        $email = $data['email'] ?? '';
         $permissions = $data['permissions'] ?? [];
 
-        if ($targetUserId <= 0 || empty($permissions)) {
-            return ApiResponse::error('user_id and permissions are required', 'VALIDATION_FAILED', 400);
+        if (empty($email) || empty($permissions)) {
+            return ApiResponse::error('email and permissions are required', 'VALIDATION_FAILED', 400);
+        }
+
+        $targetUser = \App\Chat\User::getUserByEmail($email);
+        if (!$targetUser) {
+            return ApiResponse::error('User with this email not found', 'USER_NOT_FOUND', 404);
+        }
+        
+        $targetUserId = (int) $targetUser['id'];
+        if ($targetUserId === (int) $user['id']) {
+            return ApiResponse::error('You cannot add yourself as a subuser', 'VALIDATION_FAILED', 400);
         }
 
         $subuser = VmSubuser::create([

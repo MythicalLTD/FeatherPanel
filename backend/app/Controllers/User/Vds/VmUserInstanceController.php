@@ -175,6 +175,14 @@ class VmUserInstanceController
         $vmInstance['is_owner'] = isset($vmInstance['user_uuid']) && $vmInstance['user_uuid'] === $user['uuid'];
         $vmInstance['is_subuser'] = !$vmInstance['is_owner'];
 
+        if ($vmInstance['is_subuser']) {
+            $subuser = VmSubuser::getSubuserByUserAndVmInstance((int) $user['id'], (int) $vmInstance['id']);
+            $vmInstance['permissions'] = $subuser ? json_decode($subuser['permissions'] ?? '[]', true) : [];
+        } else {
+            // Owner has all permissions
+            $vmInstance['permissions'] = ['power', 'console', 'activity.read', 'reinstall', 'settings'];
+        }
+
         return ApiResponse::success([
             'instance' => $vmInstance,
         ], 'VM instance retrieved successfully', 200);
@@ -462,7 +470,7 @@ class VmUserInstanceController
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
 
-        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'power')) {
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'reinstall')) {
             return ApiResponse::error('You do not have permission to reinstall this VM', 'PERMISSION_DENIED', 403);
         }
 
@@ -634,4 +642,48 @@ class VmUserInstanceController
         return $instances;
     }
 
+
+    #[OA\Get(
+        path: '/api/user/vm-instances/{id}/templates',
+        summary: 'Get available templates',
+        description: 'Get available templates for the VM instance to reinstall. Limited to the VM type (qemu/lxc).',
+        tags: ['User - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Templates retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'templates', type: 'array', items: new OA\Items(type: 'object')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+        ]
+    )]
+    public function getTemplates(Request $request, int $id): Response
+    {
+        $user = $request->attributes->get('user');
+        $vmInstance = $request->attributes->get('vmInstance');
+
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'reinstall')) {
+            return ApiResponse::error('You do not have permission to view templates for this VM', 'PERMISSION_DENIED', 403);
+        }
+
+        $type = $vmInstance['vm_type'] === 'qemu' ? 'qemu' : 'lxc';
+        $templates = \App\Chat\VmTemplate::getAll(true); // active only
+        
+        $filtered = array_values(array_filter($templates, fn($t) => ($t['guest_type'] ?? 'qemu') === $type));
+
+        return ApiResponse::success(['templates' => $filtered], 'Templates retrieved', 200);
+    }
 }

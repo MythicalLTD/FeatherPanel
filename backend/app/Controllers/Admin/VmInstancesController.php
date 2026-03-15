@@ -2288,8 +2288,8 @@ class VmInstancesController
             return ApiResponse::success(['status' => 'running'], 'Backup in progress', 200);
         }
 
-        $taskStatus = $taskResult['data']['status'] ?? '';
-        $exitStatus = $taskResult['data']['exitstatus'] ?? '';
+        $taskStatus = $taskResult['status'] ?? '';
+        $exitStatus = $taskResult['exitstatus'] ?? '';
 
         if ($taskStatus !== 'stopped') {
             return ApiResponse::success(['status' => 'running'], 'Backup in progress', 200);
@@ -2641,8 +2641,8 @@ class VmInstancesController
             return ApiResponse::success(['status' => 'restoring'], 'Restore in progress', 200);
         }
 
-        $taskStatus = $taskResult['data']['status'] ?? '';
-        $exitStatus = $taskResult['data']['exitstatus'] ?? '';
+        $taskStatus = $taskResult['status'] ?? '';
+        $exitStatus = $taskResult['exitstatus'] ?? '';
 
         if ($taskStatus !== 'stopped') {
             return ApiResponse::success(['status' => 'restoring'], 'Restore in progress', 200);

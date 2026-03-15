@@ -19,9 +19,10 @@ import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { NavigationItem, PluginSidebarItem } from '@/types/navigation';
-import { getAdminNavigationItems, getServerNavigationItems, getMainNavigationItems } from '@/config/navigation';
+import { getAdminNavigationItems, getServerNavigationItems, getMainNavigationItems, getVdsNavigationItems } from '@/config/navigation';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
+import { useVdsPermissions } from '@/hooks/useVdsPermissions';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 
 export function useNavigation() {
@@ -37,8 +38,12 @@ export function useNavigation() {
     const isServer = pathname.startsWith('/server/');
     const serverUuid = isServer ? pathname.split('/')[2] : null;
 
+    const isVds = pathname.startsWith('/vds/');
+    const vdsId = isVds ? pathname.split('/')[2] : null;
+
     // Call hook at top level - valid usage
     const { hasPermission: hasServerPermission, server } = useServerPermissions(serverUuid || '');
+    const { hasPermission: hasVdsPermission } = useVdsPermissions();
 
     // Get server's spell_id for filtering plugin sidebar items
     const serverSpellId = server?.spell_id || null;
@@ -214,6 +219,16 @@ export function useNavigation() {
             return items.filter((item) => !item.permission || hasServerPermission(item.permission));
         }
 
+        if (isVds && vdsId) {
+            let items = getVdsNavigationItems(t, vdsId);
+            items = items.map((item) => ({
+                ...item,
+                isActive: checkActive(item.url, item.url === `/vds/${vdsId}`),
+            }));
+            
+            return items.filter((item) => !item.permission || hasVdsPermission(item.permission));
+        }
+
         // MAIN NAVIGATION
         let items = getMainNavigationItems(t, settings, hasPermission);
 
@@ -241,6 +256,9 @@ export function useNavigation() {
         serverUuid,
         serverSpellId,
         isDeveloperModeEnabled,
+        isVds,
+        vdsId,
+        hasVdsPermission,
     ]);
 
     return { navigationItems };

@@ -20,6 +20,7 @@ use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\User\Vds\VmUserBackupController;
 use App\Controllers\User\Vds\VmUserInstanceController;
 
 return function (RouteCollection $routes): void {
@@ -132,6 +133,104 @@ return function (RouteCollection $routes): void {
         function (Request $request, array $args) {
             $reinstallId = isset($args['reinstallId']) ? trim((string) $args['reinstallId']) : '';
             return (new VmUserInstanceController())->reinstallStatus($request, $reinstallId);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-vm-instances'
+    );
+
+    // ==================== VM BACKUPS ====================
+
+    // List backups (respects backup_limit)
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-backups-list',
+        '/api/user/vm-instances/{id}/backups',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+            return (new VmUserBackupController())->listBackups($request, $id);
+        },
+        'id',
+        ['GET'],
+        Rate::perMinute(30)
+    );
+
+    // Create backup (async; 422 if backup limit reached)
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-backup-create',
+        '/api/user/vm-instances/{id}/backups',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+            return (new VmUserBackupController())->createBackup($request, $id);
+        },
+        'id',
+        ['POST'],
+        Rate::perMinute(10)
+    );
+
+    // Poll backup status
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-vm-instance-backup-status',
+        '/api/user/vm-instances/backup-status/{backupId}',
+        function (Request $request, array $args) {
+            $backupId = isset($args['backupId']) ? trim((string) $args['backupId']) : '';
+            return (new VmUserBackupController())->backupStatus($request, $backupId);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-vm-instances'
+    );
+
+    // Delete backup
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-backup-delete',
+        '/api/user/vm-instances/{id}/backups',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+            return (new VmUserBackupController())->deleteBackup($request, $id);
+        },
+        'id',
+        ['DELETE'],
+        Rate::perMinute(10)
+    );
+
+    // Restore from backup (async)
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-restore-backup',
+        '/api/user/vm-instances/{id}/backups/restore',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+            return (new VmUserBackupController())->restoreBackup($request, $id);
+        },
+        'id',
+        ['POST'],
+        Rate::perMinute(5)
+    );
+
+    // Poll restore status
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-vm-instance-restore-status',
+        '/api/user/vm-instances/restore-status/{restoreId}',
+        function (Request $request, array $args) {
+            $restoreId = isset($args['restoreId']) ? trim((string) $args['restoreId']) : '';
+            return (new VmUserBackupController())->restoreBackupStatus($request, $restoreId);
         },
         ['GET'],
         Rate::perMinute(30),

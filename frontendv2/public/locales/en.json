@@ -158,6 +158,9 @@
 		"select_an_option": "Select an option",
 		"edit": "Edit",
 		"close": "Close",
+		"waitingData": "Waiting for data...",
+		"events": "events",
+		"users": "users",
 		"confirm": "Confirm",
 		"back": "Back",
 		"search": "Search",
@@ -849,12 +852,16 @@
 			"subdomains": "Subdomains",
 			"realms": "Realms (Nests)",
 			"spells": "Spells (Eggs)",
+			"refresh": "Refresh",
+			"console": "Console",
+			"overview": "Overview",
+			"activities": "Activities",
+			"settings": "Settings",
 			"zeroTrust": "ZeroTrust Security",
 			"images": "Images",
 			"mailTemplates": "Mail Templates",
 			"translations": "Translations",
 			"aiAgent": "AI Agent",
-			"settings": "Settings",
 			"oidcProviders": "OIDC / SSO Providers",
 			"rateLimits": "Rate Limits",
 			"databaseManagement": "Database Management",
@@ -870,8 +877,6 @@
 			"ticketCategories": "Ticket Categories",
 			"ticketPriorities": "Ticket Priorities",
 			"ticketStatuses": "Ticket Statuses",
-			"console": "Console",
-			"activities": "Activities",
 			"files": "Files",
 			"databases": "Databases",
 			"schedules": "Schedules",
@@ -6600,6 +6605,75 @@
 	},
 	"public": {
 		"redirect": {}
+	},
+	"vds": {
+		"activities": {
+			"description": "All power, subuser and console actions for this VDS instance."
+		},
+		"console": {
+			"title": "VDS Console",
+			"vnc_console": "VNC Console",
+			"power": {
+				"start": "Start",
+				"stop": "Stop",
+				"reboot": "Reboot",
+				"shutdown": "Shutdown",
+				"kill": "Kill"
+			},
+			"performance": {
+				"cpu": "CPU Usage",
+				"memory": "Memory Usage",
+				"network_rx": "Network Inbound",
+				"network_tx": "Network Outbound",
+				"disk": "Disk Usage",
+				"uptime": "Uptime",
+				"history": "last 60 seconds"
+			},
+			"details": {
+				"hostname": "Hostname",
+				"ip": "IP Address",
+				"status": "Status",
+				"type": "Type"
+			}
+		},
+		"subusers": {
+			"title": "Subuser Management",
+			"description": "Manage user access and permissions for this VDS instance.",
+			"add": "Add Subuser",
+			"email_placeholder": "User email address",
+			"permissions": {
+				"power": {
+					"label": "Power Control",
+					"description": "Start, stop, and reboot the VDS instance."
+				},
+				"console": {
+					"label": "Console Access",
+					"description": "Open the VNC console for this VDS instance."
+				},
+				"reinstall": {
+					"label": "Reinstall OS",
+					"description": "Reinstall the VDS instance OS from available templates."
+				},
+				"settings": {
+					"label": "Settings Access",
+					"description": "Manage instance settings and cloud-init parameters."
+				},
+				"activity.read": {
+					"label": "View Activities",
+					"description": "View the activity log for this VDS instance."
+				}
+			}
+		},
+		"settings": {
+			"title": "VDS Settings",
+			"reinstall": {
+				"title": "Reinstall Operating System",
+				"description": "Permanently wipe and reinstall your VDS.",
+				"button": "Begin Reinstall",
+				"confirm_title": "Confirm Reinstall",
+				"confirm_desc": "All data will be lost. Proceed?"
+			}
+		}
 	},
 	"chatbot": {
 		"title": "FeatherPanel AI",
