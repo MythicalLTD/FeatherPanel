@@ -6627,7 +6627,8 @@
 				"network_tx": "Network Outbound",
 				"disk": "Disk Usage",
 				"uptime": "Uptime",
-				"history": "last 60 seconds"
+				"history": "last 60 seconds",
+				"network": "Network"
 			},
 			"details": {
 				"hostname": "Hostname",

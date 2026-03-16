@@ -25,16 +25,7 @@ import { Button } from '@/components/featherui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
-import {
-    RefreshCw,
-    AlertTriangle,
-    Loader2,
-    RotateCcw,
-    Lock,
-    Server,
-    Eye,
-    EyeOff,
-} from 'lucide-react';
+import { RefreshCw, AlertTriangle, Loader2, RotateCcw, Lock, Server, Eye, EyeOff } from 'lucide-react';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { cn } from '@/lib/utils';
 
@@ -71,15 +62,14 @@ export default function VdsSettingsPage() {
         try {
             const { data } = await axios.get(`/api/user/vm-instances/${id}/templates`);
             if (data.success) {
+                // Backend already enforces guest_type and node; just trust it.
                 setTemplates(data.data.templates || []);
             }
         } catch {
-            // Templates endpoint may not exist yet; silently fail
-            setTemplates([]);
         } finally {
             setTemplatesLoading(false);
         }
-    }, [id]);
+    }, [id, isQemu]);
 
     React.useEffect(() => {
         if (!instanceLoading) fetchTemplates();
@@ -132,7 +122,9 @@ export default function VdsSettingsPage() {
                         <AlertTriangle className='h-10 w-10 text-destructive' />
                     </div>
                     <h2 className='text-2xl font-black'>VDS Not Found</h2>
-                    <Button variant='outline' onClick={() => router.push('/dashboard')}>Go Back</Button>
+                    <Button variant='outline' onClick={() => router.push('/dashboard')}>
+                        Go Back
+                    </Button>
                 </div>
             </div>
         );
@@ -151,7 +143,9 @@ export default function VdsSettingsPage() {
                     <h2 className='text-2xl font-black font-header uppercase tracking-tighter italic'>Access Denied</h2>
                     <p className='text-muted-foreground mt-2'>You do not have permission to access VDS settings.</p>
                 </div>
-                <Button variant='outline' onClick={() => router.push(`/vds/${id}`)}>Go Back</Button>
+                <Button variant='outline' onClick={() => router.push(`/vds/${id}`)}>
+                    Go Back
+                </Button>
             </div>
         );
     }
@@ -185,7 +179,9 @@ export default function VdsSettingsPage() {
                         { label: 'Node', value: instance.node_name ?? instance.pve_node ?? '—' },
                     ].map(({ label, value }) => (
                         <div key={label} className='flex flex-col gap-1'>
-                            <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{label}</span>
+                            <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                                {label}
+                            </span>
                             <span className='text-sm font-bold font-mono'>{value}</span>
                         </div>
                     ))}
@@ -194,15 +190,15 @@ export default function VdsSettingsPage() {
 
             {/* Reinstall */}
             {canReinstall && (
-                <Card className='border-red-500/20 bg-red-500/5 backdrop-blur-sm shadow-[0_0_50px_-12px_rgba(239,68,68,0.3)]'>
+                <Card className='border-border/20 bg-card/40 backdrop-blur-sm'>
                     <CardHeader>
-                        <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2 text-red-400'>
-                            <RotateCcw className='h-4 w-4' />
+                        <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
+                            <RotateCcw className='h-4 w-4 text-primary' />
                             Reinstall OS
                         </CardTitle>
                         <CardDescription className='text-muted-foreground'>
-                            This will <strong>permanently wipe</strong> the current OS and reinstall from a chosen template.
-                            All data on the VDS will be lost.
+                            This will <strong>permanently wipe</strong> the current OS and reinstall from a chosen
+                            template. All data on the VDS will be lost.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className='space-y-4'>
@@ -212,7 +208,10 @@ export default function VdsSettingsPage() {
                                 <span className='text-sm'>Loading templates…</span>
                             </div>
                         ) : templates.length === 0 ? (
-                            <p className='text-sm text-muted-foreground italic'>No templates available. Contact your administrator.</p>
+                            <p className='text-sm text-muted-foreground italic'>
+                                No {isQemu ? 'QEMU/KVM' : 'LXC'} templates available for this VDS. Contact your
+                                administrator.
+                            </p>
                         ) : (
                             <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
                                 {templates.map((tpl) => (
@@ -238,7 +237,7 @@ export default function VdsSettingsPage() {
                             size='default'
                             disabled={!selectedTemplate || templatesLoading}
                             onClick={() => setReinstallOpen(true)}
-                            className='mt-2 rounded-2xl shadow-lg shadow-red-500/20'
+                            className='mt-2 rounded-2xl'
                         >
                             <RotateCcw className='h-4 w-4 mr-2' />
                             Begin Reinstall
@@ -258,17 +257,23 @@ export default function VdsSettingsPage() {
                     <div className='flex items-start gap-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/20'>
                         <AlertTriangle className='h-5 w-5 text-red-400 shrink-0 mt-0.5' />
                         <p className='text-sm text-red-300'>
-                            You are about to reinstall <strong>{templates.find((t) => t.id === selectedTemplate)?.name}</strong> on{' '}
-                            <strong>{instance.hostname ?? `VDS #${instance.id}`}</strong>. All existing data will be permanently erased.
+                            You are about to reinstall{' '}
+                            <strong>{templates.find((t) => t.id === selectedTemplate)?.name}</strong> on{' '}
+                            <strong>{instance.hostname ?? `VDS #${instance.id}`}</strong>. All existing data will be
+                            permanently erased.
                         </p>
                     </div>
 
                     {isQemu && (
                         <div className='space-y-4'>
-                            <p className='text-xs font-black uppercase tracking-widest text-primary/70'>Cloud-Init Credentials (optional)</p>
+                            <p className='text-xs font-black uppercase tracking-widest text-primary/70'>
+                                Cloud-Init Credentials (optional)
+                            </p>
                             <div className='space-y-3'>
                                 <div>
-                                    <label className='text-xs font-semibold text-muted-foreground block mb-1'>Username</label>
+                                    <label className='text-xs font-semibold text-muted-foreground block mb-1'>
+                                        Username
+                                    </label>
                                     <Input
                                         value={ciUser}
                                         onChange={(e) => setCiUser(e.target.value)}
@@ -277,7 +282,9 @@ export default function VdsSettingsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className='text-xs font-semibold text-muted-foreground block mb-1'>Password</label>
+                                    <label className='text-xs font-semibold text-muted-foreground block mb-1'>
+                                        Password
+                                    </label>
                                     <div className='relative'>
                                         <Input
                                             type={showPassword ? 'text' : 'password'}
@@ -291,12 +298,18 @@ export default function VdsSettingsPage() {
                                             onClick={() => setShowPassword((v) => !v)}
                                             className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
                                         >
-                                            {showPassword ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
+                                            {showPassword ? (
+                                                <EyeOff className='h-4 w-4' />
+                                            ) : (
+                                                <Eye className='h-4 w-4' />
+                                            )}
                                         </button>
                                     </div>
                                 </div>
                                 <div>
-                                    <label className='text-xs font-semibold text-muted-foreground block mb-1'>SSH Public Keys</label>
+                                    <label className='text-xs font-semibold text-muted-foreground block mb-1'>
+                                        SSH Public Keys
+                                    </label>
                                     <textarea
                                         value={ciSshKeys}
                                         onChange={(e) => setCiSshKeys(e.target.value)}
@@ -311,10 +324,22 @@ export default function VdsSettingsPage() {
                 </div>
 
                 <div className='flex justify-end gap-3 pt-4 border-t border-border/5'>
-                    <Button variant='outline' size='default' onClick={() => setReinstallOpen(false)} disabled={reinstalling} className='rounded-2xl'>
+                    <Button
+                        variant='outline'
+                        size='default'
+                        onClick={() => setReinstallOpen(false)}
+                        disabled={reinstalling}
+                        className='rounded-2xl'
+                    >
                         Cancel
                     </Button>
-                    <Button variant='destructive' size='default' onClick={handleReinstall} disabled={reinstalling} className='rounded-2xl'>
+                    <Button
+                        variant='destructive'
+                        size='default'
+                        onClick={handleReinstall}
+                        disabled={reinstalling}
+                        className='rounded-2xl'
+                    >
                         {reinstalling ? (
                             <Loader2 className='mr-2 h-5 w-5 animate-spin' />
                         ) : (

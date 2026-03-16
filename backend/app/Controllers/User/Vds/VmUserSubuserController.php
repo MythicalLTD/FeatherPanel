@@ -17,11 +17,11 @@
 
 namespace App\Controllers\User\Vds;
 
-use App\Chat\VmInstanceActivity;
 use App\Chat\VmSubuser;
-use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Chat\VmInstanceActivity;
+use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -110,7 +110,7 @@ class VmUserSubuserController
         if (!$targetUser) {
             return ApiResponse::error('User with this email not found', 'USER_NOT_FOUND', 404);
         }
-        
+
         $targetUserId = (int) $targetUser['id'];
         if ($targetUserId === (int) $user['id']) {
             return ApiResponse::error('You cannot add yourself as a subuser', 'VALIDATION_FAILED', 400);

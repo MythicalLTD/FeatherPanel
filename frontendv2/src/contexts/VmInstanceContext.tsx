@@ -97,15 +97,15 @@ export function VmInstanceProvider({ children, instanceId, initialInstance }: Vm
         (permission: string): boolean => {
             // Admins always have access
             if (hasGlobalPermission('admin.root')) return true;
-            
+
             // Owner always has access
             if (instance?.is_owner) return true;
-            
+
             // Subusers: check granular permissions from backend
             if (instance?.is_subuser) {
                 return instance.permissions?.includes(permission) ?? false;
             }
-            
+
             return false;
         },
         [instance, hasGlobalPermission],

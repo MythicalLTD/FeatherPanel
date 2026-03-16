@@ -128,8 +128,15 @@ function SidebarContent({
         if (href === '/admin') return false;
         if (href === '/admin/tickets') return false;
 
-        const serverRootRegex = /^\/server\/[^\/]+$/;
+        const serverRootRegex = /^\/server\/[^/]+$/;
         if (serverRootRegex.test(href)) {
+            return pathname === href;
+        }
+
+        // For VDS pages, only treat the exact root (/vds/{id}) as "console";
+        // subroutes like /vds/{id}/activities should not also highlight console.
+        const vdsRootRegex = /^\/vds\/[^/]+$/;
+        if (vdsRootRegex.test(href)) {
             return pathname === href;
         }
 

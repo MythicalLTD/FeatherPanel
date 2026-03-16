@@ -17,19 +17,18 @@
 
 namespace App\Controllers\User\Vds;
 
-
 use App\App;
-use App\Chat\Database;
-use App\Chat\VmInstance;
-use App\Chat\VmInstanceActivity;
-use App\Chat\VmCreationPending;
 use App\Chat\VmNode;
+use App\Chat\Database;
 use App\Chat\VmSubuser;
-use App\CloudFlare\CloudFlareRealIP;
-use App\Helpers\ApiResponse;
+use App\Chat\VmInstance;
 use App\Helpers\VmGateway;
-use App\Services\Vm\VmInstanceUtil;
+use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Chat\VmCreationPending;
+use App\Chat\VmInstanceActivity;
+use App\Services\Vm\VmInstanceUtil;
+use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -180,7 +179,7 @@ class VmUserInstanceController
             $vmInstance['permissions'] = $subuser ? json_decode($subuser['permissions'] ?? '[]', true) : [];
         } else {
             // Owner has all permissions
-            $vmInstance['permissions'] = ['power', 'console', 'activity.read', 'reinstall', 'settings'];
+            $vmInstance['permissions'] = ['power', 'console', 'backup', 'activity.read', 'reinstall', 'settings'];
         }
 
         return ApiResponse::success([
@@ -351,6 +350,7 @@ class VmUserInstanceController
             $result = $client->startVm($node, $vmid, $vmType);
             if (!$result['ok']) {
                 VmInstance::updateStatus($id, 'stopped');
+
                 return ApiResponse::error('Reboot (start) failed: ' . ($result['error'] ?? 'unknown'), 'POWER_FAILED', 500);
             }
             VmInstance::updateStatus($id, 'running');
@@ -366,6 +366,7 @@ class VmUserInstanceController
         ]);
 
         $instance = VmInstance::getById($id);
+
         return ApiResponse::success(['instance' => $instance], 'Power action completed', 200);
     }
 
@@ -617,32 +618,6 @@ class VmUserInstanceController
         ], 'VM reinstalled successfully', 200);
     }
 
-    /**
-     * Get VM instances by user UUID (owned by user).
-     */
-    private function getVmInstancesByUserUuid(string $userUuid): array
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('
-            SELECT i.*, n.name AS node_name, n.fqdn AS node_fqdn
-            FROM featherpanel_vm_instances i
-            LEFT JOIN featherpanel_vm_nodes n ON n.id = i.vm_node_id
-            WHERE i.user_uuid = :user_uuid
-            ORDER BY i.created_at DESC
-        ');
-        $stmt->execute(['user_uuid' => $userUuid]);
-
-        $instances = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
-        
-        foreach ($instances as &$instance) {
-            $instance['is_owner'] = true;
-            $instance['is_subuser'] = false;
-        }
-
-        return $instances;
-    }
-
-
     #[OA\Get(
         path: '/api/user/vm-instances/{id}/templates',
         summary: 'Get available templates',
@@ -679,11 +654,60 @@ class VmUserInstanceController
             return ApiResponse::error('You do not have permission to view templates for this VM', 'PERMISSION_DENIED', 403);
         }
 
-        $type = $vmInstance['vm_type'] === 'qemu' ? 'qemu' : 'lxc';
-        $templates = \App\Chat\VmTemplate::getAll(true); // active only
-        
-        $filtered = array_values(array_filter($templates, fn($t) => ($t['guest_type'] ?? 'qemu') === $type));
+        $type = ($vmInstance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
+        $nodeId = isset($vmInstance['vm_node_id']) ? (int) $vmInstance['vm_node_id'] : 0;
+
+        // Mirror admin behavior:
+        // - when we know the node, use VmTemplate::getByNodeId($nodeId)
+        // - otherwise fall back to all active templates
+        if ($nodeId > 0) {
+            $templates = \App\Chat\VmTemplate::getByNodeId($nodeId);
+        } else {
+            $templates = \App\Chat\VmTemplate::getAll(true);
+        }
+
+        // Filter by guest_type (qemu vs lxc)
+        $filtered = array_values(array_filter(
+            $templates,
+            static function ($t) use ($type): bool {
+                return ($t['guest_type'] ?? 'qemu') === $type;
+            }
+        ));
+
+        // Fallback: if nothing matches but the instance has a template_id, only expose that exact template
+        // (still respecting guest_type for safety).
+        if (empty($filtered) && !empty($vmInstance['template_id'])) {
+            $instanceTemplate = \App\Chat\VmTemplate::getById((int) $vmInstance['template_id']);
+            if ($instanceTemplate && (($instanceTemplate['guest_type'] ?? 'qemu') === $type)) {
+                $filtered = [$instanceTemplate];
+            }
+        }
 
         return ApiResponse::success(['templates' => $filtered], 'Templates retrieved', 200);
+    }
+
+    /**
+     * Get VM instances by user UUID (owned by user).
+     */
+    private function getVmInstancesByUserUuid(string $userUuid): array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('
+            SELECT i.*, n.name AS node_name, n.fqdn AS node_fqdn
+            FROM featherpanel_vm_instances i
+            LEFT JOIN featherpanel_vm_nodes n ON n.id = i.vm_node_id
+            WHERE i.user_uuid = :user_uuid
+            ORDER BY i.created_at DESC
+        ');
+        $stmt->execute(['user_uuid' => $userUuid]);
+
+        $instances = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+        foreach ($instances as &$instance) {
+            $instance['is_owner'] = true;
+            $instance['is_subuser'] = false;
+        }
+
+        return $instances;
     }
 }

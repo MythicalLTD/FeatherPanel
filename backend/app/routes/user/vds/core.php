@@ -50,6 +50,7 @@ return function (RouteCollection $routes): void {
             if ($id <= 0) {
                 return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
             }
+
             return (new VmUserInstanceController())->getVmInstance($request, $id);
         },
         'id',
@@ -67,7 +68,26 @@ return function (RouteCollection $routes): void {
             if ($id <= 0) {
                 return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
             }
+
             return (new VmUserInstanceController())->getVmInstanceStatus($request, $id);
+        },
+        'id',
+        ['GET'],
+        Rate::perMinute(30)
+    );
+
+    // Get available reinstall templates for this VM instance
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-templates',
+        '/api/user/vm-instances/{id}/templates',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmUserInstanceController())->getTemplates($request, $id);
         },
         'id',
         ['GET'],
@@ -84,6 +104,7 @@ return function (RouteCollection $routes): void {
             if ($id <= 0) {
                 return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
             }
+
             return (new VmUserInstanceController())->powerAction($request, $id);
         },
         'id',
@@ -101,6 +122,7 @@ return function (RouteCollection $routes): void {
             if ($id <= 0) {
                 return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
             }
+
             return (new VmUserInstanceController())->getVncTicket($request, $id);
         },
         'id',
@@ -118,6 +140,7 @@ return function (RouteCollection $routes): void {
             if ($id <= 0) {
                 return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
             }
+
             return (new VmUserInstanceController())->reinstall($request, $id);
         },
         'id',
@@ -132,6 +155,7 @@ return function (RouteCollection $routes): void {
         '/api/user/vm-instances/reinstall-status/{reinstallId}',
         function (Request $request, array $args) {
             $reinstallId = isset($args['reinstallId']) ? trim((string) $args['reinstallId']) : '';
+
             return (new VmUserInstanceController())->reinstallStatus($request, $reinstallId);
         },
         ['GET'],
@@ -151,6 +175,7 @@ return function (RouteCollection $routes): void {
             if ($id <= 0) {
                 return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
             }
+
             return (new VmUserBackupController())->listBackups($request, $id);
         },
         'id',
@@ -168,6 +193,7 @@ return function (RouteCollection $routes): void {
             if ($id <= 0) {
                 return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
             }
+
             return (new VmUserBackupController())->createBackup($request, $id);
         },
         'id',
@@ -182,6 +208,7 @@ return function (RouteCollection $routes): void {
         '/api/user/vm-instances/backup-status/{backupId}',
         function (Request $request, array $args) {
             $backupId = isset($args['backupId']) ? trim((string) $args['backupId']) : '';
+
             return (new VmUserBackupController())->backupStatus($request, $backupId);
         },
         ['GET'],
@@ -199,6 +226,7 @@ return function (RouteCollection $routes): void {
             if ($id <= 0) {
                 return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
             }
+
             return (new VmUserBackupController())->deleteBackup($request, $id);
         },
         'id',
@@ -216,6 +244,7 @@ return function (RouteCollection $routes): void {
             if ($id <= 0) {
                 return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
             }
+
             return (new VmUserBackupController())->restoreBackup($request, $id);
         },
         'id',
@@ -230,11 +259,11 @@ return function (RouteCollection $routes): void {
         '/api/user/vm-instances/restore-status/{restoreId}',
         function (Request $request, array $args) {
             $restoreId = isset($args['restoreId']) ? trim((string) $args['restoreId']) : '';
+
             return (new VmUserBackupController())->restoreBackupStatus($request, $restoreId);
         },
         ['GET'],
         Rate::perMinute(30),
         'user-vm-instances'
     );
-
 };

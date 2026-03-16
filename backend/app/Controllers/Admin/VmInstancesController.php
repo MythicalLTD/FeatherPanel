@@ -23,13 +23,12 @@ use App\Chat\VmNode;
 use App\Chat\Activity;
 use App\Chat\Database;
 use App\Chat\VmInstance;
-use App\Chat\VmInstanceActivity;
 use App\Chat\VmTemplate;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceBackup;
 use App\Chat\VmCreationPending;
-use App\Config\ConfigInterface;
+use App\Chat\VmInstanceActivity;
 use App\Services\Proxmox\Proxmox;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
@@ -558,7 +557,7 @@ class VmInstancesController
             if ($gateway !== '') {
                 $net0 .= ',gw=' . $gateway;
             }
-            
+
             // Build description with detailed info for Proxmox notes
             $descParts = ['FeatherPanel Managed VM'];
             if (!empty($ip['ip'])) {
@@ -571,7 +570,7 @@ class VmInstancesController
                 $descParts[] = 'User: ' . $pending['user_uuid'];
             }
             $descParts[] = 'Created: ' . date('Y-m-d H:i:s');
-            
+
             $config = [
                 'memory' => $memory,
                 'cores' => $cpus * $cores,
@@ -2050,9 +2049,9 @@ class VmInstancesController
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
-        
+
         $backups = VmInstanceBackup::getBackupsByInstanceId((int) $instance['id']);
-        
+
         // Fetch available backup storages from Proxmox node
         $storages = [];
         $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
@@ -2782,7 +2781,7 @@ class VmInstancesController
         }
 
         try {
-			$client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             VmInstanceUtil::deleteInstanceBackups($instance, null);
             VmInstance::delete($id);
@@ -2869,5 +2868,4 @@ class VmInstancesController
 
         return $s !== '' ? $s : 'vm-' . time();
     }
-
 }

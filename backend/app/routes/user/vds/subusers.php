@@ -17,7 +17,6 @@
 
 use App\App;
 use RateLimit\Rate;
-use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\Vds\VmUserSubuserController;
@@ -29,6 +28,7 @@ return function (RouteCollection $routes): void {
         '/api/user/vm-instances/{id}/subusers',
         function (Request $request, array $args) {
             $id = (int) ($args['id'] ?? 0);
+
             return (new VmUserSubuserController())->listSubusers($request, $id);
         },
         'id',
@@ -42,6 +42,7 @@ return function (RouteCollection $routes): void {
         '/api/user/vm-instances/{id}/subusers',
         function (Request $request, array $args) {
             $id = (int) ($args['id'] ?? 0);
+
             return (new VmUserSubuserController())->createSubuser($request, $id);
         },
         'id',
@@ -56,6 +57,7 @@ return function (RouteCollection $routes): void {
         function (Request $request, array $args) {
             $id = (int) ($args['id'] ?? 0);
             $subuserId = (int) ($args['subuserId'] ?? 0);
+
             return (new VmUserSubuserController())->deleteSubuser($request, $id, $subuserId);
         },
         'id',

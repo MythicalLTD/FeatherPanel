@@ -18,13 +18,13 @@
 namespace App\Services\Vm;
 
 use App\App;
-use App\Chat\Database;
-use App\Chat\VmCreationPending;
-use App\Chat\VmInstance;
-use App\Chat\VmInstanceBackup;
 use App\Chat\VmIp;
 use App\Chat\VmNode;
+use App\Chat\Database;
+use App\Chat\VmInstance;
 use App\Chat\VmTemplate;
+use App\Chat\VmInstanceBackup;
+use App\Chat\VmCreationPending;
 use App\Config\ConfigInterface;
 use App\Services\Proxmox\Proxmox;
 
@@ -131,7 +131,7 @@ final class VmInstanceUtil
     /**
      * Start async reinstall: validate, clone from template, save pending. Caller handles logging and HTTP response.
      *
-     * @param array<string, mixed> $instance   VM instance row (must have id, template_id, vm_node_id, vmid, etc.)
+     * @param array<string, mixed> $instance VM instance row (must have id, template_id, vm_node_id, vmid, etc.)
      * @param array<string, mixed> $requestData e.g. ['ci_user' => ..., 'ci_password' => ...] for QEMU
      *
      * @return array{ok: true, reinstall_id: string, message: string}|array{ok: false, error: string, code: string, http_status: int}
@@ -183,6 +183,7 @@ final class VmInstanceUtil
             $client = self::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
             return ['ok' => false, 'error' => 'Failed to connect to Proxmox node', 'code' => 'PROXMOX_ERROR', 'http_status' => 500];
         }
 
@@ -329,6 +330,7 @@ final class VmInstanceUtil
         ]);
         if (!$saved) {
             $client->deleteVm($node, $newVmid, $vmType);
+
             return ['ok' => false, 'error' => 'Failed to save reinstall pending record', 'code' => 'DB_ERROR', 'http_status' => 500];
         }
 
@@ -554,9 +556,9 @@ final class VmInstanceUtil
      * Create VNC console ticket and build payload (wss_url, pve_redirect_url when possible).
      * Shared by admin and user VNC ticket endpoints.
      *
-     * @param array<string, mixed> $instance           VM instance row (vmid, vm_node_id, pve_node, vm_type)
-     * @param array<string, mixed> $vmNode             VM node row (fqdn, port, scheme, ...)
-     * @param int                  $instanceIdForLabel Used for temp PVE user name (e.g. fp-console-{id}-xxx)
+     * @param array<string, mixed> $instance VM instance row (vmid, vm_node_id, pve_node, vm_type)
+     * @param array<string, mixed> $vmNode VM node row (fqdn, port, scheme, ...)
+     * @param int $instanceIdForLabel Used for temp PVE user name (e.g. fp-console-{id}-xxx)
      *
      * @return array{ok: true, payload: array}|array{ok: false, error: string, code: string, http_status: int}
      */

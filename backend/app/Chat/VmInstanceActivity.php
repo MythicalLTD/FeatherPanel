@@ -35,7 +35,7 @@ class VmInstanceActivity
      *
      * @return int|false The new activity's ID or false on failure
      */
-    public static function createActivity(array $data): int|false
+    public static function createActivity(array $data): int | false
     {
         $required = ['vm_instance_id', 'vm_node_id', 'event'];
         foreach ($required as $field) {
@@ -89,7 +89,7 @@ class VmInstanceActivity
      * Get activities by VM instance ID.
      *
      * @param int $vmInstanceId VM instance ID
-     * @param int $limit        Maximum number of results
+     * @param int $limit Maximum number of results
      *
      * @return array<int, array<string, mixed>>
      */

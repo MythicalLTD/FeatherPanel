@@ -838,10 +838,7 @@ export const getMainNavigationItems = (
     return items;
 };
 
-export const getVdsNavigationItems = (
-    t: TFunction,
-    instanceId: string,
-): NavigationItem[] => {
+export const getVdsNavigationItems = (t: TFunction, instanceId: string): NavigationItem[] => {
     const items: NavigationItem[] = [
         {
             id: 'vds-overview',
@@ -863,6 +860,17 @@ export const getVdsNavigationItems = (
             category: 'server',
             group: 'management',
             permission: 'activity.read',
+        },
+        {
+            id: 'vds-backups',
+            name: t('navigation.items.backups') || 'Backups',
+            title: t('navigation.items.backups') || 'Backups',
+            url: `/vds/${instanceId}/backups`,
+            icon: Archive,
+            isActive: false,
+            category: 'server',
+            group: 'files',
+            permission: 'backup',
         },
         {
             id: 'vds-users',

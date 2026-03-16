@@ -18,17 +18,17 @@
 namespace App\Controllers\User\Vds;
 
 use App\App;
-use App\Chat\Database;
-use App\Chat\VmCreationPending;
-use App\Chat\VmInstance;
-use App\Chat\VmInstanceActivity;
-use App\Chat\VmInstanceBackup;
 use App\Chat\VmNode;
-use App\CloudFlare\CloudFlareRealIP;
-use App\Helpers\ApiResponse;
+use App\Chat\Database;
+use App\Chat\VmInstance;
 use App\Helpers\VmGateway;
-use App\Services\Vm\VmInstanceUtil;
+use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Chat\VmInstanceBackup;
+use App\Chat\VmCreationPending;
+use App\Chat\VmInstanceActivity;
+use App\Services\Vm\VmInstanceUtil;
+use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -152,6 +152,7 @@ class VmUserBackupController
             $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
 
@@ -294,6 +295,7 @@ class VmUserBackupController
         $instance = VmInstance::getById($instanceId);
         if (!$instance) {
             VmCreationPending::deleteByCreationId($backupId);
+
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
 
@@ -305,6 +307,7 @@ class VmUserBackupController
             $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
 
@@ -443,6 +446,7 @@ class VmUserBackupController
                 }
             } catch (\Throwable $e) {
                 App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
                 return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
             }
         }
@@ -509,6 +513,7 @@ class VmUserBackupController
             $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
 
@@ -650,6 +655,7 @@ class VmUserBackupController
         $instance = VmInstance::getById($instanceId);
         if (!$instance) {
             VmCreationPending::deleteByCreationId($restoreId);
+
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
 
@@ -661,6 +667,7 @@ class VmUserBackupController
             $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
+
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
 

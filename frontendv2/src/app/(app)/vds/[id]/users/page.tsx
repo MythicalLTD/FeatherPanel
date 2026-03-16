@@ -22,18 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
-import {
-    Users,
-    Plus,
-    RefreshCw,
-    Trash2,
-    User,
-    Loader2,
-    AlertTriangle,
-    Lock,
-    Shield,
-    CheckCircle2,
-} from 'lucide-react';
+import { Users, Plus, RefreshCw, Trash2, User, Loader2, AlertTriangle, Lock, Shield, CheckCircle2 } from 'lucide-react';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -41,13 +30,7 @@ import { HeadlessModal } from '@/components/ui/headless-modal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-const VM_PERMISSIONS = [
-    'power',
-    'console',
-    'reinstall',
-    'settings',
-    'activity.read',
-];
+const VM_PERMISSIONS = ['power', 'console', 'backup', 'reinstall', 'settings', 'activity.read'];
 
 interface VmSubuser {
     id: number;
@@ -257,11 +240,21 @@ export default function VdsSubusersPage() {
                 }
                 actions={
                     <div className='flex items-center gap-3'>
-                        <Button variant='glass' size='default' onClick={fetchSubusers} disabled={loading} className='rounded-2xl'>
+                        <Button
+                            variant='glass'
+                            size='default'
+                            onClick={fetchSubusers}
+                            disabled={loading}
+                            className='rounded-2xl'
+                        >
                             <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
                             {t('common.refresh')}
                         </Button>
-                        <Button size='default' onClick={() => setIsAddOpen(true)} className='rounded-2xl shadow-lg shadow-primary/20'>
+                        <Button
+                            size='default'
+                            onClick={() => setIsAddOpen(true)}
+                            className='rounded-2xl shadow-lg shadow-primary/20'
+                        >
                             <Plus className='h-4 w-4 mr-2' />
                             {t('vds.subusers.add')}
                         </Button>
@@ -339,7 +332,9 @@ export default function VdsSubusersPage() {
             >
                 <div className='space-y-6 py-4'>
                     <div className='space-y-2'>
-                        <label className='text-sm font-black uppercase tracking-wider text-muted-foreground'>Email Address</label>
+                        <label className='text-sm font-black uppercase tracking-wider text-muted-foreground'>
+                            Email Address
+                        </label>
                         <div className='relative'>
                             <User className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10' />
                             <Input
@@ -353,7 +348,9 @@ export default function VdsSubusersPage() {
                         </div>
                     </div>
                     <div className='space-y-3'>
-                        <label className='text-sm font-black uppercase tracking-wider text-muted-foreground'>Permissions</label>
+                        <label className='text-sm font-black uppercase tracking-wider text-muted-foreground'>
+                            Permissions
+                        </label>
                         <div className='space-y-2'>
                             {VM_PERMISSIONS.map((permKey) => (
                                 <label
@@ -380,12 +377,18 @@ export default function VdsSubusersPage() {
                                                     : 'border-border/20 hover:border-primary/40',
                                             )}
                                         >
-                                            {addPermissions.includes(permKey) && <CheckCircle2 className='h-4 w-4 text-white' />}
+                                            {addPermissions.includes(permKey) && (
+                                                <CheckCircle2 className='h-4 w-4 text-white' />
+                                            )}
                                         </div>
                                     </div>
                                     <div>
-                                        <div className='font-bold text-sm'>{t(`vds.subusers.permissions.${permKey}.label`) || permKey}</div>
-                                        <div className='text-xs text-muted-foreground mt-0.5'>{t(`vds.subusers.permissions.${permKey}.description`)}</div>
+                                        <div className='font-bold text-sm'>
+                                            {t(`vds.subusers.permissions.${permKey}.label`) || permKey}
+                                        </div>
+                                        <div className='text-xs text-muted-foreground mt-0.5'>
+                                            {t(`vds.subusers.permissions.${permKey}.description`)}
+                                        </div>
                                     </div>
                                 </label>
                             ))}
@@ -393,11 +396,26 @@ export default function VdsSubusersPage() {
                     </div>
                 </div>
                 <div className='flex justify-end gap-3 pt-4 border-t border-border/5'>
-                    <Button variant='outline' size='default' onClick={() => setIsAddOpen(false)} disabled={addLoading} className='rounded-2xl'>
+                    <Button
+                        variant='outline'
+                        size='default'
+                        onClick={() => setIsAddOpen(false)}
+                        disabled={addLoading}
+                        className='rounded-2xl'
+                    >
                         {t('common.cancel')}
                     </Button>
-                    <Button size='default' onClick={handleAdd} disabled={addLoading || !addEmail} className='rounded-2xl'>
-                        {addLoading ? <Loader2 className='mr-2 h-5 w-5 animate-spin' /> : <Plus className='mr-2 h-5 w-5' />}
+                    <Button
+                        size='default'
+                        onClick={handleAdd}
+                        disabled={addLoading || !addEmail}
+                        className='rounded-2xl'
+                    >
+                        {addLoading ? (
+                            <Loader2 className='mr-2 h-5 w-5 animate-spin' />
+                        ) : (
+                            <Plus className='mr-2 h-5 w-5' />
+                        )}
                         Add
                     </Button>
                 </div>
@@ -411,11 +429,27 @@ export default function VdsSubusersPage() {
                 description={`Are you sure you want to remove ${selectedSubuser?.username || `user #${selectedSubuser?.user_id}`} from this VDS instance?`}
             >
                 <div className='flex justify-end gap-3 pt-6 border-t border-border/5'>
-                    <Button variant='outline' size='default' onClick={() => setIsDeleteOpen(false)} disabled={deleting} className='rounded-2xl'>
+                    <Button
+                        variant='outline'
+                        size='default'
+                        onClick={() => setIsDeleteOpen(false)}
+                        disabled={deleting}
+                        className='rounded-2xl'
+                    >
                         {t('common.cancel')}
                     </Button>
-                    <Button variant='destructive' size='default' onClick={handleDelete} disabled={deleting} className='rounded-2xl'>
-                        {deleting ? <Loader2 className='mr-2 h-5 w-5 animate-spin' /> : <Trash2 className='mr-2 h-5 w-5' />}
+                    <Button
+                        variant='destructive'
+                        size='default'
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        className='rounded-2xl'
+                    >
+                        {deleting ? (
+                            <Loader2 className='mr-2 h-5 w-5 animate-spin' />
+                        ) : (
+                            <Trash2 className='mr-2 h-5 w-5' />
+                        )}
                         {t('common.delete')}
                     </Button>
                 </div>
@@ -459,8 +493,12 @@ export default function VdsSubusersPage() {
                                 </div>
                             </div>
                             <div>
-                                <div className='font-bold text-sm'>{t(`vds.subusers.permissions.${permKey}.label`) || permKey}</div>
-                                <div className='text-xs text-muted-foreground mt-0.5'>{t(`vds.subusers.permissions.${permKey}.description`)}</div>
+                                <div className='font-bold text-sm'>
+                                    {t(`vds.subusers.permissions.${permKey}.label`) || permKey}
+                                </div>
+                                <div className='text-xs text-muted-foreground mt-0.5'>
+                                    {t(`vds.subusers.permissions.${permKey}.description`)}
+                                </div>
                             </div>
                         </label>
                     ))}
@@ -470,11 +508,21 @@ export default function VdsSubusersPage() {
                     </div>
                 </div>
                 <div className='flex justify-end gap-3 pt-6 border-t border-border/5'>
-                    <Button variant='outline' size='default' onClick={() => setIsPermOpen(false)} disabled={savingPerms} className='rounded-2xl'>
+                    <Button
+                        variant='outline'
+                        size='default'
+                        onClick={() => setIsPermOpen(false)}
+                        disabled={savingPerms}
+                        className='rounded-2xl'
+                    >
                         {t('common.cancel')}
                     </Button>
                     <Button size='default' onClick={savePermissions} disabled={savingPerms} className='rounded-2xl'>
-                        {savingPerms ? <Loader2 className='mr-2 h-5 w-5 animate-spin' /> : <RefreshCw className='mr-2 h-5 w-5' />}
+                        {savingPerms ? (
+                            <Loader2 className='mr-2 h-5 w-5 animate-spin' />
+                        ) : (
+                            <RefreshCw className='mr-2 h-5 w-5' />
+                        )}
                         {t('common.saveChanges')}
                     </Button>
                 </div>

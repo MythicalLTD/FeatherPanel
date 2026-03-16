@@ -217,14 +217,23 @@ export default function VdsActivitiesPage() {
                 title={t('navigation.items.activities') || 'VDS Activity Log'}
                 description={
                     <div className='flex items-center gap-3'>
-                        <span>{t('vds.activities.description') || 'All power, subuser and console actions for this VDS instance.'}</span>
+                        <span>
+                            {t('vds.activities.description') ||
+                                'All power, subuser and console actions for this VDS instance.'}
+                        </span>
                         <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'>
                             {pagination.total} {t('common.events') || 'events'}
                         </span>
                     </div>
                 }
                 actions={
-                    <Button variant='glass' size='default' onClick={() => fetchActivities(pagination.current_page)} disabled={loading} className='rounded-2xl'>
+                    <Button
+                        variant='glass'
+                        size='default'
+                        onClick={() => fetchActivities(pagination.current_page)}
+                        disabled={loading}
+                        className='rounded-2xl'
+                    >
                         <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
                         {t('common.refresh') || 'Refresh'}
                     </Button>
@@ -284,11 +293,20 @@ export default function VdsActivitiesPage() {
             {activities.length === 0 ? (
                 <EmptyState
                     title='No Activity Found'
-                    description={searchQuery ? 'No events match your search.' : 'No activity has been recorded for this VDS instance yet.'}
+                    description={
+                        searchQuery
+                            ? 'No events match your search.'
+                            : 'No activity has been recorded for this VDS instance yet.'
+                    }
                     icon={Activity}
                     action={
                         searchQuery ? (
-                            <Button variant='glass' size='default' onClick={() => setSearchQuery('')} className='h-14 px-10 text-lg rounded-xl'>
+                            <Button
+                                variant='glass'
+                                size='default'
+                                onClick={() => setSearchQuery('')}
+                                className='h-14 px-10 text-lg rounded-xl'
+                            >
                                 Clear Search
                             </Button>
                         ) : undefined
@@ -331,7 +349,9 @@ export default function VdsActivitiesPage() {
                                         {activity.ip && (
                                             <div className='flex items-center gap-2 text-muted-foreground'>
                                                 <Globe className='h-4 w-4 opacity-50' />
-                                                <span className='text-xs font-mono font-bold opacity-60 italic'>{activity.ip}</span>
+                                                <span className='text-xs font-mono font-bold opacity-60 italic'>
+                                                    {activity.ip}
+                                                </span>
                                             </div>
                                         )}
                                     </div>
@@ -402,7 +422,10 @@ export default function VdsActivitiesPage() {
                                         </span>
                                     </div>
                                     <DialogDescription className='text-xl font-medium opacity-70'>
-                                        VDS Activity — {selectedItem.timestamp ? new Date(selectedItem.timestamp).toLocaleString() : '—'}
+                                        VDS Activity —{' '}
+                                        {selectedItem.timestamp
+                                            ? new Date(selectedItem.timestamp).toLocaleString()
+                                            : '—'}
                                     </DialogDescription>
                                 </div>
                             </div>
@@ -418,25 +441,40 @@ export default function VdsActivitiesPage() {
                                 </div>
                                 <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                                     <div className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0'>
-                                        <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>User</span>
-                                        <span className='text-lg font-bold'>{selectedItem.user?.username || 'System'}</span>
+                                        <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                                            User
+                                        </span>
+                                        <span className='text-lg font-bold'>
+                                            {selectedItem.user?.username || 'System'}
+                                        </span>
                                     </div>
                                     <div className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0'>
-                                        <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>Timestamp</span>
+                                        <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                                            Timestamp
+                                        </span>
                                         <span className='text-lg font-bold'>
-                                            {selectedItem.timestamp ? new Date(selectedItem.timestamp).toLocaleString() : '—'}
+                                            {selectedItem.timestamp
+                                                ? new Date(selectedItem.timestamp).toLocaleString()
+                                                : '—'}
                                         </span>
                                     </div>
                                     {selectedItem.ip && (
                                         <div className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 col-span-2'>
-                                            <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>IP Address</span>
+                                            <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                                                IP Address
+                                            </span>
                                             <span className='text-lg font-mono font-bold'>{selectedItem.ip}</span>
                                         </div>
                                     )}
                                     {selectedItem.metadata &&
                                         Object.entries(selectedItem.metadata).map(([k, v]) => (
-                                            <div key={k} className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all'>
-                                                <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>{k}</span>
+                                            <div
+                                                key={k}
+                                                className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all'
+                                            >
+                                                <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                                                    {k}
+                                                </span>
                                                 <span className='text-base font-mono font-bold break-all'>
                                                     {typeof v === 'object' ? JSON.stringify(v) : String(v)}
                                                 </span>

@@ -19,7 +19,12 @@ import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { NavigationItem, PluginSidebarItem } from '@/types/navigation';
-import { getAdminNavigationItems, getServerNavigationItems, getMainNavigationItems, getVdsNavigationItems } from '@/config/navigation';
+import {
+    getAdminNavigationItems,
+    getServerNavigationItems,
+    getMainNavigationItems,
+    getVdsNavigationItems,
+} from '@/config/navigation';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useVdsPermissions } from '@/hooks/useVdsPermissions';
@@ -225,7 +230,7 @@ export function useNavigation() {
                 ...item,
                 isActive: checkActive(item.url, item.url === `/vds/${vdsId}`),
             }));
-            
+
             return items.filter((item) => !item.permission || hasVdsPermission(item.permission));
         }
 

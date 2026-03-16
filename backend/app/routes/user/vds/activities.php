@@ -32,6 +32,7 @@ return function (RouteCollection $routes): void {
             if ($id <= 0) {
                 return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
             }
+
             return (new VmUserActivityController())->getVmInstanceActivities($request, $id);
         },
         'id',
