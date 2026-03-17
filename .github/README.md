@@ -47,18 +47,18 @@ For installation instructions, system requirements, and complete guides, please 
 
 <!-- COUNT-STATS:START -->
 
-_Last updated: 2026-03-16T21:06:54.753Z_
+_Last updated: 2026-03-17T15:22:04.829Z_
 
 | Extension | Files | Lines |
 | --- | ---: | ---: |
-| `.php` | 424 | 107,630 |
-| `.tsx` | 301 | 87,118 |
-| `.yaml` | 3 | 5,561 |
+| `.php` | 424 | 107,627 |
+| `.tsx` | 303 | 88,019 |
+| `.yaml` | 3 | 5,566 |
 | `.ts` | 48 | 5,487 |
 | `.sql` | 98 | 1,636 |
 | `.yml` | 14 | 1,127 |
 | `.css` | 7 | 424 |
-| **Total** | 895 | 208,983 |
+| **Total** | 897 | 209,886 |
 
 <!-- COUNT-STATS:END -->
 

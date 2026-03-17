@@ -25,9 +25,6 @@ use App\Controllers\User\Vds\VmUserInstanceController;
 
 return function (RouteCollection $routes): void {
 
-    // ==================== CORE VM OPERATIONS ====================
-
-    // Get all VM instances for the authenticated user
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'user-vm-instances',
@@ -40,7 +37,6 @@ return function (RouteCollection $routes): void {
         'user-vm-instances'
     );
 
-    // Get specific VM instance details
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-get',
@@ -58,7 +54,6 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(30)
     );
 
-    // Get VM instance status
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-status',
@@ -76,7 +71,6 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(30)
     );
 
-    // Get available reinstall templates for this VM instance
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-templates',
@@ -94,7 +88,6 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(30)
     );
 
-    // Power actions (start, stop, reboot)
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-power',
@@ -112,7 +105,6 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(10)
     );
 
-    // Get VNC console ticket
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-vnc',
@@ -130,7 +122,6 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(10)
     );
 
-    // Start async VM reinstall (returns 202 + reinstall_id; poll reinstall-status until active or failed)
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-reinstall',
@@ -148,7 +139,6 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(5)
     );
 
-    // Poll reinstall status (reinstall_id from start reinstall response)
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'user-vm-instance-reinstall-status',
@@ -163,9 +153,6 @@ return function (RouteCollection $routes): void {
         'user-vm-instances'
     );
 
-    // ==================== VM BACKUPS ====================
-
-    // List backups (respects backup_limit)
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-backups-list',
@@ -183,7 +170,6 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(30)
     );
 
-    // Create backup (async; 422 if backup limit reached)
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-backup-create',
@@ -201,7 +187,6 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(10)
     );
 
-    // Poll backup status
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'user-vm-instance-backup-status',
@@ -216,7 +201,6 @@ return function (RouteCollection $routes): void {
         'user-vm-instances'
     );
 
-    // Delete backup
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-backup-delete',
@@ -234,7 +218,6 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(10)
     );
 
-    // Restore from backup (async)
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-restore-backup',
@@ -252,7 +235,6 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(5)
     );
 
-    // Poll restore status
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'user-vm-instance-restore-status',

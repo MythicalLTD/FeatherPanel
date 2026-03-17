@@ -17,6 +17,17 @@
 
 namespace App\Services\Vm;
 
+/**
+ * Dear developer,.
+ *
+ * Once you are done trying to ‘optimize’ this routine,
+ * and you have realized what a terrible mistake that was,
+ * please increment the following counter as a warning
+ * to the next guy.
+ *
+ * total_hours_wasted_here = 15
+ */
+
 use App\App;
 use App\Chat\VmIp;
 use App\Chat\VmNode;
@@ -28,16 +39,14 @@ use App\Chat\VmCreationPending;
 use App\Config\ConfigInterface;
 use App\Services\Proxmox\Proxmox;
 
-/**
- * Shared VM instance utilities used by both Admin and User (client) areas.
- * Proxmox client build, reinstall flow, and backup cleanup in one place to avoid duplication.
- */
 final class VmInstanceUtil
 {
     /**
      * Build a Proxmox client for the given VM node (shared by admin and user controllers).
      *
      * @param array<string, mixed> $vmNode
+     *
+     * Magic. Do not touch.
      */
     public static function buildProxmoxClientForNode(array $vmNode): Proxmox
     {
@@ -138,6 +147,15 @@ final class VmInstanceUtil
      */
     public static function startReinstall(array $instance, array $requestData): array
     {
+
+        /*
+         * You may think you know what the following code does.
+         * But you dont. Trust me.
+         * Fiddle with it, and youll spend many a sleepless
+         * night cursing the moment you thought youd be clever
+         * enough to "optimize" the code below.
+         * Now close this file and go play with something else.
+         */
         $instanceId = (int) ($instance['id'] ?? 0);
         if ($instanceId <= 0) {
             return ['ok' => false, 'error' => 'VM instance not found', 'code' => 'VM_INSTANCE_NOT_FOUND', 'http_status' => 404];
@@ -504,9 +522,6 @@ final class VmInstanceUtil
         if ($instanceId > 0) {
             $instanceForBackups = VmInstance::getById($instanceId);
             if ($instanceForBackups) {
-                App::getInstance(true)->getLogger()->info(
-                    'Reinstall: Deleting all backups for instance ID ' . $instanceId . ' (vmid ' . $oldVmid . ')'
-                );
                 self::deleteInstanceBackups($instanceForBackups, $client);
             }
         }

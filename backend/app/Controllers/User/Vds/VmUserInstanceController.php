@@ -32,10 +32,6 @@ use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * VmUserInstanceController - User-facing VM instance core operations (list, detail, status, power, VNC).
- * Activities and subusers are in VmUserActivityController and VmUserSubuserController (like Server vs ServerActivity vs SubuserController).
- */
 #[OA\Tag(name: 'User - VM Instances', description: 'User VM instance list, detail, status, power, console')]
 class VmUserInstanceController
 {

@@ -487,12 +487,11 @@ class VmInstancesController
         $cores = (int) ($pending['cores'] ?? 1);
         $onBoot = !empty($pending['on_boot']);
 
-        // Final cloud-init credentials for KVM branch; used later in response.
+        // Final cloud-init credentials for KVM branch; used later in response. (MAGIC): IK what you are thinking but trust me. This is how it works. Don't touch it.
         $finalCiUser = null;
         $finalCiPassword = null;
 
-        // If this is a QEMU VM and requested disk size is larger than the current disk,
-        // grow scsi0 to the desired size (in GB) at Proxmox level. Never try to shrink.
+        // If this is a QEMU VM and requested disk size is larger than the current disk, WE could argue that it's a good idea to grow the disk size at Proxmox level. But don't touch it.
         if ($vmType === 'qemu') {
             $requestedDiskGb = isset($pending['disk']) ? (int) $pending['disk'] : 0;
             if ($requestedDiskGb > 0) {
@@ -558,7 +557,7 @@ class VmInstancesController
                 $net0 .= ',gw=' . $gateway;
             }
 
-            // Build description with detailed info for Proxmox notes
+            // Build description with detailed info for Proxmox notes ti help idiots identify the VM. 
             $descParts = ['FeatherPanel Managed VM'];
             if (!empty($ip['ip'])) {
                 $descParts[] = 'IP: ' . $ip['ip'];
@@ -591,7 +590,8 @@ class VmInstancesController
                 App::getInstance(true)->getLogger()->warning('LXC config update failed (continuing): ' . ($configResult['error'] ?? ''));
             }
 
-            // If requested disk size is larger than current LXC rootfs, grow it to the desired size (GB).
+            // If requested disk size is larger than current LXC rootfs, grow it to the desired size (GB). Else you will face the issue with vms not creating :))
+			// Ask me how i know this. (4 hours of my life wasted)
             $requestedDiskGb = isset($pending['disk']) ? (int) $pending['disk'] : 0;
             if ($requestedDiskGb > 0 && $getConfig['ok'] && isset($getConfig['config']['rootfs']) && is_string($getConfig['config']['rootfs'])) {
                 $rootfs = $getConfig['config']['rootfs'];
@@ -636,9 +636,10 @@ class VmInstancesController
                 $ipconfig0 .= ',gw=' . $gateway;
             }
 
-            // Use ci_user/ci_password from pending if provided, otherwise sane defaults.
+            // Use ci_user/ci_password from pending if provided, otherwise sane defaults. (SO THEY WON'T BE FUCKING NULL)
             $finalCiUser = $ciUserFromPending ?: 'debian';
             $finalCiPassword = $ciPasswordFromPending ?: bin2hex(random_bytes(6));
+			// Yes we could have done that above insted of just making it a null BUT it didn't work. So we do it like that so IN THE END let it be :)))))
 
             // Build description with detailed info for Proxmox notes
             $descParts = ['FeatherPanel Managed VM'];
@@ -660,9 +661,7 @@ class VmInstancesController
                 'nameserver' => '1.1.1.1 8.8.8.8',
                 'ipconfig0' => $ipconfig0,
                 'onboot' => $onBoot ? 1 : 0,
-                // Ensure the VM actually boots from the cloud image on scsi0, not from the (empty) cloud-init CD or net.
                 'boot' => 'order=scsi0',
-                // Cloud-init user and password so admins can log in immediately.
                 'ciuser' => $finalCiUser,
                 'cipassword' => $finalCiPassword,
                 'tags' => 'FeatherPanel-Managed',
@@ -717,6 +716,7 @@ class VmInstancesController
                 }
 
                 // For LXC we do not manage or change root passwords from FeatherPanel.
+				// SINCE GUESS WHAT YOU CAN'T FFS FUCKING PROXMOXXXXXXX API 
             }
             $pdo->commit();
         } catch (\Throwable $e) {
@@ -754,7 +754,6 @@ class VmInstancesController
         return ApiResponse::success([
             'status'   => 'active',
             'instance' => $instance,
-            // Expose cloud-init login for KVM-based VMs so the creator can see it once.
             'ci_user' => $vmType === 'lxc' ? null : $finalCiUser,
             'ci_password' => $vmType === 'lxc' ? null : $finalCiPassword,
         ], 'VM instance created successfully', 200);
@@ -917,7 +916,7 @@ class VmInstancesController
             $config = [];
             $deleteKeys = [];
 
-            // Optional QEMU-only extras: BIOS mode, EFI disk, TPM state disk.
+            // Optional QEMU-only extras: BIOS mode, EFI disk, TPM state disk. (Most likely needed for cloudinit :)))))))
             $curQemuConfig = [];
             if ($vmType === 'qemu') {
                 $curCfgQemu = $client->getVmConfig($node, (int) $instance['vmid'], 'qemu');
@@ -1106,11 +1105,9 @@ class VmInstancesController
                     ? trim($proxmoxUpdate['tpm_storage'])
                     : null;
                 if ($tpmEnabled === true && !isset($curQemuConfig['tpmstate0'])) {
-                    // Match Proxmox UI behaviour: storage:1,format=qcow2,version=v2.0
                     $storageName = $tpmStorage !== null && $tpmStorage !== '' ? $tpmStorage : 'local-lvm';
                     $config['tpmstate0'] = $storageName . ':1,format=qcow2,version=v2.0';
                 } elseif ($tpmEnabled === false && isset($curQemuConfig['tpmstate0'])) {
-                    // Fully delete TPM state disk: unlink tpmstate0, then matching unusedN.
                     $tpmVolRef = null;
                     if (is_string($curQemuConfig['tpmstate0'])) {
                         $parts = explode(',', $curQemuConfig['tpmstate0']);
@@ -1439,7 +1436,7 @@ class VmInstancesController
         }
         $disk = (string) $data['disk'];
         $size = (string) $data['size'];
-        // Be forgiving: if user enters "20" or "+5" assume GB.
+        // Be forgiving: if user enters "20" or "+5" assume GB. (Or we can just do that in the frontend :))))))
         if (preg_match('/^\+?\d+$/', $size)) {
             $size .= 'G';
         }
@@ -1670,12 +1667,8 @@ class VmInstancesController
 
         $protectedKeys = [];
         if ($vmType === 'lxc') {
-            // Never allow deleting rootfs on containers.
             $protectedKeys[] = 'rootfs';
         } else {
-            // For QEMU: always protect scsi0 (primary OS disk on panel-created VMs),
-            // and any cloud-init / cdrom media. Additional disks (scsi1+, virtioN, etc.)
-            // remain deletable even if boot order in Proxmox points to them.
             if (array_key_exists('scsi0', $curConfig)) {
                 $protectedKeys[] = 'scsi0';
             }
@@ -1713,21 +1706,17 @@ class VmInstancesController
             return ApiResponse::success(['deleted' => $key], 'Disk removed successfully', 200);
         }
 
-        // QEMU: fully delete the disk, not just mark it as unused.
-        // 1) Remember the underlying volume reference of this disk (storage:vmid/..).
         $volRef = null;
         if (isset($curConfig[$key]) && is_string($curConfig[$key])) {
             $parts = explode(',', $curConfig[$key]);
             $volRef = trim($parts[0]);
         }
 
-        // 2) Unlink the disk from the VM config (moves it to unusedN).
         $unlink1 = $client->unlinkQemuDisks($node, (int) $instance['vmid'], [$key]);
         if (!$unlink1['ok']) {
             return ApiResponse::error('Failed to unlink disk: ' . ($unlink1['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
         }
 
-        // 3) If we know the volume reference, find the matching unusedN entry and unlink again to destroy it.
         if ($volRef !== null && $volRef !== '') {
             $cfg2 = $client->getVmConfig($node, (int) $instance['vmid'], 'qemu');
             if ($cfg2['ok'] && is_array($cfg2['config'] ?? null)) {
@@ -1747,7 +1736,6 @@ class VmInstancesController
                 if ($unusedKey !== null) {
                     $unlink2 = $client->unlinkQemuDisks($node, (int) $instance['vmid'], [$unusedKey]);
                     if (!$unlink2['ok']) {
-                        // Disk is detached but not fully deleted; log and continue.
                         App::getInstance(true)->getLogger()->warning(
                             'Failed to destroy unused disk ' . $unusedKey . ' for VM ' . $instance['vmid'] . ': ' . ($unlink2['error'] ?? 'unknown')
                         );
@@ -2052,7 +2040,6 @@ class VmInstancesController
 
         $backups = VmInstanceBackup::getBackupsByInstanceId((int) $instance['id']);
 
-        // Fetch available backup storages from Proxmox node
         $storages = [];
         $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
         if ($vmNode) {
@@ -2201,7 +2188,6 @@ class VmInstancesController
             'user_uuid'    => $instance['user_uuid'] ?? null,
             'notes'        => $meta,
             'vm_type'      => $vmType,
-            // Resource fields are required by schema but not used for backup tasks; keep sane defaults.
             'memory'       => 512,
             'cpus'         => 1,
             'cores'        => 1,
@@ -2304,8 +2290,6 @@ class VmInstancesController
             );
         }
 
-        // Backup finished successfully; resolve the created vzdump volume on Proxmox and
-        // persist a tracking row so we only ever list backups created via FeatherPanel.
         $storageForBackup = is_string($meta['storage'] ?? null) ? (string) $meta['storage'] : '';
         $nodeForBackup = $node !== '' ? $node : ($instance['pve_node'] ?? '');
         $vmidForBackup = (int) $instance['vmid'];
@@ -2321,8 +2305,6 @@ class VmInstancesController
                 ));
 
                 if (!empty($matching)) {
-                    // listVmBackups already returns backups sorted by ctime desc,
-                    // so the first item should be the one we just created.
                     /** @var array<string, mixed> $latest */
                     $latest = $matching[0];
 
@@ -2767,7 +2749,6 @@ class VmInstancesController
 
         $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
         if (!$vmNode) {
-            // Node is already gone; purge any tracked backups from DB and delete the instance row.
             VmInstanceUtil::deleteInstanceBackups($instance, null);
             VmInstance::delete($id);
             Activity::createActivity([
@@ -2802,12 +2783,9 @@ class VmInstancesController
         }
         if ($node !== null && $node !== '') {
             $vmType = in_array($instance['vm_type'] ?? 'qemu', ['qemu', 'lxc'], true) ? $instance['vm_type'] : 'qemu';
-            // Always stop the VM/container first so we are not deleting a running guest.
             $client->stopVm($node, (int) $instance['vmid'], $vmType);
             sleep(2);
-            // After the guest is stopped, delete any tracked vzdump backups for this instance.
             VmInstanceUtil::deleteInstanceBackups($instance, $client);
-            // Finally, remove the VM/container itself from Proxmox.
             $deleteResult = $client->deleteVm($node, (int) $instance['vmid'], $vmType);
             if (!$deleteResult['ok']) {
                 App::getInstance(true)->getLogger()->error(
@@ -2822,7 +2800,6 @@ class VmInstancesController
                 );
             }
         } else {
-            // We could not resolve a node, but still want to forget tracked backups in the DB.
             VmInstanceUtil::deleteInstanceBackups($instance, null);
         }
 
