@@ -31,12 +31,13 @@ namespace App\Services\Vm;
 use App\App;
 use App\Chat\VmIp;
 use App\Chat\VmNode;
+use App\Chat\VmTask;
 use App\Chat\Database;
 use App\Chat\VmInstance;
 use App\Chat\VmTemplate;
 use App\Chat\VmInstanceBackup;
-use App\Chat\VmCreationPending;
 use App\Config\ConfigInterface;
+use App\Chat\VmInstanceActivity;
 use App\Services\Proxmox\Proxmox;
 
 final class VmInstanceUtil
@@ -230,8 +231,8 @@ final class VmInstanceUtil
         $templateNode = $findTemplate['ok'] ? $findTemplate['node'] : $node;
 
         $savedMemory = (int) ($instance['memory'] ?? 512);
-        $savedCpus   = (int) ($instance['cpus'] ?? 1);
-        $savedCores  = (int) ($instance['cores'] ?? 1);
+        $savedCpus = (int) ($instance['cpus'] ?? 1);
+        $savedCores = (int) ($instance['cores'] ?? 1);
         $savedDiskGb = (int) ($instance['disk_gb'] ?? 0);
         $rootDiskKey = null;
 
@@ -307,66 +308,53 @@ final class VmInstanceUtil
         }
         $newVmid = $nextResult['vmid'];
 
-        if ($vmType === 'qemu') {
-            $clone = $client->cloneQemu($templateNode, $templateVmid, $newVmid, (string) ($instance['hostname'] ?? 'vm-' . $newVmid), $node);
-        } else {
-            $clone = $client->cloneLxc($templateNode, $templateVmid, $newVmid, (string) ($instance['hostname'] ?? 'ct-' . $newVmid), $node, (string) ($vmNode['default_storage'] ?? 'local'));
-        }
-        if (!$clone['ok'] || empty($clone['upid'])) {
-            return ['ok' => false, 'error' => 'Clone failed: ' . ($clone['error'] ?? 'unknown'), 'code' => 'CLONE_FAILED', 'http_status' => 500];
-        }
-
         $ipId = !empty($instance['vm_ip_id']) ? (int) $instance['vm_ip_id'] : null;
         $ip = $ipId ? VmIp::getById($ipId) : null;
 
-        $reinstallMeta = json_encode([
-            'type' => 'reinstall',
-            'old_vmid' => $oldVmid,
-            'instance_id' => $instanceId,
-            'ci_user' => $ciUser,
-            'ci_password' => $ciPassword,
-            'ip_address' => $ip['ip'] ?? ($instance['ip_address'] ?? null),
-            'ip_cidr' => $ip ? (int) ($ip['cidr'] ?? 24) : 24,
-            'gateway' => $ip['gateway'] ?? ($instance['gateway'] ?? null),
-            'memory' => $savedMemory,
-            'cpus' => $savedCpus,
-            'cores' => $savedCores,
-            'disk_gb' => $savedDiskGb,
-            'root_disk' => $rootDiskKey,
-        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $reinstallMeta = [
+            'type'          => 'reinstall',
+            'old_vmid'      => $oldVmid,
+            'instance_id'   => $instanceId,
+            'ci_user'       => $ciUser,
+            'ci_password'   => $ciPassword,
+            'ip_address'    => $ip['ip'] ?? ($instance['ip_address'] ?? null),
+            'ip_cidr'       => $ip ? (int) ($ip['cidr'] ?? 24) : 24,
+            'gateway'       => $ip['gateway'] ?? ($instance['gateway'] ?? null),
+            'memory'        => $savedMemory,
+            'cpus'          => $savedCpus,
+            'cores'         => $savedCores,
+            'disk_gb'       => $savedDiskGb,
+            'root_disk'     => $rootDiskKey,
+            'vm_type'       => $vmType,
+            'hostname'      => $instance['hostname'] ?? 'vm-' . $newVmid,
+            'template_vmid' => $templateVmid,
+            'template_node' => $templateNode,
+            'storage'       => (string) ($vmNode['default_storage'] ?? 'local'),
+            'current_step'  => 'initial',
+        ];
 
         $reinstallId = bin2hex(random_bytes(16));
-        $saved = VmCreationPending::create([
-            'creation_id' => $reinstallId,
-            'upid' => $clone['upid'],
+        $saved = VmTask::create([
+            'task_id'     => $reinstallId,
+            'upid'        => '', // empty UPID so runner initiates the clone
             'target_node' => $node,
-            'vmid' => $newVmid,
-            'hostname' => $instance['hostname'] ?? 'vm-' . $newVmid,
-            'vm_node_id' => (int) $instance['vm_node_id'],
-            'plan_id' => null,
-            'template_id' => $instance['template_id'] ? (int) $instance['template_id'] : null,
-            'vm_ip_id' => $ipId,
-            'user_uuid' => $instance['user_uuid'] ?? null,
-            'notes' => $reinstallMeta,
-            'vm_type' => $vmType,
-            'memory' => 512,
-            'cpus' => 1,
-            'cores' => 1,
-            'disk' => 10,
-            'storage' => 'local',
-            'bridge' => 'vmbr0',
-            'on_boot' => 0,
+            'vmid'        => $newVmid,
+            'task_type'   => 'reinstall',
+            'status'      => 'pending',
+            'instance_id' => $instanceId,
+            'vm_node_id'  => (int) $instance['vm_node_id'],
+            'user_uuid'   => $instance['user_uuid'] ?? null,
+            'data'        => $reinstallMeta,
         ]);
-        if (!$saved) {
-            $client->deleteVm($node, $newVmid, $vmType);
 
-            return ['ok' => false, 'error' => 'Failed to save reinstall pending record', 'code' => 'DB_ERROR', 'http_status' => 500];
+        if (!$saved) {
+            return ['ok' => false, 'error' => 'Failed to create reinstall task in DB', 'code' => 'DB_ERROR', 'http_status' => 500];
         }
 
         return [
-            'ok' => true,
+            'ok'           => true,
             'reinstall_id' => $reinstallId,
-            'message' => 'Reinstall clone started. Poll reinstall-status until active or failed.',
+            'message'      => 'Reinstall scheduled successfully. The task is now in queue.',
         ];
     }
 
@@ -379,7 +367,7 @@ final class VmInstanceUtil
      *
      * @return array{instance: array|null, new_vmid: int}
      */
-    public static function completeReinstallAfterClone(string $reinstallId, array $pending, array $reinstallMeta, Proxmox $client): array
+    public static function completeReinstallAfterClone(string $reinstallId, array $pending, array $reinstallMeta, Proxmox $client, bool $skipStart = false): array
     {
         $vmType = $pending['vm_type'] === 'lxc' ? 'lxc' : 'qemu';
         $newVmid = (int) $pending['vmid'];
@@ -454,7 +442,7 @@ final class VmInstanceUtil
                         }
                     }
                 }
-                if ($diskGb > $templateDiskGb) {
+                if ($diskGb > $templateDiskGb && !$skipStart) {
                     $resizeRes = $client->resizeContainerDisk($node, $newVmid, 'rootfs', $diskGb . 'G');
                     if (!$resizeRes['ok']) {
                         App::getInstance(true)->getLogger()->warning('Reinstall LXC rootfs resize failed: ' . ($resizeRes['error'] ?? 'unknown'));
@@ -516,7 +504,7 @@ final class VmInstanceUtil
                         }
                     }
                 }
-                if ($diskGb > $templateDiskGb) {
+                if ($diskGb > $templateDiskGb && !$skipStart) {
                     $resizeRes = $client->resizeQemuDisk($node, $newVmid, $diskKey, $diskGb . 'G');
                     if (!$resizeRes['ok']) {
                         App::getInstance(true)->getLogger()->warning('Reinstall QEMU disk resize failed: ' . ($resizeRes['error'] ?? 'unknown'));
@@ -543,13 +531,17 @@ final class VmInstanceUtil
             $client->deleteVm($node, $oldVmid, $vmType);
         }
 
-        sleep(2);
-        $startResult = $client->startVm($node, $newVmid, $vmType);
-        $finalStatus = $startResult['ok'] ? 'running' : 'stopped';
-        if (!$startResult['ok']) {
-            App::getInstance(true)->getLogger()->warning(
-                'Reinstall: failed to start new VM ' . $newVmid . ': ' . ($startResult['error'] ?? 'unknown')
-            );
+        if (!$skipStart) {
+            sleep(2);
+            $startResult = $client->startVm($node, $newVmid, $vmType);
+            $finalStatus = $startResult['ok'] ? 'running' : 'stopped';
+            if (!$startResult['ok']) {
+                App::getInstance(true)->getLogger()->warning(
+                    'Reinstall: failed to start new VM ' . $newVmid . ': ' . ($startResult['error'] ?? 'unknown')
+                );
+            }
+        } else {
+            $finalStatus = 'stopped';
         }
 
         $instance = null;
@@ -573,7 +565,7 @@ final class VmInstanceUtil
             }
         }
 
-        VmCreationPending::deleteByCreationId($reinstallId);
+        VmTask::update($reinstallId, ['status' => 'completed']);
 
         return ['instance' => $instance, 'new_vmid' => $newVmid];
     }
@@ -673,5 +665,300 @@ final class VmInstanceUtil
         }
 
         return ['ok' => true, 'payload' => $payload];
+    }
+
+    /**
+     * Create a background task record.
+     */
+    public static function createVmTask(array $instance, string $type, string $upid, array $meta = [], ?int $vmid = null, ?string $node = null): string
+    {
+        $taskId = bin2hex(random_bytes(16));
+        VmTask::create([
+            'task_id' => $taskId,
+            'instance_id' => isset($instance['id']) ? (int) $instance['id'] : null,
+            'vm_node_id' => isset($instance['vm_node_id']) ? (int) $instance['vm_node_id'] : null,
+            'task_type' => $type,
+            'status' => 'pending',
+            'upid' => $upid,
+            'target_node' => $node ?? $instance['pve_node'] ?? '',
+            'vmid' => $vmid ?? (int) ($instance['vmid'] ?? 0),
+            'data' => $meta,
+            'user_uuid' => $instance['user_uuid'] ?? null,
+        ]);
+
+        return $taskId;
+    }
+
+    /**
+     * Complete a task based on its type.
+     */
+    public static function completeTask(array $task, Proxmox $client, bool $skipStart = false): bool
+    {
+        $type = $task['task_type'];
+        $meta = json_decode($task['data'] ?? '{}', true);
+        $taskId = $task['task_id'];
+
+        VmTask::update($taskId, ['status' => 'running']);
+
+        try {
+            switch ($type) {
+                case 'create':
+                    self::completeCreation($taskId, $task, $meta, $client, $skipStart);
+                    break;
+                case 'reinstall':
+                    self::completeReinstallAfterClone($taskId, $task, $meta, $client, $skipStart);
+                    break;
+                case 'backup':
+                    self::completeBackup($taskId, $task, $meta, $client);
+                    break;
+                case 'restore_backup':
+                    self::completeRestore($taskId, $task, $meta, $client);
+                    break;
+                case 'delete':
+                    self::completeDeletion($taskId, $task, $meta, $client);
+                    break;
+                case 'power':
+                    self::completePowerAction($taskId, $task, $meta, $client);
+                    break;
+                default:
+                    App::getInstance(true)->getLogger()->warning("Unknown task type: $type for task $taskId");
+                    break;
+            }
+
+            if (!$skipStart) {
+                VmTask::update($taskId, ['status' => 'completed']);
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error("Task $taskId failed: " . $e->getMessage());
+            VmTask::update($taskId, ['status' => 'failed', 'error' => $e->getMessage()]);
+
+            return false;
+        }
+    }
+
+    private static function completeDeletion(string $taskId, array $task, array $meta, Proxmox $client): void
+    {
+        $instanceId = (int) ($meta['instance_id'] ?? 0);
+        $vmid = (int) ($task['vmid'] ?? 0);
+        $node = $task['target_node'] ?? '';
+        $vmType = $meta['vm_type'] ?? $task['vm_type'] ?? 'qemu';
+        $instance = $instanceId > 0 ? VmInstance::getById($instanceId) : null;
+
+        if ($node !== '' && $vmid > 0) {
+            // 1. Try to stop first
+            $client->stopVm($node, $vmid, $vmType);
+            sleep(2);
+
+            // 2. Backups
+            if ($instance) {
+                self::deleteInstanceBackups($instance, $client);
+            }
+
+            // 3. Delete from Proxmox
+            $result = $client->deleteVm($node, $vmid, $vmType);
+            if (!$result['ok']) {
+                throw new \Exception('Failed to delete from Proxmox: ' . ($result['error'] ?? 'unknown'));
+            }
+        } else {
+            if ($instance) {
+                self::deleteInstanceBackups($instance, null);
+            }
+        }
+
+        // 4. DB cleanup
+        if ($instanceId > 0) {
+            VmInstance::delete($instanceId);
+            \App\Chat\Activity::createActivity([
+                'user_uuid' => $task['user_uuid'] ?? null,
+                'name' => 'vm_instance_delete',
+                'context' => 'Deleted VM instance (async): ' . ($instance['hostname'] ?? $instanceId),
+                'ip_address' => '127.0.0.1',
+            ]);
+        }
+    }
+
+    private static function completePowerAction(string $taskId, array $task, array $meta, Proxmox $client): void
+    {
+        $instanceId = (int) ($meta['instance_id'] ?? 0);
+        $vmid = (int) ($task['vmid'] ?? 0);
+        $node = $task['target_node'] ?? '';
+        $vmType = $meta['vm_type'] ?? 'qemu';
+        $action = $meta['action'] ?? '';
+
+        if ($node === '' || $vmid === 0 || !in_array($action, ['start', 'stop', 'reboot'], true)) {
+            throw new \Exception('Invalid power task data: ' . ($action ?: 'unknown action'));
+        }
+
+        if ($action === 'start') {
+            $client->startVm($node, $vmid, $vmType);
+            VmInstance::updateStatus($instanceId, 'running');
+        } elseif ($action === 'stop') {
+            $client->stopVm($node, $vmid, $vmType);
+            VmInstance::updateStatus($instanceId, 'stopped');
+        } else {
+            $client->stopVm($node, $vmid, $vmType);
+            sleep(3);
+            $client->startVm($node, $vmid, $vmType);
+            VmInstance::updateStatus($instanceId, 'running');
+        }
+    }
+
+    private static function completeCreation(string $taskId, array $task, array $meta, Proxmox $client, bool $skipStart = false): void
+    {
+        $vmid = (int) $task['vmid'];
+        $node = $task['target_node'];
+        $vmType = $meta['vm_type'] ?? 'qemu';
+        $ipId = isset($meta['vm_ip_id']) ? (int) $meta['vm_ip_id'] : null;
+
+        $ip = $ipId ? VmIp::getById($ipId) : null;
+        if (!$ip) {
+            throw new \Exception('IP no longer available');
+        }
+
+        $cidr = (int) ($ip['cidr'] ?? 24);
+        $gateway = $ip['gateway'] ?? '';
+        $bridge = $meta['bridge'] ?? 'vmbr0';
+        $memory = (int) ($meta['memory'] ?? 512);
+        $cpus = (int) ($meta['cpus'] ?? 1);
+        $cores = (int) ($meta['cores'] ?? 1);
+        $onBoot = !empty($meta['on_boot']);
+        $hostname = $meta['hostname'] ?? 'vm-' . $vmid;
+
+        if ($vmType === 'qemu') {
+            $requestedDiskGb = (int) ($meta['disk'] ?? 0);
+            if ($requestedDiskGb > 0 && !$skipStart) { // If skipStart is false, it means we are doing it all at once
+                $client->resizeQemuDisk($node, $vmid, 'scsi0', $requestedDiskGb . 'G');
+            }
+
+            $client->setVmConfig($node, $vmid, 'qemu', [
+                'memory' => $memory,
+                'sockets' => $cpus,
+                'cores' => $cores,
+                'nameserver' => '1.1.1.1 8.8.8.8',
+                'ipconfig0' => "ip={$ip['ip']}/$cidr" . ($gateway ? ",gw=$gateway" : ''),
+                'onboot' => $onBoot ? 1 : 0,
+                'boot' => 'order=scsi0',
+                'ciuser' => $meta['ci_user'] ?? 'debian',
+                'cipassword' => $meta['ci_password'] ?? bin2hex(random_bytes(6)),
+                'tags' => 'FeatherPanel-Managed',
+                'description' => "FeatherPanel Managed VM | IP: {$ip['ip']} | Hostname: $hostname | User: {$task['user_uuid']} | Created: " . date('Y-m-d H:i:s'),
+            ]);
+        } else {
+            $client->setVmConfig($node, $vmid, 'lxc', [
+                'memory' => $memory,
+                'cores' => $cpus * $cores,
+                'nameserver' => '1.1.1.1 8.8.8.8',
+                'net0' => "name=eth0,bridge=$bridge,ip={$ip['ip']}/$cidr" . ($gateway ? ",gw=$gateway" : ''),
+                'onboot' => $onBoot ? 1 : 0,
+                'tags' => 'FeatherPanel-Managed',
+                'description' => "FeatherPanel Managed VM | IP: {$ip['ip']} | Hostname: $hostname | User: {$task['user_uuid']} | Created: " . date('Y-m-d H:i:s'),
+            ]);
+
+            $requestedDiskGb = (int) ($meta['disk'] ?? 0);
+            if ($requestedDiskGb > 0 && !$skipStart) {
+                $client->resizeContainerDisk($node, $vmid, 'rootfs', $requestedDiskGb . 'G');
+            }
+        }
+
+        $pdo = Database::getPdoConnection();
+        $instanceData = [
+            'vmid' => $vmid,
+            'vm_node_id' => (int) $task['vm_node_id'],
+            'user_uuid' => $task['user_uuid'],
+            'pve_node' => $node,
+            'plan_id' => $meta['plan_id'] ?? null,
+            'template_id' => $meta['template_id'] ?? null,
+            'vm_type' => $vmType,
+            'hostname' => $hostname,
+            'status' => 'stopped',
+            'ip_address' => $ip['ip'],
+            'gateway' => $ip['gateway'] ?? null,
+            'vm_ip_id' => $ipId,
+            'notes' => $meta['notes'] ?? null,
+            'backup_limit' => (int) ($meta['backup_limit'] ?? 5),
+            'memory' => $memory,
+            'cpus' => $cpus,
+            'cores' => $cores,
+            'disk_gb' => (int) ($meta['disk'] ?? 10),
+            'on_boot' => $onBoot ? 1 : 0,
+        ];
+
+        $instance = VmInstance::create($instanceData, $pdo);
+
+        if ($onBoot && $instance && !$skipStart) {
+            $start = $client->startVm($node, $vmid, $vmType);
+            if ($start['ok']) {
+                VmInstance::updateStatus((int) $instance['id'], 'running', $pdo);
+            }
+        }
+
+        VmInstanceActivity::createActivity([
+            'vm_instance_id' => (int) ($instance['id'] ?? 0),
+            'vm_node_id' => (int) $task['vm_node_id'],
+            'user_id' => null,
+            'event' => 'vm:create',
+            'metadata' => ['hostname' => $hostname, 'vmid' => $vmid],
+            'ip' => '127.0.0.1',
+        ]);
+    }
+
+    private static function completeBackup(string $taskId, array $task, array $meta, Proxmox $client): void
+    {
+        $instanceId = (int) ($meta['instance_id'] ?? 0);
+        $node = $task['target_node'];
+        $vmid = (int) $task['vmid'];
+        $storage = $meta['storage'] ?? '';
+
+        $list = $client->listVmBackups($node, $vmid);
+        if ($list['ok'] && !empty($list['backups'])) {
+            $matching = array_values(array_filter($list['backups'], function ($b) use ($storage) {
+                return ($b['storage'] ?? '') === $storage;
+            }));
+            if (!empty($matching)) {
+                $latest = $matching[0];
+                VmInstanceBackup::create([
+                    'vm_instance_id' => $instanceId,
+                    'vmid' => $vmid,
+                    'storage' => $storage,
+                    'volid' => (string) ($latest['volid'] ?? ''),
+                    'size_bytes' => (int) ($latest['size'] ?? 0),
+                    'ctime' => (int) ($latest['ctime'] ?? 0),
+                    'format' => (string) ($latest['format'] ?? null),
+                ]);
+            }
+        }
+
+        VmInstanceActivity::createActivity([
+            'vm_instance_id' => $instanceId,
+            'vm_node_id' => (int) $task['vm_node_id'],
+            'user_id' => null,
+            'event' => 'vm:backup.done',
+            'metadata' => ['vmid' => $vmid],
+            'ip' => '127.0.0.1',
+        ]);
+    }
+
+    private static function completeRestore(string $taskId, array $task, array $meta, Proxmox $client): void
+    {
+        $instanceId = (int) ($meta['instance_id'] ?? 0);
+        $node = $task['target_node'];
+        $vmid = (int) $task['vmid'];
+        $vmType = $meta['vm_type'] ?? 'qemu';
+
+        $start = $client->startVm($node, $vmid, $vmType);
+        $finalStatus = $start['ok'] ? 'running' : 'stopped';
+
+        VmInstance::updateStatus($instanceId, $finalStatus);
+
+        VmInstanceActivity::createActivity([
+            'vm_instance_id' => $instanceId,
+            'vm_node_id' => (int) $task['vm_node_id'],
+            'user_id' => null,
+            'event' => 'vm:restore.done',
+            'metadata' => ['vmid' => $vmid],
+            'ip' => '127.0.0.1',
+        ]);
     }
 }

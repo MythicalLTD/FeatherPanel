@@ -258,16 +258,56 @@ export default function VdsConsolePage() {
         if (!id) return;
         setPowering(action);
         try {
-            await axios.post(`/api/user/vm-instances/${id}/power`, { action });
-            toast.success(`Power action "${action}" queued`);
-            setTimeout(() => {
-                refreshInstance();
-                fetchStatus();
-            }, 2000);
+            const res = await axios.post(`/api/user/vm-instances/${id}/power`, { action });
+            const taskId = res.data?.data?.task_id as string | undefined;
+
+            if (!taskId) {
+                toast.success(`Power action "${action}" completed`);
+                setTimeout(() => {
+                    refreshInstance();
+                    fetchStatus();
+                }, 2000);
+                return;
+            }
+
+            toast.info(res.data?.message ?? 'Task added to queue');
+
+            // Poll until task is completed or failed
+            const MAX_POLLS = 120; // 6 minutes at 3s interval
+            let polls = 0;
+            const poll = async () => {
+                if (polls >= MAX_POLLS) {
+                    toast.error('Power action timed out');
+                    setPowering(null);
+                    return;
+                }
+                polls++;
+                try {
+                    const statusRes = await axios.get(`/api/user/vm-instances/task-status/${taskId}`);
+                    const s = statusRes.data?.data;
+                    if (s?.status === 'completed') {
+                        toast.success(`Power action "${action}" completed`);
+                        refreshInstance();
+                        fetchStatus();
+                        setPowering(null);
+                        return;
+                    }
+                    if (s?.status === 'failed') {
+                        toast.error(s?.error ?? 'Power action failed');
+                        setPowering(null);
+                        return;
+                    }
+                } catch {
+                    // ignore
+                }
+                setTimeout(() => {
+                    void poll();
+                }, 3000);
+            };
+            void poll();
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
             toast.error(msg);
-        } finally {
             setPowering(null);
         }
     };

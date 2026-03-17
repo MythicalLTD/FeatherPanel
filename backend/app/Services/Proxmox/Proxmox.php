@@ -262,7 +262,7 @@ class Proxmox
             $decodedBody = null;
 
             // Try to extract as much detail as possible from the Proxmox reply.
-            if (method_exists($e, 'getResponse')) {
+            if ($e instanceof \GuzzleHttp\Exception\RequestException) {
                 $response = $e->getResponse();
                 if ($response !== null) {
                     $statusCode = $response->getStatusCode();
@@ -909,6 +909,22 @@ class Proxmox
         }
 
         return ['ok' => false, 'error' => $lastError ?? "Failed to delete $type $vmid after retries"];
+    }
+
+    /**
+     * Delete a VM or container from Proxmox and return UPID immediately.
+     */
+    public function deleteVmAsync(string $node, int $vmid, string $vmType): array
+    {
+        $type = $vmType === 'lxc' ? 'lxc' : 'qemu';
+        $path = sprintf('/api2/json/nodes/%s/%s/%d', $node, $type, $vmid);
+        $result = $this->apiDelete($path, ['purge' => 1]);
+        if (!$result['ok']) {
+            return ['ok' => false, 'upid' => null, 'error' => $result['error']];
+        }
+        $upid = is_string($result['data'] ?? null) ? trim((string) $result['data']) : null;
+
+        return ['ok' => true, 'upid' => $upid, 'error' => null];
     }
 
     /**

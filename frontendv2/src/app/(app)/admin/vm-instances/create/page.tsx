@@ -156,6 +156,7 @@ export default function VmInstancesCreatePage() {
 
     useEffect(() => {
         if (nodeId <= 0) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setFreeIps([]);
             setTemplates([]);
             setBridges([]);
@@ -179,6 +180,7 @@ export default function VmInstancesCreatePage() {
 
     useEffect(() => {
         if (nodeId <= 0) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setBridges([]);
             setStorageList([]);
             return;
@@ -288,6 +290,7 @@ export default function VmInstancesCreatePage() {
         }
         setSubmitting(true);
         setCreatingMessage(null);
+        const toastId = toast.loading('Initiating VM creation…');
         try {
             const payload: Record<string, unknown> = {
                 vm_node_id: nodeId,
@@ -308,25 +311,28 @@ export default function VmInstancesCreatePage() {
             }
             if (vmIpId != null && vmIpId > 0) payload.vm_ip_id = vmIpId;
             if (selectedOwner?.uuid) payload.user_uuid = selectedOwner.uuid;
+
             const res = await axios.put('/api/admin/vm-instances', payload);
             const creationId = res.data?.data?.creation_id;
+
             if (res.status === 202 && creationId) {
+                toast.loading(res.data?.message || 'Creation scheduled to queue…', { id: toastId });
                 setCreatingMessage(t('admin.vmInstances.creating_clone') ?? 'Cloning template…');
-                await pollCreationStatus(creationId);
+                await pollCreationStatus(creationId, toastId);
                 return;
             }
-            toast.success(t('admin.vmInstances.create_success') ?? 'VM instance created successfully');
+
+            toast.success(t('admin.vmInstances.create_success') ?? 'VM instance created successfully', { id: toastId });
             router.push('/admin/vm-instances');
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
-        } finally {
+            toast.error(msg, { id: toastId });
             setSubmitting(false);
             setCreatingMessage(null);
         }
     };
 
-    const pollCreationStatus = async (creationId: string) => {
+    const pollCreationStatus = async (creationId: string, toastId: string | number) => {
         const maxAttempts = 300;
         const intervalMs = 3000;
         for (let i = 0; i < maxAttempts; i++) {
@@ -334,29 +340,33 @@ export default function VmInstancesCreatePage() {
                 const res = await axios.get(`/api/admin/vm-instances/creation-status/${creationId}`);
                 const status = res.data?.data?.status;
                 const message = res.data?.data?.message;
-                if (message) setCreatingMessage(message);
-                if (status === 'active') {
-                    toast.success(t('admin.vmInstances.create_success') ?? 'VM instance created successfully');
+
+                if (message) {
+                    setCreatingMessage(message);
+                    toast.loading(message, { id: toastId });
+                }
+
+                if (status === 'active' || status === 'completed') {
+                    toast.success(t('admin.vmInstances.create_success') ?? 'VM instance created successfully', {
+                        id: toastId,
+                    });
                     router.push('/admin/vm-instances');
                     return;
                 }
+
                 if (status === 'failed') {
                     const err = res.data?.data?.error ?? 'Creation failed';
-                    toast.error(err);
+                    toast.error(err, { id: toastId });
                     setSubmitting(false);
                     setCreatingMessage(null);
                     return;
                 }
             } catch (e) {
-                const msg = axios.isAxiosError(e) ? (e.response?.data?.message ?? e.message) : String(e);
-                toast.error(msg);
-                setSubmitting(false);
-                setCreatingMessage(null);
-                return;
+                // Ignore transient errors
             }
             await new Promise((r) => setTimeout(r, intervalMs));
         }
-        toast.error(t('admin.vmInstances.creating_timeout') ?? 'Creation timed out');
+        toast.error(t('admin.vmInstances.creating_timeout') ?? 'Creation timed out', { id: toastId });
         setSubmitting(false);
         setCreatingMessage(null);
     };

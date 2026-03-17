@@ -19,13 +19,12 @@ namespace App\Controllers\User\Vds;
 
 use App\App;
 use App\Chat\VmNode;
-use App\Chat\Database;
+use App\Chat\VmTask;
 use App\Chat\VmInstance;
 use App\Helpers\VmGateway;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceBackup;
-use App\Chat\VmCreationPending;
 use App\Chat\VmInstanceActivity;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
@@ -199,40 +198,26 @@ class VmUserBackupController
         }
 
         $backupId = bin2hex(random_bytes(16));
-        $meta = json_encode([
-            'type'        => 'backup',
-            'instance_id' => $id,
-            'vmid'        => $vmid,
-            'node'        => $node,
-            'storage'     => $storage,
-        ], JSON_UNESCAPED_SLASHES);
-
         $targetNode = $node !== '' ? $node : (string) ($instance['pve_node'] ?? '');
-        $hostname   = (string) ($instance['hostname'] ?? ('vm-' . $vmid));
         $vmNodeId   = (int) ($instance['vm_node_id'] ?? 0);
-        $planId     = isset($instance['plan_id']) && (int) $instance['plan_id'] > 0 ? (int) $instance['plan_id'] : null;
 
-        VmCreationPending::create([
-            'creation_id'  => $backupId,
-            'upid'         => $result['upid'],
-            'target_node'  => $targetNode,
-            'vmid'         => $vmid,
-            'hostname'     => $hostname,
-            'vm_node_id'   => $vmNodeId,
-            'plan_id'      => $planId,
-            'template_id'  => isset($instance['template_id']) ? (int) $instance['template_id'] : null,
-            'vm_ip_id'     => isset($instance['vm_ip_id']) ? (int) $instance['vm_ip_id'] : null,
-            'user_uuid'    => $instance['user_uuid'] ?? null,
-            'notes'        => $meta,
-            'vm_type'      => $vmType,
-            'memory'       => 512,
-            'cpus'         => 1,
-            'cores'        => 1,
-            'disk'         => 10,
-            'storage'      => $storage,
-            'bridge'       => 'vmbr0',
-            'on_boot'      => 1,
-            'backup_limit' => $backupLimit,
+        VmTask::create([
+            'task_id'     => $backupId,
+            'instance_id' => $id,
+            'vm_node_id'  => $vmNodeId,
+            'task_type'   => 'backup',
+            'status'      => 'pending',
+            'upid'        => $result['upid'],
+            'target_node' => $targetNode,
+            'vmid'        => $vmid,
+            'user_uuid'   => $instance['user_uuid'] ?? null,
+            'data'        => [
+                'type'        => 'backup',
+                'instance_id' => $id,
+                'vmid'        => $vmid,
+                'node'        => $targetNode,
+                'storage'     => $storage,
+            ],
         ]);
 
         VmInstanceActivity::createActivity([
@@ -277,107 +262,32 @@ class VmUserBackupController
             return ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401);
         }
 
-        $pending = VmCreationPending::getByCreationId($backupId);
-        if (!$pending) {
+        $task = VmTask::getByTaskId($backupId);
+        if (!$task) {
             return ApiResponse::error('Backup task not found', 'NOT_FOUND', 404);
         }
-
-        $meta = json_decode($pending['notes'] ?? '{}', true);
-        if (!is_array($meta) || ($meta['type'] ?? '') !== 'backup') {
+        if (($task['task_type'] ?? '') !== 'backup') {
             return ApiResponse::error('Invalid backup task', 'INVALID_TASK', 400);
         }
 
-        $instanceId = (int) ($meta['instance_id'] ?? 0);
+        $instanceId = (int) ($task['instance_id'] ?? 0);
         if ($instanceId <= 0 || !VmGateway::canUserAccessVmInstance($user['uuid'], $instanceId)) {
             return ApiResponse::error('Backup not found or access denied', 'NOT_FOUND', 404);
         }
 
-        $instance = VmInstance::getById($instanceId);
-        if (!$instance) {
-            VmCreationPending::deleteByCreationId($backupId);
-
-            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
-        }
-
-        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
-        if (!$vmNode) {
-            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
-        }
-        try {
-            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
-        } catch (\Throwable $e) {
-            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
-        }
-
-        $node = $meta['node'] ?? ($instance['pve_node'] ?? '');
-        $upid = $pending['upid'] ?? '';
-
-        $taskResult = $client->getTaskStatus($node, $upid);
-        if (!$taskResult['ok']) {
+        // If it's still running or pending, return running
+        if ($task['status'] === 'pending' || $task['status'] === 'running') {
             return ApiResponse::success(['status' => 'running'], 'Backup in progress', 200);
         }
 
-        $taskStatus = $taskResult['status'] ?? '';
-        $exitStatus = $taskResult['exitstatus'] ?? '';
-
-        if ($taskStatus !== 'stopped') {
-            return ApiResponse::success(['status' => 'running'], 'Backup in progress', 200);
+        if ($task['status'] === 'completed') {
+            return ApiResponse::success(['status' => 'done'], 'Backup completed', 200);
         }
 
-        VmCreationPending::deleteByCreationId($backupId);
-
-        if ($exitStatus !== 'OK') {
-            return ApiResponse::success(
-                ['status' => 'failed', 'error' => 'Backup task exited with: ' . $exitStatus],
-                'Backup failed',
-                200
-            );
-        }
-
-        $storageForBackup = is_string($meta['storage'] ?? null) ? (string) $meta['storage'] : '';
-        $nodeForBackup = $node !== '' ? $node : ($instance['pve_node'] ?? '');
-        $vmidForBackup = (int) $instance['vmid'];
-
-        if ($nodeForBackup !== '' && $vmidForBackup > 0 && $storageForBackup !== '') {
-            $list = $client->listVmBackups((string) $nodeForBackup, $vmidForBackup);
-            if ($list['ok'] && !empty($list['backups'])) {
-                $matching = array_values(array_filter(
-                    $list['backups'],
-                    static function (array $b) use ($storageForBackup): bool {
-                        return isset($b['storage']) && (string) $b['storage'] === $storageForBackup;
-                    }
-                ));
-                if (!empty($matching)) {
-                    $latest = $matching[0];
-                    VmInstanceBackup::create([
-                        'vm_instance_id' => $instanceId,
-                        'vmid'           => $vmidForBackup,
-                        'storage'        => $storageForBackup,
-                        'volid'          => (string) ($latest['volid'] ?? ''),
-                        'size_bytes'     => isset($latest['size']) ? (int) $latest['size'] : 0,
-                        'ctime'          => isset($latest['ctime']) ? (int) $latest['ctime'] : 0,
-                        'format'         => isset($latest['format']) ? (string) $latest['format'] : null,
-                    ]);
-                } else {
-                    App::getInstance(true)->getLogger()->warning(
-                        'Backup finished but no matching vzdump volume found for instance ' . $instanceId . ' on storage ' . $storageForBackup
-                    );
-                }
-            }
-        }
-
-        VmInstanceActivity::createActivity([
-            'vm_instance_id' => $instanceId,
-            'vm_node_id'     => (int) $instance['vm_node_id'],
-            'user_id'        => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
-            'event'          => 'vm:backup.done',
-            'metadata'       => [],
-            'ip'             => CloudFlareRealIP::getRealIP(),
-        ]);
-
-        return ApiResponse::success(['status' => 'done'], 'Backup completed', 200);
+        return ApiResponse::success([
+            'status' => 'failed',
+            'error'  => $task['error'] ?? 'Unknown error',
+        ], 'Backup failed', 200);
     }
 
     #[OA\Delete(
@@ -549,49 +459,31 @@ class VmUserBackupController
         } else {
             $result = $client->restoreLxcFromBackup($node, $vmid, $volid, $storage);
         }
-
         if (!$result['ok']) {
             return ApiResponse::error($result['error'] ?? 'Failed to start restore', 'PROXMOX_ERROR', 500);
         }
 
         $restoreId = bin2hex(random_bytes(16));
-        $meta = json_encode([
-            'type'        => 'restore_backup',
+
+        VmTask::create([
+            'task_id'     => $restoreId,
             'instance_id' => $id,
+            'vm_node_id'  => (int) $instance['vm_node_id'],
+            'task_type'   => 'restore_backup',
+            'status'      => 'pending',
+            'upid'        => $result['upid'],
+            'target_node' => $node,
             'vmid'        => $vmid,
-            'node'        => $node,
-            'storage'     => $storage,
-            'volid'       => $volid,
-            'vm_type'     => $vmType,
-        ], JSON_UNESCAPED_SLASHES);
-
-        $targetNode = $node !== '' ? $node : (string) ($instance['pve_node'] ?? '');
-        $hostname   = (string) ($instance['hostname'] ?? ('vm-' . $vmid));
-        $vmNodeId   = (int) ($instance['vm_node_id'] ?? 0);
-        $planId     = isset($instance['plan_id']) && (int) $instance['plan_id'] > 0 ? (int) $instance['plan_id'] : null;
-        $backupLimitForPending = (int) ($instance['backup_limit'] ?? 5);
-
-        VmCreationPending::create([
-            'creation_id'  => $restoreId,
-            'upid'         => $result['upid'],
-            'target_node'  => $targetNode,
-            'vmid'         => $vmid,
-            'hostname'     => $hostname,
-            'vm_node_id'   => $vmNodeId,
-            'plan_id'      => $planId,
-            'template_id'  => isset($instance['template_id']) ? (int) $instance['template_id'] : null,
-            'vm_ip_id'     => isset($instance['vm_ip_id']) ? (int) $instance['vm_ip_id'] : null,
-            'user_uuid'    => $instance['user_uuid'] ?? null,
-            'notes'        => $meta,
-            'vm_type'      => $vmType,
-            'memory'       => 512,
-            'cpus'         => 1,
-            'cores'        => 1,
-            'disk'         => 10,
-            'storage'      => $storage,
-            'bridge'       => 'vmbr0',
-            'on_boot'      => 1,
-            'backup_limit' => $backupLimitForPending,
+            'user_uuid'   => $instance['user_uuid'] ?? null,
+            'data'        => [
+                'type'        => 'restore_backup',
+                'instance_id' => $id,
+                'vmid'        => $vmid,
+                'node'        => $node,
+                'storage'     => $storage,
+                'volid'       => $volid,
+                'vm_type'     => $vmType,
+            ],
         ]);
 
         VmInstanceActivity::createActivity([
@@ -637,85 +529,41 @@ class VmUserBackupController
             return ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401);
         }
 
-        $pending = VmCreationPending::getByCreationId($restoreId);
-        if (!$pending) {
-            return ApiResponse::error('Restore task not found', 'NOT_FOUND', 404);
-        }
-
-        $meta = json_decode($pending['notes'] ?? '{}', true);
-        if (!is_array($meta) || ($meta['type'] ?? '') !== 'restore_backup') {
-            return ApiResponse::error('Invalid restore task', 'INVALID_TASK', 400);
-        }
-
-        $instanceId = (int) ($meta['instance_id'] ?? 0);
-        if ($instanceId <= 0 || !VmGateway::canUserAccessVmInstance($user['uuid'], $instanceId)) {
-            return ApiResponse::error('Restore not found or access denied', 'NOT_FOUND', 404);
-        }
-
-        $instance = VmInstance::getById($instanceId);
-        if (!$instance) {
-            VmCreationPending::deleteByCreationId($restoreId);
-
-            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
-        }
-
-        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
-        if (!$vmNode) {
-            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
-        }
+        // We don't need the client here, as the task status is already updated by the worker
+        // when the Proxmox task completes.
         try {
-            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+            // $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
 
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
+        $task = VmTask::getByTaskId($restoreId);
+        if (!$task) {
+            return ApiResponse::error('Restore task not found', 'NOT_FOUND', 404);
+        }
+        if (($task['task_type'] ?? '') !== 'restore_backup') {
+            return ApiResponse::error('Invalid restore task', 'INVALID_TASK', 400);
+        }
 
-        $node   = $meta['node'] ?? ($instance['pve_node'] ?? '');
-        $vmid   = (int) ($meta['vmid'] ?? $instance['vmid']);
-        $vmType = $meta['vm_type'] ?? ($instance['vm_type'] ?? 'qemu');
-        $upid   = $pending['upid'] ?? '';
+        $instanceId = (int) ($task['instance_id'] ?? 0);
+        if ($instanceId <= 0 || !VmGateway::canUserAccessVmInstance($user['uuid'], $instanceId)) {
+            return ApiResponse::error('Restore not found or access denied', 'NOT_FOUND', 404);
+        }
 
-        $taskResult = $client->getTaskStatus($node, $upid);
-        if (!$taskResult['ok']) {
+        if ($task['status'] === 'pending' || $task['status'] === 'running') {
             return ApiResponse::success(['status' => 'restoring'], 'Restore in progress', 200);
         }
 
-        $taskStatus = $taskResult['status'] ?? '';
-        $exitStatus = $taskResult['exitstatus'] ?? '';
-
-        if ($taskStatus !== 'stopped') {
-            return ApiResponse::success(['status' => 'restoring'], 'Restore in progress', 200);
-        }
-
-        VmCreationPending::deleteByCreationId($restoreId);
-
-        if ($exitStatus !== 'OK') {
-            return ApiResponse::success(['status' => 'failed', 'error' => 'Restore task exited with: ' . $exitStatus], 'Restore failed', 200);
-        }
-
-        $startResult = $client->startVm($node, $vmid, $vmType);
-        $finalStatus = $startResult['ok'] ? 'running' : 'stopped';
-
-        try {
-            $pdo  = Database::getPdoConnection();
-            $stmt = $pdo->prepare('UPDATE featherpanel_vm_instances SET status = :status WHERE id = :id');
-            $stmt->execute(['status' => $finalStatus, 'id' => $instanceId]);
+        if ($task['status'] === 'completed') {
             $instance = VmInstance::getById($instanceId);
-        } catch (\Throwable $e) {
-            App::getInstance(true)->getLogger()->error('RestoreBackup: failed to update DB status: ' . $e->getMessage());
-            $instance = VmInstance::getById($instanceId);
+
+            return ApiResponse::success(['status' => 'active', 'instance' => $instance], 'Restore completed', 200);
         }
 
-        VmInstanceActivity::createActivity([
-            'vm_instance_id' => $instanceId,
-            'vm_node_id'     => (int) $instance['vm_node_id'],
-            'user_id'        => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
-            'event'          => 'vm:restore.done',
-            'metadata'       => ['vmid' => $vmid],
-            'ip'             => CloudFlareRealIP::getRealIP(),
-        ]);
-
-        return ApiResponse::success(['status' => 'active', 'instance' => $instance], 'Restore completed', 200);
+        return ApiResponse::success([
+            'status' => 'failed',
+            'error'  => $task['error'] ?? 'Unknown error',
+        ], 'Restore failed', 200);
     }
 }

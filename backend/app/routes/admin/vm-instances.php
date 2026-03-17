@@ -61,6 +61,20 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 
+    // Generic task status poller
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-task-status',
+        '/api/admin/vm-instances/task-status/{taskId}',
+        function (Request $request, array $args) {
+            $taskId = $args['taskId'] ?? '';
+
+            return (new VmInstancesController())->taskStatus($request, $taskId);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
     // Get single VM instance
     App::getInstance(true)->registerAdminRoute(
         $routes,

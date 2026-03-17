@@ -37,12 +37,18 @@ if (!empty($_SERVER['DOCUMENT_ROOT'])) {
     define('APP_PUBLIC', __DIR__ . '/backend');
 }
 
-define('ENV_PATH', APP_PUBLIC . '/storage/');
+define('APP_STORAGE_DIR', APP_PUBLIC . '/storage/');
+define('ENV_PATH', APP_STORAGE_DIR);
 define('APP_START', microtime(true));
 define('APP_DIR', APP_PUBLIC . '/');
-define('APP_CRON_DIR', APP_PUBLIC . '/storage/cron/');
+define('APP_CACHE_DIR', APP_STORAGE_DIR . 'caches');
+define('APP_CRON_DIR', APP_STORAGE_DIR . 'cron/');
+define('APP_LOGS_DIR', APP_STORAGE_DIR . 'logs');
+define('APP_ADDONS_DIR', APP_STORAGE_DIR . 'addons');
+define('APP_SOURCECODE_DIR', APP_DIR . 'app');
+define('APP_ROUTES_DIR', APP_SOURCECODE_DIR . '/Api');
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
-define( 'APP_VERSION', 'v1.3.2');
+define('APP_VERSION', 'v1.3.2');
 define('APP_UPSTREAM', 'stable');
 define('TELEMETRY', true);
 define('IS_CLI', true);

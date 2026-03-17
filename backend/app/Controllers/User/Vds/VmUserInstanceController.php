@@ -17,15 +17,14 @@
 
 namespace App\Controllers\User\Vds;
 
-use App\App;
 use App\Chat\VmNode;
+use App\Chat\VmTask;
 use App\Chat\Database;
 use App\Chat\VmSubuser;
 use App\Chat\VmInstance;
 use App\Helpers\VmGateway;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Chat\VmCreationPending;
 use App\Chat\VmInstanceActivity;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
@@ -323,47 +322,42 @@ class VmUserInstanceController
         $vmid = (int) $vmInstance['vmid'];
         $vmType = in_array($vmInstance['vm_type'] ?? 'qemu', ['qemu', 'lxc'], true) ? $vmInstance['vm_type'] : 'qemu';
 
-        if ($action === 'start') {
-            $result = $client->startVm($node, $vmid, $vmType);
-            if ($result['ok']) {
-                VmInstance::updateStatus($id, 'running');
-            } else {
-                return ApiResponse::error('Start failed: ' . ($result['error'] ?? 'unknown'), 'POWER_FAILED', 500);
-            }
-        } elseif ($action === 'stop') {
-            $result = $client->stopVm($node, $vmid, $vmType);
-            if ($result['ok']) {
-                VmInstance::updateStatus($id, 'stopped');
-            } else {
-                return ApiResponse::error('Stop failed: ' . ($result['error'] ?? 'unknown'), 'POWER_FAILED', 500);
-            }
-        } else {
-            $result = $client->stopVm($node, $vmid, $vmType);
-            if (!$result['ok']) {
-                return ApiResponse::error('Reboot (stop) failed: ' . ($result['error'] ?? 'unknown'), 'POWER_FAILED', 500);
-            }
-            sleep(3);
-            $result = $client->startVm($node, $vmid, $vmType);
-            if (!$result['ok']) {
-                VmInstance::updateStatus($id, 'stopped');
+        $taskId = bin2hex(random_bytes(16));
+        $meta = [
+            'action'      => $action,
+            'instance_id' => $id,
+            'vm_type'     => $vmType,
+        ];
 
-                return ApiResponse::error('Reboot (start) failed: ' . ($result['error'] ?? 'unknown'), 'POWER_FAILED', 500);
-            }
-            VmInstance::updateStatus($id, 'running');
+        $saved = VmTask::create([
+            'task_id'     => $taskId,
+            'instance_id' => $id,
+            'vm_node_id'  => (int) $vmInstance['vm_node_id'],
+            'task_type'   => 'power',
+            'status'      => 'pending',
+            'target_node' => $node,
+            'vmid'        => $vmid,
+            'data'        => $meta,
+            'user_uuid'   => $user['uuid'] ?? null,
+        ]);
+
+        if (!$saved) {
+            return ApiResponse::error('Failed to create power task', 'DB_ERROR', 500);
         }
 
         VmInstanceActivity::createActivity([
             'vm_instance_id' => $id,
-            'vm_node_id' => (int) $vmInstance['vm_node_id'],
-            'user_id' => (int) $user['id'],
-            'event' => 'vm:power.' . $action,
-            'metadata' => ['hostname' => $vmInstance['hostname'] ?? null],
-            'ip' => CloudFlareRealIP::getRealIP(),
+            'vm_node_id'     => (int) $vmInstance['vm_node_id'],
+            'user_id'        => (int) $user['id'],
+            'event'          => 'vm:power.' . $action . '.scheduled',
+            'metadata'       => ['hostname' => $vmInstance['hostname'] ?? null, 'task_id' => $taskId],
+            'ip'             => CloudFlareRealIP::getRealIP(),
         ]);
 
-        $instance = VmInstance::getById($id);
-
-        return ApiResponse::success(['instance' => $instance], 'Power action completed', 200);
+        return ApiResponse::success([
+            'task_id' => $taskId,
+            'message' => 'Power task added to queue.',
+        ], 'Action scheduled', 202);
     }
 
     #[OA\Get(
@@ -527,11 +521,11 @@ class VmUserInstanceController
             new OA\Response(response: 500, description: 'Server error'),
         ]
     )]
-    public function reinstallStatus(Request $request, string $reinstallId): Response
+    public function taskStatus(Request $request, string $taskId): Response
     {
-        $reinstallId = trim($reinstallId);
-        if ($reinstallId === '') {
-            return ApiResponse::error('Missing reinstall_id', 'INVALID_ID', 400);
+        $taskId = trim($taskId);
+        if ($taskId === '') {
+            return ApiResponse::error('Missing task_id', 'INVALID_ID', 400);
         }
 
         $user = $request->attributes->get('user');
@@ -539,79 +533,57 @@ class VmUserInstanceController
             return ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401);
         }
 
-        $pending = VmCreationPending::getByCreationId($reinstallId);
-        if (!$pending) {
-            return ApiResponse::error('Reinstall not found or already completed', 'NOT_FOUND', 404);
+        $task = VmTask::getByTaskId($taskId);
+        if (!$task) {
+            return ApiResponse::error('Task not found', 'NOT_FOUND', 404);
         }
 
-        $rawNotes = $pending['notes'] ?? null;
-        $reinstallMeta = [];
-        if (is_string($rawNotes) && $rawNotes !== '' && $rawNotes[0] === '{') {
-            $decoded = json_decode($rawNotes, true);
-            if (is_array($decoded) && ($decoded['type'] ?? '') === 'reinstall') {
-                $reinstallMeta = $decoded;
+        $instanceId = (int) ($task['instance_id'] ?? 0);
+        if ($instanceId > 0 && !VmGateway::canUserAccessVmInstance($user['uuid'], $instanceId)) {
+            return ApiResponse::error('Task not found or access denied', 'NOT_FOUND', 404);
+        }
+
+        $type = $task['task_type'] ?? 'unknown';
+        $status = $task['status'] ?? 'pending';
+
+        if ($status === 'pending' || $status === 'running') {
+            $msg = match ($type) {
+                'delete'    => 'Deletion in progress…',
+                'power'     => 'Power action in progress…',
+                'reinstall' => 'Cloning and provisioning VM…',
+                'create'    => 'Provisioning new VM…',
+                default     => 'Processing task…',
+            };
+
+            if ($status === 'pending') {
+                $msg = 'Task in queue, waiting for processing…';
             }
-        }
-        if (empty($reinstallMeta)) {
-            VmCreationPending::deleteByCreationId($reinstallId);
-
-            return ApiResponse::error('Invalid reinstall pending record', 'INVALID_RECORD', 500);
-        }
-
-        $instanceId = (int) ($reinstallMeta['instance_id'] ?? 0);
-        if ($instanceId <= 0 || !VmGateway::canUserAccessVmInstance($user['uuid'], $instanceId)) {
-            return ApiResponse::error('Reinstall not found or access denied', 'NOT_FOUND', 404);
-        }
-
-        $vmNode = VmNode::getVmNodeById((int) $pending['vm_node_id']);
-        if (!$vmNode) {
-            VmCreationPending::deleteByCreationId($reinstallId);
-
-            return ApiResponse::error('VM node not found', 'NODE_NOT_FOUND', 500);
-        }
-
-        try {
-            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
-        } catch (\Throwable $e) {
-            App::getInstance(true)->getLogger()->error('Proxmox client build failed in reinstallStatus: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
-        }
-
-        $taskResult = $client->getTaskStatus($pending['target_node'], $pending['upid']);
-        if (!$taskResult['ok'] || $taskResult['status'] !== 'stopped') {
-            return ApiResponse::success([
-                'status'  => 'cloning',
-                'message' => 'Clone in progress…',
-            ], 'Clone in progress', 200);
-        }
-
-        if (($taskResult['exitstatus'] ?? '') !== 'OK') {
-            $errMsg = $taskResult['error'] ?? ('Exit status: ' . ($taskResult['exitstatus'] ?? 'unknown'));
-            $client->deleteVm($pending['target_node'], (int) $pending['vmid'], $pending['vm_type'] === 'lxc' ? 'lxc' : 'qemu');
-            VmCreationPending::deleteByCreationId($reinstallId);
 
             return ApiResponse::success([
-                'status' => 'failed',
-                'error'  => 'Clone failed: ' . $errMsg,
-            ], 'Reinstall clone failed', 200);
+                'status'  => $status,
+                'message' => $msg,
+            ], 'In progress', 200);
         }
 
-        $out = VmInstanceUtil::completeReinstallAfterClone($reinstallId, $pending, $reinstallMeta, $client);
+        if ($status === 'completed') {
+            $data = ['status' => 'completed'];
+            if ($type === 'reinstall' || $type === 'create') {
+                $data['status'] = 'active'; // Compatibility with existing frontend
+                $data['instance'] = VmInstance::getById($instanceId);
+            }
 
-        VmInstanceActivity::createActivity([
-            'vm_instance_id' => $instanceId,
-            'vm_node_id'     => (int) $pending['vm_node_id'],
-            'user_id'        => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
-            'event'          => 'vm:reinstall.complete',
-            'metadata'       => ['new_vmid' => $out['new_vmid']],
-            'ip'             => CloudFlareRealIP::getRealIP(),
-        ]);
+            return ApiResponse::success($data, 'Task completed successfully', 200);
+        }
 
         return ApiResponse::success([
-            'status'   => 'active',
-            'instance' => $out['instance'],
-        ], 'VM reinstalled successfully', 200);
+            'status' => 'failed',
+            'error'  => $task['error'] ?? 'Unknown error',
+        ], 'Task failed', 200);
+    }
+
+    public function reinstallStatus(Request $request, string $reinstallId): Response
+    {
+        return $this->taskStatus($request, $reinstallId);
     }
 
     #[OA\Get(

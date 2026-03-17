@@ -153,6 +153,20 @@ return function (RouteCollection $routes): void {
         'user-vm-instances'
     );
 
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-vm-instance-task-status',
+        '/api/user/vm-instances/task-status/{taskId}',
+        function (Request $request, array $args) {
+            $taskId = isset($args['taskId']) ? trim((string) $args['taskId']) : '';
+
+            return (new VmUserInstanceController())->taskStatus($request, $taskId);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-vm-instances'
+    );
+
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-backups-list',

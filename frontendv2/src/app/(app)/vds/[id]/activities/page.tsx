@@ -147,9 +147,9 @@ export default function VdsActivitiesPage() {
     const [loading, setLoading] = useState(true);
     const [activities, setActivities] = useState<VmActivityItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedEventFilter, setSelectedEventFilter] = useState<'all' | 'power' | 'subuser' | 'console' | 'reinstall'>(
-        'all',
-    );
+    const [selectedEventFilter, setSelectedEventFilter] = useState<
+        'all' | 'power' | 'subuser' | 'console' | 'reinstall'
+    >('all');
     const [pagination, setPagination] = useState({
         current_page: 1,
         per_page: 10,
@@ -164,8 +164,7 @@ export default function VdsActivitiesPage() {
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<VmActivityItem | null>(null);
     const [filterDialogOpen, setFilterDialogOpen] = useState(false);
-    const [pendingFilter, setPendingFilter] =
-        useState<'all' | 'power' | 'subuser' | 'console' | 'reinstall'>('all');
+    const [pendingFilter, setPendingFilter] = useState<'all' | 'power' | 'subuser' | 'console' | 'reinstall'>('all');
 
     const normalizeMetadata = (m: unknown): Record<string, unknown> | undefined => {
         if (m == null) return undefined;
@@ -362,7 +361,7 @@ export default function VdsActivitiesPage() {
                         variant='glass'
                         size='default'
                         onClick={openFilterDialog}
-                        className='h-14 min-w-[12rem] md:min-w-[14rem] bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-base px-6 hover:bg-[#0A0A0A]/40 transition-colors font-medium flex items-center justify-between gap-3'
+                        className='h-14 min-w-48 md:min-w-56 bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-base px-6 hover:bg-[#0A0A0A]/40 transition-colors font-medium flex items-center justify-between gap-3'
                     >
                         <SlidersHorizontal className='h-5 w-5 shrink-0 text-muted-foreground' />
                         <span className='truncate'>{selectedFilterLabel}</span>

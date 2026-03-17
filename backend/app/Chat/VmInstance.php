@@ -115,6 +115,15 @@ class VmInstance
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
+    public static function getByVmidAndNode(int $vmid, int $nodeId): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM featherpanel_vm_instances WHERE vmid = :vmid AND vm_node_id = :node_id LIMIT 1');
+        $stmt->execute(['vmid' => $vmid, 'node_id' => $nodeId]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
     public static function getByNodeId(int $nodeId): array
     {
         $pdo = Database::getPdoConnection();

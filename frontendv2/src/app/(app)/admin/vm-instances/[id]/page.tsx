@@ -187,14 +187,54 @@ export default function VmInstanceViewPage() {
     const handlePower = async (action: 'start' | 'stop' | 'reboot') => {
         setPoweringId(action);
         try {
-            await axios.post(`/api/admin/vm-instances/${id}/power`, { action });
-            toast.success(t('admin.vmInstances.power_success') ?? 'Power action completed');
-            const { data } = await axios.get(`/api/admin/vm-instances/${id}`);
-            setInstance(data.data?.instance ?? null);
+            const res = await axios.post(`/api/admin/vm-instances/${id}/power`, { action });
+            const taskId = res.data?.data?.task_id as string | undefined;
+
+            if (!taskId) {
+                toast.success(t('admin.vmInstances.power_success') ?? 'Power action completed');
+                const { data } = await axios.get(`/api/admin/vm-instances/${id}`);
+                setInstance(data.data?.instance ?? null);
+                return;
+            }
+
+            toast.info(res.data?.message ?? 'Task added to queue');
+
+            // Poll until task is completed or failed
+            const MAX_POLLS = 120; // 6 minutes at 3s interval
+            let polls = 0;
+            const poll = async () => {
+                if (polls >= MAX_POLLS) {
+                    toast.error('Power action timed out');
+                    setPoweringId(null);
+                    return;
+                }
+                polls++;
+                try {
+                    const statusRes = await axios.get(`/api/admin/vm-instances/task-status/${taskId}`);
+                    const s = statusRes.data?.data;
+                    if (s?.status === 'completed') {
+                        toast.success(t('admin.vmInstances.power_success') ?? 'Power action completed');
+                        const { data: fresh } = await axios.get(`/api/admin/vm-instances/${id}`);
+                        setInstance(fresh.data?.instance ?? null);
+                        setPoweringId(null);
+                        return;
+                    }
+                    if (s?.status === 'failed') {
+                        toast.error(s?.error ?? 'Power action failed');
+                        setPoweringId(null);
+                        return;
+                    }
+                } catch {
+                    // ignore
+                }
+                setTimeout(() => {
+                    void poll();
+                }, 3000);
+            };
+            void poll();
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
             toast.error(msg);
-        } finally {
             setPoweringId(null);
         }
     };
@@ -202,14 +242,53 @@ export default function VmInstanceViewPage() {
     const handleDelete = async () => {
         setDeleting(true);
         try {
-            await axios.delete(`/api/admin/vm-instances/${id}`);
-            toast.success(t('admin.vmInstances.delete_success') ?? 'VM instance deleted');
-            router.push('/admin/vm-instances');
+            const res = await axios.delete(`/api/admin/vm-instances/${id}`);
+            const taskId = res.data?.data?.task_id as string | undefined;
+
+            if (!taskId) {
+                toast.success(t('admin.vmInstances.delete_success') ?? 'VM instance deleted');
+                router.push('/admin/vm-instances');
+                return;
+            }
+
+            toast.info('Deletion task added to queue');
+
+            // Poll until task is completed or failed
+            const MAX_POLLS = 120; // 6 minutes at 3s interval
+            let polls = 0;
+            const poll = async () => {
+                if (polls >= MAX_POLLS) {
+                    toast.error('Deletion timed out');
+                    setDeleting(false);
+                    return;
+                }
+                polls++;
+                try {
+                    const statusRes = await axios.get(`/api/admin/vm-instances/delete-status/${taskId}`);
+                    const s = statusRes.data?.data;
+                    if (s?.status === 'completed') {
+                        toast.success(t('admin.vmInstances.delete_success') ?? 'VM instance deleted');
+                        router.push('/admin/vm-instances');
+                        return;
+                    }
+                    if (s?.status === 'failed') {
+                        toast.error(s?.error ?? 'Deletion failed');
+                        setDeleting(false);
+                        return;
+                    }
+                } catch {
+                    // ignore
+                }
+                setTimeout(() => {
+                    void poll();
+                }, 3000);
+            };
+            void poll();
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
             toast.error(msg);
-        } finally {
             setDeleting(false);
+        } finally {
             setConfirmDelete(false);
         }
     };
