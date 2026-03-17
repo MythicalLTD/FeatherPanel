@@ -205,6 +205,17 @@ final class VmInstanceUtil
             return ['ok' => false, 'error' => 'Failed to connect to Proxmox node', 'code' => 'PROXMOX_ERROR', 'http_status' => 500];
         }
 
+        // Mark instance as reinstalling for frontend UX while clone/provision runs
+        if ($instanceId > 0) {
+            try {
+                VmInstance::updateStatus($instanceId, 'reinstalling');
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->warning(
+                    'Failed to update VM status to reinstalling for instance ' . $instanceId . ': ' . $e->getMessage()
+                );
+            }
+        }
+
         $oldVmid = (int) $instance['vmid'];
         $node = $instance['pve_node'] ?? '';
         if ($node === '') {

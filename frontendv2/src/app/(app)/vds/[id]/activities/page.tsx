@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
@@ -42,6 +42,8 @@ import {
     Monitor,
     Copy,
     AlertTriangle,
+    SlidersHorizontal,
+    Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -81,6 +83,7 @@ function formatEvent(event: string) {
 
 function getEventIcon(event: string) {
     const e = event.toLowerCase();
+    if (e.includes('backup')) return Activity; // VM backups share the same page styling
     if (['start', 'play'].some((x) => e.includes(x))) return Play;
     if (['stop', 'kill'].some((x) => e.includes(x))) return Pause;
     if (e.includes('reboot') || e.includes('restart')) return RotateCcw;
@@ -93,6 +96,7 @@ function getEventIcon(event: string) {
 
 function getEventIconClass(event: string) {
     const e = event.toLowerCase();
+    if (e.includes('backup')) return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
     if (['start', 'play'].some((x) => e.includes(x))) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
     if (['stop', 'kill'].some((x) => e.includes(x))) return 'text-red-500 bg-red-500/10 border-red-500/20';
     if (e.includes('reboot') || e.includes('restart')) return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
@@ -103,44 +107,91 @@ function getEventIconClass(event: string) {
     return 'text-primary bg-primary/10 border-primary/20';
 }
 
-function formatRelativeTime(timestamp?: string): string {
+function formatRelativeTime(timestamp?: string, t?: (key: string, vars?: Record<string, string>) => string): string {
     if (!timestamp) return '';
-    const diffInSeconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    return new Date(timestamp).toLocaleDateString();
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (!t) {
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+        if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+        return date.toLocaleDateString();
+    }
+
+    if (diffInSeconds < 60) return t('serverActivities.justNow');
+    if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return t('serverActivities.minutesAgo', { minutes: String(minutes) });
+    }
+    if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return t('serverActivities.hoursAgo', { hours: String(hours) });
+    }
+    if (diffInSeconds < 604800) {
+        const days = Math.floor(diffInSeconds / 86400);
+        return t('serverActivities.daysAgo', { days: String(days) });
+    }
+    return date.toLocaleDateString();
 }
 
 export default function VdsActivitiesPage() {
     const { id } = useParams() as { id: string };
     const router = useRouter();
+    const pathname = usePathname();
     const { t } = useTranslation();
     const { instance, loading: instanceLoading, hasPermission } = useVmInstance();
 
     const [loading, setLoading] = useState(true);
     const [activities, setActivities] = useState<VmActivityItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedEventFilter, setSelectedEventFilter] = useState<'all' | 'power' | 'subuser' | 'console' | 'reinstall'>(
+        'all',
+    );
     const [pagination, setPagination] = useState({
         current_page: 1,
         per_page: 10,
-        total: 0,
-        last_page: 1,
+        total_records: 0,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false,
         from: 0,
         to: 0,
     });
 
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<VmActivityItem | null>(null);
+    const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+    const [pendingFilter, setPendingFilter] =
+        useState<'all' | 'power' | 'subuser' | 'console' | 'reinstall'>('all');
+
+    const normalizeMetadata = (m: unknown): Record<string, unknown> | undefined => {
+        if (m == null) return undefined;
+        if (typeof m === 'object') return m as Record<string, unknown>;
+        if (typeof m === 'string') {
+            try {
+                return JSON.parse(m) as Record<string, unknown>;
+            } catch {
+                return undefined;
+            }
+        }
+        return undefined;
+    };
 
     const fetchActivities = useCallback(
         async (page = 1) => {
             if (!id) return;
-            setLoading(true);
             try {
-                const params: Record<string, string | number> = { page, per_page: 10 };
-                if (searchQuery.trim()) params.search = searchQuery.trim();
+                setLoading(true);
+                const params: Record<string, string | number> = {
+                    page,
+                    per_page: 10,
+                };
+                if (searchQuery.trim()) {
+                    params.search = searchQuery.trim();
+                }
 
                 const { data } = await axios.get(`/api/user/vm-instances/${id}/activities`, { params });
                 if (!data.success) {
@@ -148,13 +199,43 @@ export default function VdsActivitiesPage() {
                     return;
                 }
 
-                setActivities(data.data.activities || []);
+                let items: VmActivityItem[] = (data.data.activities || []).map((item: VmActivityItem) => ({
+                    ...item,
+                    metadata: normalizeMetadata(item.metadata),
+                }));
+
+                if (selectedEventFilter !== 'all') {
+                    items = items.filter((a) => {
+                        const e = a.event.toLowerCase();
+                        switch (selectedEventFilter) {
+                            case 'power':
+                                return ['power', 'start', 'stop', 'reboot', 'restart', 'kill'].some((x) =>
+                                    e.includes(x),
+                                );
+                            case 'subuser':
+                                return ['subuser', 'user'].some((x) => e.includes(x));
+                            case 'console':
+                                return e.includes('console') || e.includes('vnc');
+                            case 'reinstall':
+                                return e.includes('reinstall');
+                            default:
+                                return true;
+                        }
+                    });
+                }
+
+                setActivities(items);
+
                 const p = data.data.pagination || {};
+                const totalPages = p.total_pages || p.last_page || 1;
+                const currentPage = p.current_page || 1;
                 setPagination({
-                    current_page: p.current_page || 1,
+                    current_page: currentPage,
                     per_page: p.per_page || 10,
-                    total: p.total || 0,
-                    last_page: p.last_page || 1,
+                    total_records: p.total || p.total_records || 0,
+                    total_pages: totalPages,
+                    has_next: currentPage < totalPages,
+                    has_prev: currentPage > 1,
                     from: p.from || 0,
                     to: p.to || 0,
                 });
@@ -164,7 +245,7 @@ export default function VdsActivitiesPage() {
                 setLoading(false);
             }
         },
-        [id, searchQuery],
+        [id, searchQuery, selectedEventFilter],
     );
 
     useEffect(() => {
@@ -183,21 +264,51 @@ export default function VdsActivitiesPage() {
         const timer = setTimeout(() => fetchActivities(1), 500);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery]);
+    }, [searchQuery, selectedEventFilter]);
 
     const changePage = (newPage: number) => {
-        if (newPage >= 1 && newPage <= pagination.last_page) {
+        if (newPage >= 1 && newPage <= pagination.total_pages) {
+            setPagination((p) => ({ ...p, current_page: newPage }));
             fetchActivities(newPage);
         }
     };
 
     const rawJson = selectedItem?.metadata ? JSON.stringify(selectedItem.metadata, null, 2) : '';
 
+    const filterOptions = [
+        { id: 'all', name: t('serverActivities.allEvents') },
+        { id: 'power', name: t('serverActivities.filterNames.power') },
+        { id: 'subuser', name: t('serverActivities.filterNames.subuser') },
+        { id: 'console', name: t('serverActivities.filterNames.file') || 'Console' },
+        { id: 'reinstall', name: t('vds.activities.filter.reinstall') || 'Reinstall' },
+    ] as const;
+
+    const selectedFilterLabel =
+        filterOptions.find((o) => o.id === selectedEventFilter)?.name ?? t('serverActivities.allEvents');
+
+    const openFilterDialog = () => {
+        setPendingFilter(selectedEventFilter);
+        setFilterDialogOpen(true);
+    };
+
+    const applyFilter = () => {
+        setSelectedEventFilter(pendingFilter);
+        setFilterDialogOpen(false);
+        setTimeout(() => fetchActivities(1), 0);
+    };
+
+    const clearFilterInDialog = () => {
+        setPendingFilter('all');
+        setSelectedEventFilter('all');
+        setFilterDialogOpen(false);
+        setTimeout(() => fetchActivities(1), 0);
+    };
+
     if (instanceLoading || (loading && activities.length === 0)) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
                 <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>Loading activity log…</p>
+                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>{t('common.loading')}</p>
             </div>
         );
     }
@@ -212,31 +323,27 @@ export default function VdsActivitiesPage() {
     }
 
     return (
-        <div className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-8 pb-12 '>
             <PageHeader
                 title={t('navigation.items.activities') || 'VDS Activity Log'}
                 description={
                     <div className='flex items-center gap-3'>
                         <span>
                             {t('vds.activities.description') ||
-                                'All power, subuser and console actions for this VDS instance.'}
+                                'All power, subuser, backup and console actions for this VDS instance.'}
                         </span>
                         <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'>
-                            {pagination.total} {t('common.events') || 'events'}
+                            {pagination.total_records} {t('serverActivities.events') || 'events'}
                         </span>
                     </div>
                 }
                 actions={
-                    <Button
-                        variant='glass'
-                        size='default'
-                        onClick={() => fetchActivities(pagination.current_page)}
-                        disabled={loading}
-                        className='rounded-2xl'
-                    >
-                        <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
-                        {t('common.refresh') || 'Refresh'}
-                    </Button>
+                    <div className='flex items-center gap-3'>
+                        <Button variant='glass' size='default' onClick={() => fetchActivities()} disabled={loading}>
+                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
+                            {t('common.refresh')}
+                        </Button>
+                    </div>
                 }
             />
 
@@ -244,30 +351,48 @@ export default function VdsActivitiesPage() {
                 <div className='relative flex-1 group'>
                     <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors' />
                     <Input
-                        placeholder='Search events…'
+                        placeholder={t('serverActivities.searchPlaceholder') || 'Search events…'}
                         className='pl-12 h-14 text-base'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                {searchQuery && (
+                <div className='w-full md:w-auto flex gap-2'>
                     <Button
                         variant='glass'
-                        size='icon'
-                        className='h-14 w-14 rounded-xl hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50'
-                        onClick={() => setSearchQuery('')}
+                        size='default'
+                        onClick={openFilterDialog}
+                        className='h-14 min-w-[12rem] md:min-w-[14rem] bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-base px-6 hover:bg-[#0A0A0A]/40 transition-colors font-medium flex items-center justify-between gap-3'
                     >
-                        <X className='h-6 w-6' />
+                        <SlidersHorizontal className='h-5 w-5 shrink-0 text-muted-foreground' />
+                        <span className='truncate'>{selectedFilterLabel}</span>
+                        {(selectedEventFilter !== 'all' || searchQuery) && (
+                            <span className='shrink-0 w-2 h-2 rounded-full bg-primary' aria-hidden />
+                        )}
                     </Button>
-                )}
+                    {(searchQuery || selectedEventFilter !== 'all') && (
+                        <Button
+                            variant='glass'
+                            size='icon'
+                            className='h-14 w-14 rounded-xl hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50'
+                            onClick={() => {
+                                setSearchQuery('');
+                                setSelectedEventFilter('all');
+                                setTimeout(() => fetchActivities(1), 0);
+                            }}
+                        >
+                            <X className='h-6 w-6' />
+                        </Button>
+                    )}
+                </div>
             </div>
 
-            {pagination.total > pagination.per_page && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+            {pagination.total_records > pagination.per_page && (
+                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
                     <Button
                         variant='glass'
                         size='sm'
-                        disabled={pagination.current_page <= 1 || loading}
+                        disabled={!pagination.has_prev || loading}
                         onClick={() => changePage(pagination.current_page - 1)}
                         className='gap-1.5'
                     >
@@ -275,12 +400,12 @@ export default function VdsActivitiesPage() {
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.current_page} / {pagination.last_page}
+                        {pagination.current_page} / {pagination.total_pages}
                     </span>
                     <Button
                         variant='glass'
                         size='sm'
-                        disabled={pagination.current_page >= pagination.last_page || loading}
+                        disabled={!pagination.has_next || loading}
                         onClick={() => changePage(pagination.current_page + 1)}
                         className='gap-1.5'
                     >
@@ -292,22 +417,28 @@ export default function VdsActivitiesPage() {
 
             {activities.length === 0 ? (
                 <EmptyState
-                    title='No Activity Found'
+                    title={t('serverActivities.noActivitiesFound') || 'No Activity Found'}
                     description={
-                        searchQuery
-                            ? 'No events match your search.'
-                            : 'No activity has been recorded for this VDS instance yet.'
+                        searchQuery || selectedEventFilter !== 'all'
+                            ? t('serverActivities.noActivitiesSearchDescription') ||
+                              'No events match your current filters or search.'
+                            : t('serverActivities.noActivitiesDescription') ||
+                              'No activity has been recorded for this instance yet.'
                     }
                     icon={Activity}
                     action={
-                        searchQuery ? (
+                        searchQuery || selectedEventFilter !== 'all' ? (
                             <Button
                                 variant='glass'
                                 size='default'
-                                onClick={() => setSearchQuery('')}
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setSelectedEventFilter('all');
+                                    setTimeout(() => fetchActivities(1), 0);
+                                }}
                                 className='h-14 px-10 text-lg rounded-xl'
                             >
-                                Clear Search
+                                {t('common.clear')}
                             </Button>
                         ) : undefined
                     }
@@ -337,13 +468,13 @@ export default function VdsActivitiesPage() {
                                         <div className='flex items-center gap-2 text-muted-foreground'>
                                             <User className='h-4 w-4 opacity-50' />
                                             <span className='text-sm font-bold uppercase tracking-tight'>
-                                                {activity.user?.username || 'System'}
+                                                {activity.user?.username || t('serverActivities.details.system')}
                                             </span>
                                         </div>
                                         <div className='flex items-center gap-2 text-muted-foreground'>
                                             <Clock className='h-4 w-4 opacity-50' />
                                             <span className='text-sm font-semibold'>
-                                                {activity.timestamp ? formatRelativeTime(activity.timestamp) : '—'}
+                                                {activity.timestamp ? formatRelativeTime(activity.timestamp, t) : '—'}
                                             </span>
                                         </div>
                                         {activity.ip && (
@@ -367,28 +498,32 @@ export default function VdsActivitiesPage() {
                 </div>
             )}
 
-            {pagination.total > pagination.per_page && (
+            {pagination.total_records > pagination.per_page && (
                 <div className='flex items-center justify-between py-8 border-t border-border/40 px-6'>
                     <p className='text-sm font-bold opacity-40 uppercase tracking-widest'>
-                        Showing {pagination.from}–{pagination.to} of {pagination.total}
+                        {t('serverActivities.pagination.showing', {
+                            from: String(pagination.from),
+                            to: String(pagination.to),
+                            total: String(pagination.total_records),
+                        })}
                     </p>
                     <div className='flex items-center gap-3'>
                         <Button
                             variant='glass'
                             size='sm'
-                            disabled={pagination.current_page <= 1 || loading}
+                            disabled={!pagination.has_prev || loading}
                             onClick={() => changePage(pagination.current_page - 1)}
                             className='h-10 w-10 p-0 rounded-xl'
                         >
                             <ChevronLeft className='h-5 w-5' />
                         </Button>
                         <span className='h-10 px-4 rounded-xl text-sm font-black bg-primary/5 text-primary border border-primary/20 flex items-center justify-center min-w-12'>
-                            {pagination.current_page} / {pagination.last_page}
+                            {pagination.current_page} / {pagination.total_pages}
                         </span>
                         <Button
                             variant='glass'
                             size='sm'
-                            disabled={pagination.current_page >= pagination.last_page || loading}
+                            disabled={!pagination.has_next || loading}
                             onClick={() => changePage(pagination.current_page + 1)}
                             className='h-10 w-10 p-0 rounded-xl'
                         >
@@ -398,6 +533,50 @@ export default function VdsActivitiesPage() {
                 </div>
             )}
 
+            {/* Filter & view options dialog */}
+            <Dialog open={filterDialogOpen} onClose={() => setFilterDialogOpen(false)} className='max-w-md'>
+                <DialogHeader>
+                    <DialogTitle className='text-xl font-bold'>{t('serverActivities.filterDialog.title')}</DialogTitle>
+                    <DialogDescription className='text-muted-foreground'>
+                        {t('serverActivities.filterDialog.whatToShow')}
+                    </DialogDescription>
+                </DialogHeader>
+                <div className='mt-6 space-y-2 max-h-[min(60vh,400px)] overflow-y-auto pr-1 custom-scrollbar'>
+                    {filterOptions.map((option) => (
+                        <button
+                            key={option.id}
+                            type='button'
+                            onClick={() => setPendingFilter(option.id)}
+                            className={cn(
+                                'w-full flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5 text-left font-medium transition-all',
+                                pendingFilter === option.id
+                                    ? 'bg-primary/15 border-primary/40 text-primary'
+                                    : 'bg-muted/20 border-border/30 text-foreground hover:bg-muted/40 hover:border-border/50',
+                            )}
+                        >
+                            <span>{option.name}</span>
+                            {pendingFilter === option.id && <Check className='h-5 w-5 shrink-0 text-primary' />}
+                        </button>
+                    ))}
+                </div>
+                <DialogFooter className='mt-6 flex flex-wrap gap-2 sm:gap-3'>
+                    <Button variant='glass' size='default' onClick={clearFilterInDialog} className='order-2 sm:order-1'>
+                        {t('common.clear')}
+                    </Button>
+                    <Button
+                        variant='glass'
+                        size='default'
+                        onClick={() => setFilterDialogOpen(false)}
+                        className='order-3'
+                    >
+                        {t('common.cancel')}
+                    </Button>
+                    <Button size='default' onClick={applyFilter} className='order-1 sm:order-3 px-8 font-semibold'>
+                        {t('serverActivities.filterDialog.apply')}
+                    </Button>
+                </DialogFooter>
+            </Dialog>
+
             {/* Detail dialog */}
             <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} className='max-w-[1200px]'>
                 {selectedItem && (
@@ -406,7 +585,7 @@ export default function VdsActivitiesPage() {
                             <div className='flex items-center gap-6'>
                                 <div
                                     className={cn(
-                                        'h-20 w-20 rounded-4xl flex items-center justify-center border-4 shrink-0',
+                                        'h-20 w-20 rounded-4xl flex items-center justify-center border-4 transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0',
                                         getEventIconClass(selectedItem.event),
                                     )}
                                 >
@@ -445,7 +624,7 @@ export default function VdsActivitiesPage() {
                                             User
                                         </span>
                                         <span className='text-lg font-bold'>
-                                            {selectedItem.user?.username || 'System'}
+                                            {selectedItem.user?.username || t('serverActivities.details.system')}
                                         </span>
                                     </div>
                                     <div className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0'>
@@ -470,12 +649,12 @@ export default function VdsActivitiesPage() {
                                         Object.entries(selectedItem.metadata).map(([k, v]) => (
                                             <div
                                                 key={k}
-                                                className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all'
+                                                className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all'
                                             >
-                                                <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                                                <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest underline decoration-primary/20 decoration-2 underline-offset-4'>
                                                     {k}
                                                 </span>
-                                                <span className='text-base font-mono font-bold break-all'>
+                                                <span className='text-base font-mono font-bold break-all leading-tight opacity-90 group-hover:opacity-100'>
                                                     {typeof v === 'object' ? JSON.stringify(v) : String(v)}
                                                 </span>
                                             </div>

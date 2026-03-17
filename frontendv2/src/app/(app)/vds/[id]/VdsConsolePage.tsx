@@ -114,6 +114,11 @@ const vmStatusStyles: Record<string, { badge: string; dot: string; label: string
         dot: 'bg-blue-400 animate-pulse',
         label: 'Creating',
     },
+    reinstalling: {
+        badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+        dot: 'bg-blue-400 animate-pulse',
+        label: 'Reinstalling',
+    },
     unknown: {
         badge: 'bg-muted/50 text-muted-foreground border-border/30',
         dot: 'bg-muted-foreground',

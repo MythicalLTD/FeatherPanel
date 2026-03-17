@@ -39,7 +39,7 @@ export default function VdsSettingsPage() {
     const { id } = useParams() as { id: string };
     const router = useRouter();
     useTranslation();
-    const { instance, loading: instanceLoading, hasPermission } = useVmInstance();
+    const { instance, loading: instanceLoading, hasPermission, refreshInstance } = useVmInstance();
 
     // Reinstall state
     const [templates, setTemplates] = React.useState<ReinstallTemplate[]>([]);
@@ -89,12 +89,52 @@ export default function VdsSettingsPage() {
                 if (ciSshKeys) payload.ci_ssh_keys = ciSshKeys;
             }
             const { data } = await axios.post(`/api/user/vm-instances/${id}/reinstall`, payload);
-            if (data.success) {
-                toast.success('Reinstall initiated. This may take several minutes.');
-                setReinstallOpen(false);
-            } else {
+            if (!data.success) {
                 toast.error(data.message || 'Failed to start reinstall.');
+                return;
             }
+
+            const reinstallId: string | undefined = data.data?.reinstall_id;
+            if (!reinstallId) {
+                toast.error('Reinstall did not return a reinstall_id');
+                return;
+            }
+
+            toast.success('Reinstall initiated. This may take several minutes.');
+            setReinstallOpen(false);
+
+            // Poll reinstall status until active or failed (mirrors admin VM flow).
+            const MAX_POLLS = 120; // 6 minutes at 3s interval
+            let polls = 0;
+            const poll = async (): Promise<void> => {
+                if (polls >= MAX_POLLS) {
+                    toast.error('Reinstall timed out waiting for clone to finish');
+                    setReinstalling(false);
+                    return;
+                }
+                polls++;
+                try {
+                    const statusRes = await axios.get(`/api/user/vm-instances/reinstall-status/${reinstallId}`);
+                    const s = statusRes.data?.data;
+                    if (s?.status === 'active') {
+                        toast.success('VDS reinstalled from template.');
+                        await refreshInstance();
+                        setReinstalling(false);
+                        return;
+                    }
+                    if (s?.status === 'failed') {
+                        toast.error(s?.error ?? 'Reinstall failed');
+                        setReinstalling(false);
+                        return;
+                    }
+                } catch {
+                    // Ignore transient polling errors — keep polling.
+                }
+                setTimeout(() => {
+                    void poll();
+                }, 3000);
+            };
+            void poll();
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
             toast.error(msg);

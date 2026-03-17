@@ -6608,7 +6608,10 @@
 	},
 	"vds": {
 		"activities": {
-			"description": "All power, subuser and console actions for this VDS instance."
+			"description": "All power, subuser and console actions for this VDS instance.",
+			"filter": {
+				"reinstall": "Reinstall events"
+			}
 		},
 		"console": {
 			"title": "VDS Console",
