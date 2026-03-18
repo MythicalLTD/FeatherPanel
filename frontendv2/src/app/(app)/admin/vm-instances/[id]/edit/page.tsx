@@ -407,13 +407,9 @@ export default function VmInstanceEditPage() {
             if (!isLxc) {
                 payload.bios = biosMode;
                 payload.efi_enabled = efiEnabled;
-                payload.efi_storage = efiEnabled
-                    ? efiStorage || nodeEfiStorageDefault || storageList[0] || 'local-lvm'
-                    : undefined;
+                // EFI storage is enforced server-side from the VDS node default.
                 payload.tpm_enabled = tpmEnabled;
-                payload.tpm_storage = tpmEnabled
-                    ? tpmStorage || nodeTpmStorageDefault || storageList[0] || 'local-lvm'
-                    : undefined;
+                // TPM storage is enforced server-side from the VDS node default.
             }
             await axios.patch(`/api/admin/vm-instances/${id}`, payload);
             toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
@@ -625,10 +621,12 @@ export default function VmInstanceEditPage() {
                             setEfiEnabled={setEfiEnabled}
                             efiStorage={efiStorage}
                             setEfiStorage={setEfiStorage}
+                            nodeEfiStorageDefault={nodeEfiStorageDefault || 'local-lvm'}
                             tpmEnabled={tpmEnabled}
                             setTpmEnabled={setTpmEnabled}
                             tpmStorage={tpmStorage}
                             setTpmStorage={setTpmStorage}
+                            nodeTpmStorageDefault={nodeTpmStorageDefault || 'local-lvm'}
                             onSave={handleSaveResources}
                             saving={savingTab === 'resources'}
                         />

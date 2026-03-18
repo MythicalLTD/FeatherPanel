@@ -40,10 +40,12 @@ interface ResourcesTabProps {
     setEfiEnabled: (v: boolean) => void;
     efiStorage: string;
     setEfiStorage: (v: string) => void;
+    nodeEfiStorageDefault: string;
     tpmEnabled: boolean;
     setTpmEnabled: (v: boolean) => void;
     tpmStorage: string;
     setTpmStorage: (v: string) => void;
+    nodeTpmStorageDefault: string;
     onSave: (e: React.FormEvent) => void;
     saving: boolean;
 }
@@ -66,10 +68,12 @@ export function ResourcesTab({
     setEfiEnabled,
     efiStorage,
     setEfiStorage,
+    nodeEfiStorageDefault,
     tpmEnabled,
     setTpmEnabled,
     tpmStorage,
     setTpmStorage,
+    nodeTpmStorageDefault,
     onSave,
     saving,
 }: ResourcesTabProps) {
@@ -151,9 +155,12 @@ export function ResourcesTab({
                                     {efiEnabled && (
                                         <select
                                             className='mt-1 bg-muted/30 h-11 rounded-xl px-3 text-sm'
-                                            value={efiStorage}
-                                            onChange={(e) => setEfiStorage(e.target.value)}
+                                            value={nodeEfiStorageDefault}
+                                            disabled
                                         >
+                                            {!storageList.includes(nodeEfiStorageDefault) && (
+                                                <option value={nodeEfiStorageDefault}>{nodeEfiStorageDefault}</option>
+                                            )}
                                             {storageList.map((s) => (
                                                 <option key={s} value={s}>
                                                     {s}
@@ -179,9 +186,12 @@ export function ResourcesTab({
                                     {tpmEnabled && (
                                         <select
                                             className='mt-1 bg-muted/30 h-11 rounded-xl px-3 text-sm'
-                                            value={tpmStorage}
-                                            onChange={(e) => setTpmStorage(e.target.value)}
+                                            value={nodeTpmStorageDefault}
+                                            disabled
                                         >
+                                            {!storageList.includes(nodeTpmStorageDefault) && (
+                                                <option value={nodeTpmStorageDefault}>{nodeTpmStorageDefault}</option>
+                                            )}
                                             {storageList.map((s) => (
                                                 <option key={s} value={s}>
                                                     {s}

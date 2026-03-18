@@ -23,6 +23,7 @@ class CloudFlareRealIP
      * List of Cloudflare IPv4 and IPv6 ranges.
      */
     private static $cloudflareRanges = [
+        // TODO : We could use the cloudflare pai to scrape the data from there and update them liveley rather than keeping them in the code!
         // IPv4
         '173.245.48.0/20',
         '103.21.244.0/22',

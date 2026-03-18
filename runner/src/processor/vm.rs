@@ -493,12 +493,53 @@ async fn handle_backup_task(
     let target_node: String = task.try_get("target_node").unwrap_or_default();
     let vmid: i32 = task.try_get("vmid").unwrap_or(0);
     let upid: String = task.try_get("upid").unwrap_or_default();
+    let vm_node_id: i32 = task.try_get("vm_node_id").unwrap_or(0);
     let backup_id = meta["backup_id"].as_i64().ok_or_else(|| anyhow::anyhow!("No backup_id in metadata"))?;
 
     info!("📝 Updating backup record {} with Proxmox details...", backup_id);
+
+    // Enforce node-level preferred backup storage when trying to locate the created backup.
+    let mut preferred_backup_storage: Option<String> = None;
+    if vm_node_id > 0 {
+        if let Ok(node_row) = sqlx::query("SELECT storage_backups FROM featherpanel_vm_nodes WHERE id = ?")
+            .bind(vm_node_id)
+            .fetch_optional(pool)
+            .await
+        {
+            if let Some(n) = node_row {
+                let s: String = n.try_get("storage_backups").unwrap_or_default();
+                let s = s.trim().to_string();
+                if !s.is_empty() {
+                    preferred_backup_storage = Some(s);
+                }
+            }
+        }
+    }
     
-    // Try to get backup details from Proxmox
-    match get_latest_backup_info(client, &target_node, vmid as u32).await {
+    // Prefer task log parsing (it is specific to this UPID, so we won't accidentally pick a different/latest backup).
+    if !upid.is_empty() {
+        match get_backup_info_from_task_log(client, &target_node, &upid).await {
+            Ok(backup_info) => {
+                update_backup_record_completed(pool, backup_id, &backup_info).await?;
+                info!("✅ Updated backup record {} from task log - marked as completed", backup_id);
+                mark_completed(pool, task_id).await?;
+                return Ok(());
+            }
+            Err(log_err) => {
+                warn!("⚠️ Could not parse task log for backup_id {}: {}", backup_id, log_err);
+            }
+        }
+    }
+
+    // Fallback: locate the created backup by scanning storages, but restrict to the configured preferred storage when available.
+    match get_latest_backup_info(
+        client,
+        &target_node,
+        vmid as u32,
+        preferred_backup_storage.as_deref(),
+    )
+    .await
+    {
         Ok(backup_info) => {
             match update_backup_record_completed(pool, backup_id, &backup_info).await {
                 Ok(_) => {
@@ -507,7 +548,6 @@ async fn handle_backup_task(
                 }
                 Err(e) => {
                     error!("❌ Failed to update backup record: {}", e);
-                    // Mark backup as damaged if we can't update it
                     let _ = sqlx::query("UPDATE featherpanel_vm_instance_backups SET status = 'failed' WHERE id = ?")
                         .bind(backup_id)
                         .execute(pool)
@@ -518,35 +558,9 @@ async fn handle_backup_task(
         }
         Err(e) => {
             warn!("⚠️ Could not fetch backup details from storage: {}", e);
-            
-            // Try to get info from task log as fallback
-            if !upid.is_empty() {
-                match get_backup_info_from_task_log(client, &target_node, &upid).await {
-                    Ok(backup_info) => {
-                        match update_backup_record_completed(pool, backup_id, &backup_info).await {
-                            Ok(_) => {
-                                info!("✅ Updated backup record {} from task log - marked as completed", backup_id);
-                                mark_completed(pool, task_id).await?;
-                                return Ok(());
-                            }
-                            Err(e) => {
-                                error!("❌ Failed to update backup record from log: {}", e);
-                                let _ = sqlx::query("UPDATE featherpanel_vm_instance_backups SET status = 'failed' WHERE id = ?")
-                                    .bind(backup_id)
-                                    .execute(pool)
-                                    .await;
-                                return Err(e);
-                            }
-                        }
-                    }
-                    Err(log_err) => {
-                        warn!("⚠️ Could not parse task log: {}", log_err);
-                    }
-                }
-            }
-            
-            // Last resort: mark backup as completed but without full details
-            // This is better than failing completely since the backup exists in Proxmox
+
+            // Last resort: mark backup as completed but without full details.
+            // This is better than failing completely since the backup exists in Proxmox.
             warn!("⚠️ Backup completed in Proxmox but couldn't fetch details - marking as completed anyway");
             sqlx::query("UPDATE featherpanel_vm_instance_backups SET status = 'completed' WHERE id = ?")
                 .bind(backup_id)
@@ -564,6 +578,7 @@ async fn get_latest_backup_info(
     client: &ProxmoxClient,
     node: &str,
     vmid: u32,
+    preferred_storage: Option<&str>,
 ) -> Result<Value> {
     // Get list of storages on this specific node
     let path = format!("/nodes/{}/storage", node);
@@ -578,6 +593,12 @@ async fn get_latest_backup_info(
             }
             
             if let Some(storage_name) = storage["storage"].as_str() {
+                if let Some(pref) = preferred_storage {
+                    if !pref.is_empty() && storage_name != pref {
+                        continue;
+                    }
+                }
+
                 // Check if this storage supports backup content
                 let content = storage["content"].as_str().unwrap_or("");
                 if !content.contains("backup") && !content.contains("vztmpl") {
@@ -783,12 +804,19 @@ async fn update_backup_record_completed(
     backup_info: &Value,
 ) -> Result<()> {
     let volid = backup_info["volid"].as_str().unwrap_or("");
-    let mut storage = backup_info["storage"].as_str().unwrap_or("");
+    // Storage must match the volid prefix to avoid inconsistencies.
+    let volid_storage = if volid.contains(':') {
+        volid.split(':').next().unwrap_or("").to_string()
+    } else {
+        String::new()
+    };
+    let storage = if !volid_storage.is_empty() {
+        volid_storage
+    } else {
+        backup_info["storage"].as_str().unwrap_or("").to_string()
+    };
     
-    // If storage is empty, extract it from volid (format: "storage:backup/file")
-    if storage.is_empty() && volid.contains(':') {
-        storage = volid.split(':').next().unwrap_or("");
-    }
+    // As a safety fallback, if storage is still empty, do nothing special.
     
     let size_bytes = backup_info["size"].as_i64().unwrap_or(0);
     let ctime = backup_info["ctime"].as_i64().unwrap_or(0);
@@ -800,7 +828,7 @@ async fn update_backup_record_completed(
         SET status = 'completed', storage = ?, volid = ?, size_bytes = ?, ctime = ?, format = ? 
         WHERE id = ?"
     )
-    .bind(storage)
+    .bind(storage.clone())
     .bind(volid)
     .bind(size_bytes)
     .bind(ctime as i32)

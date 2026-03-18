@@ -51,10 +51,10 @@ class VmNode
         'timeout',
         'addional_headers',
         'additional_params',
-		// Proxmox storage preferences (node-level defaults)
-		'storage_tpm',
-		'storage_efi',
-		'storage_backups',
+        // Proxmox storage preferences (node-level defaults)
+        'storage_tpm',
+        'storage_efi',
+        'storage_backups',
     ];
 
     /**

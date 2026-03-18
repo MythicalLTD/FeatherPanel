@@ -734,16 +734,12 @@ class VmInstancesController
 
                 // EFI disk: efidisk0
                 $efiEnabled = array_key_exists('efi_enabled', $data) ? (bool) $proxmoxUpdate['efi_enabled'] : null;
-                $efiStorage = isset($proxmoxUpdate['efi_storage']) && is_string($proxmoxUpdate['efi_storage'])
-                    ? trim($proxmoxUpdate['efi_storage'])
-                    : null;
                 if ($efiEnabled === true && !isset($curQemuConfig['efidisk0'])) {
                     $nodeEfiStorage = isset($vmNode['storage_efi']) && is_string($vmNode['storage_efi'])
                         ? trim($vmNode['storage_efi'])
                         : '';
-                    $storageName = $efiStorage !== null && $efiStorage !== ''
-                        ? $efiStorage
-                        : ($nodeEfiStorage !== '' ? $nodeEfiStorage : 'local-lvm');
+                    // Enforce VDS node defaults; ignore any client-provided efi_storage override.
+                    $storageName = $nodeEfiStorage !== '' ? $nodeEfiStorage : 'local-lvm';
                     // Let Proxmox allocate an EFI disk (special-case size handling, value "0" per qm docs).
                     $config['efidisk0'] = $storageName . ':0,efitype=4m,pre-enrolled-keys=1';
                     if (!isset($config['bios'])) {
@@ -791,16 +787,12 @@ class VmInstancesController
 
                 // TPM state disk: tpmstate0 (v2.0)
                 $tpmEnabled = array_key_exists('tpm_enabled', $data) ? (bool) $proxmoxUpdate['tpm_enabled'] : null;
-                $tpmStorage = isset($proxmoxUpdate['tpm_storage']) && is_string($proxmoxUpdate['tpm_storage'])
-                    ? trim($proxmoxUpdate['tpm_storage'])
-                    : null;
                 if ($tpmEnabled === true && !isset($curQemuConfig['tpmstate0'])) {
                     $nodeTpmStorage = isset($vmNode['storage_tpm']) && is_string($vmNode['storage_tpm'])
                         ? trim($vmNode['storage_tpm'])
                         : '';
-                    $storageName = $tpmStorage !== null && $tpmStorage !== ''
-                        ? $tpmStorage
-                        : ($nodeTpmStorage !== '' ? $nodeTpmStorage : 'local-lvm');
+                    // Enforce VDS node defaults; ignore any client-provided tpm_storage override.
+                    $storageName = $nodeTpmStorage !== '' ? $nodeTpmStorage : 'local-lvm';
                     $config['tpmstate0'] = $storageName . ':1,format=qcow2,version=v2.0';
                 } elseif ($tpmEnabled === false && isset($curQemuConfig['tpmstate0'])) {
                     $tpmVolRef = null;
@@ -1756,12 +1748,18 @@ class VmInstancesController
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
-        $storage  = is_string($data['storage'] ?? null) ? trim($data['storage']) : '';
+        // Enforce node-level backup storage defaults; ignore any client-provided `storage` override.
+        $storage  = '';
         $compress = is_string($data['compress'] ?? null) ? trim($data['compress']) : 'zstd';
         $mode     = is_string($data['mode'] ?? null) ? trim($data['mode']) : 'snapshot';
         $node     = $instance['pve_node'] ?? '';
         $vmid     = (int) $instance['vmid'];
         $vmType   = $instance['vm_type'] ?? 'qemu';
+
+        if ($node === '') {
+            $find = $client->findNodeByVmid($vmid);
+            $node = $find['ok'] ? $find['node'] : '';
+        }
 
         if ($storage === '') {
             $storagesRes = $client->getBackupStorages($node);
@@ -1774,6 +1772,10 @@ class VmInstancesController
             } else {
                 $storage = $storagesRes['storages'][0];
             }
+        }
+
+        if ($storage === '') {
+            return ApiResponse::error('No backup-capable storage selected', 'NO_BACKUP_STORAGE', 400);
         }
 
         $backupLimit = (int) ($instance['backup_limit'] ?? 5);

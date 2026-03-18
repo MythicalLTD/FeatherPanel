@@ -46,8 +46,7 @@ class MailQueue
         if ($stmt->execute($data)) {
             $id = (int) $pdo->lastInsertId();
 
-            // Notify Rust runner via Redis
-            self::notifyRustRunner($id);
+            \App\Helpers\IAsyncRunnerService::notifyMailPending($id);
 
             return $id;
         }
@@ -170,22 +169,5 @@ class MailQueue
         $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE user_uuid = :user_uuid');
 
         return $stmt->execute(['user_uuid' => $userUuid]);
-    }
-
-    /**
-     * Publish notification to Redis for instant mail processing by Rust runner.
-     */
-    private static function notifyRustRunner(int $queueId): void
-    {
-        try {
-            $redis = \App\App::getInstance(true, false, false)->getRedisConnection();
-            if ($redis) {
-                $payload = json_encode(['queue_id' => (string) $queueId]);
-                $redis->publish('featherpanel:mail:pending', $payload);
-            }
-        } catch (\Exception $e) {
-            // Silently fail - cron will pick it up as fallback
-            error_log('Failed to notify Rust runner: ' . $e->getMessage());
-        }
     }
 }

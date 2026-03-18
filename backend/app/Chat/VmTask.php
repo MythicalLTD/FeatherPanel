@@ -46,7 +46,7 @@ class VmTask
         ]);
 
         if ($success) {
-            self::notifyRustRunner($taskId);
+            \App\Helpers\IAsyncRunnerService::notifyVmTask((string) $taskId);
         }
 
         return $success;
@@ -60,15 +60,6 @@ class VmTask
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         return $row ?: null;
-    }
-
-    public static function getPendingTasks(): array
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . " WHERE status IN ('pending', 'running') ORDER BY created_at ASC");
-        $stmt->execute();
-
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
     }
 
     public static function update(string $taskId, array $data): bool
@@ -87,39 +78,5 @@ class VmTask
         $data['task_id'] = $taskId;
 
         return $stmt->execute($data);
-    }
-
-    public static function deleteByTaskId(string $taskId): bool
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE task_id = :task_id');
-        $stmt->execute(['task_id' => $taskId]);
-
-        return $stmt->rowCount() > 0;
-    }
-
-    public static function getTasksByInstanceId(int $instanceId): array
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE instance_id = :instance_id ORDER BY created_at DESC');
-        $stmt->execute(['instance_id' => $instanceId]);
-
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
-    }
-
-    /**
-     * Publish notification to Redis for instant VM task processing by Rust runner.
-     */
-    private static function notifyRustRunner(string $taskId): void
-    {
-        try {
-            $redis = \App\App::getInstance(true, false, false)->getRedisConnection();
-            if ($redis) {
-                $payload = json_encode(['task_id' => $taskId]);
-                $redis->publish('featherpanel:vm:pending', $payload);
-            }
-        } catch (\Exception $e) {
-            error_log('Failed to notify Rust runner for VM task: ' . $e->getMessage());
-        }
     }
 }

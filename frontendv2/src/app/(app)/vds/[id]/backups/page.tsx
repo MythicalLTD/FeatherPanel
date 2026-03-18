@@ -133,9 +133,8 @@ export default function VdsBackupsPage() {
         }
         setCreating(true);
         try {
-            const preferredStorage = storages[0] ?? '';
             const { data } = await axios.post(`/api/user/vm-instances/${id}/backups`, {
-                storage: preferredStorage || undefined,
+                // Storage is enforced server-side from the VDS node default.
             });
             if (!data.success) {
                 toast.error(data.message || 'Failed to start backup');

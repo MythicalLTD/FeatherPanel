@@ -125,7 +125,7 @@ export function BackupsSection({ instanceId }: BackupsSectionProps) {
         setCreating(true);
         try {
             const payload: Record<string, string> = { compress };
-            if (selectedStorage) payload.storage = selectedStorage;
+            // Storage is enforced server-side from the VDS node default.
 
             const res = await axios.post(`/api/admin/vm-instances/${id}/backups`, payload);
             const backupId = res.data?.data?.backup_id as string | undefined;

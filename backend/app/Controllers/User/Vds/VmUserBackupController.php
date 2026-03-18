@@ -170,7 +170,8 @@ class VmUserBackupController
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
-        $storage  = is_string($data['storage'] ?? null) ? trim($data['storage']) : '';
+        // Enforce node-level backup storage defaults; ignore any client-provided `storage` override.
+        $storage  = '';
         $compress = is_string($data['compress'] ?? null) ? trim($data['compress']) : 'zstd';
         $mode     = is_string($data['mode'] ?? null) ? trim($data['mode']) : 'snapshot';
         $node     = $instance['pve_node'] ?? '';
@@ -192,6 +193,10 @@ class VmUserBackupController
             } else {
                 $storage = $storagesRes['storages'][0];
             }
+        }
+
+        if ($storage === '') {
+            return ApiResponse::error('No backup-capable storage selected', 'NO_BACKUP_STORAGE', 400);
         }
 
         $backupLimit = (int) ($instance['backup_limit'] ?? 5);
