@@ -381,7 +381,8 @@ export default function VdsSettingsPage() {
 
                     if (s?.status === 'completed') {
                         const mountedMsg = t('vds.settings.iso.toast_mounted') ?? 'ISO mounted successfully';
-                        const rebootHint = t('vds.settings.iso.toast_reboot_hint') ?? 'Reboot the VM to boot from the ISO.';
+                        const rebootHint =
+                            t('vds.settings.iso.toast_reboot_hint') ?? 'Reboot the VM to boot from the ISO.';
                         toast.success(`${mountedMsg} ${rebootHint}`);
 
                         setIsoUrl('');
@@ -392,7 +393,7 @@ export default function VdsSettingsPage() {
                     }
 
                     if (s?.status === 'failed') {
-                        toast.error(s?.error ?? (t('vds.settings.iso.toast_fetch_failed') ?? 'Failed to fetch ISO'));
+                        toast.error(s?.error ?? t('vds.settings.iso.toast_fetch_failed') ?? 'Failed to fetch ISO');
                         setIsoFetchingFromUrl(false);
                         return;
                     }
@@ -596,7 +597,8 @@ export default function VdsSettingsPage() {
                                                 setSerial0Enabled(!disable);
                                             }}
                                         />
-                                        {t('vds.settings.hardware.disable_serial_label') ?? 'Disable serial port (Windows)'}
+                                        {t('vds.settings.hardware.disable_serial_label') ??
+                                            'Disable serial port (Windows)'}
                                     </label>
                                     <p className='text-xs text-muted-foreground'>
                                         {t('vds.settings.hardware.disable_serial_help') ??
