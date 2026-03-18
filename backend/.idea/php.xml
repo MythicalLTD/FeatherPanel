@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="MessDetectorOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PHPCSFixerOptionsConfiguration">
+    <option name="codingStandard" value="Custom" />
+    <option name="rulesetPath" value="$PROJECT_DIR$/.php-cs-fixer.dist.php" />
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PHPCodeSnifferOptionsConfiguration">
+    <option name="codingStandard" value="Custom" />
+    <option name="customRuleset" value="$PROJECT_DIR$/phpcs.xml" />
+    <option name="highlightLevel" value="WARNING" />
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PhpCSFixer">
+    <phpcsfixer_settings>
+      <PhpCSFixerConfiguration tool_path="$PROJECT_DIR$/storage/packages/bin/php-cs-fixer" />
+    </phpcsfixer_settings>
+  </component>
+  <component name="PhpCodeSniffer">
+    <phpcs_settings>
+      <PhpCSConfiguration beautifier_path="$PROJECT_DIR$/storage/packages/bin/phpcbf" tool_path="$PROJECT_DIR$/storage/packages/bin/phpcs" />
+    </phpcs_settings>
+  </component>
+  <component name="PhpIncludePathManager">
+    <include_path>
+      <path value="$PROJECT_DIR$/storage/packages/symfony/mime" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/polyfill-intl-idn" />
+      <path value="$PROJECT_DIR$/storage/packages/squizlabs/php_codesniffer" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/polyfill-intl-normalizer" />
+      <path value="$PROJECT_DIR$/storage/packages/phpstan/phpstan" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/polyfill-php84" />
+      <path value="$PROJECT_DIR$/storage/packages/phpstan/phpdoc-parser" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/polyfill-php80" />
+      <path value="$PROJECT_DIR$/storage/packages/composer" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/filesystem" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/finder" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/polyfill-php81" />
+      <path value="$PROJECT_DIR$/storage/packages/firebase/php-jwt" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/routing" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/event-dispatcher" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/polyfill-ctype" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/polyfill-intl-grapheme" />
+      <path value="$PROJECT_DIR$/storage/packages/theseer/tokenizer" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/event-dispatcher-contracts" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/http-foundation" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/stopwatch" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/yaml" />
+      <path value="$PROJECT_DIR$/storage/packages/phpoption/phpoption" />
+      <path value="$PROJECT_DIR$/storage/packages/dg/mysql-dump" />
+      <path value="$PROJECT_DIR$/storage/packages/pragmarx/google2fa" />
+      <path value="$PROJECT_DIR$/storage/packages/zircote/swagger-php" />
+      <path value="$PROJECT_DIR$/storage/packages/ralouphie/getallheaders" />
+      <path value="$PROJECT_DIR$/storage/packages/phar-io/manifest" />
+      <path value="$PROJECT_DIR$/storage/packages/phar-io/version" />
+      <path value="$PROJECT_DIR$/storage/packages/fidry/cpu-core-counter" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/global-state" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/complexity" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/recursion-context" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/object-reflector" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/object-enumerator" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/cli-parser" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/lines-of-code" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/diff" />
+      <path value="$PROJECT_DIR$/storage/packages/psr/container" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/type" />
+      <path value="$PROJECT_DIR$/storage/packages/psr/http-client" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/version" />
+      <path value="$PROJECT_DIR$/storage/packages/psr/http-factory" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/comparator" />
+      <path value="$PROJECT_DIR$/storage/packages/psr/http-message" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/environment" />
+      <path value="$PROJECT_DIR$/storage/packages/graham-campbell/result-type" />
+      <path value="$PROJECT_DIR$/storage/packages/psr/event-dispatcher" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/exporter" />
+      <path value="$PROJECT_DIR$/storage/packages/psr/log" />
+      <path value="$PROJECT_DIR$/storage/packages/evenement/evenement" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/code-unit" />
+      <path value="$PROJECT_DIR$/storage/packages/sebastian/code-unit-reverse-lookup" />
+      <path value="$PROJECT_DIR$/storage/packages/staabm/side-effects-detector" />
+      <path value="$PROJECT_DIR$/storage/packages/paragonie/constant_time_encoding" />
+      <path value="$PROJECT_DIR$/storage/packages/beberlei/assert" />
+      <path value="$PROJECT_DIR$/storage/packages/nikolaposa/rate-limit" />
+      <path value="$PROJECT_DIR$/storage/packages/vlucas/phpdotenv" />
+      <path value="$PROJECT_DIR$/storage/packages/phpmailer/phpmailer" />
+      <path value="$PROJECT_DIR$/storage/packages/nikic/php-parser" />
+      <path value="$PROJECT_DIR$/storage/packages/guzzlehttp/guzzle" />
+      <path value="$PROJECT_DIR$/storage/packages/guzzlehttp/psr7" />
+      <path value="$PROJECT_DIR$/storage/packages/guzzlehttp/promises" />
+      <path value="$PROJECT_DIR$/storage/packages/gravatarphp/gravatar" />
+      <path value="$PROJECT_DIR$/storage/packages/friendsofphp/php-cs-fixer" />
+      <path value="$PROJECT_DIR$/storage/packages/cloudflare/sdk" />
+      <path value="$PROJECT_DIR$/storage/packages/clue/ndjson-react" />
+      <path value="$PROJECT_DIR$/storage/packages/react/cache" />
+      <path value="$PROJECT_DIR$/storage/packages/react/child-process" />
+      <path value="$PROJECT_DIR$/storage/packages/react/stream" />
+      <path value="$PROJECT_DIR$/storage/packages/myclabs/deep-copy" />
+      <path value="$PROJECT_DIR$/storage/packages/react/dns" />
+      <path value="$PROJECT_DIR$/storage/packages/react/promise" />
+      <path value="$PROJECT_DIR$/storage/packages/react/socket" />
+      <path value="$PROJECT_DIR$/storage/packages/ifsnop/mysqldump-php" />
+      <path value="$PROJECT_DIR$/storage/packages/phpunit/php-file-iterator" />
+      <path value="$PROJECT_DIR$/storage/packages/react/event-loop" />
+      <path value="$PROJECT_DIR$/storage/packages/phpunit/php-timer" />
+      <path value="$PROJECT_DIR$/storage/packages/cron/cron" />
+      <path value="$PROJECT_DIR$/storage/packages/phpunit/php-text-template" />
+      <path value="$PROJECT_DIR$/storage/packages/phpunit/php-invoker" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/console" />
+      <path value="$PROJECT_DIR$/storage/packages/phpunit/php-code-coverage" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/deprecation-contracts" />
+      <path value="$PROJECT_DIR$/storage/packages/phpunit/phpunit" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/process" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/string" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/service-contracts" />
+      <path value="$PROJECT_DIR$/storage/packages/predis/predis" />
+      <path value="$PROJECT_DIR$/storage/packages/symfony/options-resolver" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/phpmyadmin/shapefile" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/thecodingmachine/safe" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/twig/twig" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/pragmarx/google2fa-qrcode" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/cache" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/pragmarx/google2fa" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/deprecation-contracts" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/process" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/dependency-injection" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/service-contracts" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/ramsey/collection" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/polyfill-iconv" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/ramsey/uuid" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/polyfill-php84" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/composer" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/tecnickcom/tcpdf" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/polyfill-php73" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/polyfill-php80" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/filesystem" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/polyfill-php81" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/expression-language" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/polyfill-ctype" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/cache-contracts" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/config" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/symfony/var-exporter" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/fig/http-message-util" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/brick/math" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/psr/container" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/psr/http-client" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/psr/http-factory" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/psr/http-message" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/psr/cache" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/psr/log" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/web-auth/webauthn-lib" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/web-auth/cose-lib" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/web-auth/metadata-service" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/williamdes/mariadb-mysql-kbs" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/dasprid/enum" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/nikic/fast-route" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/spomky-labs/cbor-php" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/spomky-labs/base64url" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/paragonie/sodium_compat" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/paragonie/random_compat" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/paragonie/constant_time_encoding" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/fgrosse/phpasn1" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/google/recaptcha" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/bacon/bacon-qr-code" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/ralouphie/getallheaders" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/beberlei/assert" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/webmozart/assert" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/league/uri-interfaces" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/league/uri" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/slim/psr7" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/code-lts/u2f-php-server" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/phpmyadmin/motranslator" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/phpmyadmin/twig-i18n-extension" />
+      <path value="$PROJECT_DIR$/public/pma/vendor/phpmyadmin/sql-parser" />
+    </include_path>
+  </component>
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.5" />
+  <component name="PhpStan">
+    <PhpStan_settings>
+      <PhpStanConfiguration tool_path="$PROJECT_DIR$/storage/packages/bin/phpstan" />
+    </PhpStan_settings>
+  </component>
+  <component name="PhpStanOptionsConfiguration">
+    <option name="config" value="$PROJECT_DIR$/phpstan.neon" />
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PhpUnit">
+    <phpunit_settings>
+      <PhpUnitSettings configuration_file_path="$PROJECT_DIR$/phpunit.xml" custom_loader_path="$PROJECT_DIR$/storage/packages/autoload.php" use_configuration_file="true" />
+      <PhpUnitSettings custom_loader_path="$PROJECT_DIR$/public/pma/vendor/autoload.php" />
+    </phpunit_settings>
+  </component>
+  <component name="PsalmOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+</project>

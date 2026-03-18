@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$/.." vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billingafk" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billingcore" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billinglinks" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billingoxapay" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billingpaypal" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billingredeem" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billingresources" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billingresourcesnewservers" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billingresourcesstore" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billingstripe" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/pterodactylpanelapi" vcs="Git" />
+  </component>
+</project>
