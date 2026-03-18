@@ -83,48 +83,126 @@ async fn initiate_clone(
     let template_vmid = meta["template_vmid"].as_i64().unwrap_or(0) as u32;
     let template_node = meta["template_node"].as_str().unwrap_or("");
     let target_node: String = task.try_get("target_node").unwrap_or_default();
-    let vmid: i32 = task.try_get("vmid").unwrap_or(0);
-    let default_hostname = format!("vm-{}", vmid);
-    let hostname = meta["hostname"].as_str().unwrap_or(&default_hostname);
     let vm_type_str = meta["vm_type"].as_str().unwrap_or("qemu");
     let storage = meta["storage"].as_str().unwrap_or("local");
+
+    let mut vmid: i32 = task.try_get("vmid").unwrap_or(0);
+    let max_clone_attempts = 5;
+    let mut last_err: Option<String> = None;
     
     if template_vmid == 0 || vmid == 0 || target_node.is_empty() {
         anyhow::bail!("Invalid create metadata");
     }
-    
-    let upid = if vm_type_str == "qemu" {
-        client.clone_qemu(
-            template_node,
-            template_vmid,
-            vmid as u32,
-            hostname,
-            Some(&target_node),
-        ).await?
-    } else {
-        client.clone_lxc(
-            template_node,
-            template_vmid,
-            vmid as u32,
-            hostname,
-            Some(&target_node),
-            storage,
-        ).await?
-    };
-    
-    // Update task with UPID and advance to resize step
-    let mut meta_mut = meta.clone();
-    meta_mut["current_step"] = json!("resize");
-    
-    sqlx::query("UPDATE featherpanel_vm_tasks SET upid = ?, status = 'running', data = ? WHERE task_id = ?")
-        .bind(&upid)
-        .bind(serde_json::to_string(&meta_mut)?)
-        .bind(task_id)
-        .execute(pool)
-        .await?;
-    
-    info!("✅ Clone initiated with UPID: {}, advancing to resize step", upid);
-    Ok(())
+
+    for attempt in 0..max_clone_attempts {
+        let default_hostname = format!("vm-{}", vmid);
+        let hostname = meta["hostname"].as_str().unwrap_or(&default_hostname);
+
+        let upid_res = if vm_type_str == "qemu" {
+            client
+                .clone_qemu(
+                    template_node,
+                    template_vmid,
+                    vmid as u32,
+                    hostname,
+                    Some(&target_node),
+                )
+                .await
+        } else {
+            client
+                .clone_lxc(
+                    template_node,
+                    template_vmid,
+                    vmid as u32,
+                    hostname,
+                    Some(&target_node),
+                    storage,
+                )
+                .await
+        };
+
+        match upid_res {
+            Ok(upid) => {
+                // Update task with UPID and advance to resize step
+                let mut meta_mut = meta.clone();
+                meta_mut["current_step"] = json!("resize");
+
+                sqlx::query("UPDATE featherpanel_vm_tasks SET upid = ?, status = 'running', data = ?, vmid = ? WHERE task_id = ?")
+                    .bind(&upid)
+                    .bind(serde_json::to_string(&meta_mut)?)
+                    .bind(vmid)
+                    .bind(task_id)
+                    .execute(pool)
+                    .await?;
+
+                info!(
+                    "✅ Clone initiated with UPID: {} (vmid={}, attempt {}/{}) - advancing to resize step",
+                    upid,
+                    vmid,
+                    attempt + 1,
+                    max_clone_attempts
+                );
+                return Ok(());
+            }
+            Err(e) => {
+                let err_str = format!("{}", e);
+                last_err = Some(err_str.clone());
+
+                // Proxmox can fail when the cloud-init disk already exists for that vmid.
+                // In that case, try a new vmid.
+                let is_cloudinit_exists = err_str.contains("cloudinit.qcow2") && err_str.contains("already exists");
+                if is_cloudinit_exists && attempt + 1 < max_clone_attempts {
+                    warn!(
+                        "⚠️ Clone failed due to existing cloud-init disk for vmid {}. Retrying with vmid+1. (attempt {}/{})",
+                        vmid,
+                        attempt + 1,
+                        max_clone_attempts
+                    );
+                    vmid += 1;
+                    sqlx::query("UPDATE featherpanel_vm_tasks SET vmid = ? WHERE task_id = ?")
+                        .bind(vmid)
+                        .bind(task_id)
+                        .execute(pool)
+                        .await?;
+                    continue;
+                }
+
+                // Proxmox can also fail if the VM config file already exists for the target vmid.
+                // This can happen after earlier failed clone attempts that partially created artifacts.
+                // In that case, try to stop+delete the leftover VMID and then retry.
+                let is_conf_exists = err_str.contains("config file already exists")
+                    || (err_str.contains("unable to create VM") && err_str.contains("config file already exists"));
+                if is_conf_exists && attempt + 1 < max_clone_attempts {
+                    warn!(
+                        "⚠️ Clone failed due to existing VM config for vmid {}. Cleaning up Proxmox VMID and retrying. (attempt {}/{})",
+                        vmid,
+                        attempt + 1,
+                        max_clone_attempts
+                    );
+
+                    let vm_type = VmType::from_str(vm_type_str);
+
+                    // Best-effort stop/delete; if the VM doesn't exist, these will fail and we still retry clone.
+                    let _ = client.stop_vm(&target_node, vmid as u32, vm_type).await;
+                    if let Ok(del_upid) = client.delete_vm(&target_node, vmid as u32, vm_type).await {
+                        if !del_upid.is_empty() {
+                            let _ = client.wait_task(&target_node, &del_upid, 300).await;
+                        }
+                    }
+
+                    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                    continue;
+                }
+
+                anyhow::bail!("{}", err_str);
+            }
+        }
+    }
+
+    anyhow::bail!(
+        "{}",
+        last_err.unwrap_or_else(|| "Clone failed after retries".to_string())
+    )
 }
 
 async fn handle_resize_step(

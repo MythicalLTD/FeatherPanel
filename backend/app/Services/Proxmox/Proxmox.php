@@ -201,6 +201,198 @@ class Proxmox
     }
 
     /**
+     * List storage that can hold ISO images on a node.
+     *
+     * Proxmox exposes storage entries via:
+     * GET /api2/json/nodes/{node}/storage
+     *
+     * We consider a storage ISO-capable if its "content" contains the substring "iso".
+     *
+     * @return array{ok: bool, storage: array<int, string>, error: string|null}
+     */
+    public function getIsoStorages(string $node): array
+    {
+        $path = '/api2/json/nodes/' . $node . '/storage';
+        $result = $this->apiGet($path);
+        if (!$result['ok'] || !is_array($result['data'])) {
+            return ['ok' => false, 'storage' => [], 'error' => $result['error'] ?? 'Failed to fetch storage'];
+        }
+
+        $names = [];
+        foreach ($result['data'] as $entry) {
+            $active = $entry['active'] ?? 0;
+            if ($active !== 1) {
+                continue;
+            }
+
+            $content = $entry['content'] ?? '';
+            if (!is_string($content) || strpos($content, 'iso') === false) {
+                continue;
+            }
+
+            $name = $entry['storage'] ?? null;
+            if (is_string($name) && $name !== '') {
+                $names[] = $name;
+            }
+        }
+
+        sort($names);
+
+        return ['ok' => true, 'storage' => $names, 'error' => null];
+    }
+
+    /**
+     * Upload an ISO file to a Proxmox storage.
+     *
+     * Endpoint:
+     * POST /api2/json/nodes/{node}/storage/{storage}/upload
+     *
+     * Required multipart fields:
+     * - content=iso
+     * - filename=@<file>
+     *
+     * @param string $node Proxmox node name
+     * @param string $storage Proxmox storage name
+     * @param string $filePath local filesystem path to the ISO file
+     * @param string $filename ISO filename (as it should appear in Proxmox)
+     *
+     * @return array{ok: bool, volid: string|null, error: string|null}
+     */
+    public function uploadIsoToStorage(string $node, string $storage, string $filePath, string $filename): array
+    {
+        if (!is_file($filePath) || !is_readable($filePath)) {
+            return ['ok' => false, 'volid' => null, 'error' => 'ISO file not readable'];
+        }
+
+        $path = sprintf('/api2/json/nodes/%s/storage/%s/upload', $node, $storage);
+
+        try {
+            $mime = function_exists('mime_content_type') ? (string) @mime_content_type($filePath) : '';
+            $file = fopen($filePath, 'rb');
+            if ($file === false) {
+                return ['ok' => false, 'volid' => null, 'error' => 'Failed to open ISO file'];
+            }
+
+            $multipart = [
+                [
+                    'name' => 'content',
+                    'contents' => 'iso',
+                ],
+                [
+                    'name' => 'filename',
+                    'contents' => $file,
+                    'filename' => $filename,
+                    'headers' => $mime !== '' ? ['Content-Type' => $mime] : [],
+                ],
+            ];
+
+            $response = $this->client->post($path, ['multipart' => $multipart]);
+
+            // Ensure file handle is closed even when JSON parsing throws.
+            fclose($file);
+
+            $resBody = json_decode((string) $response->getBody(), true);
+            $data = is_array($resBody) && array_key_exists('data', $resBody) ? $resBody['data'] : $resBody;
+
+            $volid = null;
+            if (is_array($data)) {
+                $candidate = $data['volid'] ?? $data['id'] ?? null;
+                if (is_string($candidate) && $candidate !== '') {
+                    $volid = $candidate;
+                }
+            } elseif (is_string($data) && trim($data) !== '') {
+                $volid = trim($data);
+            }
+
+            // Fallback: Proxmox volid format for ISO is usually "<storage>:iso/<filename>"
+            if ($volid === null) {
+                $volid = $storage . ':iso/' . $filename;
+            }
+
+            return ['ok' => true, 'volid' => $volid, 'error' => null];
+        } catch (GuzzleException $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox uploadIsoToStorage failed: ' . $e->getMessage());
+
+            return ['ok' => false, 'volid' => null, 'error' => $e->getMessage()];
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox uploadIsoToStorage failed: ' . $e->getMessage());
+
+            return ['ok' => false, 'volid' => null, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Query ISO metadata for a remote URL (filename + size) using Proxmox extjs helper.
+     *
+     * This avoids panel-side downloading for URL imports.
+     *
+     * @return array{ok: bool, size: int|null, filename: string|null, mimetype: string|null, error: string|null}
+     */
+    public function queryIsoUrlMetadata(string $node, string $url, bool $verifyCertificates = true): array
+    {
+        // Returns JSON like: {"success":1,"data":{"size":123,"filename":"foo.iso","mimetype":"application/x-iso9660-image"}}
+        $path = sprintf('/api2/extjs/nodes/%s/query-url-metadata', $node);
+        $query = [
+            'url' => $url,
+            'verify-certificates' => $verifyCertificates ? 1 : 0,
+        ];
+
+        $result = $this->apiGet($path, $query);
+        if (!$result['ok'] || !is_array($result['data'])) {
+            return [
+                'ok' => false,
+                'size' => null,
+                'filename' => null,
+                'mimetype' => null,
+                'error' => $result['error'] ?? 'Failed to query URL metadata',
+            ];
+        }
+
+        $data = $result['data'];
+        $size = isset($data['size']) && is_numeric($data['size']) ? (int) $data['size'] : null;
+        $filename = isset($data['filename']) && is_string($data['filename']) ? $data['filename'] : null;
+        $mimetype = isset($data['mimetype']) && is_string($data['mimetype']) ? $data['mimetype'] : null;
+
+        return [
+            'ok' => true,
+            'size' => $size,
+            'filename' => $filename,
+            'mimetype' => $mimetype,
+            'error' => null,
+        ];
+    }
+
+    /**
+     * Ask Proxmox to download a remote ISO URL directly into an ISO storage.
+     * Returns a UPID for the async download.
+     *
+     * @return array{ok: bool, upid: string|null, error: string|null}
+     */
+    public function downloadIsoUrlToStorage(string $node, string $storage, string $url, string $filename, bool $verifyCertificates = true): array
+    {
+        // Endpoint returns JSON like: {"success":1,"data":"UPID:..."}
+        $path = sprintf('/api2/extjs/nodes/%s/storage/%s/download-url', $node, $storage);
+        $body = [
+            'content' => 'iso',
+            'url' => $url,
+            'filename' => $filename,
+            'verify-certificates' => $verifyCertificates ? 1 : 0,
+        ];
+
+        $result = $this->apiPost($path, $body);
+        if (!$result['ok']) {
+            return ['ok' => false, 'upid' => null, 'error' => $result['error'] ?? 'Failed to start ISO download'];
+        }
+
+        $upid = is_string($result['data']) ? trim($result['data']) : null;
+        if ($upid === null || $upid === '') {
+            return ['ok' => false, 'upid' => null, 'error' => 'ISO download did not return UPID'];
+        }
+
+        return ['ok' => true, 'upid' => $upid, 'error' => null];
+    }
+
+    /**
      * Perform a lightweight connectivity check against /nodes.
      *
      * @param array<string, string> $extraHeaders additional headers to send for this check

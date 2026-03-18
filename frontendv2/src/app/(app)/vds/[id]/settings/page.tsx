@@ -35,6 +35,13 @@ interface ReinstallTemplate {
     os?: string;
 }
 
+interface MountedIso {
+    slot?: string;
+    volid: string;
+    storage: string | null;
+    filename: string | null;
+}
+
 export default function VdsSettingsPage() {
     const { id } = useParams() as { id: string };
     const router = useRouter();
@@ -62,12 +69,25 @@ export default function VdsSettingsPage() {
     const [biosMode, setBiosMode] = React.useState<'seabios' | 'ovmf'>('seabios');
     const [efiEnabled, setEfiEnabled] = React.useState(false);
     const [tpmEnabled, setTpmEnabled] = React.useState(false);
+    const [serial0Enabled, setSerial0Enabled] = React.useState(true);
 
     // Network + DNS (primary IP + nameserver/searchdomain)
     const [networkOptionsLoading, setNetworkOptionsLoading] = React.useState(false);
     const [networkSaving, setNetworkSaving] = React.useState(false);
     const [dnsNameserver, setDnsNameserver] = React.useState('');
     const [dnsSearchDomain, setDnsSearchDomain] = React.useState('');
+
+    // ISO mount/unmount (QEMU only, mounted as ide2 cdrom)
+    const [isoStoragesLoading, setIsoStoragesLoading] = React.useState(false);
+    const [isoStorages, setIsoStorages] = React.useState<string[]>([]);
+    const [isoStorage, setIsoStorage] = React.useState<string>('');
+    // ISO mounting: ONLY support ISO URL mode (Proxmox downloads directly).
+    const [isoUrl, setIsoUrl] = React.useState<string>('');
+
+    const [isoCurrentLoading, setIsoCurrentLoading] = React.useState(false);
+    const [mountedIso, setMountedIso] = React.useState<MountedIso | null>(null);
+    const [isoFetchingFromUrl, setIsoFetchingFromUrl] = React.useState(false);
+    const [isoUninstalling, setIsoUninstalling] = React.useState(false);
 
     const fetchQemuHardware = React.useCallback(async () => {
         if (!id || !isQemu) return;
@@ -80,6 +100,8 @@ export default function VdsSettingsPage() {
                 setBiosMode(bios);
                 setEfiEnabled(!!hw?.efi_enabled);
                 setTpmEnabled(!!hw?.tpm_enabled);
+                // serial0_enabled=true means serial console socket is configured.
+                setSerial0Enabled(!!hw?.serial0_enabled);
             }
         } catch {
             // Ignore: the UI is permission-gated; backend will 403 if not allowed.
@@ -116,6 +138,47 @@ export default function VdsSettingsPage() {
             void fetchNetworkOptions();
         }
     }, [instanceLoading, instance, fetchNetworkOptions]);
+
+    const fetchIsoStorages = React.useCallback(async () => {
+        if (!id || !isQemu) return;
+        setIsoStoragesLoading(true);
+        try {
+            const { data } = await axios.get(`/api/user/vm-instances/${id}/iso-storages`);
+            if (data?.success) {
+                const arr = Array.isArray(data.data?.storages) ? (data.data.storages as string[]) : [];
+                setIsoStorages(arr);
+                // Normal users should not pick storages; we only show the allowed backup storage.
+                setIsoStorage(arr[0] ?? '');
+            }
+        } catch {
+            // Permission-gated; ignore transient fetch errors.
+        } finally {
+            setIsoStoragesLoading(false);
+        }
+    }, [id, isQemu]);
+
+    const fetchIsoCurrent = React.useCallback(async () => {
+        if (!id || !isQemu) return;
+        setIsoCurrentLoading(true);
+        try {
+            const { data } = await axios.get(`/api/user/vm-instances/${id}/iso-current`);
+            if (data?.success) {
+                const current = data.data?.mounted_iso ?? null;
+                setMountedIso(current);
+            }
+        } catch {
+            // Ignore: transient errors.
+        } finally {
+            setIsoCurrentLoading(false);
+        }
+    }, [id, isQemu]);
+
+    React.useEffect(() => {
+        if (!instanceLoading && instance && isQemu) {
+            void fetchIsoStorages();
+            void fetchIsoCurrent();
+        }
+    }, [instanceLoading, instance, isQemu, fetchIsoStorages, fetchIsoCurrent]);
 
     const fetchTemplates = React.useCallback(async () => {
         if (!id) return;
@@ -220,6 +283,7 @@ export default function VdsSettingsPage() {
                 bios: biosMode,
                 efi_enabled: efiEnabled,
                 tpm_enabled: tpmEnabled,
+                serial0_enabled: serial0Enabled,
             });
             toast.success(t('vds.settings.hardware.apply_success') ?? 'Hardware updated.');
             await refreshInstance();
@@ -247,6 +311,105 @@ export default function VdsSettingsPage() {
             toast.error(msg || (t('vds.settings.network.apply_failed') ?? 'Failed to update network/DNS'));
         } finally {
             setNetworkSaving(false);
+        }
+    };
+
+    const handleUnmountIso = async () => {
+        if (!mountedIso) return;
+
+        setIsoUninstalling(true);
+        try {
+            const { data } = await axios.post(`/api/user/vm-instances/${id}/iso-unmount`);
+            if (!data?.success) {
+                toast.error(data?.message ?? 'Failed to unmount ISO');
+                return;
+            }
+
+            toast.success(t('vds.settings.iso.toast_unmounted') ?? 'ISO unmounted successfully');
+            await fetchIsoCurrent();
+            await refreshInstance();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg || (t('vds.settings.iso.toast_unmount_failed') ?? 'Failed to unmount ISO'));
+        } finally {
+            setIsoUninstalling(false);
+        }
+    };
+
+    const handleFetchAndMountIsoFromUrl = async () => {
+        const url = isoUrl.trim();
+        if (!url) {
+            toast.error(t('vds.settings.iso.errors.url_required') ?? 'Enter an ISO URL');
+            return;
+        }
+        if (!isoStorage) {
+            toast.error(t('vds.settings.iso.errors.storage_required') ?? 'Select an ISO storage');
+            return;
+        }
+
+        setIsoFetchingFromUrl(true);
+        try {
+            const payload = { storage: isoStorage, url };
+            const { data } = await axios.post(`/api/user/vm-instances/${id}/iso-fetch-and-mount`, payload);
+            if (!data?.success) {
+                toast.error(data?.message ?? 'Failed to fetch & mount ISO');
+                return;
+            }
+
+            const taskId = data?.data?.task_id as string | undefined;
+            if (!taskId) {
+                toast.error(data?.message ?? 'Failed to queue ISO task');
+                return;
+            }
+
+            toast.info(data?.message ?? 'ISO fetch queued');
+
+            // Poll until the Rust runner completes the task.
+            const MAX_POLLS = 180; // ~9 minutes @ 3s
+            let polls = 0;
+
+            const poll = async () => {
+                if (polls >= MAX_POLLS) {
+                    toast.error('ISO fetch timed out');
+                    setIsoFetchingFromUrl(false);
+                    return;
+                }
+                polls++;
+                try {
+                    const statusRes = await axios.get(`/api/user/vm-instances/task-status/${taskId}`);
+                    const s = statusRes.data?.data;
+
+                    if (s?.status === 'completed') {
+                        const mountedMsg = t('vds.settings.iso.toast_mounted') ?? 'ISO mounted successfully';
+                        const rebootHint = t('vds.settings.iso.toast_reboot_hint') ?? 'Reboot the VM to boot from the ISO.';
+                        toast.success(`${mountedMsg} ${rebootHint}`);
+
+                        setIsoUrl('');
+                        await fetchIsoCurrent();
+                        await refreshInstance();
+                        setIsoFetchingFromUrl(false);
+                        return;
+                    }
+
+                    if (s?.status === 'failed') {
+                        toast.error(s?.error ?? (t('vds.settings.iso.toast_fetch_failed') ?? 'Failed to fetch ISO'));
+                        setIsoFetchingFromUrl(false);
+                        return;
+                    }
+                } catch {
+                    // ignore transient polling issues
+                }
+
+                setTimeout(() => {
+                    void poll();
+                }, 3000);
+            };
+
+            void poll();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg || (t('vds.settings.iso.toast_fetch_failed') ?? 'Failed to fetch ISO'));
+            setIsoFetchingFromUrl(false);
         }
     };
 
@@ -423,6 +586,24 @@ export default function VdsSettingsPage() {
                                     </p>
                                 </div>
 
+                                <div className='space-y-2'>
+                                    <label className='flex items-center gap-2 text-sm'>
+                                        <input
+                                            type='checkbox'
+                                            checked={!serial0Enabled}
+                                            onChange={(e) => {
+                                                const disable = e.target.checked;
+                                                setSerial0Enabled(!disable);
+                                            }}
+                                        />
+                                        {t('vds.settings.hardware.disable_serial_label') ?? 'Disable serial port (Windows)'}
+                                    </label>
+                                    <p className='text-xs text-muted-foreground'>
+                                        {t('vds.settings.hardware.disable_serial_help') ??
+                                            'Removes `serial0` so the console renders graphical output instead of serial.'}
+                                    </p>
+                                </div>
+
                                 <div className='flex justify-end pt-2'>
                                     <Button
                                         variant='glass'
@@ -435,6 +616,105 @@ export default function VdsSettingsPage() {
                                 </div>
                             </div>
                         )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* ISO Mount (upload + mount ide2 cdrom) */}
+            {isQemu && (
+                <Card className='border-border/20 bg-card/30 backdrop-blur-sm'>
+                    <CardHeader>
+                        <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
+                            <Server className='h-4 w-4 text-primary' />
+                            {t('vds.settings.iso.title') ?? 'ISO Mount'}
+                        </CardTitle>
+                        <CardDescription className='text-muted-foreground'>
+                            {t('vds.settings.iso.description') ?? 'Use ISO URL to boot this VM from it.'}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className='space-y-5'>
+                        <div className='space-y-2'>
+                            <div className='text-xs font-semibold text-muted-foreground'>
+                                {t('vds.settings.iso.current_label') ?? 'Current ISO'}
+                            </div>
+                            {isoCurrentLoading ? (
+                                <div className='flex items-center gap-2 text-muted-foreground'>
+                                    <Loader2 className='h-4 w-4 animate-spin' />
+                                    {t('vds.settings.iso.loading') ?? 'Loading…'}
+                                </div>
+                            ) : mountedIso ? (
+                                <div className='flex flex-col gap-1 rounded-xl border border-border/50 bg-muted/20 px-3 py-2'>
+                                    <div className='text-sm font-bold font-mono truncate'>
+                                        {mountedIso.filename ?? mountedIso.volid}
+                                    </div>
+                                    <div className='text-xs text-muted-foreground'>
+                                        {t('vds.settings.iso.mounted_as') ?? 'Mounted as'}{' '}
+                                        <span className='font-mono'>{mountedIso.slot ?? 'ide2'}</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className='text-sm text-muted-foreground italic'>
+                                    {t('vds.settings.iso.none') ?? 'No ISO mounted.'}
+                                </p>
+                            )}
+
+                            <div className='flex justify-end pt-3'>
+                                <Button
+                                    variant='glass'
+                                    disabled={!mountedIso || isoUninstalling}
+                                    onClick={handleUnmountIso}
+                                >
+                                    {isoUninstalling && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                                    {t('vds.settings.iso.unmount_button') ?? 'Unmount ISO'}
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className='space-y-2'>
+                            <div className='text-xs font-semibold text-muted-foreground'>
+                                {t('vds.settings.iso.storage_label') ?? 'ISO Storage'}
+                            </div>
+                            {isoStoragesLoading ? (
+                                <div className='flex items-center gap-2 text-muted-foreground'>
+                                    <Loader2 className='h-4 w-4 animate-spin' />
+                                    {t('vds.settings.iso.loading') ?? 'Loading…'}
+                                </div>
+                            ) : isoStorages.length === 0 ? (
+                                <p className='text-sm text-muted-foreground italic'>
+                                    {t('vds.settings.iso.no_storages') ?? 'No ISO storage available'}
+                                </p>
+                            ) : (
+                                <div className='w-full h-11 rounded-xl bg-muted/30 border border-border/30 px-4 flex items-center text-sm font-mono'>
+                                    {isoStorage}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className='space-y-3'>
+                            <div className='space-y-2'>
+                                <div className='text-xs font-semibold text-muted-foreground'>
+                                    {t('vds.settings.iso.url_label') ?? 'ISO URL'}
+                                </div>
+                                <Input
+                                    value={isoUrl}
+                                    onChange={(e) => setIsoUrl(e.target.value)}
+                                    placeholder={t('vds.settings.iso.url_placeholder') ?? 'https://example.com/my.iso'}
+                                    disabled={isoUninstalling || isoFetchingFromUrl}
+                                    className='bg-muted/30'
+                                />
+                            </div>
+
+                            <div className='flex justify-end pt-2'>
+                                <Button
+                                    variant='glass'
+                                    disabled={isoUninstalling || isoFetchingFromUrl || !isoStorage || !isoUrl.trim()}
+                                    onClick={handleFetchAndMountIsoFromUrl}
+                                >
+                                    {isoFetchingFromUrl && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                                    {t('vds.settings.iso.fetch_button') ?? 'Fetch & Mount'}
+                                </Button>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             )}

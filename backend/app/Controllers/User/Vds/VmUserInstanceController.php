@@ -23,7 +23,6 @@ use App\Chat\VmTask;
 use App\Chat\Database;
 use App\Chat\VmSubuser;
 use App\Chat\VmInstance;
-use App\Chat\VmIp;
 use App\Helpers\VmGateway;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -249,8 +248,8 @@ class VmUserInstanceController
 
     #[OA\Get(
         path: '/api/user/vm-instances/{id}/qemu-hardware',
-        summary: 'Get QEMU hardware settings (EFI + TPM)',
-        description: 'Returns the current QEMU BIOS mode and whether EFI disk and TPM state disks are present.',
+        summary: 'Get QEMU hardware settings (EFI + TPM + Serial)',
+        description: 'Returns the current QEMU BIOS mode and whether EFI disk, TPM state disk, and serial0 socket are enabled.',
         tags: ['User - VM Instances'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -264,6 +263,7 @@ class VmUserInstanceController
                         new OA\Property(property: 'bios', type: 'string', nullable: true),
                         new OA\Property(property: 'efi_enabled', type: 'boolean'),
                         new OA\Property(property: 'tpm_enabled', type: 'boolean'),
+                        new OA\Property(property: 'serial0_enabled', type: 'boolean'),
                     ]
                 )
             ),
@@ -317,12 +317,16 @@ class VmUserInstanceController
 
         $cfg = $result['config'];
         $bios = isset($cfg['bios']) && is_string($cfg['bios']) ? $cfg['bios'] : null;
+        $serial0Enabled = array_key_exists('serial0', $cfg) && is_string($cfg['serial0'])
+            ? str_contains($cfg['serial0'], 'socket')
+            : false;
 
         return ApiResponse::success(
             [
                 'bios' => $bios,
                 'efi_enabled' => array_key_exists('efidisk0', $cfg),
                 'tpm_enabled' => array_key_exists('tpmstate0', $cfg),
+                'serial0_enabled' => $serial0Enabled,
             ],
             'Hardware settings fetched',
             200
@@ -331,8 +335,8 @@ class VmUserInstanceController
 
     #[OA\Patch(
         path: '/api/user/vm-instances/{id}/qemu-hardware',
-        summary: 'Update QEMU hardware settings (EFI + TPM)',
-        description: 'Updates Proxmox config to enable/disable EFI disk and TPM state disk. Optional BIOS mode can be updated.',
+        summary: 'Update QEMU hardware settings (EFI + TPM + Serial)',
+        description: 'Updates Proxmox config to enable/disable EFI disk, TPM state disk, and serial0 socket. Optional BIOS mode can be updated.',
         tags: ['User - VM Instances'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -344,6 +348,7 @@ class VmUserInstanceController
                     new OA\Property(property: 'bios', type: 'string', enum: ['seabios', 'ovmf'], nullable: true),
                     new OA\Property(property: 'efi_enabled', type: 'boolean', nullable: true),
                     new OA\Property(property: 'tpm_enabled', type: 'boolean', nullable: true),
+                    new OA\Property(property: 'serial0_enabled', type: 'boolean', nullable: true),
                 ]
             )
         ),
@@ -405,7 +410,16 @@ class VmUserInstanceController
             $tpmEnabled = $tpmEnabledParsed;
         }
 
-        if ($biosMode === null && $efiEnabled === null && $tpmEnabled === null) {
+        $serial0Enabled = null;
+        if (array_key_exists('serial0_enabled', $data) && $data['serial0_enabled'] !== null) {
+            $serialEnabledParsed = filter_var($data['serial0_enabled'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($serialEnabledParsed === null) {
+                return ApiResponse::error('Invalid serial0_enabled value', 'INVALID_SERIAL0_ENABLED', 400);
+            }
+            $serial0Enabled = $serialEnabledParsed;
+        }
+
+        if ($biosMode === null && $efiEnabled === null && $tpmEnabled === null && $serial0Enabled === null) {
             return ApiResponse::success(['instance' => $vmInstance], 'No changes to apply', 200);
         }
 
@@ -439,6 +453,7 @@ class VmUserInstanceController
         $curQemuConfig = $curCfg['config'];
 
         $config = [];
+        $deleteKeys = [];
 
         if ($biosMode !== null) {
             $config['bios'] = $biosMode;
@@ -553,8 +568,21 @@ class VmUserInstanceController
             }
         }
 
-        if (!empty($config)) {
-            $res = $client->setVmConfig($node, $vmid, 'qemu', $config, []);
+        if ($serial0Enabled === true) {
+            // Enable serial0 socket (so noVNC might show serial output).
+            $config['serial0'] = 'socket';
+            // Templates sometimes set the display to serial (`vga=serial0`).
+            // When enabling serial, keep display consistent.
+            $config['vga'] = 'serial0';
+        } elseif ($serial0Enabled === false) {
+            // Disable serial console by removing serial0 from the config.
+            $deleteKeys[] = 'serial0';
+            // Switch display back to a graphical adapter for Windows.
+            $config['vga'] = 'std';
+        }
+
+        if (!empty($config) || !empty($deleteKeys)) {
+            $res = $client->setVmConfig($node, $vmid, 'qemu', $config, $deleteKeys);
             if (!$res['ok']) {
                 return ApiResponse::error('Proxmox config update failed: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
             }
@@ -569,6 +597,7 @@ class VmUserInstanceController
                 'bios' => $biosMode,
                 'efi_enabled' => $efiEnabled,
                 'tpm_enabled' => $tpmEnabled,
+                'serial0_enabled' => $serial0Enabled,
             ],
             'ip'             => CloudFlareRealIP::getRealIP(),
         ]);
@@ -582,6 +611,9 @@ class VmUserInstanceController
                 'bios' => isset($after['bios']) && is_string($after['bios']) ? $after['bios'] : null,
                 'efi_enabled' => array_key_exists('efidisk0', $after),
                 'tpm_enabled' => array_key_exists('tpmstate0', $after),
+                'serial0_enabled' => array_key_exists('serial0', $after) && is_string($after['serial0'])
+                    ? str_contains($after['serial0'], 'socket')
+                    : false,
             ],
             'QEMU hardware updated successfully',
             200
@@ -793,6 +825,698 @@ class VmUserInstanceController
         }
 
         return ApiResponse::success(['instance' => $vmInstance], 'DNS updated successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/user/vm-instances/{id}/iso-storages',
+        summary: 'List ISO storages',
+        description: 'Returns ISO-capable Proxmox storage names for the VM node.',
+        tags: ['User - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'ISO storages fetched',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'storages', type: 'array', items: new OA\Items(type: 'string')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox error'),
+        ]
+    )]
+    public function getIsoStorages(Request $request, int $id): Response
+    {
+        $user = $request->attributes->get('user');
+        $vmInstance = $request->attributes->get('vmInstance');
+
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'settings')) {
+            return ApiResponse::error('You do not have permission to change settings for this VM', 'PERMISSION_DENIED', 403);
+        }
+
+        $vmNode = VmNode::getVmNodeById((int) ($vmInstance['vm_node_id'] ?? 0));
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node = $vmInstance['pve_node'] ?? '';
+        if ($node === '') {
+            $find = $client->findNodeByVmid((int) $vmInstance['vmid']);
+            $node = $find['ok'] ? $find['node'] : null;
+        }
+        if ($node === null || $node === '') {
+            return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
+        }
+
+        // Per requirement: ISO storage list should match the backup storage list.
+        $storages = [];
+        $storagesRes = $client->getBackupStorages((string) $node);
+        if ($storagesRes['ok'] && !empty($storagesRes['storages'])) {
+            $storages = $storagesRes['storages'];
+        }
+
+        // Prefer node-level storage_backups default when available.
+        $preferred = isset($vmNode['storage_backups']) && is_string($vmNode['storage_backups']) ? trim($vmNode['storage_backups']) : '';
+        if ($preferred !== '' && in_array($preferred, $storages, true)) {
+            $storages = array_merge(
+                [$preferred],
+                array_values(array_filter($storages, static fn ($s) => $s !== $preferred)),
+            );
+        }
+
+        return ApiResponse::success(['storages' => $storages], 'ISO storages fetched', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/user/vm-instances/{id}/iso-current',
+        summary: 'Get currently mounted ISO',
+        description: 'Returns currently mounted ISO (if any) by inspecting QEMU cdrom devices (media=cdrom).',
+        tags: ['User - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'ISO current fetched'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox error'),
+        ]
+    )]
+    public function getIsoCurrent(Request $request, int $id): Response
+    {
+        $user = $request->attributes->get('user');
+        $vmInstance = $request->attributes->get('vmInstance');
+
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'settings')) {
+            return ApiResponse::error('You do not have permission to change settings for this VM', 'PERMISSION_DENIED', 403);
+        }
+
+        $vmType = ($vmInstance['vm_type'] ?? 'qemu') === 'qemu' ? 'qemu' : 'lxc';
+        if ($vmType !== 'qemu') {
+            return ApiResponse::error('ISO mounting is only supported for QEMU VMs', 'ISO_NOT_SUPPORTED', 400);
+        }
+
+        $vmNode = VmNode::getVmNodeById((int) ($vmInstance['vm_node_id'] ?? 0));
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node = $vmInstance['pve_node'] ?? '';
+        if ($node === '') {
+            $find = $client->findNodeByVmid((int) $vmInstance['vmid']);
+            $node = $find['ok'] ? $find['node'] : null;
+        }
+        if ($node === null || $node === '') {
+            return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
+        }
+
+        $vmid = (int) $vmInstance['vmid'];
+        $cfgRes = $client->getVmConfig((string) $node, $vmid, 'qemu');
+        if (!$cfgRes['ok'] || !is_array($cfgRes['config'] ?? null)) {
+            return ApiResponse::error('Failed to fetch VM config', 'PROXMOX_ERROR', 502);
+        }
+
+        /** @var array<string, mixed> $cfg */
+        $cfg = $cfgRes['config'];
+
+        $mountedIso = null;
+
+        // Prefer ide2 (typical cdrom slot) if present.
+        foreach (['ide2', 'ide0', 'sata2', 'scsi2'] as $preferredKey) {
+            $val = $cfg[$preferredKey] ?? null;
+            if (!is_string($val)) {
+                continue;
+            }
+            if (strpos($val, 'media=cdrom') === false) {
+                continue;
+            }
+            $beforeComma = explode(',', $val)[0] ?? '';
+            $beforeComma = trim($beforeComma);
+            if ($beforeComma === '') {
+                continue;
+            }
+            if (strpos($beforeComma, ':iso/') === false && strpos($beforeComma, '/iso/') === false) {
+                continue;
+            }
+            $mountedIso = ['slot' => $preferredKey, 'volid' => $beforeComma];
+            break;
+        }
+
+        // Fallback: scan any cdrom entry.
+        if ($mountedIso === null) {
+            foreach ($cfg as $k => $v) {
+                if (!is_string($k) || !is_string($v)) {
+                    continue;
+                }
+                if (strpos($v, 'media=cdrom') === false) {
+                    continue;
+                }
+                $beforeComma = explode(',', $v)[0] ?? '';
+                $beforeComma = trim($beforeComma);
+                if ($beforeComma === '') {
+                    continue;
+                }
+                if (strpos($beforeComma, ':iso/') === false && strpos($beforeComma, '/iso/') === false) {
+                    continue;
+                }
+                $mountedIso = ['slot' => $k, 'volid' => $beforeComma];
+                break;
+            }
+        }
+
+        if ($mountedIso !== null) {
+            $volid = (string) $mountedIso['volid'];
+            $parts = explode(':iso/', $volid);
+            $storage = $parts[0] ?? '';
+            $filename = $parts[1] ?? '';
+            $mountedIso['storage'] = $storage !== '' ? $storage : null;
+            $mountedIso['filename'] = $filename !== '' ? $filename : null;
+        }
+
+        return ApiResponse::success(['mounted_iso' => $mountedIso], 'ISO current fetched', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/vm-instances/{id}/iso-upload-and-mount',
+        summary: 'Upload and mount an ISO',
+        description: 'Uploads an ISO to Proxmox and mounts it as the VM cdrom (ide2) while enforcing only one ISO/cdrom at a time.',
+        tags: ['User - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['file', 'storage'],
+                    properties: [
+                        new OA\Property(property: 'storage', type: 'string', description: 'ISO storage name on Proxmox'),
+                        new OA\Property(property: 'file', type: 'string', format: 'binary', description: 'ISO file to upload'),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Mounted successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox error'),
+        ]
+    )]
+    public function uploadAndMountIso(Request $request, int $id): Response
+    {
+        $user = $request->attributes->get('user');
+        $vmInstance = $request->attributes->get('vmInstance');
+
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'settings')) {
+            return ApiResponse::error('You do not have permission to change settings for this VM', 'PERMISSION_DENIED', 403);
+        }
+
+        $vmType = ($vmInstance['vm_type'] ?? 'qemu') === 'qemu' ? 'qemu' : 'lxc';
+        if ($vmType !== 'qemu') {
+            return ApiResponse::error('ISO mounting is only supported for QEMU VMs', 'ISO_NOT_SUPPORTED', 400);
+        }
+
+        $storage = $request->request->get('storage');
+        $storage = is_string($storage) ? trim($storage) : '';
+        if ($storage === '') {
+            return ApiResponse::error('storage is required', 'STORAGE_REQUIRED', 400);
+        }
+
+        $uploadedFile = $request->files->get('file');
+        if (!$uploadedFile) {
+            return ApiResponse::error('file is required', 'FILE_REQUIRED', 400);
+        }
+
+        $originalName = is_string($uploadedFile->getClientOriginalName())
+            ? $uploadedFile->getClientOriginalName()
+            : 'uploaded.iso';
+
+        $lowerName = strtolower($originalName);
+        if (!str_ends_with($lowerName, '.iso')) {
+            return ApiResponse::error('Only .iso files are allowed', 'INVALID_FILE_TYPE', 400);
+        }
+
+        $maxBytes = 1024 * 1024 * 1024; // 1 GiB
+        $fileSize = (int) $uploadedFile->getSize();
+        if ($fileSize <= 0) {
+            return ApiResponse::error('Invalid file size', 'INVALID_FILE', 400);
+        }
+        if ($fileSize > $maxBytes) {
+            return ApiResponse::error('ISO file too large (max 1 GiB)', 'FILE_TOO_LARGE', 400);
+        }
+
+        $vmNode = VmNode::getVmNodeById((int) ($vmInstance['vm_node_id'] ?? 0));
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node = $vmInstance['pve_node'] ?? '';
+        if ($node === '') {
+            $find = $client->findNodeByVmid((int) $vmInstance['vmid']);
+            $node = $find['ok'] ? $find['node'] : null;
+        }
+        if ($node === null || $node === '') {
+            return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
+        }
+
+        $vmid = (int) $vmInstance['vmid'];
+
+        $tmpDir = sys_get_temp_dir() . '/featherpanel-iso-upload';
+        if (!is_dir($tmpDir)) {
+            @mkdir($tmpDir, 0700, true);
+        }
+        $tmpPath = $tmpDir . '/' . bin2hex(random_bytes(8)) . '-' . basename($originalName);
+
+        try {
+            $uploadedFile->move($tmpDir, basename($tmpPath));
+
+            $uploadRes = $client->uploadIsoToStorage((string) $node, $storage, $tmpPath, basename($originalName));
+            if (!$uploadRes['ok']) {
+                $uploadErr = $uploadRes['error'] ?? 'unknown';
+                $uploadErrStr = is_string($uploadErr) ? $uploadErr : 'unknown';
+
+                // Proxmox (pveproxy/nginx) rejects the request when the ISO is over its configured upload limit.
+                // Surface this as an explicit 413 so the frontend can show a helpful message.
+                if (
+                    str_contains($uploadErrStr, '413')
+                    || str_contains(strtolower($uploadErrStr), 'payload too large')
+                ) {
+                    return ApiResponse::error(
+                        'Proxmox rejected the ISO upload (413 Payload Too Large). Upload a smaller ISO or increase Proxmox upload limit (nginx/pveproxy `client_max_body_size`).',
+                        'PROXMOX_PAYLOAD_TOO_LARGE',
+                        413
+                    );
+                }
+
+                return ApiResponse::error('Failed to upload ISO: ' . $uploadErrStr, 'PROXMOX_ERROR', 502);
+            }
+
+            $volid = $uploadRes['volid'] ?? null;
+            if (!is_string($volid) || $volid === '') {
+                return ApiResponse::error('ISO upload did not return a volid', 'UPLOAD_FAILED', 502);
+            }
+
+            // Enforce only one cdrom/iso at a time: unlink all media=cdrom devices.
+            $cfgRes = $client->getVmConfig((string) $node, $vmid, 'qemu');
+            $cdromKeys = [];
+            if ($cfgRes['ok'] && is_array($cfgRes['config'] ?? null)) {
+                foreach ($cfgRes['config'] as $k => $v) {
+                    if (!is_string($k) || !is_string($v)) {
+                        continue;
+                    }
+                    if (strpos($v, 'media=cdrom') === false) {
+                        continue;
+                    }
+                    $cdromKeys[] = $k;
+                }
+            }
+            $cdromKeys = array_values(array_unique($cdromKeys));
+            if (!empty($cdromKeys)) {
+                $unlinkRes = $client->unlinkQemuDisks((string) $node, $vmid, $cdromKeys);
+                if (!$unlinkRes['ok']) {
+                    return ApiResponse::error('Failed to unmount previous cdrom: ' . ($unlinkRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+                }
+            }
+
+            // Mount ISO into ide2 and make it boot priority.
+            // Some VMs already have a boot order (usually `boot=order=scsi0;net0`).
+            // We preserve the existing list but force `ide2` to be the first device.
+            $cfgForBoot = is_array($cfgRes['config'] ?? null) ? $cfgRes['config'] : [];
+            $bootStr = isset($cfgForBoot['boot']) && is_string($cfgForBoot['boot']) ? $cfgForBoot['boot'] : '';
+            $bootDevices = [];
+            if ($bootStr !== '' && preg_match('/order=([^,]+)/', $bootStr, $m)) {
+                $orderPart = (string) ($m[1] ?? '');
+                $bootDevices = array_map('trim', explode(';', $orderPart));
+            }
+            $bootDevices = array_values(array_filter($bootDevices, static fn ($d) => is_string($d) && $d !== ''));
+            $bootDevices = array_values(array_unique(array_merge(['ide2'], $bootDevices)));
+            $bootValue = 'order=' . implode(';', $bootDevices);
+
+            $config = [
+                'ide2' => $volid . ',media=cdrom',
+                'boot' => $bootValue,
+            ];
+            $setRes = $client->setVmConfig((string) $node, $vmid, 'qemu', $config, []);
+            if (!$setRes['ok']) {
+                return ApiResponse::error('Proxmox mount/config update failed: ' . ($setRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+            }
+
+            return ApiResponse::success(
+                ['mounted_iso' => ['slot' => 'ide2', 'volid' => $volid, 'storage' => $storage, 'filename' => basename($originalName)]],
+                'ISO mounted successfully',
+                200
+            );
+        } finally {
+            if (is_file($tmpPath)) {
+                @unlink($tmpPath);
+            }
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/user/vm-instances/{id}/iso-fetch-and-mount',
+        summary: 'Fetch ISO from URL and mount it',
+        description: 'Proxmox downloads the ISO directly from a remote URL into the ISO storage, then mounts it as VM cdrom (ide2) while enforcing only one ISO/cdrom at a time.',
+        tags: ['User - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'storage', type: 'string', description: 'ISO storage name on Proxmox'),
+                    new OA\Property(property: 'url', type: 'string', format: 'uri', description: 'Remote ISO URL to download'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Mounted successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox error'),
+        ]
+    )]
+    public function fetchAndMountIsoFromUrl(Request $request, int $id): Response
+    {
+        $user = $request->attributes->get('user');
+        $vmInstance = $request->attributes->get('vmInstance');
+
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'settings')) {
+            return ApiResponse::error('You do not have permission to change settings for this VM', 'PERMISSION_DENIED', 403);
+        }
+
+        $vmType = ($vmInstance['vm_type'] ?? 'qemu') === 'qemu' ? 'qemu' : 'lxc';
+        if ($vmType !== 'qemu') {
+            return ApiResponse::error('ISO mounting is only supported for QEMU VMs', 'ISO_NOT_SUPPORTED', 400);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        $storage = isset($data['storage']) ? (is_string($data['storage']) ? trim($data['storage']) : '') : '';
+        if ($storage === '') {
+            return ApiResponse::error('storage is required', 'STORAGE_REQUIRED', 400);
+        }
+
+        $url = isset($data['url']) ? (is_string($data['url']) ? trim($data['url']) : '') : '';
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return ApiResponse::error('url is invalid', 'INVALID_URL', 400);
+        }
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return ApiResponse::error('Only http/https URLs are allowed', 'INVALID_URL_SCHEME', 400);
+        }
+
+        $maxBytes = 1024 * 1024 * 1024; // 1 GiB
+
+        $vmNode = VmNode::getVmNodeById((int) ($vmInstance['vm_node_id'] ?? 0));
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $pClient = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node = $vmInstance['pve_node'] ?? '';
+        if ($node === '') {
+            $find = $pClient->findNodeByVmid((int) $vmInstance['vmid']);
+            $node = $find['ok'] ? $find['node'] : null;
+        }
+        if ($node === null || $node === '') {
+            return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
+        }
+
+        $vmid = (int) $vmInstance['vmid'];
+
+        $taskId = bin2hex(random_bytes(16));
+        $meta = [
+            'action' => 'iso_fetch_and_mount',
+            'instance_id' => (int) $id,
+            'vm_type' => 'qemu',
+            'url' => $url,
+            'storage' => $storage,
+            'max_bytes' => $maxBytes,
+        ];
+
+        $saved = VmTask::create([
+            'task_id' => $taskId,
+            'instance_id' => (int) $id,
+            'vm_node_id' => (int) ($vmInstance['vm_node_id'] ?? 0),
+            'task_type' => 'iso_fetch_and_mount',
+            'status' => 'pending',
+            'upid' => '',
+            'target_node' => (string) $node,
+            'vmid' => $vmid,
+            'data' => $meta,
+            'user_uuid' => $user['uuid'] ?? null,
+        ]);
+
+        if (!$saved) {
+            return ApiResponse::error('Failed to create ISO task', 'DB_ERROR', 500);
+        }
+
+        VmInstanceActivity::createActivity([
+            'vm_instance_id' => (int) $id,
+            'vm_node_id' => (int) ($vmInstance['vm_node_id'] ?? 0),
+            'user_id' => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
+            'event' => 'vm:iso.fetch_and_mount.start',
+            'metadata' => ['storage' => $storage],
+            'ip' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success(
+            ['task_id' => $taskId, 'message' => 'ISO fetch queued'],
+            'ISO fetch queued',
+            202
+        );
+    }
+
+    #[OA\Post(
+        path: '/api/user/vm-instances/{id}/iso-unmount',
+        summary: 'Unmount ISO',
+        description: 'Unlinks cdrom devices (media=cdrom) and sets VM boot order back to the main disk.',
+        tags: ['User - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Unmounted successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox error'),
+        ]
+    )]
+    public function unmountIso(Request $request, int $id): Response
+    {
+        $user = $request->attributes->get('user');
+        $vmInstance = $request->attributes->get('vmInstance');
+
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'settings')) {
+            return ApiResponse::error('You do not have permission to change settings for this VM', 'PERMISSION_DENIED', 403);
+        }
+
+        $vmType = ($vmInstance['vm_type'] ?? 'qemu') === 'qemu' ? 'qemu' : 'lxc';
+        if ($vmType !== 'qemu') {
+            return ApiResponse::error('ISO mounting is only supported for QEMU VMs', 'ISO_NOT_SUPPORTED', 400);
+        }
+
+        $vmNode = VmNode::getVmNodeById((int) ($vmInstance['vm_node_id'] ?? 0));
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node = $vmInstance['pve_node'] ?? '';
+        if ($node === '') {
+            $find = $client->findNodeByVmid((int) $vmInstance['vmid']);
+            $node = $find['ok'] ? $find['node'] : null;
+        }
+        if ($node === null || $node === '') {
+            return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
+        }
+
+        $vmid = (int) $vmInstance['vmid'];
+
+        $cfgRes = $client->getVmConfig((string) $node, $vmid, 'qemu');
+        if (!$cfgRes['ok'] || !is_array($cfgRes['config'] ?? null)) {
+            return ApiResponse::error('Failed to fetch VM config', 'PROXMOX_ERROR', 502);
+        }
+
+        /** @var array<string, mixed> $cfg */
+        $cfg = $cfgRes['config'];
+
+        // Preserve cloud-init config values so we can force Proxmox to regenerate
+        // the cloud-init seed ISO after we unlink the currently mounted ISO.
+        // This is required so users can manage IP/DNS again after unmounting.
+        $cloudInitReset = [];
+        foreach (['ciuser', 'cipassword', 'ipconfig0', 'nameserver'] as $k) {
+            if (array_key_exists($k, $cfg) && is_string($cfg[$k])) {
+                $v = trim($cfg[$k]);
+                if ($v !== '') {
+                    $cloudInitReset[$k] = $v;
+                }
+            }
+        }
+
+        $cdromKeys = [];
+        foreach ($cfg as $k => $v) {
+            if (!is_string($k) || !is_string($v)) {
+                continue;
+            }
+            if (strpos($v, 'media=cdrom') === false) {
+                continue;
+            }
+            $cdromKeys[] = $k;
+        }
+        $cdromKeys = array_values(array_unique($cdromKeys));
+
+        // Detect whether Proxmox already re-attached cloud-init seed after we re-apply inputs.
+        $hasCloudInitSeed = static function (array $vmCfg): bool {
+            foreach ($vmCfg as $k => $v) {
+                if (!is_string($v)) {
+                    continue;
+                }
+
+                $vLower = strtolower($v);
+                $isCdrom = str_contains($vLower, 'media=cdrom');
+                $looksLikeCloudInit = str_contains($vLower, 'cloudinit') || str_contains($vLower, 'cloud-init');
+
+                if ($isCdrom && $looksLikeCloudInit) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        $finalCfg = $cfg;
+        $cloudInitRestored = false;
+
+        // Attempt A: re-apply cloud-init inputs FIRST (while ISO is still attached).
+        // This gives Proxmox a chance to overwrite ide2 back to the cloud-init seed ISO.
+        if (!empty($cloudInitReset)) {
+            $regenRes1 = $client->setVmConfig((string) $node, $vmid, 'qemu', $cloudInitReset, []);
+            if ($regenRes1['ok']) {
+                $afterCfgRes1 = $client->getVmConfig((string) $node, $vmid, 'qemu');
+                if ($afterCfgRes1['ok'] && is_array($afterCfgRes1['config'] ?? null)) {
+                    $finalCfg = $afterCfgRes1['config'];
+                    $cloudInitRestored = $hasCloudInitSeed($finalCfg);
+                }
+            }
+        }
+
+        // Attempt B: if cloud-init didn't come back, unlink cdrom(s) and re-apply again.
+        if (!$cloudInitRestored) {
+            if (!empty($cdromKeys)) {
+                $unlinkRes = $client->unlinkQemuDisks((string) $node, $vmid, $cdromKeys);
+                if (!$unlinkRes['ok']) {
+                    return ApiResponse::error('Failed to unmount cdrom: ' . ($unlinkRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+                }
+            }
+
+            if (!empty($cloudInitReset)) {
+                $regenRes2 = $client->setVmConfig((string) $node, $vmid, 'qemu', $cloudInitReset, []);
+                if (!$regenRes2['ok']) {
+                    App::getInstance(true)->getLogger()->warning(
+                        'Failed to reapply cloud-init seed inputs after ISO unmount for VM ' .
+                        $vmid . ': ' . ($regenRes2['error'] ?? 'unknown')
+                    );
+                }
+            }
+
+            $afterCfgRes2 = $client->getVmConfig((string) $node, $vmid, 'qemu');
+            if ($afterCfgRes2['ok'] && is_array($afterCfgRes2['config'] ?? null)) {
+                $finalCfg = $afterCfgRes2['config'];
+            }
+
+            $cloudInitRestored = $hasCloudInitSeed($finalCfg);
+        }
+
+        if (!empty($cloudInitReset) && !$cloudInitRestored) {
+            return ApiResponse::error(
+                'Cloud-init seed ISO was not restored after ISO unmount',
+                'CLOUDINIT_NOT_RESTORED',
+                502
+            );
+        }
+
+        // Restore boot order to main disk (preferred devices in order).
+        $preferred = ['scsi0', 'virtio0', 'sata0', 'ide0'];
+        $bootDisk = 'scsi0';
+        foreach ($preferred as $candidate) {
+            if (array_key_exists($candidate, $finalCfg)) {
+                $bootDisk = $candidate;
+                break;
+            }
+        }
+        $setRes = $client->setVmConfig((string) $node, $vmid, 'qemu', ['boot' => 'order=' . $bootDisk], []);
+        if (!$setRes['ok']) {
+            return ApiResponse::error('Proxmox boot order update failed: ' . ($setRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+        }
+
+        return ApiResponse::success([], 'ISO unmounted successfully', 200);
     }
 
     #[OA\Post(

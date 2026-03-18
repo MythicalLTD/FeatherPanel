@@ -3,6 +3,7 @@ use sqlx::{MySqlPool, Row};
 use tracing::{error, info, warn};
 use serde_json::{json, Value};
 use chrono;
+use std::collections::HashSet;
 
 use crate::proxmox::{ProxmoxClient, VmType, PowerAction};
 use super::create::{handle_create_task, handle_reinstall_task};
@@ -100,6 +101,55 @@ pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &s
                         if !task_status.is_ok() {
                             let error = task_status.exitstatus.unwrap_or_else(|| "Task failed".to_string());
                             error!("❌ Proxmox task failed: {}", error);
+
+                            // Failsafe: reinstall/create clone can fail when the cloud-init disk
+                            // already exists for the intended vmid (leftovers from previous attempts).
+                            // Retry by bumping vmid and resetting task step back to "initial".
+                            let err_str = error.clone();
+                            let is_cloudinit_exists =
+                                err_str.contains("cloudinit.qcow2") && err_str.contains("already exists");
+                            let is_conf_atomic_exists =
+                                err_str.contains("atomic file") && err_str.contains("File exists");
+                            let is_conf_file_exists =
+                                err_str.contains(".conf") && err_str.contains("File exists");
+
+                            // Only retry during the clone phase (not later steps).
+                            let current_step = meta["current_step"].as_str().unwrap_or("");
+                            let should_retry_clone =
+                                (task_type == "create" || task_type == "reinstall")
+                                    && current_step == "resize"
+                                    && (is_cloudinit_exists || is_conf_atomic_exists || is_conf_file_exists);
+
+                            if should_retry_clone {
+                                let current_vmid: i32 = task.try_get("vmid").unwrap_or(0);
+                                let retry_count: u64 = meta["clone_retry"].as_u64().unwrap_or(0);
+                                let max_retries: u64 = 5;
+
+                                if retry_count < max_retries && current_vmid > 0 {
+                                    let new_vmid = current_vmid + 1;
+                                    warn!(
+                                        "⚠️ Clone failed due to leftover files/config for vmid {}. Retrying with vmid {} (attempt {}/{}).",
+                                        current_vmid,
+                                        new_vmid,
+                                        retry_count + 1,
+                                        max_retries
+                                    );
+
+                                    let mut meta_mut = meta.clone();
+                                    meta_mut["clone_retry"] = json!(retry_count + 1);
+                                    meta_mut["current_step"] = json!("initial");
+
+                                    sqlx::query("UPDATE featherpanel_vm_tasks SET status = 'pending', upid = '', vmid = ?, data = ? WHERE task_id = ?")
+                                        .bind(new_vmid)
+                                        .bind(serde_json::to_string(&meta_mut)?)
+                                        .bind(task_id)
+                                        .execute(pool)
+                                        .await?;
+
+                                    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                                    continue;
+                                }
+                            }
                             
                             // For create tasks, mark VM instance as damaged if it exists
                             if task_type == "create" {
@@ -278,6 +328,10 @@ pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &s
                         return Ok(());
                     }
                 }
+            }
+            "iso_fetch_and_mount" => {
+                handle_iso_fetch_and_mount_task(pool, task_id, &task, &meta, &client).await?;
+                return Ok(());
             }
             "restore_backup" => {
                 // Restore backup just waits for UPID to complete, then marks task done
@@ -883,5 +937,200 @@ async fn mark_completed(pool: &MySqlPool, task_id: &str) -> Result<()> {
         .bind(task_id)
         .execute(pool)
         .await?;
+    Ok(())
+}
+
+async fn handle_iso_fetch_and_mount_task(
+    pool: &MySqlPool,
+    task_id: &str,
+    task: &sqlx::mysql::MySqlRow,
+    meta: &Value,
+    client: &ProxmoxClient,
+) -> Result<()> {
+    let target_node: String = task.try_get("target_node").unwrap_or_default();
+    let vmid: i32 = task.try_get("vmid").unwrap_or(0);
+
+    let url = meta["url"].as_str().unwrap_or_default().to_string();
+    let storage = meta["storage"].as_str().unwrap_or_default().to_string();
+    let max_bytes: i64 = meta["max_bytes"].as_i64().unwrap_or(1024 * 1024 * 1024);
+
+    if target_node.is_empty() || vmid <= 0 || url.is_empty() || storage.is_empty() {
+        mark_failed(pool, task_id, "Missing required ISO task parameters").await?;
+        return Ok(());
+    }
+
+    let verify_certificates = true;
+
+    // Query size + filename so we can enforce the max size before triggering the download.
+    let md_res = match client
+        .query_iso_url_metadata(&target_node, &url, verify_certificates)
+        .await
+    {
+        Ok(v) => v,
+        Err(e) => {
+            mark_failed(pool, task_id, &format!("ISO URL metadata failed: {}", e)).await?;
+            return Ok(());
+        }
+    };
+
+    let size_bytes = md_res["data"]["size"].as_i64().unwrap_or(-1);
+    let raw_filename = md_res["data"]["filename"].as_str().unwrap_or("uploaded.iso");
+
+    if size_bytes >= 0 && size_bytes > max_bytes {
+        mark_failed(pool, task_id, "ISO too large for panel limit (max 1 GiB)").await?;
+        return Ok(());
+    }
+
+    // extjs returns a filename; sanitize it so we can build a safe volid.
+    let mut filename = raw_filename
+        .split('/')
+        .last()
+        .unwrap_or(raw_filename)
+        .split('\\')
+        .last()
+        .unwrap_or(raw_filename)
+        .to_string();
+
+    let mut sanitized = String::new();
+    for c in filename.chars() {
+        if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+            sanitized.push(c);
+        } else {
+            sanitized.push('_');
+        }
+    }
+    filename = if sanitized.trim().is_empty() {
+        "uploaded.iso".to_string()
+    } else {
+        sanitized
+    };
+
+    if !filename.to_lowercase().ends_with(".iso") {
+        filename.push_str(".iso");
+    }
+
+    // Start download (returns UPID).
+    // Proxmox's extjs `download-url` refuses to overwrite an existing file.
+    // When that happens, the ISO already exists in the storage path we would mount anyway,
+    // so we treat it as success and skip waiting.
+    let mut upid_opt: Option<String> = None;
+    match client
+        .download_iso_url_to_storage(&target_node, &storage, &url, &filename, verify_certificates)
+        .await
+    {
+        Ok(u) => {
+            upid_opt = Some(u);
+        }
+        Err(e) => {
+            let err_str = format!("{}", e);
+            if err_str.contains("refusing to override existing file") || err_str.contains("refusing to override") {
+                info!(
+                    "ℹ️ ISO already exists for url import; skipping download wait. filename={}",
+                    filename
+                );
+            } else {
+                mark_failed(pool, task_id, &format!("ISO download-url failed: {}", err_str)).await?;
+                return Ok(());
+            }
+        }
+    }
+
+    if let Some(upid) = upid_opt {
+        if let Err(e) = client.wait_task(&target_node, &upid, 900).await {
+            let err_str = format!("{}", e);
+            // Proxmox extjs `download-url` returns a UPID even when the underlying job
+            // rejects the download due to "file exists". In that case, we can still
+            // mount the already-existing ISO and treat it as success.
+            if err_str.contains("refusing to override existing file") || err_str.contains("refusing to override") {
+                info!("✅ ISO already existed on storage; reusing existing file (skip download wait).");
+            } else {
+                mark_failed(pool, task_id, &format!("ISO download task failed: {}", err_str)).await?;
+                return Ok(());
+            }
+        }
+    }
+
+    let volid = format!("{}:iso/{}", storage, filename);
+
+    // Load current VM config so we can unlink cdrom devices + preserve boot order.
+    let cfg = match client
+        .get_vm_config(&target_node, vmid as u32, VmType::Qemu)
+        .await
+    {
+        Ok(v) => v,
+        Err(e) => {
+            mark_failed(pool, task_id, &format!("Failed to fetch VM config: {}", e)).await?;
+            return Ok(());
+        }
+    };
+
+    // Unlink all devices that contain `media=cdrom` so only one ISO exists at a time.
+    let mut cdrom_keys: Vec<String> = Vec::new();
+    if let Some(obj) = cfg.as_object() {
+        for (k, v) in obj {
+            if let Some(s) = v.as_str() {
+                if s.contains("media=cdrom") {
+                    cdrom_keys.push(k.clone());
+                }
+            }
+        }
+    }
+
+    if let Err(e) = client
+        .unlink_qemu_disks(&target_node, vmid as u32, &cdrom_keys)
+        .await
+    {
+        mark_failed(pool, task_id, &format!("Failed to unlink previous cdrom(s): {}", e)).await?;
+        return Ok(());
+    }
+
+    let boot_str = cfg.get("boot").and_then(|v| v.as_str()).unwrap_or("");
+    let mut boot_devices: Vec<String> = Vec::new();
+    if let Some(order_idx) = boot_str.find("order=") {
+        let after = &boot_str[(order_idx + "order=".len())..];
+        let after = after.split(',').next().unwrap_or(after);
+        boot_devices = after
+            .split(';')
+            .filter_map(|s| {
+                let t = s.trim();
+                if t.is_empty() {
+                    None
+                } else {
+                    Some(t.to_string())
+                }
+            })
+            .collect();
+    }
+
+    let mut final_devices: Vec<String> = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+    final_devices.push("ide2".to_string());
+    seen.insert("ide2".to_string());
+    for d in boot_devices {
+        if d == "ide2" {
+            continue;
+        }
+        if seen.insert(d.clone()) {
+            final_devices.push(d);
+        }
+    }
+
+    let boot_value = format!("order={}", final_devices.join(";"));
+
+    let ide2_value = format!("{},media=cdrom", volid);
+    let config = json!({
+        "ide2": ide2_value,
+        "boot": boot_value,
+    });
+
+    if let Err(e) = client
+        .set_vm_config(&target_node, vmid as u32, VmType::Qemu, &config)
+        .await
+    {
+        mark_failed(pool, task_id, &format!("Failed to set VM config: {}", e)).await?;
+        return Ok(());
+    }
+
+    mark_completed(pool, task_id).await?;
     Ok(())
 }

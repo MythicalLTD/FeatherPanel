@@ -7,6 +7,7 @@ use serde_json::Value;
 pub struct ProxmoxClient {
     client: Client,
     base_url: String,
+    extjs_base_url: String,
     extra_params: std::collections::HashMap<String, String>,
 }
 
@@ -35,6 +36,7 @@ impl ProxmoxClient {
         extra_params: std::collections::HashMap<String, String>,
     ) -> Result<Self> {
         let base_url = format!("{}://{}:{}/api2/json", scheme, fqdn, port);
+        let extjs_base_url = format!("{}://{}:{}/api2/extjs", scheme, fqdn, port);
         
         let mut headers = HeaderMap::new();
         
@@ -68,6 +70,7 @@ impl ProxmoxClient {
         Ok(Self {
             client: builder.build()?,
             base_url,
+            extjs_base_url,
             extra_params,
         })
     }
@@ -122,5 +125,40 @@ impl ProxmoxClient {
         let json: Value = serde_json::from_str(&body_text)
             .context(format!("Failed to parse JSON: {}", body_text))?;
         Ok(json)
+    }
+
+    /// Make a GET request against a Proxmox `/api2/extjs/...` endpoint.
+    pub async fn get_extjs(&self, path: &str, query: &std::collections::HashMap<String, String>) -> Result<Value> {
+        let url = format!("{}{}", self.extjs_base_url, path);
+        tracing::debug!("🌐 EXTJS GET {}", url);
+
+        let mut merged = self.extra_params.clone();
+        for (k, v) in query {
+            merged.insert(k.clone(), v.clone());
+        }
+
+        let res = self.client.get(&url).query(&merged).send().await?;
+        self.handle_response(res, &url).await
+    }
+
+    /// Make a POST request against a Proxmox `/api2/extjs/...` endpoint with form params.
+    pub async fn post_extjs_form(
+        &self,
+        path: &str,
+        form: &std::collections::HashMap<String, String>,
+    ) -> Result<Value> {
+        let url = format!("{}{}", self.extjs_base_url, path);
+        tracing::debug!("🌐 EXTJS POST (form) {}", url);
+
+        // Keep any default query params configured on the client.
+        let res = self
+            .client
+            .post(&url)
+            .query(&self.extra_params)
+            .form(form)
+            .send()
+            .await?;
+
+        self.handle_response(res, &url).await
     }
 }

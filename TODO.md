@@ -1,3 +1,1 @@
-- Users cannot mount their own ISO and install using a ISO
-- Users cannot change their DNS network
 - Let admins know the one line proxmox command they have to run so they can acess the fucking VNC :))

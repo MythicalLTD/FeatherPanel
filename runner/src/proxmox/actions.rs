@@ -1,6 +1,7 @@
 use anyhow::Result;
 use serde_json::{json, Value};
 use tracing::info;
+use std::collections::HashMap;
 
 use super::client::ProxmoxClient;
 use super::types::{PowerAction, TaskStatus, VmType};
@@ -90,7 +91,16 @@ impl ProxmoxClient {
     
     /// Delete a VM
     pub async fn delete_vm(&self, node: &str, vmid: u32, vm_type: VmType) -> Result<String> {
-        let path = format!("/nodes/{}/{}/{}", node, vm_type.as_str(), vmid);
+        // IMPORTANT:
+        // Proxmox "delete" without `purge=1` removes only the config but keeps underlying disk volumes.
+        // We want reinstall/delete flows to clean up volumes (e.g. leftover cloud-init disks),
+        // so we always purge volumes here.
+        let path = format!(
+            "/nodes/{}/{}/{}?purge=1",
+            node,
+            vm_type.as_str(),
+            vmid
+        );
         let result = self.delete(&path).await?;
         
         let upid = result["data"]
@@ -169,5 +179,74 @@ impl ProxmoxClient {
             
             tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
         }
+    }
+
+    /// Query remote ISO/contents metadata using Proxmox `query-url-metadata` (extjs).
+    /// Returns JSON-like object containing size, filename, mimetype.
+    pub async fn query_iso_url_metadata(
+        &self,
+        node: &str,
+        url: &str,
+        verify_certificates: bool,
+    ) -> Result<Value> {
+        // Endpoint: GET /api2/extjs/nodes/{node}/query-url-metadata
+        let path = format!("/nodes/{}/query-url-metadata", node);
+
+        let mut query: HashMap<String, String> = HashMap::new();
+        query.insert("url".to_string(), url.to_string());
+        query.insert(
+            "verify-certificates".to_string(),
+            if verify_certificates { "1" } else { "0" }.to_string(),
+        );
+        // extjs endpoints often expect `_dc` (cache busting) even though it's not strictly documented.
+        query.insert(
+            "_dc".to_string(),
+            chrono::Utc::now().timestamp_millis().to_string(),
+        );
+
+        self.get_extjs(&path, &query).await
+    }
+
+    /// Download an ISO from a URL directly on Proxmox into an ISO-capable storage.
+    /// Returns an UPID (async task id).
+    pub async fn download_iso_url_to_storage(
+        &self,
+        node: &str,
+        storage: &str,
+        url: &str,
+        filename: &str,
+        verify_certificates: bool,
+    ) -> Result<String> {
+        // Endpoint: POST /api2/extjs/nodes/{node}/storage/{storage}/download-url
+        let path = format!("/nodes/{}/storage/{}/download-url", node, storage);
+
+        let mut form: HashMap<String, String> = HashMap::new();
+        form.insert("content".to_string(), "iso".to_string());
+        form.insert("url".to_string(), url.to_string());
+        form.insert("filename".to_string(), filename.to_string());
+        form.insert(
+            "verify-certificates".to_string(),
+            if verify_certificates { "1" } else { "0" }.to_string(),
+        );
+
+        let result = self.post_extjs_form(&path, &form).await?;
+        let upid = result["data"]
+            .as_str()
+            .ok_or_else(|| anyhow::anyhow!("No UPID in download-url response"))?;
+
+        Ok(upid.to_string())
+    }
+
+    /// Unlink (detach/delete) one or more qemu disks from a VM.
+    /// Used to remove existing cdrom devices (media=cdrom) so only one ISO is attached.
+    pub async fn unlink_qemu_disks(&self, node: &str, vmid: u32, ids: &[String]) -> Result<()> {
+        if ids.is_empty() {
+            return Ok(());
+        }
+
+        let path = format!("/nodes/{}/qemu/{}/unlink", node, vmid);
+        let body = json!({ "idlist": ids.join(",") });
+        let _ = self.put(&path, &body).await?;
+        Ok(())
     }
 }

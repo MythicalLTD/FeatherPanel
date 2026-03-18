@@ -141,6 +141,92 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(10)
     );
 
+    // ISO mount/unmount (QEMU only)
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-iso-storages',
+        '/api/user/vm-instances/{id}/iso-storages',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmUserInstanceController())->getIsoStorages($request, $id);
+        },
+        'id',
+        ['GET'],
+        Rate::perMinute(30)
+    );
+
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-iso-current',
+        '/api/user/vm-instances/{id}/iso-current',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmUserInstanceController())->getIsoCurrent($request, $id);
+        },
+        'id',
+        ['GET'],
+        Rate::perMinute(30)
+    );
+
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-iso-upload-and-mount',
+        '/api/user/vm-instances/{id}/iso-upload-and-mount',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmUserInstanceController())->uploadAndMountIso($request, $id);
+        },
+        'id',
+        ['POST'],
+        Rate::perMinute(2)
+    );
+
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-iso-fetch-and-mount',
+        '/api/user/vm-instances/{id}/iso-fetch-and-mount',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmUserInstanceController())->fetchAndMountIsoFromUrl($request, $id);
+        },
+        'id',
+        ['POST'],
+        Rate::perMinute(2)
+    );
+
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-iso-unmount',
+        '/api/user/vm-instances/{id}/iso-unmount',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmUserInstanceController())->unmountIso($request, $id);
+        },
+        'id',
+        ['POST'],
+        Rate::perMinute(5)
+    );
+
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-templates',
