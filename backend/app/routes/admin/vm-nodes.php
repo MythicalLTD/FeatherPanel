@@ -272,6 +272,22 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-vm-nodes-backup-storage',
+        '/api/admin/vm-nodes/{id}/backup-storage',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->backupStorage($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-vm-nodes-templates',
         '/api/admin/vm-nodes/{id}/templates',
         function (Request $request, array $args) {

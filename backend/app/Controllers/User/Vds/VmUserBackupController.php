@@ -97,6 +97,17 @@ class VmUserBackupController
             }
         }
 
+        // Prefer node-level backup storage when it is available on this Proxmox node.
+        if ($vmNode) {
+            $preferred = isset($vmNode['storage_backups']) && is_string($vmNode['storage_backups']) ? trim($vmNode['storage_backups']) : '';
+            if ($preferred !== '' && in_array($preferred, $storages, true)) {
+                $storages = array_merge(
+                    [$preferred],
+                    array_values(array_filter($storages, static fn ($s) => $s !== $preferred)),
+                );
+            }
+        }
+
         return ApiResponse::success([
             'backups'      => $backups,
             'backup_limit' => (int) ($vmInstance['backup_limit'] ?? 5),
@@ -175,7 +186,12 @@ class VmUserBackupController
             if (!$storagesRes['ok'] || empty($storagesRes['storages'])) {
                 return ApiResponse::error('No backup-capable storage found on node', 'NO_BACKUP_STORAGE', 400);
             }
-            $storage = $storagesRes['storages'][0];
+            $preferred = isset($vmNode['storage_backups']) && is_string($vmNode['storage_backups']) ? trim($vmNode['storage_backups']) : '';
+            if ($preferred !== '' && in_array($preferred, $storagesRes['storages'], true)) {
+                $storage = $preferred;
+            } else {
+                $storage = $storagesRes['storages'][0];
+            }
         }
 
         $backupLimit = (int) ($instance['backup_limit'] ?? 5);

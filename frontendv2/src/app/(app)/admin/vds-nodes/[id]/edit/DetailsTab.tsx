@@ -13,16 +13,21 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select-native';
 import { Button } from '@/components/featherui/Button';
-import { Database, Search, MapPin } from 'lucide-react';
+import { Database, Search, MapPin, Loader2 } from 'lucide-react';
 import type { VdsNodeForm } from './page';
 
 interface DetailsTabProps {
+    nodeId: string | number;
     form: VdsNodeForm;
     setForm: React.Dispatch<React.SetStateAction<VdsNodeForm>>;
     errors: Record<string, string>;
@@ -32,6 +37,7 @@ interface DetailsTabProps {
 }
 
 export function DetailsTab({
+    nodeId,
     form,
     setForm,
     errors,
@@ -40,6 +46,37 @@ export function DetailsTab({
     fetchLocations,
 }: DetailsTabProps) {
     const { t } = useTranslation();
+
+    const [imageStorages, setImageStorages] = useState<string[]>([]);
+    const [backupStorages, setBackupStorages] = useState<string[]>([]);
+    const [storagesLoading, setStoragesLoading] = useState(false);
+    const [storagesError, setStoragesError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!nodeId) return;
+
+        const loadStorages = async () => {
+            setStoragesLoading(true);
+            setStoragesError(null);
+            try {
+                const [storageRes, backupStorageRes] = await Promise.all([
+                    axios.get(`/api/admin/vm-nodes/${nodeId}/storage`),
+                    axios.get(`/api/admin/vm-nodes/${nodeId}/backup-storage`),
+                ]);
+
+                setImageStorages((storageRes.data.data?.storage ?? []) as string[]);
+                setBackupStorages((backupStorageRes.data.data?.storages ?? []) as string[]);
+            } catch (err) {
+                const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+                setStoragesError(msg);
+                toast.error(t('admin.vdsNodes.errors.fetch_failed') || 'Failed to fetch storages');
+            } finally {
+                setStoragesLoading(false);
+            }
+        };
+
+        loadStorages();
+    }, [nodeId, t]);
 
     return (
         <PageCard title={t('admin.vdsNodes.form.basic_details')} icon={Database}>
@@ -64,6 +101,46 @@ export function DetailsTab({
                             onChange={(e) => setForm({ ...form, description: e.target.value })}
                             className='min-h-[120px]'
                         />
+                    </div>
+
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.efi_storage')}</Label>
+                            <Select
+                                value={form.storage_efi}
+                                disabled={storagesLoading}
+                                onChange={(e) => setForm({ ...form, storage_efi: e.target.value })}
+                            >
+                                <option value=''>{t('admin.vdsNodes.form.storage_auto')}</option>
+                                {imageStorages.map((s) => (
+                                    <option key={s} value={s}>
+                                        {s}
+                                    </option>
+                                ))}
+                            </Select>
+                            <p className='text-xs text-muted-foreground/70 italic'>
+                                {t('admin.vdsNodes.form.efi_storage_help')}
+                            </p>
+                        </div>
+
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.tpm_storage')}</Label>
+                            <Select
+                                value={form.storage_tpm}
+                                disabled={storagesLoading}
+                                onChange={(e) => setForm({ ...form, storage_tpm: e.target.value })}
+                            >
+                                <option value=''>{t('admin.vdsNodes.form.storage_auto')}</option>
+                                {imageStorages.map((s) => (
+                                    <option key={s} value={s}>
+                                        {s}
+                                    </option>
+                                ))}
+                            </Select>
+                            <p className='text-xs text-muted-foreground/70 italic'>
+                                {t('admin.vdsNodes.form.tpm_storage_help')}
+                            </p>
+                        </div>
                     </div>
                 </div>
                 <div className='space-y-6'>
@@ -99,6 +176,32 @@ export function DetailsTab({
                         <p className='text-xs text-muted-foreground/70 italic'>
                             {t('admin.vdsNodes.form.select_location_description')}
                         </p>
+                    </div>
+
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.backup_storage')}</Label>
+                        <div className='flex items-center gap-2'>
+                            <Select
+                                className='flex-1'
+                                value={form.storage_backups}
+                                disabled={storagesLoading}
+                                onChange={(e) => setForm({ ...form, storage_backups: e.target.value })}
+                            >
+                                <option value=''>{t('admin.vdsNodes.form.storage_auto')}</option>
+                                {backupStorages.map((s) => (
+                                    <option key={s} value={s}>
+                                        {s}
+                                    </option>
+                                ))}
+                            </Select>
+                            {storagesLoading && <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />}
+                        </div>
+                        <p className='text-xs text-muted-foreground/70 italic'>
+                            {t('admin.vdsNodes.form.backup_storage_help')}
+                        </p>
+                        {storagesError && (
+                            <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>{storagesError}</p>
+                        )}
                     </div>
                 </div>
             </div>

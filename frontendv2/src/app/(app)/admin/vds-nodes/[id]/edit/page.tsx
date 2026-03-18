@@ -60,6 +60,9 @@ export interface VdsNodeForm {
     secret: string;
     tls_no_verify: 'true' | 'false';
     timeout: number;
+    storage_tpm: string;
+    storage_efi: string;
+    storage_backups: string;
 }
 
 export default function EditVdsNodePage() {
@@ -80,6 +83,9 @@ export default function EditVdsNodePage() {
         secret: '',
         tls_no_verify: 'false',
         timeout: 60,
+        storage_tpm: '',
+        storage_efi: '',
+        storage_backups: '',
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
@@ -152,6 +158,9 @@ export default function EditVdsNodePage() {
                     secret: '',
                     tls_no_verify: (node.tls_no_verify as 'true' | 'false') ?? 'false',
                     timeout: node.timeout ?? 60,
+                    storage_tpm: node.storage_tpm ?? '',
+                    storage_efi: node.storage_efi ?? '',
+                    storage_backups: node.storage_backups ?? '',
                 });
 
                 if (node.addional_headers) {
@@ -342,6 +351,7 @@ export default function EditVdsNodePage() {
 
                 <TabsContent value='details' className='mt-0'>
                     <DetailsTab
+                        nodeId={id}
                         form={form}
                         setForm={setForm}
                         errors={errors}

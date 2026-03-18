@@ -87,6 +87,8 @@ export default function VmInstanceEditPage() {
     const [efiStorage, setEfiStorage] = useState('');
     const [tpmEnabled, setTpmEnabled] = useState(false);
     const [tpmStorage, setTpmStorage] = useState('');
+    const [nodeEfiStorageDefault, setNodeEfiStorageDefault] = useState('');
+    const [nodeTpmStorageDefault, setNodeTpmStorageDefault] = useState('');
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instance-edit');
 
@@ -232,6 +234,8 @@ export default function VmInstanceEditPage() {
             setFreeIps([]);
             setBridges([]);
             setStorageList([]);
+            setNodeEfiStorageDefault('');
+            setNodeTpmStorageDefault('');
             return;
         }
         axios
@@ -253,6 +257,18 @@ export default function VmInstanceEditPage() {
                 setStorageList((res.data.data?.storage ?? []) as string[]);
             })
             .catch(() => setStorageList([]));
+
+        axios
+            .get(`/api/admin/vm-nodes/${nodeId}`)
+            .then((res) => {
+                const node = res.data.data?.vm_node ?? res.data.data;
+                setNodeEfiStorageDefault((node?.storage_efi as string) ?? '');
+                setNodeTpmStorageDefault((node?.storage_tpm as string) ?? '');
+            })
+            .catch(() => {
+                setNodeEfiStorageDefault('');
+                setNodeTpmStorageDefault('');
+            });
     }, [nodeId]);
 
     const fetchOwners = useCallback(async () => {
@@ -391,9 +407,13 @@ export default function VmInstanceEditPage() {
             if (!isLxc) {
                 payload.bios = biosMode;
                 payload.efi_enabled = efiEnabled;
-                payload.efi_storage = efiEnabled ? efiStorage || storageList[0] || 'local-lvm' : undefined;
+                payload.efi_storage = efiEnabled
+                    ? efiStorage || nodeEfiStorageDefault || storageList[0] || 'local-lvm'
+                    : undefined;
                 payload.tpm_enabled = tpmEnabled;
-                payload.tpm_storage = tpmEnabled ? tpmStorage || storageList[0] || 'local-lvm' : undefined;
+                payload.tpm_storage = tpmEnabled
+                    ? tpmStorage || nodeTpmStorageDefault || storageList[0] || 'local-lvm'
+                    : undefined;
             }
             await axios.patch(`/api/admin/vm-instances/${id}`, payload);
             toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');

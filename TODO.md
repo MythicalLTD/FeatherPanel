@@ -1,5 +1,4 @@
 - You can't select and admins can't configure where TPM,STORAGE,EFI WILL BE STORED (DISK??)
-- Users cannot restore from backups
 - Isers cannot add TPM support and EFI support
 - Users cannot mount their own ISO and install using a ISO
 - Users cannot change their DNS network

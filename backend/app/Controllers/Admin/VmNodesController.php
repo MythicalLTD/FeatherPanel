@@ -965,6 +965,88 @@ class VmNodesController
         }
     }
 
+    /**
+     * GET /api/admin/vm-nodes/{id}/backup-storage — List Proxmox storage (for vzdump backups).
+     */
+    public function backupStorage(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
+
+            $extraHeaders = [];
+            $extraParams = [];
+
+            if (!empty($vmNode['addional_headers']) && is_string($vmNode['addional_headers'])) {
+                $decoded = json_decode($vmNode['addional_headers'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraHeaders[$key] = (string) $value;
+                        }
+                    }
+                } else {
+                    App::getInstance(true)->getLogger()->warning(
+                        'VM node additional headers JSON is invalid for ID ' . $id
+                    );
+                }
+            }
+
+            if (!empty($vmNode['additional_params']) && is_string($vmNode['additional_params'])) {
+                $decoded = json_decode($vmNode['additional_params'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraParams[$key] = $value;
+                        }
+                    }
+                } else {
+                    App::getInstance(true)->getLogger()->warning(
+                        'VM node additional params JSON is invalid for ID ' . $id
+                    );
+                }
+            }
+
+            $client = new Proxmox(
+                $vmNode['fqdn'],
+                (int) $vmNode['port'],
+                $vmNode['scheme'],
+                $vmNode['user'],
+                $vmNode['token_id'],
+                $vmNode['secret'],
+                $tlsNoVerify,
+                (int) ($vmNode['timeout'] ?? 10),
+                $extraHeaders,
+                $extraParams,
+            );
+
+            $nodesResult = $client->getNodes();
+            if (!$nodesResult['ok'] || empty($nodesResult['nodes'])) {
+                return ApiResponse::error(
+                    'Could not get Proxmox nodes: ' . ($nodesResult['error'] ?? 'unknown'),
+                    'PROXMOX_ERROR',
+                    502,
+                );
+            }
+
+            $pveNode = (string) $nodesResult['nodes'][0]['node'];
+            $result = $client->getBackupStorages($pveNode);
+            if (!$result['ok']) {
+                return ApiResponse::error($result['error'] ?? 'Failed to fetch backup storage', 'PROXMOX_ERROR', 502);
+            }
+
+            return ApiResponse::success(['storages' => $result['storages']], 'Backup storage list fetched', 200);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox getBackupStorages failed for node ' . $id . ': ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to fetch backup storage: ' . $e->getMessage(), 'PROXMOX_ERROR', 500);
+        }
+    }
+
     #[OA\Get(
         path: '/api/admin/vm-nodes/{id}/ips',
         summary: 'List IPs for a VM node',

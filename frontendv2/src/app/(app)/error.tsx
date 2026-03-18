@@ -123,7 +123,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-4'>
             {renderBackground()}
             {hasOverlay && (
-                <div className='pointer-events-none absolute inset-0 z-[1]' style={overlayStyle} aria-hidden />
+                <div className='pointer-events-none absolute inset-0 z-1' style={overlayStyle} aria-hidden />
             )}
 
             <div className='pointer-events-auto absolute top-4 right-4 z-50'>

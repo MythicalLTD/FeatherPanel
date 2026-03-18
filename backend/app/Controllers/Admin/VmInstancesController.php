@@ -738,7 +738,12 @@ class VmInstancesController
                     ? trim($proxmoxUpdate['efi_storage'])
                     : null;
                 if ($efiEnabled === true && !isset($curQemuConfig['efidisk0'])) {
-                    $storageName = $efiStorage !== null && $efiStorage !== '' ? $efiStorage : 'local-lvm';
+                    $nodeEfiStorage = isset($vmNode['storage_efi']) && is_string($vmNode['storage_efi'])
+                        ? trim($vmNode['storage_efi'])
+                        : '';
+                    $storageName = $efiStorage !== null && $efiStorage !== ''
+                        ? $efiStorage
+                        : ($nodeEfiStorage !== '' ? $nodeEfiStorage : 'local-lvm');
                     // Let Proxmox allocate an EFI disk (special-case size handling, value "0" per qm docs).
                     $config['efidisk0'] = $storageName . ':0,efitype=4m,pre-enrolled-keys=1';
                     if (!isset($config['bios'])) {
@@ -790,7 +795,12 @@ class VmInstancesController
                     ? trim($proxmoxUpdate['tpm_storage'])
                     : null;
                 if ($tpmEnabled === true && !isset($curQemuConfig['tpmstate0'])) {
-                    $storageName = $tpmStorage !== null && $tpmStorage !== '' ? $tpmStorage : 'local-lvm';
+                    $nodeTpmStorage = isset($vmNode['storage_tpm']) && is_string($vmNode['storage_tpm'])
+                        ? trim($vmNode['storage_tpm'])
+                        : '';
+                    $storageName = $tpmStorage !== null && $tpmStorage !== ''
+                        ? $tpmStorage
+                        : ($nodeTpmStorage !== '' ? $nodeTpmStorage : 'local-lvm');
                     $config['tpmstate0'] = $storageName . ':1,format=qcow2,version=v2.0';
                 } elseif ($tpmEnabled === false && isset($curQemuConfig['tpmstate0'])) {
                     $tpmVolRef = null;
@@ -1670,6 +1680,17 @@ class VmInstancesController
             }
         }
 
+        // Prefer node-level backup storage when it is available on this Proxmox node.
+        if ($vmNode) {
+            $preferred = isset($vmNode['storage_backups']) && is_string($vmNode['storage_backups']) ? trim($vmNode['storage_backups']) : '';
+            if ($preferred !== '' && in_array($preferred, $storages, true)) {
+                $storages = array_merge(
+                    [$preferred],
+                    array_values(array_filter($storages, static fn ($s) => $s !== $preferred)),
+                );
+            }
+        }
+
         return ApiResponse::success([
             'backups'      => $backups,
             'backup_limit' => (int) ($instance['backup_limit'] ?? 5),
@@ -1747,7 +1768,12 @@ class VmInstancesController
             if (!$storagesRes['ok'] || empty($storagesRes['storages'])) {
                 return ApiResponse::error('No backup-capable storage found on node', 'NO_BACKUP_STORAGE', 400);
             }
-            $storage = $storagesRes['storages'][0];
+            $preferred = isset($vmNode['storage_backups']) && is_string($vmNode['storage_backups']) ? trim($vmNode['storage_backups']) : '';
+            if ($preferred !== '' && in_array($preferred, $storagesRes['storages'], true)) {
+                $storage = $preferred;
+            } else {
+                $storage = $storagesRes['storages'][0];
+            }
         }
 
         $backupLimit = (int) ($instance['backup_limit'] ?? 5);
