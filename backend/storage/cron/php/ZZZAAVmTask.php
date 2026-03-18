@@ -121,7 +121,7 @@ class ZZZAAVmTask implements TimeTask
                 $vmid = (int) $task['vmid'];
 
                 if (empty($upid)) {
-                    if ($type === 'create' || $type === 'reinstall') {
+                    if ($type === 'create') {
                         if ($step === 'initial') {
                             $this->logTask($type, '&eInitiating Clone operation...');
                             $this->initiateAsyncCreate($task, $client);
@@ -142,7 +142,7 @@ class ZZZAAVmTask implements TimeTask
                                         $n = (int) $m[1];
                                         $u = strtolower($m[2] ?? 'g');
                                         $currentDiskGb = match ($u) {
-                                            'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n
+                                            'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n,
                                         };
                                     }
                                 }
@@ -169,11 +169,10 @@ class ZZZAAVmTask implements TimeTask
 
                         if ($step === 'config') {
                             $this->logTask($type, '&eApplying Cloud-init / Container configuration...');
-                            // This is typically very fast, so we do it synchronously here
-                            VmInstanceUtil::completeTask($task, $client, true); // We'll add a 'skipStart' param
+                            $this->applyVmConfig($task, $client, $meta, $node, $vmid, $vmType);
 
                             $meta['current_step'] = 'start';
-                            VmTask::update($taskId, ['data' => json_encode($meta)]);
+                            VmTask::update($taskId, ['upid' => '', 'data' => json_encode($meta)]);
                             continue;
                         }
 
@@ -184,12 +183,153 @@ class ZZZAAVmTask implements TimeTask
                             if ($res['ok'] && $startUpid) {
                                 VmTask::update($taskId, ['upid' => $startUpid]);
                             } else {
-                                $this->logTask($type, '&aStart command sent (no task returned).');
-                                VmTask::update($taskId, ['status' => 'completed']);
-                                if (isset($meta['instance_id'])) {
-                                    \App\Chat\VmInstance::updateStatus((int) $meta['instance_id'], 'running');
+                                // Start command sent but no UPID returned (common for already running VMs or quick starts)
+                                if ($res['ok']) {
+                                    $this->logTask($type, '&aStart command sent successfully (no task returned).');
+                                    VmTask::update($taskId, ['status' => 'completed']);
+                                    if (isset($meta['instance_id'])) {
+                                        \App\Chat\VmInstance::updateStatus((int) $meta['instance_id'], 'running');
+                                    }
+                                    $this->logTask($type, "&aTask {$taskId} completed successfully.");
+                                } else {
+                                    $this->logTask($type, '&cFailed to start VM: ' . ($res['error'] ?? 'unknown'));
+                                    VmTask::update($taskId, ['status' => 'failed', 'error' => 'Start failed: ' . ($res['error'] ?? 'unknown')]);
                                 }
-                                $this->logTask($type, "&aTask {$taskId} completed successfully.");
+
+                                return;
+                            }
+                            continue;
+                        }
+                    }
+
+                    if ($type === 'reinstall') {
+                        if ($step === 'initial') {
+                            $this->logTask($type, '&eInitiating Clone operation...');
+                            $this->initiateAsyncCreate($task, $client);
+                            continue;
+                        }
+
+                        if ($step === 'resize') {
+                            $requestedDiskGb = (int) ($meta['disk'] ?? $meta['disk_gb'] ?? 0);
+                            if ($requestedDiskGb > 0) {
+                                $this->logTask($type, '&eChecking disk size before resize...');
+                                $cfg = $client->getVmConfig($node, $vmid, $vmType);
+                                $currentDiskGb = 0;
+                                if ($cfg['ok'] && is_array($cfg['config'])) {
+                                    $diskKey = $vmType === 'qemu' ? ($meta['root_disk'] ?? 'scsi0') : 'rootfs';
+                                    $diskValue = $cfg['config'][$diskKey] ?? '';
+                                    if (preg_match('/size=(\d+)([GgMmTt])?/', $diskValue, $m)) {
+                                        $n = (int) $m[1];
+                                        $u = strtolower($m[2] ?? 'g');
+                                        $currentDiskGb = match ($u) {
+                                            'm' => (int) ceil($n / 1024), 't' => $n * 1024, default => $n,
+                                        };
+                                    }
+                                }
+
+                                if ($requestedDiskGb > $currentDiskGb) {
+                                    $this->logTask($type, "&eResizing disk from {$currentDiskGb}G to {$requestedDiskGb}G...");
+                                    $res = $vmType === 'qemu'
+                                        ? $client->resizeQemuDisk($node, $vmid, $meta['root_disk'] ?? 'scsi0', $requestedDiskGb . 'G')
+                                        : $client->resizeContainerDisk($node, $vmid, 'rootfs', $requestedDiskGb . 'G');
+
+                                    if ($res['ok'] && !empty($res['upid'])) {
+                                        VmTask::update($taskId, ['upid' => $res['upid']]);
+                                        continue;
+                                    }
+                                } else {
+                                    $this->logTask($type, "&aDisk is already {$currentDiskGb}G or larger. Skipping resize.");
+                                }
+                            }
+
+                            $meta['current_step'] = 'config';
+                            VmTask::update($taskId, ['data' => json_encode($meta)]);
+                            continue;
+                        }
+
+                        if ($step === 'config') {
+                            $this->logTask($type, '&eApplying Cloud-init / Container configuration...');
+                            $this->applyVmConfig($task, $client, $meta, $node, $vmid, $vmType);
+
+                            $meta['current_step'] = 'backups';
+                            VmTask::update($taskId, ['upid' => '', 'data' => json_encode($meta)]);
+                            continue;
+                        }
+
+                        if ($step === 'backups') {
+                            $this->logTask($type, '&eDeleting old backups...');
+                            $instanceId = (int) ($meta['instance_id'] ?? 0);
+                            $instance = $instanceId > 0 ? \App\Chat\VmInstance::getById($instanceId) : null;
+                            if ($instance) {
+                                VmInstanceUtil::deleteInstanceBackups($instance, $client);
+                                $this->logTask($type, '&aBackups deleted.');
+                            } else {
+                                $this->logTask($type, '&eNo instance found for backup deletion.');
+                            }
+
+                            $meta['current_step'] = 'cleanup';
+                            VmTask::update($taskId, ['data' => json_encode($meta)]);
+                            continue;
+                        }
+
+                        if ($step === 'cleanup') {
+                            $oldVmid = (int) ($meta['old_vmid'] ?? 0);
+                            if ($oldVmid > 0 && $oldVmid !== $vmid) {
+                                $this->logTask($type, "&eStopping and deleting old VM {$oldVmid}...");
+                                $client->stopVm($node, $oldVmid, $vmType);
+                                sleep(2);
+                                $res = $client->deleteVm($node, $oldVmid, $vmType);
+                                if ($res['ok']) {
+                                    $this->logTask($type, "&aOld VM {$oldVmid} deleted.");
+                                } else {
+                                    $this->logTask($type, '&cFailed to delete old VM: ' . ($res['error'] ?? 'unknown'));
+                                }
+                            }
+
+                            $meta['current_step'] = 'update_db';
+                            VmTask::update($taskId, ['data' => json_encode($meta)]);
+                            continue;
+                        }
+
+                        if ($step === 'update_db') {
+                            $this->logTask($type, '&eUpdating database records...');
+                            $instanceId = (int) ($meta['instance_id'] ?? 0);
+                            if ($instanceId > 0) {
+                                $pdo = \App\Chat\Database::getPdoConnection();
+                                $stmt = $pdo->prepare(
+                                    'UPDATE featherpanel_vm_instances SET vmid = :vmid, pve_node = :node, status = :status WHERE id = :id'
+                                );
+                                $stmt->execute([
+                                    'vmid' => $vmid,
+                                    'node' => $node,
+                                    'status' => 'stopped',
+                                    'id' => $instanceId,
+                                ]);
+                            }
+
+                            $meta['current_step'] = 'start';
+                            VmTask::update($taskId, ['upid' => '', 'data' => json_encode($meta)]);
+                            continue;
+                        }
+
+                        if ($step === 'start') {
+                            $this->logTask($type, '&eStarting VM/Container...');
+                            $res = $client->startVm($node, $vmid, $vmType);
+                            $startUpid = isset($res['data']) && is_string($res['data']) ? $res['data'] : null;
+                            if ($res['ok'] && $startUpid) {
+                                VmTask::update($taskId, ['upid' => $startUpid]);
+                            } else {
+                                if ($res['ok']) {
+                                    $this->logTask($type, '&aStart command sent successfully (no task returned).');
+                                    VmTask::update($taskId, ['status' => 'completed']);
+                                    if (isset($meta['instance_id'])) {
+                                        \App\Chat\VmInstance::updateStatus((int) $meta['instance_id'], 'running');
+                                    }
+                                    $this->logTask($type, "&aTask {$taskId} completed successfully.");
+                                } else {
+                                    $this->logTask($type, '&cFailed to start VM: ' . ($res['error'] ?? 'unknown'));
+                                    VmTask::update($taskId, ['status' => 'failed', 'error' => 'Start failed: ' . ($res['error'] ?? 'unknown')]);
+                                }
 
                                 return;
                             }
@@ -301,7 +441,27 @@ class ZZZAAVmTask implements TimeTask
                     $this->logTask($type, '&aProxmox operation finished successfully.');
 
                     // Sequence management
-                    if ($type === 'create' || $type === 'reinstall') {
+                    if ($type === 'create') {
+                        if ($step === 'initial') {
+                            $meta['current_step'] = 'resize';
+                        } elseif ($step === 'resize') {
+                            $meta['current_step'] = 'config';
+                        } elseif ($step === 'start') {
+                            // Start finished
+                            if (isset($meta['instance_id'])) {
+                                \App\Chat\VmInstance::updateStatus((int) $meta['instance_id'], 'running');
+                            }
+                            VmTask::update($taskId, ['status' => 'completed']);
+                            $this->logTask($type, "&aTask {$taskId} completed successfully.");
+
+                            return;
+                        }
+
+                        VmTask::update($taskId, ['upid' => '', 'data' => json_encode($meta)]);
+                        continue;
+                    }
+
+                    if ($type === 'reinstall') {
                         if ($step === 'initial') {
                             $meta['current_step'] = 'resize';
                         } elseif ($step === 'resize') {
@@ -378,6 +538,166 @@ class ZZZAAVmTask implements TimeTask
             ]);
         } catch (\Exception $e) {
             VmTask::update($taskId, ['status' => 'failed', 'error' => 'Clone error: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Apply VM configuration (Cloud-init for QEMU, network for LXC).
+     */
+    private function applyVmConfig(array $task, \App\Services\Proxmox\Proxmox $client, array $meta, string $node, int $vmid, string $vmType)
+    {
+        $taskId = $task['task_id'];
+        $type = $task['task_type'];
+        $instanceId = (int) ($meta['instance_id'] ?? 0);
+
+        try {
+            if ($type === 'create') {
+                // For create, we need to set up the VM and create DB record
+                $ipId = isset($meta['vm_ip_id']) ? (int) $meta['vm_ip_id'] : null;
+                $ip = $ipId ? \App\Chat\VmIp::getById($ipId) : null;
+                if (!$ip) {
+                    throw new \Exception('IP no longer available');
+                }
+
+                $cidr = (int) ($ip['cidr'] ?? 24);
+                $gateway = $ip['gateway'] ?? '';
+                $bridge = $meta['bridge'] ?? 'vmbr0';
+                $memory = (int) ($meta['memory'] ?? 512);
+                $cpus = (int) ($meta['cpus'] ?? 1);
+                $cores = (int) ($meta['cores'] ?? 1);
+                $onBoot = !empty($meta['on_boot']);
+                $hostname = $meta['hostname'] ?? 'vm-' . $vmid;
+
+                if ($vmType === 'qemu') {
+                    $client->setVmConfig($node, $vmid, 'qemu', [
+                        'memory' => $memory,
+                        'sockets' => $cpus,
+                        'cores' => $cores,
+                        'nameserver' => '1.1.1.1 8.8.8.8',
+                        'ipconfig0' => "ip={$ip['ip']}/$cidr" . ($gateway ? ",gw=$gateway" : ''),
+                        'onboot' => $onBoot ? 1 : 0,
+                        'boot' => 'order=scsi0',
+                        'ciuser' => $meta['ci_user'] ?? 'debian',
+                        'cipassword' => $meta['ci_password'] ?? bin2hex(random_bytes(6)),
+                        'tags' => 'FeatherPanel-Managed',
+                        'description' => "FeatherPanel Managed VM | IP: {$ip['ip']} | Hostname: $hostname | User: {$task['user_uuid']} | Created: " . date('Y-m-d H:i:s'),
+                    ]);
+                } else {
+                    $client->setVmConfig($node, $vmid, 'lxc', [
+                        'memory' => $memory,
+                        'cores' => $cpus * $cores,
+                        'nameserver' => '1.1.1.1 8.8.8.8',
+                        'net0' => "name=eth0,bridge=$bridge,ip={$ip['ip']}/$cidr" . ($gateway ? ",gw=$gateway" : ''),
+                        'onboot' => $onBoot ? 1 : 0,
+                        'tags' => 'FeatherPanel-Managed',
+                        'description' => "FeatherPanel Managed VM | IP: {$ip['ip']} | Hostname: $hostname | User: {$task['user_uuid']} | Created: " . date('Y-m-d H:i:s'),
+                    ]);
+                }
+
+                // Create DB record
+                $pdo = \App\Chat\Database::getPdoConnection();
+                $instanceData = [
+                    'vmid' => $vmid,
+                    'vm_node_id' => (int) $task['vm_node_id'],
+                    'user_uuid' => $task['user_uuid'],
+                    'pve_node' => $node,
+                    'plan_id' => $meta['plan_id'] ?? null,
+                    'template_id' => $meta['template_id'] ?? null,
+                    'vm_type' => $vmType,
+                    'hostname' => $hostname,
+                    'status' => 'stopped',
+                    'ip_address' => $ip['ip'],
+                    'gateway' => $ip['gateway'] ?? null,
+                    'vm_ip_id' => $ipId,
+                    'notes' => $meta['notes'] ?? null,
+                    'backup_limit' => (int) ($meta['backup_limit'] ?? 5),
+                    'memory' => $memory,
+                    'cpus' => $cpus,
+                    'cores' => $cores,
+                    'disk_gb' => (int) ($meta['disk'] ?? 10),
+                    'on_boot' => $onBoot ? 1 : 0,
+                ];
+
+                $instance = \App\Chat\VmInstance::create($instanceData, $pdo);
+
+                \App\Chat\VmInstanceActivity::createActivity([
+                    'vm_instance_id' => (int) ($instance['id'] ?? 0),
+                    'vm_node_id' => (int) $task['vm_node_id'],
+                    'user_id' => null,
+                    'event' => 'vm:create',
+                    'metadata' => ['hostname' => $hostname, 'vmid' => $vmid],
+                    'ip' => '127.0.0.1',
+                ]);
+
+                // Store instance_id for later steps
+                $meta['instance_id'] = (int) ($instance['id'] ?? 0);
+                VmTask::update($taskId, ['data' => json_encode($meta)]);
+            } elseif ($type === 'reinstall') {
+                // For reinstall, just update the config
+                $ipAddress = $meta['ip_address'] ?? null;
+                $ipCidr = (int) ($meta['ip_cidr'] ?? 24);
+                $gateway = trim((string) ($meta['gateway'] ?? ''));
+                $memory = (int) ($meta['memory'] ?? 512);
+                $cpus = (int) ($meta['cpus'] ?? 1);
+                $cores = (int) ($meta['cores'] ?? 1);
+                $ciUser = $meta['ci_user'] ?? null;
+                $ciPassword = $meta['ci_password'] ?? null;
+                $hostname = $meta['hostname'] ?? 'vm-' . $vmid;
+
+                if ($vmType === 'qemu') {
+                    $ipconfig0 = 'ip=' . $ipAddress . '/' . $ipCidr;
+                    if ($gateway !== '') {
+                        $ipconfig0 .= ',gw=' . $gateway;
+                    }
+                    $rootDisk = $meta['root_disk'] ?? 'scsi0';
+                    $bootOrder = 'order=' . $rootDisk;
+
+                    $client->setVmConfig($node, $vmid, 'qemu', [
+                        'nameserver' => '1.1.1.1 8.8.8.8',
+                        'ipconfig0' => $ipconfig0,
+                        'boot' => $bootOrder,
+                        'memory' => $memory,
+                        'sockets' => $cpus > 0 ? $cpus : 1,
+                        'cores' => $cores > 0 ? $cores : 1,
+                        'ciuser' => $ciUser ?? 'debian',
+                        'cipassword' => $ciPassword ?? bin2hex(random_bytes(6)),
+                        'tags' => 'FeatherPanel-Managed',
+                        'description' => "FeatherPanel Managed VM (Reinstalled) | IP: $ipAddress | Hostname: $hostname | User: {$task['user_uuid']} | Reinstalled: " . date('Y-m-d H:i:s'),
+                    ], []);
+                } else {
+                    // Clean up old network interfaces
+                    $deleteNetKeys = [];
+                    $getConfig = $client->getVmConfig($node, $vmid, 'lxc');
+                    if ($getConfig['ok'] && is_array($getConfig['config'] ?? null)) {
+                        foreach (array_keys((array) $getConfig['config']) as $k) {
+                            if (preg_match('/^net\d+$/', (string) $k)) {
+                                $deleteNetKeys[] = (string) $k;
+                            }
+                        }
+                    }
+                    if (!empty($deleteNetKeys)) {
+                        $client->setVmConfig($node, $vmid, 'lxc', [], $deleteNetKeys);
+                    }
+
+                    $net0 = 'name=eth0,bridge=vmbr0,ip=' . $ipAddress . '/' . $ipCidr;
+                    if ($gateway !== '') {
+                        $net0 .= ',gw=' . $gateway;
+                    }
+
+                    $client->setVmConfig($node, $vmid, 'lxc', [
+                        'nameserver' => '1.1.1.1 8.8.8.8',
+                        'net0' => $net0,
+                        'memory' => $memory,
+                        'cores' => $cores > 0 ? $cores : 1,
+                        'onboot' => 0,
+                        'tags' => 'FeatherPanel-Managed',
+                        'description' => "FeatherPanel Managed VM (Reinstalled) | IP: $ipAddress | Hostname: $hostname | User: {$task['user_uuid']} | Reinstalled: " . date('Y-m-d H:i:s'),
+                    ], []);
+                }
+            }
+        } catch (\Exception $e) {
+            VmTask::update($taskId, ['status' => 'failed', 'error' => 'Config failed: ' . $e->getMessage()]);
+            throw $e;
         }
     }
 }

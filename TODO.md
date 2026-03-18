@@ -1,4 +1,4 @@
-- Vms don't start after reinstall / init 
+
 - Backups don't show that they are in progress and they will let you create 100 of them
 - You can't select and admins can't configure where TPM,STORAGE,EFI WILL BE STORED (DISK??)
 - Users cannot restore from backups

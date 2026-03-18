@@ -45,7 +45,7 @@ services:
 
   backend:
     #image: ghcr.io/mythicalltd/featherpanel-backend:dev
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: featherpanel_backend
@@ -77,7 +77,7 @@ services:
 
   frontendv2:
     #image: ghcr.io/mythicalltd/featherpanel-frontendv2:dev
-    build: 
+    build:
       context: ./frontendv2
       dockerfile: Dockerfile
     container_name: featherpanel_frontendv2
@@ -94,11 +94,45 @@ services:
         condition: service_healthy
     healthcheck:
       # Node image has no curl; use node to hit Caddy on 80
-      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:80', r => { r.resume(); process.exit(r.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:80', r => { r.resume(); process.exit(r.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));",
+        ]
       timeout: 20s
       retries: 10
     ports:
       - "4831:80"
+    networks:
+      - featherpanel_network
+
+  async-runner:
+    build:
+      context: ./runner
+      dockerfile: Dockerfile
+    container_name: featherpanel_async_runner
+    restart: unless-stopped
+    environment:
+      - RUST_LOG=info
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${MARIADB_DATABASE:-featherpanel}
+      - DB_USER=${MARIADB_USER:-featherpanel}
+      - DB_PASS=${MARIADB_PASSWORD:-featherpanel_password}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-featherpanel_redis}@redis:6379
+    volumes:
+      - featherpanel_config:/app/config:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      frontendv2:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     networks:
       - featherpanel_network
 

@@ -26,6 +26,12 @@ class MailQueue
 
     public static function create(array $data): int | false
     {
+        $app = \App\App::getInstance(false, true);
+        $config = new \App\Config\ConfigFactory($app->getDatabase()->getPdo());
+        if ($config->getSetting(\App\Config\ConfigInterface::SMTP_ENABLED, 'false') === 'false') {
+            return true;
+        }
+
         $required = ['user_uuid', 'subject', 'body'];
         foreach ($required as $field) {
             if (!isset($data[$field]) || trim($data[$field]) === '') {
@@ -38,7 +44,12 @@ class MailQueue
         $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($data)) {
-            return (int) $pdo->lastInsertId();
+            $id = (int) $pdo->lastInsertId();
+
+            // Notify Rust runner via Redis
+            self::notifyRustRunner($id);
+
+            return $id;
         }
 
         return false;
@@ -159,5 +170,22 @@ class MailQueue
         $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE user_uuid = :user_uuid');
 
         return $stmt->execute(['user_uuid' => $userUuid]);
+    }
+
+    /**
+     * Publish notification to Redis for instant mail processing by Rust runner.
+     */
+    private static function notifyRustRunner(int $queueId): void
+    {
+        try {
+            $redis = \App\App::getInstance(true, false, false)->getRedisConnection();
+            if ($redis) {
+                $payload = json_encode(['queue_id' => (string) $queueId]);
+                $redis->publish('featherpanel:mail:pending', $payload);
+            }
+        } catch (\Exception $e) {
+            // Silently fail - cron will pick it up as fallback
+            error_log('Failed to notify Rust runner: ' . $e->getMessage());
+        }
     }
 }

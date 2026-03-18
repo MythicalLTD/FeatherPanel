@@ -1,0 +1,17 @@
+[Unit]
+Description=FeatherPanel Async Runner
+After=network.target mysql.service redis.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/featherpanel/runner
+Environment="RUST_LOG=info"
+EnvironmentFile=/var/www/featherpanel/runner/.env
+ExecStart=/var/www/featherpanel/runner/target/release/async-runner
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+target/
+.env
+.env.example
+*.md
+.git
+.gitignore
+docker-compose.yml
+featherpanel-runner.service
