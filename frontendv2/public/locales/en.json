@@ -6685,10 +6685,55 @@
 			"title": "VDS Settings",
 			"reinstall": {
 				"title": "Reinstall Operating System",
-				"description": "Permanently wipe and reinstall your VDS.",
+				"description": "This will permanently wipe the current OS and reinstall from a chosen template. All data on the VDS will be lost.",
 				"button": "Begin Reinstall",
 				"confirm_title": "Confirm Reinstall",
-				"confirm_desc": "All data will be lost. Proceed?"
+				"confirm_desc": "This action is irreversible. All data on this VDS will be destroyed.",
+				"templates_loading": "Loading templates...",
+				"templates_none": "No {template_type} templates available for this VDS. Contact your administrator.",
+				"confirm_body_prefix": "You are about to reinstall ",
+				"confirm_body_on": " on ",
+				"confirm_body_after_hostname": ". All existing data will be permanently erased.",
+				"cloud_init_credentials_optional": "Cloud-Init Credentials (optional)",
+				"cloud_init": {
+					"username_label": "Username",
+					"username_placeholder": "e.g. ubuntu",
+					"password_label": "Password",
+					"password_placeholder": "Leave blank to keep existing",
+					"ssh_keys_label": "SSH Public Keys",
+					"ssh_keys_placeholder": "Paste SSH public key(s) here..."
+				},
+				"cancel_button": "Cancel",
+				"confirm_button": "Confirm Reinstall"
+			},
+			"hardware": {
+				"title": "QEMU Hardware (EFI / TPM)",
+				"description": "Enable UEFI (EFI disk) and TPM 2.0 state disk for this QEMU VM.",
+				"loading": "Loading hardware…",
+				"bios_label": "BIOS / Firmware",
+				"bios_seabios": "Legacy (SeaBIOS)",
+				"bios_ovmf": "UEFI (OVMF)",
+				"efi_label": "Enable EFI disk",
+				"efi_help": "Adds efidisk0 (UEFI firmware required for TPM).",
+				"tpm_label": "Enable TPM 2.0",
+				"tpm_help": "Adds tpmstate0 (v2.0). Usually requires EFI/OVMF.",
+				"apply_button": "Apply",
+				"apply_success": "Hardware updated successfully.",
+				"apply_failed": "Failed to update hardware."
+			},
+			"network": {
+				"title": "Network & DNS",
+				"description": "Update DNS settings for this VDS instance.",
+				"loading": "Loading…",
+				"ip_label": "Primary IP",
+				"nameserver_label": "Nameserver",
+				"nameserver_placeholder": "1.1.1.1 8.8.8.8",
+				"searchdomain_label": "Search domain",
+				"searchdomain_placeholder": "example.com",
+				"apply_button": "Apply",
+				"apply_success": "Network/DNS updated.",
+				"apply_failed": "Failed to update network/DNS",
+				"select_ip": "Select an IP"
 			}
 		}
 	},

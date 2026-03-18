@@ -1,5 +1,3 @@
-- You can't select and admins can't configure where TPM,STORAGE,EFI WILL BE STORED (DISK??)
-- Isers cannot add TPM support and EFI support
 - Users cannot mount their own ISO and install using a ISO
 - Users cannot change their DNS network
 - Let admins know the one line proxmox command they have to run so they can acess the fucking VNC :))

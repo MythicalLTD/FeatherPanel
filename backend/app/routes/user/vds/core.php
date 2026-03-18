@@ -71,6 +71,76 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(30)
     );
 
+    // QEMU hardware settings: EFI + TPM (bios/efidisk0/tpmstate0)
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-qemu-hardware-get',
+        '/api/user/vm-instances/{id}/qemu-hardware',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmUserInstanceController())->getQemuHardware($request, $id);
+        },
+        'id',
+        ['GET'],
+        Rate::perMinute(30)
+    );
+
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-qemu-hardware-patch',
+        '/api/user/vm-instances/{id}/qemu-hardware',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmUserInstanceController())->patchQemuHardware($request, $id);
+        },
+        'id',
+        ['PATCH'],
+        Rate::perMinute(10)
+    );
+
+    // Network + DNS options (free IPs, current DNS)
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-network-options',
+        '/api/user/vm-instances/{id}/network-options',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmUserInstanceController())->getNetworkOptions($request, $id);
+        },
+        'id',
+        ['GET'],
+        Rate::perMinute(30)
+    );
+
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
+        'user-vm-instance-network-dns-patch',
+        '/api/user/vm-instances/{id}/network-dns',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmUserInstanceController())->patchNetworkDns($request, $id);
+        },
+        'id',
+        ['PATCH'],
+        Rate::perMinute(10)
+    );
+
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
         'user-vm-instance-templates',

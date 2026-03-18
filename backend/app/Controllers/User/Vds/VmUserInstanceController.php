@@ -17,11 +17,13 @@
 
 namespace App\Controllers\User\Vds;
 
+use App\App;
 use App\Chat\VmNode;
 use App\Chat\VmTask;
 use App\Chat\Database;
 use App\Chat\VmSubuser;
 use App\Chat\VmInstance;
+use App\Chat\VmIp;
 use App\Helpers\VmGateway;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -243,6 +245,554 @@ class VmUserInstanceController
         }
 
         return ApiResponse::success(['status' => $result['status'] ?? []], 'Status fetched', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/user/vm-instances/{id}/qemu-hardware',
+        summary: 'Get QEMU hardware settings (EFI + TPM)',
+        description: 'Returns the current QEMU BIOS mode and whether EFI disk and TPM state disks are present.',
+        tags: ['User - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Hardware settings fetched successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'bios', type: 'string', nullable: true),
+                        new OA\Property(property: 'efi_enabled', type: 'boolean'),
+                        new OA\Property(property: 'tpm_enabled', type: 'boolean'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox error'),
+        ]
+    )]
+    public function getQemuHardware(Request $request, int $id): Response
+    {
+        $user = $request->attributes->get('user');
+        $vmInstance = $request->attributes->get('vmInstance');
+
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'settings')) {
+            return ApiResponse::error('You do not have permission to change settings for this VM', 'PERMISSION_DENIED', 403);
+        }
+
+        if (($vmInstance['vm_type'] ?? 'qemu') !== 'qemu') {
+            return ApiResponse::error('QEMU hardware settings are only available for QEMU VMs', 'INVALID_VM_TYPE', 400);
+        }
+
+        $vmNode = VmNode::getVmNodeById((int) $vmInstance['vm_node_id']);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node = $vmInstance['pve_node'] ?? '';
+        if ($node === '') {
+            $find = $client->findNodeByVmid((int) $vmInstance['vmid']);
+            $node = $find['ok'] ? $find['node'] : null;
+        }
+        if ($node === null || $node === '') {
+            return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
+        }
+
+        $result = $client->getVmConfig($node, (int) $vmInstance['vmid'], 'qemu');
+        if (!$result['ok'] || !is_array($result['config'] ?? null)) {
+            return ApiResponse::error('Failed to fetch QEMU hardware config', 'PROXMOX_ERROR', 502);
+        }
+
+        $cfg = $result['config'];
+        $bios = isset($cfg['bios']) && is_string($cfg['bios']) ? $cfg['bios'] : null;
+
+        return ApiResponse::success(
+            [
+                'bios' => $bios,
+                'efi_enabled' => array_key_exists('efidisk0', $cfg),
+                'tpm_enabled' => array_key_exists('tpmstate0', $cfg),
+            ],
+            'Hardware settings fetched',
+            200
+        );
+    }
+
+    #[OA\Patch(
+        path: '/api/user/vm-instances/{id}/qemu-hardware',
+        summary: 'Update QEMU hardware settings (EFI + TPM)',
+        description: 'Updates Proxmox config to enable/disable EFI disk and TPM state disk. Optional BIOS mode can be updated.',
+        tags: ['User - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'bios', type: 'string', enum: ['seabios', 'ovmf'], nullable: true),
+                    new OA\Property(property: 'efi_enabled', type: 'boolean', nullable: true),
+                    new OA\Property(property: 'tpm_enabled', type: 'boolean', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Hardware updated successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox error'),
+        ]
+    )]
+    public function patchQemuHardware(Request $request, int $id): Response
+    {
+        $user = $request->attributes->get('user');
+        $vmInstance = $request->attributes->get('vmInstance');
+
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'settings')) {
+            return ApiResponse::error('You do not have permission to change settings for this VM', 'PERMISSION_DENIED', 403);
+        }
+
+        if (($vmInstance['vm_type'] ?? 'qemu') !== 'qemu') {
+            return ApiResponse::error('QEMU hardware settings are only available for QEMU VMs', 'INVALID_VM_TYPE', 400);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        $biosMode = null;
+        if (array_key_exists('bios', $data) && $data['bios'] !== null) {
+            $rawBios = is_string($data['bios']) ? strtolower(trim($data['bios'])) : '';
+            if (!in_array($rawBios, ['seabios', 'ovmf'], true)) {
+                return ApiResponse::error('Invalid bios value', 'INVALID_BIOS', 400);
+            }
+            $biosMode = $rawBios;
+        }
+
+        $efiEnabled = null;
+        if (array_key_exists('efi_enabled', $data) && $data['efi_enabled'] !== null) {
+            $efiEnabledParsed = filter_var($data['efi_enabled'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($efiEnabledParsed === null) {
+                return ApiResponse::error('Invalid efi_enabled value', 'INVALID_EFI', 400);
+            }
+            $efiEnabled = $efiEnabledParsed;
+        }
+
+        $tpmEnabled = null;
+        if (array_key_exists('tpm_enabled', $data) && $data['tpm_enabled'] !== null) {
+            $tpmEnabledParsed = filter_var($data['tpm_enabled'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($tpmEnabledParsed === null) {
+                return ApiResponse::error('Invalid tpm_enabled value', 'INVALID_TPM', 400);
+            }
+            $tpmEnabled = $tpmEnabledParsed;
+        }
+
+        if ($biosMode === null && $efiEnabled === null && $tpmEnabled === null) {
+            return ApiResponse::success(['instance' => $vmInstance], 'No changes to apply', 200);
+        }
+
+        $vmNode = VmNode::getVmNodeById((int) $vmInstance['vm_node_id']);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node = $vmInstance['pve_node'] ?? '';
+        if ($node === '') {
+            $find = $client->findNodeByVmid((int) $vmInstance['vmid']);
+            $node = $find['ok'] ? $find['node'] : null;
+        }
+        if ($node === null || $node === '') {
+            return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
+        }
+
+        $vmid = (int) $vmInstance['vmid'];
+
+        $curCfg = $client->getVmConfig($node, $vmid, 'qemu');
+        if (!$curCfg['ok'] || !is_array($curCfg['config'] ?? null)) {
+            return ApiResponse::error('Failed to fetch current QEMU config', 'PROXMOX_ERROR', 502);
+        }
+        /** @var array<string, mixed> $curQemuConfig */
+        $curQemuConfig = $curCfg['config'];
+
+        $config = [];
+
+        if ($biosMode !== null) {
+            $config['bios'] = $biosMode;
+        }
+
+        // Enabling TPM usually requires UEFI + EFI disk; auto-enable EFI if needed
+        // unless the user explicitly disabled EFI.
+        if ($tpmEnabled === true && $efiEnabled !== false && !array_key_exists('efidisk0', $curQemuConfig)) {
+            $efiEnabled = true;
+        }
+
+        if ($efiEnabled === true && !array_key_exists('efidisk0', $curQemuConfig)) {
+            $nodeEfiStorage = isset($vmNode['storage_efi']) && is_string($vmNode['storage_efi'])
+                ? trim($vmNode['storage_efi'])
+                : '';
+            $storageName = $nodeEfiStorage !== '' ? $nodeEfiStorage : 'local-lvm';
+
+            $config['efidisk0'] = $storageName . ':0,efitype=4m,pre-enrolled-keys=1';
+            if (!array_key_exists('bios', $config)) {
+                $config['bios'] = 'ovmf';
+            }
+        } elseif ($efiEnabled === false && array_key_exists('efidisk0', $curQemuConfig)) {
+            $efiVolRef = null;
+            if (is_string($curQemuConfig['efidisk0'])) {
+                $parts = explode(',', $curQemuConfig['efidisk0']);
+                $efiVolRef = trim($parts[0]);
+            }
+
+            $unlinkEfi = $client->unlinkQemuDisks($node, $vmid, ['efidisk0']);
+            if (!$unlinkEfi['ok']) {
+                return ApiResponse::error('Failed to unlink EFI disk', 'PROXMOX_UPDATE_FAILED', 502);
+            }
+
+            if ($efiVolRef !== null && $efiVolRef !== '') {
+                $cfgAfter = $client->getVmConfig($node, $vmid, 'qemu');
+                if ($cfgAfter['ok'] && is_array($cfgAfter['config'] ?? null)) {
+                    /** @var array<string, mixed> $cfgArrAfter */
+                    $cfgArrAfter = $cfgAfter['config'];
+                    $unusedKey = null;
+                    foreach ($cfgArrAfter as $cfgKey => $value) {
+                        if (!is_string($cfgKey) || !preg_match('/^unused\d+$/', $cfgKey)) {
+                            continue;
+                        }
+                        $val = is_string($value) ? $value : '';
+                        if ($val !== '' && str_starts_with($val, $efiVolRef)) {
+                            $unusedKey = $cfgKey;
+                            break;
+                        }
+                    }
+                    if ($unusedKey !== null) {
+                        $unlinkUnused = $client->unlinkQemuDisks($node, $vmid, [$unusedKey]);
+                        if (!$unlinkUnused['ok']) {
+                            App::getInstance(true)->getLogger()->warning(
+                                'Failed to destroy unused EFI disk ' . $unusedKey . ' for VM ' . $vmid . ': ' .
+                                ($unlinkUnused['error'] ?? 'unknown')
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($tpmEnabled === true && !array_key_exists('tpmstate0', $curQemuConfig)) {
+            $nodeTpmStorage = isset($vmNode['storage_tpm']) && is_string($vmNode['storage_tpm'])
+                ? trim($vmNode['storage_tpm'])
+                : '';
+            $storageName = $nodeTpmStorage !== '' ? $nodeTpmStorage : 'local-lvm';
+
+            $config['tpmstate0'] = $storageName . ':1,format=qcow2,version=v2.0';
+            if (!array_key_exists('bios', $config)) {
+                // Keep BIOS compatible for TPM use cases.
+                $config['bios'] = 'ovmf';
+            }
+        } elseif ($tpmEnabled === false && array_key_exists('tpmstate0', $curQemuConfig)) {
+            $tpmVolRef = null;
+            if (is_string($curQemuConfig['tpmstate0'])) {
+                $parts = explode(',', $curQemuConfig['tpmstate0']);
+                $tpmVolRef = trim($parts[0]);
+            }
+
+            $unlinkTpm = $client->unlinkQemuDisks($node, $vmid, ['tpmstate0']);
+            if (!$unlinkTpm['ok']) {
+                return ApiResponse::error('Failed to unlink TPM disk', 'PROXMOX_UPDATE_FAILED', 502);
+            }
+
+            if ($tpmVolRef !== null && $tpmVolRef !== '') {
+                $cfgAfter = $client->getVmConfig($node, $vmid, 'qemu');
+                if ($cfgAfter['ok'] && is_array($cfgAfter['config'] ?? null)) {
+                    /** @var array<string, mixed> $cfgArrAfter */
+                    $cfgArrAfter = $cfgAfter['config'];
+                    $unusedKey = null;
+                    foreach ($cfgArrAfter as $cfgKey => $value) {
+                        if (!is_string($cfgKey) || !preg_match('/^unused\d+$/', $cfgKey)) {
+                            continue;
+                        }
+                        $val = is_string($value) ? $value : '';
+                        if ($val !== '' && str_starts_with($val, $tpmVolRef)) {
+                            $unusedKey = $cfgKey;
+                            break;
+                        }
+                    }
+                    if ($unusedKey !== null) {
+                        $unlinkUnused = $client->unlinkQemuDisks($node, $vmid, [$unusedKey]);
+                        if (!$unlinkUnused['ok']) {
+                            App::getInstance(true)->getLogger()->warning(
+                                'Failed to destroy unused TPM disk ' . $unusedKey . ' for VM ' . $vmid . ': ' .
+                                ($unlinkUnused['error'] ?? 'unknown')
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($config)) {
+            $res = $client->setVmConfig($node, $vmid, 'qemu', $config, []);
+            if (!$res['ok']) {
+                return ApiResponse::error('Proxmox config update failed: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+            }
+        }
+
+        VmInstanceActivity::createActivity([
+            'vm_instance_id' => $id,
+            'vm_node_id'     => (int) ($vmInstance['vm_node_id'] ?? 0),
+            'user_id'        => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
+            'event'          => 'vm:hardware.qemu.update',
+            'metadata'       => [
+                'bios' => $biosMode,
+                'efi_enabled' => $efiEnabled,
+                'tpm_enabled' => $tpmEnabled,
+            ],
+            'ip'             => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        // Return updated hardware state.
+        $afterCfg = $client->getVmConfig($node, $vmid, 'qemu');
+        $after = is_array($afterCfg['config'] ?? null) ? $afterCfg['config'] : [];
+
+        return ApiResponse::success(
+            [
+                'bios' => isset($after['bios']) && is_string($after['bios']) ? $after['bios'] : null,
+                'efi_enabled' => array_key_exists('efidisk0', $after),
+                'tpm_enabled' => array_key_exists('tpmstate0', $after),
+            ],
+            'QEMU hardware updated successfully',
+            200
+        );
+    }
+
+    #[OA\Get(
+        path: '/api/user/vm-instances/{id}/network-options',
+        summary: 'Get DNS options',
+        description: 'Returns current DNS settings (nameserver/searchdomain). Supports both QEMU and LXC.',
+        tags: ['User - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Options fetched successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'nameserver', type: 'string', nullable: true),
+                        new OA\Property(property: 'searchdomain', type: 'string', nullable: true),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox error'),
+        ]
+    )]
+    public function getNetworkOptions(Request $request, int $id): Response
+    {
+        $user = $request->attributes->get('user');
+        $vmInstance = $request->attributes->get('vmInstance');
+
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'settings')) {
+            return ApiResponse::error('You do not have permission to change settings for this VM', 'PERMISSION_DENIED', 403);
+        }
+
+        $vmNodeId = (int) ($vmInstance['vm_node_id'] ?? 0);
+        if ($vmNodeId <= 0) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        $vmType = ($vmInstance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
+
+        // Fetch current DNS values from Proxmox config (best-effort).
+        $nameserver = null;
+        $searchdomain = null;
+
+        $vmNode = VmNode::getVmNodeById($vmNodeId);
+        if ($vmNode) {
+            try {
+                $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+                $node = $vmInstance['pve_node'] ?? '';
+                if ($node === '') {
+                    $find = $client->findNodeByVmid((int) $vmInstance['vmid']);
+                    $node = $find['ok'] ? $find['node'] : null;
+                }
+                if ($node !== null && $node !== '') {
+                    $cfgRes = $client->getVmConfig((string) $node, (int) $vmInstance['vmid'], $vmType);
+                    if ($cfgRes['ok'] && is_array($cfgRes['config'] ?? null)) {
+                        $cfg = $cfgRes['config'];
+                        if (array_key_exists('nameserver', $cfg) && is_string($cfg['nameserver'])) {
+                            $nameserver = $cfg['nameserver'];
+                        }
+                        if ($vmType === 'lxc' && array_key_exists('searchdomain', $cfg) && is_string($cfg['searchdomain'])) {
+                            $searchdomain = $cfg['searchdomain'];
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Ignore: UI can still show whatever DNS values it has.
+            }
+        }
+
+        return ApiResponse::success(
+            [
+                'nameserver' => $nameserver,
+                'searchdomain' => $searchdomain,
+            ],
+            'Network options fetched',
+            200
+        );
+    }
+
+    #[OA\Patch(
+        path: '/api/user/vm-instances/{id}/network-dns',
+        summary: 'Update DNS settings',
+        description: 'Updates nameserver (and searchdomain for LXC). Primary IP is intentionally not editable for normal users.',
+        tags: ['User - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'nameserver', type: 'string', nullable: true),
+                    new OA\Property(property: 'searchdomain', type: 'string', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Updated successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+            new OA\Response(response: 502, description: 'Proxmox error'),
+        ]
+    )]
+    public function patchNetworkDns(Request $request, int $id): Response
+    {
+        $user = $request->attributes->get('user');
+        $vmInstance = $request->attributes->get('vmInstance');
+
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, 'settings')) {
+            return ApiResponse::error('You do not have permission to change settings for this VM', 'PERMISSION_DENIED', 403);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        $vmType = ($vmInstance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
+
+        $vmNodeId = (int) ($vmInstance['vm_node_id'] ?? 0);
+        if ($vmNodeId <= 0) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        $nameserver = array_key_exists('nameserver', $data) ? $data['nameserver'] : null;
+        $nameserverParsed = null;
+        if ($nameserver !== null) {
+            $ns = is_string($nameserver) ? trim($nameserver) : '';
+            if ($ns !== '') {
+                $nameserverParsed = $ns;
+            }
+        }
+
+        $searchdomain = array_key_exists('searchdomain', $data) ? $data['searchdomain'] : null;
+        $searchdomainParsed = null;
+        if ($searchdomain !== null) {
+            $sd = is_string($searchdomain) ? trim($searchdomain) : '';
+            if ($sd !== '') {
+                $searchdomainParsed = $sd;
+            }
+        }
+
+        if ($nameserverParsed === null && $searchdomainParsed === null) {
+            return ApiResponse::success(['instance' => $vmInstance], 'No changes to apply', 200);
+        }
+
+        $vmNode = VmNode::getVmNodeById($vmNodeId);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+
+        $node = $vmInstance['pve_node'] ?? '';
+        if ($node === '') {
+            $find = $client->findNodeByVmid((int) $vmInstance['vmid']);
+            $node = $find['ok'] ? $find['node'] : null;
+        }
+        if ($node === null || $node === '') {
+            return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
+        }
+
+        $vmid = (int) $vmInstance['vmid'];
+
+        $config = [];
+
+        if ($vmType === 'qemu') {
+            if ($nameserverParsed !== null) {
+                $config['nameserver'] = $nameserverParsed;
+            }
+            // searchdomain is LXC-specific in our current panel; we ignore it for QEMU.
+        } else {
+            // LXC
+            if ($nameserverParsed !== null) {
+                $config['nameserver'] = $nameserverParsed;
+            }
+            if ($searchdomainParsed !== null) {
+                $config['searchdomain'] = $searchdomainParsed;
+            }
+        }
+
+        if (!empty($config)) {
+            $res = $client->setVmConfig((string) $node, $vmid, $vmType, $config, []);
+            if (!$res['ok']) {
+                return ApiResponse::error('Proxmox config update failed: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+            }
+        }
+
+        return ApiResponse::success(['instance' => $vmInstance], 'DNS updated successfully', 200);
     }
 
     #[OA\Post(

@@ -38,7 +38,7 @@ interface ReinstallTemplate {
 export default function VdsSettingsPage() {
     const { id } = useParams() as { id: string };
     const router = useRouter();
-    useTranslation();
+    const { t } = useTranslation();
     const { instance, loading: instanceLoading, hasPermission, refreshInstance } = useVmInstance();
 
     // Reinstall state
@@ -56,6 +56,67 @@ export default function VdsSettingsPage() {
 
     const isQemu = instance?.vm_type === 'qemu';
 
+    // QEMU hardware settings (EFI + TPM)
+    const [qemuHardwareLoading, setQemuHardwareLoading] = React.useState(false);
+    const [qemuHardwareSaving, setQemuHardwareSaving] = React.useState(false);
+    const [biosMode, setBiosMode] = React.useState<'seabios' | 'ovmf'>('seabios');
+    const [efiEnabled, setEfiEnabled] = React.useState(false);
+    const [tpmEnabled, setTpmEnabled] = React.useState(false);
+
+    // Network + DNS (primary IP + nameserver/searchdomain)
+    const [networkOptionsLoading, setNetworkOptionsLoading] = React.useState(false);
+    const [networkSaving, setNetworkSaving] = React.useState(false);
+    const [dnsNameserver, setDnsNameserver] = React.useState('');
+    const [dnsSearchDomain, setDnsSearchDomain] = React.useState('');
+
+    const fetchQemuHardware = React.useCallback(async () => {
+        if (!id || !isQemu) return;
+        setQemuHardwareLoading(true);
+        try {
+            const { data } = await axios.get(`/api/user/vm-instances/${id}/qemu-hardware`);
+            if (data?.success) {
+                const hw = data.data ?? {};
+                const bios = hw?.bios === 'ovmf' ? 'ovmf' : 'seabios';
+                setBiosMode(bios);
+                setEfiEnabled(!!hw?.efi_enabled);
+                setTpmEnabled(!!hw?.tpm_enabled);
+            }
+        } catch {
+            // Ignore: the UI is permission-gated; backend will 403 if not allowed.
+        } finally {
+            setQemuHardwareLoading(false);
+        }
+    }, [id, isQemu]);
+
+    React.useEffect(() => {
+        if (!instanceLoading && instance && isQemu) {
+            void fetchQemuHardware();
+        }
+    }, [instanceLoading, instance, isQemu, fetchQemuHardware]);
+
+    const fetchNetworkOptions = React.useCallback(async () => {
+        if (!id || !instance) return;
+        setNetworkOptionsLoading(true);
+        try {
+            const { data } = await axios.get(`/api/user/vm-instances/${id}/network-options`);
+            if (data?.success) {
+                const opts = data.data ?? {};
+                setDnsNameserver(typeof opts.nameserver === 'string' ? opts.nameserver : '');
+                setDnsSearchDomain(typeof opts.searchdomain === 'string' ? opts.searchdomain : '');
+            }
+        } catch {
+            // Ignore; user may not have permission or Proxmox might be temporarily unreachable.
+        } finally {
+            setNetworkOptionsLoading(false);
+        }
+    }, [id, instance]);
+
+    React.useEffect(() => {
+        if (!instanceLoading && instance) {
+            void fetchNetworkOptions();
+        }
+    }, [instanceLoading, instance, fetchNetworkOptions]);
+
     const fetchTemplates = React.useCallback(async () => {
         if (!id) return;
         setTemplatesLoading(true);
@@ -69,7 +130,7 @@ export default function VdsSettingsPage() {
         } finally {
             setTemplatesLoading(false);
         }
-    }, [id, isQemu]);
+    }, [id]);
 
     React.useEffect(() => {
         if (!instanceLoading) fetchTemplates();
@@ -148,6 +209,44 @@ export default function VdsSettingsPage() {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
             toast.error(msg, { id: toastId });
             setReinstalling(false);
+        }
+    };
+
+    const handleApplyQemuHardware = async () => {
+        if (!isQemu) return;
+        setQemuHardwareSaving(true);
+        try {
+            await axios.patch(`/api/user/vm-instances/${id}/qemu-hardware`, {
+                bios: biosMode,
+                efi_enabled: efiEnabled,
+                tpm_enabled: tpmEnabled,
+            });
+            toast.success(t('vds.settings.hardware.apply_success') ?? 'Hardware updated.');
+            await refreshInstance();
+            await fetchQemuHardware();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg || (t('vds.settings.hardware.apply_failed') ?? 'Failed to update hardware.'));
+        } finally {
+            setQemuHardwareSaving(false);
+        }
+    };
+
+    const handleApplyNetworkDns = async () => {
+        setNetworkSaving(true);
+        try {
+            await axios.patch(`/api/user/vm-instances/${id}/network-dns`, {
+                nameserver: dnsNameserver.trim() || undefined,
+                searchdomain: instance?.vm_type === 'lxc' ? dnsSearchDomain.trim() || undefined : undefined,
+            });
+            toast.success(t('vds.settings.network.apply_success') ?? 'Network/DNS updated.');
+            await refreshInstance();
+            await fetchNetworkOptions();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg || (t('vds.settings.network.apply_failed') ?? 'Failed to update network/DNS'));
+        } finally {
+            setNetworkSaving(false);
         }
     };
 
@@ -236,29 +335,191 @@ export default function VdsSettingsPage() {
                 </CardContent>
             </Card>
 
+            {/* QEMU Hardware (EFI + TPM) */}
+            {isQemu && (
+                <Card className='border-border/20 bg-card/30 backdrop-blur-sm'>
+                    <CardHeader>
+                        <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
+                            <Server className='h-4 w-4 text-primary' />
+                            {t('vds.settings.hardware.title') ?? 'QEMU Hardware (EFI / TPM)'}
+                        </CardTitle>
+                        <CardDescription className='text-muted-foreground'>
+                            {t('vds.settings.hardware.description') ??
+                                'Enable UEFI (EFI disk) and TPM 2.0 state disk for this QEMU VM.'}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className='space-y-5'>
+                        {qemuHardwareLoading ? (
+                            <div className='flex items-center gap-2 text-muted-foreground'>
+                                <Loader2 className='h-4 w-4 animate-spin' />
+                                {t('vds.settings.hardware.loading') ?? 'Loading hardware…'}
+                            </div>
+                        ) : (
+                            <div className='space-y-4'>
+                                <div className='space-y-2'>
+                                    <div className='text-xs font-semibold text-muted-foreground'>
+                                        {t('vds.settings.hardware.bios_label') ?? 'BIOS / Firmware'}
+                                    </div>
+                                    <select
+                                        value={biosMode}
+                                        onChange={(e) =>
+                                            (() => {
+                                                const next = e.target.value === 'ovmf' ? 'ovmf' : 'seabios';
+                                                setBiosMode(next);
+                                                // UEFI (OVMF) normally needs an EFI disk. If user switches to
+                                                // OVMF, automatically enable the EFI checkbox.
+                                                if (next === 'ovmf') setEfiEnabled(true);
+                                            })()
+                                        }
+                                        className='w-full h-11 rounded-xl bg-muted/30 border border-border/30 px-3'
+                                    >
+                                        <option value='seabios'>
+                                            {t('vds.settings.hardware.bios_seabios') ?? 'Legacy (SeaBIOS)'}
+                                        </option>
+                                        <option value='ovmf'>
+                                            {t('vds.settings.hardware.bios_ovmf') ?? 'UEFI (OVMF)'}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div className='space-y-2'>
+                                    <label className='flex items-center gap-2 text-sm'>
+                                        <input
+                                            type='checkbox'
+                                            checked={efiEnabled}
+                                            onChange={(e) => {
+                                                const next = e.target.checked;
+                                                setEfiEnabled(next);
+                                                if (next) setBiosMode('ovmf');
+                                            }}
+                                        />
+                                        {t('vds.settings.hardware.efi_label') ?? 'Enable EFI disk'}
+                                    </label>
+                                    <p className='text-xs text-muted-foreground'>
+                                        {t('vds.settings.hardware.efi_help') ??
+                                            'Adds efidisk0 (UEFI firmware required for TPM).'}
+                                    </p>
+                                </div>
+
+                                <div className='space-y-2'>
+                                    <label className='flex items-center gap-2 text-sm'>
+                                        <input
+                                            type='checkbox'
+                                            checked={tpmEnabled}
+                                            onChange={(e) => {
+                                                const next = e.target.checked;
+                                                setTpmEnabled(next);
+                                                if (next) {
+                                                    setEfiEnabled(true);
+                                                    setBiosMode('ovmf');
+                                                }
+                                            }}
+                                        />
+                                        {t('vds.settings.hardware.tpm_label') ?? 'Enable TPM 2.0'}
+                                    </label>
+                                    <p className='text-xs text-muted-foreground'>
+                                        {t('vds.settings.hardware.tpm_help') ??
+                                            'Adds tpmstate0 (v2.0). Usually requires EFI/OVMF.'}
+                                    </p>
+                                </div>
+
+                                <div className='flex justify-end pt-2'>
+                                    <Button
+                                        variant='glass'
+                                        disabled={qemuHardwareSaving || qemuHardwareLoading}
+                                        onClick={handleApplyQemuHardware}
+                                    >
+                                        {qemuHardwareSaving && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                                        {t('vds.settings.hardware.apply_button') ?? 'Apply'}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Network + DNS */}
+            <Card className='border-border/20 bg-card/30 backdrop-blur-sm'>
+                <CardHeader>
+                    <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
+                        <Server className='h-4 w-4 text-primary' />
+                        {t('vds.settings.network.title') ?? 'Network & DNS'}
+                    </CardTitle>
+                    <CardDescription className='text-muted-foreground'>
+                        {t('vds.settings.network.description') ?? 'Update DNS settings for this VDS instance.'}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className='space-y-5'>
+                    {networkOptionsLoading ? (
+                        <div className='flex items-center gap-2 text-muted-foreground'>
+                            <Loader2 className='h-4 w-4 animate-spin' />
+                            {t('vds.settings.network.loading') ?? 'Loading…'}
+                        </div>
+                    ) : (
+                        <div className='space-y-4'>
+                            <div className='space-y-2'>
+                                <div className='text-xs font-semibold text-muted-foreground'>
+                                    {t('vds.settings.network.nameserver_label') ?? 'Nameserver'}
+                                </div>
+                                <Input
+                                    value={dnsNameserver}
+                                    onChange={(e) => setDnsNameserver(e.target.value)}
+                                    placeholder={t('vds.settings.network.nameserver_placeholder') ?? '1.1.1.1 8.8.8.8'}
+                                    className='bg-muted/30'
+                                />
+                            </div>
+
+                            {instance?.vm_type === 'lxc' && (
+                                <div className='space-y-2'>
+                                    <div className='text-xs font-semibold text-muted-foreground'>
+                                        {t('vds.settings.network.searchdomain_label') ?? 'Search domain'}
+                                    </div>
+                                    <Input
+                                        value={dnsSearchDomain}
+                                        onChange={(e) => setDnsSearchDomain(e.target.value)}
+                                        placeholder={
+                                            t('vds.settings.network.searchdomain_placeholder') ?? 'example.com'
+                                        }
+                                        className='bg-muted/30'
+                                    />
+                                </div>
+                            )}
+
+                            <div className='flex justify-end pt-2'>
+                                <Button variant='glass' disabled={networkSaving} onClick={handleApplyNetworkDns}>
+                                    {networkSaving && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                                    {t('vds.settings.network.apply_button') ?? 'Apply'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
             {/* Reinstall */}
             {canReinstall && (
                 <Card className='border-border/20 bg-card/40 backdrop-blur-sm'>
                     <CardHeader>
                         <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
                             <RotateCcw className='h-4 w-4 text-primary' />
-                            Reinstall OS
+                            {t('vds.settings.reinstall.title') ?? 'Reinstall Operating System'}
                         </CardTitle>
                         <CardDescription className='text-muted-foreground'>
-                            This will <strong>permanently wipe</strong> the current OS and reinstall from a chosen
-                            template. All data on the VDS will be lost.
+                            {t('vds.settings.reinstall.description') ?? 'Permanently wipe and reinstall your VDS.'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className='space-y-4'>
                         {templatesLoading ? (
                             <div className='flex items-center gap-2 text-muted-foreground'>
                                 <Loader2 className='h-4 w-4 animate-spin' />
-                                <span className='text-sm'>Loading templates…</span>
+                                <span className='text-sm'>{t('vds.settings.reinstall.templates_loading')}</span>
                             </div>
                         ) : templates.length === 0 ? (
                             <p className='text-sm text-muted-foreground italic'>
-                                No {isQemu ? 'QEMU/KVM' : 'LXC'} templates available for this VDS. Contact your
-                                administrator.
+                                {t('vds.settings.reinstall.templates_none', {
+                                    template_type: isQemu ? 'QEMU/KVM' : 'LXC',
+                                })}
                             </p>
                         ) : (
                             <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
@@ -288,7 +549,7 @@ export default function VdsSettingsPage() {
                             className='mt-2 rounded-2xl'
                         >
                             <RotateCcw className='h-4 w-4 mr-2' />
-                            Begin Reinstall
+                            {t('vds.settings.reinstall.button')}
                         </Button>
                     </CardContent>
                 </Card>
@@ -298,47 +559,48 @@ export default function VdsSettingsPage() {
             <HeadlessModal
                 isOpen={reinstallOpen}
                 onClose={() => setReinstallOpen(false)}
-                title='Confirm OS Reinstall'
-                description='This action is irreversible. All data on this VDS will be destroyed.'
+                title={t('vds.settings.reinstall.confirm_title')}
+                description={t('vds.settings.reinstall.confirm_desc')}
             >
                 <div className='space-y-6 py-4'>
                     <div className='flex items-start gap-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/20'>
                         <AlertTriangle className='h-5 w-5 text-red-400 shrink-0 mt-0.5' />
                         <p className='text-sm text-red-300'>
-                            You are about to reinstall{' '}
-                            <strong>{templates.find((t) => t.id === selectedTemplate)?.name}</strong> on{' '}
-                            <strong>{instance.hostname ?? `VDS #${instance.id}`}</strong>. All existing data will be
-                            permanently erased.
+                            {t('vds.settings.reinstall.confirm_body_prefix')}
+                            <strong>{templates.find((t) => t.id === selectedTemplate)?.name}</strong>
+                            {t('vds.settings.reinstall.confirm_body_on')}
+                            <strong>{instance.hostname ?? `VDS #${instance.id}`}</strong>
+                            {t('vds.settings.reinstall.confirm_body_after_hostname')}
                         </p>
                     </div>
 
                     {isQemu && (
                         <div className='space-y-4'>
                             <p className='text-xs font-black uppercase tracking-widest text-primary/70'>
-                                Cloud-Init Credentials (optional)
+                                {t('vds.settings.reinstall.cloud_init_credentials_optional')}
                             </p>
                             <div className='space-y-3'>
                                 <div>
                                     <label className='text-xs font-semibold text-muted-foreground block mb-1'>
-                                        Username
+                                        {t('vds.settings.reinstall.cloud_init.username_label')}
                                     </label>
                                     <Input
                                         value={ciUser}
                                         onChange={(e) => setCiUser(e.target.value)}
-                                        placeholder='e.g. ubuntu'
+                                        placeholder={t('vds.settings.reinstall.cloud_init.username_placeholder')}
                                         className='h-11'
                                     />
                                 </div>
                                 <div>
                                     <label className='text-xs font-semibold text-muted-foreground block mb-1'>
-                                        Password
+                                        {t('vds.settings.reinstall.cloud_init.password_label')}
                                     </label>
                                     <div className='relative'>
                                         <Input
                                             type={showPassword ? 'text' : 'password'}
                                             value={ciPassword}
                                             onChange={(e) => setCiPassword(e.target.value)}
-                                            placeholder='Leave blank to keep existing'
+                                            placeholder={t('vds.settings.reinstall.cloud_init.password_placeholder')}
                                             className='h-11 pr-10'
                                         />
                                         <button
@@ -356,12 +618,12 @@ export default function VdsSettingsPage() {
                                 </div>
                                 <div>
                                     <label className='text-xs font-semibold text-muted-foreground block mb-1'>
-                                        SSH Public Keys
+                                        {t('vds.settings.reinstall.cloud_init.ssh_keys_label')}
                                     </label>
                                     <textarea
                                         value={ciSshKeys}
                                         onChange={(e) => setCiSshKeys(e.target.value)}
-                                        placeholder='Paste SSH public key(s) here…'
+                                        placeholder={t('vds.settings.reinstall.cloud_init.ssh_keys_placeholder')}
                                         rows={3}
                                         className='w-full rounded-xl border border-border/20 bg-background/50 px-4 py-3 text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50'
                                     />
@@ -379,7 +641,7 @@ export default function VdsSettingsPage() {
                         disabled={reinstalling}
                         className='rounded-2xl'
                     >
-                        Cancel
+                        {t('vds.settings.reinstall.cancel_button')}
                     </Button>
                     <Button
                         variant='destructive'
@@ -393,7 +655,7 @@ export default function VdsSettingsPage() {
                         ) : (
                             <RotateCcw className='mr-2 h-5 w-5' />
                         )}
-                        Confirm Reinstall
+                        {t('vds.settings.reinstall.confirm_button')}
                     </Button>
                 </div>
             </HeadlessModal>
