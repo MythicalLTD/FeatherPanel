@@ -31,8 +31,9 @@ class VmTask
                 (:task_id, :instance_id, :vm_node_id, :task_type, :status, :upid, :target_node, :vmid, :data, :user_uuid)
         ');
 
-        return $stmt->execute([
-            'task_id'     => $data['task_id'] ?? bin2hex(random_bytes(16)),
+        $taskId = $data['task_id'] ?? bin2hex(random_bytes(16));
+        $success = $stmt->execute([
+            'task_id'     => $taskId,
             'instance_id' => isset($data['instance_id']) ? (int) $data['instance_id'] : null,
             'task_type'   => $data['task_type'] ?? 'unknown',
             'status'      => $data['status'] ?? 'pending',
@@ -43,6 +44,12 @@ class VmTask
             'user_uuid'   => $data['user_uuid'] ?? null,
             'vm_node_id'  => isset($data['vm_node_id']) ? (int) $data['vm_node_id'] : null,
         ]);
+
+        if ($success) {
+            self::notifyRustRunner($taskId);
+        }
+
+        return $success;
     }
 
     public static function getByTaskId(string $taskId): ?array
@@ -98,5 +105,21 @@ class VmTask
         $stmt->execute(['instance_id' => $instanceId]);
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Publish notification to Redis for instant VM task processing by Rust runner.
+     */
+    private static function notifyRustRunner(string $taskId): void
+    {
+        try {
+            $redis = \App\App::getInstance(true, false, false)->getRedisConnection();
+            if ($redis) {
+                $payload = json_encode(['task_id' => $taskId]);
+                $redis->publish('featherpanel:vm:pending', $payload);
+            }
+        } catch (\Exception $e) {
+            error_log('Failed to notify Rust runner for VM task: ' . $e->getMessage());
+        }
     }
 }

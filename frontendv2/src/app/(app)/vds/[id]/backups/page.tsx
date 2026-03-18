@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
-import { Plus, Loader2, Archive, RefreshCw, Search, HardDrive, Calendar, AlertTriangle } from 'lucide-react';
+import { Plus, Loader2, Archive, RefreshCw, Search, HardDrive, Calendar, AlertTriangle, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
@@ -40,6 +40,7 @@ type VmBackup = {
     size_bytes: number;
     ctime: number;
     format?: string | null;
+    status?: string;
 };
 
 type ListBackupsResponse = {
@@ -64,11 +65,14 @@ export default function VdsBackupsPage() {
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [restoring, setRestoring] = useState(false);
     const [search, setSearch] = useState('');
 
     const [confirmCreateOpen, setConfirmCreateOpen] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+    const [confirmRestoreOpen, setConfirmRestoreOpen] = useState(false);
     const [selectedForDelete, setSelectedForDelete] = useState<VmBackup | null>(null);
+    const [selectedForRestore, setSelectedForRestore] = useState<VmBackup | null>(null);
 
     const fetchBackups = useCallback(async () => {
         if (!id) return;
@@ -101,12 +105,15 @@ export default function VdsBackupsPage() {
     }, [instanceLoading, instance, fetchBackups, router]);
 
     useEffect(() => {
-        const hasRunning = backups.some((b) => {
-            // we poll via backup-status; here we just heuristically refresh if any backup is younger than ~2 minutes
+        // Auto-refresh if any backup is pending or recently created
+        const hasPending = backups.some((b) => b.status === 'pending' || b.status === 'running');
+        const hasRecent = backups.some((b) => {
             const created = b.ctime ? b.ctime * 1000 : 0;
             return created > Date.now() - 120_000;
         });
-        if (!hasRunning) return;
+
+        if (!hasPending && !hasRecent) return;
+
         const interval = setInterval(() => {
             fetchBackups();
         }, 5000);
@@ -169,6 +176,70 @@ export default function VdsBackupsPage() {
         } finally {
             setDeleting(false);
         }
+    };
+
+    const handleRestoreBackup = async () => {
+        if (!selectedForRestore) return;
+        setRestoring(true);
+        try {
+            const { data } = await axios.post(`/api/user/vm-instances/${id}/backups/restore`, {
+                volid: selectedForRestore.volid,
+                storage: selectedForRestore.storage,
+            });
+            if (!data.success) {
+                toast.error(data.message || 'Failed to start restore');
+                return;
+            }
+            const restoreId = data.data?.restore_id;
+            toast.success('Restore started. This may take several minutes.');
+            setConfirmRestoreOpen(false);
+            setSelectedForRestore(null);
+
+            // Poll restore status
+            if (restoreId) {
+                pollRestoreStatus(restoreId);
+            }
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg);
+        } finally {
+            setRestoring(false);
+        }
+    };
+
+    const pollRestoreStatus = async (restoreId: string) => {
+        const maxAttempts = 120; // 10 minutes max
+        let attempts = 0;
+
+        const poll = async () => {
+            if (attempts >= maxAttempts) {
+                toast.error('Restore is taking longer than expected. Please check manually.');
+                return;
+            }
+
+            try {
+                const { data } = await axios.get(`/api/user/vm-instances/restore-status/${restoreId}`);
+                if (!data.success) return;
+
+                const status = data.data?.status;
+                if (status === 'active') {
+                    toast.success('Restore completed successfully!');
+                    fetchBackups();
+                    return;
+                } else if (status === 'failed') {
+                    toast.error(data.data?.error || 'Restore failed');
+                    return;
+                }
+
+                // Still restoring, poll again
+                attempts++;
+                setTimeout(poll, 5000);
+            } catch (err) {
+                // Ignore polling errors
+            }
+        };
+
+        poll();
     };
 
     const filteredBackups = backups.filter((b) =>
@@ -279,49 +350,116 @@ export default function VdsBackupsPage() {
                     />
                 ) : (
                     <div className='grid grid-cols-1 gap-4'>
-                        {filteredBackups.map((backup) => (
-                            <ResourceCard
-                                key={backup.id}
-                                icon={Archive}
-                                iconWrapperClassName='bg-primary/10 border-primary/20 text-primary'
-                                title={backup.volid}
-                                description={
-                                    <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>
-                                        <div className='flex items-center gap-2 text-muted-foreground'>
-                                            <HardDrive className='h-4 w-4 opacity-50' />
-                                            <span className='text-sm font-semibold'>
-                                                {formatMib(backup.size_bytes / 1024 / 1024)}
-                                            </span>
+                        {filteredBackups.map((backup) => {
+                            const isPending = backup.status === 'pending' || backup.status === 'running';
+                            const isFailed = backup.status === 'failed';
+
+                            return (
+                                <ResourceCard
+                                    key={backup.id}
+                                    icon={Archive}
+                                    iconWrapperClassName={cn(
+                                        isPending && 'bg-blue-500/10 border-blue-500/20 text-blue-500',
+                                        isFailed && 'bg-red-500/10 border-red-500/20 text-red-500',
+                                        !isPending && !isFailed && 'bg-primary/10 border-primary/20 text-primary',
+                                    )}
+                                    title={backup.volid || `Backup #${backup.id}`}
+                                    description={
+                                        <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>
+                                            {isPending ? (
+                                                <div className='flex items-center gap-2 text-blue-500'>
+                                                    <Loader2 className='h-4 w-4 animate-spin' />
+                                                    <span className='text-sm font-semibold'>
+                                                        {t('serverBackups.creating') ||
+                                                            'Creating backup, please wait...'}
+                                                    </span>
+                                                </div>
+                                            ) : isFailed ? (
+                                                <div className='flex items-center gap-2 text-red-500'>
+                                                    <AlertTriangle className='h-4 w-4' />
+                                                    <span className='text-sm font-semibold'>
+                                                        {t('serverBackups.failed') || 'Backup failed'}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className='flex items-center gap-2 text-muted-foreground'>
+                                                        <HardDrive className='h-4 w-4 opacity-50' />
+                                                        <span className='text-sm font-semibold'>
+                                                            {formatMib(backup.size_bytes / 1024 / 1024)}
+                                                        </span>
+                                                    </div>
+                                                    <div className='flex items-center gap-2 text-muted-foreground'>
+                                                        <Calendar className='h-4 w-4 opacity-50' />
+                                                        <span className='text-sm font-semibold'>
+                                                            {backup.ctime
+                                                                ? new Date(backup.ctime * 1000).toLocaleString()
+                                                                : '—'}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
-                                        <div className='flex items-center gap-2 text-muted-foreground'>
-                                            <Calendar className='h-4 w-4 opacity-50' />
-                                            <span className='text-sm font-semibold'>
-                                                {backup.ctime ? new Date(backup.ctime * 1000).toLocaleString() : '—'}
-                                            </span>
+                                    }
+                                    badges={
+                                        <div className='flex items-center gap-2'>
+                                            {backup.storage && (
+                                                <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40'>
+                                                    {backup.storage}
+                                                </span>
+                                            )}
+                                            {isPending && (
+                                                <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-blue-500/10 text-blue-500 border border-blue-500/20 animate-pulse'>
+                                                    {t('serverBackups.inProgress') || 'IN PROGRESS'}
+                                                </span>
+                                            )}
+                                            {isFailed && (
+                                                <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-red-500/10 text-red-500 border border-red-500/20'>
+                                                    {t('serverBackups.failed') || 'FAILED'}
+                                                </span>
+                                            )}
                                         </div>
-                                    </div>
-                                }
-                                badges={
-                                    <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40'>
-                                        {backup.storage}
-                                    </span>
-                                }
-                                actions={
-                                    <Button
-                                        variant='destructive'
-                                        size='sm'
-                                        className='h-9 px-4 rounded-xl'
-                                        onClick={() => {
-                                            setSelectedForDelete(backup);
-                                            setConfirmDeleteOpen(true);
-                                        }}
-                                    >
-                                        <AlertTriangle className='h-3.5 w-3.5 mr-1.5' />
-                                        {t('serverBackups.delete') || 'Delete'}
-                                    </Button>
-                                }
-                            />
-                        ))}
+                                    }
+                                    actions={
+                                        isPending ? (
+                                            <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                                                <Loader2 className='h-4 w-4 animate-spin' />
+                                                <span>{t('serverBackups.pleaseWait') || 'Please wait...'}</span>
+                                            </div>
+                                        ) : (
+                                            <div className='flex items-center gap-2'>
+                                                {!isFailed && (
+                                                    <Button
+                                                        variant='outline'
+                                                        size='sm'
+                                                        className='h-9 px-4 rounded-xl'
+                                                        onClick={() => {
+                                                            setSelectedForRestore(backup);
+                                                            setConfirmRestoreOpen(true);
+                                                        }}
+                                                    >
+                                                        <RotateCcw className='h-3.5 w-3.5 mr-1.5' />
+                                                        {t('serverBackups.restore') || 'Restore'}
+                                                    </Button>
+                                                )}
+                                                <Button
+                                                    variant='destructive'
+                                                    size='sm'
+                                                    className='h-9 px-4 rounded-xl'
+                                                    onClick={() => {
+                                                        setSelectedForDelete(backup);
+                                                        setConfirmDeleteOpen(true);
+                                                    }}
+                                                >
+                                                    <AlertTriangle className='h-3.5 w-3.5 mr-1.5' />
+                                                    {t('serverBackups.delete') || 'Delete'}
+                                                </Button>
+                                            </div>
+                                        )
+                                    }
+                                />
+                            );
+                        })}
                     </div>
                 )}
             </div>
@@ -385,6 +523,63 @@ export default function VdsBackupsPage() {
                         >
                             {deleting ? <Loader2 className='h-4 w-4 mr-2 animate-spin' /> : null}
                             {t('serverBackups.delete') || 'Delete'}
+                        </Button>
+                    </DialogFooter>
+                </div>
+            </Dialog>
+
+            {/* Restore backup confirm dialog */}
+            <Dialog open={confirmRestoreOpen} onOpenChange={setConfirmRestoreOpen}>
+                <div className='space-y-6 p-4'>
+                    <DialogHeader>
+                        <DialogTitle>{t('serverBackups.confirmRestoreTitle') || 'Restore from backup?'}</DialogTitle>
+                        <DialogDescription>
+                            <div className='space-y-3'>
+                                <p className='text-yellow-500 font-semibold flex items-center gap-2'>
+                                    <AlertTriangle className='h-4 w-4' />
+                                    {t('serverBackups.restoreWarning') ||
+                                        'Warning: This will overwrite all current data!'}
+                                </p>
+                                <p>
+                                    {t('serverBackups.restoreConfirm') ||
+                                        'The VM will be stopped and restored to the state of this backup. All current data will be replaced. This action cannot be undone.'}
+                                </p>
+                                {selectedForRestore && (
+                                    <div className='mt-4 p-3 rounded-lg bg-muted/50 border border-border/50'>
+                                        <p className='text-sm font-mono text-muted-foreground'>
+                                            {selectedForRestore.volid}
+                                        </p>
+                                        <p className='text-xs text-muted-foreground mt-1'>
+                                            {selectedForRestore.ctime
+                                                ? new Date(selectedForRestore.ctime * 1000).toLocaleString()
+                                                : '—'}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className='flex gap-3 justify-end'>
+                        <Button
+                            variant='outline'
+                            onClick={() => setConfirmRestoreOpen(false)}
+                            disabled={restoring}
+                            className='rounded-xl'
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            variant='destructive'
+                            onClick={handleRestoreBackup}
+                            disabled={restoring}
+                            className='rounded-xl'
+                        >
+                            {restoring ? (
+                                <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                            ) : (
+                                <RotateCcw className='h-4 w-4 mr-2' />
+                            )}
+                            {t('serverBackups.restore') || 'Restore'}
                         </Button>
                     </DialogFooter>
                 </div>

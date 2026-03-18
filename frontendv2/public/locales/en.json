@@ -1124,7 +1124,13 @@
 		"confirmUnlockTitle": "Unlock Backup",
 		"failedToPerformAction": "Failed to perform action",
 		"caution": "Caution",
-		"truncateDirectoryDescription": "This will clear the server folder before restoring"
+		"truncateDirectoryDescription": "This will clear the server folder before restoring",
+		"creating": "Creating backup, please wait...",
+		"failed": "Backup failed",
+		"inProgress": "IN PROGRESS",
+		"pleaseWait": "Please wait...",
+		"restoreConfirm": "The VM will be stopped and restored to the state of this backup. All current data will be replaced. This action cannot be undone.",
+		"restoreWarning": "Warning: This will overwrite all current data!"
 	},
 	"serverImport": {
 		"title": "Server Import",

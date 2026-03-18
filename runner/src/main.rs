@@ -6,6 +6,7 @@ mod database;
 mod encryption;
 mod mail;
 mod processor;
+mod proxmox;
 mod redis;
 mod settings;
 mod types;
@@ -41,7 +42,7 @@ async fn main() -> Result<()> {
 
     // Start Redis listener with retries
     info!("📡 Starting Redis listener...");
-    redis::listen(&config.redis_url, pool).await?;
+    redis::listen(&config.redis_url, pool, config.encryption_key).await?;
 
     Ok(())
 }

@@ -30,15 +30,18 @@ impl Encryptor {
         // Decode base64 encrypted data
         let data = general_purpose::STANDARD
             .decode(encrypted_data)
-            .context("Failed to decode encrypted data")?;
+            .context(format!("Failed to decode encrypted data (input length: {})", encrypted_data.len()))?;
 
         // Extract nonce (first 24 bytes for XChaCha20)
         if data.len() < 24 {
-            anyhow::bail!("Encrypted data too short");
+            anyhow::bail!("Encrypted data too short: {} bytes (need at least 24)", data.len());
         }
 
         let nonce = &data[..24];
         let ciphertext = &data[24..];
+
+        tracing::debug!("🔓 Decrypting data: total={} bytes, nonce={} bytes, ciphertext={} bytes", 
+            data.len(), nonce.len(), ciphertext.len());
 
         // PHP uses: sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($encrypted, $nonce, $nonce, $key)
         // The nonce is used as both the nonce AND the associated data
@@ -51,7 +54,7 @@ impl Encryptor {
         let plaintext = self
             .cipher
             .decrypt(nonce.into(), payload)
-            .map_err(|e| anyhow::anyhow!("Decryption failed: {}", e))?;
+            .map_err(|e| anyhow::anyhow!("Decryption failed: {} (ciphertext length: {})", e, ciphertext.len()))?;
 
         String::from_utf8(plaintext).context("Decrypted data is not valid UTF-8")
     }

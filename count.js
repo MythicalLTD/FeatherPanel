@@ -22,6 +22,7 @@ const VALID_EXTENSIONS = [
   ".yaml",
   ".sql",
   ".cs",
+  ".rs"
 ];
 // Directories to exclude
 const EXCLUDED_DIRS = [
@@ -38,6 +39,7 @@ const EXCLUDED_DIRS = [
   ".next",
   "out",
   "build",
+  "target"
 ];
 // Process arguments
 const targetDir = process.argv[2] || process.cwd();

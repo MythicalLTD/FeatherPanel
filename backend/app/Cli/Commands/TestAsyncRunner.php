@@ -40,7 +40,7 @@ class TestAsyncRunner extends App implements CommandBuilder
         try {
             $redis = new \Redis();
             $host = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
-            $port = (int)($_ENV['REDIS_PORT'] ?? 6379);
+            $port = (int) ($_ENV['REDIS_PORT'] ?? 6379);
 
             try {
                 $connected = $redis->connect($host, $port);

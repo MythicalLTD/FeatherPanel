@@ -4,6 +4,10 @@ use tracing::{error, info, warn};
 
 use crate::database;
 use crate::mail;
+pub mod vm;
+pub mod create;
+
+pub use vm::process_vm_task;
 
 pub async fn process_mail(pool: &MySqlPool, queue_id: &str) -> Result<()> {
     info!("🔄 Processing mail queue_id: {}", queue_id);

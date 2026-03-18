@@ -5,6 +5,11 @@ pub struct MailNotification {
     pub queue_id: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VmNotification {
+    pub task_id: String,
+}
+
 #[derive(Clone, Debug)]
 pub struct SmtpConfig {
     pub host: String,
