@@ -95,6 +95,32 @@ services:
     networks:
       - featherpanel_network
 
+  async-runner:
+    image: ghcr.io/mythicalltd/featherpanel-async-runner:latest
+    container_name: featherpanel_async_runner
+    restart: unless-stopped
+    environment:
+      - RUST_LOG=info
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${MARIADB_DATABASE:-featherpanel}
+      - DB_USER=${MARIADB_USER:-featherpanel}
+      - DB_PASS=${MARIADB_PASSWORD:-featherpanel_password}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-featherpanel_redis}@redis:6379
+    volumes:
+      - featherpanel_config:/app/config:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      frontendv2:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - featherpanel_network
+
 volumes:
   mariadb_data:
     driver: local
