@@ -10,6 +10,7 @@
 - Fixed an issue preventing tickets from being closed when using the "Close" popup in the ticket viewer ("Failed to close ticket" error). The trash icon still worked, but this ensures tickets can now be closed from within the viewer as intended. by @nayskutzu
 - Mail sending has been significantly improved and is now handled asynchronously for faster and more reliable delivery. by @nayskutzu
 - Resolved compatibility issues with outdated eggs that could cause installation failures. by @nayskutzu
+- Resolved minor markdown rendering inconsistencies for improved display quality and reliability. by @nayskutzu
 
 ### Added
 

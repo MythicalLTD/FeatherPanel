@@ -140,11 +140,20 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                 p: ({ children }) => (
                                     <p className='leading-relaxed mb-4 text-muted-foreground/90'>{children}</p>
                                 ),
-                                code: ({ children }) => (
-                                    <code className='bg-muted px-1.5 py-0.5 rounded text-primary font-mono text-sm'>
-                                        {children}
-                                    </code>
-                                ),
+                                code: ({ inline, children, ...props }: any) => {
+                                    if (inline) {
+                                        return (
+                                            <code className='bg-muted px-1.5 py-0.5 rounded text-primary font-mono text-sm'>
+                                                {children}
+                                            </code>
+                                        );
+                                    }
+                                    return (
+                                        <code className='font-mono text-sm' {...props}>
+                                            {children}
+                                        </code>
+                                    );
+                                },
                                 pre: ({ children }) => (
                                     <pre className='bg-muted/50 p-4 rounded-xl border border-border/50 overflow-x-auto my-6'>
                                         {children}
