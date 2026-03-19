@@ -5264,6 +5264,7 @@
 				"badges": {},
 				"tabs": {
 					"servers": "Servers",
+					"vds": "VDS",
 					"activities": "Activities",
 					"mails": "Mails"
 				},
@@ -5309,6 +5310,16 @@
 					"no_servers": "No servers found for this user.",
 					"viewAll": "View all servers"
 				},
+				"vds": {
+					"title": "Owned VDS",
+					"viewAll": "View all VDS",
+					"hostname": "Hostname",
+					"status": "Status",
+					"ip": "IP",
+					"node": "Node",
+					"actions": "Actions",
+					"empty": "This user does not own any VDS."
+				},
 				"activities": {
 					"title": "Activities",
 					"name": "Name",
@@ -5333,7 +5344,11 @@
 				"descriptionGeneric": "Servers owned by this user",
 				"backToUser": "Back to user",
 				"noServers": "No servers",
-				"noServersDescription": "This user does not own any servers."
+				"noServersDescription": "This user does not own any servers.",
+				"vdsTitle": "Owned VDS",
+				"vdsViewAll": "View all VDS",
+				"noVds": "No VDS",
+				"noVdsDescription": "This user does not own any VDS instances."
 			},
 			"messages": {
 				"created": "User created successfully",

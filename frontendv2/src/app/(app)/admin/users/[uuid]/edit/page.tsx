@@ -107,6 +107,19 @@ interface Server {
     created_at: string;
 }
 
+interface VmInstance {
+    id: number;
+    hostname?: string;
+    status?: string;
+    vmid: number;
+    vm_type?: 'qemu' | 'lxc';
+    ip_address?: string | null;
+    pve_node?: string | null;
+    node_name?: string | null;
+    suspended?: number;
+    created_at?: string;
+}
+
 interface AvailableRole {
     id: string;
     name: string;
@@ -124,6 +137,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const [user, setUser] = useState<ApiUser | null>(null);
     const [availableRoles, setAvailableRoles] = useState<AvailableRole[]>([]);
     const [ownedServers, setOwnedServers] = useState<Server[]>([]);
+    const [ownedVms, setOwnedVms] = useState<VmInstance[]>([]);
     const [ssoGenerating, setSsoGenerating] = useState(false);
     const [ssoLink, setSsoLink] = useState<string | null>(null);
     const [mailPreview, setMailPreview] = useState<{
@@ -199,6 +213,15 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 setOwnedServers(serversRes.data?.data?.servers || []);
             } catch {
                 setOwnedServers([]);
+            }
+
+            try {
+                const vmsRes = await axios.get(`/api/admin/users/${resolvedParams.uuid}/vm-instances`, {
+                    params: { limit: 50 },
+                });
+                setOwnedVms(vmsRes.data?.data?.instances || []);
+            } catch {
+                setOwnedVms([]);
             }
         } catch {
             toast.error(t('admin.users.edit.error'));
@@ -675,6 +698,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <Activity className='h-4 w-4' />
                             {t('admin.users.edit.tabs.activities')}
                         </TabsTrigger>
+                        <TabsTrigger value='vds' className='gap-2'>
+                            <ServerIcon className='h-4 w-4' />
+                            {t('admin.users.edit.tabs.vds', { defaultValue: 'VDS' })}
+                        </TabsTrigger>
                         <TabsTrigger value='mails' className='gap-2'>
                             <Mail className='h-4 w-4' />
                             {t('admin.users.edit.tabs.mails')}
@@ -811,6 +838,108 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                 <td className='p-4 text-muted-foreground'>{activity.context}</td>
                                                 <td className='p-4 font-mono text-xs'>{activity.ip_address}</td>
                                                 <td className='p-4 text-muted-foreground'>{activity.created_at}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </PageCard>
+                </TabsContent>
+
+                <TabsContent value='vds'>
+                    <PageCard
+                        title={t('admin.users.edit.vds.title', { defaultValue: 'Owned VDS' })}
+                        icon={ServerIcon}
+                        action={
+                            <Button variant='outline' size='sm' onClick={() => router.push('/admin/vm-instances')}>
+                                {t('admin.users.edit.vds.viewAll', { defaultValue: 'View all VDS' })}
+                            </Button>
+                        }
+                    >
+                        <div className='overflow-x-auto'>
+                            <table className='w-full text-sm'>
+                                <thead>
+                                    <tr className='border-b border-white/5 text-left'>
+                                        <th className='p-4 font-medium text-muted-foreground'>
+                                            {t('admin.users.edit.vds.hostname', { defaultValue: 'Hostname' })}
+                                        </th>
+                                        <th className='p-4 font-medium text-muted-foreground'>
+                                            {t('admin.users.edit.vds.status', { defaultValue: 'Status' })}
+                                        </th>
+                                        <th className='p-4 font-medium text-muted-foreground'>
+                                            {t('admin.users.edit.vds.ip', { defaultValue: 'IP' })}
+                                        </th>
+                                        <th className='p-4 font-medium text-muted-foreground'>
+                                            {t('admin.users.edit.vds.node', { defaultValue: 'Node' })}
+                                        </th>
+                                        <th className='p-4 font-medium text-muted-foreground text-right'>
+                                            {t('admin.users.edit.vds.actions', { defaultValue: 'Actions' })}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {ownedVms.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className='p-8 text-center text-muted-foreground'>
+                                                {t('admin.users.edit.vds.empty', {
+                                                    defaultValue: 'This user does not own any VDS.',
+                                                })}
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        ownedVms.map((vm) => (
+                                            <tr
+                                                key={vm.id}
+                                                className='border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors'
+                                            >
+                                                <td className='p-4'>
+                                                    <div className='font-medium'>{vm.hostname || `VM #${vm.id}`}</div>
+                                                    <div className='text-xs text-muted-foreground'>
+                                                        {vm.vm_type?.toUpperCase() || 'QEMU'} • VMID {vm.vmid}
+                                                    </div>
+                                                </td>
+                                                <td className='p-4'>
+                                                    <Badge
+                                                        variant={
+                                                            vm.suspended === 1 || vm.status === 'suspended'
+                                                                ? 'destructive'
+                                                                : vm.status === 'running'
+                                                                  ? 'secondary'
+                                                                  : 'outline'
+                                                        }
+                                                    >
+                                                        {vm.suspended === 1 || vm.status === 'suspended'
+                                                            ? t('vds.console.status.suspended', {
+                                                                  defaultValue: 'Suspended',
+                                                              })
+                                                            : vm.status || t('vds.console.status.unknown')}
+                                                    </Badge>
+                                                </td>
+                                                <td className='p-4 font-mono text-xs'>{vm.ip_address || '—'}</td>
+                                                <td className='p-4 text-muted-foreground'>
+                                                    {vm.node_name || vm.pve_node || '—'}
+                                                </td>
+                                                <td className='p-4 text-right'>
+                                                    <div className='flex gap-2 justify-end'>
+                                                        <Button
+                                                            size='sm'
+                                                            variant='ghost'
+                                                            onClick={() => router.push(`/vds/${vm.id}`)}
+                                                        >
+                                                            <ExternalLink className='h-4 w-4' />
+                                                        </Button>
+                                                        <Button
+                                                            size='sm'
+                                                            variant='ghost'
+                                                            onClick={() =>
+                                                                router.push(`/admin/vm-instances/${vm.id}/edit`)
+                                                            }
+                                                        >
+                                                            <Edit className='h-4 w-4' />
+                                                        </Button>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         ))
                                     )}
