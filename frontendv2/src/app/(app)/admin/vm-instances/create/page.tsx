@@ -362,7 +362,7 @@ export default function VmInstancesCreatePage() {
                     return;
                 }
             } catch (e) {
-                // Ignore transient errors
+                console.error('Error polling creation status:', e);
             }
             await new Promise((r) => setTimeout(r, intervalMs));
         }

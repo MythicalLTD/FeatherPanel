@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Server, Clock, Cpu } from 'lucide-react';
+import { Server, Clock } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import Link from 'next/link';

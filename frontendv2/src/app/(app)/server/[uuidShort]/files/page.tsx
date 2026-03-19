@@ -107,6 +107,16 @@ type UploadQueueItem = {
     batchId?: string;
 };
 
+let uploadIdCounter = 0;
+
+const generateUploadId = (): string => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    uploadIdCounter += 1;
+    return `upload-${Date.now()}-${uploadIdCounter}`;
+};
+
 export default function ServerFilesPage({ params }: { params: Promise<{ uuidShort: string }> }) {
     const router = useRouter();
     const { uuidShort } = use(params);
@@ -359,16 +369,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         },
         [uuidShort, refresh, t, ensureDirectoryExists],
     );
-
-    let uploadIdCounter = 0;
-
-    const generateUploadId = (): string => {
-        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-            return crypto.randomUUID();
-        }
-        uploadIdCounter += 1;
-        return `upload-${Date.now()}-${uploadIdCounter}`;
-    };
 
     const addToUploadQueue = React.useCallback(
         (files: File[]) => {

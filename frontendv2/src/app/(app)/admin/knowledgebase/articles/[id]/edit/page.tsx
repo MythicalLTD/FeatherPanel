@@ -422,14 +422,14 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                                         {children}
                                                     </blockquote>
                                                 ),
-                                                img: ({ node, ...props }) => (
+                                                img: ({ ...props }) => (
                                                     <img
                                                         {...props}
                                                         alt={props.alt || ''}
                                                         className='rounded-xl border border-border/50 shadow-md my-8 mx-auto block max-w-full'
                                                     />
                                                 ),
-                                                a: ({ node, href, children, ...props }) => {
+                                                a: ({ href, children, ...props }) => {
                                                     if (
                                                         href &&
                                                         /\.(png|jpe?g|gif|webp|svg|bmp|ico)(\?.*)?$/i.test(href)

@@ -61,7 +61,7 @@ export default function VdsBackupsPage() {
 
     const [backups, setBackups] = useState<VmBackup[]>([]);
     const [backupLimit, setBackupLimit] = useState<number>(0);
-    const [storages, setStorages] = useState<string[]>([]);
+    const [, setStorages] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -234,7 +234,7 @@ export default function VdsBackupsPage() {
                 attempts++;
                 setTimeout(poll, 5000);
             } catch (err) {
-                // Ignore polling errors
+                console.error('Error polling restore status:', err);
             }
         };
 

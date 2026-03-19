@@ -4576,6 +4576,22 @@
 				"updated": "Updated",
 				"removed": "Removed"
 			},
+			"update_instructions": {
+				"title": "Update FeatherPanel",
+				"description": "To update your FeatherPanel installation, please log in to your server via SSH and run one of the following commands:",
+				"ssh_method": "Using SSH:",
+				"curl_method": "Using cURL:",
+				"follow_process": "Follow the update process on your server after running the command.",
+				"close": "Close",
+				"copy_command": "Copy Command",
+				"copied": "Command copied to clipboard",
+				"steps": {
+					"login": "Login to your server via SSH",
+					"run_command": "Run one of the commands above",
+					"follow_prompts": "Follow the on-screen prompts",
+					"complete": "The update will complete automatically"
+				}
+			},
 			"integrity_coming_soon": "This feature is coming soon in a future update."
 		},
 		"quick_links": {

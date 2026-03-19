@@ -16,12 +16,24 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { toast } from 'sonner';
-
-import React, { useState } from 'react';
-import { Package, Download, ExternalLink, ShieldCheck, CheckCircle2, ChevronDown, ChevronUp, Cpu } from 'lucide-react';
+import { useState } from 'react';
+import {
+    Package,
+    Download,
+    ExternalLink,
+    ShieldCheck,
+    CheckCircle2,
+    ChevronDown,
+    ChevronUp,
+    Cpu,
+    Copy,
+    X,
+} from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import ReactMarkdown from 'react-markdown';
 import { ChangelogSection } from './ChangelogSection';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { copyToClipboard } from '@/lib/utils';
 
 interface ChangelogData {
     changelog_added?: string[];
@@ -62,11 +74,10 @@ interface VersionInfoWidgetProps {
     loading?: boolean;
 }
 
-import { useTranslation } from '@/contexts/TranslationContext';
-
 export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
     const { t } = useTranslation();
     const [showChangelog, setShowChangelog] = useState(version?.update_available ?? false);
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
 
     const isLatest = !version?.update_available;
     const current = version?.current;
@@ -124,7 +135,10 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                                     </p>
                                 </div>
                             </div>
-                            <button className='w-full py-3 rounded-xl bg-amber-500 text-amber-950 text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-colors '>
+                            <button
+                                onClick={() => setShowUpdateModal(true)}
+                                className='w-full py-3 rounded-xl bg-amber-500 text-amber-950 text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-colors '
+                            >
                                 {t('admin.version.update_now')}
                             </button>
                         </div>
@@ -235,6 +249,64 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                     )}
                 </div>
             </div>
+
+            {showUpdateModal && (
+                <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'>
+                    <div className='bg-background border border-border rounded-2xl md:rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-300'>
+                        <div className='sticky top-0 flex items-center justify-between p-4 md:p-6 border-b border-border bg-card/50 backdrop-blur-xl'>
+                            <div>
+                                <h2 className='text-lg md:text-2xl font-black'>
+                                    {t('admin.version.update_instructions.title')}
+                                </h2>
+                                <p className='text-xs md:text-sm text-muted-foreground mt-1'>
+                                    {t('admin.version.update_instructions.description')}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowUpdateModal(false)}
+                                className='p-2 hover:bg-muted rounded-lg transition-colors shrink-0'
+                            >
+                                <X className='h-5 w-5' />
+                            </button>
+                        </div>
+
+                        <div className='p-4 md:p-6 space-y-6'>
+                            <div className='h-px bg-border' />
+
+                            {/* Curl Method */}
+                            <div className='space-y-3'>
+                                <h3 className='font-bold text-sm md:text-base flex items-center gap-2'>
+                                    <span className='inline-flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary text-xs font-black'>
+                                        1
+                                    </span>
+                                    {t('admin.version.update_instructions.curl_method')}
+                                </h3>
+                                <div className='bg-muted/30 border border-border rounded-xl p-3 md:p-4 font-mono text-xs md:text-sm break-all text-muted-foreground'>
+                                    curl -sSL https://get.featherpanel.com/installer.sh | bash
+                                </div>
+                                <button
+                                    onClick={() =>
+                                        copyToClipboard('curl -sSL https://get.featherpanel.com/installer.sh | bash')
+                                    }
+                                    className='flex items-center gap-2 text-xs md:text-sm font-semibold text-primary hover:text-primary/80 transition-colors'
+                                >
+                                    <Copy className='h-3.5 w-3.5' />
+                                    {t('admin.version.update_instructions.copy_command')}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className='sticky bottom-0 flex justify-end gap-2 p-4 md:p-6 border-t border-border bg-card/50 backdrop-blur-xl'>
+                            <button
+                                onClick={() => setShowUpdateModal(false)}
+                                className='px-4 md:px-6 py-2 md:py-3 rounded-xl border border-border hover:bg-muted transition-colors text-sm md:text-base font-semibold'
+                            >
+                                {t('admin.version.update_instructions.close')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </PageCard>
     );
 }
