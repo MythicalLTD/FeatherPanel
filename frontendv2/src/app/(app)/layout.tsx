@@ -84,6 +84,9 @@ export async function generateMetadata(): Promise<Metadata> {
                   follow: false,
                   nocache: true,
               },
+        other: {
+            author: 'FeatherPanel',
+        },
     };
 }
 
@@ -91,6 +94,7 @@ import SystemHealthCheck from '@/components/SystemHealthCheck';
 import PluginAssets from '@/components/common/PluginAssets';
 import ChunkLoadErrorHandler from '@/components/common/ChunkLoadErrorHandler';
 import { PwaInstaller } from '@/components/common/PwaInstaller';
+import AnalyticsScript from '@/components/common/AnalyticsScript';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
     const cookieStore = await cookies();
@@ -100,20 +104,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     return (
         <html lang='en' suppressHydrationWarning>
             <head>
-                <meta name='author' content='FeatherPanel' />
                 <link rel='preconnect' href='https://fonts.googleapis.com' />
                 <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin='anonymous' />
                 <link
                     rel='stylesheet'
                     href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap'
                 />
-                {analyticsEnabled && (
-                    <script
-                        defer
-                        src='https://dynhost.mythical.systems/script.js'
-                        data-website-id='71281b01-8c95-4fac-9f58-6d68aac179d7'
-                    />
-                )}
                 <noscript
                     dangerouslySetInnerHTML={{
                         __html: `<!-- FEATHERPANEL_HEADER_PLACEHOLDER_START -->\n<!-- FEATHERPANEL_HEADER_PLACEHOLDER_END -->`,
@@ -173,6 +169,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </head>
             <body className='bg-background text-foreground'>
                 <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_APP_PLACEHOLDER_START -->' }} />
+                <AnalyticsScript enabled={analyticsEnabled} />
                 <SettingsProvider>
                     <ThemeProvider>
                         <TranslationProvider>

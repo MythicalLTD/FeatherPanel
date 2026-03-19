@@ -773,6 +773,16 @@ export const getMainNavigationItems = (
             group: 'overview',
         },
         {
+            id: 'vms',
+            name: t('navigation.items.virtualServersVds'),
+            title: t('navigation.items.virtualServersVds'),
+            url: '/dashboard/vms',
+            icon: Server,
+            isActive: false,
+            category: 'main',
+            group: 'overview',
+        },
+        {
             id: 'account',
             name: t('navigation.items.account'),
             title: t('navigation.items.account'),
@@ -835,6 +845,7 @@ export const getMainNavigationItems = (
             group: 'support',
         });
     }
+
     return items;
 };
 

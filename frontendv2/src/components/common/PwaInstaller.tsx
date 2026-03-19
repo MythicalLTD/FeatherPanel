@@ -23,13 +23,7 @@ export function PwaInstaller() {
 
     useEffect(() => {
         if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
-        if (!('serviceWorker' in navigator)) return;
         if (!settings || settings.app_pwa_enabled !== 'true') return;
-
-        // Register service worker for PWA installability.
-        navigator.serviceWorker.register('/sw.js').catch(() => {
-            // Silently ignore SW registration failures; PWA is a progressive enhancement.
-        });
 
         // Proactively trigger the install prompt when criteria are met.
         const handler = (event: Event) => {

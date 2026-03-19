@@ -226,7 +226,7 @@
     "editor.defaultFormatter": "redhat.vscode-xml"
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
@@ -235,7 +235,7 @@
 	"editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
 },
 "[typescript]": {
-	"editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+	"editor.defaultFormatter": "esbenp.prettier-vscode"
 },
 "kiroAgent.configureMCP": "Disabled" // required to format on save
 }

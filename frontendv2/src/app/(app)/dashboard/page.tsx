@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Server, Clock } from 'lucide-react';
+import { Server, Clock, Cpu } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import Link from 'next/link';
@@ -25,8 +25,10 @@ import axios from 'axios';
 
 import type { Server as ServerData } from '@/types/server';
 import type { Activity } from '@/types/activity';
+import type { VmInstance } from '@/lib/vms-api';
 
 import { ServerCard } from '@/components/servers/ServerCard';
+import { VmCard } from '@/components/vms/VmCard';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner';
 import { TicketList } from '@/components/dashboard/TicketList';
@@ -36,17 +38,24 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 import { serversApi } from '@/lib/servers-api';
+import { vmsApi } from '@/lib/vms-api';
 import { useServersWebSocket } from '@/hooks/useServersWebSocket';
+import { cn } from '@/lib/utils';
 
 import { isEnabled } from '@/lib/utils';
+
+type ResourceFilter = 'all' | 'servers' | 'vds';
 
 export default function DashboardPage() {
     const { t } = useTranslation();
     const { user } = useSession();
     const [servers, setServers] = useState<ServerData[]>([]);
+    const [vms, setVms] = useState<VmInstance[]>([]);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loadingServers, setLoadingServers] = useState(true);
+    const [loadingVms, setLoadingVms] = useState(true);
     const [loadingActivity, setLoadingActivity] = useState(true);
+    const [resourceFilter, setResourceFilter] = useState<ResourceFilter>('all');
     const { settings } = useSettings();
     const { fetchWidgets, getWidgets } = usePluginWidgets('dashboard');
 
@@ -57,18 +66,19 @@ export default function DashboardPage() {
 
         const fetchData = async () => {
             try {
-                const response = await serversApi.getServers();
-                const serversArray = Array.isArray(response.servers) ? response.servers : [];
+                // Fetch Servers
+                const serversResponse = await serversApi.getServers();
+                const serversArray = Array.isArray(serversResponse.servers) ? serversResponse.servers : [];
 
                 let orderedServers: ServerData[] = [];
 
                 try {
                     if (typeof window !== 'undefined') {
                         const STORAGE_KEY = 'featherpanel_recent_servers_v1';
-                        type RecentEntry = {
+                        interface RecentEntry {
                             uuidShort: string;
                             lastViewedAt: string;
-                        };
+                        }
 
                         const raw = window.localStorage.getItem(STORAGE_KEY);
                         if (raw) {
@@ -96,10 +106,10 @@ export default function DashboardPage() {
                     orderedServers = serversArray;
                 }
 
-                setServers(orderedServers.slice(0, 3));
+                setServers(orderedServers.slice(0, 5));
 
                 if (serversArray.length > 0) {
-                    const serverUuids = serversArray.slice(0, 3).map((s) => s.uuidShort);
+                    const serverUuids = serversArray.slice(0, 5).map((s) => s.uuidShort);
                     connectServers(serverUuids);
                 }
             } catch (err) {
@@ -108,6 +118,19 @@ export default function DashboardPage() {
                 setLoadingServers(false);
             }
 
+            // Fetch VMs
+            try {
+                const vmsResponse = await vmsApi.getVms(1, 50);
+                if (vmsResponse.data?.instances) {
+                    setVms(vmsResponse.data.instances.slice(0, 5));
+                }
+            } catch (err) {
+                console.error('Failed to fetch VMs', err);
+            } finally {
+                setLoadingVms(false);
+            }
+
+            // Fetch Activity
             try {
                 const { data } = await axios.get('/api/user/activities?limit=5');
                 if (data.success && data.data) {
@@ -192,47 +215,103 @@ export default function DashboardPage() {
 
                     <div className='space-y-6'>
                         <div className='flex items-center justify-between'>
-                            <h2 className='text-xl font-bold'>{t('dashboard.recent_servers.title')}</h2>
-                            <Link
-                                href='/dashboard/servers'
-                                className='text-sm font-medium text-primary hover:text-primary/80 transition-colors'
-                            >
-                                {t('dashboard.recent_servers.view_all')} &rarr;
-                            </Link>
+                            <h2 className='text-xl font-bold'>{t('dashboard.resources.title')}</h2>
+                            <div className='flex items-center gap-3'>
+                                <div className='inline-flex items-center gap-0.5 bg-background/30 rounded-lg p-1 border border-border/50'>
+                                    {(['all', 'servers', 'vds'] as const).map((filter) => (
+                                        <button
+                                            key={filter}
+                                            onClick={() => setResourceFilter(filter)}
+                                            className={cn(
+                                                'px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap',
+                                                resourceFilter === filter
+                                                    ? 'bg-primary text-primary-foreground shadow-md'
+                                                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
+                                            )}
+                                        >
+                                            {filter === 'all'
+                                                ? t('dashboard.resources.filter_all')
+                                                : filter === 'servers'
+                                                  ? t('dashboard.resources.filter_servers')
+                                                  : t('dashboard.resources.filter_vms')}
+                                        </button>
+                                    ))}
+                                </div>
+                                <Link
+                                    href={
+                                        resourceFilter === 'all'
+                                            ? '/dashboard/servers'
+                                            : resourceFilter === 'servers'
+                                              ? '/dashboard/servers'
+                                              : '/dashboard/vms'
+                                    }
+                                    className='text-sm font-medium text-primary hover:text-primary/80 transition-colors'
+                                >
+                                    {t('dashboard.resources.view_all')} &rarr;
+                                </Link>
+                            </div>
                         </div>
 
-                        {loadingServers ? (
+                        {loadingServers || loadingVms ? (
                             <div className='flex items-center justify-center py-12'>
                                 <Server className='h-8 w-8 animate-spin text-muted-foreground' />
                             </div>
-                        ) : servers.length > 0 ? (
-                            <div className='space-y-4 stagger-children'>
-                                {servers.map((server) => (
-                                    <div key={server.id} className='stagger-child'>
-                                        <ServerCard
-                                            server={server}
-                                            layout='list'
-                                            serverUrl={`/server/${server.uuidShort}`}
-                                            liveStats={getServerLiveStats(server)}
-                                            isConnected={isServerConnected(server.uuidShort)}
-                                            t={t}
-                                            folders={[]}
-                                            onAssignFolder={() => {}}
-                                            onUnassignFolder={() => {}}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
                         ) : (
-                            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-12 text-center'>
-                                <Server className='h-12 w-12 text-muted-foreground/50 mx-auto mb-3' />
-                                <p className='text-muted-foreground font-medium'>
-                                    {t('dashboard.recent_servers.no_servers')}
-                                </p>
-                                <p className='text-sm text-muted-foreground/70 mt-1'>
-                                    {t('dashboard.recent_servers.create_first')}
-                                </p>
-                            </div>
+                            <>
+                                {(() => {
+                                    const displayServers =
+                                        resourceFilter === 'all' || resourceFilter === 'servers' ? servers : [];
+                                    const displayVms = resourceFilter === 'all' || resourceFilter === 'vds' ? vms : [];
+                                    const allResources = [
+                                        ...displayServers.map((s) => ({ type: 'server' as const, data: s })),
+                                        ...displayVms.map((v) => ({ type: 'vm' as const, data: v })),
+                                    ];
+
+                                    if (allResources.length === 0) {
+                                        return (
+                                            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-12 text-center'>
+                                                <Server className='h-12 w-12 text-muted-foreground/50 mx-auto mb-3' />
+                                                <p className='text-muted-foreground font-medium'>
+                                                    {resourceFilter === 'all'
+                                                        ? t('dashboard.resources.no_resources')
+                                                        : resourceFilter === 'servers'
+                                                          ? t('dashboard.resources.no_servers')
+                                                          : t('dashboard.resources.no_vms')}
+                                                </p>
+                                                <p className='text-sm text-muted-foreground/70 mt-1'>
+                                                    {t('dashboard.resources.create_first')}
+                                                </p>
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <div className='space-y-4 stagger-children'>
+                                            {allResources.map((resource, idx) => (
+                                                <div key={`${resource.type}-${idx}`} className='stagger-child'>
+                                                    {resource.type === 'server' ? (
+                                                        <ServerCard
+                                                            server={resource.data as ServerData}
+                                                            layout='list'
+                                                            serverUrl={`/server/${(resource.data as ServerData).uuidShort}`}
+                                                            liveStats={getServerLiveStats(resource.data as ServerData)}
+                                                            isConnected={isServerConnected(
+                                                                (resource.data as ServerData).uuidShort,
+                                                            )}
+                                                            t={t}
+                                                            folders={[]}
+                                                            onAssignFolder={() => {}}
+                                                            onUnassignFolder={() => {}}
+                                                        />
+                                                    ) : (
+                                                        <VmCard vm={resource.data as VmInstance} layout='list' />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
+                            </>
                         )}
 
                         <WidgetRenderer widgets={getWidgets('dashboard', 'after-server-list')} />

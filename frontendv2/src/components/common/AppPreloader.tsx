@@ -54,7 +54,7 @@ export default function AppPreloader() {
             <div className='relative z-10 flex flex-col items-center gap-6'>
                 <div className='relative animate-fade-in' style={{ animationDelay: '0.1s' }}>
                     <div
-                        className='h-20 w-20 flex items-center justify-center animate-bounce'
+                        className='relative h-20 w-20 flex items-center justify-center animate-bounce'
                         style={{ animationDuration: '2s' }}
                     >
                         <Image src={logoUrl} alt={appName} fill className='object-contain' sizes='80px' priority />

@@ -1,4 +1,3 @@
-
 /*
 This file is part of FeatherPanel.
 
@@ -14,66 +13,67 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  reactCompiler: true,
-  experimental: {
-    turbopackFileSystemCacheForDev: true, // Huge boost for cold starts
-},
-  // Enable standalone output for optimized Docker builds
-  output: "standalone",
-  // Prevent caching of HTML so users always get fresh chunk references after deploys
-  async headers() {
-    return [
-      {
-        source: "/((?!_next/static)(?!_next/image)(?!api)(?!attachments)(?!addons)(?!components)(?!pma).*)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-store, must-revalidate",
-          },
+    reactCompiler: true,
+    experimental: {
+        turbopackFileSystemCacheForDev: true, // Huge boost for cold starts
+    },
+    // Enable standalone output for optimized Docker builds
+    output: 'standalone',
+	allowedDevOrigins: ['testingpanel.mythical.systems'],
+    // Prevent caching of HTML so users always get fresh chunk references after deploys
+    async headers() {
+        return [
+            {
+                source: '/((?!_next/static)(?!_next/image)(?!api)(?!attachments)(?!addons)(?!components)(?!pma).*)',
+                headers: [
+                    {
+                        key: 'Cache-Control',
+                        value: 'no-store, must-revalidate',
+                    },
+                ],
+            },
+        ];
+    },
+    images: {
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: '**',
+            },
+            {
+                protocol: 'http',
+                hostname: '**',
+            },
         ],
-      },
-    ];
-  },
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-      {
-        protocol: "http",
-        hostname: "**",
-      },
-    ],
-  },
-  // Proxy API requests to backend during development (like Vite proxy)
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://localhost:8721/api/:path*",
-      },
-      {
-        source: "/attachments/:path*",
-        destination: "http://localhost:8721/attachments/:path*",
-      },
-      {
-        source: "/addons/:path*",
-        destination: "http://localhost:8721/addons/:path*",
-      },
-      {
-        source: "/components/:path*",
-        destination: "http://localhost:8721/components/:path*",
-      },
-      {
-        source: "/pma/:path*",
-        destination: "http://localhost:8721/pma/:path*",
-      },
-    ];
-  },
+    },
+    // Proxy API requests to backend during development (like Vite proxy)
+    async rewrites() {
+        return [
+            {
+                source: '/api/:path*',
+                destination: 'http://localhost:8721/api/:path*',
+            },
+            {
+                source: '/attachments/:path*',
+                destination: 'http://localhost:8721/attachments/:path*',
+            },
+            {
+                source: '/addons/:path*',
+                destination: 'http://localhost:8721/addons/:path*',
+            },
+            {
+                source: '/components/:path*',
+                destination: 'http://localhost:8721/components/:path*',
+            },
+            {
+                source: '/pma/:path*',
+                destination: 'http://localhost:8721/pma/:path*',
+            },
+        ];
+    },
 };
 
 export default nextConfig;

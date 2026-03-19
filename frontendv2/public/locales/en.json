@@ -260,6 +260,18 @@
 			"no_servers": "No servers found",
 			"create_first": "Create your first server to get started"
 		},
+		"resources": {
+			"title": "Resources",
+			"view_all": "View All",
+			"filter_all": "All",
+			"filter_servers": "Game Servers",
+			"filter_vms": "Virtual Machines",
+			"no_resources": "No resources available",
+			"no_servers": "No game servers available",
+			"no_vms": "No virtual machines available",
+			"create_first": "Create your first resource to get started",
+			"loading": "Loading resources..."
+		},
 		"announcements": {},
 		"tickets": {
 			"title": "Recent Support Tickets",
@@ -273,7 +285,6 @@
 			"view_all": "View All",
 			"no_activity": "No recent activity"
 		},
-		"resources": {},
 		"knowledgebase": {
 			"title": "Knowledge Base",
 			"view_all": "View All",
@@ -748,6 +759,45 @@
 		"server": "Server",
 		"serverId": "ID",
 		"attachFiles": "Attach Files"
+	},
+	"vms": {
+		"title": "Virtual Machines",
+		"description": "Manage your virtual machines and infrastructure",
+		"searchPlaceholder": "Search virtual machines...",
+		"refresh": "Refresh",
+		"runningOnly": "Running only",
+		"sort": {
+			"name": "Name",
+			"status": "Status",
+			"dateCreated": "Recently Created",
+			"lastUpdated": "Recently Updated"
+		},
+		"layout": {
+			"grid": "Grid",
+			"list": "List"
+		},
+		"pagination": {
+			"showing": "Showing {from} to {to} of {total} VMs",
+			"page": "Page {current} of {total}",
+			"previous": "Previous",
+			"next": "Next"
+		},
+		"loading": "Loading virtual machines...",
+		"errorTitle": "Error Loading VMs",
+		"errorLoading": "Failed to load virtual machines. Please try again.",
+		"retry": "Try Again",
+		"noVmsFound": "No VMs found matching your search",
+		"adjustFilters": "Try adjusting your search query",
+		"noVms": "No virtual machines available",
+		"getStarted": "You do not have any VM instances yet",
+		"status": {
+			"running": "Running",
+			"stopped": "Stopped",
+			"offline": "Offline",
+			"paused": "Paused",
+			"suspended": "Suspended",
+			"unknown": "Unknown"
+		}
 	},
 	"appearance": {
 		"language": "Language",
