@@ -42,6 +42,7 @@ import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select-native';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -147,6 +148,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         created_at: string;
     } | null>(null);
     const [mailPreviewOpen, setMailPreviewOpen] = useState(false);
+    const [sendEmailOpen, setSendEmailOpen] = useState(false);
+    const [sendingEmail, setSendingEmail] = useState(false);
+    const [sendEmailData, setSendEmailData] = useState({ subject: '', body: '' });
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-users-edit');
 
@@ -351,6 +355,43 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const showMailPreview = (mail: { subject: string; body?: string; status: string; created_at: string }) => {
         setMailPreview(mail);
         setMailPreviewOpen(true);
+    };
+
+    const handleSendEmail = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user) return;
+
+        const subject = sendEmailData.subject.trim();
+        const body = sendEmailData.body.trim();
+
+        if (!subject || !body) {
+            toast.error(t('admin.users.messages.send_email_required'));
+            return;
+        }
+
+        setSendingEmail(true);
+        try {
+            const { data } = await axios.post(`/api/admin/users/${user.uuid}/send-email`, {
+                subject,
+                body,
+            });
+
+            if (data?.success) {
+                toast.success(t('admin.users.messages.email_sent'));
+                setSendEmailOpen(false);
+                setSendEmailData({ subject: '', body: '' });
+                await fetchUser();
+            } else {
+                toast.error(data?.message || t('admin.users.messages.email_send_failed'));
+            }
+        } catch (error: unknown) {
+            const message = axios.isAxiosError(error)
+                ? (error.response?.data?.message ?? error.message)
+                : t('admin.users.messages.email_send_failed');
+            toast.error(message);
+        } finally {
+            setSendingEmail(false);
+        }
     };
 
     if (loading) {
@@ -682,6 +723,16 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                     </Button>
                                 )}
                             </div>
+                        </div>
+
+                        <div className='mt-6 pt-6 border-t border-border/50'>
+                            <Label className='mb-2 block text-xs uppercase text-muted-foreground font-bold tracking-wider'>
+                                {t('admin.users.edit.actions.email.title', { defaultValue: 'Direct Email' })}
+                            </Label>
+                            <Button variant='secondary' className='w-full' onClick={() => setSendEmailOpen(true)}>
+                                <Mail className='h-4 w-4 mr-2' />
+                                {t('admin.users.edit.actions.email.compose', { defaultValue: 'Compose email' })}
+                            </Button>
                         </div>
                     </PageCard>
                 </div>
@@ -1024,6 +1075,83 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             dangerouslySetInnerHTML={{ __html: mailPreview?.body || '' }}
                         />
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={sendEmailOpen} onOpenChange={setSendEmailOpen}>
+                <DialogContent className='max-w-2xl'>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t('admin.users.edit.actions.email.title', { defaultValue: 'Direct Email' })}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('admin.users.edit.actions.email.description', {
+                                defaultValue: 'Send an email directly to this user. HTML is supported in the body.',
+                            })}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={handleSendEmail} className='space-y-4 mt-2'>
+                        <div>
+                            <Label htmlFor='send-email-recipient'>
+                                {t('admin.users.edit.actions.email.to', { defaultValue: 'To' })}
+                            </Label>
+                            <Input id='send-email-recipient' value={user.email || ''} readOnly className='mt-2' />
+                        </div>
+
+                        <div>
+                            <Label htmlFor='send-email-subject'>
+                                {t('admin.users.edit.actions.email.subject', { defaultValue: 'Subject' })}
+                            </Label>
+                            <Input
+                                id='send-email-subject'
+                                value={sendEmailData.subject}
+                                onChange={(e) => setSendEmailData((v) => ({ ...v, subject: e.target.value }))}
+                                placeholder={t('admin.users.edit.actions.email.subject_placeholder', {
+                                    defaultValue: 'Enter subject',
+                                })}
+                                maxLength={255}
+                                className='mt-2'
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <Label htmlFor='send-email-body'>
+                                {t('admin.users.edit.actions.email.body', { defaultValue: 'HTML Body' })}
+                            </Label>
+                            <Textarea
+                                id='send-email-body'
+                                value={sendEmailData.body}
+                                onChange={(e) => setSendEmailData((v) => ({ ...v, body: e.target.value }))}
+                                placeholder={t('admin.users.edit.actions.email.body_placeholder', {
+                                    defaultValue: '<h1>Hello</h1><p>Your message here</p>',
+                                })}
+                                rows={10}
+                                className='mt-2 font-mono text-sm'
+                                required
+                            />
+                        </div>
+
+                        <div className='flex justify-end gap-2'>
+                            <Button type='button' variant='outline' onClick={() => setSendEmailOpen(false)}>
+                                {t('common.cancel')}
+                            </Button>
+                            <Button type='submit' disabled={sendingEmail}>
+                                {sendingEmail ? (
+                                    <>
+                                        <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
+                                        {t('admin.users.messages.sending_email', { defaultValue: 'Sending...' })}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Mail className='h-4 w-4 mr-2' />
+                                        {t('admin.users.edit.actions.email.send', { defaultValue: 'Send Email' })}
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </form>
                 </DialogContent>
             </Dialog>
 

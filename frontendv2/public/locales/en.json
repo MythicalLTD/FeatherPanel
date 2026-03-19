@@ -5295,6 +5295,17 @@
 				},
 				"actions": {
 					"title": "Actions",
+					"email": {
+						"title": "Direct Email",
+						"compose": "Compose email",
+						"description": "Send an email directly to this user. HTML is supported in the body.",
+						"to": "To",
+						"subject": "Subject",
+						"subject_placeholder": "Enter subject",
+						"body": "HTML Body",
+						"body_placeholder": "<h1>Hello</h1><p>Your message here</p>",
+						"send": "Send Email"
+					},
 					"sso": {
 						"title": "Single Sign-On",
 						"generate": "Generate SSO Link"
@@ -5360,6 +5371,7 @@
 				"discord_unlinked": "Discord unlinked successfully",
 				"sso_generated": "SSO login link generated",
 				"sso_copied": "SSO link copied to clipboard",
+				"email_sent": "Email queued successfully",
 				"create_failed": "Failed to create user",
 				"update_failed": "Failed to update user",
 				"delete_failed": "Failed to delete user",
@@ -5368,6 +5380,9 @@
 				"discord_failed": "Failed to unlink Discord",
 				"sso_failed": "Failed to generate SSO token",
 				"sso_copy_failed": "Failed to copy SSO link",
+				"send_email_required": "Subject and body are required",
+				"email_send_failed": "Failed to send email",
+				"sending_email": "Sending...",
 				"discord_confirm": "Are you sure you want to unlink Discord from this user?",
 				"ban_confirm": "Are you sure you want to ban/unban this user?",
 				"fetch_failed": "Failed to fetch users",

@@ -1265,6 +1265,102 @@ class UsersController
 	}
 
 	#[OA\Post(
+		path: '/api/admin/users/{uuid}/send-email',
+		summary: 'Send email to user',
+		description: 'Queue a direct email to a specific user with subject and HTML body content.',
+		tags: ['Admin - Users'],
+		parameters: [
+			new OA\Parameter(
+				name: 'uuid',
+				in: 'path',
+				description: 'User UUID',
+				required: true,
+				schema: new OA\Schema(type: 'string', format: 'uuid')
+			),
+		],
+		requestBody: new OA\RequestBody(
+			required: true,
+			content: new OA\JsonContent(
+				required: ['subject', 'body'],
+				properties: [
+					new OA\Property(property: 'subject', type: 'string', minLength: 1, maxLength: 255),
+					new OA\Property(property: 'body', type: 'string', minLength: 1, maxLength: 65535, description: 'HTML content is supported'),
+				]
+			)
+		),
+		responses: [
+			new OA\Response(response: 200, description: 'Email queued successfully'),
+			new OA\Response(response: 400, description: 'Bad request'),
+			new OA\Response(response: 401, description: 'Unauthorized'),
+			new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+			new OA\Response(response: 404, description: 'User not found'),
+			new OA\Response(response: 500, description: 'Internal server error - Failed to queue email'),
+		]
+	)]
+	public function sendEmail(Request $request, string $uuid): Response
+	{
+		$user = User::getUserByUuid($uuid);
+		if (!$user) {
+			return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+		}
+
+		$data = json_decode($request->getContent(), true);
+		if (!is_array($data)) {
+			return ApiResponse::error('No data provided', 'NO_DATA_PROVIDED', 400);
+		}
+
+		$subject = isset($data['subject']) && is_string($data['subject']) ? trim($data['subject']) : '';
+		$body = isset($data['body']) && is_string($data['body']) ? trim($data['body']) : '';
+
+		if ($subject === '' || $body === '') {
+			return ApiResponse::error('Subject and body are required', 'MISSING_REQUIRED_FIELDS', 400);
+		}
+		if (strlen($subject) > 255) {
+			return ApiResponse::error('Subject must be less than 255 characters long', 'INVALID_DATA_LENGTH', 400);
+		}
+		if (strlen($body) > 65535) {
+			return ApiResponse::error('Body must be less than 65535 characters long', 'INVALID_DATA_LENGTH', 400);
+		}
+
+		$queueData = [
+			'user_uuid' => $user['uuid'],
+			'subject' => $subject,
+			'body' => $body,
+			'status' => 'pending',
+			'locked' => 'false',
+			'created_at' => date('Y-m-d H:i:s'),
+			'deleted' => 'false',
+		];
+
+		$queueId = MailQueue::create($queueData);
+		if (!$queueId) {
+			return ApiResponse::error('Failed to queue email', 'FAILED_TO_QUEUE_EMAIL', 500);
+		}
+
+		$listData = [
+			'queue_id' => $queueId,
+			'user_uuid' => $user['uuid'],
+			'created_at' => date('Y-m-d H:i:s'),
+			'deleted' => 'false',
+		];
+
+		if (!MailList::create($listData)) {
+			return ApiResponse::error('Failed to create mail list entry', 'FAILED_TO_CREATE_MAIL_LIST', 500);
+		}
+
+		Activity::createActivity([
+			'user_uuid' => $request->get('user')['uuid'] ?? null,
+			'name' => 'send_user_email',
+			'context' => 'Sent email to user ' . ($user['username'] ?? $user['uuid']) . '. Subject: ' . $subject,
+			'ip_address' => CloudFlareRealIP::getRealIP(),
+		]);
+
+		return ApiResponse::success([
+			'queue_id' => $queueId,
+		], 'Email queued successfully', 200);
+	}
+
+	#[OA\Post(
 		path: '/api/admin/users/{uuid}/ban',
 		summary: 'Ban a user',
 		description: 'Ban a user account. The user will be immediately blocked from all authenticated endpoints and receive a suspension email notification.',
