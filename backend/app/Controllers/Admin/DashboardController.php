@@ -23,6 +23,8 @@ use App\Chat\User;
 use App\Chat\Spell;
 use App\Cache\Cache;
 use App\Chat\Server;
+use App\Chat\VmNode;
+use App\Chat\VmInstance;
 use App\Chat\TimedTask;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -110,6 +112,8 @@ class DashboardController
             $nodeCount = Node::getNodesCount();
             $spellCount = Spell::getSpellsCount();
             $serverCount = Server::getCount();
+            $vmNodeCount = VmNode::getVmNodesCount();
+            $vmInstanceCount = VmInstance::countAll();
 
             $version = APP_VERSION;
             $upstream = APP_UPSTREAM;
@@ -153,6 +157,8 @@ class DashboardController
                     'nodes' => $nodeCount,
                     'spells' => $spellCount,
                     'servers' => $serverCount,
+                    'vm_nodes' => $vmNodeCount,
+                    'vm_instances' => $vmInstanceCount,
                 ],
                 'cron' => [
                     'recent' => $recentCrons,

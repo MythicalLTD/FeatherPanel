@@ -24,6 +24,8 @@ interface AdminDashboardData {
         nodes: number;
         spells: number;
         servers: number;
+        vm_nodes: number;
+        vm_instances: number;
     };
     cron: {
         recent: {

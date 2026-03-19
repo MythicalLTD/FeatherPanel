@@ -4547,7 +4547,9 @@
 			"total_servers": "Total Servers",
 			"total_users": "Total Users",
 			"total_nodes": "Total Nodes",
-			"total_spells": "Total Spells"
+			"total_spells": "Total Spells",
+			"total_vm_nodes": "Total VDS Nodes",
+			"total_vm_instances": "Total VM Instances"
 		},
 		"cron": {
 			"title": "Cron Status",

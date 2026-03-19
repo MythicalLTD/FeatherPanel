@@ -15,8 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React from 'react';
-import { Server, Users, HardDrive, Scroll } from 'lucide-react';
+import { Server, Users, HardDrive, Scroll, Cloud, Monitor } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/TranslationContext';
 
@@ -26,6 +25,8 @@ interface QuickStatsWidgetProps {
         users: number;
         nodes: number;
         spells: number;
+        vm_nodes: number;
+        vm_instances: number;
     };
     loading?: boolean;
 }
@@ -66,10 +67,26 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
             bg: 'bg-primary/10',
             border: 'border-primary/20',
         },
+        {
+            name: t('admin.stats.total_vm_nodes'),
+            value: stats?.vm_nodes || 0,
+            icon: Cloud,
+            color: 'text-primary',
+            bg: 'bg-primary/10',
+            border: 'border-primary/20',
+        },
+        {
+            name: t('admin.stats.total_vm_instances'),
+            value: stats?.vm_instances || 0,
+            icon: Monitor,
+            color: 'text-primary',
+            bg: 'bg-primary/10',
+            border: 'border-primary/20',
+        },
     ];
 
     return (
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-6 md:mb-8'>
             {items.map((item, index) => (
                 <div
                     key={index}
