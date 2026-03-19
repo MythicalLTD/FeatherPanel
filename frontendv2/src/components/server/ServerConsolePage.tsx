@@ -296,12 +296,33 @@ export default function ServerConsolePage() {
         }
     }, []);
 
+    const handleInstallOutput = useCallback((output: string) => {
+        if (terminalRef.current) {
+            terminalRef.current.writeln(output);
+        }
+    }, []);
+
+    const handleInstallStarted = useCallback(() => {
+        if (terminalRef.current) {
+            terminalRef.current.writeln('\u001b[33m[FeatherPanel] Install started...\u001b[0m');
+        }
+    }, []);
+
+    const handleInstallCompleted = useCallback(() => {
+        if (terminalRef.current) {
+            terminalRef.current.writeln('\u001b[32m[FeatherPanel] Install completed.\u001b[0m');
+        }
+    }, []);
+
     const { connectionStatus, ping, sendCommand, sendPowerAction, requestStats, requestLogs } = useWingsWebSocket({
         serverUuid,
         connect: canConnect,
         onConsoleOutput: handleConsoleOutput,
         onStatus: handleStatusUpdate,
         onStats: handleStatsUpdate,
+        onInstallOutput: handleInstallOutput,
+        onInstallStarted: handleInstallStarted,
+        onInstallCompleted: handleInstallCompleted,
     });
 
     useEffect(() => {

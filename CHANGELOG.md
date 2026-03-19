@@ -29,6 +29,7 @@
 - Enhanced the server list page with a significantly cleaner and more intuitive user experience. by @nayskutzu
 - Fonts are now bundled and served locally using Next.js optimized font loading, eliminating external Google CDN requests for improved privacy. by @nayskutzu
 - Plugin bootstrapping and logging have been significantly optimized for improved startup performance and cleaner diagnostic output. by @nayskutzu
+- Added an installation output handlers to ServerConsolePage by @nayskutzu
 
 ## v1.3.1 STABLE
 
