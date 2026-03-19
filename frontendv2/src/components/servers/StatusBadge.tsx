@@ -27,6 +27,7 @@ export function StatusBadge({ status, t }: StatusBadgeProps) {
         stopped: 'bg-red-500/10 text-red-600 border-red-500/20',
         starting: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
         stopping: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+        suspended: 'bg-red-500/20 text-red-600 border-red-500/30 font-bold',
     };
 
     const displayStatus = t ? t(`servers.status.${status}`) : status;

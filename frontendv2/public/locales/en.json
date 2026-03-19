@@ -527,6 +527,12 @@
 			"suspended": "Suspended",
 			"restoring_backup": "Restoring Backup"
 		},
+		"suspended_banner": {
+			"title": "Server Suspended",
+			"message": "This server has been suspended and is not accessible. Please contact support for more information.",
+			"contact_support": "Contact Support",
+			"back_to_dashboard": "Back to Dashboard"
+		},
 		"subuser": "Subuser",
 		"noDescription": "No description",
 		"moveToFolder": "Move to Folder",

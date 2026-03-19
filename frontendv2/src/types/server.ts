@@ -122,6 +122,7 @@ export interface Server {
         | 'stopping'
         | 'stopped'
         | 'offline';
+    suspended: number; // 0 = not suspended, 1 = suspended
     user_id: number;
     owner_id: number;
     node_id: number;

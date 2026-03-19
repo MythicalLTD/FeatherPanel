@@ -68,6 +68,7 @@ export function ServerCard({
 }: ServerCardProps) {
     const accessible = isServerAccessible(server);
     const status = liveStats?.status || displayStatus(server);
+    const isSuspended = server.suspended === 1;
 
     const memory = liveStats?.memory ?? getServerMemory(server);
     const disk = liveStats?.disk ?? getServerDisk(server);
@@ -106,7 +107,12 @@ export function ServerCard({
                     <div className='flex items-center gap-3 mb-2'>
                         <h3 className='text-lg font-semibold truncate'>{server.name}</h3>
                         <StatusBadge status={status} t={t} />
-                        {isConnected && status === 'running' && (
+                        {isSuspended && (
+                            <span className='px-2 py-1 bg-red-500/20 text-red-600 text-xs font-bold rounded-lg border border-red-500/30 uppercase'>
+                                {t('servers.status.suspended')}
+                            </span>
+                        )}
+                        {isConnected && status === 'running' && !isSuspended && (
                             <span
                                 className='h-2 w-2 bg-green-500 rounded-full animate-pulse'
                                 title={t('servers.liveConnected')}
@@ -332,6 +338,11 @@ export function ServerCard({
 
                 <Link href={serverUrl} className='flex items-center gap-2 cursor-pointer'>
                     <StatusBadge status={status} t={t} />
+                    {isSuspended && (
+                        <span className='px-2 py-1 bg-red-500/20 text-red-600 text-xs font-bold rounded-lg border border-red-500/30 uppercase'>
+                            {t('servers.status.suspended')}
+                        </span>
+                    )}
                     {server.is_subuser && (
                         <span className='px-2 py-1 bg-blue-500/10 text-blue-500 text-xs font-medium rounded-lg'>
                             {t('servers.subuser')}

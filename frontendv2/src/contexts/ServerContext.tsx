@@ -100,6 +100,45 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
             }
         } catch (err) {
             console.error('Failed to fetch server:', err);
+
+            // Check if it's a suspended server error (403 with SERVER_SUSPENDED code)
+            if (axios.isAxiosError(err) && err.response?.status === 403) {
+                const errorData = err.response.data;
+                if (errorData?.error_code === 'SERVER_SUSPENDED') {
+                    // For suspended servers, create a minimal server object so UI can render with banner
+                    const suspendedServer: Server = {
+                        id: 0,
+                        uuid: '',
+                        uuidShort,
+                        identifier: uuidShort,
+                        name: 'Suspended Server',
+                        description: '',
+                        status: 'suspended',
+                        suspended: 1,
+                        user_id: 0,
+                        owner_id: 0,
+                        node_id: 0,
+                        realm_id: 0,
+                        spell_id: 0,
+                        memory: 0,
+                        swap: 0,
+                        disk: 0,
+                        io: 0,
+                        cpu: 0,
+                        allocation_id: 0,
+                        allocation_limit: 0,
+                        database_limit: 0,
+                        backup_limit: 0,
+                        created_at: '',
+                        updated_at: '',
+                        is_subuser: false,
+                    };
+                    setServer(suspendedServer);
+                    setError(null);
+                    return;
+                }
+            }
+
             setError(err as Error);
         } finally {
             setLoading(false);

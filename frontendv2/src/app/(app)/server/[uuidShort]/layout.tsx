@@ -78,6 +78,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 import { ServerProvider } from '@/contexts/ServerContext';
+import { ServerSuspendedWrapper } from '@/components/server/ServerSuspendedWrapper';
 
 export default async function ServerLayout({
     children,
@@ -91,7 +92,9 @@ export default async function ServerLayout({
 
     return (
         <ServerProvider uuidShort={uuidShort} initialServer={server}>
-            <DashboardShell>{children}</DashboardShell>
+            <DashboardShell>
+                <ServerSuspendedWrapper>{children}</ServerSuspendedWrapper>
+            </DashboardShell>
             <ChatbotWidget />
         </ServerProvider>
     );

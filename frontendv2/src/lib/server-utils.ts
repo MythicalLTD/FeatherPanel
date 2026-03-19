@@ -145,7 +145,10 @@ export function getStatusDotColor(status: string): string {
  * Get display status for server
  */
 export function displayStatus(server: Server): string {
-    // Priority: installation/suspension status > stats state > server status
+    // Priority: suspended flag > installation/suspension status > stats state > server status
+    if (server.suspended === 1) {
+        return 'suspended';
+    }
     if (server.status === 'installing' || server.status === 'install_failed') {
         return server.status;
     }
@@ -162,12 +165,17 @@ export function displayStatus(server: Server): string {
  * Check if server is accessible
  */
 export function isServerAccessible(server: Server): boolean {
+    // Check if server is suspended
+    if (server.suspended === 1) {
+        return false;
+    }
+
     // Check if node is in maintenance mode
     if (server.node?.maintenance_mode) {
         return false;
     }
 
-    // Check if server is suspended
+    // Check if server is suspended (legacy status check)
     if (server.status === 'suspended') {
         return false;
     }
