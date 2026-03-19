@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "next dev",
-		"build": "run-s scan:translations export:docs lint build:next",
+		"build": "run-s scan:translations lint build:next",
 		"build:next": "next build",
 		"start": "next start",
 		"lint": "run-s lint:eslint lint:format",
