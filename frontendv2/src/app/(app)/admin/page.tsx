@@ -34,6 +34,7 @@ import { CronStatusWidget } from '@/components/admin/CronStatusWidget';
 import { SystemHealthWidget } from '@/components/admin/SystemHealthWidget';
 import { VersionInfoWidget } from '@/components/admin/VersionInfoWidget';
 import { QuickLinksWidget } from '@/components/admin/QuickLinksWidget';
+import { EulaWidget } from '@/components/admin/EulaWidget';
 import { PageHeader } from '@/components/featherui/PageHeader';
 
 export default function AdminDashboardPage() {
@@ -336,6 +337,26 @@ export default function AdminDashboardPage() {
             </div>
 
             <WidgetRenderer widgets={getWidgets('admin-home', 'after-widgets-grid')} />
+
+            <div className={cn('transition-all duration-500', !isVisible('eula') && 'hidden')}>
+                <div className='relative'>
+                    {isCustomizing && (
+                        <button
+                            onClick={() => toggleWidgetVisibility('eula')}
+                            className='absolute -top-3 -right-3 z-20 p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground'
+                        >
+                            {hiddenWidgets.includes('eula') ? (
+                                <Eye className='h-4 w-4' />
+                            ) : (
+                                <EyeOff className='h-4 w-4' />
+                            )}
+                        </button>
+                    )}
+                    <div className={cn(hiddenWidgets.includes('eula') && 'opacity-30 grayscale')}>
+                        <EulaWidget />
+                    </div>
+                </div>
+            </div>
 
             <WidgetRenderer widgets={getWidgets('admin-home', 'bottom-of-page')} />
         </div>
