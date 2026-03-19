@@ -6951,6 +6951,10 @@
 				"lxc": "Additional IPs are provisioned as extra container network interfaces such as net1, net2, and so on."
 			}
 		},
+		"suspended_banner": {
+			"title": "This VDS is suspended",
+			"message": "Access to this VDS has been temporarily restricted. Contact support for details."
+		},
 		"settings": {
 			"title": "VDS Settings",
 			"reinstall": {

@@ -26,9 +26,10 @@ interface VmCardProps {
 }
 
 export function VmCard({ vm, layout }: VmCardProps) {
-    const isRunning = vm.status === 'running';
-    const statusColor = isRunning ? 'text-green-500' : 'text-red-500';
-    const statusBg = isRunning ? 'bg-green-500/10' : 'bg-red-500/10';
+    const isSuspended = vm.suspended === 1 || vm.status === 'suspended';
+    const isRunning = vm.status === 'running' && !isSuspended;
+    const statusColor = isSuspended ? 'text-amber-500' : isRunning ? 'text-green-500' : 'text-red-500';
+    const statusBg = isSuspended ? 'bg-amber-500/10' : isRunning ? 'bg-green-500/10' : 'bg-red-500/10';
 
     const content = (
         <>

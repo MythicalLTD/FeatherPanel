@@ -19,6 +19,7 @@ import ChatbotWidget from '@/components/ai/ChatbotWidget';
 import { getBaseUrl } from '@/lib/settings-api';
 import { cookies } from 'next/headers';
 import { VmInstanceProvider, VmInstance } from '@/contexts/VmInstanceContext';
+import { VdsSuspendedWrapper } from '@/components/vds/VdsSuspendedWrapper';
 
 type Props = {
     params: Promise<{ id: string }>;
@@ -72,7 +73,9 @@ export default async function VdsLayout({
 
     return (
         <VmInstanceProvider instanceId={parseInt(id, 10)} initialInstance={instance}>
-            <DashboardShell>{children}</DashboardShell>
+            <DashboardShell>
+                <VdsSuspendedWrapper>{children}</VdsSuspendedWrapper>
+            </DashboardShell>
             <ChatbotWidget />
         </VmInstanceProvider>
     );

@@ -27,6 +27,7 @@ export interface VmInstance {
     pve_node_ip?: string;
     storage: string;
     status?: string;
+    suspended?: number;
     cpu_cores?: number;
     memory_mb?: number;
     disk_gb?: number;

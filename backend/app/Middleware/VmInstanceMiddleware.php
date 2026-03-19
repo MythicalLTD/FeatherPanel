@@ -30,83 +30,92 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class VmInstanceMiddleware implements MiddlewareInterface
 {
-    public function handle(Request $request, callable $next): Response
-    {
-        $user = $request->attributes->get('user');
+	public function handle(Request $request, callable $next): Response
+	{
+		$user = $request->attributes->get('user');
 
-        unset($user['password'], $user['remember_token']);
+		unset($user['password'], $user['remember_token']);
 
-        if (!$user) {
-            return ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401, []);
-        }
+		if (!$user) {
+			return ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401, []);
+		}
 
-        // Resolve VM instance ID from route attributes
-        $vmInstanceId = null;
-        $vmInstanceParamName = $request->attributes->get('vmInstance');
+		// Resolve VM instance ID from route attributes
+		$vmInstanceId = null;
+		$vmInstanceParamName = $request->attributes->get('vmInstance');
 
-        if ($vmInstanceParamName && $request->attributes->has($vmInstanceParamName)) {
-            $vmInstanceId = (int) $request->attributes->get($vmInstanceParamName);
-        }
+		if ($vmInstanceParamName && $request->attributes->has($vmInstanceParamName)) {
+			$vmInstanceId = (int) $request->attributes->get($vmInstanceParamName);
+		}
 
-        if (!$vmInstanceId) {
-            $vmInstanceId = (int) ($request->attributes->get('id') ?? $request->get('id'));
-        }
+		if (!$vmInstanceId) {
+			$vmInstanceId = (int) ($request->attributes->get('id') ?? $request->get('id'));
+		}
 
-        if (!$vmInstanceId || $vmInstanceId <= 0) {
-            $context = [
-                'attributes' => $request->attributes->all(),
-                'query' => $request->query->all(),
-                'vmInstanceParamName' => $vmInstanceParamName,
-                'path' => $request->getPathInfo(),
-            ];
-            App::getInstance(true)->getLogger()->error('VM_INSTANCE_ID_MISSING: Attributes dump: ' . json_encode($context));
+		if (!$vmInstanceId || $vmInstanceId <= 0) {
+			$context = [
+				'attributes' => $request->attributes->all(),
+				'query' => $request->query->all(),
+				'vmInstanceParamName' => $vmInstanceParamName,
+				'path' => $request->getPathInfo(),
+			];
+			App::getInstance(true)->getLogger()->error('VM_INSTANCE_ID_MISSING: Attributes dump: ' . json_encode($context));
 
-            return ApiResponse::error('VM instance ID not provided', 'VM_INSTANCE_ID_MISSING', 400, []);
-        }
+			return ApiResponse::error('VM instance ID not provided', 'VM_INSTANCE_ID_MISSING', 400, []);
+		}
 
-        // Get the VM instance details
-        $vmInstance = VmInstance::getById($vmInstanceId);
+		// Get the VM instance details
+		$vmInstance = VmInstance::getById($vmInstanceId);
 
-        if (!$vmInstance) {
-            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404, [
-                'vmInstanceId' => $vmInstanceId,
-            ]);
-        }
+		if (!$vmInstance) {
+			return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404, [
+				'vmInstanceId' => $vmInstanceId,
+			]);
+		}
 
-        // Check if user can access the VM instance (owner, subuser, or admin)
-        if (!VmGateway::canUserAccessVmInstance($user['uuid'], $vmInstanceId)) {
-            return ApiResponse::error('Access denied: VM instance not accessible by user', 'ACCESS_DENIED', 403, []);
-        }
+		// Check if user can access the VM instance (owner, subuser, or admin)
+		if (!VmGateway::canUserAccessVmInstance($user['uuid'], $vmInstanceId)) {
+			return ApiResponse::error('Access denied: VM instance not accessible by user', 'ACCESS_DENIED', 403, []);
+		}
 
-        // Store VM instance in request attributes for controller use
-        $request->attributes->set('vmInstance', $vmInstance);
+		if (isset($vmInstance['suspended']) && (int) $vmInstance['suspended'] === 1) {
+			return ApiResponse::error(
+				'Sorry, but you can\'t access VDS instances while they are suspended.',
+				'VM_INSTANCE_SUSPENDED',
+				403,
+				[]
+			);
+		}
 
-        return $next($request);
-    }
+		// Store VM instance in request attributes for controller use
+		$request->attributes->set('vmInstance', $vmInstance);
 
-    /**
-     * Get the authenticated user from the request (if available).
-     */
-    public static function getCurrentUser(Request $request): ?array
-    {
-        return $request->attributes->get('user');
-    }
+		return $next($request);
+	}
 
-    /**
-     * Get the VM instance ID from the request (if available).
-     */
-    public static function getVmInstanceId(Request $request): ?int
-    {
-        $id = $request->attributes->get('id') ?? $request->get('id');
+	/**
+	 * Get the authenticated user from the request (if available).
+	 */
+	public static function getCurrentUser(Request $request): ?array
+	{
+		return $request->attributes->get('user');
+	}
 
-        return $id ? (int) $id : null;
-    }
+	/**
+	 * Get the VM instance ID from the request (if available).
+	 */
+	public static function getVmInstanceId(Request $request): ?int
+	{
+		$id = $request->attributes->get('id') ?? $request->get('id');
 
-    /**
-     * Get the VM instance from the request (if available).
-     */
-    public static function getVmInstance(Request $request): ?array
-    {
-        return $request->attributes->get('vmInstance');
-    }
+		return $id ? (int) $id : null;
+	}
+
+	/**
+	 * Get the VM instance from the request (if available).
+	 */
+	public static function getVmInstance(Request $request): ?array
+	{
+		return $request->attributes->get('vmInstance');
+	}
 }

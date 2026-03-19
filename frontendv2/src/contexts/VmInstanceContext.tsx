@@ -42,6 +42,7 @@ export interface VmInstance {
     is_subuser?: boolean;
     permissions?: string[];
     access_password?: string | null;
+    suspended?: number;
 }
 
 interface VmInstanceContextType {
@@ -79,6 +80,28 @@ export function VmInstanceProvider({ children, instanceId, initialInstance }: Vm
             }
         } catch (err) {
             console.error('Failed to fetch VM instance:', err);
+            if (axios.isAxiosError(err) && err.response?.status === 403) {
+                const errorData = err.response.data;
+                if (errorData?.error_code === 'VM_INSTANCE_SUSPENDED') {
+                    const suspendedVm: VmInstance = {
+                        id: instanceId,
+                        vmid: 0,
+                        hostname: 'Suspended VDS',
+                        status: 'suspended',
+                        vm_type: 'qemu',
+                        ip_address: null,
+                        user_uuid: '',
+                        vm_node_id: 0,
+                        suspended: 1,
+                        is_owner: true,
+                        is_subuser: false,
+                        permissions: [],
+                    };
+                    setInstance(suspendedVm);
+                    setError(null);
+                    return;
+                }
+            }
             setError(err as Error);
         } finally {
             setLoading(false);
