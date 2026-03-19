@@ -14,6 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import './globals.css';
+import { Inter, Nunito } from 'next/font/google';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { TranslationProvider } from '@/contexts/TranslationContext';
@@ -23,6 +24,20 @@ import AppContent from '@/components/common/AppContent';
 import { Toaster } from 'sonner';
 
 import type { Metadata } from 'next';
+
+const inter = Inter({
+    subsets: ['latin'],
+    weight: ['400', '500', '600', '700'],
+    variable: '--font-inter',
+    display: 'swap',
+});
+
+const nunito = Nunito({
+    subsets: ['latin'],
+    weight: ['400', '500', '600', '700'],
+    variable: '--font-nunito',
+    display: 'swap',
+});
 import { cookies } from 'next/headers';
 import { settingsApi } from '@/lib/settings-api';
 import { ANALYTICS_COOKIE_NAME } from '@/lib/analytics-cookie';
@@ -102,20 +117,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     const analyticsEnabled = analyticsCookie !== '0';
 
     return (
-        <html lang='en' suppressHydrationWarning>
+        <html lang='en' suppressHydrationWarning className={`${inter.variable} ${nunito.variable}`}>
             <head>
-                <link rel='preconnect' href='https://fonts.googleapis.com' />
-                <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin='anonymous' />
-                <link
-                    rel='stylesheet'
-                    href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap'
-                />
                 <noscript
                     dangerouslySetInnerHTML={{
                         __html: `<!-- FEATHERPANEL_HEADER_PLACEHOLDER_START -->\n<!-- FEATHERPANEL_HEADER_PLACEHOLDER_END -->`,
                     }}
                 />
                 <script
+                    type='text/javascript'
                     dangerouslySetInnerHTML={{
                         __html: `
               (function() {

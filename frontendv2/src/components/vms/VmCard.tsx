@@ -133,7 +133,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
     );
 
     return (
-        <Link href={`/dashboard/vms/${vm.id}`}>
+        <Link href={`/vds/${vm.id}`}>
             <div
                 className={cn(
                     'rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl hover:bg-card/70 hover:border-primary/30 transition-all cursor-pointer p-4',

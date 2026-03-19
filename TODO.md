@@ -1,1 +1,0 @@
-- Let admins know the one line proxmox command they have to run so they can acess the fucking VNC :))
