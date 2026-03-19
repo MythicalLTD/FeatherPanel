@@ -210,6 +210,7 @@ interface ConfigInterface
      * Status Page Settings.
      */
     public const STATUS_PAGE_ENABLED = 'status_page_enabled';
+    public const STATUS_PAGE_PUBLIC_ENABLED = 'status_page_public_enabled';
     public const STATUS_PAGE_SHOW_NODE_STATUS = 'status_page_show_node_status';
     public const STATUS_PAGE_SHOW_LOAD_USAGE = 'status_page_show_load_usage';
     public const STATUS_PAGE_SHOW_TOTAL_SERVERS = 'status_page_show_total_servers';
@@ -219,6 +220,7 @@ interface ConfigInterface
      * Knowledgebase Settings.
      */
     public const KNOWLEDGEBASE_ENABLED = 'knowledgebase_enabled';
+    public const KNOWLEDGEBASE_PUBLIC_ENABLED = 'knowledgebase_public_enabled';
     public const KNOWLEDGEBASE_SHOW_CATEGORIES = 'knowledgebase_show_categories';
     public const KNOWLEDGEBASE_SHOW_ARTICLES = 'knowledgebase_show_articles';
     public const KNOWLEDGEBASE_SHOW_ATTACHMENTS = 'knowledgebase_show_attachments';

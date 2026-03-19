@@ -17,10 +17,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, type ComponentPropsWithoutRef, type ReactNode } from 'react';
 import axios from 'axios';
 import { FileText, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+
+type MarkdownCodeProps = ComponentPropsWithoutRef<'code'> & {
+    inline?: boolean;
+    children?: ReactNode;
+};
 
 interface Category {
     id: number;
@@ -60,6 +66,8 @@ interface Article {
 export default function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const { t } = useTranslation();
+    const pathname = usePathname();
+    const knowledgebaseBasePath = pathname.startsWith('/knowledgebase') ? '/knowledgebase' : '/dashboard/knowledgebase';
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -110,7 +118,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'top-of-page')} />
 
             <div className='flex items-center gap-4 px-1'>
-                <Link href={`/dashboard/knowledgebase/category/${article.category_id}`}>
+                <Link href={`${knowledgebaseBasePath}/category/${article.category_id}`}>
                     <Button
                         variant='ghost'
                         size='icon'
@@ -140,7 +148,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                 p: ({ children }) => (
                                     <p className='leading-relaxed mb-4 text-muted-foreground/90'>{children}</p>
                                 ),
-                                code: ({ inline, children, ...props }: any) => {
+                                code: ({ inline, children, ...props }: MarkdownCodeProps) => {
                                     if (inline) {
                                         return (
                                             <code className='bg-muted px-1.5 py-0.5 rounded text-primary font-mono text-sm'>

@@ -21,6 +21,8 @@
 - Introduced a built-in email server test directly from the mail templates page, making it easy to verify your mail configuration without leaving the panel. by @nayskutzu
 - Improved the experience for suspended servers, providing clearer feedback and a more polished interface. by @nayskutzu
 - Added support for SFTP subdomains for nodes and databases. by @nayskutzu
+- Introduced fully public knowledgebases, allowing anyone to access helpful documentation and resources without needing to log in. by @nayskutzu
+- Public status pages, enabling anyone to view real-time system and server status without requiring authentication. by @nayskutzu
 
 ### Improved
 

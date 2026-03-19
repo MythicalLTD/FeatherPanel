@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { usePathname } from 'next/navigation';
 import {
     RefreshCw,
     Server as ServerIcon,
@@ -75,6 +76,9 @@ interface StatusData {
 
 export default function StatusPage() {
     const { t } = useTranslation();
+    const pathname = usePathname();
+    const isPublicStatusPage = pathname.startsWith('/status');
+    const statusApiPath = pathname.startsWith('/status') ? '/api/status' : '/api/user/status';
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -95,7 +99,7 @@ export default function StatusPage() {
             setError(null);
 
             try {
-                const { data } = await axios.get('/api/user/status');
+                const { data } = await axios.get(statusApiPath);
 
                 if (data && data.success) {
                     setStatusData(data.data);
@@ -116,7 +120,7 @@ export default function StatusPage() {
                 setRefreshing(false);
             }
         },
-        [t],
+        [statusApiPath, t],
     );
 
     const manualRefresh = async () => {
@@ -178,11 +182,32 @@ export default function StatusPage() {
     }
 
     return (
-        <div className='space-y-6 '>
+        <div
+            className={cn(
+                'space-y-6',
+                isPublicStatusPage && 'mx-auto w-full max-w-7xl px-4 pb-12 pt-8 md:px-8 md:pt-10',
+            )}
+        >
             <WidgetRenderer widgets={getWidgets('dashboard-status', 'top-of-page')} />
 
-            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
+            <div
+                className={cn(
+                    'flex flex-col sm:flex-row sm:items-center justify-between gap-4',
+                    isPublicStatusPage &&
+                        'rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card/90 to-primary/5 p-5 md:p-7 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.65)]',
+                )}
+            >
                 <div>
+                    <div className='mb-3 flex items-center gap-2'>
+                        {isPublicStatusPage && (
+                            <Badge className='bg-primary/15 text-primary border border-primary/20 uppercase tracking-wide text-[10px] font-bold'>
+                                {t('public_portal.badges.public')}
+                            </Badge>
+                        )}
+                        <Badge className='bg-green-500/15 text-green-500 border border-green-500/20 uppercase tracking-wide text-[10px] font-bold'>
+                            {t('public_portal.badges.live')}
+                        </Badge>
+                    </div>
                     <h1 className='text-3xl font-bold tracking-tight mb-2'>{t('dashboard.status.title')}</h1>
                     <p className='text-muted-foreground'>{t('dashboard.status.description')}</p>
                 </div>
@@ -311,10 +336,14 @@ export default function StatusPage() {
                                             </div>
                                             <div className='flex items-center gap-3 text-xs text-muted-foreground font-medium'>
                                                 <span className='opacity-70 font-mono tracking-tight'>
-                                                    {node.fqdn || 'N/A'}
+                                                    {node.fqdn || t('public_portal.not_available')}
                                                 </span>
                                                 <span className='w-1 h-1 rounded-full bg-muted-foreground/30' />
-                                                <span>{node.server_count} Servers</span>
+                                                <span>
+                                                    {t('public_portal.servers_count', {
+                                                        count: String(node.server_count ?? 0),
+                                                    })}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>

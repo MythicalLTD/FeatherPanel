@@ -59,6 +59,14 @@ class NodeStatusController
             return ApiResponse::error('Status page is disabled', 'STATUS_PAGE_DISABLED', 403);
         }
 
+        // Public API path can be disabled independently from authenticated status access.
+        if (str_starts_with($request->getPathInfo(), '/api/status')) {
+            $publicEnabled = $config->getSetting(ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED, 'true') === 'true';
+            if (!$publicEnabled) {
+                return ApiResponse::error('Public status page is disabled', 'STATUS_PAGE_PUBLIC_DISABLED', 403);
+            }
+        }
+
         $showNodeStatus = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_NODE_STATUS, 'true') === 'true';
         $showLoadUsage = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_LOAD_USAGE, 'true') === 'true';
         $showTotalServers = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_TOTAL_SERVERS, 'true') === 'true';

@@ -159,9 +159,11 @@ class PublicConfig extends ConfigFactory
 
             // Status page settings
             ConfigInterface::STATUS_PAGE_ENABLED => 'false',
+            ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED => 'true',
 
             // Knowledgebase settings
             ConfigInterface::KNOWLEDGEBASE_ENABLED => 'true',
+            ConfigInterface::KNOWLEDGEBASE_PUBLIC_ENABLED => 'true',
             ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES => 'true',
             ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES => 'true',
             ConfigInterface::KNOWLEDGEBASE_SHOW_ATTACHMENTS => 'true',

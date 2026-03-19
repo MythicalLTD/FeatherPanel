@@ -65,8 +65,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const [isSessionChecked, setIsSessionChecked] = useState(false);
     const router = useRouter();
 
+    const isPublicNoAuthRoute = useCallback((pathname: string): boolean => {
+        return (
+            pathname === '/status' ||
+            pathname.startsWith('/status/') ||
+            pathname === '/knowledgebase' ||
+            pathname.startsWith('/knowledgebase/') ||
+            pathname === '/knowladgebase' ||
+            pathname.startsWith('/knowladgebase/')
+        );
+    }, []);
+
     const fetchSession = useCallback(
         async (force = false): Promise<boolean> => {
+            if (typeof window !== 'undefined' && isPublicNoAuthRoute(window.location.pathname)) {
+                setIsSessionChecked(true);
+                setIsLoading(false);
+                return false;
+            }
+
             if (!force && isSessionChecked && user) {
                 return true;
             }
@@ -90,7 +107,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                 } else {
                     console.error('Invalid session response:', res.data);
                     clearSession();
-                    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+                    if (
+                        typeof window !== 'undefined' &&
+                        !window.location.pathname.startsWith('/auth') &&
+                        !isPublicNoAuthRoute(window.location.pathname)
+                    ) {
                         router.push('/auth/login');
                     }
                     setIsSessionChecked(true);
@@ -102,7 +123,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                 const errorCode = axiosError?.response?.data?.error_code;
                 if (errorCode === 'INVALID_ACCOUNT_TOKEN' || axiosError?.response?.status === 401) {
                     clearSession();
-                    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+                    if (
+                        typeof window !== 'undefined' &&
+                        !window.location.pathname.startsWith('/auth') &&
+                        !isPublicNoAuthRoute(window.location.pathname)
+                    ) {
                         router.push('/auth/login');
                     }
                 }
@@ -111,7 +136,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                 return false;
             }
         },
-        [isSessionChecked, user, router],
+        [isSessionChecked, user, router, isPublicNoAuthRoute],
     );
 
     const refreshSession = async (): Promise<boolean> => {
@@ -147,8 +172,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
 
     useEffect(() => {
+        if (typeof window !== 'undefined' && isPublicNoAuthRoute(window.location.pathname)) {
+            setIsSessionChecked(true);
+            setIsLoading(false);
+            return;
+        }
+
         fetchSession();
-    }, [fetchSession]);
+    }, [fetchSession, isPublicNoAuthRoute]);
 
     return (
         <SessionContext.Provider

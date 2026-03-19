@@ -20,11 +20,13 @@ import axios from 'axios';
 import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { cn } from '@/lib/utils';
 
 interface Category {
     id: number;
@@ -57,6 +59,9 @@ interface Pagination {
 export default function CategoryArticlesPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const { t } = useTranslation();
+    const pathname = usePathname();
+    const isPublicKnowledgebasePage = pathname.startsWith('/knowledgebase');
+    const knowledgebaseBasePath = pathname.startsWith('/knowledgebase') ? '/knowledgebase' : '/dashboard/knowledgebase';
     const [category, setCategory] = useState<Category | null>(null);
     const [articles, setArticles] = useState<Article[]>([]);
     const [loading, setLoading] = useState(true);
@@ -108,23 +113,30 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
     if (!category) return null;
 
     return (
-        <div className='space-y-6'>
+        <div
+            className={cn(
+                'space-y-4',
+                isPublicKnowledgebasePage && 'mx-auto w-full max-w-5xl px-4 pb-10 pt-4 md:px-8 md:pt-5',
+            )}
+        >
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'top-of-page')} />
 
-            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
+            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
                 <div className='flex items-center gap-4'>
-                    <Link href='/dashboard/knowledgebase'>
+                    <Link href={knowledgebaseBasePath}>
                         <Button
                             variant='ghost'
                             size='icon'
-                            className='rounded-full h-10 w-10 border border-border/50 hover:bg-card'
+                            className='rounded-full h-9 w-9 border border-border/50 hover:bg-card/80'
                         >
-                            <ChevronLeft className='h-5 w-5' />
+                            <ChevronLeft className='h-4 w-4' />
                         </Button>
                     </Link>
                     <div>
-                        <h1 className='text-3xl font-bold tracking-tight text-foreground'>{category.name}</h1>
-                        {category.description && <p className='text-muted-foreground'>{category.description}</p>}
+                        <h1 className='text-2xl font-bold tracking-tight text-foreground'>{category.name}</h1>
+                        {category.description && (
+                            <p className='text-muted-foreground text-sm'>{category.description}</p>
+                        )}
                     </div>
                 </div>
                 <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'after-header')} />
@@ -132,7 +144,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'before-articles-list')} />
             {pagination && pagination.total_pages > 1 && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='flex items-center justify-between gap-4 py-2.5 px-3.5 rounded-xl border border-border/50 bg-card/40'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -172,12 +184,12 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                         {articles.map((article) => (
                             <Link
                                 key={article.id}
-                                href={`/dashboard/knowledgebase/article/${article.id}`}
+                                href={`${knowledgebaseBasePath}/article/${article.id}`}
                                 className='block'
                             >
-                                <div className='p-5 hover:bg-white/5 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group border-l-2 border-l-transparent hover:border-l-primary cursor-pointer'>
+                                <div className='p-4 hover:bg-muted/20 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group border-l-2 border-l-transparent hover:border-l-primary cursor-pointer'>
                                     <div className='flex items-center gap-4 flex-1'>
-                                        <div className='h-10 w-10 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300 shrink-0'>
+                                        <div className='h-9 w-9 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300 shrink-0'>
                                             {article.icon ? (
                                                 <div className='h-5 w-5 relative overflow-hidden rounded-sm'>
                                                     <Image
@@ -193,7 +205,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                                             )}
                                         </div>
                                         <div className='min-w-0'>
-                                            <h3 className='font-semibold text-base text-foreground group-hover:text-primary transition-colors truncate'>
+                                            <h3 className='font-semibold text-sm md:text-[0.95rem] text-foreground group-hover:text-primary transition-colors truncate'>
                                                 {article.title}
                                             </h3>
                                             {article.pinned === 'true' && (
@@ -201,7 +213,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                                                     {t('dashboard.knowledgebase.pinned')}
                                                 </Badge>
                                             )}
-                                            <div className='flex items-center gap-2 mt-0.5 text-xs text-muted-foreground'>
+                                            <div className='flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground'>
                                                 <span>{new Date(article.updated_at).toLocaleDateString()}</span>
                                                 {article.slug && (
                                                     <>
@@ -212,9 +224,9 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                                             </div>
                                         </div>
                                     </div>
-                                    <div className='flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0'>
+                                    <div className='flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-1 group-hover:translate-x-0'>
                                         <div className='pl-4 border-l border-border/50'>
-                                            <ChevronRight className='h-5 w-5 text-primary' />
+                                            <ChevronRight className='h-4 w-4 text-primary' />
                                         </div>
                                     </div>
                                 </div>
@@ -224,7 +236,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 )}
 
                 {pagination && pagination.total_pages > 1 && (
-                    <div className='p-4 border-t border-border/50 flex items-center justify-between bg-white/1'>
+                    <div className='p-3 border-t border-border/50 flex items-center justify-between bg-white/1'>
                         <p className='text-sm text-muted-foreground'>
                             {currentPage} / {pagination.total_pages}
                         </p>

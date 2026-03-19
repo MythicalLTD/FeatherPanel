@@ -20,9 +20,12 @@ import axios from 'axios';
 import { BookOpen, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface Category {
     id: number;
@@ -35,6 +38,9 @@ interface Category {
 
 export default function KnowledgeBasePage() {
     const { t } = useTranslation();
+    const pathname = usePathname();
+    const isPublicKnowledgebasePage = pathname.startsWith('/knowledgebase');
+    const knowledgebaseBasePath = pathname.startsWith('/knowledgebase') ? '/knowledgebase' : '/dashboard/knowledgebase';
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -76,9 +82,30 @@ export default function KnowledgeBasePage() {
     }
 
     return (
-        <div className='space-y-6'>
+        <div
+            className={cn(
+                'space-y-6',
+                isPublicKnowledgebasePage && 'mx-auto w-full max-w-6xl px-4 pb-12 pt-8 md:px-8 md:pt-10',
+            )}
+        >
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'top-of-page')} />
-            <div>
+
+            <div
+                className={cn(
+                    isPublicKnowledgebasePage &&
+                        'rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card/95 to-primary/5 p-5 md:p-7 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.65)]',
+                )}
+            >
+                {isPublicKnowledgebasePage && (
+                    <div className='mb-3 flex items-center gap-2'>
+                        <Badge className='bg-primary/15 text-primary border border-primary/20 uppercase tracking-wide text-[10px] font-bold'>
+                            {t('public_portal.badges.public')}
+                        </Badge>
+                        <Badge className='bg-amber-500/15 text-amber-500 border border-amber-500/20 uppercase tracking-wide text-[10px] font-bold'>
+                            {t('public_portal.badges.docs')}
+                        </Badge>
+                    </div>
+                )}
                 <h1 className='text-3xl font-bold tracking-tight mb-2'>{t('dashboard.knowledgebase.title')}</h1>
                 <p className='text-muted-foreground'>{t('dashboard.knowledgebase.browseByCategory')}</p>
             </div>
@@ -111,7 +138,7 @@ export default function KnowledgeBasePage() {
                                 {categories.map((cat) => (
                                     <Link
                                         key={cat.id}
-                                        href={`/dashboard/knowledgebase/category/${cat.id}`}
+                                        href={`${knowledgebaseBasePath}/category/${cat.id}`}
                                         className='block'
                                     >
                                         <div className='p-5 hover:bg-white/5 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group border-l-2 border-l-transparent hover:border-l-primary cursor-pointer'>

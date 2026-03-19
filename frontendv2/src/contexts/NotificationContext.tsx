@@ -38,6 +38,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         return window.location.pathname.startsWith('/auth');
     }, []);
 
+    const checkIsPublicNoAuthPage = useCallback(() => {
+        if (typeof window === 'undefined') return false;
+        const { pathname } = window.location;
+        return (
+            pathname === '/status' ||
+            pathname.startsWith('/status/') ||
+            pathname === '/knowledgebase' ||
+            pathname.startsWith('/knowledgebase/') ||
+            pathname === '/knowladgebase' ||
+            pathname.startsWith('/knowladgebase/')
+        );
+    }, []);
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const stored = localStorage.getItem('featherpanel_dismissed_notifications');
@@ -58,7 +71,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }, [dismissedIds]);
 
     const fetchNotifications = useCallback(async () => {
-        if (typeof window === 'undefined' || checkIsAuthPage()) {
+        if (typeof window === 'undefined' || checkIsAuthPage() || checkIsPublicNoAuthPage()) {
             setLoading(false);
             return;
         }
@@ -70,20 +83,20 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             }
         } catch (error) {
             const axiosError = error as { response?: { status?: number } };
-            if (axiosError?.response?.status === 401) {
+            if (axiosError?.response?.status === 401 || axiosError?.response?.status === 400) {
                 setNotifications([]);
             } else {
-                if (!checkIsAuthPage()) {
+                if (!checkIsAuthPage() && !checkIsPublicNoAuthPage()) {
                     console.error('Failed to fetch notifications', error);
                 }
             }
         } finally {
             setLoading(false);
         }
-    }, [checkIsAuthPage]);
+    }, [checkIsAuthPage, checkIsPublicNoAuthPage]);
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && !checkIsAuthPage()) {
+        if (typeof window !== 'undefined' && !checkIsAuthPage() && !checkIsPublicNoAuthPage()) {
             fetchNotifications();
 
             const interval = setInterval(
@@ -98,7 +111,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         } else {
             setLoading(false);
         }
-    }, [fetchNotifications, checkIsAuthPage]);
+    }, [fetchNotifications, checkIsAuthPage, checkIsPublicNoAuthPage]);
 
     const dismissNotification = useCallback((id: number) => {
         setDismissedIds((prev) => {

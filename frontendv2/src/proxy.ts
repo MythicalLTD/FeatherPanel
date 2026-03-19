@@ -23,6 +23,9 @@ export function proxy(request: NextRequest) {
 
     const publicRoutes = [
         '/',
+        '/status',
+        '/knowledgebase',
+        '/knowladgebase',
         '/auth/login',
         '/auth/register',
         '/auth/forgot-password',

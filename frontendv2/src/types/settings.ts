@@ -21,6 +21,7 @@ export interface AppSettings {
     chatbot_ai_provider: string;
     chatbot_enabled: string;
     knowledgebase_enabled: string;
+    knowledgebase_public_enabled: string;
     server_allow_allocation_select: string;
     server_allow_egg_change: string;
     server_allow_user_made_firewall: string;
@@ -30,6 +31,7 @@ export interface AppSettings {
     server_allow_user_server_deletion: string;
     smtp_enabled: string;
     status_page_enabled: string;
+    status_page_public_enabled: string;
     ticket_system_enabled: string;
     turnstile_enabled: string;
     turnstile_key_pub: string;

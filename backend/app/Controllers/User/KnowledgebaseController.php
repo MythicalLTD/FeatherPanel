@@ -32,7 +32,7 @@ class KnowledgebaseController
 {
     public function categoriesIndex(Request $request): Response
     {
-        if (!$this->isKnowledgebaseEnabled() || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES)) {
+        if (!$this->canAccessKnowledgebase($request, ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES)) {
             return ApiResponse::error('Knowledgebase is disabled', 'KNOWLEDGEBASE_DISABLED', 403);
         }
 
@@ -86,7 +86,7 @@ class KnowledgebaseController
 
     public function categoriesShow(Request $request, int $id): Response
     {
-        if (!$this->isKnowledgebaseEnabled() || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES)) {
+        if (!$this->canAccessKnowledgebase($request, ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES)) {
             return ApiResponse::error('Knowledgebase is disabled', 'KNOWLEDGEBASE_DISABLED', 403);
         }
 
@@ -111,7 +111,7 @@ class KnowledgebaseController
 
     public function articlesIndex(Request $request): Response
     {
-        if (!$this->isKnowledgebaseEnabled() || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES)) {
+        if (!$this->canAccessKnowledgebase($request, ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES)) {
             return ApiResponse::error('Knowledgebase is disabled', 'KNOWLEDGEBASE_DISABLED', 403);
         }
 
@@ -170,7 +170,7 @@ class KnowledgebaseController
 
     public function articlesShow(Request $request, int $id): Response
     {
-        if (!$this->isKnowledgebaseEnabled() || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES)) {
+        if (!$this->canAccessKnowledgebase($request, ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES)) {
             return ApiResponse::error('Knowledgebase is disabled', 'KNOWLEDGEBASE_DISABLED', 403);
         }
 
@@ -222,7 +222,10 @@ class KnowledgebaseController
 
     public function categoryArticles(Request $request, int $id): Response
     {
-        if (!$this->isKnowledgebaseEnabled() || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES) || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES)) {
+        if (
+            !$this->canAccessKnowledgebase($request, ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES)
+            || !$this->canAccessKnowledgebase($request, ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES)
+        ) {
             return ApiResponse::error('Knowledgebase is disabled', 'KNOWLEDGEBASE_DISABLED', 403);
         }
 
@@ -290,6 +293,36 @@ class KnowledgebaseController
         $config = $app->getConfig();
 
         return $config->getSetting(ConfigInterface::KNOWLEDGEBASE_ENABLED, 'true') === 'true';
+    }
+
+    private function isKnowledgebasePublicEnabled(): bool
+    {
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+
+        return $config->getSetting(ConfigInterface::KNOWLEDGEBASE_PUBLIC_ENABLED, 'true') === 'true';
+    }
+
+    private function isPublicKnowledgebaseRequest(Request $request): bool
+    {
+        return str_starts_with($request->getPathInfo(), '/api/knowledgebase');
+    }
+
+    private function canAccessKnowledgebase(Request $request, ?string $feature = null): bool
+    {
+        if (!$this->isKnowledgebaseEnabled()) {
+            return false;
+        }
+
+        if ($feature !== null && !$this->isFeatureEnabled($feature)) {
+            return false;
+        }
+
+        if ($this->isPublicKnowledgebaseRequest($request) && !$this->isKnowledgebasePublicEnabled()) {
+            return false;
+        }
+
+        return true;
     }
 
     private function isFeatureEnabled(string $feature): bool
