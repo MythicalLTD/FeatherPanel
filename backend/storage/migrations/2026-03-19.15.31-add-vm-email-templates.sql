@@ -1,0 +1,24 @@
+-- Add VM suspension email templates
+INSERT INTO
+	`featherpanel_mail_templates` (
+		`name`,
+		`subject`,
+		`body`,
+		`deleted`,
+		`locked`
+	)
+VALUES
+	(
+		'vm_suspended',
+		'Your VM Has Been Suspended',
+		'<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VM Suspended</title></head><body style="background-color:#f4f4f4;color:#333;font-family:-apple-system,BlinkMacSystemFont,`Segoe UI`,Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;line-height:1.6;margin:0;padding:20px"><div style="background-color:#fff;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.1);margin:0 auto;max-width:600px;overflow:hidden"><div style="background:linear-gradient(135deg,#f7971e 0,#ffd200 100%);color:#fff;padding:40px 30px;text-align:center"><h1 style="font-size:28px;font-weight:600;margin:0 0 10px 0">VM Suspended</h1><p style="font-size:16px;opacity:.9;margin:0">Your virtual machine <b>{vm_hostname}</b> has been suspended.</p></div><div style="padding:40px 30px"><div style="margin-bottom:30px;text-align:center"><h2 style="color:#2d3748;font-size:24px;margin:0 0 15px 0">Hello, {first_name} {last_name}</h2><p style="color:#4a5568;font-size:16px;line-height:1.6;margin:0">Your virtual machine has been suspended and is no longer accessible.</p></div><div style="background-color:#f7fafc;border:2px solid #e2e8f0;border-radius:8px;margin:30px 0;padding:30px;text-align:center"><h3 style="color:#2d3748;font-size:20px;margin:0 0 15px 0">VM Details</h3><p style="color:#4a5568;margin:0 0 25px 0"><b>VM Hostname:</b> {vm_hostname}<br><b>Status:</b> <span style="color:#f7971e;font-weight:600">Suspended</span></p><p style="color:#4a5568;margin:0 0 25px 0">To resolve this issue, please contact support.</p><a href="{support_url}" style="background:linear-gradient(135deg,#f7971e 0,#ffd200 100%);border-radius:6px;color:#fff;display:inline-block;font-size:16px;font-weight:600;margin:10px 0;padding:18px 40px;text-decoration:none">Contact Support</a></div></div><div style="background-color:#f7fafc;border-top:1px solid #e2e8f0;padding:30px;text-align:center"><p style="color:#718096;font-size:14px;margin:0 0 10px 0">This email was sent to <b>{email}</b></p><p style="color:#718096;font-size:14px;margin:0 0 10px 0">© 2024-2025 {app_name}. All rights reserved.</p><p style="color:#718096;font-size:14px;margin:0"><a href="{support_url}" style="color:#667eea;text-decoration:none">Support</a></p></div></div></body></html>',
+		'false',
+		'false'
+	),
+	(
+		'vm_unsuspended',
+		'Your VM Has Been Restored',
+		'<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VM Unsuspended</title></head><body style="background-color:#f4f4f4;color:#333;font-family:-apple-system,BlinkMacSystemFont,`Segoe UI`,Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;line-height:1.6;margin:0;padding:20px"><div style="background-color:#fff;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.1);margin:0 auto;max-width:600px;overflow:hidden"><div style="background:linear-gradient(135deg,#38a169 0,#68d391 100%);color:#fff;padding:40px 30px;text-align:center"><h1 style="font-size:28px;font-weight:600;margin:0 0 10px 0">VM Unsuspended</h1><p style="font-size:16px;opacity:.9;margin:0">Your virtual machine <b>{vm_hostname}</b> is now active again.</p></div><div style="padding:40px 30px"><div style="margin-bottom:30px;text-align:center"><h2 style="color:#2d3748;font-size:24px;margin:0 0 15px 0">Hello, {first_name} {last_name}</h2><p style="color:#4a5568;font-size:16px;line-height:1.6;margin:0">Great news! Your virtual machine suspension has been lifted and your VM is now accessible.</p></div><div style="background-color:#f0fff4;border:2px solid #9ae6b4;border-radius:8px;margin:30px 0;padding:30px;text-align:center"><h3 style="color:#2d3748;font-size:20px;margin:0 0 15px 0">VM Status</h3><p style="color:#4a5568;margin:0 0 25px 0"><b>VM Hostname:</b> {vm_hostname}<br><b>Status:</b> <span style="color:#38a169;font-weight:600">Active</span></p><p style="color:#4a5568;margin:0 0 25px 0">Your virtual machine is now fully accessible and all services have been restored.</p><a href="{dashboard_url}" style="background:linear-gradient(135deg,#3182ce 0,#63b3ed 100%);border-radius:6px;color:#fff;display:inline-block;font-size:16px;font-weight:600;padding:12px 30px;text-decoration:none;transition:transform .2s">Access Dashboard</a></div></div><div style="background-color:#f7fafc;border-top:1px solid #e2e8f0;padding:30px;text-align:center"><p style="color:#718096;font-size:14px;margin:0 0 10px 0">This email was sent to <b>{email}</b></p><p style="color:#718096;font-size:14px;margin:0 0 10px 0">© 2024-2025 {app_name}. All rights reserved.</p><p style="color:#718096;font-size:14px;margin:0"><a href="{support_url}" style="color:#667eea;text-decoration:none">Support</a></p></div></div></body></html>',
+		'false',
+		'false'
+	);

@@ -25,7 +25,18 @@ import { Input } from '@/components/featherui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Server, ArrowLeft, Loader2, Wifi, Cpu, HardDrive, History, Search as SearchIcon } from 'lucide-react';
+import {
+    Server,
+    ArrowLeft,
+    Loader2,
+    Wifi,
+    Cpu,
+    HardDrive,
+    History,
+    Search as SearchIcon,
+    Ban,
+    ShieldCheck,
+} from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -89,6 +100,7 @@ export default function VmInstanceEditPage() {
     const [tpmStorage, setTpmStorage] = useState('');
     const [nodeEfiStorageDefault, setNodeEfiStorageDefault] = useState('');
     const [nodeTpmStorageDefault, setNodeTpmStorageDefault] = useState('');
+    const [suspending, setSuspending] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instance-edit');
 
@@ -489,6 +501,34 @@ export default function VmInstanceEditPage() {
         }
     };
 
+    const handleSuspend = async () => {
+        setSuspending(true);
+        try {
+            await axios.post(`/api/admin/vm-instances/${id}/suspend`);
+            toast.success(t('admin.vmInstances.suspend_success') ?? 'VM instance suspended');
+            await fetchInstance();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg);
+        } finally {
+            setSuspending(false);
+        }
+    };
+
+    const handleUnsuspend = async () => {
+        setSuspending(true);
+        try {
+            await axios.post(`/api/admin/vm-instances/${id}/unsuspend`);
+            toast.success(t('admin.vmInstances.unsuspend_success') ?? 'VM instance unsuspended');
+            await fetchInstance();
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
+            toast.error(msg);
+        } finally {
+            setSuspending(false);
+        }
+    };
+
     const diskKeys = config
         ? (Object.keys(config) as string[]).filter((k) =>
               isLxc ? k === 'rootfs' || /^mp\d+$/.test(k) : /^(scsi|virtio|sata|ide)\d+$/.test(k),
@@ -524,10 +564,43 @@ export default function VmInstanceEditPage() {
                 }
                 icon={Server}
                 actions={
-                    <Button variant='outline' size='sm' onClick={() => router.push(`/admin/vm-instances/${id}`)}>
-                        <ArrowLeft className='h-4 w-4 mr-2' />
-                        {t('common.back')}
-                    </Button>
+                    <div className='flex items-center gap-2'>
+                        {instance.suspended === 1 ? (
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={handleUnsuspend}
+                                disabled={suspending}
+                                className='text-green-600 hover:text-green-700 border-green-500/20 hover:bg-green-500/10'
+                            >
+                                {suspending ? (
+                                    <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                                ) : (
+                                    <ShieldCheck className='h-4 w-4 mr-2' />
+                                )}
+                                {t('admin.vmInstances.unsuspend') ?? 'Unsuspend'}
+                            </Button>
+                        ) : (
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={handleSuspend}
+                                disabled={suspending}
+                                className='text-amber-600 hover:text-amber-700 border-amber-500/20 hover:bg-amber-500/10'
+                            >
+                                {suspending ? (
+                                    <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                                ) : (
+                                    <Ban className='h-4 w-4 mr-2' />
+                                )}
+                                {t('admin.vmInstances.suspend') ?? 'Suspend'}
+                            </Button>
+                        )}
+                        <Button variant='outline' size='sm' onClick={() => router.push('/admin/vm-instances')}>
+                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            {t('common.back')}
+                        </Button>
+                    </div>
                 }
             />
 

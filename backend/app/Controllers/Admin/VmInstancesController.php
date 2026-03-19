@@ -18,6 +18,7 @@
 namespace App\Controllers\Admin;
 
 use App\App;
+use App\Chat\User;
 use App\Chat\VmIp;
 use App\Chat\VmNode;
 use App\Chat\VmTask;
@@ -28,10 +29,13 @@ use App\Chat\VmTemplate;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceBackup;
+use App\Config\ConfigInterface;
 use App\Chat\VmInstanceActivity;
 use App\Services\Proxmox\Proxmox;
+use App\Mail\templates\VmSuspended;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Mail\templates\VmUnsuspended;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -2196,6 +2200,200 @@ class VmInstancesController
         ]);
 
         return ApiResponse::success(['backup_limit' => $limit], 'Backup limit updated', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/vm-instances/{id}/suspend',
+        summary: 'Suspend VM instance',
+        description: 'Suspend a VM instance by stopping it in Proxmox and updating the suspended status. Sends notification email to the VM owner.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'VM Instance ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'VM instance suspended successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to suspend VM'),
+        ]
+    )]
+    public function suspend(Request $request, int $id): Response
+    {
+        $instance = VmInstance::getById($id);
+        if (!$instance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+
+        $ok = VmInstance::update($id, ['suspended' => 1]);
+        if (!$ok) {
+            return ApiResponse::error('Failed to suspend VM instance', 'FAILED_TO_SUSPEND', 500);
+        }
+
+        $config = App::getInstance(true)->getConfig();
+        $user = null;
+        if (!empty($instance['user_uuid'])) {
+            $user = User::getUserByUuid($instance['user_uuid']);
+        }
+
+        $admin = $request->get('user');
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'vm_instance_suspend',
+            'context' => 'Suspended VM instance ' . ($instance['hostname'] ?? $id),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);
+        if ($vmNode) {
+            try {
+                $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+                $vmid = (int) $instance['vmid'];
+                $vmType = in_array($instance['vm_type'] ?? 'qemu', ['qemu', 'lxc'], true) ? $instance['vm_type'] : 'qemu';
+                $node = $instance['pve_node'] ?? '';
+
+                if ($vmType === 'qemu') {
+                    $client->stopVm($node, $vmid, 'qemu');
+                } else {
+                    $client->stopVm($node, $vmid, 'lxc');
+                }
+
+                VmInstanceActivity::createActivity([
+                    'vm_instance_id' => $id,
+                    'vm_node_id'     => (int) ($instance['vm_node_id'] ?? 0),
+                    'user_id'        => isset($admin['id']) ? (int) $admin['id'] : null,
+                    'event'          => 'vm:suspended',
+                    'metadata'       => ['hostname' => $instance['hostname'] ?? null],
+                    'ip'             => CloudFlareRealIP::getRealIP(),
+                ]);
+            } catch (\Exception $e) {
+                App::getInstance(true)->getLogger()->error('Failed to stop VM during suspension: ' . $e->getMessage());
+            }
+        }
+
+        if ($user) {
+            try {
+                VmSuspended::send([
+                    'email' => $user['email'],
+                    'subject' => 'VM suspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                    'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                    'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                    'first_name' => $user['first_name'],
+                    'last_name' => $user['last_name'],
+                    'username' => $user['username'],
+                    'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                    'uuid' => $user['uuid'],
+                    'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+                    'vm_hostname' => $instance['hostname'] ?? 'VM-' . $id,
+                ]);
+            } catch (\Exception $e) {
+                App::getInstance(true)->getLogger()->error('Failed to send VM suspended email: ' . $e->getMessage());
+            }
+        }
+
+        return ApiResponse::success([], 'VM instance suspended', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/vm-instances/{id}/unsuspend',
+        summary: 'Unsuspend VM instance',
+        description: 'Unsuspend a VM instance by updating the suspended status. Sends notification email to the VM owner.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'VM Instance ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'VM instance unsuspended successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to unsuspend VM'),
+        ]
+    )]
+    public function unsuspend(Request $request, int $id): Response
+    {
+        $instance = VmInstance::getById($id);
+        if (!$instance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+
+        $ok = VmInstance::update($id, ['suspended' => 0]);
+        if (!$ok) {
+            return ApiResponse::error('Failed to unsuspend VM instance', 'FAILED_TO_UNSUSPEND', 500);
+        }
+
+        $config = App::getInstance(true)->getConfig();
+        $user = null;
+        if (!empty($instance['user_uuid'])) {
+            $user = User::getUserByUuid($instance['user_uuid']);
+        }
+
+        $admin = $request->get('user');
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'vm_instance_unsuspend',
+            'context' => 'Unsuspended VM instance ' . ($instance['hostname'] ?? $id),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        VmInstanceActivity::createActivity([
+            'vm_instance_id' => $id,
+            'vm_node_id'     => (int) ($instance['vm_node_id'] ?? 0),
+            'user_id'        => isset($admin['id']) ? (int) $admin['id'] : null,
+            'event'          => 'vm:unsuspended',
+            'metadata'       => ['hostname' => $instance['hostname'] ?? null],
+            'ip'             => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        if ($user) {
+            try {
+                VmUnsuspended::send([
+                    'email' => $user['email'],
+                    'subject' => 'VM unsuspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                    'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                    'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                    'first_name' => $user['first_name'],
+                    'last_name' => $user['last_name'],
+                    'username' => $user['username'],
+                    'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                    'uuid' => $user['uuid'],
+                    'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+                    'vm_hostname' => $instance['hostname'] ?? 'VM-' . $id,
+                ]);
+            } catch (\Exception $e) {
+                App::getInstance(true)->getLogger()->error('Failed to send VM unsuspended email: ' . $e->getMessage());
+            }
+        }
+
+        return ApiResponse::success([], 'VM instance unsuspended', 200);
     }
 
     #[OA\Delete(

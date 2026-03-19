@@ -13,6 +13,7 @@
 		"lint:format": "prettier --log-level silent --write src/",
 		"format": "run-s lint:format",
 		"scan:translations": "node scripts/scan-translations.js",
+		"translations:add": "node scripts/add-translation.js",
 		"scan:translations:unused": "node scripts/scan-unused-translations.js",
 		"fix:translations": "node scripts/fix-translation-placeholders.js",
 		"export:docs": "run-s export:docs:widgets export:docs:permissions export:docs:events export:docs:api",

@@ -280,8 +280,6 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 
-    // ── Backup routes ────────────────────────────────────────────────────
-
     // List backups
     App::getInstance(true)->registerAdminRoute(
         $routes,
@@ -401,7 +399,39 @@ return function (RouteCollection $routes): void {
         ['PATCH']
     );
 
-    // ── End backup routes ─────────────────────────────────────────────────
+    // Suspend VM instance
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-suspend',
+        '/api/admin/vm-instances/{id}/suspend',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->suspend($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
+
+    // Unsuspend VM instance
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-unsuspend',
+        '/api/admin/vm-instances/{id}/unsuspend',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->unsuspend($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
 
     // Delete VM instance
     App::getInstance(true)->registerAdminRoute(

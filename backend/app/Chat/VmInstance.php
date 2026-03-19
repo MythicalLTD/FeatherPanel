@@ -243,7 +243,7 @@ class VmInstance
      */
     public static function update(int $id, array $data): bool
     {
-        $allowed = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'memory', 'cpus', 'cores', 'disk_gb', 'on_boot'];
+        $allowed = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'memory', 'cpus', 'cores', 'disk_gb', 'on_boot', 'suspended'];
         $updates = [];
         $params = ['id' => $id];
 
@@ -296,6 +296,10 @@ class VmInstance
             if ($key === 'on_boot') {
                 $updates[] = 'on_boot = :on_boot';
                 $params['on_boot'] = (int) (bool) $data['on_boot'];
+            }
+            if ($key === 'suspended') {
+                $updates[] = 'suspended = :suspended';
+                $params['suspended'] = (int) (bool) $data['suspended'];
             }
         }
 
