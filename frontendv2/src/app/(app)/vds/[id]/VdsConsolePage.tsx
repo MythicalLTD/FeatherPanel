@@ -43,6 +43,9 @@ import {
     RefreshCw,
     Info,
     Zap,
+    Eye,
+    EyeOff,
+    Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -61,6 +64,8 @@ interface VmStatus {
     vmid?: number;
     name?: string;
 }
+
+type TranslateFn = (key: string, params?: Record<string, string>) => string;
 
 function formatMemory(bytes: number): string {
     if (bytes === 0) return '0 B';
@@ -91,42 +96,53 @@ function formatNetwork(bytes: number): string {
     return `${bytes} B`;
 }
 
-const vmStatusStyles: Record<string, { badge: string; dot: string; label: string }> = {
-    running: {
-        badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-        dot: 'bg-emerald-400',
-        label: 'Running',
-    },
-    stopped: { badge: 'bg-red-500/15 text-red-400 border-red-500/30', dot: 'bg-red-400', label: 'Stopped' },
-    starting: {
-        badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-        dot: 'bg-blue-400 animate-pulse',
-        label: 'Starting',
-    },
-    stopping: {
-        badge: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
-        dot: 'bg-orange-400 animate-pulse',
-        label: 'Stopping',
-    },
-    suspended: { badge: 'bg-amber-500/15 text-amber-400 border-amber-500/30', dot: 'bg-amber-400', label: 'Suspended' },
-    creating: {
-        badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-        dot: 'bg-blue-400 animate-pulse',
-        label: 'Creating',
-    },
-    reinstalling: {
-        badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-        dot: 'bg-blue-400 animate-pulse',
-        label: 'Reinstalling',
-    },
-    unknown: {
-        badge: 'bg-muted/50 text-muted-foreground border-border/30',
-        dot: 'bg-muted-foreground',
-        label: 'Unknown',
-    },
-};
+function getVmStatusStyles(t: TranslateFn): Record<string, { badge: string; dot: string; label: string }> {
+    return {
+        running: {
+            badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+            dot: 'bg-emerald-400',
+            label: t('vds.console.status.running'),
+        },
+        stopped: {
+            badge: 'bg-red-500/15 text-red-400 border-red-500/30',
+            dot: 'bg-red-400',
+            label: t('vds.console.status.stopped'),
+        },
+        starting: {
+            badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+            dot: 'bg-blue-400 animate-pulse',
+            label: t('vds.console.status.starting'),
+        },
+        stopping: {
+            badge: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+            dot: 'bg-orange-400 animate-pulse',
+            label: t('vds.console.status.stopping'),
+        },
+        suspended: {
+            badge: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+            dot: 'bg-amber-400',
+            label: t('vds.console.status.suspended'),
+        },
+        creating: {
+            badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+            dot: 'bg-blue-400 animate-pulse',
+            label: t('vds.console.status.creating'),
+        },
+        reinstalling: {
+            badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+            dot: 'bg-blue-400 animate-pulse',
+            label: t('vds.console.status.reinstalling'),
+        },
+        unknown: {
+            badge: 'bg-muted/50 text-muted-foreground border-border/30',
+            dot: 'bg-muted-foreground',
+            label: t('vds.console.status.unknown'),
+        },
+    };
+}
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, t }: { status: string; t: TranslateFn }) {
+    const vmStatusStyles = getVmStatusStyles(t);
     const s = vmStatusStyles[status] ?? vmStatusStyles.unknown;
     return (
         <span
@@ -183,6 +199,7 @@ export default function VdsConsolePage() {
     const [statusLoading, setStatusLoading] = useState(false);
     const [powering, setPowering] = useState<string | null>(null);
     const [vncLoading, setVncLoading] = useState(false);
+    const [showAccessPassword, setShowAccessPassword] = useState(false);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const [cpuData, setCpuData] = useState<{ timestamp: number; value: number }[]>([]);
@@ -262,7 +279,7 @@ export default function VdsConsolePage() {
             const taskId = res.data?.data?.task_id as string | undefined;
 
             if (!taskId) {
-                toast.success(`Power action "${action}" completed`);
+                toast.success(t('vds.console.toast.power_completed', { action }));
                 setTimeout(() => {
                     refreshInstance();
                     fetchStatus();
@@ -270,14 +287,14 @@ export default function VdsConsolePage() {
                 return;
             }
 
-            toast.info(res.data?.message ?? 'Task added to queue');
+            toast.info(res.data?.message ?? t('vds.console.toast.task_queued'));
 
             // Poll until task is completed or failed
             const MAX_POLLS = 120; // 6 minutes at 3s interval
             let polls = 0;
             const poll = async () => {
                 if (polls >= MAX_POLLS) {
-                    toast.error('Power action timed out');
+                    toast.error(t('vds.console.toast.power_timeout'));
                     setPowering(null);
                     return;
                 }
@@ -286,14 +303,14 @@ export default function VdsConsolePage() {
                     const statusRes = await axios.get(`/api/user/vm-instances/task-status/${taskId}`);
                     const s = statusRes.data?.data;
                     if (s?.status === 'completed') {
-                        toast.success(`Power action "${action}" completed`);
+                        toast.success(t('vds.console.toast.power_completed', { action }));
                         refreshInstance();
                         fetchStatus();
                         setPowering(null);
                         return;
                     }
                     if (s?.status === 'failed') {
-                        toast.error(s?.error ?? 'Power action failed');
+                        toast.error(s?.error ?? t('vds.console.toast.power_failed'));
                         setPowering(null);
                         return;
                     }
@@ -322,10 +339,10 @@ export default function VdsConsolePage() {
                 if (payload.pve_redirect_url) {
                     window.open(payload.pve_redirect_url, '_blank', 'noopener,noreferrer');
                 } else if (payload.wss_url) {
-                    toast.info(`VNC WSS: ${payload.wss_url}`);
+                    toast.info(t('vds.console.toast.vnc_wss', { url: payload.wss_url }));
                 }
             } else {
-                toast.error(data.message || 'Failed to get VNC ticket');
+                toast.error(data.message || t('vds.console.toast.vnc_failed'));
             }
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
@@ -340,7 +357,7 @@ export default function VdsConsolePage() {
             <div className='flex items-center justify-center min-h-[60vh]'>
                 <div className='flex flex-col items-center gap-4'>
                     <Loader2 className='h-10 w-10 animate-spin text-primary' />
-                    <p className='text-muted-foreground font-medium animate-pulse'>Loading VDS instance…</p>
+                    <p className='text-muted-foreground font-medium animate-pulse'>{t('vds.console.loading')}</p>
                 </div>
             </div>
         );
@@ -353,10 +370,10 @@ export default function VdsConsolePage() {
                     <div className='h-20 w-20 mx-auto rounded-3xl bg-destructive/10 border border-destructive/20 flex items-center justify-center'>
                         <AlertTriangle className='h-10 w-10 text-destructive' />
                     </div>
-                    <h2 className='text-2xl font-black'>VDS Not Found</h2>
-                    <p className='text-muted-foreground'>This VDS instance does not exist or you do not have access.</p>
+                    <h2 className='text-2xl font-black'>{t('vds.console.not_found_title')}</h2>
+                    <p className='text-muted-foreground'>{t('vds.console.not_found_description')}</p>
                     <Button variant='outline' onClick={() => router.push('/dashboard')} className='mt-4'>
-                        Go Back
+                        {t('common.goBack')}
                     </Button>
                 </div>
             </div>
@@ -374,6 +391,7 @@ export default function VdsConsolePage() {
     const diskUsed = vmStatus?.disk ?? null;
     const diskMax = vmStatus?.maxdisk ?? (instance.plan_disk ? instance.plan_disk * 1024 * 1024 * 1024 : null);
     const uptime = vmStatus?.uptime ?? null;
+    const canViewAccessPassword = Boolean(instance.is_owner && instance.access_password);
 
     return (
         <div className='space-y-8 pb-12'>
@@ -383,7 +401,7 @@ export default function VdsConsolePage() {
                 title={instance.hostname ?? t('vds.console.title')}
                 description={
                     <div className='flex flex-wrap items-center gap-3 mt-1'>
-                        <StatusBadge status={liveStatus} />
+                        <StatusBadge status={liveStatus} t={t} />
                         <span className='text-xs font-black uppercase tracking-widest text-muted-foreground/50 border border-border/20 rounded-full px-2 py-0.5'>
                             VMID {instance.vmid}
                         </span>
@@ -533,19 +551,27 @@ export default function VdsConsolePage() {
                     <CardHeader className='pb-4'>
                         <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
                             <Info className='h-4 w-4 text-primary' />
-                            Instance Details
+                            {t('vds.console.details.instance_details')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className='space-y-3'>
                         {[
-                            { label: 'Hostname', value: instance.hostname ?? '—' },
-                            { label: 'VMID', value: String(instance.vmid) },
-                            { label: 'Type', value: instance.vm_type?.toUpperCase() ?? 'QEMU' },
-                            { label: 'Status', value: liveStatus },
-                            { label: 'IP Address', value: ip ?? '—' },
-                            { label: 'Node', value: instance.node_name ?? instance.pve_node ?? '—' },
-                            { label: 'Plan', value: instance.plan_name ?? '—' },
-                            { label: 'Role', value: instance.is_owner ? 'Owner' : 'Subuser' },
+                            { label: t('vds.console.details.hostname'), value: instance.hostname ?? '—' },
+                            { label: t('vds.console.details.vmid'), value: String(instance.vmid) },
+                            { label: t('vds.console.details.type'), value: instance.vm_type?.toUpperCase() ?? 'QEMU' },
+                            { label: t('vds.console.details.status'), value: liveStatus },
+                            { label: t('vds.console.details.ip'), value: ip ?? '—' },
+                            {
+                                label: t('vds.console.details.node'),
+                                value: instance.node_name ?? instance.pve_node ?? '—',
+                            },
+                            { label: t('vds.console.details.plan'), value: instance.plan_name ?? '—' },
+                            {
+                                label: t('vds.console.details.role'),
+                                value: instance.is_owner
+                                    ? t('vds.console.details.role_owner')
+                                    : t('vds.console.details.role_subuser'),
+                            },
                         ].map(({ label, value }) => (
                             <div
                                 key={label}
@@ -557,6 +583,44 @@ export default function VdsConsolePage() {
                                 <span className='text-sm font-bold font-mono'>{value}</span>
                             </div>
                         ))}
+                        {canViewAccessPassword && (
+                            <div className='rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-3'>
+                                <div className='flex items-start justify-between gap-3'>
+                                    <div className='space-y-1'>
+                                        <div className='flex items-center gap-2 text-sm font-black uppercase tracking-widest text-primary/80'>
+                                            <Lock className='h-4 w-4' />
+                                            {t('vds.console.password.title')}
+                                        </div>
+                                        <p className='text-xs text-muted-foreground'>
+                                            {t('vds.console.password.description')}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        variant='glass'
+                                        size='sm'
+                                        onClick={() => setShowAccessPassword((value) => !value)}
+                                    >
+                                        {showAccessPassword ? (
+                                            <EyeOff className='h-4 w-4 mr-1.5' />
+                                        ) : (
+                                            <Eye className='h-4 w-4 mr-1.5' />
+                                        )}
+                                        {showAccessPassword ? t('common.hide') : t('common.show')}
+                                    </Button>
+                                </div>
+                                <div className='rounded-xl border border-border/20 bg-background/60 px-4 py-3'>
+                                    <span
+                                        className={cn(
+                                            'text-sm font-bold font-mono tracking-wide transition-all duration-200',
+                                            !showAccessPassword && 'blur-sm select-none',
+                                        )}
+                                    >
+                                        {instance.access_password}
+                                    </span>
+                                </div>
+                                <p className='text-xs text-amber-300/90'>{t('vds.console.password.change_asap')}</p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -564,7 +628,7 @@ export default function VdsConsolePage() {
                     <CardHeader className='pb-4'>
                         <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
                             <Terminal className='h-4 w-4 text-primary' />
-                            Console Access
+                            {t('vds.console.console_access.title')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className='flex flex-col items-center justify-center py-12 gap-6 text-center'>
@@ -574,9 +638,11 @@ export default function VdsConsolePage() {
                                     <AlertTriangle className='h-10 w-10 text-amber-400' />
                                 </div>
                                 <div>
-                                    <p className='text-lg font-black'>No Console Access</p>
+                                    <p className='text-lg font-black'>
+                                        {t('vds.console.console_access.no_access_title')}
+                                    </p>
                                     <p className='text-muted-foreground text-sm mt-1'>
-                                        Subusers do not currently have console access to VDS instances.
+                                        {t('vds.console.console_access.no_access_description')}
                                     </p>
                                 </div>
                             </>
@@ -586,9 +652,11 @@ export default function VdsConsolePage() {
                                     <Server className='h-10 w-10 text-muted-foreground' />
                                 </div>
                                 <div>
-                                    <p className='text-lg font-black'>VDS is Offline</p>
+                                    <p className='text-lg font-black'>
+                                        {t('vds.console.console_access.offline_title')}
+                                    </p>
                                     <p className='text-muted-foreground text-sm mt-1'>
-                                        Start the VDS instance to access the VNC console.
+                                        {t('vds.console.console_access.offline_description')}
                                     </p>
                                 </div>
                                 {canPower && (
@@ -602,7 +670,7 @@ export default function VdsConsolePage() {
                                         ) : (
                                             <Play className='h-4 w-4 mr-2' />
                                         )}
-                                        Start Instance
+                                        {t('vds.console.console_access.start_instance')}
                                     </Button>
                                 )}
                             </>
@@ -612,9 +680,9 @@ export default function VdsConsolePage() {
                                     <Monitor className='h-10 w-10 text-emerald-400' />
                                 </div>
                                 <div>
-                                    <p className='text-lg font-black'>VNC Console Ready</p>
+                                    <p className='text-lg font-black'>{t('vds.console.console_access.ready_title')}</p>
                                     <p className='text-muted-foreground text-sm mt-1'>
-                                        Click below to open the graphical console in a new tab.
+                                        {t('vds.console.console_access.ready_description')}
                                     </p>
                                 </div>
                                 <Button onClick={openVnc} disabled={vncLoading} className='mt-2 px-8'>
@@ -623,10 +691,10 @@ export default function VdsConsolePage() {
                                     ) : (
                                         <Monitor className='h-4 w-4 mr-2' />
                                     )}
-                                    Open VNC Console
+                                    {t('vds.console.console_access.open_button')}
                                 </Button>
                                 <p className='text-xs text-muted-foreground opacity-50'>
-                                    Opens in a new browser tab via Proxmox noVNC
+                                    {t('vds.console.console_access.open_hint')}
                                 </p>
                             </>
                         )}

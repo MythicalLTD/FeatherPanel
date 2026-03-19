@@ -31,6 +31,7 @@ export interface VmInstance {
     memory_mb?: number;
     disk_gb?: number;
     ip_address?: string;
+    access_password?: string | null;
     created_at?: string;
     updated_at?: string;
 }

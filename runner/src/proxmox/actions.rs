@@ -118,6 +118,17 @@ impl ProxmoxClient {
         let result = self.get(&path).await?;
         Ok(result["data"].clone())
     }
+
+    /// Get the current power state for a VM or container.
+    pub async fn get_vm_power_state(&self, node: &str, vmid: u32, vm_type: VmType) -> Result<String> {
+        let path = format!("/nodes/{}/{}/{}/status/current", node, vm_type.as_str(), vmid);
+        let result = self.get(&path).await?;
+
+        Ok(result["data"]["status"]
+            .as_str()
+            .unwrap_or("unknown")
+            .to_string())
+    }
     
     /// Update VM configuration
     pub async fn set_vm_config(&self, node: &str, vmid: u32, vm_type: VmType, config: &Value) -> Result<()> {

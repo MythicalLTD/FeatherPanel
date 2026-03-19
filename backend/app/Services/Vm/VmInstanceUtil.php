@@ -297,7 +297,7 @@ final class VmInstanceUtil
             }
         }
 
-        $nextResult = $client->getNextVmid(100);
+        $nextResult = $client->getNextVmid(5000);
         if (!$nextResult['ok'] || $nextResult['vmid'] === null) {
             return [
                 'ok' => false,

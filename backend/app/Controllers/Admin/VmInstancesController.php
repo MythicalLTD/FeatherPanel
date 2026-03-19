@@ -317,7 +317,7 @@ class VmInstancesController
         }
         $targetNode = (string) $nodesResult['nodes'][0]['node'];
 
-        $nextResult = $client->getNextVmid(100);
+        $nextResult = $client->getNextVmid(5000);
         if (!$nextResult['ok'] || $nextResult['vmid'] === null) {
             return ApiResponse::error(
                 'Could not get next VMID: ' . ($nextResult['error'] ?? 'unknown'),

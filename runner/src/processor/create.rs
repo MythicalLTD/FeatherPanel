@@ -1,4 +1,5 @@
 use anyhow::Result;
+use redis::AsyncCommands;
 use sqlx::{MySqlPool, Row};
 use serde_json::{json, Value};
 use tracing::{info, warn};
@@ -403,6 +404,11 @@ async fn finalize_create(pool: &MySqlPool, task_id: &str, meta: &Value) -> Resul
             .bind(instance_id)
             .execute(pool)
             .await?;
+        
+        // Queue email notification for VM creation
+        if let Err(e) = queue_vm_created_email(pool, instance_id, meta).await {
+            tracing::warn!("⚠️ Failed to queue VM created email: {}", e);
+        }
     }
     
     sqlx::query("UPDATE featherpanel_vm_tasks SET status = 'completed' WHERE task_id = ?")
@@ -741,35 +747,101 @@ async fn cleanup_old_vm(
     }
     
     info!("🗑️ Stopping and deleting old VM {}...", old_vmid);
-    
-    // Try to stop, but don't fail if already stopped
-    match client.stop_vm(node, old_vmid, vm_type).await {
-        Ok(_) => {
-            info!("✅ Old VM {} stopped", old_vmid);
-            tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-        }
-        Err(e) => {
-            let error_msg = format!("{}", e);
-            if error_msg.contains("not running") || error_msg.contains("already stopped") {
-                info!("ℹ️ Old VM {} is already stopped", old_vmid);
-            } else {
-                warn!("⚠️ Failed to stop old VM: {}", e);
+
+        ensure_vm_stopped(client, node, old_vmid, vm_type).await?;
+
+        let mut deleted = false;
+        for attempt in 1..=2 {
+            match client.delete_vm(node, old_vmid, vm_type).await {
+                Ok(delete_upid) => {
+                    if !delete_upid.is_empty() {
+                        client.wait_task(node, &delete_upid, 180).await?;
+                    }
+                    info!("✅ Old VM {} deleted", old_vmid);
+                    deleted = true;
+                    break;
+                }
+                Err(e) => {
+                    let error_msg = format!("{}", e);
+                    if attempt == 1 && error_msg.contains("container is running") {
+                        warn!(
+                            "⚠️ Delete reported VM {} still running after stop. Re-checking state and retrying once...",
+                            old_vmid
+                        );
+                        ensure_vm_stopped(client, node, old_vmid, vm_type).await?;
+                        continue;
+                    }
+
+                    return Err(e);
+                }
             }
         }
-    }
-    
-    // Try to delete
-    match client.delete_vm(node, old_vmid, vm_type).await {
-        Ok(_) => info!("✅ Old VM {} deleted", old_vmid),
-        Err(e) => {
-            warn!("⚠️ Failed to delete old VM: {}", e);
-            // Continue anyway - the new VM is working
+
+        if !deleted {
+            anyhow::bail!("Failed to delete old VM {} after retries", old_vmid);
         }
-    }
     
     advance_step(pool, task_id, "update_db").await?;
     Ok(())
 }
+
+    async fn ensure_vm_stopped(
+        client: &ProxmoxClient,
+        node: &str,
+        vmid: u32,
+        vm_type: VmType,
+    ) -> Result<()> {
+        match client.get_vm_power_state(node, vmid, vm_type).await {
+            Ok(state) if state == "stopped" => {
+                info!("ℹ️ Old VM {} is already stopped", vmid);
+                return Ok(());
+            }
+            Ok(_) => {}
+            Err(e) => {
+                let error_msg = format!("{}", e);
+                if error_msg.contains("404") || error_msg.contains("not exist") || error_msg.contains("not found") {
+                    info!("ℹ️ Old VM {} no longer exists", vmid);
+                    return Ok(());
+                }
+            }
+        }
+
+        match client.stop_vm(node, vmid, vm_type).await {
+            Ok(stop_upid) => {
+                if !stop_upid.is_empty() {
+                    client.wait_task(node, &stop_upid, 180).await?;
+                }
+            }
+            Err(e) => {
+                let error_msg = format!("{}", e);
+                if !(error_msg.contains("not running") || error_msg.contains("already stopped")) {
+                    return Err(e);
+                }
+            }
+        }
+
+        for _ in 0..10 {
+            match client.get_vm_power_state(node, vmid, vm_type).await {
+                Ok(state) if state == "stopped" => {
+                    info!("✅ Old VM {} stopped", vmid);
+                    return Ok(());
+                }
+                Ok(_) => {
+                    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                }
+                Err(e) => {
+                    let error_msg = format!("{}", e);
+                    if error_msg.contains("404") || error_msg.contains("not exist") || error_msg.contains("not found") {
+                        info!("ℹ️ Old VM {} no longer exists", vmid);
+                        return Ok(());
+                    }
+                    return Err(e);
+                }
+            }
+        }
+
+        anyhow::bail!("Timed out waiting for old VM {} to stop", vmid)
+    }
 
 async fn update_reinstall_db(
     pool: &MySqlPool,
@@ -782,9 +854,35 @@ async fn update_reinstall_db(
     let instance_id = meta["instance_id"].as_i64().unwrap_or(0);
     
     if instance_id > 0 {
-        sqlx::query("UPDATE featherpanel_vm_instances SET vmid = ?, pve_node = ?, status = 'stopped' WHERE id = ?")
+        let existing_row = sqlx::query("SELECT notes FROM featherpanel_vm_instances WHERE id = ?")
+            .bind(instance_id)
+            .fetch_optional(pool)
+            .await?;
+
+        let mut notes_json = existing_row
+            .as_ref()
+            .and_then(|row| row.try_get::<Option<String>, _>("notes").ok().flatten())
+            .and_then(|notes| serde_json::from_str::<Value>(&notes).ok())
+            .and_then(|value| value.as_object().cloned())
+            .unwrap_or_default();
+
+        if let Some(ci_user) = meta["ci_user"].as_str().filter(|value| !value.trim().is_empty()) {
+            notes_json.insert("ci_user".to_string(), json!(ci_user));
+        }
+        if let Some(ci_password) = meta["ci_password"].as_str().filter(|value| !value.trim().is_empty()) {
+            notes_json.insert("ci_password".to_string(), json!(ci_password));
+        }
+
+        let notes_value = if notes_json.is_empty() {
+            None
+        } else {
+            Some(Value::Object(notes_json).to_string())
+        };
+
+        sqlx::query("UPDATE featherpanel_vm_instances SET vmid = ?, pve_node = ?, status = 'stopped', notes = ? WHERE id = ?")
             .bind(vmid)
             .bind(node)
+            .bind(notes_value)
             .bind(instance_id)
             .execute(pool)
             .await?;
@@ -802,6 +900,11 @@ async fn finalize_reinstall(pool: &MySqlPool, task_id: &str, meta: &Value) -> Re
             .bind(instance_id)
             .execute(pool)
             .await?;
+        
+        // Queue email notification for VM reinstall completion
+        if let Err(e) = queue_vm_reinstall_email(pool, instance_id, meta).await {
+            tracing::warn!("⚠️ Failed to queue VM reinstall email: {}", e);
+        }
     }
     
     sqlx::query("UPDATE featherpanel_vm_tasks SET status = 'completed' WHERE task_id = ?")
@@ -811,4 +914,197 @@ async fn finalize_reinstall(pool: &MySqlPool, task_id: &str, meta: &Value) -> Re
     
     info!("✅ REINSTALL task completed successfully");
     Ok(())
+}
+
+async fn queue_vm_created_email(pool: &MySqlPool, instance_id: i64, meta: &Value) -> Result<()> {
+    send_vm_email(pool, instance_id, meta, "vm_created").await
+}
+
+async fn queue_vm_reinstall_email(pool: &MySqlPool, instance_id: i64, meta: &Value) -> Result<()> {
+    send_vm_email(pool, instance_id, meta, "vm_reinstall_completed").await
+}
+
+pub(super) async fn send_vm_email(pool: &MySqlPool, instance_id: i64, meta: &Value, template_name: &str) -> Result<()> {
+    use std::collections::HashMap;
+    
+    info!("📧 Queueing {} email for instance {}", template_name, instance_id);
+    
+    // Get VM instance details
+    let instance = sqlx::query("SELECT * FROM featherpanel_vm_instances WHERE id = ?")
+        .bind(instance_id)
+        .fetch_optional(pool)
+        .await?;
+    
+    let instance = match instance {
+        Some(i) => i,
+        None => {
+            warn!("⚠️ VM instance {} not found in database", instance_id);
+            return Ok(());
+        }
+    };
+    
+    let user_uuid: String = instance.try_get("user_uuid")?;
+    
+    // Get user details
+    let user = sqlx::query("SELECT * FROM featherpanel_users WHERE uuid = ?")
+        .bind(&user_uuid)
+        .fetch_optional(pool)
+        .await?;
+    
+    let user = match user {
+        Some(u) => u,
+        None => {
+            warn!("⚠️ User {} not found in database", user_uuid);
+            return Ok(());
+        }
+    };
+    
+    // Get email template
+    let template = sqlx::query("SELECT subject, body FROM featherpanel_mail_templates WHERE name = ? AND deleted = 'false'")
+        .bind(template_name)
+        .fetch_optional(pool)
+        .await?;
+    
+    let template = match template {
+        Some(t) => t,
+        None => {
+            warn!("⚠️ Email template '{}' not found in database", template_name);
+            return Ok(());
+        }
+    };
+    
+    // Build placeholders map
+    let mut placeholders: HashMap<String, String> = HashMap::new();
+    
+    // App config
+    placeholders.insert("app_name".to_string(), get_config_value(pool, "app_name").await.unwrap_or_else(|_| "FeatherPanel".to_string()));
+    placeholders.insert("app_url".to_string(), get_config_value(pool, "app_url").await.unwrap_or_else(|_| "https://featherpanel.mythical.systems".to_string()));
+    placeholders.insert("support_url".to_string(), get_config_value(pool, "app_support_url").await.unwrap_or_else(|_| "https://discord.mythical.systems".to_string()));
+    
+    // User details
+    placeholders.insert("first_name".to_string(), user.try_get("first_name").unwrap_or_else(|_| String::new()));
+    placeholders.insert("last_name".to_string(), user.try_get("last_name").unwrap_or_else(|_| String::new()));
+    placeholders.insert("email".to_string(), user.try_get("email").unwrap_or_else(|_| String::new()));
+    placeholders.insert("username".to_string(), user.try_get("username").unwrap_or_else(|_| String::new()));
+    
+    // Dashboard URL
+    let app_url = placeholders.get("app_url").cloned().unwrap_or_default();
+    placeholders.insert("dashboard_url".to_string(), format!("{}/dashboard", app_url));
+    
+    // VM details
+    let hostname: String = instance.try_get("hostname").unwrap_or_else(|_| format!("vm-{}", instance_id));
+    let ip_address: String = instance.try_get("ip_address").unwrap_or_default();
+    placeholders.insert("vm_hostname".to_string(), hostname);
+    placeholders.insert("vm_ip".to_string(), ip_address);
+    
+    // Password (if available)
+    let password = resolve_vm_access_password(pool, &instance, meta).await.unwrap_or_default();
+    placeholders.insert("vm_password".to_string(), password.to_string());
+    
+    // Parse template
+    let mut subject: String = template.try_get("subject")?;
+    let mut body: String = template.try_get("body")?;
+    
+    for (key, value) in &placeholders {
+        let placeholder = format!("{{{}}}", key);
+        subject = subject.replace(&placeholder, value);
+        body = body.replace(&placeholder, value);
+    }
+    
+    let user_email: String = user.try_get("email")?;
+    
+    // Insert into mail queue
+    let result = sqlx::query(
+        "INSERT INTO featherpanel_mail_queue (user_uuid, subject, body, status, created_at, updated_at) VALUES (?, ?, ?, 'pending', NOW(), NOW())"
+    )
+    .bind(&user_uuid)
+    .bind(&subject)
+    .bind(&body)
+    .execute(pool)
+    .await?;
+    
+    let queue_id = result.last_insert_id();
+    
+    // Insert into mail list
+    sqlx::query("INSERT INTO featherpanel_mail_list (queue_id, user_uuid, created_at, updated_at) VALUES (?, ?, NOW(), NOW())")
+        .bind(queue_id)
+        .bind(&user_uuid)
+        .execute(pool)
+        .await?;
+    
+    info!("✅ Queued {} email (queue_id: {}) for {}", template_name, queue_id, user_email);
+    
+    // Publish Redis notification to trigger mail worker
+    if let Err(e) = publish_mail_notification(queue_id).await {
+        warn!("⚠️ Failed to publish Redis notification for mail queue {}: {}", queue_id, e);
+    }
+    
+    Ok(())
+}
+
+async fn get_config_value(pool: &MySqlPool, key: &str) -> Result<String> {
+    let row = sqlx::query("SELECT value FROM featherpanel_settings WHERE `key` = ?")
+        .bind(key)
+        .fetch_optional(pool)
+        .await?;
+    
+    match row {
+        Some(r) => Ok(r.try_get("value")?),
+        None => Ok(String::new()),
+    }
+}
+
+async fn publish_mail_notification(queue_id: u64) -> Result<()> {
+    let config = crate::config::load_config()?;
+    let client = redis::Client::open(config.redis_url)?;
+    let mut connection = client.get_multiplexed_async_connection().await?;
+    let payload = json!({
+        "queue_id": queue_id.to_string(),
+        "timestamp": chrono::Utc::now().timestamp(),
+    })
+    .to_string();
+
+    let _: i32 = connection
+        .publish("featherpanel:mail:pending", payload)
+        .await?;
+
+    Ok(())
+}
+
+async fn resolve_vm_access_password(
+    pool: &MySqlPool,
+    instance: &sqlx::mysql::MySqlRow,
+    meta: &Value,
+) -> Result<String> {
+    if let Some(password) = meta["ci_password"].as_str().filter(|value| !value.trim().is_empty()) {
+        return Ok(password.to_string());
+    }
+
+    if let Ok(Some(notes)) = instance.try_get::<Option<String>, _>("notes") {
+        if let Ok(parsed) = serde_json::from_str::<Value>(&notes) {
+            if let Some(password) = parsed["ci_password"].as_str().filter(|value| !value.trim().is_empty()) {
+                return Ok(password.to_string());
+            }
+        }
+    }
+
+    let vm_type: String = instance.try_get("vm_type").unwrap_or_else(|_| "qemu".to_string());
+    if vm_type == "lxc" {
+        let template_id: i64 = instance.try_get("template_id").unwrap_or(0);
+        if template_id > 0 {
+            let template = sqlx::query("SELECT lxc_root_password FROM featherpanel_vm_templates WHERE id = ?")
+                .bind(template_id)
+                .fetch_optional(pool)
+                .await?;
+
+            if let Some(template_row) = template {
+                let password: Option<String> = template_row.try_get("lxc_root_password").ok();
+                if let Some(password) = password.filter(|value| !value.trim().is_empty()) {
+                    return Ok(password);
+                }
+            }
+        }
+    }
+
+    Ok(String::new())
 }

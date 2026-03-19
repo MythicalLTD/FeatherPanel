@@ -626,10 +626,11 @@ class Proxmox
      */
     public function getNextVmid(?int $minVmid = null): array
     {
-        $minVmid = $minVmid !== null && $minVmid > 0 ? $minVmid : 100;
+        $minVmid = $minVmid !== null && $minVmid > 0 ? $minVmid : 5000;
 
+        // Try to get next VMID from Proxmox API with our minimum
         $path = '/api2/json/cluster/nextid';
-        $result = $this->apiGet($path, []);
+        $result = $this->apiGet($path, ['vmid' => $minVmid]);
         if ($result['ok'] && is_numeric($result['data'])) {
             $vmid = (int) $result['data'];
             if ($vmid >= $minVmid) {

@@ -6817,7 +6817,20 @@
 		},
 		"console": {
 			"title": "VDS Console",
+			"loading": "Loading VDS instance...",
+			"not_found_title": "VDS Not Found",
+			"not_found_description": "This VDS instance does not exist or you do not have access.",
 			"vnc_console": "VNC Console",
+			"status": {
+				"running": "Running",
+				"stopped": "Stopped",
+				"starting": "Starting",
+				"stopping": "Stopping",
+				"suspended": "Suspended",
+				"creating": "Creating",
+				"reinstalling": "Reinstalling",
+				"unknown": "Unknown"
+			},
 			"power": {
 				"start": "Start",
 				"stop": "Stop",
@@ -6836,10 +6849,42 @@
 				"network": "Network"
 			},
 			"details": {
+				"instance_details": "Instance Details",
 				"hostname": "Hostname",
+				"vmid": "VMID",
 				"ip": "IP Address",
 				"status": "Status",
-				"type": "Type"
+				"type": "Type",
+				"node": "Node",
+				"plan": "Plan",
+				"role": "Role",
+				"role_owner": "Owner",
+				"role_subuser": "Subuser"
+			},
+			"password": {
+				"title": "Access Password",
+				"description": "This is the latest password the panel has for this VDS.",
+				"change_asap": "Change this password as soon as possible after signing in."
+			},
+			"console_access": {
+				"title": "Console Access",
+				"no_access_title": "No Console Access",
+				"no_access_description": "Subusers do not currently have console access to VDS instances.",
+				"offline_title": "VDS is Offline",
+				"offline_description": "Start the VDS instance to access the VNC console.",
+				"start_instance": "Start Instance",
+				"ready_title": "VNC Console Ready",
+				"ready_description": "Click below to open the graphical console in a new tab.",
+				"open_button": "Open VNC Console",
+				"open_hint": "Opens in a new browser tab via Proxmox noVNC"
+			},
+			"toast": {
+				"power_completed": "Power action \"{action}\" completed",
+				"task_queued": "Task added to queue",
+				"power_timeout": "Power action timed out",
+				"power_failed": "Power action failed",
+				"vnc_wss": "VNC WSS: {url}",
+				"vnc_failed": "Failed to get VNC ticket"
 			}
 		},
 		"subusers": {
@@ -6878,6 +6923,7 @@
 				"button": "Begin Reinstall",
 				"confirm_title": "Confirm Reinstall",
 				"confirm_desc": "This action is irreversible. All data on this VDS will be destroyed.",
+				"password_notice": "After reinstall, you will receive the password by email or you can view it on the main VDS page. Please change this password ASAP.",
 				"templates_loading": "Loading templates...",
 				"templates_none": "No {template_type} templates available for this VDS. Contact your administrator.",
 				"confirm_body_prefix": "You are about to reinstall ",

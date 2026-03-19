@@ -47,7 +47,7 @@ pub async fn get_mail_queue(pool: &MySqlPool, queue_id: &str) -> Result<Option<M
 }
 
 pub async fn get_mail_list(pool: &MySqlPool, queue_id: &str) -> Result<Option<MailListEntry>> {
-    let row = sqlx::query("SELECT user_uuid FROM featherpanel_mail_list WHERE id = ?")
+    let row = sqlx::query("SELECT user_uuid FROM featherpanel_mail_list WHERE queue_id = ? AND deleted = 'false'")
         .bind(queue_id)
         .fetch_optional(pool)
         .await?;

@@ -23,6 +23,7 @@ use App\Chat\VmTask;
 use App\Chat\Database;
 use App\Chat\VmSubuser;
 use App\Chat\VmInstance;
+use App\Chat\VmTemplate;
 use App\Helpers\VmGateway;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -177,6 +178,10 @@ class VmUserInstanceController
             // Owner has all permissions
             $vmInstance['permissions'] = ['power', 'console', 'backup', 'activity.read', 'reinstall', 'settings'];
         }
+
+        $vmInstance['access_password'] = $vmInstance['is_owner']
+            ? self::resolveAccessPassword($vmInstance)
+            : null;
 
         return ApiResponse::success([
             'instance' => $vmInstance,
@@ -590,16 +595,16 @@ class VmUserInstanceController
 
         VmInstanceActivity::createActivity([
             'vm_instance_id' => $id,
-            'vm_node_id'     => (int) ($vmInstance['vm_node_id'] ?? 0),
-            'user_id'        => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
-            'event'          => 'vm:hardware.qemu.update',
-            'metadata'       => [
+            'vm_node_id' => (int) ($vmInstance['vm_node_id'] ?? 0),
+            'user_id' => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
+            'event' => 'vm:hardware.qemu.update',
+            'metadata' => [
                 'bios' => $biosMode,
                 'efi_enabled' => $efiEnabled,
                 'tpm_enabled' => $tpmEnabled,
                 'serial0_enabled' => $serial0Enabled,
             ],
-            'ip'             => CloudFlareRealIP::getRealIP(),
+            'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
         // Return updated hardware state.
@@ -1598,21 +1603,21 @@ class VmUserInstanceController
 
         $taskId = bin2hex(random_bytes(16));
         $meta = [
-            'action'      => $action,
+            'action' => $action,
             'instance_id' => $id,
-            'vm_type'     => $vmType,
+            'vm_type' => $vmType,
         ];
 
         $saved = VmTask::create([
-            'task_id'     => $taskId,
+            'task_id' => $taskId,
             'instance_id' => $id,
-            'vm_node_id'  => (int) $vmInstance['vm_node_id'],
-            'task_type'   => 'power',
-            'status'      => 'pending',
+            'vm_node_id' => (int) $vmInstance['vm_node_id'],
+            'task_type' => 'power',
+            'status' => 'pending',
             'target_node' => $node,
-            'vmid'        => $vmid,
-            'data'        => $meta,
-            'user_uuid'   => $user['uuid'] ?? null,
+            'vmid' => $vmid,
+            'data' => $meta,
+            'user_uuid' => $user['uuid'] ?? null,
         ]);
 
         if (!$saved) {
@@ -1621,11 +1626,11 @@ class VmUserInstanceController
 
         VmInstanceActivity::createActivity([
             'vm_instance_id' => $id,
-            'vm_node_id'     => (int) $vmInstance['vm_node_id'],
-            'user_id'        => (int) $user['id'],
-            'event'          => 'vm:power.' . $action . '.scheduled',
-            'metadata'       => ['hostname' => $vmInstance['hostname'] ?? null, 'task_id' => $taskId],
-            'ip'             => CloudFlareRealIP::getRealIP(),
+            'vm_node_id' => (int) $vmInstance['vm_node_id'],
+            'user_id' => (int) $user['id'],
+            'event' => 'vm:power.' . $action . '.scheduled',
+            'metadata' => ['hostname' => $vmInstance['hostname'] ?? null, 'task_id' => $taskId],
+            'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
         return ApiResponse::success([
@@ -1755,16 +1760,16 @@ class VmUserInstanceController
 
         VmInstanceActivity::createActivity([
             'vm_instance_id' => $id,
-            'vm_node_id'     => (int) $instance['vm_node_id'],
-            'user_id'        => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
-            'event'          => 'vm:reinstall.start',
-            'metadata'       => ['hostname' => $instance['hostname'] ?? null],
-            'ip'             => CloudFlareRealIP::getRealIP(),
+            'vm_node_id' => (int) $instance['vm_node_id'],
+            'user_id' => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
+            'event' => 'vm:reinstall.start',
+            'metadata' => ['hostname' => $instance['hostname'] ?? null],
+            'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
         return ApiResponse::success([
             'reinstall_id' => $result['reinstall_id'],
-            'message'      => $result['message'],
+            'message' => $result['message'],
         ], 'VM reinstall started', 202);
     }
 
@@ -1822,11 +1827,11 @@ class VmUserInstanceController
 
         if ($status === 'pending' || $status === 'running') {
             $msg = match ($type) {
-                'delete'    => 'Deletion in progress…',
-                'power'     => 'Power action in progress…',
+                'delete' => 'Deletion in progress…',
+                'power' => 'Power action in progress…',
                 'reinstall' => 'Cloning and provisioning VM…',
-                'create'    => 'Provisioning new VM…',
-                default     => 'Processing task…',
+                'create' => 'Provisioning new VM…',
+                default => 'Processing task…',
             };
 
             if ($status === 'pending') {
@@ -1834,7 +1839,7 @@ class VmUserInstanceController
             }
 
             return ApiResponse::success([
-                'status'  => $status,
+                'status' => $status,
                 'message' => $msg,
             ], 'In progress', 200);
         }
@@ -1851,7 +1856,7 @@ class VmUserInstanceController
 
         return ApiResponse::success([
             'status' => 'failed',
-            'error'  => $task['error'] ?? 'Unknown error',
+            'error' => $task['error'] ?? 'Unknown error',
         ], 'Task failed', 200);
     }
 
@@ -1903,9 +1908,9 @@ class VmUserInstanceController
         // - when we know the node, use VmTemplate::getByNodeId($nodeId)
         // - otherwise fall back to all active templates
         if ($nodeId > 0) {
-            $templates = \App\Chat\VmTemplate::getByNodeId($nodeId);
+            $templates = VmTemplate::getByNodeId($nodeId);
         } else {
-            $templates = \App\Chat\VmTemplate::getAll(true);
+            $templates = VmTemplate::getAll(true);
         }
 
         // Filter by guest_type (qemu vs lxc)
@@ -1919,13 +1924,37 @@ class VmUserInstanceController
         // Fallback: if nothing matches but the instance has a template_id, only expose that exact template
         // (still respecting guest_type for safety).
         if (empty($filtered) && !empty($vmInstance['template_id'])) {
-            $instanceTemplate = \App\Chat\VmTemplate::getById((int) $vmInstance['template_id']);
+            $instanceTemplate = VmTemplate::getById((int) $vmInstance['template_id']);
             if ($instanceTemplate && (($instanceTemplate['guest_type'] ?? 'qemu') === $type)) {
                 $filtered = [$instanceTemplate];
             }
         }
 
         return ApiResponse::success(['templates' => $filtered], 'Templates retrieved', 200);
+    }
+
+    /**
+     * Resolve the VM access password for owner-facing UX.
+     */
+    private static function resolveAccessPassword(array $vmInstance): ?string
+    {
+        $notesRaw = isset($vmInstance['notes']) && is_string($vmInstance['notes']) ? trim($vmInstance['notes']) : '';
+        if ($notesRaw !== '') {
+            $notes = json_decode($notesRaw, true);
+            if (is_array($notes) && !empty($notes['ci_password']) && is_string($notes['ci_password'])) {
+                return trim((string) $notes['ci_password']) !== '' ? trim((string) $notes['ci_password']) : null;
+            }
+        }
+
+        $vmType = ($vmInstance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
+        if ($vmType === 'lxc' && !empty($vmInstance['template_id'])) {
+            $template = VmTemplate::getById((int) $vmInstance['template_id']);
+            if ($template && !empty($template['lxc_root_password']) && is_string($template['lxc_root_password'])) {
+                return trim((string) $template['lxc_root_password']) !== '' ? trim((string) $template['lxc_root_password']) : null;
+            }
+        }
+
+        return null;
     }
 
     /**

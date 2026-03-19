@@ -41,6 +41,7 @@ export interface VmInstance {
     is_owner?: boolean;
     is_subuser?: boolean;
     permissions?: string[];
+    access_password?: string | null;
 }
 
 interface VmInstanceContextType {

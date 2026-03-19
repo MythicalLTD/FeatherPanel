@@ -6,7 +6,7 @@ use chrono;
 use std::collections::HashSet;
 
 use crate::proxmox::{ProxmoxClient, VmType, PowerAction};
-use super::create::{handle_create_task, handle_reinstall_task};
+use super::create::{handle_create_task, handle_reinstall_task, send_vm_email};
 
 // 🐛 DEBUG MODE - Set to true to print decrypted credentials (ONLY FOR DEVELOPMENT!)
 const DEBUG_DECRYPT: bool = false;
@@ -523,7 +523,14 @@ async fn handle_delete_task(
         }
     }
 
-    // Step 4: Delete from database
+    // Step 4: Queue email notification before deletion
+    if instance_id > 0 {
+        if let Err(e) = queue_vm_deleted_email(pool, instance_id).await {
+            warn!("⚠️ Failed to queue VM deleted email: {}", e);
+        }
+    }
+
+    // Step 5: Delete from database
     if instance_id > 0 {
         info!("🗑️ Removing VM instance {} from database...", instance_id);
         sqlx::query("DELETE FROM featherpanel_vm_instances WHERE id = ?")
@@ -1133,4 +1140,9 @@ async fn handle_iso_fetch_and_mount_task(
 
     mark_completed(pool, task_id).await?;
     Ok(())
+}
+
+async fn queue_vm_deleted_email(pool: &MySqlPool, instance_id: i64) -> Result<()> {
+    info!("📧 Queueing vm_deleted email for instance {}", instance_id);
+    send_vm_email(pool, instance_id, &json!({}), "vm_deleted").await
 }

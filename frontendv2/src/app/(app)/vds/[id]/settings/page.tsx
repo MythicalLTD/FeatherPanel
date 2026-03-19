@@ -856,6 +856,11 @@ export default function VdsSettingsPage() {
                         </p>
                     </div>
 
+                    <div className='flex items-start gap-4 p-4 rounded-2xl bg-primary/10 border border-primary/20'>
+                        <Lock className='h-5 w-5 text-primary shrink-0 mt-0.5' />
+                        <p className='text-sm text-foreground/90'>{t('vds.settings.reinstall.password_notice')}</p>
+                    </div>
+
                     {isQemu && (
                         <div className='space-y-4'>
                             <p className='text-xs font-black uppercase tracking-widest text-primary/70'>
