@@ -4922,6 +4922,14 @@
 				"loading_error": "Failed to load online spells",
 				"install_error": "Failed to install spell",
 				"select_realm_error": "Please select a realm before installing",
+				"install_success": "Successfully installed {identifier}",
+				"pterodactyl_banner": {
+					"title": "Pterodactyl Game Eggs Store",
+					"description": "FeatherPanel uses the official Pterodactyl eggs repository. Browse and install game server configurations that are verified and maintained by the Pterodactyl community.",
+					"powered_by": "Powered by Pterodactyl Official Eggs",
+					"view_github": "Browse Eggs",
+					"learn_more": "Learn More"
+				},
 				"online_banner": {
 					"title": "Have some spells to share?",
 					"description": "Publish your creations to the community. Download your spell and head over to our cloud platform. Our team aims to review and publish within 48 hours.",
@@ -4933,22 +4941,32 @@
 				"loading": "Loading online spells...",
 				"grid": {
 					"verified": "Verified",
+					"pterodactyl_verified": "Pterodactyl Verified",
 					"unverified_warning": "Unverified spell - review source before installing",
+					"external_source": "This spell is from an external source and may not be verified by FeatherPanel",
 					"install": "Install",
 					"no_description": "No description available"
 				},
 				"dialog": {
-					"title": "Install Spell",
+					"title": "Install Game Server Egg",
 					"realm": "Select Realm *",
 					"realm_help": "Select the realm where this spell will be installed.",
 					"install": "Install",
 					"installing": "Installing...",
+					"community_egg_title": "Pterodactyl Community Egg",
+					"community_egg_desc": "This egg is maintained by the Pterodactyl community and is regularly updated.",
 					"unverified_warning": "Unverified Spell",
 					"unverified_desc": "This spell is not verified. Installing unverified spells can be unsafe. Please review the source code before installing.",
 					"already_installed_title": "Spell Already Installed",
 					"already_installed_desc": "You already have this spell installed. Installing it again will create another instance."
 				},
 				"help": {
+					"official_repo_title": "Official Repository",
+					"official_repo_desc": "All game server eggs are sourced from the official Pterodactyl repository, ensuring quality and compatibility.",
+					"easy_install_title": "Easy Installation",
+					"easy_install_desc": "Install game servers with a single click. All configurations and dependencies are handled automatically.",
+					"community_title": "Community Maintained",
+					"community_desc": "Eggs are actively maintained by the Pterodactyl community with regular updates and improvements.",
 					"repo_title": "Online Repository",
 					"repo_desc": "Browse community-created spells from our online repository. Install directly from this page with a single click.",
 					"install_title": "Install Spells",

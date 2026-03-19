@@ -1460,83 +1460,107 @@ class SpellsController
     public function onlineList(Request $request): Response
     {
         try {
-            // New official spells API
-            $base = 'https://api.featherpanel.com/spells';
             $q = trim((string) ($request->query->get('q') ?? ''));
             $page = (int) ($request->query->get('page') ?? 1);
             $perPage = (int) ($request->query->get('per_page') ?? 20);
-            $query = [];
+            $category = trim((string) ($request->query->get('category') ?? ''));
+
+            // Try to get from cache first (cache for 60 minutes)
+            $cacheKey = 'pterodactyl_eggs_list';
+            $allEggs = \App\Cache\Cache::get($cacheKey);
+
+            if ($allEggs === null) {
+                // Fetch from Pterodactyl eggs API
+                $url = 'https://eggs.pterodactyl.io/api/eggs.json';
+
+                $context = stream_context_create([
+                    'http' => [
+                        'timeout' => 10,
+                        'ignore_errors' => true,
+                        'user_agent' => 'FeatherPanel/1.0',
+                    ],
+                ]);
+
+                $response = @file_get_contents($url, false, $context);
+                if ($response === false) {
+                    return ApiResponse::error('Failed to fetch Pterodactyl eggs store', 'ONLINE_LIST_FETCH_FAILED', 500);
+                }
+
+                $allEggs = json_decode($response, true);
+                if (!is_array($allEggs)) {
+                    return ApiResponse::error('Invalid response from eggs store', 'ONLINE_LIST_INVALID', 500);
+                }
+
+                // Cache for 60 minutes
+                \App\Cache\Cache::put($cacheKey, $allEggs, 60);
+            }
+
+            // Filter by category if provided
+            $filteredEggs = $allEggs;
+            if ($category !== '') {
+                $filteredEggs = array_filter($filteredEggs, function ($egg) use ($category) {
+                    return strcasecmp($egg['category'] ?? '', $category) === 0;
+                });
+                $filteredEggs = array_values($filteredEggs);
+            }
+
+            // Filter by search query if provided
             if ($q !== '') {
-                $query['search'] = $q;
-            }
-            if ($page > 0) {
-                $query['page'] = (string) $page;
-            }
-            if ($perPage > 0) {
-                $query['per_page'] = (string) $perPage;
-            }
-            $url = $base . (!empty($query) ? ('?' . http_build_query($query)) : '');
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 10,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $response = @file_get_contents($url, false, $context);
-            if ($response === false) {
-                return ApiResponse::error('Failed to fetch online spell list', 'ONLINE_LIST_FETCH_FAILED', 500);
+                $filteredEggs = array_filter($filteredEggs, function ($egg) use ($q) {
+                    return stripos($egg['name'] ?? '', $q) !== false
+                        || stripos($egg['description'] ?? '', $q) !== false
+                        || stripos($egg['category'] ?? '', $q) !== false
+                        || stripos($egg['id'] ?? '', $q) !== false;
+                });
+                $filteredEggs = array_values($filteredEggs);
             }
 
-            $data = json_decode($response, true);
-            if (!is_array($data) || !isset($data['data']['spells']) || !is_array($data['data']['spells'])) {
-                return ApiResponse::error('Invalid response from online spell list', 'ONLINE_LIST_INVALID', 500);
-            }
+            // Calculate pagination
+            $total = count($filteredEggs);
+            $totalPages = ceil($total / $perPage);
+            $offset = ($page - 1) * $perPage;
+            $paginatedEggs = array_slice($filteredEggs, $offset, $perPage);
 
-            $spells = $data['data']['spells'];
-            $onlineSpells = array_map(static function (array $spell): array {
-                $latest = $spell['latest_version'] ?? [];
-                $downloadUrl = isset($latest['download_url']) ? ('https://api.featherpanel.com' . $latest['download_url']) : null;
-                if (isset($spell['icon_url'])) {
-                    $iconUrl = $spell['icon_url'];
-                    // If iconUrl is set and not empty, ensure it is https
-                    if (!empty($iconUrl) && is_string($iconUrl)) {
-                        if (strpos($iconUrl, 'http://') === 0) {
-                            $iconUrl = 'https://' . substr($iconUrl, 7);
-                        }
-                    }
-                } else {
-                    $iconUrl = null;
+            // Transform eggs to match expected format
+            $onlineSpells = array_map(static function (array $egg): array {
+                // Extract author from repo URL or use default
+                $author = 'Pterodactyl';
+                if (isset($egg['repo']) && preg_match('/github\.com\/([^\/]+)/', $egg['repo'], $matches)) {
+                    $author = $matches[1];
                 }
 
                 return [
-                    // Basic identity
-                    'id' => $spell['id'] ?? null,
-                    'identifier' => $spell['name'] ?? '',
-                    'name' => $spell['display_name'] ?? ($spell['name'] ?? ''),
-                    'description' => $spell['description'] ?? null,
-                    'icon' => $iconUrl,
-                    'website' => $spell['website'] ?? null,
-                    // Authors/maintainers
-                    'author' => $spell['author'] ?? null,
-                    'author_email' => $spell['author_email'] ?? null,
-                    'maintainers' => $spell['maintainers'] ?? [],
-                    // Meta
-                    'tags' => $spell['tags'] ?? [],
-                    'verified' => isset($spell['verified']) ? (int) $spell['verified'] === 1 : false,
-                    'downloads' => $spell['downloads'] ?? 0,
-                    'created_at' => $spell['created_at'] ?? null,
-                    'updated_at' => $spell['updated_at'] ?? null,
-                    // Latest version
+                    'id' => null,
+                    'identifier' => $egg['id'] ?? '',
+                    'name' => $egg['name'] ?? '',
+                    'description' => $egg['description'] ?? null,
+                    'icon' => null, // Pterodactyl eggs don't have icons
+                    'website' => $egg['repo'] ?? null,
+                    'author' => $author,
+                    'author_email' => null,
+                    'maintainers' => [],
+                    'tags' => [$egg['category'] ?? 'unknown'],
+                    'verified' => true, // All Pterodactyl eggs are verified
+                    'downloads' => 0,
+                    'created_at' => $egg['lastUpdated'] ?? null,
+                    'updated_at' => $egg['lastUpdated'] ?? null,
                     'latest_version' => [
-                        'version' => $latest['version'] ?? null,
-                        'download_url' => $downloadUrl,
-                        'file_size' => $latest['file_size'] ?? null,
-                        'created_at' => $latest['created_at'] ?? null,
+                        'version' => null,
+                        'download_url' => $egg['downloadUrl'] ?? null,
+                        'file_size' => null,
+                        'created_at' => $egg['lastUpdated'] ?? null,
                     ],
                 ];
-            }, $spells);
+            }, $paginatedEggs);
 
-            $pagination = $data['data']['pagination'] ?? null;
+            $pagination = [
+                'current_page' => $page,
+                'total_pages' => $totalPages,
+                'total_records' => $total,
+                'per_page' => $perPage,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+            ];
 
             return ApiResponse::success([
                 'spells' => $onlineSpells,
@@ -1580,7 +1604,7 @@ class SpellsController
             $identifier = $body['identifier'] ?? null;
             $realmId = $body['realm_id'] ?? null;
 
-            if (!$identifier || !preg_match('/^[a-zA-Z0-9_\-]+$/', (string) $identifier)) {
+            if (!$identifier) {
                 return ApiResponse::error('Invalid identifier', 'INVALID_IDENTIFIER', 400);
             }
 
@@ -1594,98 +1618,45 @@ class SpellsController
                 return ApiResponse::error('Realm not found', 'REALM_NOT_FOUND', 404);
             }
 
-            // Fetch spell metadata to get download URL from the new API
-            // First try to find the spell by searching with the identifier
-            $searchUrl = 'https://api.featherpanel.com/spells?search=' . urlencode($identifier);
+            // Fetch Pterodactyl eggs store
+            $storeUrl = 'https://eggs.pterodactyl.io/api/eggs.json';
             $context = stream_context_create([
                 'http' => [
                     'timeout' => 15,
                     'ignore_errors' => true,
+                    'user_agent' => 'FeatherPanel/1.0',
                 ],
             ]);
 
+            $storeResp = @file_get_contents($storeUrl, false, $context);
+            if ($storeResp === false) {
+                return ApiResponse::error('Failed to fetch Pterodactyl eggs store', 'EGGS_STORE_FETCH_FAILED', 500);
+            }
+
+            $allEggs = json_decode($storeResp, true);
+            if (!is_array($allEggs)) {
+                return ApiResponse::error('Invalid eggs store format', 'INVALID_EGGS_STORE', 500);
+            }
+
+            // Find the egg by identifier
             $match = null;
-            $searchResp = @file_get_contents($searchUrl, false, $context);
-            if ($searchResp !== false) {
-                $searchData = json_decode($searchResp, true);
-                if (is_array($searchData) && isset($searchData['data']['spells']) && is_array($searchData['data']['spells'])) {
-                    foreach ($searchData['data']['spells'] as $spell) {
-                        // Check multiple possible identifier fields
-                        if (
-                            ($spell['name'] ?? '') === $identifier
-                            || ($spell['display_name'] ?? '') === $identifier
-                            || ($spell['identifier'] ?? '') === $identifier
-                        ) {
-                            $match = $spell;
-                            break;
-                        }
-                    }
+            foreach ($allEggs as $egg) {
+                if (($egg['id'] ?? '') === $identifier) {
+                    $match = $egg;
+                    break;
                 }
             }
 
-            // If not found in search, try fetching all spells with pagination (fallback for pagination issues)
-            if (!$match) {
-                $page = 1;
-                $maxPages = 10; // Prevent infinite loops
+            if (!$match || !isset($match['downloadUrl'])) {
+                App::getInstance(true)->getLogger()->error('Egg installation failed for identifier: ' . $identifier);
 
-                while ($page <= $maxPages && !$match) {
-                    $metaUrl = "https://api.featherpanel.com/spells?page=$page&per_page=100";
-                    $metaResp = @file_get_contents($metaUrl, false, $context);
-                    if ($metaResp === false) {
-                        break;
-                    }
-
-                    $meta = json_decode($metaResp, true);
-                    if (!is_array($meta) || !isset($meta['data']['spells']) || !is_array($meta['data']['spells'])) {
-                        break;
-                    }
-
-                    $spells = $meta['data']['spells'];
-                    if (empty($spells)) {
-                        break; // No more spells
-                    }
-
-                    foreach ($spells as $spell) {
-                        // Check multiple possible identifier fields
-                        if (
-                            ($spell['name'] ?? '') === $identifier
-                            || ($spell['display_name'] ?? '') === $identifier
-                            || ($spell['identifier'] ?? '') === $identifier
-                        ) {
-                            $match = $spell;
-                            break 2; // Break out of both loops
-                        }
-                    }
-
-                    ++$page;
-
-                    // Check if we've reached the last page
-                    $pagination = $meta['data']['pagination'] ?? [];
-                    if (
-                        isset($pagination['current_page'], $pagination['last_page'])
-                        && $pagination['current_page'] >= $pagination['last_page']
-                    ) {
-                        break;
-                    }
-                }
+                return ApiResponse::error("Egg '$identifier' not found in Pterodactyl store", 'EGG_NOT_FOUND', 404);
             }
 
-            if (!$match || !isset($match['latest_version']['download_url'])) {
-                // Log debug information for troubleshooting
-                App::getInstance(true)->getLogger()->error('Spell installation failed for identifier: ' . $identifier);
-                if (!$match) {
-                    App::getInstance(true)->getLogger()->error('No spell match found in registry');
-
-                    return ApiResponse::error("Spell '$identifier' not found in registry. Please check the spelling and try again.", 'SPELL_NOT_FOUND', 404);
-                }
-                App::getInstance(true)->getLogger()->error('Spell found but missing download URL: ' . json_encode($match));
-
-                return ApiResponse::error("Spell '$identifier' found but download URL is missing", 'SPELL_DOWNLOAD_URL_MISSING', 404);
-            }
-            $downloadUrl = 'https://api.featherpanel.com' . $match['latest_version']['download_url'];
+            $downloadUrl = $match['downloadUrl'];
             $fileContent = @file_get_contents($downloadUrl, false, $context);
             if ($fileContent === false) {
-                return ApiResponse::error('Failed to download spell JSON', 'SPELL_DOWNLOAD_FAILED', 500);
+                return ApiResponse::error('Failed to download egg JSON', 'EGG_DOWNLOAD_FAILED', 500);
             }
 
             // Parse the downloaded JSON content

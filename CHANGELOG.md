@@ -1,6 +1,5 @@
 # Changelog
 
-
 ## v1.3.2 STABLE
 
 ### Fixed
@@ -9,16 +8,21 @@
 - Corrected the API documentation route to ensure proper access. by @nayskutzu
 - Fixed an issue in the admin ticket viewer where image links in ticket messages were incorrectly formatted, resulting in links like `.eu69aecf4298b27_ticket_wait_your_turn.gif` instead of the correct `.eu/attachments/69aecf4298b27_ticket_wait_your_turn.gif`. by @nayskutzu
 - Fixed an issue preventing tickets from being closed when using the "Close" popup in the ticket viewer ("Failed to close ticket" error). The trash icon still worked, but this ensures tickets can now be closed from within the viewer as intended. by @nayskutzu
-
+- Mail sending has been significantly improved and is now handled asynchronously for faster and more reliable delivery. by @nayskutzu
+- Resolved compatibility issues with outdated eggs that could cause installation failures. by @nayskutzu
 
 ### Added
 
 - Initial infrastructure implemented for upcoming Proxmox VM support. by @nayskutzu
+- Introduced a high-performance async task runner for email delivery, VM provisioning, and more delivering faster execution and improved reliability across the board. by @nayskutzu
+- Introduced a dedicated EULA page in the admin area, making it easier for users to review the software license agreement at any time. by @nayskutzu
+- Introduced a step-by-step update guide directly within the admin area, making it easier than ever to keep your panel up to date. by @nayskutzu
 
 ### Improved
 
 - Enhanced the server list page with a significantly cleaner and more intuitive user experience. by @nayskutzu
-
+- Fonts are now bundled and served locally using Next.js optimized font loading, eliminating external Google CDN requests for improved privacy. by @nayskutzu
+- Plugin bootstrapping and logging have been significantly optimized for improved startup performance and cleaner diagnostic output. by @nayskutzu
 
 ## v1.3.1 STABLE
 
@@ -116,7 +120,7 @@
 - Implement filter dialog for server activities with localization support by @nayskutzu
 - Added cache control headers to ensure HTML is always served fresh and prevent unwanted caching. by @nayskutzu
 - Admins can now add themselves as subusers to servers, but are restricted from being added as server owners. by @nayskutzu
-- Introduce analytics settings in user profile enable external analytics script loading based on user preference. by @nayskutzu 
+- Introduce analytics settings in user profile enable external analytics script loading based on user preference. by @nayskutzu
 
 ## v1.2.3 STABLE
 
@@ -168,7 +172,7 @@
 
 - Implement route name validation in admin rate limits API, enhancing error handling for invalid requests. Enable debug mode across various files for improved troubleshooting during development. by @nayskutzu
 - Improve plugin directory handling in PluginManager by adding checks for empty directories and ensuring only directories are returned, enhancing plugin management reliability.
-- Ollama integration is now fully functional—issues preventing it from working have been resolved!  by @nayskutzu
+- Ollama integration is now fully functional—issues preventing it from working have been resolved! by @nayskutzu
 - Resolved several issues affecting the reliable saving and persistence of rate limits. by @nayskutzu
 
 ### Updated

@@ -314,6 +314,14 @@ class Permissions {
     /** Manage ticket messages */
     public static ADMIN_TICKET_MESSAGES_MANAGE = 'admin.ticket_messages.manage';
 
+    // Admin VM Instances Permissions
+    /** View VM instances */
+    public static ADMIN_VM_INSTANCES_VIEW = 'admin.vm_instances.view';
+    /** Edit existing VM instances */
+    public static ADMIN_VM_INSTANCES_EDIT = 'admin.vm_instances.edit';
+    /** Delete VM instances */
+    public static ADMIN_VM_INSTANCES_DELETE = 'admin.vm_instances.delete';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -996,6 +1004,24 @@ class Permissions {
                 value: Permissions.ADMIN_TICKET_MESSAGES_MANAGE,
                 category: 'Admin Ticket Messages',
                 description: 'Manage ticket messages',
+            },
+            {
+                constant: 'ADMIN_VM_INSTANCES_VIEW',
+                value: Permissions.ADMIN_VM_INSTANCES_VIEW,
+                category: 'Admin VM Instances',
+                description: 'View VM instances',
+            },
+            {
+                constant: 'ADMIN_VM_INSTANCES_EDIT',
+                value: Permissions.ADMIN_VM_INSTANCES_EDIT,
+                category: 'Admin VM Instances',
+                description: 'Edit existing VM instances',
+            },
+            {
+                constant: 'ADMIN_VM_INSTANCES_DELETE',
+                value: Permissions.ADMIN_VM_INSTANCES_DELETE,
+                category: 'Admin VM Instances',
+                description: 'Delete VM instances',
             },
         ];
     }

@@ -184,7 +184,7 @@ export default function SpellsPage() {
                 identifier: selectedSpell.identifier,
                 realm_id: parseInt(selectedRealmId, 10),
             });
-            toast.success(`Successfully installed ${selectedSpell.identifier}`);
+            toast.success(t('admin.marketplace.spells.install_success', { identifier: selectedSpell.identifier }));
             fetchInstalledSpells();
             setConfirmInstallOpen(false);
         } catch (err: unknown) {
@@ -244,35 +244,26 @@ export default function SpellsPage() {
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'after-header')} />
 
             <PageCard
-                title={t('admin.marketplace.spells.online_banner.title')}
+                title={t('admin.marketplace.spells.pterodactyl_banner.title')}
                 icon={Sparkles}
                 className='bg-linear-to-r from-indigo-600/10 via-purple-600/10 to-fuchsia-600/10 border-indigo-500/20'
                 action={
-                    <div className='flex items-center gap-3'>
-                        <Button
-                            variant='default'
-                            size='sm'
-                            onClick={() => window.open('https://cloud.mythical.systems', '_blank')}
-                        >
-                            {t('admin.marketplace.spells.online_banner.action')}
-                            <ArrowRight className='h-4 w-4 ml-2' />
-                        </Button>
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={() => window.open('https://cloud.mythical.systems', '_blank')}
-                        >
-                            {t('admin.marketplace.spells.online_banner.learn_more')}
-                        </Button>
-                    </div>
+                    <Button
+                        variant='default'
+                        size='sm'
+                        onClick={() => window.open('https://eggs.pterodactyl.io/', '_blank')}
+                    >
+                        {t('admin.marketplace.spells.pterodactyl_banner.view_github')}
+                        <ArrowRight className='h-4 w-4 ml-2' />
+                    </Button>
                 }
             >
                 <div className='space-y-4'>
                     <p className='text-muted-foreground text-sm max-w-2xl leading-relaxed'>
-                        {t('admin.marketplace.spells.online_banner.description')}
+                        {t('admin.marketplace.spells.pterodactyl_banner.description')}
                     </p>
                     <div className='text-xs text-primary font-bold tracking-wide uppercase'>
-                        {t('admin.marketplace.spells.online_banner.tip')}
+                        {t('admin.marketplace.spells.pterodactyl_banner.powered_by')}
                     </div>
                 </div>
             </PageCard>
@@ -354,7 +345,7 @@ export default function SpellsPage() {
                                             : null,
                                         spell.verified
                                             ? {
-                                                  label: t('admin.marketplace.spells.grid.verified'),
+                                                  label: t('admin.marketplace.spells.grid.pterodactyl_verified'),
                                                   className: 'bg-green-500/10 text-green-600 border-green-500/20',
                                               }
                                             : null,
@@ -374,7 +365,7 @@ export default function SpellsPage() {
                                         {!spell.verified && (
                                             <div className='text-[10px] text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 flex items-center gap-2'>
                                                 <AlertCircle className='h-3 w-3 shrink-0' />
-                                                <span>{t('admin.marketplace.spells.grid.unverified_warning')}</span>
+                                                <span>{t('admin.marketplace.spells.grid.external_source')}</span>
                                             </div>
                                         )}
                                         <div className='flex items-center justify-between text-xs text-muted-foreground font-medium pt-2'>
@@ -420,19 +411,23 @@ export default function SpellsPage() {
             {renderPagination()}
 
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10 pb-12'>
-                <PageCard title={t('admin.marketplace.spells.help.repo_title')} icon={Globe}>
+                <PageCard title={t('admin.marketplace.spells.help.official_repo_title')} icon={Globe}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
-                        {t('admin.marketplace.spells.help.repo_desc')}
+                        {t('admin.marketplace.spells.help.official_repo_desc')}
                     </p>
                 </PageCard>
-                <PageCard title={t('admin.marketplace.spells.help.install_title')} icon={CloudDownload}>
+                <PageCard title={t('admin.marketplace.spells.help.easy_install_title')} icon={CloudDownload}>
                     <p className='text-sm text-muted-foreground leading-relaxed'>
-                        {t('admin.marketplace.spells.help.install_desc')}
+                        {t('admin.marketplace.spells.help.easy_install_desc')}
                     </p>
                 </PageCard>
-                <PageCard title={t('admin.marketplace.spells.help.security_title')} icon={AlertCircle} variant='danger'>
+                <PageCard
+                    title={t('admin.marketplace.spells.help.community_title')}
+                    icon={BadgeCheck}
+                    variant='default'
+                >
                     <p className='text-sm text-muted-foreground leading-relaxed'>
-                        {t('admin.marketplace.spells.help.security_desc')}
+                        {t('admin.marketplace.spells.help.community_desc')}
                     </p>
                 </PageCard>
             </div>
@@ -448,14 +443,14 @@ export default function SpellsPage() {
 
                     <div className='flex-1 overflow-y-auto pr-2 -mr-2 space-y-6'>
                         {selectedSpell && !selectedSpell.verified && (
-                            <div className='rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5 flex items-start gap-4'>
-                                <AlertCircle className='h-5 w-5 text-amber-600 shrink-0 mt-0.5' />
+                            <div className='rounded-2xl border border-blue-500/30 bg-blue-500/5 p-5 flex items-start gap-4'>
+                                <Info className='h-5 w-5 text-blue-600 shrink-0 mt-0.5' />
                                 <div className='space-y-1'>
-                                    <p className='text-sm font-bold text-amber-700'>
-                                        {t('admin.marketplace.spells.dialog.unverified_warning')}
+                                    <p className='text-sm font-bold text-blue-700'>
+                                        {t('admin.marketplace.spells.dialog.community_egg_title')}
                                     </p>
-                                    <p className='text-xs text-amber-700/80 leading-relaxed font-medium'>
-                                        {t('admin.marketplace.spells.dialog.unverified_desc')}
+                                    <p className='text-xs text-blue-700/80 leading-relaxed font-medium'>
+                                        {t('admin.marketplace.spells.dialog.community_egg_desc')}
                                     </p>
                                 </div>
                             </div>
