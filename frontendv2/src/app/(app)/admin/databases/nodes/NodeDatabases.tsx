@@ -419,7 +419,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 <div className='flex flex-col gap-1 mt-2 text-sm text-muted-foreground font-mono'>
                                     <div className='flex items-center gap-2 truncate'>
                                         <Server className='h-3 w-3 shrink-0 opacity-50' />
-                                        {(db.database_subdomain || db.database_host)}:{db.database_port}
+                                        {db.database_subdomain || db.database_host}:{db.database_port}
                                     </div>
                                     <div className='flex items-center gap-2 truncate'>
                                         <Activity className='h-3 w-3 shrink-0 opacity-50' />
@@ -651,9 +651,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 <Label>{t('admin.node_databases.form.database_subdomain')}</Label>
                                 <Input
                                     value={formData.database_subdomain}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, database_subdomain: e.target.value })
-                                    }
+                                    onChange={(e) => setFormData({ ...formData, database_subdomain: e.target.value })}
                                     placeholder={t('admin.node_databases.form.database_subdomain_placeholder')}
                                 />
                             </div>

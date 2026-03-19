@@ -407,8 +407,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
         }
 
         if (form.sftp_subdomain) {
-            const hostnameRegex =
-                /^(?!-)(?:[a-zA-Z0-9-]{1,63}(?<!-)\.)*[a-zA-Z0-9-]{1,63}(?<!-)$/;
+            const hostnameRegex = /^(?!-)(?:[a-zA-Z0-9-]{1,63}(?<!-)\.)*[a-zA-Z0-9-]{1,63}(?<!-)$/;
             if (!hostnameRegex.test(form.sftp_subdomain)) {
                 newErrors.sftp_subdomain = t('admin.node.form.sftp_subdomain_invalid');
             }

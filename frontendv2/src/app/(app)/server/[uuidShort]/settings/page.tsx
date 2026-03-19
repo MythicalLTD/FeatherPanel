@@ -336,7 +336,9 @@ export default function ServerSettingsPage() {
                                         variant='ghost'
                                         size='sm'
                                         className='h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400'
-                                        onClick={() => copyToClipboard(resolvedSftpHost ? `sftp://${resolvedSftpHost}` : '')}
+                                        onClick={() =>
+                                            copyToClipboard(resolvedSftpHost ? `sftp://${resolvedSftpHost}` : '')
+                                        }
                                     >
                                         <Copy className='h-3.5 w-3.5' />
                                     </Button>

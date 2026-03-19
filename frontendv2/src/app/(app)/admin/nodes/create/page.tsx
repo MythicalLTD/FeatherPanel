@@ -151,8 +151,7 @@ export default function CreateNodePage() {
         }
 
         if (form.sftp_subdomain) {
-            const hostnameRegex =
-                /^(?!-)(?:[a-zA-Z0-9-]{1,63}(?<!-)\.)*[a-zA-Z0-9-]{1,63}(?<!-)$/;
+            const hostnameRegex = /^(?!-)(?:[a-zA-Z0-9-]{1,63}(?<!-)\.)*[a-zA-Z0-9-]{1,63}(?<!-)$/;
             if (!hostnameRegex.test(form.sftp_subdomain)) {
                 newErrors.sftp_subdomain = t('admin.node.form.sftp_subdomain_invalid');
             }
@@ -485,7 +484,9 @@ export default function CreateNodePage() {
                                     </div>
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.node.form.sftp_subdomain')}</Label>
+                                    <Label className='text-sm font-semibold'>
+                                        {t('admin.node.form.sftp_subdomain')}
+                                    </Label>
                                     <Input
                                         placeholder={t('admin.node.form.sftp_subdomain_placeholder')}
                                         value={form.sftp_subdomain}

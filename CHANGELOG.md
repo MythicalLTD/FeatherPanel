@@ -19,6 +19,7 @@
 - Introduced a step-by-step update guide directly within the admin area, making it easier than ever to keep your panel up to date. by @nayskutzu
 - Introduced a built-in email server test directly from the mail templates page, making it easy to verify your mail configuration without leaving the panel. by @nayskutzu
 - Improved the experience for suspended servers, providing clearer feedback and a more polished interface. by @nayskutzu
+- Added support for SFTP subdomains for nodes and databases. by @nayskutzu
 
 ### Improved
 
