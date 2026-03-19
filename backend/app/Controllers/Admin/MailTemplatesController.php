@@ -774,4 +774,128 @@ class MailTemplatesController
             'total_users' => count($validUsers),
         ], $message, 200);
     }
+
+    #[OA\Post(
+        path: '/api/admin/mail-templates/test-email',
+        summary: 'Send test email',
+        description: 'Send a test email to a specified email address to verify mail configuration and template rendering.',
+        tags: ['Admin - Mail Templates'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email', 'subject', 'body'],
+                properties: [
+                    new OA\Property(property: 'email', type: 'string', format: 'email', description: 'Recipient email address'),
+                    new OA\Property(property: 'subject', type: 'string', description: 'Email subject', minLength: 1, maxLength: 255),
+                    new OA\Property(property: 'body', type: 'string', description: 'Email body content', minLength: 1, maxLength: 65535),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Test email queued successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                        new OA\Property(property: 'queue_id', type: 'integer', description: 'Mail queue ID'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid email format, or validation errors'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to queue test email'),
+        ]
+    )]
+    public function sendTestEmail(Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (empty($data)) {
+            return ApiResponse::error('No data provided', 'NO_DATA_PROVIDED', 400);
+        }
+
+        // Required fields validation
+        $requiredFields = ['email', 'subject', 'body'];
+        $missingFields = [];
+        foreach ($requiredFields as $field) {
+            if (!isset($data[$field]) || trim($data[$field]) === '') {
+                $missingFields[] = $field;
+            }
+        }
+
+        if (!empty($missingFields)) {
+            return ApiResponse::error('Missing required fields: ' . implode(', ', $missingFields), 'MISSING_REQUIRED_FIELDS', 400);
+        }
+
+        // Validate email format
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            return ApiResponse::error('Invalid email address format', 'INVALID_EMAIL_FORMAT', 400);
+        }
+
+        // Validate data types and length
+        $validationRules = [
+            'subject' => ['string', 1, 255],
+            'body' => ['string', 1, 65535],
+        ];
+
+        foreach ($validationRules as $field => [$type, $minLength, $maxLength]) {
+            if (!is_string($data[$field])) {
+                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE', 400);
+            }
+
+            $length = strlen($data[$field]);
+            if ($length < $minLength) {
+                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be at least $minLength characters long", 'INVALID_DATA_LENGTH', 400);
+            }
+            if ($length > $maxLength) {
+                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $maxLength characters long", 'INVALID_DATA_LENGTH', 400);
+            }
+        }
+
+        // Create a temporary user UUID for test email (using admin's UUID)
+        $adminUuid = $request->get('user')['uuid'] ?? 'test-email';
+
+        // Create mail queue entry
+        $queueData = [
+            'user_uuid' => $adminUuid,
+            'subject' => '[TEST] ' . $data['subject'],
+            'body' => $data['body'],
+            'status' => 'pending',
+            'locked' => 'false',
+            'created_at' => date('Y-m-d H:i:s'),
+            'deleted' => 'false',
+        ];
+
+        $queueId = MailQueue::create($queueData);
+
+        if (!$queueId) {
+            return ApiResponse::error('Failed to queue test email', 'FAILED_TO_QUEUE_EMAIL', 500);
+        }
+
+        // Create mail list entry with the test email address
+        $listData = [
+            'queue_id' => $queueId,
+            'user_uuid' => $adminUuid,
+            'created_at' => date('Y-m-d H:i:s'),
+            'deleted' => 'false',
+        ];
+
+        if (!MailList::create($listData)) {
+            return ApiResponse::error('Failed to create mail list entry', 'FAILED_TO_CREATE_MAIL_LIST', 500);
+        }
+
+        // Log activity
+        Activity::createActivity([
+            'user_uuid' => $adminUuid,
+            'name' => 'send_test_email',
+            'context' => 'Sent test email to: ' . $data['email'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'queue_id' => $queueId,
+        ], 'Test email queued successfully. It will be sent shortly.', 200);
+    }
 }

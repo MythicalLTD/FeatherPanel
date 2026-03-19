@@ -87,10 +87,12 @@ export default function MailTemplatesPage() {
     const [editOpen, setEditOpen] = useState(false);
     const [previewOpen, setPreviewOpen] = useState(false);
     const [massEmailOpen, setMassEmailOpen] = useState(false);
+    const [testEmailOpen, setTestEmailOpen] = useState(false);
 
     const [selectedTemplate, setSelectedTemplate] = useState<MailTemplate | null>(null);
     const [formData, setFormData] = useState({ name: '', subject: '', body: '' });
     const [massEmailData, setMassEmailData] = useState({ subject: '', body: '' });
+    const [testEmailData, setTestEmailData] = useState({ email: '', subject: '', body: '' });
 
     const [processing, setProcessing] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -224,6 +226,27 @@ export default function MailTemplatesPage() {
         }
     };
 
+    const handleSendTestEmail = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setProcessing(true);
+        try {
+            const { data } = await axios.post('/api/admin/mail-templates/test-email', testEmailData);
+            if (data.success) {
+                toast.success(t('admin.mail_templates.messages.test_email_sent'));
+                setTestEmailOpen(false);
+                setTestEmailData({ email: '', subject: '', body: '' });
+            } else {
+                toast.error(data.message || t('admin.mail_templates.messages.test_email_failed'));
+            }
+        } catch (error: unknown) {
+            const message =
+                error instanceof Error ? error.message : t('admin.mail_templates.messages.test_email_failed');
+            toast.error(message);
+        } finally {
+            setProcessing(false);
+        }
+    };
+
     const openCreate = () => {
         setSelectedTemplate(null);
         setFormData({ name: '', subject: '', body: '' });
@@ -250,6 +273,10 @@ export default function MailTemplatesPage() {
                 icon={Mail}
                 actions={
                     <div className='flex gap-2'>
+                        <Button variant='outline' onClick={() => setTestEmailOpen(true)}>
+                            <Mail className='w-4 h-4 mr-2' />
+                            {t('admin.mail_templates.send_test_email')}
+                        </Button>
                         <Button variant='outline' onClick={() => setMassEmailOpen(true)}>
                             <Send className='w-4 h-4 mr-2' />
                             {t('admin.mail_templates.send_mass_email')}
@@ -607,6 +634,68 @@ export default function MailTemplatesPage() {
                         <SheetFooter>
                             <Button type='submit' variant='destructive' loading={processing}>
                                 {t('admin.mail_templates.form.send')}
+                            </Button>
+                        </SheetFooter>
+                    </form>
+                </div>
+            </Sheet>
+
+            <Sheet open={testEmailOpen} onOpenChange={setTestEmailOpen}>
+                <div className='space-y-6'>
+                    <SheetHeader>
+                        <SheetTitle>{t('admin.mail_templates.form.test_email_title')}</SheetTitle>
+                        <SheetDescription>{t('admin.mail_templates.form.test_email_description')}</SheetDescription>
+                    </SheetHeader>
+                    <form onSubmit={handleSendTestEmail} className='space-y-4 pt-6'>
+                        <div className='space-y-4'>
+                            <Alert className='bg-primary/5 border-primary/20'>
+                                <Mail className='h-4 w-4' />
+                                <AlertTitle>{t('admin.mail_templates.messages.test_email_info_title')}</AlertTitle>
+                                <AlertDescription>
+                                    {t('admin.mail_templates.messages.test_email_info')}
+                                </AlertDescription>
+                            </Alert>
+                            <div className='space-y-2'>
+                                <Label htmlFor='test-email'>{t('admin.mail_templates.form.test_email_address')}</Label>
+                                <Input
+                                    id='test-email'
+                                    type='email'
+                                    placeholder='admin@example.com'
+                                    value={testEmailData.email}
+                                    onChange={(e) => setTestEmailData({ ...testEmailData, email: e.target.value })}
+                                    required
+                                />
+                                <p className='text-xs text-muted-foreground'>
+                                    {t('admin.mail_templates.form.test_email_help')}
+                                </p>
+                            </div>
+                            <div className='space-y-2'>
+                                <Label htmlFor='test-subject'>{t('admin.mail_templates.form.subject')}</Label>
+                                <Input
+                                    id='test-subject'
+                                    value={testEmailData.subject}
+                                    onChange={(e) => setTestEmailData({ ...testEmailData, subject: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className='space-y-2'>
+                                <Label htmlFor='test-body'>{t('admin.mail_templates.form.body')}</Label>
+                                <Textarea
+                                    id='test-body'
+                                    className='min-h-[300px] font-mono text-xs'
+                                    value={testEmailData.body}
+                                    onChange={(e) => setTestEmailData({ ...testEmailData, body: e.target.value })}
+                                    required
+                                />
+                                <p className='text-xs text-muted-foreground'>
+                                    {t('admin.mail_templates.form.html_help')}
+                                </p>
+                            </div>
+                        </div>
+                        <SheetFooter>
+                            <Button type='submit' loading={processing}>
+                                <Mail className='w-4 h-4 mr-2' />
+                                {t('admin.mail_templates.form.send_test')}
                             </Button>
                         </SheetFooter>
                     </form>

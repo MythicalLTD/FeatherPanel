@@ -6374,6 +6374,7 @@
 			"subtitle": "Manage email templates for your system.",
 			"create": "Template",
 			"send_mass_email": "Send Mass Email",
+			"send_test_email": "Send Test Email",
 			"search_placeholder": "Search by name or subject...",
 			"no_results": "No mail templates found.",
 			"form": {
@@ -6385,13 +6386,18 @@
 				"preview_description": "Preview for template: {name}",
 				"mass_email_title": "Send Mass Email",
 				"mass_email_description": "Create and send HTML emails to all users in your system.",
+				"test_email_title": "Send Test Email",
+				"test_email_description": "Send a test email to verify your mail configuration and template rendering.",
+				"test_email_address": "Recipient Email Address",
+				"test_email_help": "Enter the email address where you want to receive the test email.",
 				"name": "Name",
 				"subject": "Subject",
 				"body": "Body (HTML)",
 				"html_help": "You can use HTML tags like <h1>, <p>, <strong>, <em>, <a>, etc.",
 				"submit_create": "Create Template",
 				"submit_update": "Update Template",
-				"send": "Send to All Users"
+				"send": "Send to All Users",
+				"send_test": "Send Test Email"
 			},
 			"messages": {
 				"fetch_failed": "Failed to fetch mail templates.",
@@ -6403,7 +6409,11 @@
 				"mass_email_queued": "Mass email queued successfully! {count} emails queued.",
 				"mass_email_failed": "Failed to queue mass email.",
 				"mass_email_warning_title": "Important Notice",
-				"mass_email_warning": "This will send emails to ALL users with valid email addresses in your system. Make sure your content is appropriate and test thoroughly before sending."
+				"mass_email_warning": "This will send emails to ALL users with valid email addresses in your system. Make sure your content is appropriate and test thoroughly before sending.",
+				"test_email_sent": "Test email queued successfully! Check your inbox shortly.",
+				"test_email_failed": "Failed to send test email.",
+				"test_email_info_title": "Test Email",
+				"test_email_info": "The test email will be queued and sent through your configured SMTP server. Subject will be prefixed with [TEST]."
 			},
 			"help": {
 				"what_is": {

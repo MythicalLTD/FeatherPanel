@@ -17,6 +17,7 @@
 - Introduced a high-performance async task runner for email delivery, VM provisioning, and more delivering faster execution and improved reliability across the board. by @nayskutzu
 - Introduced a dedicated EULA page in the admin area, making it easier for users to review the software license agreement at any time. by @nayskutzu
 - Introduced a step-by-step update guide directly within the admin area, making it easier than ever to keep your panel up to date. by @nayskutzu
+- Introduced a built-in email server test directly from the mail templates page, making it easy to verify your mail configuration without leaving the panel. by @nayskutzu
 
 ### Improved
 
