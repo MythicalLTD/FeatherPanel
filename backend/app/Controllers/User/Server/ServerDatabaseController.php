@@ -217,6 +217,13 @@ class ServerDatabaseController
         $total = count($serverDatabases);
         $offset = ($page - 1) * $perPage;
         $serverDatabases = array_slice($serverDatabases, $offset, $perPage);
+        foreach ($serverDatabases as &$database) {
+            $databaseHost = DatabaseInstance::getDatabaseById((int) ($database['database_host_id'] ?? 0));
+            if ($databaseHost) {
+                $database['database_host'] = DatabaseInstance::getDatabaseHostname($databaseHost);
+            }
+        }
+        unset($database);
 
         return ApiResponse::success([
             'data' => $serverDatabases,
@@ -308,6 +315,11 @@ class ServerDatabaseController
         if (!$canViewPassword) {
             // User cannot view password, redact it
             $database['password'] = '[REDACTED]';
+        }
+
+        $databaseHost = DatabaseInstance::getDatabaseById((int) ($database['database_host_id'] ?? 0));
+        if ($databaseHost) {
+            $database['database_host'] = DatabaseInstance::getDatabaseHostname($databaseHost);
         }
 
         // Get node information
@@ -966,9 +978,10 @@ class ServerDatabaseController
         }
 
         // Build phpMyAdmin URL with database credentials as query parameters
+        $databaseHostname = DatabaseInstance::getDatabaseHostname($databaseHost);
         $pmaUrl = rtrim($appUrl, '/') . '/pma/token.php?' . http_build_query([
             'db' => $database['database'],
-            'host' => $database['database_host'] ?? $databaseHost['database_host'],
+            'host' => $databaseHostname,
             'port' => $database['database_port'] ?? $databaseHost['database_port'] ?? 3306,
             'user' => $database['username'],
             'pass' => $database['password'],

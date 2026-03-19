@@ -75,6 +75,7 @@ export default function CreateNodePage() {
         daemonBase: '/var/lib/featherpanel/volumes',
         public_ip_v4: '',
         public_ip_v6: '',
+        sftp_subdomain: '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -149,6 +150,14 @@ export default function CreateNodePage() {
             newErrors.public_ip_v6 = t('admin.node.form.ipv6_invalid');
         }
 
+        if (form.sftp_subdomain) {
+            const hostnameRegex =
+                /^(?!-)(?:[a-zA-Z0-9-]{1,63}(?<!-)\.)*[a-zA-Z0-9-]{1,63}(?<!-)$/;
+            if (!hostnameRegex.test(form.sftp_subdomain)) {
+                newErrors.sftp_subdomain = t('admin.node.form.sftp_subdomain_invalid');
+            }
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     }, [form, t]);
@@ -161,6 +170,7 @@ export default function CreateNodePage() {
         try {
             const trimmedIPv4 = form.public_ip_v4.trim();
             const trimmedIPv6 = form.public_ip_v6.trim();
+            const trimmedSftpSubdomain = form.sftp_subdomain.trim();
 
             const submitData = {
                 ...form,
@@ -177,6 +187,7 @@ export default function CreateNodePage() {
                 daemonSFTP: Number(form.daemonSFTP),
                 public_ip_v4: trimmedIPv4 === '' ? null : trimmedIPv4,
                 public_ip_v6: trimmedIPv6 === '' ? null : trimmedIPv6,
+                sftp_subdomain: trimmedSftpSubdomain === '' ? null : trimmedSftpSubdomain,
             };
 
             const { data } = await axios.put('/api/admin/nodes', submitData);
@@ -472,6 +483,18 @@ export default function CreateNodePage() {
                                             error={!!errors.public_ip_v6}
                                         />
                                     </div>
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label className='text-sm font-semibold'>{t('admin.node.form.sftp_subdomain')}</Label>
+                                    <Input
+                                        placeholder={t('admin.node.form.sftp_subdomain_placeholder')}
+                                        value={form.sftp_subdomain}
+                                        onChange={(e) => setForm({ ...form, sftp_subdomain: e.target.value })}
+                                        error={!!errors.sftp_subdomain}
+                                    />
+                                    <p className='text-xs text-muted-foreground/70 italic'>
+                                        {t('admin.node.form.sftp_subdomain_help')}
+                                    </p>
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.node.form.maintenance')}</Label>

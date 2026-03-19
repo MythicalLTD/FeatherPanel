@@ -55,6 +55,7 @@ class Node
         'daemonBase',
         'public_ip_v4',
         'public_ip_v6',
+        'sftp_subdomain',
     ];
 
     /**
@@ -114,6 +115,10 @@ class Node
             if (!filter_var($data['public_ip_v6'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
                 $errors[] = 'public_ip_v6 must be a valid IPv6 address';
             }
+        }
+
+        if (isset($data['sftp_subdomain']) && !self::isValidSubdomain($data['sftp_subdomain'])) {
+            $errors[] = 'SFTP subdomain must be a valid DNS hostname (alphanumeric, hyphens, dots only)';
         }
 
         return $errors;
@@ -613,6 +618,69 @@ class Node
     public static function isValidUuid(string $uuid): bool
     {
         return (bool) preg_match('/^[a-f0-9\-]{36}$/i', $uuid);
+    }
+
+    /**
+     * Validate subdomain format according to RFC 1123 DNS hostname rules.
+     *
+     * @param string|null $subdomain The subdomain to validate
+     *
+     * @return bool True if valid or null, false otherwise
+     */
+    public static function isValidSubdomain(?string $subdomain): bool
+    {
+        if ($subdomain === null || $subdomain === '') {
+            return true; // Null/empty is valid (optional field)
+        }
+
+        // DNS hostname validation:
+        // - Length: 1-253 characters total
+        // - Labels: separated by dots, each 1-63 characters
+        // - Characters: alphanumeric and hyphens
+        // - Cannot start or end with hyphen
+        // - Case insensitive
+
+        if (strlen($subdomain) > 253) {
+            return false;
+        }
+
+        // RFC 1123 hostname pattern
+        $pattern = '/^(?!-)(?:[a-zA-Z0-9-]{1,63}(?<!-)\.)*[a-zA-Z0-9-]{1,63}(?<!-)$/';
+
+        return (bool) preg_match($pattern, $subdomain);
+    }
+
+    /**
+     * Get the SFTP hostname for a node (subdomain or fallback to FQDN/IP).
+     *
+     * @param array $node Node data array
+     *
+     * @return string The hostname to use for SFTP connections
+     */
+    public static function getSftpHostname(array $node): string
+    {
+        // Priority 1: Use sftp_subdomain if configured
+        if (!empty($node['sftp_subdomain'])) {
+            return $node['sftp_subdomain'];
+        }
+
+        // Priority 2: Fallback to FQDN
+        if (!empty($node['fqdn'])) {
+            return $node['fqdn'];
+        }
+
+        // Priority 3: Fallback to public_ip_v4
+        if (!empty($node['public_ip_v4'])) {
+            return $node['public_ip_v4'];
+        }
+
+        // Priority 4: Fallback to public_ip_v6
+        if (!empty($node['public_ip_v6'])) {
+            return $node['public_ip_v6'];
+        }
+
+        // Ultimate fallback
+        return 'localhost';
     }
 
     /**

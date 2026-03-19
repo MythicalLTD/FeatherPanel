@@ -55,6 +55,13 @@ use Symfony\Component\HttpFoundation\Response;
             nullable: true,
             description: 'Public IPv6 address reachable by clients.'
         ),
+        new OA\Property(
+            property: 'sftp_subdomain',
+            type: 'string',
+            nullable: true,
+            description: 'Custom subdomain for SFTP access (e.g., sftp.node.domain.de). DNS must be configured externally.',
+            example: 'sftp.node.domain.de'
+        ),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
     ]
@@ -95,6 +102,13 @@ use Symfony\Component\HttpFoundation\Response;
             description: 'Public IPv6 address reachable by clients.',
             example: '2001:db8::10'
         ),
+        new OA\Property(
+            property: 'sftp_subdomain',
+            type: 'string',
+            nullable: true,
+            description: 'Optional custom hostname for SFTP connections shown to users.',
+            example: 'sftp.node.domain.de'
+        ),
         new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional node ID (useful for migrations from other platforms)'),
     ]
 )]
@@ -117,6 +131,12 @@ use Symfony\Component\HttpFoundation\Response;
             type: 'string',
             nullable: true,
             description: 'Public IPv6 address reachable by clients.'
+        ),
+        new OA\Property(
+            property: 'sftp_subdomain',
+            type: 'string',
+            nullable: true,
+            description: 'Optional custom hostname for SFTP connections shown to users.'
         ),
     ]
 )]
@@ -325,6 +345,22 @@ class NodesController
         if ($data['public_ip_v6'] !== null && !filter_var($data['public_ip_v6'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
             return ApiResponse::error('public_ip_v6 must be a valid IPv6 address', 'NODE_VALIDATION_FAILED', 400);
         }
+
+        // Handle sftp_subdomain field
+        if (array_key_exists('sftp_subdomain', $data)) {
+            $data['sftp_subdomain'] = $data['sftp_subdomain'] === null ? null : trim((string) $data['sftp_subdomain']);
+            if ($data['sftp_subdomain'] === '') {
+                $data['sftp_subdomain'] = null;
+            }
+            if (!Node::isValidSubdomain($data['sftp_subdomain'])) {
+                return ApiResponse::error(
+                    'sftp_subdomain must be a valid DNS hostname',
+                    'NODE_VALIDATION_FAILED',
+                    400
+                );
+            }
+        }
+
         // Generate UUID and tokens for the node
         $data['uuid'] = Node::generateUuid();
         $data['daemon_token_id'] = Node::generateDaemonTokenId();
@@ -436,14 +472,15 @@ class NodesController
         if (isset($data['id'])) {
             unset($data['id']);
         }
-        $locationId = $data['location_id'] ?? null;
-        if (!$locationId || !is_numeric($locationId) || !Location::getById((int) $locationId)) {
-            return ApiResponse::error('Location does not exist', 'LOCATION_NOT_FOUND', 400);
+        if (array_key_exists('location_id', $data)) {
+            $locationId = $data['location_id'];
+            if ($locationId === null || $locationId === '' || !is_numeric($locationId) || !Location::getById((int) $locationId)) {
+                return ApiResponse::error('Location does not exist', 'LOCATION_NOT_FOUND', 400);
+            }
+            $data['location_id'] = (int) $locationId;
         }
-        $data['location_id'] = (int) $locationId;
 
-        $requiredFields = ['name', 'fqdn', 'location_id'];
-        $errors = Node::validateNodeData($data, $requiredFields);
+        $errors = Node::validateNodeData($data);
         if (!empty($errors)) {
             return ApiResponse::error(implode('; ', $errors), 'NODE_VALIDATION_FAILED', 400);
         }
@@ -465,6 +502,21 @@ class NodesController
             }
             if ($data['public_ip_v6'] !== null && !filter_var($data['public_ip_v6'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
                 return ApiResponse::error('public_ip_v6 must be a valid IPv6 address', 'NODE_VALIDATION_FAILED', 400);
+            }
+        }
+
+        // Handle sftp_subdomain field
+        if (array_key_exists('sftp_subdomain', $data)) {
+            $data['sftp_subdomain'] = $data['sftp_subdomain'] === null ? null : trim((string) $data['sftp_subdomain']);
+            if ($data['sftp_subdomain'] === '') {
+                $data['sftp_subdomain'] = null;
+            }
+            if (!Node::isValidSubdomain($data['sftp_subdomain'])) {
+                return ApiResponse::error(
+                    'sftp_subdomain must be a valid DNS hostname',
+                    'NODE_VALIDATION_FAILED',
+                    400
+                );
             }
         }
 

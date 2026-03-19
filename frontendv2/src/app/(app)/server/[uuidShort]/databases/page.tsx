@@ -438,6 +438,8 @@ export default function ServerDatabasesPage() {
     };
 
     const copyToClipboard = (text: string) => copyUtil(text, t);
+    const getDatabaseDisplayHost = (db: Pick<Database, 'database_host' | 'database_subdomain'>) =>
+        db.database_subdomain || db.database_host || '';
 
     if (loading && databases.length === 0) {
         return (
@@ -607,7 +609,7 @@ export default function ServerDatabasesPage() {
                                         <div className='flex items-center gap-2 text-muted-foreground'>
                                             <ServerIcon className='h-4 w-4 opacity-50' />
                                             <span className='text-sm font-semibold font-mono'>
-                                                {db.database_host}:{db.database_port}
+                                                {getDatabaseDisplayHost(db)}:{db.database_port}
                                             </span>
                                         </div>
                                     </>
@@ -790,7 +792,7 @@ export default function ServerDatabasesPage() {
                                     }}
                                     options={availableHosts.map((h) => ({
                                         id: String(h.id),
-                                        name: `${h.name} (${h.database_type})`,
+                                        name: `${h.name} (${h.database_type}) - ${h.database_subdomain || h.database_host}:${h.database_port}`,
                                     }))}
                                     placeholder={
                                         availableHosts.length === 0
@@ -958,7 +960,10 @@ export default function ServerDatabasesPage() {
                                 </h3>
                                 <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
                                     {[
-                                        { label: t('serverDatabases.host'), value: viewingDatabase.database_host },
+                                        {
+                                            label: t('serverDatabases.host'),
+                                            value: getDatabaseDisplayHost(viewingDatabase),
+                                        },
                                         {
                                             label: t('serverDatabases.port'),
                                             value: String(viewingDatabase.database_port),

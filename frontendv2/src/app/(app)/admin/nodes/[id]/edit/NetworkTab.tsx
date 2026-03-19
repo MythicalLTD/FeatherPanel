@@ -47,6 +47,20 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
                         />
                         <p className='text-xs text-muted-foreground/70 italic'>{t('admin.node.form.fqdn_help')}</p>
                     </div>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.node.form.sftp_subdomain')}</Label>
+                        <Input
+                            placeholder={t('admin.node.form.sftp_subdomain_placeholder')}
+                            value={form.sftp_subdomain}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setForm({ ...form, sftp_subdomain: e.target.value })
+                            }
+                            error={!!errors.sftp_subdomain}
+                        />
+                        <p className='text-xs text-muted-foreground/70 italic'>
+                            {t('admin.node.form.sftp_subdomain_help')}
+                        </p>
+                    </div>
                 </div>
                 <div className='space-y-6'>
                     <div className='space-y-2'>

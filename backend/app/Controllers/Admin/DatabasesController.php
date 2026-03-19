@@ -39,6 +39,12 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'database_port', type: 'integer', description: 'Database port', minimum: 1, maximum: 65535),
         new OA\Property(property: 'database_username', type: 'string', description: 'Database username'),
         new OA\Property(property: 'database_host', type: 'string', description: 'Database host'),
+        new OA\Property(
+            property: 'database_subdomain',
+            type: 'string',
+            nullable: true,
+            description: 'Optional custom hostname shown to users for database access (e.g. db1.node.domain.de)'
+        ),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
     ]
@@ -55,6 +61,14 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'database_username', type: 'string', description: 'Database username', minLength: 1, maxLength: 255),
         new OA\Property(property: 'database_password', type: 'string', description: 'Database password', minLength: 1, maxLength: 255),
         new OA\Property(property: 'database_host', type: 'string', description: 'Database host', minLength: 1, maxLength: 255),
+        new OA\Property(
+            property: 'database_subdomain',
+            type: 'string',
+            nullable: true,
+            description: 'Optional custom hostname shown to users for database access',
+            minLength: 1,
+            maxLength: 255
+        ),
         new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional database ID (useful for migrations from other platforms)'),
     ]
 )]
@@ -69,6 +83,14 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'database_username', type: 'string', description: 'Database username', minLength: 1, maxLength: 255),
         new OA\Property(property: 'database_password', type: 'string', description: 'Database password', minLength: 1, maxLength: 255),
         new OA\Property(property: 'database_host', type: 'string', description: 'Database host', minLength: 1, maxLength: 255),
+        new OA\Property(
+            property: 'database_subdomain',
+            type: 'string',
+            nullable: true,
+            description: 'Optional custom hostname shown to users for database access',
+            minLength: 1,
+            maxLength: 255
+        ),
     ]
 )]
 #[OA\Schema(
@@ -167,6 +189,7 @@ class DatabasesController
                 'database_port',
                 'database_username',
                 'database_host',
+                'database_subdomain',
                 'created_at',
                 'updated_at',
             ],
@@ -321,6 +344,16 @@ class DatabasesController
             }
             if ($len > $max) {
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $max characters long", 'INVALID_DATA_LENGTH');
+            }
+        }
+
+        if (array_key_exists('database_subdomain', $data)) {
+            $data['database_subdomain'] = $data['database_subdomain'] === null ? null : trim((string) $data['database_subdomain']);
+            if ($data['database_subdomain'] === '') {
+                $data['database_subdomain'] = null;
+            }
+            if (!DatabaseInstance::isValidSubdomain($data['database_subdomain'])) {
+                return ApiResponse::error('database_subdomain must be a valid DNS hostname', 'INVALID_DATABASE_SUBDOMAIN', 400);
             }
         }
 
@@ -479,6 +512,16 @@ class DatabasesController
                 if ($len > $max) {
                     return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $max characters long", 'INVALID_DATA_LENGTH');
                 }
+            }
+        }
+
+        if (array_key_exists('database_subdomain', $data)) {
+            $data['database_subdomain'] = $data['database_subdomain'] === null ? null : trim((string) $data['database_subdomain']);
+            if ($data['database_subdomain'] === '') {
+                $data['database_subdomain'] = null;
+            }
+            if (!DatabaseInstance::isValidSubdomain($data['database_subdomain'])) {
+                return ApiResponse::error('database_subdomain must be a valid DNS hostname', 'INVALID_DATABASE_SUBDOMAIN', 400);
             }
         }
 

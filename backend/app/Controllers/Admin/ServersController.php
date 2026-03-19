@@ -534,12 +534,13 @@ class ServersController
         $server['variables'] = $mergedVariables;
 
         // Add SFTP information (similar to user controller)
+        $sftpHost = Node::getSftpHostname($server['node']);
         $sftp = [
-            'host' => $server['node']['fqdn'],
+            'host' => $sftpHost,
             'port' => $server['node']['daemonSFTP'] ?? 2022,
             'username' => strtolower($server['owner']['username']) . '.' . $server['uuidShort'],
             'password' => '#AUTH_PASSWORD#',
-            'url' => 'sftp://' . $server['node']['fqdn'] . ':' . ($server['node']['daemonSFTP'] ?? 2022) . '/' . strtolower($server['owner']['username']) . '.' . $server['uuidShort'],
+            'url' => 'sftp://' . $sftpHost . ':' . ($server['node']['daemonSFTP'] ?? 2022) . '/' . strtolower($server['owner']['username']) . '.' . $server['uuidShort'],
         ];
         $server['sftp'] = $sftp;
 
@@ -668,12 +669,13 @@ class ServersController
         $server['variables'] = $mergedVariables;
 
         // Add SFTP information (similar to user controller)
+        $sftpHost = Node::getSftpHostname($server['node']);
         $sftp = [
-            'host' => $server['node']['fqdn'],
+            'host' => $sftpHost,
             'port' => $server['node']['daemonSFTP'] ?? 2022,
             'username' => strtolower($server['owner']['username']) . '.' . $server['uuidShort'],
             'password' => '#AUTH_PASSWORD#',
-            'url' => 'sftp://' . $server['node']['fqdn'] . ':' . ($server['node']['daemonSFTP'] ?? 2022) . '/' . strtolower($server['owner']['username']) . '.' . $server['uuidShort'],
+            'url' => 'sftp://' . $sftpHost . ':' . ($server['node']['daemonSFTP'] ?? 2022) . '/' . strtolower($server['owner']['username']) . '.' . $server['uuidShort'],
         ];
         $server['sftp'] = $sftp;
 

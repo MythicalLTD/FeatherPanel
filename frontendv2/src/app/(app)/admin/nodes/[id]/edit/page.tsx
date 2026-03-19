@@ -80,6 +80,7 @@ export interface NodeForm {
     daemonBase: string;
     public_ip_v4: string;
     public_ip_v6: string;
+    sftp_subdomain: string;
 }
 
 export default function EditNodePage() {
@@ -136,6 +137,7 @@ export default function EditNodePage() {
         daemonBase: '/var/lib/featherpanel/volumes',
         public_ip_v4: '',
         public_ip_v6: '',
+        sftp_subdomain: '',
     });
 
     const [systemInfo, setSystemInfo] = useState<{
@@ -204,6 +206,7 @@ export default function EditNodePage() {
                 daemonBase: node.daemonBase,
                 public_ip_v4: node.public_ip_v4 || '',
                 public_ip_v6: node.public_ip_v6 || '',
+                sftp_subdomain: node.sftp_subdomain || '',
             });
         } catch (error) {
             console.error('Error fetching node data:', error);
@@ -403,6 +406,14 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
             newErrors.public_ip_v6 = t('admin.node.form.ipv6_invalid');
         }
 
+        if (form.sftp_subdomain) {
+            const hostnameRegex =
+                /^(?!-)(?:[a-zA-Z0-9-]{1,63}(?<!-)\.)*[a-zA-Z0-9-]{1,63}(?<!-)$/;
+            if (!hostnameRegex.test(form.sftp_subdomain)) {
+                newErrors.sftp_subdomain = t('admin.node.form.sftp_subdomain_invalid');
+            }
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     }, [form, t]);
@@ -415,6 +426,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
         try {
             const trimmedIPv4 = form.public_ip_v4.trim();
             const trimmedIPv6 = form.public_ip_v6.trim();
+            const trimmedSftpSubdomain = form.sftp_subdomain.trim();
 
             const submitData = {
                 ...form,
@@ -431,6 +443,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 daemonSFTP: Number(form.daemonSFTP),
                 public_ip_v4: trimmedIPv4 === '' ? null : trimmedIPv4,
                 public_ip_v6: trimmedIPv6 === '' ? null : trimmedIPv6,
+                sftp_subdomain: trimmedSftpSubdomain === '' ? null : trimmedSftpSubdomain,
             };
 
             await axios.patch(`/api/admin/nodes/${nodeId}`, submitData);

@@ -3589,6 +3589,9 @@
 				"disk_overallocate": "Disk Over-Allocation",
 				"daemon_port": "Daemon Port",
 				"daemon_sftp_port": "Daemon SFTP Port",
+				"sftp_subdomain": "SFTP Hostname (optional)",
+				"sftp_subdomain_placeholder": "sftp.node.domain.de",
+				"sftp_subdomain_help": "Used for user-facing SFTP connection details. Leave empty to use node FQDN/IP.",
 				"ipv4": "Public IPv4",
 				"ipv6": "Public IPv6",
 				"maintenance": "Maintenance Mode",
@@ -3612,7 +3615,8 @@
 				"location_required": "Location is required",
 				"daemon_base_required": "Daemon base path is required",
 				"ipv4_invalid": "Invalid IPv4 address",
-				"ipv6_invalid": "Invalid IPv6 address"
+				"ipv6_invalid": "Invalid IPv6 address",
+				"sftp_subdomain_invalid": "Invalid SFTP hostname"
 			},
 			"wings": {
 				"config_title": "Wings Configuration",
@@ -5738,6 +5742,9 @@
 				"host": "Host",
 				"host_placeholder": "localhost",
 				"host_help": "Enter the hostname or IP address of the database server.",
+				"database_subdomain": "Database Hostname (optional)",
+				"database_subdomain_placeholder": "db1.node.domain.de",
+				"database_subdomain_help": "Used for user-facing database credentials. Leave empty to use the database host.",
 				"port": "Port",
 				"port_placeholder": "3306",
 				"port_help": "Default ports: MySQL/MariaDB (3306), PostgreSQL (5432)",

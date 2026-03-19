@@ -117,6 +117,7 @@ export interface NodeData {
     daemonBase: string;
     public_ip_v4?: string | null;
     public_ip_v6?: string | null;
+    sftp_subdomain?: string | null;
     created_at: string;
     updated_at: string;
 }

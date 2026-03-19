@@ -47,6 +47,7 @@ export interface ServerNode {
     daemon_listen: number;
     daemon_sftp: number;
     daemon_base: string;
+    sftp_subdomain?: string | null;
     location_id: number;
     location?: ServerLocation;
 }
@@ -229,6 +230,7 @@ export interface Database {
     created_at: string;
     updated_at: string;
     database_host?: string;
+    database_subdomain?: string | null;
     database_port?: number;
     database_type?: string;
     host_name?: string;
@@ -239,6 +241,7 @@ export interface DatabaseHost {
     name: string;
     database_type: string;
     database_host: string;
+    database_subdomain?: string | null;
     database_port: number;
 }
 

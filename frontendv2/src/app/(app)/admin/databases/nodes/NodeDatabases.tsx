@@ -54,6 +54,7 @@ interface Database {
     database_username: string;
     database_password?: string;
     database_host: string;
+    database_subdomain?: string | null;
     created_at: string;
     updated_at: string;
     healthy?: boolean;
@@ -109,6 +110,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
         name: '',
         database_type: 'mysql',
         database_host: 'localhost',
+        database_subdomain: '',
         database_port: 3306,
         database_username: '',
         database_password: '',
@@ -155,6 +157,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 (db: Database) =>
                     db.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
                     db.database_host.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+                    (db.database_subdomain || '').toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
                     db.database_username.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
             );
 
@@ -201,6 +204,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 name: '',
                 database_type: 'mysql',
                 database_host: 'localhost',
+                database_subdomain: '',
                 database_port: 3306,
                 database_username: '',
                 database_password: '',
@@ -415,7 +419,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 <div className='flex flex-col gap-1 mt-2 text-sm text-muted-foreground font-mono'>
                                     <div className='flex items-center gap-2 truncate'>
                                         <Server className='h-3 w-3 shrink-0 opacity-50' />
-                                        {db.database_host}:{db.database_port}
+                                        {(db.database_subdomain || db.database_host)}:{db.database_port}
                                     </div>
                                     <div className='flex items-center gap-2 truncate'>
                                         <Activity className='h-3 w-3 shrink-0 opacity-50' />
@@ -452,6 +456,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                                 name: db.name,
                                                 database_type: db.database_type,
                                                 database_host: db.database_host,
+                                                database_subdomain: db.database_subdomain || '',
                                                 database_port: db.database_port,
                                                 database_username: db.database_username,
                                                 database_password: '',
@@ -555,6 +560,17 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                             <p className='text-xs text-muted-foreground'>{t('admin.node_databases.form.host_help')}</p>
                         </div>
                         <div className='space-y-2'>
+                            <Label>{t('admin.node_databases.form.database_subdomain')}</Label>
+                            <Input
+                                value={formData.database_subdomain}
+                                onChange={(e) => setFormData({ ...formData, database_subdomain: e.target.value })}
+                                placeholder={t('admin.node_databases.form.database_subdomain_placeholder')}
+                            />
+                            <p className='text-xs text-muted-foreground'>
+                                {t('admin.node_databases.form.database_subdomain_help')}
+                            </p>
+                        </div>
+                        <div className='space-y-2'>
                             <Label>{t('admin.node_databases.form.port')}</Label>
                             <Input
                                 type='number'
@@ -632,6 +648,16 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 />
                             </div>
                             <div className='space-y-2'>
+                                <Label>{t('admin.node_databases.form.database_subdomain')}</Label>
+                                <Input
+                                    value={formData.database_subdomain}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, database_subdomain: e.target.value })
+                                    }
+                                    placeholder={t('admin.node_databases.form.database_subdomain_placeholder')}
+                                />
+                            </div>
+                            <div className='space-y-2'>
                                 <Label>{t('admin.node_databases.form.port')}</Label>
                                 <Input
                                     type='number'
@@ -696,6 +722,14 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 </Label>
                                 <div className='font-mono text-sm'>
                                     {selectedDatabase.database_host}:{selectedDatabase.database_port}
+                                </div>
+                            </div>
+                            <div className='space-y-1'>
+                                <Label className='text-xs uppercase text-muted-foreground'>
+                                    {t('admin.node_databases.form.database_subdomain')}
+                                </Label>
+                                <div className='font-mono text-sm'>
+                                    {selectedDatabase.database_subdomain || t('common.nA')}
                                 </div>
                             </div>
                             <div className='space-y-1'>

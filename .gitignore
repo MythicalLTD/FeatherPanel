@@ -22,6 +22,7 @@ fdocs/
 backend/app/storage/config/ratelimit.json
 backend/storage/config/ratelimit.json
 old/
+.kiro/
 /blueprintconverter/
 .cursor/
 node_modules

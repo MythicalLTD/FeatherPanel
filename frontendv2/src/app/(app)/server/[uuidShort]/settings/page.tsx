@@ -204,6 +204,13 @@ export default function ServerSettingsPage() {
     };
 
     const hasChanges = server?.name !== name || (server?.description || '') !== description;
+    const resolvedSftpHost = server?.node?.sftp_subdomain || server?.sftp?.host || '';
+    const resolvedSftpPort = server?.sftp?.port;
+    const resolvedSftpUsername = server?.sftp?.username || '';
+    const resolvedSftpUrl =
+        resolvedSftpHost && resolvedSftpPort
+            ? `sftp://${resolvedSftpHost}:${resolvedSftpPort}/${resolvedSftpUsername}`
+            : server?.sftp?.url || '';
 
     if (permissionsLoading || settingsLoading) return null;
 
@@ -323,15 +330,13 @@ export default function ServerSettingsPage() {
                                 </Label>
                                 <div className='flex items-center gap-2 p-1 pl-4 pr-1 bg-secondary/50 border border-border/10 rounded-xl hover:border-blue-500/30 transition-colors group/input'>
                                     <code className='text-xs font-mono flex-1 truncate text-foreground/80'>
-                                        {server?.sftp?.host ? `sftp://${server.sftp.host}` : t('common.nA')}
+                                        {resolvedSftpHost ? `sftp://${resolvedSftpHost}` : t('common.nA')}
                                     </code>
                                     <Button
                                         variant='ghost'
                                         size='sm'
                                         className='h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400'
-                                        onClick={() =>
-                                            copyToClipboard(server?.sftp?.host ? `sftp://${server.sftp.host}` : '')
-                                        }
+                                        onClick={() => copyToClipboard(resolvedSftpHost ? `sftp://${resolvedSftpHost}` : '')}
                                     >
                                         <Copy className='h-3.5 w-3.5' />
                                     </Button>
@@ -398,13 +403,13 @@ export default function ServerSettingsPage() {
                             </Label>
                             <div className='flex items-center gap-2 p-1 pl-4 pr-1 bg-white/5 border border-white/5 rounded-xl hover:border-blue-500/30 transition-colors group/input'>
                                 <code className='text-xs font-mono flex-1 truncate text-foreground/80'>
-                                    {server?.sftp?.url || t('common.nA')}
+                                    {resolvedSftpUrl || t('common.nA')}
                                 </code>
                                 <Button
                                     variant='ghost'
                                     size='sm'
                                     className='h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400'
-                                    onClick={() => copyToClipboard(server?.sftp?.url || '')}
+                                    onClick={() => copyToClipboard(resolvedSftpUrl || '')}
                                 >
                                     <Copy className='h-3.5 w-3.5' />
                                 </Button>
@@ -413,8 +418,8 @@ export default function ServerSettingsPage() {
                                     size='sm'
                                     className='h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400'
                                     onClick={() => {
-                                        if (server?.sftp?.url) {
-                                            window.open(server.sftp.url, '_blank');
+                                        if (resolvedSftpUrl) {
+                                            window.open(resolvedSftpUrl, '_blank');
                                         }
                                     }}
                                 >
