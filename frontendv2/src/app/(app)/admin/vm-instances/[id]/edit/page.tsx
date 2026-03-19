@@ -217,9 +217,9 @@ export default function VmInstanceEditPage() {
         fetchConfig(instance as Record<string, unknown>);
     }, [id, instance, fetchConfig]);
 
-    // Sync networks from Proxmox config (LXC)
+    // Sync networks from Proxmox config for both LXC and QEMU.
     useEffect(() => {
-        if (!config || !isLxc || !instance) return;
+        if (!config || !instance) return;
         const netKeys = (Object.keys(config) as string[]).filter((k) => /^net\d+$/.test(k)).sort();
         const list = [...freeIps];
         const curId = instance.vm_ip_id != null ? Number(instance.vm_ip_id) : null;
@@ -227,11 +227,25 @@ export default function VmInstanceEditPage() {
         if (curId != null && curIp && !list.some((i) => i.id === curId)) {
             list.unshift({ id: curId, ip: curIp, cidr: null, gateway: null });
         }
+        // Add all already-assigned IPs (net1, net2, …) so they resolve correctly even though
+        // they are not in the free-IPs list (they're already assigned to this instance).
+        const assignedIps =
+            (instance.assigned_ips as
+                | Array<{ vm_ip_id: number; ip: string; cidr?: number | null; gateway?: string | null }>
+                | undefined) ?? [];
+        for (const ai of assignedIps) {
+            const aiId = Number(ai.vm_ip_id);
+            if (!Number.isNaN(aiId) && aiId > 0 && !list.some((i) => i.id === aiId)) {
+                list.push({ id: aiId, ip: ai.ip, cidr: ai.cidr ?? null, gateway: ai.gateway ?? null });
+            }
+        }
         const arr: NetworkRow[] = netKeys.map((key) => {
-            const val = String(config[key] ?? '');
+            const netVal = String(config[key] ?? '');
+            const idx = Number((key.match(/\d+/) ?? ['0'])[0]);
+            const val = isLxc ? netVal : String(config[`ipconfig${idx}`] ?? '');
             const ipMatch = val.match(/ip=([^/,\s]+)/);
             const ip = ipMatch ? ipMatch[1] : '';
-            const bridgeMatch = val.match(/bridge=([^,\s]+)/);
+            const bridgeMatch = netVal.match(/bridge=([^,\s]+)/);
             const bridge = bridgeMatch ? bridgeMatch[1] : 'vmbr0';
             const found = list.find((o) => o.ip === ip);
             return { key, vm_ip_id: found ? found.id : null, bridge };
@@ -315,7 +329,8 @@ export default function VmInstanceEditPage() {
             map[Number(instance.vm_ip_id)] = String(instance.ip_address);
         }
         networks.forEach((n) => {
-            const val = String(config?.[n.key] ?? '');
+            const idx = Number((n.key.match(/\d+/) ?? ['0'])[0]);
+            const val = String(isLxc ? (config?.[n.key] ?? '') : (config?.[`ipconfig${idx}`] ?? ''));
             const m = val.match(/ip=([^/,\s]+)/);
             if (m && n.vm_ip_id != null) map[n.vm_ip_id] = m[1];
         });
@@ -335,16 +350,6 @@ export default function VmInstanceEditPage() {
         }
         return list;
     };
-
-    const ipOptionsQemu = (() => {
-        const list = [...freeIps];
-        const curId = instance?.vm_ip_id != null ? Number(instance.vm_ip_id) : null;
-        const curIp = instance?.ip_address as string | undefined;
-        if (curId != null && curIp && !list.some((i) => i.id === curId)) {
-            list.unshift({ id: curId, ip: curIp, cidr: null, gateway: null });
-        }
-        return list;
-    })();
 
     useEffect(() => {
         fetchWidgets();
@@ -379,7 +384,7 @@ export default function VmInstanceEditPage() {
         e.preventDefault();
         setSavingTab('network');
         try {
-            if (isLxc && (networks.length > 0 || newNetworkRow)) {
+            if (networks.length > 0 || newNetworkRow) {
                 const kept = networks
                     .filter((n) => !removedNetKeys.has(n.key) && n.vm_ip_id != null)
                     .map((n) => ({ key: n.key, vm_ip_id: n.vm_ip_id!, bridge: n.bridge || undefined }));
@@ -655,7 +660,6 @@ export default function VmInstanceEditPage() {
                     <TabsContent value='network' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
                         <NetworkTab
                             isLxc={isLxc}
-                            instance={instance}
                             networks={networks}
                             setNetworks={setNetworks}
                             removedNetKeys={removedNetKeys}
@@ -664,12 +668,8 @@ export default function VmInstanceEditPage() {
                             setNewNetworkRow={setNewNetworkRow}
                             freeIps={freeIps}
                             bridges={bridges}
-                            vmIpId={vmIpId}
-                            setVmIpId={setVmIpId}
-                            config={config}
                             assignedIpMap={assignedIpMap}
                             getRowIpOptions={getRowIpOptions}
-                            ipOptionsQemu={ipOptionsQemu}
                             onSave={handleSaveNetwork}
                             saving={savingTab === 'network'}
                         />

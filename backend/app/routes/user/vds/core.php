@@ -126,6 +126,23 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
+        'user-vm-instance-networking',
+        '/api/user/vm-instances/{id}/networking',
+        function (Request $request, array $args) {
+            $id = (int) ($args['id'] ?? 0);
+            if ($id <= 0) {
+                return ApiResponse::error('Invalid VM instance ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmUserInstanceController())->getNetworking($request, $id);
+        },
+        'id',
+        ['GET'],
+        Rate::perMinute(30)
+    );
+
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
         'user-vm-instance-network-dns-patch',
         '/api/user/vm-instances/{id}/network-dns',
         function (Request $request, array $args) {

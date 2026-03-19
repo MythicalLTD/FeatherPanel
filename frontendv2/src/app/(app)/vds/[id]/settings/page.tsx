@@ -71,12 +71,6 @@ export default function VdsSettingsPage() {
     const [tpmEnabled, setTpmEnabled] = React.useState(false);
     const [serial0Enabled, setSerial0Enabled] = React.useState(true);
 
-    // Network + DNS (primary IP + nameserver/searchdomain)
-    const [networkOptionsLoading, setNetworkOptionsLoading] = React.useState(false);
-    const [networkSaving, setNetworkSaving] = React.useState(false);
-    const [dnsNameserver, setDnsNameserver] = React.useState('');
-    const [dnsSearchDomain, setDnsSearchDomain] = React.useState('');
-
     // ISO mount/unmount (QEMU only, mounted as ide2 cdrom)
     const [isoStoragesLoading, setIsoStoragesLoading] = React.useState(false);
     const [isoStorages, setIsoStorages] = React.useState<string[]>([]);
@@ -115,29 +109,6 @@ export default function VdsSettingsPage() {
             void fetchQemuHardware();
         }
     }, [instanceLoading, instance, isQemu, fetchQemuHardware]);
-
-    const fetchNetworkOptions = React.useCallback(async () => {
-        if (!id || !instance) return;
-        setNetworkOptionsLoading(true);
-        try {
-            const { data } = await axios.get(`/api/user/vm-instances/${id}/network-options`);
-            if (data?.success) {
-                const opts = data.data ?? {};
-                setDnsNameserver(typeof opts.nameserver === 'string' ? opts.nameserver : '');
-                setDnsSearchDomain(typeof opts.searchdomain === 'string' ? opts.searchdomain : '');
-            }
-        } catch {
-            // Ignore; user may not have permission or Proxmox might be temporarily unreachable.
-        } finally {
-            setNetworkOptionsLoading(false);
-        }
-    }, [id, instance]);
-
-    React.useEffect(() => {
-        if (!instanceLoading && instance) {
-            void fetchNetworkOptions();
-        }
-    }, [instanceLoading, instance, fetchNetworkOptions]);
 
     const fetchIsoStorages = React.useCallback(async () => {
         if (!id || !isQemu) return;
@@ -293,24 +264,6 @@ export default function VdsSettingsPage() {
             toast.error(msg || (t('vds.settings.hardware.apply_failed') ?? 'Failed to update hardware.'));
         } finally {
             setQemuHardwareSaving(false);
-        }
-    };
-
-    const handleApplyNetworkDns = async () => {
-        setNetworkSaving(true);
-        try {
-            await axios.patch(`/api/user/vm-instances/${id}/network-dns`, {
-                nameserver: dnsNameserver.trim() || undefined,
-                searchdomain: instance?.vm_type === 'lxc' ? dnsSearchDomain.trim() || undefined : undefined,
-            });
-            toast.success(t('vds.settings.network.apply_success') ?? 'Network/DNS updated.');
-            await refreshInstance();
-            await fetchNetworkOptions();
-        } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || (t('vds.settings.network.apply_failed') ?? 'Failed to update network/DNS'));
-        } finally {
-            setNetworkSaving(false);
         }
     };
 
@@ -720,64 +673,6 @@ export default function VdsSettingsPage() {
                     </CardContent>
                 </Card>
             )}
-
-            {/* Network + DNS */}
-            <Card className='border-border/20 bg-card/30 backdrop-blur-sm'>
-                <CardHeader>
-                    <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
-                        <Server className='h-4 w-4 text-primary' />
-                        {t('vds.settings.network.title') ?? 'Network & DNS'}
-                    </CardTitle>
-                    <CardDescription className='text-muted-foreground'>
-                        {t('vds.settings.network.description') ?? 'Update DNS settings for this VDS instance.'}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className='space-y-5'>
-                    {networkOptionsLoading ? (
-                        <div className='flex items-center gap-2 text-muted-foreground'>
-                            <Loader2 className='h-4 w-4 animate-spin' />
-                            {t('vds.settings.network.loading') ?? 'Loading…'}
-                        </div>
-                    ) : (
-                        <div className='space-y-4'>
-                            <div className='space-y-2'>
-                                <div className='text-xs font-semibold text-muted-foreground'>
-                                    {t('vds.settings.network.nameserver_label') ?? 'Nameserver'}
-                                </div>
-                                <Input
-                                    value={dnsNameserver}
-                                    onChange={(e) => setDnsNameserver(e.target.value)}
-                                    placeholder={t('vds.settings.network.nameserver_placeholder') ?? '1.1.1.1 8.8.8.8'}
-                                    className='bg-muted/30'
-                                />
-                            </div>
-
-                            {instance?.vm_type === 'lxc' && (
-                                <div className='space-y-2'>
-                                    <div className='text-xs font-semibold text-muted-foreground'>
-                                        {t('vds.settings.network.searchdomain_label') ?? 'Search domain'}
-                                    </div>
-                                    <Input
-                                        value={dnsSearchDomain}
-                                        onChange={(e) => setDnsSearchDomain(e.target.value)}
-                                        placeholder={
-                                            t('vds.settings.network.searchdomain_placeholder') ?? 'example.com'
-                                        }
-                                        className='bg-muted/30'
-                                    />
-                                </div>
-                            )}
-
-                            <div className='flex justify-end pt-2'>
-                                <Button variant='glass' disabled={networkSaving} onClick={handleApplyNetworkDns}>
-                                    {networkSaving && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
-                                    {t('vds.settings.network.apply_button') ?? 'Apply'}
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
 
             {/* Reinstall */}
             {canReinstall && (

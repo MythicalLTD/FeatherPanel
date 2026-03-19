@@ -35,6 +35,7 @@ use App\Chat\VmTask;
 use App\Chat\Database;
 use App\Chat\VmInstance;
 use App\Chat\VmTemplate;
+use App\Chat\VmInstanceIp;
 use App\Chat\VmInstanceBackup;
 use App\Config\ConfigInterface;
 use App\Chat\VmInstanceActivity;
@@ -97,6 +98,175 @@ final class VmInstanceUtil
             $extraHeaders,
             $extraParams,
         );
+    }
+
+    /**
+     * @param array<string, mixed> $instance
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getInstanceNetworkAssignments(array $instance): array
+    {
+        $instanceId = isset($instance['id']) ? (int) $instance['id'] : 0;
+        if ($instanceId > 0) {
+            $rows = VmInstanceIp::getByInstanceId($instanceId);
+            if (!empty($rows)) {
+                return array_values(array_map(static function (array $row): array {
+                    return [
+                        'vm_ip_id' => isset($row['vm_ip_id']) ? (int) $row['vm_ip_id'] : 0,
+                        'network_key' => isset($row['network_key']) && is_string($row['network_key']) ? $row['network_key'] : 'net0',
+                        'bridge' => isset($row['bridge']) && is_string($row['bridge']) ? $row['bridge'] : null,
+                        'interface_name' => isset($row['interface_name']) && is_string($row['interface_name']) ? $row['interface_name'] : null,
+                        'is_primary' => !empty($row['is_primary']),
+                        'sort_order' => isset($row['sort_order']) ? (int) $row['sort_order'] : 0,
+                        'ip' => $row['ip'] ?? null,
+                        'cidr' => isset($row['cidr']) ? (int) $row['cidr'] : null,
+                        'gateway' => $row['gateway'] ?? null,
+                    ];
+                }, $rows));
+            }
+        }
+
+        $vmIpId = isset($instance['vm_ip_id']) ? (int) $instance['vm_ip_id'] : 0;
+        if ($vmIpId <= 0) {
+            return [];
+        }
+
+        $ip = VmIp::getById($vmIpId);
+        if (!$ip) {
+            return [];
+        }
+
+        return [
+            [
+                'vm_ip_id' => $vmIpId,
+                'network_key' => 'net0',
+                'bridge' => null,
+                'interface_name' => 'eth0',
+                'is_primary' => true,
+                'sort_order' => 0,
+                'ip' => $ip['ip'] ?? ($instance['ip_address'] ?? null),
+                'cidr' => isset($ip['cidr']) ? (int) $ip['cidr'] : 24,
+                'gateway' => $ip['gateway'] ?? ($instance['gateway'] ?? null),
+            ],
+        ];
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $assignments
+     * @param array<string, mixed> $currentConfig
+     *
+     * @return array{config: array<string, mixed>, deleteKeys: array<int, string>}
+     */
+    public static function buildNetworkConfig(string $vmType, array $assignments, array $currentConfig = []): array
+    {
+        usort($assignments, static function (array $a, array $b): int {
+            $keyA = isset($a['network_key']) ? (string) $a['network_key'] : 'net999';
+            $keyB = isset($b['network_key']) ? (string) $b['network_key'] : 'net999';
+
+            return strnatcmp($keyA, $keyB);
+        });
+
+        $normalized = [];
+        foreach (array_values($assignments) as $index => $assignment) {
+            $ip = $assignment['ip'] ?? null;
+            if (!is_string($ip) || trim($ip) === '') {
+                continue;
+            }
+
+            $networkKey = isset($assignment['network_key']) && is_string($assignment['network_key']) && preg_match('/^net\d+$/', $assignment['network_key'])
+                ? $assignment['network_key']
+                : ('net' . $index);
+
+            $normalized[] = [
+                'network_key' => $networkKey,
+                'ip' => trim($ip),
+                'cidr' => isset($assignment['cidr']) ? (int) $assignment['cidr'] : 24,
+                'gateway' => isset($assignment['gateway']) && is_string($assignment['gateway']) ? trim($assignment['gateway']) : '',
+                'bridge' => isset($assignment['bridge']) && is_string($assignment['bridge']) ? trim($assignment['bridge']) : '',
+                'interface_name' => isset($assignment['interface_name']) && is_string($assignment['interface_name']) ? trim($assignment['interface_name']) : '',
+                'is_primary' => $index === 0 || !empty($assignment['is_primary']),
+            ];
+        }
+
+        $config = [];
+        $deleteKeys = [];
+
+        if ($vmType === 'qemu') {
+            $currentNetKeys = array_values(array_filter(array_keys($currentConfig), static function ($key) {
+                return preg_match('/^net\d+$/', (string) $key);
+            }));
+            $currentIpconfigKeys = array_values(array_filter(array_keys($currentConfig), static function ($key) {
+                return preg_match('/^ipconfig\d+$/', (string) $key);
+            }));
+            $desiredNetKeys = [];
+            $desiredIpconfigKeys = [];
+
+            foreach ($normalized as $index => $assignment) {
+                $networkKey = $assignment['network_key'];
+                $networkIndex = (int) preg_replace('/\D/', '', $networkKey);
+                $desiredNetKeys[] = $networkKey;
+                $desiredIpconfigKeys[] = 'ipconfig' . $networkIndex;
+
+                $bridge = $assignment['bridge'] !== '' ? $assignment['bridge'] : 'vmbr0';
+                $existingNet = isset($currentConfig[$networkKey]) && is_string($currentConfig[$networkKey])
+                    ? (string) $currentConfig[$networkKey]
+                    : '';
+                if ($existingNet !== '') {
+                    if (preg_match('/(^|,)bridge=[^,]*/', $existingNet) === 1) {
+                        $existingNet = preg_replace('/(^|,)bridge=[^,]*/', '$1bridge=' . $bridge, $existingNet) ?? $existingNet;
+                    } else {
+                        $existingNet .= ',bridge=' . $bridge;
+                    }
+                    $config[$networkKey] = trim($existingNet, ',');
+                } else {
+                    $config[$networkKey] = 'virtio,bridge=' . $bridge;
+                }
+
+                $ipconfig = 'ip=' . $assignment['ip'] . '/' . max(1, $assignment['cidr']);
+                if ($index === 0 && $assignment['gateway'] !== '') {
+                    $ipconfig .= ',gw=' . $assignment['gateway'];
+                }
+                $config['ipconfig' . $networkIndex] = $ipconfig;
+            }
+
+            foreach ($currentNetKeys as $key) {
+                if (!in_array($key, $desiredNetKeys, true)) {
+                    $deleteKeys[] = (string) $key;
+                }
+            }
+            foreach ($currentIpconfigKeys as $key) {
+                if (!in_array($key, $desiredIpconfigKeys, true)) {
+                    $deleteKeys[] = (string) $key;
+                }
+            }
+        } else {
+            $currentNetKeys = array_values(array_filter(array_keys($currentConfig), static function ($key) {
+                return preg_match('/^net\d+$/', (string) $key);
+            }));
+            $desiredNetKeys = [];
+
+            foreach ($normalized as $index => $assignment) {
+                $networkKey = $assignment['network_key'];
+                $desiredNetKeys[] = $networkKey;
+
+                $bridge = $assignment['bridge'] !== '' ? $assignment['bridge'] : 'vmbr0';
+                $interfaceName = $assignment['interface_name'] !== '' ? $assignment['interface_name'] : ('eth' . $index);
+                $net = 'name=' . $interfaceName . ',bridge=' . $bridge . ',ip=' . $assignment['ip'] . '/' . max(1, $assignment['cidr']);
+                if ($index === 0 && $assignment['gateway'] !== '') {
+                    $net .= ',gw=' . $assignment['gateway'];
+                }
+                $config[$networkKey] = $net;
+            }
+
+            foreach ($currentNetKeys as $key) {
+                if (!in_array($key, $desiredNetKeys, true)) {
+                    $deleteKeys[] = (string) $key;
+                }
+            }
+        }
+
+        return ['config' => $config, 'deleteKeys' => $deleteKeys];
     }
 
     /**
@@ -312,39 +482,39 @@ final class VmInstanceUtil
         $ip = $ipId ? VmIp::getById($ipId) : null;
 
         $reinstallMeta = [
-            'type'          => 'reinstall',
-            'old_vmid'      => $oldVmid,
-            'instance_id'   => $instanceId,
-            'ci_user'       => $ciUser,
-            'ci_password'   => $ciPassword,
-            'ip_address'    => $ip['ip'] ?? ($instance['ip_address'] ?? null),
-            'ip_cidr'       => $ip ? (int) ($ip['cidr'] ?? 24) : 24,
-            'gateway'       => $ip['gateway'] ?? ($instance['gateway'] ?? null),
-            'memory'        => $savedMemory,
-            'cpus'          => $savedCpus,
-            'cores'         => $savedCores,
-            'disk_gb'       => $savedDiskGb,
-            'root_disk'     => $rootDiskKey,
-            'vm_type'       => $vmType,
-            'hostname'      => $instance['hostname'] ?? 'vm-' . $newVmid,
+            'type' => 'reinstall',
+            'old_vmid' => $oldVmid,
+            'instance_id' => $instanceId,
+            'ci_user' => $ciUser,
+            'ci_password' => $ciPassword,
+            'ip_address' => $ip['ip'] ?? ($instance['ip_address'] ?? null),
+            'ip_cidr' => $ip ? (int) ($ip['cidr'] ?? 24) : 24,
+            'gateway' => $ip['gateway'] ?? ($instance['gateway'] ?? null),
+            'memory' => $savedMemory,
+            'cpus' => $savedCpus,
+            'cores' => $savedCores,
+            'disk_gb' => $savedDiskGb,
+            'root_disk' => $rootDiskKey,
+            'vm_type' => $vmType,
+            'hostname' => $instance['hostname'] ?? 'vm-' . $newVmid,
             'template_vmid' => $templateVmid,
             'template_node' => $templateNode,
-            'storage'       => (string) ($vmNode['default_storage'] ?? 'local'),
-            'current_step'  => 'initial',
+            'storage' => (string) ($vmNode['default_storage'] ?? 'local'),
+            'current_step' => 'initial',
         ];
 
         $reinstallId = bin2hex(random_bytes(16));
         $saved = VmTask::create([
-            'task_id'     => $reinstallId,
-            'upid'        => '', // empty UPID so runner initiates the clone
+            'task_id' => $reinstallId,
+            'upid' => '', // empty UPID so runner initiates the clone
             'target_node' => $node,
-            'vmid'        => $newVmid,
-            'task_type'   => 'reinstall',
-            'status'      => 'pending',
+            'vmid' => $newVmid,
+            'task_type' => 'reinstall',
+            'status' => 'pending',
             'instance_id' => $instanceId,
-            'vm_node_id'  => (int) $instance['vm_node_id'],
-            'user_uuid'   => $instance['user_uuid'] ?? null,
-            'data'        => $reinstallMeta,
+            'vm_node_id' => (int) $instance['vm_node_id'],
+            'user_uuid' => $instance['user_uuid'] ?? null,
+            'data' => $reinstallMeta,
         ]);
 
         if (!$saved) {
@@ -352,9 +522,9 @@ final class VmInstanceUtil
         }
 
         return [
-            'ok'           => true,
+            'ok' => true,
             'reinstall_id' => $reinstallId,
-            'message'      => 'Reinstall scheduled successfully. The task is now in queue.',
+            'message' => 'Reinstall scheduled successfully. The task is now in queue.',
         ];
     }
 
@@ -376,32 +546,22 @@ final class VmInstanceUtil
         $instanceId = (int) ($reinstallMeta['instance_id'] ?? 0);
         $ciUser = $reinstallMeta['ci_user'] ?? null;
         $ciPassword = $reinstallMeta['ci_password'] ?? null;
-        $ipAddress = $reinstallMeta['ip_address'] ?? null;
-        $ipCidr = (int) ($reinstallMeta['ip_cidr'] ?? 24);
-        $gateway = trim((string) ($reinstallMeta['gateway'] ?? ''));
         $memory = (int) ($reinstallMeta['memory'] ?? 512);
         $cpus = (int) ($reinstallMeta['cpus'] ?? 1);
         $cores = (int) ($reinstallMeta['cores'] ?? 1);
         $diskGb = (int) ($reinstallMeta['disk_gb'] ?? 0);
         $rootDisk = is_string($reinstallMeta['root_disk'] ?? null) ? (string) $reinstallMeta['root_disk'] : null;
+        $instance = VmInstance::getById($instanceId);
+        $networkAssignments = $instance ? self::getInstanceNetworkAssignments($instance) : [];
+        $primaryAssignment = $networkAssignments[0] ?? null;
+        $ipAddress = is_array($primaryAssignment) && is_string($primaryAssignment['ip'] ?? null)
+            ? $primaryAssignment['ip']
+            : ($reinstallMeta['ip_address'] ?? null);
 
         if ($vmType === 'lxc') {
-            $deleteNetKeys = [];
             $getConfig = $client->getVmConfig($node, $newVmid, 'lxc');
-            if ($getConfig['ok'] && is_array($getConfig['config'] ?? null)) {
-                foreach (array_keys((array) $getConfig['config']) as $k) {
-                    if (preg_match('/^net\d+$/', (string) $k)) {
-                        $deleteNetKeys[] = (string) $k;
-                    }
-                }
-            }
-            if (!empty($deleteNetKeys)) {
-                $client->setVmConfig($node, $newVmid, 'lxc', [], $deleteNetKeys);
-            }
-            $net0 = 'name=eth0,bridge=vmbr0,ip=' . $ipAddress . '/' . $ipCidr;
-            if ($gateway !== '') {
-                $net0 .= ',gw=' . $gateway;
-            }
+            $currentConfig = $getConfig['ok'] && is_array($getConfig['config'] ?? null) ? (array) $getConfig['config'] : [];
+            $networkConfig = self::buildNetworkConfig('lxc', $networkAssignments, $currentConfig);
             $descParts = ['FeatherPanel Managed VM (Reinstalled)'];
             if (!empty($ipAddress)) {
                 $descParts[] = 'IP: ' . $ipAddress;
@@ -415,14 +575,13 @@ final class VmInstanceUtil
             $descParts[] = 'Reinstalled: ' . date('Y-m-d H:i:s');
             $config = [
                 'nameserver' => '1.1.1.1 8.8.8.8',
-                'net0' => $net0,
                 'memory' => $memory,
                 'cores' => $cores > 0 ? $cores : 1,
                 'onboot' => 0,
                 'tags' => 'FeatherPanel-Managed',
                 'description' => implode(' | ', $descParts),
             ];
-            $client->setVmConfig($node, $newVmid, 'lxc', $config, []);
+            $client->setVmConfig($node, $newVmid, 'lxc', $config + $networkConfig['config'], $networkConfig['deleteKeys']);
             if ($diskGb > 0) {
                 $cfgAfter = $client->getVmConfig($node, $newVmid, 'lxc');
                 $templateDiskGb = 0;
@@ -455,12 +614,11 @@ final class VmInstanceUtil
                 }
             }
         } else {
-            $ipconfig0 = 'ip=' . $ipAddress . '/' . $ipCidr;
-            if ($gateway !== '') {
-                $ipconfig0 .= ',gw=' . $gateway;
-            }
             $bootDiskKey = $rootDisk ?? 'scsi0';
             $bootOrder = 'order=' . $bootDiskKey;
+            $curCfg = $client->getVmConfig($node, $newVmid, 'qemu');
+            $currentConfig = $curCfg['ok'] && is_array($curCfg['config'] ?? null) ? (array) $curCfg['config'] : [];
+            $networkConfig = self::buildNetworkConfig('qemu', $networkAssignments, $currentConfig);
             $descParts = ['FeatherPanel Managed VM (Reinstalled)'];
             if (!empty($ipAddress)) {
                 $descParts[] = 'IP: ' . $ipAddress;
@@ -474,7 +632,6 @@ final class VmInstanceUtil
             $descParts[] = 'Reinstalled: ' . date('Y-m-d H:i:s');
             $client->setVmConfig($node, $newVmid, 'qemu', [
                 'nameserver' => '1.1.1.1 8.8.8.8',
-                'ipconfig0' => $ipconfig0,
                 'boot' => $bootOrder,
                 'memory' => $memory,
                 'sockets' => $cpus > 0 ? $cpus : 1,
@@ -483,7 +640,7 @@ final class VmInstanceUtil
                 'cipassword' => $ciPassword ?? bin2hex(random_bytes(6)),
                 'tags' => 'FeatherPanel-Managed',
                 'description' => implode(' | ', $descParts),
-            ], []);
+            ] + $networkConfig['config'], $networkConfig['deleteKeys']);
             if ($diskGb > 0) {
                 $cfgAfter = $client->getVmConfig($node, $newVmid, 'qemu');
                 $templateDiskGb = 0;
@@ -812,19 +969,87 @@ final class VmInstanceUtil
         $vmType = $meta['vm_type'] ?? 'qemu';
         $ipId = isset($meta['vm_ip_id']) ? (int) $meta['vm_ip_id'] : null;
 
-        $ip = $ipId ? VmIp::getById($ipId) : null;
-        if (!$ip) {
-            throw new \Exception('IP no longer available');
-        }
-
-        $cidr = (int) ($ip['cidr'] ?? 24);
-        $gateway = $ip['gateway'] ?? '';
         $bridge = $meta['bridge'] ?? 'vmbr0';
         $memory = (int) ($meta['memory'] ?? 512);
         $cpus = (int) ($meta['cpus'] ?? 1);
         $cores = (int) ($meta['cores'] ?? 1);
         $onBoot = !empty($meta['on_boot']);
         $hostname = $meta['hostname'] ?? 'vm-' . $vmid;
+        $requestedNetworks = isset($meta['networks']) && is_array($meta['networks']) ? $meta['networks'] : [];
+        $networkAssignments = [];
+
+        foreach (array_values($requestedNetworks) as $index => $network) {
+            if (!is_array($network)) {
+                continue;
+            }
+
+            $key = isset($network['key']) && is_string($network['key']) ? trim($network['key']) : ('net' . $index);
+            if (!preg_match('/^net\d+$/', $key)) {
+                $key = 'net' . $index;
+            }
+
+            $networkVmIpId = isset($network['vm_ip_id']) ? (int) $network['vm_ip_id'] : 0;
+            if ($networkVmIpId <= 0) {
+                continue;
+            }
+
+            $ipRow = VmIp::getById($networkVmIpId);
+            if (!$ipRow || empty($ipRow['ip'])) {
+                continue;
+            }
+
+            $interfaceIndex = (int) preg_replace('/\D/', '', $key);
+            $networkAssignments[] = [
+                'vm_ip_id' => $networkVmIpId,
+                'network_key' => $key,
+                'bridge' => isset($network['bridge']) && is_string($network['bridge']) && trim($network['bridge']) !== ''
+                    ? trim($network['bridge'])
+                    : $bridge,
+                'interface_name' => 'eth' . $interfaceIndex,
+                'is_primary' => false,
+                'sort_order' => $index,
+                'ip' => $ipRow['ip'] ?? null,
+                'cidr' => isset($ipRow['cidr']) ? (int) $ipRow['cidr'] : 24,
+                'gateway' => $ipRow['gateway'] ?? null,
+            ];
+        }
+
+        if (empty($networkAssignments)) {
+            $ip = $ipId ? VmIp::getById($ipId) : null;
+            if (!$ip) {
+                throw new \Exception('IP no longer available');
+            }
+
+            $networkAssignments[] = [
+                'vm_ip_id' => $ipId,
+                'network_key' => 'net0',
+                'bridge' => $bridge,
+                'interface_name' => 'eth0',
+                'is_primary' => true,
+                'sort_order' => 0,
+                'ip' => $ip['ip'] ?? null,
+                'cidr' => isset($ip['cidr']) ? (int) $ip['cidr'] : 24,
+                'gateway' => $ip['gateway'] ?? null,
+            ];
+        } else {
+            $networkAssignments = array_values($networkAssignments);
+            foreach ($networkAssignments as $index => &$assignment) {
+                $assignment['is_primary'] = $index === 0;
+                $assignment['sort_order'] = $index;
+            }
+            unset($assignment);
+        }
+
+        $primaryAssignment = $networkAssignments[0] ?? null;
+        if (!$primaryAssignment || !is_string($primaryAssignment['ip'] ?? null) || trim((string) $primaryAssignment['ip']) === '') {
+            throw new \Exception('Primary IP is required');
+        }
+
+        $primaryIpAddress = (string) $primaryAssignment['ip'];
+        $primaryGateway = isset($primaryAssignment['gateway']) && is_string($primaryAssignment['gateway'])
+            ? $primaryAssignment['gateway']
+            : null;
+        $primaryVmIpId = (int) $primaryAssignment['vm_ip_id'];
 
         if ($vmType === 'qemu') {
             $requestedDiskGb = (int) ($meta['disk'] ?? 0);
@@ -832,29 +1057,29 @@ final class VmInstanceUtil
                 $client->resizeQemuDisk($node, $vmid, 'scsi0', $requestedDiskGb . 'G');
             }
 
+            $networkConfig = self::buildNetworkConfig('qemu', $networkAssignments, []);
             $client->setVmConfig($node, $vmid, 'qemu', [
                 'memory' => $memory,
                 'sockets' => $cpus,
                 'cores' => $cores,
                 'nameserver' => '1.1.1.1 8.8.8.8',
-                'ipconfig0' => "ip={$ip['ip']}/$cidr" . ($gateway ? ",gw=$gateway" : ''),
                 'onboot' => $onBoot ? 1 : 0,
                 'boot' => 'order=scsi0',
                 'ciuser' => $meta['ci_user'] ?? 'debian',
                 'cipassword' => $meta['ci_password'] ?? bin2hex(random_bytes(6)),
                 'tags' => 'FeatherPanel-Managed',
-                'description' => "FeatherPanel Managed VM | IP: {$ip['ip']} | Hostname: $hostname | User: {$task['user_uuid']} | Created: " . date('Y-m-d H:i:s'),
-            ]);
+                'description' => "FeatherPanel Managed VM | IP: {$primaryIpAddress} | Hostname: $hostname | User: {$task['user_uuid']} | Created: " . date('Y-m-d H:i:s'),
+            ] + $networkConfig['config']);
         } else {
+            $networkConfig = self::buildNetworkConfig('lxc', $networkAssignments, []);
             $client->setVmConfig($node, $vmid, 'lxc', [
                 'memory' => $memory,
                 'cores' => $cpus * $cores,
                 'nameserver' => '1.1.1.1 8.8.8.8',
-                'net0' => "name=eth0,bridge=$bridge,ip={$ip['ip']}/$cidr" . ($gateway ? ",gw=$gateway" : ''),
                 'onboot' => $onBoot ? 1 : 0,
                 'tags' => 'FeatherPanel-Managed',
-                'description' => "FeatherPanel Managed VM | IP: {$ip['ip']} | Hostname: $hostname | User: {$task['user_uuid']} | Created: " . date('Y-m-d H:i:s'),
-            ]);
+                'description' => "FeatherPanel Managed VM | IP: {$primaryIpAddress} | Hostname: $hostname | User: {$task['user_uuid']} | Created: " . date('Y-m-d H:i:s'),
+            ] + $networkConfig['config']);
 
             $requestedDiskGb = (int) ($meta['disk'] ?? 0);
             if ($requestedDiskGb > 0 && !$skipStart) {
@@ -873,9 +1098,9 @@ final class VmInstanceUtil
             'vm_type' => $vmType,
             'hostname' => $hostname,
             'status' => 'stopped',
-            'ip_address' => $ip['ip'],
-            'gateway' => $ip['gateway'] ?? null,
-            'vm_ip_id' => $ipId,
+            'ip_address' => $primaryIpAddress,
+            'gateway' => $primaryGateway,
+            'vm_ip_id' => $primaryVmIpId,
             'notes' => $meta['notes'] ?? null,
             'backup_limit' => (int) ($meta['backup_limit'] ?? 5),
             'memory' => $memory,
@@ -886,6 +1111,10 @@ final class VmInstanceUtil
         ];
 
         $instance = VmInstance::create($instanceData, $pdo);
+
+        if ($instance) {
+            VmInstanceIp::syncForInstance((int) $instance['id'], $networkAssignments, $pdo);
+        }
 
         if ($onBoot && $instance && !$skipStart) {
             $start = $client->startVm($node, $vmid, $vmType);

@@ -73,6 +73,11 @@ interface OwnerUser {
     email: string;
 }
 
+interface NetworkRow {
+    key: string;
+    vm_ip_id: number | null;
+}
+
 const totalSteps = 3;
 
 export default function VmInstancesCreatePage() {
@@ -82,7 +87,7 @@ export default function VmInstancesCreatePage() {
     const [currentStep, setCurrentStep] = useState(1);
 
     const [templateId, setTemplateId] = useState<number>(0);
-    const [vmIpId, setVmIpId] = useState<number | null>(null);
+    const [networks, setNetworks] = useState<NetworkRow[]>([{ key: 'net0', vm_ip_id: null }]);
     const [hostname, setHostname] = useState('');
     const [loadingPlans, setLoadingPlans] = useState(true);
     const [loadingMeta, setLoadingMeta] = useState(false);
@@ -141,6 +146,7 @@ export default function VmInstancesCreatePage() {
 
     const selectedTemplate = templates.find((tpl) => tpl.id === templateId) || null;
     const isLxcTemplate = selectedTemplate?.guest_type === 'lxc';
+    const primaryNetwork = networks[0] ?? null;
 
     useEffect(() => {
         axios
@@ -165,14 +171,15 @@ export default function VmInstancesCreatePage() {
         }
         setLoadingMeta(true);
         setTemplateId(0);
-        setVmIpId(null);
         Promise.all([
             axios.get(`/api/admin/vm-nodes/${nodeId}/free-ips`),
             axios.get(`/api/admin/vm-nodes/${nodeId}/templates`),
         ])
             .then(([ipsRes, tplRes]) => {
-                setFreeIps(ipsRes.data.data?.free_ips ?? []);
+                const ips = ipsRes.data.data?.free_ips ?? [];
+                setFreeIps(ips);
                 setTemplates(tplRes.data.data?.templates ?? []);
+                setNetworks([{ key: 'net0', vm_ip_id: ips[0]?.id ?? null }]);
             })
             .catch(() => toast.error(t('admin.vmInstances.errors.fetch_failed')))
             .finally(() => setLoadingMeta(false));
@@ -243,11 +250,43 @@ export default function VmInstancesCreatePage() {
     const handlePrevious = () => setCurrentStep((s) => Math.max(1, s - 1));
     const handleNext = () => setCurrentStep((s) => Math.min(totalSteps, s + 1));
 
+    const getRowIpOptions = useCallback(
+        (row: NetworkRow) => {
+            const selectedElsewhere = new Set(
+                networks
+                    .filter((candidate) => candidate.key !== row.key && candidate.vm_ip_id != null)
+                    .map((candidate) => candidate.vm_ip_id),
+            );
+
+            return freeIps.filter((ip) => !selectedElsewhere.has(ip.id) || ip.id === row.vm_ip_id);
+        },
+        [freeIps, networks],
+    );
+
+    const addNetworkRow = () => {
+        const nextIndex =
+            networks.length > 0
+                ? Math.max(...networks.map((row) => parseInt(row.key.replace(/\D/g, ''), 10) || 0)) + 1
+                : 0;
+
+        setNetworks((prev) => [...prev, { key: `net${nextIndex}`, vm_ip_id: null }]);
+    };
+
+    const removeNetworkRow = (key: string) => {
+        setNetworks((prev) => prev.filter((row) => row.key !== key));
+    };
+
     const canProceedStep1 = nodeId > 0 && templateId > 0 && freeIps.length > 0;
     const hostnameValid = hostname.trim().length > 0;
     const ownerSelected = selectedOwner != null;
     const ciFieldsValid = isLxcTemplate || (ciUser.trim().length > 0 && ciPassword.trim().length > 0);
-    const canCreate = currentStep === totalSteps && canProceedStep1 && hostnameValid && ownerSelected && ciFieldsValid;
+    const canCreate =
+        currentStep === totalSteps &&
+        canProceedStep1 &&
+        hostnameValid &&
+        ownerSelected &&
+        ciFieldsValid &&
+        primaryNetwork?.vm_ip_id != null;
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -267,6 +306,10 @@ export default function VmInstancesCreatePage() {
             return;
         }
         if (freeIps.length === 0) {
+            toast.error(t('admin.vmInstances.no_free_ips') ?? 'No free IPs for this node.');
+            return;
+        }
+        if (primaryNetwork?.vm_ip_id == null) {
             toast.error(t('admin.vmInstances.no_free_ips') ?? 'No free IPs for this node.');
             return;
         }
@@ -304,12 +347,15 @@ export default function VmInstancesCreatePage() {
                 on_boot: onBoot,
                 hostname: hostname.trim(),
                 backup_limit: backupLimit,
+                vm_ip_id: primaryNetwork.vm_ip_id,
+                networks: networks
+                    .filter((row) => row.vm_ip_id != null)
+                    .map((row) => ({ key: row.key, vm_ip_id: row.vm_ip_id })),
             };
             if (!isLxcTemplate) {
                 payload.ci_user = ciUser.trim();
                 payload.ci_password = ciPassword;
             }
-            if (vmIpId != null && vmIpId > 0) payload.vm_ip_id = vmIpId;
             if (selectedOwner?.uuid) payload.user_uuid = selectedOwner.uuid;
 
             const res = await axios.put('/api/admin/vm-instances', payload);
@@ -467,34 +513,6 @@ export default function VmInstancesCreatePage() {
                                                 </p>
                                             )}
                                         </div>
-
-                                        <div className='space-y-3'>
-                                            <Label>{t('admin.vmInstances.ip') ?? 'IP address'}</Label>
-                                            <Select
-                                                value={vmIpId ?? ''}
-                                                onChange={(e) => {
-                                                    const v = e.target.value;
-                                                    setVmIpId(v === '' || v === 'auto' ? null : Number(v));
-                                                }}
-                                                className='bg-muted/30 h-11 rounded-xl'
-                                            >
-                                                <option value=''>Auto (first free)</option>
-                                                {freeIps.map((ip) => (
-                                                    <option key={ip.id} value={ip.id}>
-                                                        {ip.ip}
-                                                    </option>
-                                                ))}
-                                            </Select>
-                                            {freeIps.length === 0 && (
-                                                <p className='text-xs text-amber-600'>
-                                                    {t('admin.vmInstances.no_free_ips')}
-                                                </p>
-                                            )}
-                                            <p className='text-xs text-muted-foreground'>
-                                                {t('admin.vmInstances.ip_help') ??
-                                                    'Leave on Auto to assign the first free IP from the node pool.'}
-                                            </p>
-                                        </div>
                                     </>
                                 )}
                             </div>
@@ -618,6 +636,77 @@ export default function VmInstancesCreatePage() {
                                         />
                                     )}
                                 </div>
+                                <div className='space-y-3 sm:col-span-2'>
+                                    <Label>{t('admin.vmInstances.network') ?? 'Network'}</Label>
+                                    <p className='text-xs text-muted-foreground'>
+                                        {isLxcTemplate
+                                            ? (t('admin.vmInstances.network_multi_hint') ??
+                                              'Add or remove IPs (Proxmox net0, net1, …). Select one pool IP for each interface.')
+                                            : (t('admin.vmInstances.network_multi_qemu_hint') ??
+                                              'Add or remove IPs for this VM. FeatherPanel will keep NICs and cloud-init network config aligned automatically.')}
+                                    </p>
+                                    <div className='space-y-3'>
+                                        {networks.map((row, index) => (
+                                            <div
+                                                key={row.key}
+                                                className='flex flex-col gap-3 rounded-xl border border-border/50 bg-muted/20 p-4 sm:flex-row sm:items-center'
+                                            >
+                                                <div className='min-w-24'>
+                                                    <div className='font-mono text-sm font-semibold'>{row.key}</div>
+                                                    <div className='text-xs text-muted-foreground'>
+                                                        {index === 0
+                                                            ? (t('admin.vmInstances.primary_ip') ?? 'Primary')
+                                                            : (t('admin.vmInstances.secondary_ip') ?? 'Secondary')}
+                                                    </div>
+                                                </div>
+                                                <Select
+                                                    value={row.vm_ip_id ?? ''}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        setNetworks((prev) =>
+                                                            prev.map((candidate) =>
+                                                                candidate.key === row.key
+                                                                    ? {
+                                                                          ...candidate,
+                                                                          vm_ip_id: value === '' ? null : Number(value),
+                                                                      }
+                                                                    : candidate,
+                                                            ),
+                                                        );
+                                                    }}
+                                                    className='bg-muted/30 h-11 rounded-xl flex-1'
+                                                >
+                                                    <option value=''>Select IP</option>
+                                                    {getRowIpOptions(row).map((ip) => (
+                                                        <option key={ip.id} value={ip.id}>
+                                                            {ip.ip}
+                                                        </option>
+                                                    ))}
+                                                </Select>
+                                                <Button
+                                                    type='button'
+                                                    variant='ghost'
+                                                    size='icon'
+                                                    disabled={index === 0}
+                                                    onClick={() => removeNetworkRow(row.key)}
+                                                    className='self-end sm:self-auto'
+                                                >
+                                                    <X className='h-4 w-4' />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className='flex items-center justify-between gap-3'>
+                                        <p className='text-xs text-muted-foreground'>
+                                            {t('admin.vmInstances.ip_help') ??
+                                                'Leave on Auto to assign the first free IP from the node pool.'}
+                                        </p>
+                                        <Button type='button' variant='outline' size='sm' onClick={addNetworkRow}>
+                                            <Plus className='h-4 w-4 mr-2' />
+                                            {t('admin.vmInstances.add_ip') ?? 'Add IP'}
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                             <div className='flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50 mt-6'>
                                 <Label>{t('admin.vmInstances.on_boot') ?? 'Start on boot'}</Label>
@@ -708,7 +797,7 @@ export default function VmInstancesCreatePage() {
                                                 <span className='text-red-500 font-bold'>*</span>
                                             </Label>
                                             <Input
-                                                type='poassword'
+                                                type='password'
                                                 value={ciPassword}
                                                 onChange={(e) => setCiPassword(e.target.value)}
                                                 placeholder='Strong password for VM login'

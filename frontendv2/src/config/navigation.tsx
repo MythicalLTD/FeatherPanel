@@ -895,6 +895,16 @@ export const getVdsNavigationItems = (t: TFunction, instanceId: string): Navigat
             permission: 'settings',
         },
         {
+            id: 'vds-network',
+            name: t('navigation.items.network') || 'Networking',
+            title: t('navigation.items.network') || 'Networking',
+            url: `/vds/${instanceId}/network`,
+            icon: Network,
+            isActive: false,
+            category: 'server',
+            group: 'configuration',
+        },
+        {
             id: 'vds-settings',
             name: t('navigation.items.settings') || 'Settings',
             title: t('navigation.items.settings') || 'Settings',

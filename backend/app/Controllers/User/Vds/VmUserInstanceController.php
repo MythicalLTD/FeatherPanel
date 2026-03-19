@@ -18,12 +18,14 @@
 namespace App\Controllers\User\Vds;
 
 use App\App;
+use App\Chat\VmIp;
 use App\Chat\VmNode;
 use App\Chat\VmTask;
 use App\Chat\Database;
 use App\Chat\VmSubuser;
 use App\Chat\VmInstance;
 use App\Chat\VmTemplate;
+use App\Chat\VmInstanceIp;
 use App\Helpers\VmGateway;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -182,6 +184,7 @@ class VmUserInstanceController
         $vmInstance['access_password'] = $vmInstance['is_owner']
             ? self::resolveAccessPassword($vmInstance)
             : null;
+        $vmInstance['assigned_ips'] = VmInstanceIp::getByInstanceId((int) $vmInstance['id']);
 
         return ApiResponse::success([
             'instance' => $vmInstance,
@@ -708,6 +711,96 @@ class VmUserInstanceController
             'Network options fetched',
             200
         );
+    }
+
+    #[OA\Get(
+        path: '/api/user/vm-instances/{id}/networking',
+        summary: 'Get VM networking details',
+        description: 'Returns assigned IP addresses and current DNS settings for a VDS instance.',
+        tags: ['User - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Networking details fetched'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+        ]
+    )]
+    public function getNetworking(Request $request, int $id): Response
+    {
+        $vmInstance = $request->attributes->get('vmInstance');
+
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+
+        $nameserver = null;
+        $searchdomain = null;
+        $vmType = ($vmInstance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
+
+        $vmNodeId = (int) ($vmInstance['vm_node_id'] ?? 0);
+        if ($vmNodeId > 0) {
+            $vmNode = VmNode::getVmNodeById($vmNodeId);
+            if ($vmNode) {
+                try {
+                    $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+                    $node = $vmInstance['pve_node'] ?? '';
+                    if ($node === '') {
+                        $find = $client->findNodeByVmid((int) $vmInstance['vmid']);
+                        $node = $find['ok'] ? $find['node'] : null;
+                    }
+                    if ($node !== null && $node !== '') {
+                        $cfgRes = $client->getVmConfig((string) $node, (int) $vmInstance['vmid'], $vmType);
+                        if ($cfgRes['ok'] && is_array($cfgRes['config'] ?? null)) {
+                            $cfg = $cfgRes['config'];
+                            if (array_key_exists('nameserver', $cfg) && is_string($cfg['nameserver'])) {
+                                $nameserver = $cfg['nameserver'];
+                            }
+                            if ($vmType === 'lxc' && array_key_exists('searchdomain', $cfg) && is_string($cfg['searchdomain'])) {
+                                $searchdomain = $cfg['searchdomain'];
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Read-only view: ignore transient Proxmox fetch failures and return available data.
+                }
+            }
+        }
+
+        $assignedIps = VmInstanceIp::getByInstanceId((int) $vmInstance['id']);
+
+        // Backwards compat: VMs provisioned before the VmInstanceIp table existed
+        // only have their primary IP stored on the instance row (vm_ip_id / ip_address).
+        // Synthesise a primary entry so the networking page always shows at least that IP.
+        if (empty($assignedIps) && !empty($vmInstance['vm_ip_id'])) {
+            $ipRecord = VmIp::getById((int) $vmInstance['vm_ip_id']);
+            $assignedIps = [
+                [
+                    'id' => null,
+                    'vm_instance_id' => $vmInstance['id'],
+                    'vm_ip_id' => $vmInstance['vm_ip_id'],
+                    'network_key' => 'net0',
+                    'bridge' => null,
+                    'interface_name' => null,
+                    'is_primary' => 1,
+                    'sort_order' => 0,
+                    'ip' => $vmInstance['ip_address'] ?? ($ipRecord['ip'] ?? null),
+                    'cidr' => $ipRecord['cidr'] ?? null,
+                    'gateway' => $ipRecord['gateway'] ?? null,
+                    'ip_notes' => $ipRecord['notes'] ?? null,
+                ],
+            ];
+        }
+
+        return ApiResponse::success([
+            'assigned_ips' => $assignedIps,
+            'nameserver' => $nameserver,
+            'searchdomain' => $searchdomain,
+            'vm_type' => $vmType,
+            'primary_ip' => $vmInstance['ip_address'] ?? null,
+        ], 'Networking details fetched', 200);
     }
 
     #[OA\Patch(

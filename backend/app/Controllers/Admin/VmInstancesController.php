@@ -26,6 +26,7 @@ use App\Chat\Activity;
 use App\Chat\Database;
 use App\Chat\VmInstance;
 use App\Chat\VmTemplate;
+use App\Chat\VmInstanceIp;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceBackup;
@@ -90,6 +91,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'on_boot', type: 'integer', description: 'Start on boot', default: 1),
         new OA\Property(property: 'hostname', type: 'string', nullable: true, description: 'Hostname'),
         new OA\Property(property: 'vm_ip_id', type: 'integer', nullable: true, description: 'Specific IP ID to assign'),
+        new OA\Property(property: 'networks', type: 'array', items: new OA\Items(type: 'object'), nullable: true, description: 'List of network IP assignments for this VM'),
         new OA\Property(property: 'user_uuid', type: 'string', nullable: true, description: 'User UUID'),
         new OA\Property(property: 'notes', type: 'string', nullable: true, description: 'Notes'),
         new OA\Property(property: 'ci_user', type: 'string', nullable: true, description: 'Cloud-init user (required for KVM/QEMU)'),
@@ -148,25 +150,25 @@ class VmInstancesController
     )]
     public function index(Request $request): Response
     {
-        $page   = max(1, (int) $request->query->get('page', 1));
-        $limit  = min(100, max(1, (int) $request->query->get('limit', 25)));
+        $page = max(1, (int) $request->query->get('page', 1));
+        $limit = min(100, max(1, (int) $request->query->get('limit', 25)));
         $search = $request->query->get('search', null);
 
-        $instances    = VmInstance::getAll($page, $limit, $search);
-        $total        = VmInstance::countAll($search);
-        $totalPages   = (int) ceil($total / $limit);
+        $instances = VmInstance::getAll($page, $limit, $search);
+        $total = VmInstance::countAll($search);
+        $totalPages = (int) ceil($total / $limit);
         $statusCounts = VmInstance::countByStatus();
 
         return ApiResponse::success([
-            'instances'     => $instances,
+            'instances' => $instances,
             'status_counts' => $statusCounts,
-            'pagination'    => [
-                'current_page'  => $page,
-                'per_page'      => $limit,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
                 'total_records' => $total,
-                'total_pages'   => $totalPages,
-                'has_next'      => $page < $totalPages,
-                'has_prev'      => $page > 1,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
             ],
         ], 'VM instances fetched successfully', 200);
     }
@@ -258,25 +260,90 @@ class VmInstancesController
         $hostname = self::sanitizeHostnameForProxmox($hostnameRaw);
 
         $vmIpId = isset($data['vm_ip_id']) ? (int) $data['vm_ip_id'] : null;
+        $requestedNetworks = isset($data['networks']) && is_array($data['networks']) ? $data['networks'] : null;
         $freeIps = VmIp::getFreeIpsForNode($vmNodeId);
         if (empty($freeIps)) {
             return ApiResponse::error('No free IP addresses available for this node. Add IPs in VM Node IPs.', 'NO_FREE_IP', 400);
         }
-        if ($vmIpId !== null && $vmIpId > 0) {
-            $found = null;
-            foreach ($freeIps as $f) {
-                if ((int) $f['id'] === $vmIpId) {
-                    $found = $f;
-                    break;
+
+        $freeIpsById = [];
+        foreach ($freeIps as $freeIp) {
+            $freeIpsById[(int) $freeIp['id']] = $freeIp;
+        }
+
+        $networkAssignments = [];
+        $selectedVmIpIds = [];
+        if ($requestedNetworks !== null) {
+            foreach (array_values($requestedNetworks) as $index => $network) {
+                if (!is_array($network)) {
+                    continue;
                 }
+
+                $key = isset($network['key']) && is_string($network['key']) ? trim($network['key']) : ('net' . $index);
+                if (!preg_match('/^net\d+$/', $key)) {
+                    $key = 'net' . $index;
+                }
+
+                $networkVmIpId = isset($network['vm_ip_id']) ? (int) $network['vm_ip_id'] : 0;
+                if ($networkVmIpId <= 0) {
+                    continue;
+                }
+
+                if (in_array($networkVmIpId, $selectedVmIpIds, true)) {
+                    return ApiResponse::error('Each network interface must use a unique IP address', 'DUPLICATE_VM_IP', 400);
+                }
+
+                $ipRow = $freeIpsById[$networkVmIpId] ?? null;
+                if ($ipRow === null) {
+                    return ApiResponse::error('Invalid vm_ip_id or IP is already assigned to another instance', 'INVALID_VM_IP', 400);
+                }
+
+                $selectedVmIpIds[] = $networkVmIpId;
+                $interfaceIndex = (int) preg_replace('/\D/', '', $key);
+                $networkAssignments[] = [
+                    'vm_ip_id' => $networkVmIpId,
+                    'network_key' => $key,
+                    'bridge' => isset($network['bridge']) && is_string($network['bridge']) && trim($network['bridge']) !== ''
+                        ? trim($network['bridge'])
+                        : $bridge,
+                    'interface_name' => 'eth' . $interfaceIndex,
+                    'is_primary' => false,
+                    'sort_order' => $index,
+                ];
             }
-            if ($found === null) {
+        }
+
+        if (empty($networkAssignments)) {
+            if ($vmIpId !== null && $vmIpId > 0) {
+                $ip = $freeIpsById[$vmIpId] ?? null;
+                if ($ip === null) {
+                    return ApiResponse::error('Invalid vm_ip_id or IP is already assigned to another instance', 'INVALID_VM_IP', 400);
+                }
+            } else {
+                $ip = $freeIps[0];
+                $vmIpId = (int) $ip['id'];
+            }
+
+            $networkAssignments[] = [
+                'vm_ip_id' => $vmIpId,
+                'network_key' => 'net0',
+                'bridge' => $bridge,
+                'interface_name' => 'eth0',
+                'is_primary' => true,
+                'sort_order' => 0,
+            ];
+        } else {
+            $networkAssignments = array_values($networkAssignments);
+            foreach ($networkAssignments as $index => &$assignment) {
+                $assignment['is_primary'] = $index === 0;
+                $assignment['sort_order'] = $index;
+            }
+            unset($assignment);
+            $vmIpId = (int) $networkAssignments[0]['vm_ip_id'];
+            $ip = $freeIpsById[$vmIpId] ?? VmIp::getById($vmIpId);
+            if ($ip === null) {
                 return ApiResponse::error('Invalid vm_ip_id or IP is already assigned to another instance', 'INVALID_VM_IP', 400);
             }
-            $ip = $found;
-        } else {
-            $ip = $freeIps[0];
-            $vmIpId = (int) $ip['id'];
         }
 
         $userUuid = isset($data['user_uuid']) && is_string($data['user_uuid']) ? trim($data['user_uuid']) : null;
@@ -331,25 +398,32 @@ class VmInstancesController
         $templateNode = $findNode['ok'] ? $findNode['node'] : $targetNode;
 
         $meta = [
-            'hostname'      => $hostname,
-            'vm_node_id'    => $vmNodeId,
-            'template_id'   => $templateId,
+            'hostname' => $hostname,
+            'vm_node_id' => $vmNodeId,
+            'template_id' => $templateId,
             'template_vmid' => $templateVmid,
             'template_node' => $templateNode,
-            'vm_ip_id'      => $vmIpId,
-            'notes'         => $notesRaw,
-            'vm_type'       => $vmType,
-            'memory'        => $memory,
-            'cpus'          => $cpus,
-            'cores'         => $cores,
-            'disk'          => $disk,
-            'storage'       => $storage,
-            'bridge'        => $bridge,
-            'on_boot'       => $onBoot,
-            'backup_limit'  => $backupLimit,
-            'ci_user'       => $ciUserInput,
-            'ci_password'   => $ciPasswordInput,
-            'current_step'  => 'initial',
+            'vm_ip_id' => $vmIpId,
+            'networks' => array_map(static function (array $assignment): array {
+                return [
+                    'key' => $assignment['network_key'],
+                    'vm_ip_id' => (int) $assignment['vm_ip_id'],
+                    'bridge' => $assignment['bridge'] ?? null,
+                ];
+            }, $networkAssignments),
+            'notes' => $notesRaw,
+            'vm_type' => $vmType,
+            'memory' => $memory,
+            'cpus' => $cpus,
+            'cores' => $cores,
+            'disk' => $disk,
+            'storage' => $storage,
+            'bridge' => $bridge,
+            'on_boot' => $onBoot,
+            'backup_limit' => $backupLimit,
+            'ci_user' => $ciUserInput,
+            'ci_password' => $ciPasswordInput,
+            'current_step' => 'initial',
         ];
 
         $creationId = VmInstanceUtil::createVmTask(
@@ -363,7 +437,7 @@ class VmInstancesController
 
         return ApiResponse::success([
             'creation_id' => $creationId,
-            'message'     => 'VM creation scheduled successfully. The task is now in queue.',
+            'message' => 'VM creation scheduled successfully. The task is now in queue.',
         ], 'VM creation scheduled', 202);
     }
 
@@ -437,13 +511,13 @@ class VmInstancesController
 
         if ($status === 'pending') {
             return ApiResponse::success([
-                'status'  => 'pending',
+                'status' => 'pending',
                 'message' => 'Task added to queue and scheduled to task processor…',
             ], 'Creation pending', 200);
         }
 
         return ApiResponse::success([
-            'status'  => 'cloning',
+            'status' => 'cloning',
             'message' => $status === 'running' ? 'Cloning VM from template…' : 'Finalizing VM configuration…',
         ], 'Creation in progress', 200);
     }
@@ -487,8 +561,10 @@ class VmInstancesController
             }
         }
 
+        $assignedIps = VmInstanceIp::getByInstanceId($id);
+
         return ApiResponse::success(
-            ['instance' => array_merge($instance, $extra)],
+            ['instance' => array_merge($instance, $extra, ['assigned_ips' => $assignedIps])],
             'VM instance fetched successfully',
             200
         );
@@ -546,6 +622,9 @@ class VmInstancesController
             $first = reset($networks);
             $firstIpId = isset($first['vm_ip_id']) ? (int) $first['vm_ip_id'] : null;
             $dbUpdate['vm_ip_id'] = $firstIpId;
+        }
+        if ($networks !== null) {
+            unset($dbUpdate['vm_ip_id']);
         }
         $vmTypeCheck = ($instance['vm_type'] ?? 'qemu') === 'lxc';
         $dnsUpdate = $vmTypeCheck && (
@@ -616,54 +695,45 @@ class VmInstancesController
                 }
             }
 
-            if ($vmType === 'lxc' && $networks !== null) {
-                $curCfg = $client->getVmConfig($node, (int) $instance['vmid'], 'lxc');
-                $curConfig = $curCfg['ok'] && is_array($curCfg['config'] ?? null) ? $curCfg['config'] : [];
-                $currentNetKeys = array_values(array_filter(array_keys($curConfig), static function ($k) {
-                    return preg_match('/^net\d+$/', (string) $k);
-                }));
-                if (empty($networks)) {
-                    $deleteKeys = $currentNetKeys;
-                }
-            }
-
-            if ($vmType === 'lxc' && $networks !== null && !empty($networks)) {
-                $newKeys = array_values(array_map(static function ($n) {
-                    return isset($n['key']) ? (string) $n['key'] : '';
-                }, $networks));
-                $newKeys = array_values(array_filter($newKeys, static function ($k) {
-                    return preg_match('/^net\d+$/', $k);
-                }));
-                foreach ($currentNetKeys as $k) {
-                    if (!in_array($k, $newKeys, true)) {
-                        $deleteKeys[] = $k;
-                    }
-                }
-                $bridge = 'vmbr0';
-                if (!empty($curConfig['net0']) && preg_match('/bridge=([^,\s]+)/', (string) $curConfig['net0'], $m)) {
-                    $bridge = $m[1];
-                }
-                foreach ($networks as $n) {
-                    $key = isset($n['key']) ? (string) $n['key'] : '';
+            if ($networks !== null) {
+                $curCfg = $client->getVmConfig($node, (int) $instance['vmid'], $vmType);
+                $curConfig = $curCfg['ok'] && is_array($curCfg['config'] ?? null) ? (array) $curCfg['config'] : [];
+                $networkAssignments = [];
+                foreach (array_values($networks) as $index => $network) {
+                    $key = isset($network['key']) && is_string($network['key']) ? trim($network['key']) : ('net' . $index);
                     if (!preg_match('/^net\d+$/', $key)) {
                         continue;
                     }
-                    $vmIpId = isset($n['vm_ip_id']) ? (int) $n['vm_ip_id'] : 0;
-                    $ipRow = $vmIpId > 0 ? VmIp::getById($vmIpId) : null;
+
+                    $vmIpId = isset($network['vm_ip_id']) ? (int) $network['vm_ip_id'] : 0;
+                    if ($vmIpId <= 0) {
+                        continue;
+                    }
+
+                    $ipRow = VmIp::getById($vmIpId);
                     if (!$ipRow || empty($ipRow['ip'])) {
                         continue;
                     }
-                    $netBridge = isset($n['bridge']) && (string) $n['bridge'] !== '' ? (string) $n['bridge'] : $bridge;
-                    $cidr = isset($ipRow['cidr']) && $ipRow['cidr'] !== null ? (int) $ipRow['cidr'] : 24;
-                    $gateway = trim((string) ($ipRow['gateway'] ?? ''));
-                    $ethName = isset($n['name']) ? (string) $n['name'] : ('eth' . (int) preg_replace('/\D/', '', $key));
-                    $ipStr = str_replace([',', '='], '', (string) $ipRow['ip']);
-                    $netStr = 'name=' . $ethName . ',bridge=' . $netBridge . ',ip=' . $ipStr . '/' . $cidr;
-                    if ($gateway !== '') {
-                        $netStr .= ',gw=' . str_replace([',', '='], '', $gateway);
-                    }
-                    $config[$key] = $netStr;
+
+                    $interfaceIndex = (int) preg_replace('/\D/', '', $key);
+                    $networkAssignments[] = [
+                        'vm_ip_id' => $vmIpId,
+                        'network_key' => $key,
+                        'bridge' => isset($network['bridge']) && is_string($network['bridge']) && trim($network['bridge']) !== ''
+                            ? trim($network['bridge'])
+                            : 'vmbr0',
+                        'interface_name' => 'eth' . $interfaceIndex,
+                        'is_primary' => $index === 0,
+                        'sort_order' => $index,
+                        'ip' => $ipRow['ip'] ?? null,
+                        'cidr' => isset($ipRow['cidr']) ? (int) $ipRow['cidr'] : 24,
+                        'gateway' => $ipRow['gateway'] ?? null,
+                    ];
                 }
+
+                $networkConfig = VmInstanceUtil::buildNetworkConfig($vmType, $networkAssignments, $curConfig);
+                $config = $config + $networkConfig['config'];
+                $deleteKeys = array_values(array_unique(array_merge($deleteKeys, $networkConfig['deleteKeys'])));
             }
 
             if ($vmType === 'lxc') {
@@ -709,7 +779,7 @@ class VmInstancesController
                     }
                     $config['net0'] = $net0;
                 }
-            } elseif ($vmType === 'qemu') {
+            } elseif ($vmType === 'qemu' && $networks === null) {
                 if ($cpus !== null) {
                     $config['sockets'] = $cpus;
                     $dbUpdate['cpus'] = $cpus;
@@ -849,6 +919,38 @@ class VmInstancesController
                 if (!$res['ok']) {
                     return ApiResponse::error('Proxmox config update failed: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
                 }
+            }
+
+            if ($networks !== null) {
+                $savedAssignments = [];
+                foreach (array_values($networks) as $index => $network) {
+                    $vmIpId = isset($network['vm_ip_id']) ? (int) $network['vm_ip_id'] : 0;
+                    if ($vmIpId <= 0) {
+                        continue;
+                    }
+
+                    $key = isset($network['key']) && is_string($network['key']) ? trim($network['key']) : ('net' . $index);
+                    if (!preg_match('/^net\d+$/', $key)) {
+                        $key = 'net' . $index;
+                    }
+
+                    $interfaceIndex = (int) preg_replace('/\D/', '', $key);
+                    $savedAssignments[] = [
+                        'vm_ip_id' => $vmIpId,
+                        'network_key' => $key,
+                        'bridge' => isset($network['bridge']) && is_string($network['bridge']) && trim($network['bridge']) !== ''
+                            ? trim($network['bridge'])
+                            : 'vmbr0',
+                        'interface_name' => 'eth' . $interfaceIndex,
+                        'is_primary' => $index === 0,
+                        'sort_order' => $index,
+                    ];
+                }
+
+                VmInstanceIp::syncForInstance($id, $savedAssignments);
+                $primaryIpId = !empty($savedAssignments) ? (int) $savedAssignments[0]['vm_ip_id'] : null;
+                VmInstance::update($id, ['vm_ip_id' => $primaryIpId]);
+                $instance = VmInstance::getById($id);
             }
         }
 
@@ -1513,21 +1615,21 @@ class VmInstancesController
 
         $taskId = bin2hex(random_bytes(16));
         $meta = [
-            'action'      => $action,
+            'action' => $action,
             'instance_id' => $id,
-            'vm_type'     => $vmType,
+            'vm_type' => $vmType,
         ];
 
         $saved = VmTask::create([
-            'task_id'     => $taskId,
+            'task_id' => $taskId,
             'instance_id' => $id,
-            'vm_node_id'  => (int) $instance['vm_node_id'],
-            'task_type'   => 'power',
-            'status'      => 'pending',
+            'vm_node_id' => (int) $instance['vm_node_id'],
+            'task_type' => 'power',
+            'status' => 'pending',
             'target_node' => $node,
-            'vmid'        => $vmid,
-            'data'        => $meta,
-            'user_uuid'   => $admin['uuid'] ?? null,
+            'vmid' => $vmid,
+            'data' => $meta,
+            'user_uuid' => $admin['uuid'] ?? null,
         ]);
 
         if (!$saved) {
@@ -1536,11 +1638,11 @@ class VmInstancesController
 
         VmInstanceActivity::createActivity([
             'vm_instance_id' => $id,
-            'vm_node_id'     => (int) ($instance['vm_node_id'] ?? 0),
-            'user_id'        => isset($admin['id']) ? (int) $admin['id'] : null,
-            'event'          => 'vm:power.' . $action . '.scheduled',
-            'metadata'       => ['hostname' => $instance['hostname'] ?? null, 'task_id' => $taskId],
-            'ip'             => CloudFlareRealIP::getRealIP(),
+            'vm_node_id' => (int) ($instance['vm_node_id'] ?? 0),
+            'user_id' => isset($admin['id']) ? (int) $admin['id'] : null,
+            'event' => 'vm:power.' . $action . '.scheduled',
+            'metadata' => ['hostname' => $instance['hostname'] ?? null, 'task_id' => $taskId],
+            'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
         return ApiResponse::success([
@@ -1606,7 +1708,7 @@ class VmInstancesController
 
         return ApiResponse::success([
             'reinstall_id' => $result['reinstall_id'],
-            'message'      => $result['message'],
+            'message' => $result['message'],
         ], 'VM reinstall started', 202);
     }
 
@@ -1688,9 +1790,9 @@ class VmInstancesController
         }
 
         return ApiResponse::success([
-            'backups'      => $backups,
+            'backups' => $backups,
             'backup_limit' => (int) ($instance['backup_limit'] ?? 5),
-            'storages'     => $storages,
+            'storages' => $storages,
         ], 'Backups listed', 200);
     }
 
@@ -1748,17 +1850,17 @@ class VmInstancesController
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
 
-        $data     = json_decode($request->getContent(), true);
+        $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
         // Enforce node-level backup storage defaults; ignore any client-provided `storage` override.
-        $storage  = '';
+        $storage = '';
         $compress = is_string($data['compress'] ?? null) ? trim($data['compress']) : 'zstd';
-        $mode     = is_string($data['mode'] ?? null) ? trim($data['mode']) : 'snapshot';
-        $node     = $instance['pve_node'] ?? '';
-        $vmid     = (int) $instance['vmid'];
-        $vmType   = $instance['vm_type'] ?? 'qemu';
+        $mode = is_string($data['mode'] ?? null) ? trim($data['mode']) : 'snapshot';
+        $node = $instance['pve_node'] ?? '';
+        $vmid = (int) $instance['vmid'];
+        $vmType = $instance['vm_type'] ?? 'qemu';
 
         if ($node === '') {
             $find = $client->findNodeByVmid($vmid);
@@ -1804,29 +1906,29 @@ class VmInstancesController
         $vmNodeId = (int) ($instance['vm_node_id'] ?? 0);
 
         VmTask::create([
-            'task_id'     => $backupId,
+            'task_id' => $backupId,
             'instance_id' => $id,
-            'vm_node_id'  => $vmNodeId,
-            'task_type'   => 'backup',
-            'status'      => 'pending',
-            'upid'        => $result['upid'],
+            'vm_node_id' => $vmNodeId,
+            'task_type' => 'backup',
+            'status' => 'pending',
+            'upid' => $result['upid'],
             'target_node' => $node,
-            'vmid'        => $vmid,
-            'user_uuid'   => $instance['user_uuid'] ?? null,
-            'data'        => [
-                'type'        => 'backup',
+            'vmid' => $vmid,
+            'user_uuid' => $instance['user_uuid'] ?? null,
+            'data' => [
+                'type' => 'backup',
                 'instance_id' => $id,
-                'vmid'        => $vmid,
-                'node'        => $node,
-                'storage'     => $storage,
+                'vmid' => $vmid,
+                'node' => $node,
+                'storage' => $storage,
             ],
         ]);
 
         $admin = $request->get('user');
         Activity::createActivity([
-            'user_uuid'  => $admin['uuid'] ?? null,
-            'name'       => 'vm_instance_backup_start',
-            'context'    => 'Backup started for instance ID ' . $id . ' (vmid ' . $vmid . ')',
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'vm_instance_backup_start',
+            'context' => 'Backup started for instance ID ' . $id . ' (vmid ' . $vmid . ')',
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
@@ -1878,7 +1980,7 @@ class VmInstancesController
 
         return ApiResponse::success([
             'status' => 'failed',
-            'error'  => $task['error'] ?? 'Unknown error',
+            'error' => $task['error'] ?? 'Unknown error',
         ], 'Backup failed', 200);
     }
 
@@ -1915,11 +2017,11 @@ class VmInstancesController
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
 
-        $data    = json_decode($request->getContent(), true);
+        $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
-        $volid   = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
+        $volid = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
         $storage = is_string($data['storage'] ?? null) ? trim($data['storage']) : '';
 
         if ($volid === '' || $storage === '') {
@@ -1935,7 +2037,7 @@ class VmInstancesController
         if ($vmNode) {
             try {
                 $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
-                $node   = $instance['pve_node'] ?? '';
+                $node = $instance['pve_node'] ?? '';
                 if ($node !== '') {
                     $result = $client->deleteBackupVolume($node, (string) $backup['storage'], (string) $backup['volid']);
                     if (!$result['ok']) {
@@ -1955,9 +2057,9 @@ class VmInstancesController
 
         $admin = $request->get('user');
         Activity::createActivity([
-            'user_uuid'  => $admin['uuid'] ?? null,
-            'name'       => 'vm_instance_backup_delete',
-            'context'    => 'Deleted backup ' . $volid . ' for instance ID ' . $id,
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'vm_instance_backup_delete',
+            'context' => 'Deleted backup ' . $volid . ' for instance ID ' . $id,
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
@@ -2016,19 +2118,19 @@ class VmInstancesController
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
 
-        $data    = json_decode($request->getContent(), true);
+        $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
-        $volid   = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
+        $volid = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
         $storage = is_string($data['storage'] ?? null) ? trim($data['storage']) : '';
 
         if ($volid === '' || $storage === '') {
             return ApiResponse::error('volid and storage are required', 'MISSING_PARAMS', 400);
         }
 
-        $vmid   = (int) $instance['vmid'];
-        $node   = $instance['pve_node'] ?? '';
+        $vmid = (int) $instance['vmid'];
+        $node = $instance['pve_node'] ?? '';
         $vmType = $instance['vm_type'] ?? 'qemu';
 
         $stopResult = $client->stopVm($node, $vmid, $vmType);
@@ -2049,34 +2151,34 @@ class VmInstancesController
         }
 
         $restoreId = bin2hex(random_bytes(16));
-        $vmNodeId  = (int) ($instance['vm_node_id'] ?? 0);
+        $vmNodeId = (int) ($instance['vm_node_id'] ?? 0);
 
         VmTask::create([
-            'task_id'     => $restoreId,
+            'task_id' => $restoreId,
             'instance_id' => $id,
-            'vm_node_id'  => $vmNodeId,
-            'task_type'   => 'restore_backup',
-            'status'      => 'pending',
-            'upid'        => $result['upid'],
+            'vm_node_id' => $vmNodeId,
+            'task_type' => 'restore_backup',
+            'status' => 'pending',
+            'upid' => $result['upid'],
             'target_node' => $node,
-            'vmid'        => $vmid,
-            'user_uuid'   => $instance['user_uuid'] ?? null,
-            'data'        => [
-                'type'        => 'restore_backup',
+            'vmid' => $vmid,
+            'user_uuid' => $instance['user_uuid'] ?? null,
+            'data' => [
+                'type' => 'restore_backup',
                 'instance_id' => $id,
-                'vmid'        => $vmid,
-                'node'        => $node,
-                'storage'     => $storage,
-                'volid'       => $volid,
-                'vm_type'     => $vmType,
+                'vmid' => $vmid,
+                'node' => $node,
+                'storage' => $storage,
+                'volid' => $volid,
+                'vm_type' => $vmType,
             ],
         ]);
 
         $admin = $request->get('user');
         Activity::createActivity([
-            'user_uuid'  => $admin['uuid'] ?? null,
-            'name'       => 'vm_instance_restore_start',
-            'context'    => 'Restore started for instance ID ' . $id . ' from ' . $volid,
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'vm_instance_restore_start',
+            'context' => 'Restore started for instance ID ' . $id . ' from ' . $volid,
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
@@ -2131,7 +2233,7 @@ class VmInstancesController
 
         return ApiResponse::success([
             'status' => 'failed',
-            'error'  => $task['error'] ?? 'Unknown error',
+            'error' => $task['error'] ?? 'Unknown error',
         ], 'Restore failed', 200);
     }
 
@@ -2174,7 +2276,7 @@ class VmInstancesController
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
 
-        $data  = json_decode($request->getContent(), true);
+        $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
@@ -2184,7 +2286,7 @@ class VmInstancesController
         }
 
         try {
-            $pdo  = Database::getPdoConnection();
+            $pdo = Database::getPdoConnection();
             $stmt = $pdo->prepare('UPDATE featherpanel_vm_instances SET backup_limit = :limit WHERE id = :id');
             $stmt->execute(['limit' => $limit, 'id' => $id]);
         } catch (\Throwable $e) {
@@ -2193,9 +2295,9 @@ class VmInstancesController
 
         $admin = $request->get('user');
         Activity::createActivity([
-            'user_uuid'  => $admin['uuid'] ?? null,
-            'name'       => 'vm_instance_backup_limit_set',
-            'context'    => 'Backup limit set to ' . $limit . ' for instance ID ' . $id,
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'vm_instance_backup_limit_set',
+            'context' => 'Backup limit set to ' . $limit . ' for instance ID ' . $id,
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
@@ -2274,11 +2376,11 @@ class VmInstancesController
 
                 VmInstanceActivity::createActivity([
                     'vm_instance_id' => $id,
-                    'vm_node_id'     => (int) ($instance['vm_node_id'] ?? 0),
-                    'user_id'        => isset($admin['id']) ? (int) $admin['id'] : null,
-                    'event'          => 'vm:suspended',
-                    'metadata'       => ['hostname' => $instance['hostname'] ?? null],
-                    'ip'             => CloudFlareRealIP::getRealIP(),
+                    'vm_node_id' => (int) ($instance['vm_node_id'] ?? 0),
+                    'user_id' => isset($admin['id']) ? (int) $admin['id'] : null,
+                    'event' => 'vm:suspended',
+                    'metadata' => ['hostname' => $instance['hostname'] ?? null],
+                    'ip' => CloudFlareRealIP::getRealIP(),
                 ]);
             } catch (\Exception $e) {
                 App::getInstance(true)->getLogger()->error('Failed to stop VM during suspension: ' . $e->getMessage());
@@ -2366,11 +2468,11 @@ class VmInstancesController
 
         VmInstanceActivity::createActivity([
             'vm_instance_id' => $id,
-            'vm_node_id'     => (int) ($instance['vm_node_id'] ?? 0),
-            'user_id'        => isset($admin['id']) ? (int) $admin['id'] : null,
-            'event'          => 'vm:unsuspended',
-            'metadata'       => ['hostname' => $instance['hostname'] ?? null],
-            'ip'             => CloudFlareRealIP::getRealIP(),
+            'vm_node_id' => (int) ($instance['vm_node_id'] ?? 0),
+            'user_id' => isset($admin['id']) ? (int) $admin['id'] : null,
+            'event' => 'vm:unsuspended',
+            'metadata' => ['hostname' => $instance['hostname'] ?? null],
+            'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
         if ($user) {
@@ -2454,31 +2556,31 @@ class VmInstancesController
         VmInstance::updateStatus($id, 'deleting');
         $taskId = bin2hex(random_bytes(16));
         VmTask::create([
-            'task_id'     => $taskId,
+            'task_id' => $taskId,
             'instance_id' => $id,
-            'vm_node_id'  => (int) $instance['vm_node_id'],
-            'task_type'   => 'delete',
-            'status'      => 'pending',
+            'vm_node_id' => (int) $instance['vm_node_id'],
+            'task_type' => 'delete',
+            'status' => 'pending',
             'target_node' => $instance['pve_node'] ?? '',
-            'vmid'        => $vmid,
-            'user_uuid'   => $admin['uuid'] ?? null,
-            'data'        => [
-                'type'        => 'delete',
+            'vmid' => $vmid,
+            'user_uuid' => $admin['uuid'] ?? null,
+            'data' => [
+                'type' => 'delete',
                 'instance_id' => $id,
-                'vmid'        => $vmid,
-                'vm_type'     => $vmType,
-                'node'        => $instance['pve_node'] ?? '',
+                'vmid' => $vmid,
+                'vm_type' => $vmType,
+                'node' => $instance['pve_node'] ?? '',
                 'current_step' => 'initial',
             ],
         ]);
 
         VmInstanceActivity::createActivity([
             'vm_instance_id' => $id,
-            'vm_node_id'     => (int) ($instance['vm_node_id'] ?? 0),
-            'user_id'        => isset($admin['id']) ? (int) $admin['id'] : null,
-            'event'          => 'vm:delete.queued',
-            'metadata'       => ['hostname' => $instance['hostname'] ?? null, 'task_id' => $taskId],
-            'ip'             => CloudFlareRealIP::getRealIP(),
+            'vm_node_id' => (int) ($instance['vm_node_id'] ?? 0),
+            'user_id' => isset($admin['id']) ? (int) $admin['id'] : null,
+            'event' => 'vm:delete.queued',
+            'metadata' => ['hostname' => $instance['hostname'] ?? null, 'task_id' => $taskId],
+            'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
         return ApiResponse::success(['task_id' => $taskId], 'VM deletion task added to queue', 202);
@@ -2501,11 +2603,11 @@ class VmInstancesController
 
         if ($status === 'pending' || $status === 'running') {
             $msg = match ($type) {
-                'delete'    => 'Deletion in progress…',
-                'power'     => 'Power action in progress…',
+                'delete' => 'Deletion in progress…',
+                'power' => 'Power action in progress…',
                 'reinstall' => 'Cloning and provisioning VM…',
-                'create'    => 'Provisioning new VM…',
-                default     => 'Processing task…',
+                'create' => 'Provisioning new VM…',
+                default => 'Processing task…',
             };
 
             if ($status === 'pending') {
@@ -2513,7 +2615,7 @@ class VmInstancesController
             }
 
             return ApiResponse::success([
-                'status'  => $status,
+                'status' => $status,
                 'message' => $msg,
             ], 'In progress', 200);
         }
@@ -2526,7 +2628,7 @@ class VmInstancesController
 
         return ApiResponse::success([
             'status' => 'failed',
-            'error'  => $task['error'] ?? 'Unknown error',
+            'error' => $task['error'] ?? 'Unknown error',
         ], 'Task failed', 200);
     }
 

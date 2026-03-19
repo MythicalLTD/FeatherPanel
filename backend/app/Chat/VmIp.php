@@ -65,6 +65,8 @@ class VmIp
             AND ip.id NOT IN (
                 SELECT vm_ip_id FROM featherpanel_vm_instances
                 WHERE vm_ip_id IS NOT NULL
+                UNION
+                SELECT vm_ip_id FROM featherpanel_vm_instance_ips
             )
             ORDER BY ip.ip ASC
         ');
@@ -82,8 +84,17 @@ class VmIp
     {
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('
-            SELECT DISTINCT vm_ip_id FROM featherpanel_vm_instances
-            WHERE vm_node_id = :vm_node_id AND vm_ip_id IS NOT NULL
+            SELECT DISTINCT used.vm_ip_id
+            FROM (
+                SELECT vm_ip_id
+                FROM featherpanel_vm_instances
+                WHERE vm_node_id = :vm_node_id AND vm_ip_id IS NOT NULL
+                UNION
+                SELECT vii.vm_ip_id
+                FROM featherpanel_vm_instance_ips vii
+                INNER JOIN featherpanel_vm_instances vi ON vi.id = vii.vm_instance_id
+                WHERE vi.vm_node_id = :vm_node_id
+            ) used
         ');
         $stmt->execute(['vm_node_id' => $vmNodeId]);
 

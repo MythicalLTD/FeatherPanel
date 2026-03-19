@@ -925,6 +925,7 @@
 			"spells": "Spells (Eggs)",
 			"refresh": "Refresh",
 			"console": "Console",
+			"network": "Networking",
 			"overview": "Overview",
 			"activities": "Activities",
 			"settings": "Settings",
@@ -3401,7 +3402,10 @@
 			"disk_size_placeholder": "e.g. +5G or 20G",
 			"resize_success": "Disk resized successfully.",
 			"network_multi_hint": "Add or remove IPs (Proxmox net0, net1, …). Select IP from pool for each interface.",
+			"network_multi_qemu_hint": "Add or remove IPs for this VM. FeatherPanel will keep virtual NICs and cloud-init ipconfig entries aligned automatically.",
 			"add_ip": "Add IP",
+			"primary_ip": "Primary",
+			"secondary_ip": "Secondary",
 			"disks_list": "Disks",
 			"disk_storage": "Storage",
 			"disk_size_gb": "Size (GB)",
@@ -6915,6 +6919,38 @@
 				}
 			}
 		},
+		"networking": {
+			"title": "Networking",
+			"description": "View assigned IPs, interfaces, and DNS settings.",
+			"loading": "Loading networking…",
+			"primary_ip_label": "Primary IP",
+			"assigned_ips": {
+				"title": "Assigned IPs",
+				"description": "These addresses are currently attached to your VDS instance.",
+				"primary_badge": "Primary",
+				"cidr": "CIDR",
+				"gateway": "Gateway",
+				"bridge": "Bridge",
+				"empty": "No assigned IPs were found for this VDS."
+			},
+			"dns": {
+				"title": "DNS",
+				"description": "Nameserver and search domain settings for this instance.",
+				"nameserver_label": "Nameserver",
+				"nameserver_placeholder": "1.1.1.1 8.8.8.8",
+				"searchdomain_label": "Search domain",
+				"searchdomain_placeholder": "example.com",
+				"apply_button": "Apply",
+				"apply_success": "DNS updated.",
+				"apply_failed": "Failed to update DNS.",
+				"readonly_notice": "You can view DNS settings here, but you do not have permission to change them."
+			},
+			"notes": {
+				"title": "How It Works",
+				"qemu": "Additional IPs are provisioned as extra virtual NICs with matching cloud-init ipconfig entries.",
+				"lxc": "Additional IPs are provisioned as extra container network interfaces such as net1, net2, and so on."
+			}
+		},
 		"settings": {
 			"title": "VDS Settings",
 			"reinstall": {
@@ -7001,6 +7037,38 @@
 				"apply_success": "Network/DNS updated.",
 				"apply_failed": "Failed to update network/DNS",
 				"select_ip": "Select an IP"
+			},
+			"networking": {
+				"title": "Networking",
+				"description": "View assigned IPs, interfaces, and DNS settings.",
+				"loading": "Loading networking…",
+				"primary_ip_label": "Primary IP",
+				"assigned_ips": {
+					"title": "Assigned IPs",
+					"description": "These addresses are currently attached to your VDS instance.",
+					"primary_badge": "Primary",
+					"cidr": "CIDR",
+					"gateway": "Gateway",
+					"bridge": "Bridge",
+					"empty": "No assigned IPs were found for this VDS."
+				},
+				"dns": {
+					"title": "DNS",
+					"description": "Nameserver and search domain settings for this instance.",
+					"nameserver_label": "Nameserver",
+					"nameserver_placeholder": "1.1.1.1 8.8.8.8",
+					"searchdomain_label": "Search domain",
+					"searchdomain_placeholder": "example.com",
+					"apply_button": "Apply",
+					"apply_success": "DNS updated.",
+					"apply_failed": "Failed to update DNS.",
+					"readonly_notice": "You can view DNS settings here, but you do not have permission to change them."
+				},
+				"notes": {
+					"title": "How It Works",
+					"qemu": "Additional IPs are provisioned as extra virtual NICs with matching cloud-init ipconfig entries.",
+					"lxc": "Additional IPs are provisioned as extra container network interfaces such as net1, net2, and so on."
+				}
 			}
 		}
 	},
