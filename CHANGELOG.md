@@ -23,6 +23,7 @@
 - Added support for SFTP subdomains for nodes and databases. by @nayskutzu
 - Introduced fully public knowledgebases, allowing anyone to access helpful documentation and resources without needing to log in. by @nayskutzu
 - Public status pages, enabling anyone to view real-time system and server status without requiring authentication. by @nayskutzu
+- Added the ability to send system emails to users directly from the user edit page, enabling streamlined communication and support workflows. by @nayskutzu
 
 ### Improved
 
