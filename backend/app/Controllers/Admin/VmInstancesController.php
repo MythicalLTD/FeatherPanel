@@ -32,11 +32,11 @@ use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceBackup;
 use App\Config\ConfigInterface;
 use App\Chat\VmInstanceActivity;
-use App\Services\Proxmox\Proxmox;
 use App\Mail\templates\VmSuspended;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\VmUnsuspended;
+use App\Plugins\Events\Events\VdsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -434,6 +434,14 @@ class VmInstancesController
             $vmid,
             $targetNode
         );
+
+        self::emitVdsEvent(VdsEvent::onVdsCreated(), [
+            'user_uuid' => $userUuid,
+            'vds_id' => null,
+            'vmid' => $vmid,
+            'creation_id' => $creationId,
+            'context' => ['source' => 'admin', 'vm_node_id' => $vmNodeId, 'template_id' => $templateId],
+        ]);
 
         return ApiResponse::success([
             'creation_id' => $creationId,
@@ -969,6 +977,14 @@ class VmInstancesController
             'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsEvent::onVdsUpdated(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($instance['vmid'] ?? 0),
+            'changed_fields' => array_keys($data),
+            'context' => ['source' => 'admin'],
+        ]);
+
         return ApiResponse::success(['instance' => VmInstance::getById($id)], 'VM instance updated successfully', 200);
     }
 
@@ -1120,6 +1136,7 @@ class VmInstancesController
     )]
     public function vncTicket(Request $request, int $id): Response
     {
+        $admin = $request->get('user');
         $instance = VmInstance::getById($id);
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
@@ -1133,6 +1150,13 @@ class VmInstancesController
         if (!$result['ok']) {
             return ApiResponse::error($result['error'], $result['code'], $result['http_status']);
         }
+
+        self::emitVdsEvent(VdsEvent::onVdsConsoleAccessed(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($instance['vmid'] ?? 0),
+            'context' => ['source' => 'admin'],
+        ]);
 
         return ApiResponse::success($result['payload'], 'VNC ticket created (valid ~40s)', 200);
     }
@@ -1645,6 +1669,15 @@ class VmInstancesController
             'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsEvent::onVdsPowerAction(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => $vmid,
+            'action' => $action,
+            'task_id' => $taskId,
+            'context' => ['source' => 'admin'],
+        ]);
+
         return ApiResponse::success([
             'task_id' => $taskId,
             'message' => 'Power task added to queue.',
@@ -1704,6 +1737,14 @@ class VmInstancesController
             'name' => 'vm_instance_reinstall_start',
             'context' => 'Started reinstall for VM instance: ' . ($instance['hostname'] ?? $id),
             'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        self::emitVdsEvent(VdsEvent::onVdsReinstalled(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($instance['vmid'] ?? 0),
+            'reinstall_id' => $result['reinstall_id'] ?? null,
+            'context' => ['source' => 'admin'],
         ]);
 
         return ApiResponse::success([
@@ -1932,6 +1973,14 @@ class VmInstancesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsEvent::onVdsBackupCreated(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => $vmid,
+            'backup_id' => $backupId,
+            'context' => ['source' => 'admin', 'storage' => $storage],
+        ]);
+
         return ApiResponse::success(['backup_id' => $backupId], 'Backup started', 202);
     }
 
@@ -2063,6 +2112,14 @@ class VmInstancesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsEvent::onVdsBackupDeleted(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($instance['vmid'] ?? 0),
+            'volid' => $volid,
+            'context' => ['source' => 'admin', 'storage' => $storage],
+        ]);
+
         return ApiResponse::success([], 'Backup deleted', 200);
     }
 
@@ -2180,6 +2237,15 @@ class VmInstancesController
             'name' => 'vm_instance_restore_start',
             'context' => 'Restore started for instance ID ' . $id . ' from ' . $volid,
             'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        self::emitVdsEvent(VdsEvent::onVdsBackupRestored(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => $vmid,
+            'restore_id' => $restoreId,
+            'volid' => $volid,
+            'context' => ['source' => 'admin', 'storage' => $storage],
         ]);
 
         return ApiResponse::success(['restore_id' => $restoreId], 'Restore started', 202);
@@ -2301,6 +2367,14 @@ class VmInstancesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsEvent::onVdsUpdated(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($instance['vmid'] ?? 0),
+            'changed_fields' => ['backup_limit'],
+            'context' => ['source' => 'admin'],
+        ]);
+
         return ApiResponse::success(['backup_limit' => $limit], 'Backup limit updated', 200);
     }
 
@@ -2386,6 +2460,13 @@ class VmInstancesController
                 App::getInstance(true)->getLogger()->error('Failed to stop VM during suspension: ' . $e->getMessage());
             }
         }
+
+        self::emitVdsEvent(VdsEvent::onVdsSuspended(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($instance['vmid'] ?? 0),
+            'context' => ['source' => 'admin'],
+        ]);
 
         if ($user) {
             try {
@@ -2475,6 +2556,13 @@ class VmInstancesController
             'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsEvent::onVdsUnsuspended(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($instance['vmid'] ?? 0),
+            'context' => ['source' => 'admin'],
+        ]);
+
         if ($user) {
             try {
                 VmUnsuspended::send([
@@ -2532,6 +2620,13 @@ class VmInstancesController
                 'ip_address' => CloudFlareRealIP::getRealIP(),
             ]);
 
+            self::emitVdsEvent(VdsEvent::onVdsDeleted(), [
+                'user_uuid' => $admin['uuid'] ?? null,
+                'vds_id' => $id,
+                'vmid' => (int) ($instance['vmid'] ?? 0),
+                'context' => ['source' => 'admin', 'reason' => 'node_gone'],
+            ]);
+
             return ApiResponse::success([], 'VM instance deleted', 200);
         }
 
@@ -2545,6 +2640,13 @@ class VmInstancesController
                 'name' => 'vm_instance_delete',
                 'context' => 'Deleted VM instance (Proxmox unreachable): ' . ($instance['hostname'] ?? $id),
                 'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            self::emitVdsEvent(VdsEvent::onVdsDeleted(), [
+                'user_uuid' => $admin['uuid'] ?? null,
+                'vds_id' => $id,
+                'vmid' => (int) ($instance['vmid'] ?? 0),
+                'context' => ['source' => 'admin', 'reason' => 'proxmox_unreachable'],
             ]);
 
             return ApiResponse::success([], 'VM instance deleted from panel', 200);
@@ -2581,6 +2683,13 @@ class VmInstancesController
             'event' => 'vm:delete.queued',
             'metadata' => ['hostname' => $instance['hostname'] ?? null, 'task_id' => $taskId],
             'ip' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        self::emitVdsEvent(VdsEvent::onVdsDeleted(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => $vmid,
+            'context' => ['source' => 'admin', 'task_id' => $taskId, 'queued' => true],
         ]);
 
         return ApiResponse::success(['task_id' => $taskId], 'VM deletion task added to queue', 202);
@@ -2659,5 +2768,13 @@ class VmInstancesController
         }
 
         return $s !== '' ? $s : 'vm-' . time();
+    }
+
+    private static function emitVdsEvent(string $eventName, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($eventName, $payload);
+        }
     }
 }

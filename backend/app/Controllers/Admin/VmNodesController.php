@@ -27,6 +27,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Services\Proxmox\Proxmox;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\VdsNodeEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -364,6 +365,13 @@ class VmNodesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsNodeEvent::onVdsNodeCreated(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vm_node_id' => (int) $vmNodeId,
+            'vm_node' => $vmNode,
+            'context' => ['source' => 'admin'],
+        ]);
+
         return ApiResponse::success(['vm_node' => $vmNode], 'VM node created successfully', 201);
     }
 
@@ -479,6 +487,14 @@ class VmNodesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsNodeEvent::onVdsNodeUpdated(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vm_node_id' => $id,
+            'vm_node' => $vmNode,
+            'changed_fields' => array_keys($data),
+            'context' => ['source' => 'admin'],
+        ]);
+
         return ApiResponse::success(['vm_node' => $vmNode], 'VM node updated successfully', 200);
     }
 
@@ -530,6 +546,13 @@ class VmNodesController
             'name' => 'delete_vm_node',
             'context' => 'Deleted VM node: ' . $vmNode['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        self::emitVdsEvent(VdsNodeEvent::onVdsNodeDeleted(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vm_node_id' => $id,
+            'vm_node' => $vmNode,
+            'context' => ['source' => 'admin'],
         ]);
 
         return ApiResponse::success([], 'VM node deleted successfully', 200);
@@ -1211,6 +1234,14 @@ class VmNodesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsNodeEvent::onVdsNodeIpCreated(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vm_node_id' => $id,
+            'ip_id' => (int) $ipId,
+            'ip' => $ip,
+            'context' => ['source' => 'admin'],
+        ]);
+
         return ApiResponse::success(['ip' => $ip], 'VM node IP created successfully', 201);
     }
 
@@ -1294,6 +1325,15 @@ class VmNodesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsNodeEvent::onVdsNodeIpUpdated(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vm_node_id' => $id,
+            'ip_id' => $ipId,
+            'ip' => $updated,
+            'changed_fields' => array_keys($data),
+            'context' => ['source' => 'admin'],
+        ]);
+
         return ApiResponse::success(['ip' => $updated], 'VM node IP updated successfully', 200);
     }
 
@@ -1352,6 +1392,14 @@ class VmNodesController
             'name' => 'delete_vm_node_ip',
             'context' => 'Deleted IP ' . ($ip['ip'] ?? '') . ' from VM node: ' . ($vmNode['name'] ?? $id),
             'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        self::emitVdsEvent(VdsNodeEvent::onVdsNodeIpDeleted(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vm_node_id' => $id,
+            'ip_id' => $ipId,
+            'ip' => $ip,
+            'context' => ['source' => 'admin'],
         ]);
 
         return ApiResponse::success([], 'VM node IP deleted successfully', 200);
@@ -1416,6 +1464,14 @@ class VmNodesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsNodeEvent::onVdsNodeIpPrimarySet(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vm_node_id' => $id,
+            'ip_id' => $ipId,
+            'ip' => $updated,
+            'context' => ['source' => 'admin'],
+        ]);
+
         return ApiResponse::success(['ip' => $updated], 'VM node primary IP updated successfully', 200);
     }
 
@@ -1456,6 +1512,7 @@ class VmNodesController
      */
     public function createTemplate(Request $request, int $id): Response
     {
+        $admin = $request->get('user');
         $vmNode = VmNode::getVmNodeById($id);
         if (!$vmNode) {
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
@@ -1471,15 +1528,23 @@ class VmNodesController
         }
         try {
             $created = VmTemplate::create([
-                'name'              => $data['name'],
-                'description'       => $data['description'] ?? null,
-                'guest_type'        => $data['guest_type'] ?? 'qemu',
-                'os_type'           => $data['os_type'] ?? null,
-                'storage'           => $data['storage'] ?? 'local',
-                'template_file'     => $templateFile,
-                'vm_node_id'        => $id,
-                'is_active'         => $data['is_active'] ?? 'true',
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'guest_type' => $data['guest_type'] ?? 'qemu',
+                'os_type' => $data['os_type'] ?? null,
+                'storage' => $data['storage'] ?? 'local',
+                'template_file' => $templateFile,
+                'vm_node_id' => $id,
+                'is_active' => $data['is_active'] ?? 'true',
                 'lxc_root_password' => $data['lxc_root_password'] ?? null,
+            ]);
+
+            self::emitVdsEvent(VdsNodeEvent::onVdsTemplateCreated(), [
+                'user_uuid' => $admin['uuid'] ?? null,
+                'template_id' => (int) ($created['id'] ?? 0),
+                'vm_node_id' => $id,
+                'template' => $created,
+                'context' => ['source' => 'admin'],
             ]);
 
             return ApiResponse::success(['template' => $created], 'Template created successfully', 201);
@@ -1493,6 +1558,7 @@ class VmNodesController
      */
     public function updateTemplate(Request $request, int $templateId): Response
     {
+        $admin = $request->get('user');
         $template = VmTemplate::getById($templateId);
         if (!$template) {
             return ApiResponse::error('Template not found', 'TEMPLATE_NOT_FOUND', 404);
@@ -1504,6 +1570,17 @@ class VmNodesController
         }
         $updated = VmTemplate::update($templateId, $data);
 
+        if ($updated) {
+            self::emitVdsEvent(VdsNodeEvent::onVdsTemplateUpdated(), [
+                'user_uuid' => $admin['uuid'] ?? null,
+                'template_id' => $templateId,
+                'vm_node_id' => (int) ($template['vm_node_id'] ?? 0),
+                'template' => $updated,
+                'changed_fields' => array_keys($data),
+                'context' => ['source' => 'admin'],
+            ]);
+        }
+
         return $updated
             ? ApiResponse::success(['template' => $updated], 'Template updated successfully', 200)
             : ApiResponse::error('Update failed', 'UPDATE_FAILED', 400);
@@ -1514,14 +1591,33 @@ class VmNodesController
      */
     public function deleteTemplate(Request $request, int $templateId): Response
     {
+        $admin = $request->get('user');
         $template = VmTemplate::getById($templateId);
         if (!$template) {
             return ApiResponse::error('Template not found', 'TEMPLATE_NOT_FOUND', 404);
         }
         $deleted = VmTemplate::delete($templateId);
 
+        if ($deleted) {
+            self::emitVdsEvent(VdsNodeEvent::onVdsTemplateDeleted(), [
+                'user_uuid' => $admin['uuid'] ?? null,
+                'template_id' => $templateId,
+                'vm_node_id' => (int) ($template['vm_node_id'] ?? 0),
+                'template' => $template,
+                'context' => ['source' => 'admin'],
+            ]);
+        }
+
         return $deleted
             ? ApiResponse::success(null, 'Template deleted successfully', 200)
             : ApiResponse::error('Delete failed', 'DELETE_FAILED', 400);
+    }
+
+    private static function emitVdsEvent(string $eventName, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($eventName, $payload);
+        }
     }
 }

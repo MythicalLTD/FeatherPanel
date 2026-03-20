@@ -22,6 +22,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceActivity;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\VdsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -135,6 +136,14 @@ class VmUserSubuserController
             'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsEvent::onVdsSubuserCreated(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($vmInstance['vmid'] ?? 0),
+            'subuser_id' => (int) ($subuser['id'] ?? 0),
+            'context' => ['source' => 'user', 'target_user_id' => $targetUserId],
+        ]);
+
         return ApiResponse::success(['subuser' => $subuser], 'Subuser added', 201);
     }
 
@@ -180,6 +189,22 @@ class VmUserSubuserController
             'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsEvent::onVdsSubuserDeleted(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($vmInstance['vmid'] ?? 0),
+            'subuser_id' => $subuserId,
+            'context' => ['source' => 'user'],
+        ]);
+
         return ApiResponse::success([], 'Subuser removed', 200);
+    }
+
+    private static function emitVdsEvent(string $eventName, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($eventName, $payload);
+        }
     }
 }

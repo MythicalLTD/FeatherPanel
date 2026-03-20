@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: Vds</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>Vds</h1>
+      <p class="muted">17 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:vds:backup:create</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsBackupCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string backup id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsBackupCreated(), function ($uuid, $id, $vmid, $id, $context) {
+        // Handle featherpanel:vds:backup:create
+        // Parameters: string|null user uuid, int vds instance id, int vmid, string backup id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:backup:delete</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsBackupDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string volid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsBackupDeleted(), function ($uuid, $id, $vmid, $volid, $context) {
+        // Handle featherpanel:vds:backup:delete
+        // Parameters: string|null user uuid, int vds instance id, int vmid, string volid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:backup:restore</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsBackupRestored</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string restore id, string volid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsBackupRestored(), function ($uuid, $id, $vmid, $id, $volid, $context) {
+        // Handle featherpanel:vds:backup:restore
+        // Parameters: string|null user uuid, int vds instance id, int vmid, string restore id, string volid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:console:access</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsConsoleAccessed</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsConsoleAccessed(), function ($uuid, $id, $vmid, $context) {
+        // Handle featherpanel:vds:console:access
+        // Parameters: string|null user uuid, int vds instance id, int vmid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsCreated(), function ($uuid, $id, $vmid, $context) {
+        // Handle featherpanel:vds:created
+        // Parameters: string|null user uuid, int vds instance id, int vmid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsDeleted(), function ($uuid, $id, $vmid, $context) {
+        // Handle featherpanel:vds:deleted
+        // Parameters: string|null user uuid, int vds instance id, int vmid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:iso:mount</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsIsoMounted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string volid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsIsoMounted(), function ($uuid, $id, $vmid, $volid, $context) {
+        // Handle featherpanel:vds:iso:mount
+        // Parameters: string|null user uuid, int vds instance id, int vmid, string volid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:iso:unmount</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsIsoUnmounted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsIsoUnmounted(), function ($uuid, $id, $vmid, $context) {
+        // Handle featherpanel:vds:iso:unmount
+        // Parameters: string|null user uuid, int vds instance id, int vmid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:network:update</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsNetworkUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array dns/network payload, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsNetworkUpdated(), function ($uuid, $id, $vmid, $payload, $context) {
+        // Handle featherpanel:vds:network:update
+        // Parameters: string|null user uuid, int vds instance id, int vmid, array dns/network payload, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:power:action</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsPowerAction</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string action, string task id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsPowerAction(), function ($uuid, $id, $vmid, $action, $id, $context) {
+        // Handle featherpanel:vds:power:action
+        // Parameters: string|null user uuid, int vds instance id, int vmid, string action, string task id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:qemu:hardware:update</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsQemuHardwareUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array qemu payload, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsQemuHardwareUpdated(), function ($uuid, $id, $vmid, $payload, $context) {
+        // Handle featherpanel:vds:qemu:hardware:update
+        // Parameters: string|null user uuid, int vds instance id, int vmid, array qemu payload, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:reinstall</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsReinstalled</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string reinstall id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsReinstalled(), function ($uuid, $id, $vmid, $id, $context) {
+        // Handle featherpanel:vds:reinstall
+        // Parameters: string|null user uuid, int vds instance id, int vmid, string reinstall id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:subuser:create</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsSubuserCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, int subuser id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsSubuserCreated(), function ($uuid, $id, $vmid, $id, $context) {
+        // Handle featherpanel:vds:subuser:create
+        // Parameters: string|null user uuid, int vds instance id, int vmid, int subuser id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:subuser:delete</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsSubuserDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, int subuser id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsSubuserDeleted(), function ($uuid, $id, $vmid, $id, $context) {
+        // Handle featherpanel:vds:subuser:delete
+        // Parameters: string|null user uuid, int vds instance id, int vmid, int subuser id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:suspended</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsSuspended</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsSuspended(), function ($uuid, $id, $vmid, $context) {
+        // Handle featherpanel:vds:suspended
+        // Parameters: string|null user uuid, int vds instance id, int vmid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:unsuspended</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsUnsuspended</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsUnsuspended(), function ($uuid, $id, $vmid, $context) {
+        // Handle featherpanel:vds:unsuspended
+        // Parameters: string|null user uuid, int vds instance id, int vmid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:vds:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onVdsUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array changed fields, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\VdsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(VdsEvent::onVdsUpdated(), function ($uuid, $id, $vmid, $fields, $context) {
+        // Handle featherpanel:vds:updated
+        // Parameters: string|null user uuid, int vds instance id, int vmid, array changed fields, array context.
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

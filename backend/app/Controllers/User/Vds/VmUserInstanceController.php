@@ -32,6 +32,7 @@ use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceActivity;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\VdsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -610,6 +611,19 @@ class VmUserInstanceController
             'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsEvent::onVdsQemuHardwareUpdated(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($vmInstance['vmid'] ?? 0),
+            'changes' => [
+                'bios' => $biosMode,
+                'efi_enabled' => $efiEnabled,
+                'tpm_enabled' => $tpmEnabled,
+                'serial0_enabled' => $serial0Enabled,
+            ],
+            'context' => ['source' => 'user'],
+        ]);
+
         // Return updated hardware state.
         $afterCfg = $client->getVmConfig($node, $vmid, 'qemu');
         $after = is_array($afterCfg['config'] ?? null) ? $afterCfg['config'] : [];
@@ -921,6 +935,17 @@ class VmUserInstanceController
                 return ApiResponse::error('Proxmox config update failed: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
             }
         }
+
+        self::emitVdsEvent(VdsEvent::onVdsNetworkUpdated(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($vmInstance['vmid'] ?? 0),
+            'changes' => [
+                'nameserver' => $nameserverParsed,
+                'searchdomain' => $searchdomainParsed,
+            ],
+            'context' => ['source' => 'user'],
+        ]);
 
         return ApiResponse::success(['instance' => $vmInstance], 'DNS updated successfully', 200);
     }
@@ -1300,6 +1325,14 @@ class VmUserInstanceController
                 return ApiResponse::error('Proxmox mount/config update failed: ' . ($setRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
             }
 
+            self::emitVdsEvent(VdsEvent::onVdsIsoMounted(), [
+                'user_uuid' => $user['uuid'] ?? null,
+                'vds_id' => $id,
+                'vmid' => $vmid,
+                'volid' => $volid,
+                'context' => ['source' => 'user', 'method' => 'upload'],
+            ]);
+
             return ApiResponse::success(
                 ['mounted_iso' => ['slot' => 'ide2', 'volid' => $volid, 'storage' => $storage, 'filename' => basename($originalName)]],
                 'ISO mounted successfully',
@@ -1432,6 +1465,14 @@ class VmUserInstanceController
             'event' => 'vm:iso.fetch_and_mount.start',
             'metadata' => ['storage' => $storage],
             'ip' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        self::emitVdsEvent(VdsEvent::onVdsIsoMounted(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => $vmid,
+            'volid' => null,
+            'context' => ['source' => 'user', 'method' => 'fetch', 'task_id' => $taskId, 'storage' => $storage],
         ]);
 
         return ApiResponse::success(
@@ -1614,6 +1655,13 @@ class VmUserInstanceController
             return ApiResponse::error('Proxmox boot order update failed: ' . ($setRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
         }
 
+        self::emitVdsEvent(VdsEvent::onVdsIsoUnmounted(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => $vmid,
+            'context' => ['source' => 'user'],
+        ]);
+
         return ApiResponse::success([], 'ISO unmounted successfully', 200);
     }
 
@@ -1726,6 +1774,15 @@ class VmUserInstanceController
             'ip' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitVdsEvent(VdsEvent::onVdsPowerAction(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => $vmid,
+            'action' => $action,
+            'task_id' => $taskId,
+            'context' => ['source' => 'user'],
+        ]);
+
         return ApiResponse::success([
             'task_id' => $taskId,
             'message' => 'Power task added to queue.',
@@ -1785,6 +1842,13 @@ class VmUserInstanceController
         if (!$result['ok']) {
             return ApiResponse::error($result['error'], $result['code'], $result['http_status']);
         }
+
+        self::emitVdsEvent(VdsEvent::onVdsConsoleAccessed(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($vmInstance['vmid'] ?? 0),
+            'context' => ['source' => 'user'],
+        ]);
 
         return ApiResponse::success($result['payload'], 'VNC ticket created', 200);
     }
@@ -1858,6 +1922,14 @@ class VmUserInstanceController
             'event' => 'vm:reinstall.start',
             'metadata' => ['hostname' => $instance['hostname'] ?? null],
             'ip' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        self::emitVdsEvent(VdsEvent::onVdsReinstalled(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($instance['vmid'] ?? 0),
+            'reinstall_id' => $result['reinstall_id'] ?? null,
+            'context' => ['source' => 'user'],
         ]);
 
         return ApiResponse::success([
@@ -2073,5 +2145,13 @@ class VmUserInstanceController
         }
 
         return $instances;
+    }
+
+    private static function emitVdsEvent(string $eventName, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($eventName, $payload);
+        }
     }
 }

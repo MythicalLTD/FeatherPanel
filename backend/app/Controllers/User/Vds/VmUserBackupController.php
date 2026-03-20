@@ -28,6 +28,7 @@ use App\Chat\VmInstanceBackup;
 use App\Chat\VmInstanceActivity;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\VdsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -109,9 +110,9 @@ class VmUserBackupController
         }
 
         return ApiResponse::success([
-            'backups'      => $backups,
+            'backups' => $backups,
             'backup_limit' => (int) ($vmInstance['backup_limit'] ?? 5),
-            'storages'     => $storages,
+            'storages' => $storages,
         ], 'Backups listed', 200);
     }
 
@@ -166,17 +167,17 @@ class VmUserBackupController
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
 
-        $data     = json_decode($request->getContent(), true);
+        $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
         // Enforce node-level backup storage defaults; ignore any client-provided `storage` override.
-        $storage  = '';
+        $storage = '';
         $compress = is_string($data['compress'] ?? null) ? trim($data['compress']) : 'zstd';
-        $mode     = is_string($data['mode'] ?? null) ? trim($data['mode']) : 'snapshot';
-        $node     = $instance['pve_node'] ?? '';
-        $vmid     = (int) $instance['vmid'];
-        $vmType   = $instance['vm_type'] ?? 'qemu';
+        $mode = is_string($data['mode'] ?? null) ? trim($data['mode']) : 'snapshot';
+        $node = $instance['pve_node'] ?? '';
+        $vmid = (int) $instance['vmid'];
+        $vmType = $instance['vm_type'] ?? 'qemu';
 
         if ($node === '') {
             $find = $client->findNodeByVmid($vmid);
@@ -220,34 +221,42 @@ class VmUserBackupController
 
         $backupId = bin2hex(random_bytes(16));
         $targetNode = $node !== '' ? $node : (string) ($instance['pve_node'] ?? '');
-        $vmNodeId   = (int) ($instance['vm_node_id'] ?? 0);
+        $vmNodeId = (int) ($instance['vm_node_id'] ?? 0);
 
         VmTask::create([
-            'task_id'     => $backupId,
+            'task_id' => $backupId,
             'instance_id' => $id,
-            'vm_node_id'  => $vmNodeId,
-            'task_type'   => 'backup',
-            'status'      => 'pending',
-            'upid'        => $result['upid'],
+            'vm_node_id' => $vmNodeId,
+            'task_type' => 'backup',
+            'status' => 'pending',
+            'upid' => $result['upid'],
             'target_node' => $targetNode,
-            'vmid'        => $vmid,
-            'user_uuid'   => $instance['user_uuid'] ?? null,
-            'data'        => [
-                'type'        => 'backup',
+            'vmid' => $vmid,
+            'user_uuid' => $instance['user_uuid'] ?? null,
+            'data' => [
+                'type' => 'backup',
                 'instance_id' => $id,
-                'vmid'        => $vmid,
-                'node'        => $targetNode,
-                'storage'     => $storage,
+                'vmid' => $vmid,
+                'node' => $targetNode,
+                'storage' => $storage,
             ],
         ]);
 
         VmInstanceActivity::createActivity([
             'vm_instance_id' => $id,
-            'vm_node_id'     => (int) $instance['vm_node_id'],
-            'user_id'        => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
-            'event'          => 'vm:backup.start',
-            'metadata'       => ['vmid' => $vmid],
-            'ip'             => CloudFlareRealIP::getRealIP(),
+            'vm_node_id' => (int) $instance['vm_node_id'],
+            'user_id' => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
+            'event' => 'vm:backup.start',
+            'metadata' => ['vmid' => $vmid],
+            'ip' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        self::emitVdsEvent(VdsEvent::onVdsBackupCreated(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => $vmid,
+            'backup_id' => $backupId,
+            'context' => ['source' => 'user', 'storage' => $storage],
         ]);
 
         return ApiResponse::success(['backup_id' => $backupId], 'Backup started', 202);
@@ -307,7 +316,7 @@ class VmUserBackupController
 
         return ApiResponse::success([
             'status' => 'failed',
-            'error'  => $task['error'] ?? 'Unknown error',
+            'error' => $task['error'] ?? 'Unknown error',
         ], 'Backup failed', 200);
     }
 
@@ -348,11 +357,11 @@ class VmUserBackupController
             return ApiResponse::error('You do not have permission to delete backups for this VM', 'PERMISSION_DENIED', 403);
         }
 
-        $data    = json_decode($request->getContent(), true);
+        $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
-        $volid   = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
+        $volid = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
         $storage = is_string($data['storage'] ?? null) ? trim($data['storage']) : '';
 
         if ($volid === '' || $storage === '') {
@@ -368,7 +377,7 @@ class VmUserBackupController
         if ($vmNode) {
             try {
                 $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
-                $node   = $instance['pve_node'] ?? '';
+                $node = $instance['pve_node'] ?? '';
                 if ($node !== '') {
                     $result = $client->deleteBackupVolume($node, (string) $backup['storage'], (string) $backup['volid']);
                     if (!$result['ok']) {
@@ -388,11 +397,19 @@ class VmUserBackupController
 
         VmInstanceActivity::createActivity([
             'vm_instance_id' => $id,
-            'vm_node_id'     => (int) $instance['vm_node_id'],
-            'user_id'        => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
-            'event'          => 'vm:backup.delete',
-            'metadata'       => ['volid' => $volid],
-            'ip'             => CloudFlareRealIP::getRealIP(),
+            'vm_node_id' => (int) $instance['vm_node_id'],
+            'user_id' => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
+            'event' => 'vm:backup.delete',
+            'metadata' => ['volid' => $volid],
+            'ip' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        self::emitVdsEvent(VdsEvent::onVdsBackupDeleted(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($instance['vmid'] ?? 0),
+            'volid' => $volid,
+            'context' => ['source' => 'user', 'storage' => $storage],
         ]);
 
         return ApiResponse::success([], 'Backup deleted', 200);
@@ -448,19 +465,19 @@ class VmUserBackupController
             return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
         }
 
-        $data    = json_decode($request->getContent(), true);
+        $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
-        $volid   = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
+        $volid = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
         $storage = is_string($data['storage'] ?? null) ? trim($data['storage']) : '';
 
         if ($volid === '' || $storage === '') {
             return ApiResponse::error('volid and storage are required', 'MISSING_PARAMS', 400);
         }
 
-        $vmid   = (int) $instance['vmid'];
-        $node   = $instance['pve_node'] ?? '';
+        $vmid = (int) $instance['vmid'];
+        $node = $instance['pve_node'] ?? '';
         $vmType = $instance['vm_type'] ?? 'qemu';
         if ($node === '') {
             $find = $client->findNodeByVmid($vmid);
@@ -487,33 +504,42 @@ class VmUserBackupController
         $restoreId = bin2hex(random_bytes(16));
 
         VmTask::create([
-            'task_id'     => $restoreId,
+            'task_id' => $restoreId,
             'instance_id' => $id,
-            'vm_node_id'  => (int) $instance['vm_node_id'],
-            'task_type'   => 'restore_backup',
-            'status'      => 'pending',
-            'upid'        => $result['upid'],
+            'vm_node_id' => (int) $instance['vm_node_id'],
+            'task_type' => 'restore_backup',
+            'status' => 'pending',
+            'upid' => $result['upid'],
             'target_node' => $node,
-            'vmid'        => $vmid,
-            'user_uuid'   => $instance['user_uuid'] ?? null,
-            'data'        => [
-                'type'        => 'restore_backup',
+            'vmid' => $vmid,
+            'user_uuid' => $instance['user_uuid'] ?? null,
+            'data' => [
+                'type' => 'restore_backup',
                 'instance_id' => $id,
-                'vmid'        => $vmid,
-                'node'        => $node,
-                'storage'     => $storage,
-                'volid'       => $volid,
-                'vm_type'     => $vmType,
+                'vmid' => $vmid,
+                'node' => $node,
+                'storage' => $storage,
+                'volid' => $volid,
+                'vm_type' => $vmType,
             ],
         ]);
 
         VmInstanceActivity::createActivity([
             'vm_instance_id' => $id,
-            'vm_node_id'     => (int) $instance['vm_node_id'],
-            'user_id'        => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
-            'event'          => 'vm:restore.start',
-            'metadata'       => ['volid' => $volid],
-            'ip'             => CloudFlareRealIP::getRealIP(),
+            'vm_node_id' => (int) $instance['vm_node_id'],
+            'user_id' => isset($user['id']) && (int) $user['id'] > 0 ? (int) $user['id'] : null,
+            'event' => 'vm:restore.start',
+            'metadata' => ['volid' => $volid],
+            'ip' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        self::emitVdsEvent(VdsEvent::onVdsBackupRestored(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => $vmid,
+            'restore_id' => $restoreId,
+            'volid' => $volid,
+            'context' => ['source' => 'user', 'storage' => $storage],
         ]);
 
         return ApiResponse::success(['restore_id' => $restoreId], 'Restore started', 202);
@@ -584,7 +610,15 @@ class VmUserBackupController
 
         return ApiResponse::success([
             'status' => 'failed',
-            'error'  => $task['error'] ?? 'Unknown error',
+            'error' => $task['error'] ?? 'Unknown error',
         ], 'Restore failed', 200);
+    }
+
+    private static function emitVdsEvent(string $eventName, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($eventName, $payload);
+        }
     }
 }

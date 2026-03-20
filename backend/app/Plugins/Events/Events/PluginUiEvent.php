@@ -21,27 +21,27 @@ use App\Plugins\Events\PluginEvent;
 
 class PluginUiEvent implements PluginEvent
 {
-	/**
-	 * Callback: array sidebar sections, array context metadata.
-	 */
-	public static function onSidebarRetrieved(): string
-	{
-		return 'featherpanel:system:plugins:ui:sidebar:retrieved';
-	}
+    /**
+     * Callback: array sidebar sections, array context metadata.
+     */
+    public static function onSidebarRetrieved(): string
+    {
+        return 'featherpanel:system:plugins:ui:sidebar:retrieved';
+    }
 
-	/**
-	 * Callback: array widgets by page/location, array context metadata.
-	 */
-	public static function onWidgetsRetrieved(): string
-	{
-		return 'featherpanel:system:plugins:ui:widgets:retrieved';
-	}
+    /**
+     * Callback: array widgets by page/location, array context metadata.
+     */
+    public static function onWidgetsRetrieved(): string
+    {
+        return 'featherpanel:system:plugins:ui:widgets:retrieved';
+    }
 
-	/**
-	 * Callback: string source, string message, array context metadata.
-	 */
-	public static function onUiError(): string
-	{
-		return 'featherpanel:system:plugins:ui:error';
-	}
+    /**
+     * Callback: string source, string message, array context metadata.
+     */
+    public static function onUiError(): string
+    {
+        return 'featherpanel:system:plugins:ui:error';
+    }
 }
