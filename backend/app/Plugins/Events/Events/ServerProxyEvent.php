@@ -21,19 +21,19 @@ use App\Plugins\Events\PluginEvent;
 
 class ServerProxyEvent implements PluginEvent
 {
-	/**
-	 * Callback: string user uuid, string server uuid, int|null proxy id, string domain, int port.
-	 */
-	public static function onServerProxyCreated(): string
-	{
-		return 'featherpanel:server:proxy:create';
-	}
+    /**
+     * Callback: string user uuid, string server uuid, int|null proxy id, string domain, int port.
+     */
+    public static function onServerProxyCreated(): string
+    {
+        return 'featherpanel:server:proxy:create';
+    }
 
-	/**
-	 * Callback: string user uuid, string server uuid, int|null proxy id, string domain, int port.
-	 */
-	public static function onServerProxyDeleted(): string
-	{
-		return 'featherpanel:server:proxy:delete';
-	}
+    /**
+     * Callback: string user uuid, string server uuid, int|null proxy id, string domain, int port.
+     */
+    public static function onServerProxyDeleted(): string
+    {
+        return 'featherpanel:server:proxy:delete';
+    }
 }

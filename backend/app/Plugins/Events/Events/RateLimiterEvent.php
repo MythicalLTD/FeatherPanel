@@ -21,35 +21,35 @@ use App\Plugins\Events\PluginEvent;
 
 class RateLimiterEvent implements PluginEvent
 {
-	/**
-	 * Callback: string|null user uuid, bool enabled.
-	 */
-	public static function onRateLimiterGlobalUpdated(): string
-	{
-		return 'featherpanel:rate-limiter:global:update';
-	}
+    /**
+     * Callback: string|null user uuid, bool enabled.
+     */
+    public static function onRateLimiterGlobalUpdated(): string
+    {
+        return 'featherpanel:rate-limiter:global:update';
+    }
 
-	/**
-	 * Callback: string|null user uuid, string route name, array config.
-	 */
-	public static function onRateLimiterUpdated(): string
-	{
-		return 'featherpanel:rate-limiter:update';
-	}
+    /**
+     * Callback: string|null user uuid, string route name, array config.
+     */
+    public static function onRateLimiterUpdated(): string
+    {
+        return 'featherpanel:rate-limiter:update';
+    }
 
-	/**
-	 * Callback: string|null user uuid, string route name.
-	 */
-	public static function onRateLimiterDeleted(): string
-	{
-		return 'featherpanel:rate-limiter:delete';
-	}
+    /**
+     * Callback: string|null user uuid, string route name.
+     */
+    public static function onRateLimiterDeleted(): string
+    {
+        return 'featherpanel:rate-limiter:delete';
+    }
 
-	/**
-	 * Callback: string|null user uuid, array updated routes, array errors.
-	 */
-	public static function onRateLimiterBulkUpdated(): string
-	{
-		return 'featherpanel:rate-limiter:bulk:update';
-	}
+    /**
+     * Callback: string|null user uuid, array updated routes, array errors.
+     */
+    public static function onRateLimiterBulkUpdated(): string
+    {
+        return 'featherpanel:rate-limiter:bulk:update';
+    }
 }

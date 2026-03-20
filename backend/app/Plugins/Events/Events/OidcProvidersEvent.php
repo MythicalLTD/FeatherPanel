@@ -21,27 +21,27 @@ use App\Plugins\Events\PluginEvent;
 
 class OidcProvidersEvent implements PluginEvent
 {
-	/**
-	 * Callback: string|null user uuid, array provider.
-	 */
-	public static function onOidcProviderCreated(): string
-	{
-		return 'featherpanel:oidc:provider:create';
-	}
+    /**
+     * Callback: string|null user uuid, array provider.
+     */
+    public static function onOidcProviderCreated(): string
+    {
+        return 'featherpanel:oidc:provider:create';
+    }
 
-	/**
-	 * Callback: string|null user uuid, array provider, array changed fields.
-	 */
-	public static function onOidcProviderUpdated(): string
-	{
-		return 'featherpanel:oidc:provider:update';
-	}
+    /**
+     * Callback: string|null user uuid, array provider, array changed fields.
+     */
+    public static function onOidcProviderUpdated(): string
+    {
+        return 'featherpanel:oidc:provider:update';
+    }
 
-	/**
-	 * Callback: string|null user uuid, array provider.
-	 */
-	public static function onOidcProviderDeleted(): string
-	{
-		return 'featherpanel:oidc:provider:delete';
-	}
+    /**
+     * Callback: string|null user uuid, array provider.
+     */
+    public static function onOidcProviderDeleted(): string
+    {
+        return 'featherpanel:oidc:provider:delete';
+    }
 }

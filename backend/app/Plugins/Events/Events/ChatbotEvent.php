@@ -21,19 +21,19 @@ use App\Plugins\Events\PluginEvent;
 
 class ChatbotEvent implements PluginEvent
 {
-	/**
-	 * Callback: string user uuid, int conversation id.
-	 */
-	public static function onConversationDeleted(): string
-	{
-		return 'featherpanel:chatbot:conversation:delete';
-	}
+    /**
+     * Callback: string user uuid, int conversation id.
+     */
+    public static function onConversationDeleted(): string
+    {
+        return 'featherpanel:chatbot:conversation:delete';
+    }
 
-	/**
-	 * Callback: string user uuid, int conversation id, string memory.
-	 */
-	public static function onConversationMemoryUpdated(): string
-	{
-		return 'featherpanel:chatbot:conversation:memory:update';
-	}
+    /**
+     * Callback: string user uuid, int conversation id, string memory.
+     */
+    public static function onConversationMemoryUpdated(): string
+    {
+        return 'featherpanel:chatbot:conversation:memory:update';
+    }
 }
