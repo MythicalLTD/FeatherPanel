@@ -64,6 +64,7 @@ export interface PluginSidebarResponse {
     data: {
         sidebar: {
             server: Record<string, PluginSidebarItem>;
+            vds: Record<string, PluginSidebarItem>;
             client: Record<string, PluginSidebarItem>;
             admin: Record<string, PluginSidebarItem>;
         };

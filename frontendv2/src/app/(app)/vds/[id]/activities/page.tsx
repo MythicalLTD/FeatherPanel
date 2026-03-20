@@ -53,6 +53,8 @@ import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface VmActivityUser {
     username: string;
@@ -143,6 +145,7 @@ export default function VdsActivitiesPage() {
     const pathname = usePathname();
     const { t } = useTranslation();
     const { instance, loading: instanceLoading, hasPermission } = useVmInstance();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('vds-activities');
 
     const [loading, setLoading] = useState(true);
     const [activities, setActivities] = useState<VmActivityItem[]>([]);
@@ -265,6 +268,10 @@ export default function VdsActivitiesPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchQuery, selectedEventFilter]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     const changePage = (newPage: number) => {
         if (newPage >= 1 && newPage <= pagination.total_pages) {
             setPagination((p) => ({ ...p, current_page: newPage }));
@@ -323,6 +330,8 @@ export default function VdsActivitiesPage() {
 
     return (
         <div key={pathname} className='space-y-8 pb-12 '>
+            <WidgetRenderer widgets={getWidgets('vds-activities', 'top-of-page')} />
+
             <PageHeader
                 title={t('navigation.items.activities') || 'VDS Activity Log'}
                 description={
@@ -531,6 +540,8 @@ export default function VdsActivitiesPage() {
                     </div>
                 </div>
             )}
+
+            <WidgetRenderer widgets={getWidgets('vds-activities', 'bottom-of-page')} />
 
             {/* Filter & view options dialog */}
             <Dialog open={filterDialogOpen} onClose={() => setFilterDialogOpen(false)} className='max-w-md'>

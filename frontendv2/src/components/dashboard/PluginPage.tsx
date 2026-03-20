@@ -28,11 +28,12 @@ import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 
 interface PluginPageProps {
-    context: 'admin' | 'client' | 'server';
+    context: 'admin' | 'client' | 'server' | 'vds';
     serverUuid?: string;
+    vdsId?: string;
 }
 
-export default function PluginPage({ context, serverUuid }: PluginPageProps) {
+export default function PluginPage({ context, serverUuid, vdsId }: PluginPageProps) {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const pathname = usePathname();
@@ -58,6 +59,9 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
             if (context === 'server' && serverUuid) {
                 document.cookie = `serverUuid=${serverUuid}; path=/; max-age=3600; SameSite=Lax`;
             }
+            if (context === 'vds' && vdsId) {
+                document.cookie = `vdsId=${vdsId}; path=/; max-age=3600; SameSite=Lax`;
+            }
 
             try {
                 if (!pluginData) {
@@ -68,6 +72,8 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
 
                 if (context === 'admin') {
                     sidebarSection = pluginData.admin || {};
+                } else if (context === 'vds') {
+                    sidebarSection = pluginData.vds || {};
                 } else if (context === 'server') {
                     sidebarSection = pluginData.server || {};
                 } else {
@@ -77,6 +83,9 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                 let pluginPath = '';
                 if (context === 'admin') {
                     pluginPath = pathname.replace('/admin', '');
+                } else if (context === 'vds' && vdsId) {
+                    const vdsPrefix = `/vds/${vdsId}`;
+                    pluginPath = pathname.replace(vdsPrefix, '');
                 } else if (context === 'server' && serverUuid) {
                     const serverPrefix = `/server/${serverUuid}`;
                     pluginPath = pathname.replace(serverPrefix, '');
@@ -132,6 +141,15 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                         }
                     }
 
+                    if (context === 'vds' && vdsId) {
+                        if (componentUrl.includes('vdsId=notFound')) {
+                            componentUrl = componentUrl.replace('vdsId=notFound', `vdsId=${vdsId}`);
+                        } else if (!componentUrl.includes('vdsId=')) {
+                            const separator = componentUrl.includes('?') ? '&' : '?';
+                            componentUrl += `${separator}vdsId=${vdsId}`;
+                        }
+                    }
+
                     setIframeSrc(componentUrl);
                 } else {
                     setError(t('errors.plugin.not_found'));
@@ -145,7 +163,7 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
         };
 
         processPluginData();
-    }, [pathname, context, serverUuid, t, pluginData, serverSpellId]);
+    }, [pathname, context, serverUuid, vdsId, t, pluginData, serverSpellId]);
 
     const injectScrollbarStyles = () => {
         if (!iframeRef.current) return;

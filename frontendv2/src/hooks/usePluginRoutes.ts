@@ -106,5 +106,15 @@ export function getPluginPaths(pluginData: PluginSidebarResponse['data']['sideba
         });
     }
 
+    // Extract vds plugin paths
+    if (pluginData.vds) {
+        Object.values(pluginData.vds).forEach((item) => {
+            if (item.redirect) {
+                const redirectPath = item.redirect.startsWith('/') ? item.redirect : `/${item.redirect}`;
+                paths.push(redirectPath);
+            }
+        });
+    }
+
     return paths;
 }

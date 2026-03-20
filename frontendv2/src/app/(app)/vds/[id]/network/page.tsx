@@ -27,6 +27,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { Globe, Loader2, Lock, Network, RefreshCw, Server, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface AssignedIp {
     id: number;
@@ -54,6 +56,7 @@ export default function VdsNetworkingPage() {
     const router = useRouter();
     const { t } = useTranslation();
     const { instance, loading: instanceLoading, hasPermission, refreshInstance } = useVmInstance();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('vds-network');
 
     const [networking, setNetworking] = React.useState<NetworkingResponse | null>(null);
     const [loading, setLoading] = React.useState(false);
@@ -87,6 +90,10 @@ export default function VdsNetworkingPage() {
             void fetchNetworking();
         }
     }, [instanceLoading, instance, fetchNetworking]);
+
+    React.useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const handleApplyDns = async () => {
         if (!canSettings) return;
@@ -139,6 +146,8 @@ export default function VdsNetworkingPage() {
 
     return (
         <div className='space-y-8 pb-12'>
+            <WidgetRenderer widgets={getWidgets('vds-network', 'top-of-page')} />
+
             <PageHeader
                 title={t('vds.networking.title') ?? 'Networking'}
                 description={t('vds.networking.description') ?? 'View assigned IPs, interfaces, and DNS settings.'}
@@ -309,6 +318,8 @@ export default function VdsNetworkingPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            <WidgetRenderer widgets={getWidgets('vds-network', 'bottom-of-page')} />
         </div>
     );
 }

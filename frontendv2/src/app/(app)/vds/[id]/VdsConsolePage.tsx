@@ -193,7 +193,24 @@ export default function VdsConsolePage() {
     const router = useRouter();
     const { t } = useTranslation();
     const { instance, loading: instanceLoading, refreshInstance, hasPermission } = useVmInstance();
-    const { fetchWidgets, getWidgets } = usePluginWidgets(`vds-${id}`);
+    const { fetchWidgets, getWidgets } = usePluginWidgets('vds-console');
+
+    const getVdsWidgets = useCallback(
+        (location: string) => {
+            const stableWidgets = getWidgets('vds-console', location);
+            const legacyWidgets = getWidgets(`vds-${id}`, location);
+
+            if (legacyWidgets.length === 0) {
+                return stableWidgets;
+            }
+
+            const stableKeys = new Set(stableWidgets.map((w) => `${w.plugin}:${w.id}`));
+            const uniqueLegacy = legacyWidgets.filter((w) => !stableKeys.has(`${w.plugin}:${w.id}`));
+
+            return [...stableWidgets, ...uniqueLegacy];
+        },
+        [getWidgets, id],
+    );
 
     const [vmStatus, setVmStatus] = useState<VmStatus | null>(null);
     const [statusLoading, setStatusLoading] = useState(false);
@@ -395,7 +412,7 @@ export default function VdsConsolePage() {
 
     return (
         <div className='space-y-8 pb-12'>
-            <WidgetRenderer widgets={getWidgets(`vds-${id}`, 'top-of-page')} />
+            <WidgetRenderer widgets={getVdsWidgets('top-of-page')} />
 
             <PageHeader
                 title={instance.hostname ?? t('vds.console.title')}
@@ -497,7 +514,7 @@ export default function VdsConsolePage() {
                 }
             />
 
-            <WidgetRenderer widgets={getWidgets(`vds-${id}`, 'after-header')} />
+            <WidgetRenderer widgets={getVdsWidgets('after-header')} />
 
             <VdsPerformance
                 cpuData={cpuData}
@@ -544,7 +561,7 @@ export default function VdsConsolePage() {
                 />
             </div>
 
-            <WidgetRenderer widgets={getWidgets(`vds-${id}`, 'after-stats')} />
+            <WidgetRenderer widgets={getVdsWidgets('after-stats')} />
 
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
                 <Card className='border-border/20 bg-card/30 backdrop-blur-sm'>

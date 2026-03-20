@@ -29,6 +29,8 @@ import { Input } from '@/components/featherui/Input';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 const VM_PERMISSIONS = ['power', 'console', 'backup', 'reinstall', 'settings', 'activity.read'];
 
@@ -46,6 +48,7 @@ export default function VdsSubusersPage() {
     const router = useRouter();
     const { t } = useTranslation();
     const { instance, loading: instanceLoading } = useVmInstance();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('vds-users');
 
     const [subusers, setSubusers] = React.useState<VmSubuser[]>([]);
     const [loading, setLoading] = React.useState(true);
@@ -99,6 +102,10 @@ export default function VdsSubusersPage() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [instanceLoading]);
+
+    React.useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const toggleAddPerm = (perm: string) => {
         setAddPermissions((prev) => (prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm]));
@@ -228,6 +235,8 @@ export default function VdsSubusersPage() {
 
     return (
         <div className='space-y-8 pb-12'>
+            <WidgetRenderer widgets={getWidgets('vds-users', 'top-of-page')} />
+
             <PageHeader
                 title={t('navigation.items.users') || t('vds.subusers.title')}
                 description={
@@ -527,6 +536,8 @@ export default function VdsSubusersPage() {
                     </Button>
                 </div>
             </HeadlessModal>
+
+            <WidgetRenderer widgets={getWidgets('vds-users', 'bottom-of-page')} />
         </div>
     );
 }

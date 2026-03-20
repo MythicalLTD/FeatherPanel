@@ -30,6 +30,8 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 type VmBackup = {
     id: number;
@@ -58,6 +60,7 @@ export default function VdsBackupsPage() {
     const router = useRouter();
     const { t } = useTranslation();
     const { instance, loading: instanceLoading } = useVmInstance();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('vds-backups');
 
     const [backups, setBackups] = useState<VmBackup[]>([]);
     const [backupLimit, setBackupLimit] = useState<number>(0);
@@ -103,6 +106,10 @@ export default function VdsBackupsPage() {
             fetchBackups();
         }
     }, [instanceLoading, instance, fetchBackups, router]);
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     useEffect(() => {
         // Auto-refresh if any backup is pending or recently created
@@ -259,6 +266,8 @@ export default function VdsBackupsPage() {
 
     return (
         <div className='space-y-8 pb-12'>
+            <WidgetRenderer widgets={getWidgets('vds-backups', 'top-of-page')} />
+
             <PageHeader
                 title={t('serverBackups.title') || 'Backups'}
                 description={
@@ -583,6 +592,8 @@ export default function VdsBackupsPage() {
                     </DialogFooter>
                 </div>
             </Dialog>
+
+            <WidgetRenderer widgets={getWidgets('vds-backups', 'bottom-of-page')} />
         </div>
     );
 }

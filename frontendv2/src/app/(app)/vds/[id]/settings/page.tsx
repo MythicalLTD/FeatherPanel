@@ -28,6 +28,8 @@ import { toast } from 'sonner';
 import { RefreshCw, AlertTriangle, Loader2, RotateCcw, Lock, Server, Eye, EyeOff } from 'lucide-react';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { cn } from '@/lib/utils';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface ReinstallTemplate {
     id: number;
@@ -47,6 +49,7 @@ export default function VdsSettingsPage() {
     const router = useRouter();
     const { t } = useTranslation();
     const { instance, loading: instanceLoading, hasPermission, refreshInstance } = useVmInstance();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('vds-settings');
 
     // Reinstall state
     const [templates, setTemplates] = React.useState<ReinstallTemplate[]>([]);
@@ -169,6 +172,10 @@ export default function VdsSettingsPage() {
     React.useEffect(() => {
         if (!instanceLoading) fetchTemplates();
     }, [instanceLoading, fetchTemplates]);
+
+    React.useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const handleReinstall = async () => {
         if (!selectedTemplate) {
@@ -416,6 +423,8 @@ export default function VdsSettingsPage() {
 
     return (
         <div className='space-y-8 pb-12'>
+            <WidgetRenderer widgets={getWidgets('vds-settings', 'top-of-page')} />
+
             <PageHeader
                 title='VDS Settings'
                 description='Manage your VDS instance settings and reinstall options.'
@@ -841,6 +850,8 @@ export default function VdsSettingsPage() {
                     </Button>
                 </div>
             </HeadlessModal>
+
+            <WidgetRenderer widgets={getWidgets('vds-settings', 'bottom-of-page')} />
         </div>
     );
 }

@@ -57,8 +57,9 @@ export function useNavigation() {
     const convertPluginItems = useCallback(
         (
             pluginItems: Record<string, PluginSidebarItem>,
-            category: 'main' | 'admin' | 'server',
+            category: 'main' | 'admin' | 'server' | 'vds',
             serverUuid?: string,
+            vdsId?: string,
             spellId?: number | null,
         ): NavigationItem[] => {
             // Use outer serverSpellId for filtering to ensure we capture the latest value
@@ -105,6 +106,16 @@ export function useNavigation() {
                         }
                     }
 
+                    // Handle vds specific prefix and url cleaning
+                    if (category === 'vds') {
+                        if (vdsId) {
+                            prefix = `/vds/${vdsId}`;
+                        }
+                        if (processedUrl.startsWith('/vds')) {
+                            processedUrl = processedUrl.replace('/vds', '');
+                        }
+                    }
+
                     const cleanUrl = processedUrl.startsWith('/') ? processedUrl : `/${processedUrl}`;
                     const fullUrl = `${prefix}${cleanUrl}`;
 
@@ -112,6 +123,9 @@ export function useNavigation() {
                     let redirectUrl = item.redirect;
                     if (category === 'server' && redirectUrl && redirectUrl.startsWith('/server')) {
                         redirectUrl = redirectUrl.replace('/server', '');
+                    }
+                    if (category === 'vds' && redirectUrl && redirectUrl.startsWith('/vds')) {
+                        redirectUrl = redirectUrl.replace('/vds', '');
                     }
 
                     const cleanRedirect = redirectUrl
@@ -125,6 +139,7 @@ export function useNavigation() {
                     // Legacy-style group normalization
                     const builtInGroups: Record<string, string[]> = {
                         server: ['management', 'files', 'networking', 'automation', 'configuration'],
+                        vds: ['management', 'files', 'networking', 'automation', 'configuration'],
                         admin: [
                             'overview',
                             'feathercloud',
@@ -155,7 +170,7 @@ export function useNavigation() {
                         icon: item.icon,
                         lucideIcon: item.lucideIcon,
                         isActive: pathname === fullUrl || pathname.startsWith(fullUrl + '/'),
-                        category,
+                        category: 'server',
                         isPlugin: true,
                         pluginJs: item.js,
                         pluginRedirect: fullRedirect,
@@ -217,7 +232,13 @@ export function useNavigation() {
 
             // Add Server Plugin Items
             if (pluginRoutes?.server) {
-                const serverPlugins = convertPluginItems(pluginRoutes.server, 'server', serverUuid, serverSpellId);
+                const serverPlugins = convertPluginItems(
+                    pluginRoutes.server,
+                    'server',
+                    serverUuid,
+                    undefined,
+                    serverSpellId,
+                );
                 items.push(...serverPlugins);
             }
 
@@ -230,6 +251,11 @@ export function useNavigation() {
                 ...item,
                 isActive: checkActive(item.url, item.url === `/vds/${vdsId}`),
             }));
+
+            if (pluginRoutes?.vds) {
+                const vdsPlugins = convertPluginItems(pluginRoutes.vds, 'vds', undefined, vdsId);
+                items.push(...vdsPlugins);
+            }
 
             return items.filter((item) => !item.permission || hasVdsPermission(item.permission));
         }
