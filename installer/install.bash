@@ -10,6 +10,8 @@ fi
 
 apt update -y 
 apt upgrade -y 
+apt purge -y 
+apt autoremove -y
 
 # Parse command-line arguments
 SKIP_OS_CHECK=false
@@ -20,6 +22,7 @@ SKIP_SYSTEM_UPDATE=false
 USE_DEV=false
 DEV_BRANCH=""
 DEV_SHA=""
+SHOW_CONFIG_MENU=false
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -57,6 +60,10 @@ while [[ $# -gt 0 ]]; do
 		DEV_SHA="$2"
 		shift 2
 		;;
+	--config | -c)
+		SHOW_CONFIG_MENU=true
+		shift
+		;;
 	--help | -h)
 		echo "FeatherPanel Installer"
 		echo ""
@@ -71,6 +78,7 @@ while [[ $# -gt 0 ]]; do
 		echo "  --dev                  Use latest dev release images"
 		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., main, develop)"
 		echo "  --dev-sha SHA          Use dev images for specific commit SHA (requires --dev-branch)"
+		echo "  --config, -c           Open configuration manager"
 		echo "  --help, -h             Show this help message"
 		echo ""
 		echo "Dev Release Examples:"
@@ -95,6 +103,7 @@ done
 LOG_DIR=/var/www/featherpanel
 LOG_FILE=$LOG_DIR/install.log
 BACKUP_DIR="/var/www/featherpanel/backups"
+CONFIG_FILE="/var/www/featherpanel/.featherpanel.conf"
 
 # Colors (use real ANSI escapes)
 NC=$'\033[0m'
@@ -106,9 +115,9 @@ CYAN=$'\033[0;36m'
 BOLD=$'\033[1m'
 
 log_init() {
-	sudo mkdir -p "$LOG_DIR"
-	sudo touch "$LOG_FILE"
-	sudo chmod 664 "$LOG_FILE" 2>/dev/null || true
+	mkdir -p "$LOG_DIR"
+	touch "$LOG_FILE"
+	chmod 664 "$LOG_FILE" 2>/dev/null || true
 	{
 		echo "========================================"
 		date '+%Y-%m-%d %H:%M:%S %Z' | sed 's/^/[START] /'
@@ -154,7 +163,8 @@ run_with_spinner() {
 	local cmd_pid=$!
 	local spinner="|/-\\"
 	local i=0
-	local start_ts=$(date +%s)
+	local start_ts
+	start_ts=$(date +%s)
 
 	if [ -t 1 ]; then
 		printf '  '
@@ -234,6 +244,572 @@ log_init
 trap 'log_error "An unexpected error occurred."; upload_logs_on_fail' ERR
 set -o pipefail
 
+# ====================================================================
+# Configuration Management Functions
+# ====================================================================
+
+# Initialize default configuration
+init_config() {
+	if [ ! -f "$CONFIG_FILE" ]; then
+		mkdir -p "$(dirname "$CONFIG_FILE")"
+		tee "$CONFIG_FILE" >/dev/null <<'EOF'
+# FeatherPanel Configuration
+# This file stores your preferences for the installer and panel
+
+# Auto-update settings
+AUTO_UPDATE=no
+AUTO_UPDATE_SCHEDULE="daily"
+
+# Development branch settings
+PREFER_DEV=no
+DEV_BRANCH="main"
+
+# Custom panel port setting (0 = use default 4831)
+PANEL_PORT=0
+
+# Installation preferences
+SKIP_OS_CHECK=no
+FORCE_ARM=no
+BACKUP_BEFORE_UPDATE=yes
+ENABLE_CLOUDFLARE_TUNNEL=no
+
+# Email/Notification settings
+NOTIFY_ON_UPDATE=no
+NOTIFY_EMAIL=""
+
+# Advanced settings - Image Registries
+# Supported registries: docker (docker.io), ghcr (ghcr.io), quay (quay.io), custom
+IMAGE_REGISTRY="ghcr"
+# If using custom registry, specify the base URL (e.g., ghcr.io or custom.registry.com)
+CUSTOM_REGISTRY_URL=""
+CUSTOM_COMPOSE_URL=""
+EOF
+		chmod 600 "$CONFIG_FILE"
+		log_success "Configuration file created at $CONFIG_FILE"
+	fi
+}
+
+# Load configuration from file
+load_config() {
+	if [ -f "$CONFIG_FILE" ]; then
+		# Source the config, but only load valid bash variable assignments
+		set +e
+		while IFS='=' read -r key value; do
+			# Skip comments and empty lines
+			[[ "$key" =~ ^#.*$ ]] && continue
+			[[ -z "$key" ]] && continue
+			
+			# Only set if it's a valid variable name
+			if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+				# Remove leading/trailing quotes and spaces from value
+				value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed 's/^"//;s/"$//' | sed "s/^'//;s/'$//")
+				export "$key=$value"
+			fi
+		done < "$CONFIG_FILE"
+
+		# Backward compatibility for older config files.
+		if [ -n "${DOCKER_REGISTRY:-}" ] && [ -z "${IMAGE_REGISTRY:-}" ]; then
+			case "$DOCKER_REGISTRY" in
+			ghcr.io) IMAGE_REGISTRY="ghcr" ;;
+			docker.io) IMAGE_REGISTRY="docker" ;;
+			quay.io) IMAGE_REGISTRY="quay" ;;
+			*)
+				IMAGE_REGISTRY="custom"
+				CUSTOM_REGISTRY_URL="$DOCKER_REGISTRY"
+				;;
+			esac
+		fi
+
+		# Ensure sensible defaults even if config is partial.
+		[ -z "${IMAGE_REGISTRY:-}" ] && IMAGE_REGISTRY="ghcr"
+		[ -z "${CUSTOM_REGISTRY_URL:-}" ] && CUSTOM_REGISTRY_URL=""
+
+		# Migrate legacy FRONTEND_PORT to PANEL_PORT.
+		if [ -z "${PANEL_PORT:-}" ] && [ -n "${FRONTEND_PORT:-}" ]; then
+			PANEL_PORT="$FRONTEND_PORT"
+		fi
+		[ -z "${PANEL_PORT:-}" ] && PANEL_PORT=0
+
+		set -e
+	fi
+}
+
+get_panel_port() {
+	local configured_port="${PANEL_PORT:-0}"
+	if [[ "$configured_port" =~ ^[0-9]+$ ]] && [ "$configured_port" -ge 1 ] && [ "$configured_port" -le 65535 ]; then
+		echo "$configured_port"
+	else
+		echo "4831"
+	fi
+}
+
+apply_panel_port_to_compose() {
+	local compose_file="$1"
+	local panel_port
+	panel_port=$(get_panel_port)
+
+	if [ ! -f "$compose_file" ]; then
+		return 0
+	fi
+
+	# FeatherPanel only publishes the panel service externally. Keep container port 80 and only change host port.
+	sed -E -i "s|- \"[0-9]{1,5}:80\"|- \"${panel_port}:80\"|g" "$compose_file"
+	log_info "Applied panel port mapping: ${panel_port}:80"
+}
+
+# Save configuration to file
+save_config() {
+	tee "$CONFIG_FILE" >/dev/null <<EOF
+# FeatherPanel Configuration
+# This file stores your preferences for the installer and panel
+
+# Auto-update settings
+AUTO_UPDATE=$AUTO_UPDATE
+AUTO_UPDATE_SCHEDULE=$AUTO_UPDATE_SCHEDULE
+
+# Development branch settings
+PREFER_DEV=$PREFER_DEV
+DEV_BRANCH=$DEV_BRANCH
+
+# Custom panel port setting (0 = use default 4831)
+PANEL_PORT=$PANEL_PORT
+
+# Installation preferences
+SKIP_OS_CHECK=$SKIP_OS_CHECK
+FORCE_ARM=$FORCE_ARM
+BACKUP_BEFORE_UPDATE=$BACKUP_BEFORE_UPDATE
+ENABLE_CLOUDFLARE_TUNNEL=$ENABLE_CLOUDFLARE_TUNNEL
+
+# Email/Notification settings
+NOTIFY_ON_UPDATE=$NOTIFY_ON_UPDATE
+NOTIFY_EMAIL=$NOTIFY_EMAIL
+
+# Advanced settings - Image Registries
+IMAGE_REGISTRY=$IMAGE_REGISTRY
+CUSTOM_REGISTRY_URL=$CUSTOM_REGISTRY_URL
+CUSTOM_COMPOSE_URL=$CUSTOM_COMPOSE_URL
+EOF
+	chmod 600 "$CONFIG_FILE"
+	log_success "Configuration saved"
+}
+
+# Display current configuration
+show_config() {
+	echo ""
+	draw_hr
+	echo -e "${BOLD}${CYAN}Current Configuration${NC}"
+	draw_hr
+	echo ""
+	echo -e "${BOLD}Auto-Update Settings:${NC}"
+	echo -e "  ${CYAN}•${NC} Auto Update: ${BLUE}$AUTO_UPDATE${NC} ${YELLOW}(Schedule: $AUTO_UPDATE_SCHEDULE)${NC}"
+	echo ""
+	echo -e "${BOLD}Development Settings:${NC}"
+	echo -e "  ${CYAN}•${NC} Prefer Dev: ${BLUE}$PREFER_DEV${NC} ${YELLOW}(Branch: $DEV_BRANCH)${NC}"
+	echo ""
+	echo -e "${BOLD}Custom Panel Port:${NC}"
+	echo -e "  ${CYAN}•${NC} Panel Port: ${BLUE}$(get_panel_port)${NC} ${YELLOW}(mapping: $(get_panel_port):80)${NC}"
+	echo ""
+	echo -e "${BOLD}Safety Settings:${NC}"
+	echo -e "  ${CYAN}•${NC} Backup Before Update: ${BLUE}$BACKUP_BEFORE_UPDATE${NC}"
+	echo -e "  ${CYAN}•${NC} Skip OS Check: ${BLUE}$SKIP_OS_CHECK${NC}"
+	echo -e "  ${CYAN}•${NC} Force ARM: ${BLUE}$FORCE_ARM${NC}"
+	echo ""
+	echo -e "${BOLD}Notifications:${NC}"
+	echo -e "  ${CYAN}•${NC} Notify on Update: ${BLUE}$NOTIFY_ON_UPDATE${NC} ${YELLOW}(Email: ${NOTIFY_EMAIL:-not set})${NC}"
+	echo ""
+	echo -e "${BOLD}Image Registry:${NC}"
+	echo -e "  ${CYAN}•${NC} Registry Type: ${BLUE}$IMAGE_REGISTRY${NC}"
+	if [ -n "$CUSTOM_REGISTRY_URL" ]; then
+		echo -e "  ${CYAN}•${NC} Custom Registry: ${BLUE}$CUSTOM_REGISTRY_URL${NC}"
+	fi
+	draw_hr
+	echo ""
+}
+
+# Configuration management menu
+show_config_menu() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	echo -e "${BOLD}${CYAN}Configuration Manager${NC}"
+	draw_hr
+	echo ""
+	echo -e "     ${BLUE}→ Manage your FeatherPanel preferences and settings${NC}"
+	echo ""
+	echo -e "  ${GREEN}[1]${NC} ${BOLD}View Current Configuration${NC}"
+	echo -e "     ${BLUE}→ Show all current settings${NC}"
+	echo ""
+	echo -e "  ${GREEN}[2]${NC} ${BOLD}Auto-Update Settings${NC}"
+	echo -e "     ${BLUE}→ Enable/disable automatic updates${NC}"
+	echo ""
+	echo -e "  ${GREEN}[3]${NC} ${BOLD}Development Branch Settings${NC}"
+	echo -e "     ${BLUE}→ Configure dev build preferences${NC}"
+	echo ""
+	echo -e "  ${GREEN}[4]${NC} ${BOLD}Custom Panel Port${NC}"
+	echo -e "     ${BLUE}→ Set host port for panel mapping (default 4831:80)${NC}"
+	echo ""
+	echo -e "  ${GREEN}[5]${NC} ${BOLD}Safety Settings${NC}"
+	echo -e "     ${BLUE}→ Configure backup and safety options${NC}"
+	echo ""
+	echo -e "  ${GREEN}[6]${NC} ${BOLD}Notification Settings${NC}"
+	echo -e "     ${BLUE}→ Configure update notifications${NC}"
+	echo ""
+	echo -e "  ${GREEN}[7]${NC} ${BOLD}Image Registry Settings${NC}"
+	echo -e "     ${BLUE}→ Configure Docker image registry (ghcr.io, docker.io, etc)${NC}"
+	echo ""
+	echo -e "  ${YELLOW}[8]${NC} ${BOLD}Reset to Defaults${NC}"
+	echo -e "     ${RED}→ Reset all settings to defaults${NC}"
+	echo ""
+	echo -e "  ${CYAN}[0]${NC} ${BOLD}Back to Main Menu${NC}"
+	draw_hr
+}
+
+configure_auto_update() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	echo -e "${BOLD}${CYAN}Auto-Update Configuration${NC}"
+	draw_hr
+	echo ""
+	echo -e "${BLUE}Current Setting: Auto Update = ${BOLD}$AUTO_UPDATE${NC}"
+	echo ""
+	echo -e "${BOLD}Enable automatic updates?${NC}"
+	echo -e "  ${GREEN}[1]${NC} Yes - Check for updates daily"
+	echo -e "  ${GREEN}[2]${NC} No - Manual updates only"
+	draw_hr
+	
+	choice=""
+	prompt "${BOLD}Select option${NC} ${BLUE}(1/2)${NC}: " choice
+	
+	case $choice in
+	1)
+		AUTO_UPDATE="yes"
+		log_success "Auto-Update enabled (daily)"
+		;;
+	2)
+		AUTO_UPDATE="no"
+		log_success "Auto-Update disabled"
+		;;
+	*)
+		log_error "Invalid choice"
+		return 1
+		;;
+	esac
+	
+	save_config
+	sleep 2
+}
+
+configure_dev_branch() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	echo -e "${BOLD}${CYAN}Development Branch Configuration${NC}"
+	draw_hr
+	echo ""
+	echo -e "${BLUE}Current Setting: Prefer Dev = ${BOLD}$PREFER_DEV${NC}, Branch = ${BOLD}$DEV_BRANCH${NC}"
+	echo ""
+	echo -e "${BOLD}Configuration Options:${NC}"
+	echo -e "  ${GREEN}[1]${NC} Use stable releases (recommended)"
+	echo -e "  ${GREEN}[2]${NC} Always use development builds"
+	echo -e "  ${GREEN}[3]${NC} Custom branch selection"
+	draw_hr
+	
+	choice=""
+	prompt "${BOLD}Select option${NC} ${BLUE}(1/2/3)${NC}: " choice
+	
+	case $choice in
+	1)
+		PREFER_DEV="no"
+		DEV_BRANCH="main"
+		log_success "Set to use stable releases"
+		;;
+	2)
+		PREFER_DEV="yes"
+		DEV_BRANCH="main"
+		log_success "Set to always use development builds from main"
+		;;
+	3)
+		echo ""
+		prompt "Enter branch name (main, develop, etc.): " DEV_BRANCH
+		if [ -n "$DEV_BRANCH" ]; then
+			PREFER_DEV="yes"
+			log_success "Set to use branch: $DEV_BRANCH"
+		else
+			log_error "Branch name cannot be empty"
+			return 1
+		fi
+		;;
+	*)
+		log_error "Invalid choice"
+		return 1
+		;;
+	esac
+	
+	save_config
+	sleep 2
+}
+
+configure_ports() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	echo -e "${BOLD}${CYAN}Custom Panel Port Configuration${NC}"
+	draw_hr
+	echo ""
+	echo -e "${BLUE}Current Panel Mapping:${NC}"
+	echo -e "  ${BOLD}$(get_panel_port):80${NC}"
+	echo ""
+	echo -e "${BOLD}Port Configuration:${NC}"
+	echo -e "  ${GREEN}[1]${NC} Set Panel Host Port"
+	echo -e "  ${GREEN}[2]${NC} Reset to default (${BOLD}4831${NC})"
+	draw_hr
+	
+	choice=""
+	prompt "${BOLD}Select option${NC} ${BLUE}(1/2)${NC}: " choice
+	
+	case $choice in
+	1)
+		echo ""
+		prompt "Enter panel host port (or press Enter for default 4831): " port
+		if [ -z "$port" ]; then
+			PANEL_PORT=0
+			log_success "Panel port set to default (4831:80)"
+		elif [[ "$port" =~ ^[0-9]+$ ]] && [ "$port" -ge 1 ] && [ "$port" -le 65535 ]; then
+			PANEL_PORT=$port
+			log_success "Panel port set to ${port}:80"
+		else
+			log_error "Invalid port number"
+			return 1
+		fi
+		;;
+	2)
+		PANEL_PORT=0
+		log_success "Panel port reset to default (4831:80)"
+		;;
+	*)
+		log_error "Invalid choice"
+		return 1
+		;;
+	esac
+
+	if [ -f /var/www/featherpanel/docker-compose.yml ]; then
+		apply_panel_port_to_compose "/var/www/featherpanel/docker-compose.yml"
+	fi
+	
+	save_config
+	sleep 2
+}
+
+configure_safety() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	echo -e "${BOLD}${CYAN}Safety Settings${NC}"
+	draw_hr
+	echo ""
+	echo -e "${BLUE}Current Settings:${NC}"
+	echo -e "  Backup Before Update: ${BOLD}$BACKUP_BEFORE_UPDATE${NC}"
+	echo -e "  Skip OS Check: ${BOLD}$SKIP_OS_CHECK${NC}"
+	echo -e "  Force ARM: ${BOLD}$FORCE_ARM${NC}"
+	echo ""
+	echo -e "${BOLD}Options:${NC}"
+	echo -e "  ${GREEN}[1]${NC} Toggle backup before update (${BACKUP_BEFORE_UPDATE})"
+	echo -e "  ${GREEN}[2]${NC} Toggle skip OS check (${SKIP_OS_CHECK})"
+	echo -e "  ${GREEN}[3]${NC} Toggle force ARM (${FORCE_ARM})"
+	draw_hr
+	
+	choice=""
+	prompt "${BOLD}Select option${NC} ${BLUE}(1/2/3)${NC}: " choice
+	
+	case $choice in
+	1)
+		[ "$BACKUP_BEFORE_UPDATE" = "yes" ] && BACKUP_BEFORE_UPDATE="no" || BACKUP_BEFORE_UPDATE="yes"
+		log_success "Backup before update: $BACKUP_BEFORE_UPDATE"
+		;;
+	2)
+		[ "$SKIP_OS_CHECK" = "yes" ] && SKIP_OS_CHECK="no" || SKIP_OS_CHECK="yes"
+		log_success "Skip OS check: $SKIP_OS_CHECK"
+		;;
+	3)
+		[ "$FORCE_ARM" = "yes" ] && FORCE_ARM="no" || FORCE_ARM="yes"
+		log_success "Force ARM: $FORCE_ARM"
+		;;
+	*)
+		log_error "Invalid choice"
+		return 1
+		;;
+	esac
+	
+	save_config
+	sleep 2
+}
+
+configure_notifications() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	echo -e "${BOLD}${CYAN}Notification Settings${NC}"
+	draw_hr
+	echo ""
+	echo -e "${BLUE}Current Settings:${NC}"
+	echo -e "  Notify on Update: ${BOLD}$NOTIFY_ON_UPDATE${NC}"
+	echo -e "  Email: ${BOLD}${NOTIFY_EMAIL:-not set}${NC}"
+	echo ""
+	echo -e "${BOLD}Options:${NC}"
+	echo -e "  ${GREEN}[1]${NC} Toggle update notifications"
+	echo -e "  ${GREEN}[2]${NC} Set notification email"
+	draw_hr
+	
+	choice=""
+	prompt "${BOLD}Select option${NC} ${BLUE}(1/2)${NC}: " choice
+	
+	case $choice in
+	1)
+		[ "$NOTIFY_ON_UPDATE" = "yes" ] && NOTIFY_ON_UPDATE="no" || NOTIFY_ON_UPDATE="yes"
+		log_success "Update notifications: $NOTIFY_ON_UPDATE"
+		;;
+	2)
+		echo ""
+		prompt "Enter email address (or leave blank to disable): " email
+		if [ -n "$email" ]; then
+			if [[ "$email" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+				NOTIFY_EMAIL="$email"
+				NOTIFY_ON_UPDATE="yes"
+				log_success "Notification email set to: $email"
+			else
+				log_error "Invalid email format"
+				return 1
+			fi
+		else
+			NOTIFY_EMAIL=""
+			NOTIFY_ON_UPDATE="no"
+			log_success "Notifications disabled"
+		fi
+		;;
+	*)
+		log_error "Invalid choice"
+		return 1
+		;;
+	esac
+	
+	save_config
+	sleep 2
+}
+
+configure_image_registry() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	echo -e "${BOLD}${CYAN}Image Registry Configuration${NC}"
+	draw_hr
+	echo ""
+	echo -e "${BLUE}Current Registry: ${BOLD}$IMAGE_REGISTRY${NC}"
+	if [ -n "$CUSTOM_REGISTRY_URL" ]; then
+		echo -e "${BLUE}Custom URL: ${BOLD}$CUSTOM_REGISTRY_URL${NC}"
+	fi
+	echo ""
+	echo -e "${BOLD}Select image registry:${NC}"
+	echo -e "  ${GREEN}[1]${NC} Docker Hub (docker.io) - Official Docker images"
+	echo -e "  ${GREEN}[2]${NC} GitHub Container Registry (ghcr.io) - GitHub Packages"
+	echo -e "  ${GREEN}[3]${NC} Quay.io (quay.io) - RedHat Quay registry"
+	echo -e "  ${GREEN}[4]${NC} Custom Registry URL"
+	draw_hr
+	
+	choice=""
+	prompt "${BOLD}Select option${NC} ${BLUE}(1/2/3/4)${NC}: " choice
+	
+	case $choice in
+	1)
+		IMAGE_REGISTRY="docker"
+		CUSTOM_REGISTRY_URL=""
+		log_success "Registry set to Docker Hub (docker.io)"
+		;;
+	2)
+		IMAGE_REGISTRY="ghcr"
+		CUSTOM_REGISTRY_URL=""
+		log_success "Registry set to GitHub Container Registry (ghcr.io)"
+		;;
+	3)
+		IMAGE_REGISTRY="quay"
+		CUSTOM_REGISTRY_URL=""
+		log_success "Registry set to Quay.io"
+		;;
+	4)
+		echo ""
+		prompt "Enter custom registry URL (e.g., registry.example.com): " registry_url
+		if [ -n "$registry_url" ]; then
+			IMAGE_REGISTRY="custom"
+			CUSTOM_REGISTRY_URL="$registry_url"
+			log_success "Custom registry set to: $registry_url"
+		else
+			log_error "Registry URL cannot be empty"
+			return 1
+		fi
+		;;
+	*)
+		log_error "Invalid choice"
+		return 1
+		;;
+	esac
+	
+	save_config
+	sleep 2
+}
+
+# Main configuration menu handler
+manage_configuration() {
+	while true; do
+		show_config_menu
+		
+		config_choice=""
+		prompt "${BOLD}${CYAN}Select option${NC} ${BLUE}(0-8)${NC}: " config_choice
+		
+		case $config_choice in
+		1)
+			show_config
+			echo ""
+			read -r -p "Press Enter to continue..."
+			;;
+		2)
+			configure_auto_update
+			;;
+		3)
+			configure_dev_branch
+			;;
+		4)
+			configure_ports
+			;;
+		5)
+			configure_safety
+			;;
+		6)
+			configure_notifications
+			;;
+		7)
+			configure_image_registry
+			;;
+		8)
+			confirm=""
+			prompt "${BOLD}${YELLOW}Reset ALL settings to defaults?${NC} ${BLUE}(y/n)${NC}: " confirm
+			if [[ "$confirm" =~ ^[yY]$ ]]; then
+				init_config
+				load_config
+				log_success "Configuration reset to defaults"
+				sleep 2
+			fi
+			;;
+		0)
+			break
+			;;
+		*)
+			log_error "Invalid option"
+			sleep 1
+			;;
+		esac
+	done
+}
+
 print_banner() {
 	echo -e "${CYAN}${BOLD}FeatherPanel${NC}"
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⠀⠀⣀⣀⡀${NC}"
@@ -252,7 +828,7 @@ print_banner() {
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 
-	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.0.4${NC}"
+	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.0${NC}"
 
 	echo -e "${CYAN}${BOLD}┌────────────────────────────────────────────────────────────┐${NC}"
 	echo -e "${CYAN}${BOLD}${NC}  🌐 Website:  ${BLUE}www.mythical.systems${NC}           ${CYAN}${BOLD}${NC}"
@@ -339,14 +915,18 @@ show_main_menu() {
 	if [ -t 1 ]; then clear; fi
 	print_banner
 	draw_hr
-	echo -e "${BOLD}Choose a component:${NC}"
-	echo -e "  ${GREEN}[1]${NC} ${BOLD}Panel${NC} ${BLUE}(Web Interface)${NC}"
-	echo -e "  ${BLUE}[2]${NC} ${BOLD}Wings${NC} ${BLUE}(Game Server Daemon)${NC}"
-	echo -e "  ${CYAN}[3]${NC} ${BOLD}CLI${NC} ${BLUE}(Migration & Server Management)${NC}"
-	echo -e "  ${YELLOW}[4]${NC} ${BOLD}SSL Certificates${NC} ${BLUE}(Let's Encrypt)${NC}"
-	echo -e "  ${MAGENTA}[5]${NC} ${BOLD}Databases${NC} ${BLUE}(Remote MySQL/MariaDB Hosts)${NC}"
-	echo -e "  ${MAGENTA}[6]${NC} ${BOLD}Proxmox Agent (DHCP)${NC} ${BLUE}(Virtual Machines)${NC} ${YELLOW}[Coming Soon]${NC}"
-	echo -e "  ${MAGENTA}[7]${NC} ${BOLD}FeatherFly Daemon${NC} ${BLUE}(WebHosting Daemon)${NC} ${YELLOW}[Coming Soon]${NC}"
+	print_centered "Main Menu" "$YELLOW"
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Panel${NC} ${CYAN}Web Interface${NC}"
+	echo -e "  ${BLUE}${BOLD}[2]${NC} ${BOLD}Wings${NC} ${CYAN}Game Server Daemon${NC}"
+	echo -e "  ${CYAN}${BOLD}[3]${NC} ${BOLD}CLI${NC} ${CYAN}Migration & Server Management${NC}"
+	echo -e "  ${YELLOW}${BOLD}[4]${NC} ${BOLD}SSL Certificates${NC} ${CYAN}Let's Encrypt Tools${NC}"
+	echo -e "  ${MAGENTA}${BOLD}[5]${NC} ${BOLD}Databases${NC} ${CYAN}Remote MySQL/MariaDB Hosts${NC}"
+	echo -e "  ${RED}${BOLD}[6]${NC} ${BOLD}Proxmox VNC Agent${NC} ${CYAN}Install on Proxmox Node${NC}"
+	echo -e "  ${MAGENTA}${BOLD}[7]${NC} ${BOLD}FeatherFly Daemon${NC} ${CYAN}WebHosting Daemon${NC} ${YELLOW}${BOLD}[Coming Soon]${NC}"
+	echo -e "  ${GREEN}${BOLD}[8]${NC} ${BOLD}Configuration${NC} ${CYAN}Settings & Preferences${NC}"
+	echo ""
+	echo -e "  ${BLUE}Tip:${NC} ${YELLOW}Choose ${BOLD}8${NC}${YELLOW} to set defaults like panel port and prefer-dev behavior.${NC}"
 	draw_hr
 }
 
@@ -377,7 +957,361 @@ show_panel_menu() {
 	echo -e "     ${BLUE}→ Backup database, volumes, and configuration${NC}"
 	echo -e "     ${BLUE}→ Export/Import for migrating to another server${NC}"
 	echo ""
+	echo -e "  ${MAGENTA}${BOLD}[5]${NC} ${BOLD}Panel Info${NC}"
+	echo -e "     ${BLUE}→ Live CPU, RAM, load, uptime, container health, and storage usage${NC}"
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[6]${NC} ${BOLD}Firewall Manager${NC}"
+	echo -e "     ${BLUE}→ Detect ufw/iptables and allow required Panel ports automatically${NC}"
+	echo -e "     ${BLUE}→ Smart port detection based on Panel config and reverse proxy${NC}"
+	echo ""
 	draw_hr
+}
+
+show_panel_info() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "Panel Runtime Information" "$CYAN"
+	draw_hr
+	echo ""
+
+	local panel_port
+	panel_port=$(get_panel_port)
+	local compose_file="/var/www/featherpanel/docker-compose.yml"
+	echo -e "${BOLD}${CYAN}FeatherPanel Endpoint:${NC} ${GREEN}${panel_port}:80${NC}"
+	echo ""
+
+	if command -v docker >/dev/null 2>&1; then
+		if [ ! -f "$compose_file" ]; then
+			echo -e "${YELLOW}FeatherPanel compose file not found at ${compose_file}.${NC}"
+			echo ""
+			draw_hr
+			read -r -p "Press Enter to continue..."
+			return 0
+		fi
+
+		local container_ids
+		container_ids=$(cd /var/www/featherpanel && docker compose ps -q 2>/dev/null | tr '\n' ' ')
+		local container_names=""
+		local cid
+		for cid in $container_ids; do
+			local cname
+			cname=$(docker inspect -f '{{.Name}}' "$cid" 2>/dev/null | sed 's#^/##')
+			if [ -n "$cname" ]; then
+				container_names="$container_names $cname"
+			fi
+		done
+
+		if [ -z "$container_names" ]; then
+			container_names=$(docker ps -a --format '{{.Names}}' | grep '^featherpanel_' | tr '\n' ' ')
+		fi
+
+		local container_count=0
+		local running_count=0
+		local healthy_count=0
+		local oldest_started_epoch=0
+		local now_epoch
+		now_epoch=$(date +%s)
+
+		if [ -n "$container_names" ]; then
+			for container in $container_names; do
+				container_count=$((container_count + 1))
+				run_state=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null || echo "unknown")
+				health_state=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}}' "$container" 2>/dev/null || echo "unknown")
+				if [ "$run_state" = "running" ]; then
+					running_count=$((running_count + 1))
+					started_at=$(docker inspect -f '{{.State.StartedAt}}' "$container" 2>/dev/null || true)
+					if [ -n "$started_at" ] && [ "$started_at" != "0001-01-01T00:00:00Z" ]; then
+						started_epoch=$(date -d "$started_at" +%s 2>/dev/null || echo 0)
+						if [ "$oldest_started_epoch" -eq 0 ] || [ "$started_epoch" -lt "$oldest_started_epoch" ]; then
+							oldest_started_epoch=$started_epoch
+						fi
+					fi
+				fi
+				if [ "$health_state" = "healthy" ]; then
+					healthy_count=$((healthy_count + 1))
+				fi
+			done
+		fi
+
+		local stack_uptime="n/a"
+		if [ "$oldest_started_epoch" -gt 0 ] && [ "$now_epoch" -ge "$oldest_started_epoch" ]; then
+			uptime_seconds=$((now_epoch - oldest_started_epoch))
+			days=$((uptime_seconds / 86400))
+			hours=$(((uptime_seconds % 86400) / 3600))
+			mins=$(((uptime_seconds % 3600) / 60))
+			if [ "$days" -gt 0 ]; then
+				stack_uptime="${days}d ${hours}h ${mins}m"
+			elif [ "$hours" -gt 0 ]; then
+				stack_uptime="${hours}h ${mins}m"
+			else
+				stack_uptime="${mins}m"
+			fi
+		fi
+
+		local stats_raw=""
+		local total_cpu="0"
+		local mem_bytes="0"
+		local net_bytes="0"
+		local block_bytes="0"
+
+		to_bytes() {
+			local raw="$1"
+			raw=$(echo "$raw" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+			if [ -z "$raw" ] || [ "$raw" = "0" ] || [ "$raw" = "0B" ]; then
+				echo 0
+				return
+			fi
+
+			if command -v numfmt >/dev/null 2>&1; then
+				converted=$(numfmt --from=auto "$raw" 2>/dev/null || true)
+				if [[ "$converted" =~ ^[0-9]+$ ]]; then
+					echo "$converted"
+					return
+				fi
+			fi
+
+			local number unit unit_lc mult
+			number=$(echo "$raw" | sed -E 's/^([0-9]+(\.[0-9]+)?).*/\1/')
+			unit=$(echo "$raw" | sed -E 's/^[0-9]+(\.[0-9]+)?//')
+			unit_lc=$(echo "$unit" | tr '[:upper:]' '[:lower:]')
+			case "$unit_lc" in
+			""|"b") mult=1 ;;
+			"k"|"kb"|"kib") mult=1024 ;;
+			"m"|"mb"|"mib") mult=1048576 ;;
+			"g"|"gb"|"gib") mult=1073741824 ;;
+			"t"|"tb"|"tib") mult=1099511627776 ;;
+			*) mult=1 ;;
+			esac
+			awk -v n="$number" -v m="$mult" 'BEGIN { printf "%.0f", n*m }'
+		}
+
+		if [ -n "$container_names" ]; then
+			stats_raw=$(docker stats --no-stream --format '{{.Name}};{{.CPUPerc}};{{.MemUsage}};{{.NetIO}};{{.BlockIO}}' $container_names 2>/dev/null || true)
+			if [ -n "$stats_raw" ]; then
+				while IFS=';' read -r _name cpu_pct mem_usage net_io block_io; do
+					cpu_val=$(echo "$cpu_pct" | tr -d '%' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+					if [ -n "$cpu_val" ]; then
+						total_cpu=$(awk -v a="$total_cpu" -v b="$cpu_val" 'BEGIN { printf "%.2f", a+b }')
+					fi
+
+					mem_left=$(echo "$mem_usage" | awk -F'/' '{print $1}')
+					mem_bytes=$((mem_bytes + $(to_bytes "$mem_left")))
+
+					net_rx=$(echo "$net_io" | awk -F'/' '{print $1}')
+					net_tx=$(echo "$net_io" | awk -F'/' '{print $2}')
+					net_bytes=$((net_bytes + $(to_bytes "$net_rx") + $(to_bytes "$net_tx")))
+
+					blk_r=$(echo "$block_io" | awk -F'/' '{print $1}')
+					blk_w=$(echo "$block_io" | awk -F'/' '{print $2}')
+					block_bytes=$((block_bytes + $(to_bytes "$blk_r") + $(to_bytes "$blk_w")))
+				done <<< "$stats_raw"
+			fi
+		fi
+
+		echo -e "${MAGENTA}${BOLD}FeatherPanel Total Usage Summary${NC}"
+		echo -e "  ${CYAN}•${NC} Containers: ${BLUE}${running_count}/${container_count}${NC} running | ${GREEN}${healthy_count}${NC} healthy"
+		echo -e "  ${CYAN}•${NC} Stack Uptime: ${BLUE}${stack_uptime}${NC}"
+		echo -e "  ${CYAN}•${NC} CPU Total: ${BLUE}${total_cpu}%${NC}"
+		if command -v numfmt >/dev/null 2>&1; then
+			mem_human=$(numfmt --to=iec --suffix=B "$mem_bytes" 2>/dev/null || echo "${mem_bytes}B")
+			net_human=$(numfmt --to=iec --suffix=B "$net_bytes" 2>/dev/null || echo "${net_bytes}B")
+			block_human=$(numfmt --to=iec --suffix=B "$block_bytes" 2>/dev/null || echo "${block_bytes}B")
+		else
+			mem_human="${mem_bytes}B"
+			net_human="${net_bytes}B"
+			block_human="${block_bytes}B"
+		fi
+		echo -e "  ${CYAN}•${NC} RAM In Use: ${BLUE}${mem_human}${NC}"
+		echo -e "  ${CYAN}•${NC} Network I/O (total): ${BLUE}${net_human}${NC}"
+		echo -e "  ${CYAN}•${NC} Block I/O (total): ${BLUE}${block_human}${NC}"
+		echo ""
+
+		echo -e "${BOLD}Container Status:${NC}"
+		(cd /var/www/featherpanel && docker compose ps) 2>/dev/null || echo "docker compose status unavailable"
+		echo ""
+
+		echo -e "${BOLD}Container Resource Usage:${NC}"
+		if [ -n "$container_names" ]; then
+			docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}\t{{.BlockIO}}" $container_names 2>/dev/null || echo "docker stats unavailable"
+		else
+			echo "No FeatherPanel containers found."
+		fi
+		echo ""
+
+		echo -e "${BOLD}Health Summary:${NC}"
+		if [ -n "$container_names" ]; then
+			for container in $container_names; do
+				run_state=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null || echo "unknown")
+				health_state=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}}' "$container" 2>/dev/null || echo "unknown")
+				echo -e "  ${CYAN}•${NC} ${container}: run=${run_state}, health=${health_state}"
+			done
+		else
+			echo -e "  ${YELLOW}•${NC} No FeatherPanel containers found"
+		fi
+		echo ""
+
+		echo -e "${BOLD}FeatherPanel Storage Usage:${NC}"
+		local image_total_bytes=0
+		local volume_total_bytes=0
+		local image
+		for image in $(cd /var/www/featherpanel && docker compose config --images 2>/dev/null | awk '!seen[$0]++'); do
+			img_size=$(docker image inspect -f '{{.Size}}' "$image" 2>/dev/null || echo 0)
+			if [[ "$img_size" =~ ^[0-9]+$ ]]; then
+				image_total_bytes=$((image_total_bytes + img_size))
+			fi
+		done
+		local volume
+		for volume in $(docker volume ls --format '{{.Name}}' | grep '^featherpanel_'); do
+			mountpoint=$(docker volume inspect -f '{{.Mountpoint}}' "$volume" 2>/dev/null || true)
+			if [ -n "$mountpoint" ] && [ -d "$mountpoint" ]; then
+				v_size=$(du -sb "$mountpoint" 2>/dev/null | awk '{print $1}')
+				if [[ "$v_size" =~ ^[0-9]+$ ]]; then
+					volume_total_bytes=$((volume_total_bytes + v_size))
+				fi
+			fi
+		done
+		if command -v numfmt >/dev/null 2>&1; then
+			image_total_human=$(numfmt --to=iec --suffix=B "$image_total_bytes" 2>/dev/null || echo "${image_total_bytes}B")
+			volume_total_human=$(numfmt --to=iec --suffix=B "$volume_total_bytes" 2>/dev/null || echo "${volume_total_bytes}B")
+		else
+			image_total_human="${image_total_bytes}B"
+			volume_total_human="${volume_total_bytes}B"
+		fi
+		total_disk_bytes=$((image_total_bytes + volume_total_bytes))
+		if command -v numfmt >/dev/null 2>&1; then
+			total_disk_human=$(numfmt --to=iec --suffix=B "$total_disk_bytes" 2>/dev/null || echo "${total_disk_bytes}B")
+		else
+			total_disk_human="${total_disk_bytes}B"
+		fi
+		echo -e "  ${CYAN}•${NC} FeatherPanel images total: ${BLUE}${image_total_human}${NC}"
+		echo -e "  ${CYAN}•${NC} FeatherPanel volumes total: ${BLUE}${volume_total_human}${NC}"
+		echo -e "  ${CYAN}•${NC} FeatherPanel disk total: ${BLUE}${total_disk_human}${NC}"
+	else
+		echo -e "${YELLOW}Docker is not available on this system.${NC}"
+	fi
+
+	echo ""
+	draw_hr
+	read -r -p "Press Enter to continue..."
+}
+
+manage_panel_firewall() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "Panel Firewall Manager" "$CYAN"
+	draw_hr
+	echo ""
+
+	local panel_port
+	panel_port=$(get_panel_port)
+	local reverse_proxy_detected=false
+	local reverse_proxy_details="none"
+
+	# Detect actual reverse-proxy forwarding config for FeatherPanel.
+	if [ -f /etc/nginx/sites-enabled/featherpanel ] || [ -f /etc/nginx/sites-available/featherpanel ]; then
+		reverse_proxy_detected=true
+		reverse_proxy_details="nginx"
+	fi
+	if [ -f /etc/apache2/sites-enabled/featherpanel.conf ] || [ -f /etc/apache2/sites-available/featherpanel.conf ]; then
+		reverse_proxy_detected=true
+		if [ "$reverse_proxy_details" = "none" ]; then
+			reverse_proxy_details="apache2"
+		else
+			reverse_proxy_details="${reverse_proxy_details}+apache2"
+		fi
+	fi
+
+	local ports_to_open=""
+	if [ "$reverse_proxy_detected" = true ]; then
+		ports_to_open="80 443"
+	else
+		ports_to_open="$panel_port"
+	fi
+
+	local unique_ports
+	unique_ports=$(echo "$ports_to_open" | tr ' ' '\n' | grep -E '^[0-9]+$' | awk '!seen[$1]++' | tr '\n' ' ')
+
+	local ufw_available=false
+	local ufw_active=false
+	local iptables_available=false
+	if command -v ufw >/dev/null 2>&1; then
+		ufw_available=true
+		if ufw status 2>/dev/null | grep -q "Status: active"; then
+			ufw_active=true
+		fi
+	fi
+	if command -v iptables >/dev/null 2>&1; then
+		iptables_available=true
+	fi
+
+	echo -e "${BOLD}Detected Firewall Tools:${NC}"
+	echo -e "  ${CYAN}•${NC} ufw available: ${BLUE}${ufw_available}${NC}"
+	echo -e "  ${CYAN}•${NC} ufw active: ${BLUE}${ufw_active}${NC}"
+	echo -e "  ${CYAN}•${NC} iptables available: ${BLUE}${iptables_available}${NC}"
+	echo ""
+	echo -e "${BOLD}Reverse Proxy Detection:${NC} ${CYAN}${reverse_proxy_detected}${NC} (${reverse_proxy_details})"
+	if [ "$reverse_proxy_detected" = true ]; then
+		echo -e "${BLUE}Detected reverse proxy config, so this manager will allow only 80/443 and block ${panel_port}/tcp.${NC}"
+	else
+		echo -e "${BLUE}No reverse proxy config detected, so this manager will allow only ${panel_port}/tcp.${NC}"
+	fi
+	echo ""
+	echo -e "${BOLD}Ports to allow (TCP):${NC} ${CYAN}${unique_ports}${NC}"
+	echo -e "${BLUE}Policy:${NC} never enables firewall services; only updates existing ufw/iptables rules"
+	echo ""
+
+	if [ "$ufw_available" = false ] && [ "$iptables_available" = false ]; then
+		log_error "No supported firewall tool detected (ufw or iptables)."
+		return 1
+	fi
+
+	apply_fw=""
+	prompt "${BOLD}Apply these firewall rules now?${NC} ${BLUE}(y/n)${NC}: " apply_fw
+	if [[ ! "$apply_fw" =~ ^[yY]$ ]]; then
+		log_info "Firewall changes cancelled."
+		return 0
+	fi
+
+	for port in $unique_ports; do
+		if [ "$ufw_active" = true ]; then
+			ufw allow "${port}/tcp" >>"$LOG_FILE" 2>&1 || log_warn "ufw failed to allow ${port}/tcp"
+		fi
+
+		if [ "$iptables_available" = true ]; then
+			iptables -C INPUT -p tcp --dport "$port" -j ACCEPT >/dev/null 2>&1 || \
+				iptables -I INPUT -p tcp --dport "$port" -j ACCEPT >/dev/null 2>&1 || \
+				log_warn "iptables failed to allow ${port}/tcp"
+		fi
+	done
+
+	if [ "$reverse_proxy_detected" = true ]; then
+		# Enforce proxy-only access by blocking direct panel port.
+		if [ "$ufw_active" = true ]; then
+			ufw deny "${panel_port}/tcp" >>"$LOG_FILE" 2>&1 || log_warn "ufw failed to block ${panel_port}/tcp"
+		fi
+
+		if [ "$iptables_available" = true ]; then
+			# Remove broad ACCEPT rule for panel port if present, then add DROP.
+			while iptables -C INPUT -p tcp --dport "$panel_port" -j ACCEPT >/dev/null 2>&1; do
+				iptables -D INPUT -p tcp --dport "$panel_port" -j ACCEPT >/dev/null 2>&1 || break
+			done
+			iptables -C INPUT -p tcp --dport "$panel_port" -j DROP >/dev/null 2>&1 || \
+				iptables -I INPUT -p tcp --dport "$panel_port" -j DROP >/dev/null 2>&1 || \
+				log_warn "iptables failed to block ${panel_port}/tcp"
+		fi
+		log_success "Direct panel port ${panel_port}/tcp blocked because reverse proxy forwarding is configured."
+	fi
+
+	log_success "Firewall rules applied for TCP ports: ${unique_ports}"
+	if [ "$iptables_available" = true ]; then
+		log_warn "If your distro does not persist iptables rules automatically, persist them manually (iptables-save)."
+	fi
+
+	echo ""
+	draw_hr
+	read -r -p "Press Enter to continue..."
 }
 
 show_backup_menu() {
@@ -552,11 +1486,13 @@ show_access_method_menu() {
 	if [ -t 1 ]; then clear; fi
 	print_banner
 	draw_hr
+	local panel_port
+	panel_port=$(get_panel_port)
 	echo -e "${BOLD}Choose access method:${NC}"
 	echo -e "  ${GREEN}[1]${NC} ${BOLD}Cloudflare Tunnel${NC} ${BLUE}(HTTPS via Cloudflare, no port forwarding)${NC}"
 	echo -e "  ${BLUE}[2]${NC} ${BOLD}Nginx Reverse Proxy${NC} ${BLUE}(Traditional reverse proxy)${NC}"
 	echo -e "  ${YELLOW}[3]${NC} ${BOLD}Apache2 Reverse Proxy${NC} ${BLUE}(Traditional reverse proxy)${NC}"
-	echo -e "  ${CYAN}[4]${NC} ${BOLD}Direct Access${NC} ${BLUE}(Home hosting / no domain – use http://YOUR_IP:4831)${NC}"
+	echo -e "  ${CYAN}[4]${NC} ${BOLD}Direct Access${NC} ${BLUE}(Home hosting / no domain – use http://YOUR_IP:${panel_port})${NC}"
 	echo -e "     ${BLUE}→ No domain or SSL needed; ideal for local network or testing${NC}"
 	draw_hr
 }
@@ -575,14 +1511,14 @@ ensure_system_ready() {
 	export DEBIAN_FRONTEND=noninteractive
 	export APT_LISTCHANGES_FRONTEND=none
 
-	# We run as root - use apt-get directly (sudo may not exist on minimal systems)
+	# We run as root - use apt-get directly (may not exist on minimal systems)
 	if ! apt-get update -qq >>"$LOG_FILE" 2>&1; then
 		log_error "Failed to update package lists. Check $LOG_FILE for details."
 		return 1
 	fi
 
 	# Install essential packages only (no full upgrade - upgrade can hang on prompts or take extremely long)
-	ESSENTIAL_PACKAGES="sudo curl ca-certificates apt-transport-https gnupg"
+	ESSENTIAL_PACKAGES="curl ca-certificates apt-transport-https gnupg"
 	for pkg in $ESSENTIAL_PACKAGES; do
 		if ! dpkg -s "$pkg" >/dev/null 2>&1; then
 			if ! run_with_spinner "Installing $pkg..." "$pkg installed." apt-get install -y -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" "$pkg"; then
@@ -592,7 +1528,7 @@ ensure_system_ready() {
 	done
 
 	log_success "Package lists updated and essential packages ready."
-	log_info "To upgrade all system packages later (optional): sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y"
+	log_info "To upgrade all system packages later (optional): apt update && DEBIAN_FRONTEND=noninteractive apt upgrade -y"
 }
 
 # Function to check if a package is installed and install it if not
@@ -609,7 +1545,7 @@ install_packages() {
 	if [ ${#packages_to_install[@]} -gt 0 ]; then
 		printf 'Installing packages: %s\n' "${packages_to_install[*]}" | sed 's/^/ /'
 		log_step "Installing dependencies: ${packages_to_install[*]}"
-		sudo apt-get -qq install -y "${packages_to_install[@]}" 2>&1 | tee -a "$LOG_FILE" >/dev/null || {
+		apt-get -qq install -y "${packages_to_install[@]}" 2>&1 | tee -a "$LOG_FILE" >/dev/null || {
 			log_error "Failed to install packages: ${packages_to_install[*]}"
 			exit 1
 		}
@@ -620,7 +1556,8 @@ install_packages() {
 # Function to setup QEMU emulation for running amd64 containers on unsupported ARM systems
 # Note: ARM64 (aarch64) is now natively supported, so QEMU is only needed for older ARM architectures
 setup_qemu_emulation() {
-	local arch=$(uname -m)
+	local arch
+	arch=$(uname -m)
 
 	# ARM64 is natively supported - no QEMU needed
 	if [[ "$arch" == "aarch64" ]] || [[ "$arch" == "arm64" ]]; then
@@ -650,14 +1587,14 @@ setup_qemu_emulation() {
 	local max_attempts=10
 	local attempt=0
 	while [ $attempt -lt $max_attempts ]; do
-		if sudo docker info >/dev/null 2>&1; then
+		if docker info >/dev/null 2>&1; then
 			break
 		fi
 		attempt=$((attempt + 1))
 		sleep 1
 	done
 
-	if ! sudo docker info >/dev/null 2>&1; then
+	if ! docker info >/dev/null 2>&1; then
 		log_warn "Docker daemon is not ready. QEMU setup will be skipped."
 		log_warn "You may need to manually run: docker run --rm --privileged tonistiigi/binfmt --install all"
 		return 1
@@ -674,7 +1611,7 @@ setup_qemu_emulation() {
 	# Use Docker's binfmt tool to properly set up QEMU emulation
 	# This is the recommended method for Docker containers
 	log_info "Installing QEMU binfmt interpreters using Docker's binfmt tool..."
-	if sudo docker run --rm --privileged tonistiigi/binfmt --install all >>"$LOG_FILE" 2>&1; then
+	if docker run --rm --privileged tonistiigi/binfmt --install all 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
 		log_success "QEMU binfmt interpreters installed successfully"
 
 		# Verify installation
@@ -700,17 +1637,17 @@ stop_all_featherpanel_containers() {
 	# First, try docker compose down if docker-compose.yml exists (stops containers defined in compose file)
 	if [ -f /var/www/featherpanel/docker-compose.yml ]; then
 		cd /var/www/featherpanel || true
-		sudo docker compose down >>"$LOG_FILE" 2>&1 || true
+		docker compose down 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
 	fi
 
 	# Then stop any remaining FeatherPanel containers by name (catches old v1 containers not in compose file)
-	RUNNING_CONTAINERS=$(sudo docker ps --format '{{.Names}}' 2>/dev/null | grep '^featherpanel_' || true)
+	RUNNING_CONTAINERS=$(docker ps --format '{{.Names}}' 2>/dev/null | grep '^featherpanel_' || true)
 
 	if [ -n "$RUNNING_CONTAINERS" ]; then
 		while IFS= read -r container; do
 			if [ -n "$container" ]; then
 				log_info "Stopping container: $container"
-				sudo docker stop "$container" >>"$LOG_FILE" 2>&1 || true
+				docker stop "$container" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
 			fi
 		done <<<"$RUNNING_CONTAINERS"
 	fi
@@ -720,25 +1657,29 @@ stop_all_featherpanel_containers() {
 prompt() {
 	local message="$1"
 	local __varname="$2"
+	local __input=""
 	if [ -t 0 ]; then
-		read -r -p "$message" "$__varname"
+		read -r -p "$message" __input
 	else
 		# Read from the real terminal
-		read -r -p "$message" "$__varname" </dev/tty
+		read -r -p "$message" __input </dev/tty
 	fi
+	printf -v "$__varname" '%s' "$__input"
 }
 
 prompt_secret() {
 	local message="$1"
 	local __varname="$2"
+	local __input=""
 	if [ -t 0 ]; then
-		read -r -s -p "$message" "$__varname"
+		read -r -s -p "$message" __input
 		echo
 	else
 		# Read from the real terminal
-		read -r -s -p "$message" "$__varname" </dev/tty
+		read -r -s -p "$message" __input </dev/tty
 		echo
 	fi
+	printf -v "$__varname" '%s' "$__input"
 }
 
 uninstall_cloudflare_tunnel() {
@@ -873,7 +1814,7 @@ setup_cloudflare_tunnel_full_auto() {
 			while [[ ! "$tunnel_choice" =~ ^[12]$ ]]; do
 				prompt "${BOLD}Enter choice${NC} ${BLUE}(1/2)${NC}: " tunnel_choice
 				if [[ ! "$tunnel_choice" =~ ^[12]$ ]]; then
-					echo -e "${RED}Invalid input.${NC} Enter ${YELLOW}1${NC} or ${YELLOW}2${NC}."
+					echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC} or ${YELLOW}2${NC}."
 					sleep 1
 				fi
 			done
@@ -969,14 +1910,16 @@ setup_cloudflare_tunnel_full_auto() {
 
 		# Check if hostname already exists in ingress rules
 		HOSTNAME_EXISTS=$(echo "$EXISTING_INGRESS" | jq -r --arg hostname "$CF_HOSTNAME" '.[] | select(.hostname == $hostname) | .hostname // empty' | head -n 1)
+		local service_url
+		service_url="http://localhost:$(get_panel_port)"
 
 		if [ -n "$HOSTNAME_EXISTS" ] && [ "$HOSTNAME_EXISTS" != "null" ] && [ "$HOSTNAME_EXISTS" != "" ]; then
 			# Update existing ingress rule for this hostname
-			NEW_INGRESS=$(echo "$EXISTING_INGRESS" | jq --arg hostname "$CF_HOSTNAME" 'map(if .hostname == $hostname then {hostname: $hostname, service: "http://localhost:4831"} else . end)')
+			NEW_INGRESS=$(echo "$EXISTING_INGRESS" | jq --arg hostname "$CF_HOSTNAME" --arg service_url "$service_url" 'map(if .hostname == $hostname then {hostname: $hostname, service: $service_url} else . end)')
 		else
 			# Remove catch-all if it exists, add new rule, then re-add catch-all
 			INGRESS_WITHOUT_CATCHALL=$(echo "$EXISTING_INGRESS" | jq 'map(select(.service != "http_status:404"))')
-			NEW_INGRESS=$(echo "$INGRESS_WITHOUT_CATCHALL" | jq --arg hostname "$CF_HOSTNAME" '. + [{hostname: $hostname, service: "http://localhost:4831"}] + [{service: "http_status:404"}]')
+			NEW_INGRESS=$(echo "$INGRESS_WITHOUT_CATCHALL" | jq --arg hostname "$CF_HOSTNAME" --arg service_url "$service_url" '. + [{hostname: $hostname, service: $service_url}] + [{service: "http_status:404"}]')
 		fi
 
 		curl -s -X PUT "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/configurations" \
@@ -987,11 +1930,13 @@ setup_cloudflare_tunnel_full_auto() {
 	else
 		# No existing config, create new one
 		log_info "Creating tunnel configuration..."
+		local service_url
+		service_url="http://localhost:$(get_panel_port)"
 		curl -s -X PUT "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/configurations" \
 			-H "X-Auth-Email: $CF_EMAIL" \
 			-H "X-Auth-Key: $CF_API_KEY" \
 			-H "Content-Type: application/json" \
-			--data "$(jq -n --arg hostname "$CF_HOSTNAME" '{config:{ingress:[{hostname:$hostname,service:"http://localhost:4831"},{service:"http_status:404"}]}}')" >/dev/null
+			--data "$(jq -n --arg hostname "$CF_HOSTNAME" --arg service_url "$service_url" '{config:{ingress:[{hostname:$hostname,service:$service_url},{service:"http_status:404"}]}}')" >/dev/null
 	fi
 
 	log_info "Full-automatic Cloudflare Tunnel setup complete."
@@ -1008,8 +1953,8 @@ setup_cloudflare_tunnel_full_auto() {
 		printf 'ZONE_ID="%s"\n' "$ZONE_ID"
 		printf 'CF_HOSTNAME="%s"\n' "$CF_HOSTNAME"
 		printf 'CF_TUNNEL_TOKEN="%s"\n' "$CF_TUNNEL_TOKEN"
-	} | sudo tee "$ENV_FILE" >/dev/null
-	sudo chmod 600 "$ENV_FILE"
+	} | tee "$ENV_FILE" >/dev/null
+	chmod 600 "$ENV_FILE"
 	log_success "Cloudflare settings saved."
 }
 
@@ -1021,8 +1966,8 @@ setup_cloudflare_tunnel_client() {
 		else
 			log_step "Installing Docker engine (this may take a minute)..."
 			curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
-			sudo systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
-			sudo usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
+			systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
+			usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
 			log_success "Docker installed. You may need to re-login for group changes to take effect."
 		fi
 		if ! run_with_spinner "Starting Cloudflare Tunnel container" "Cloudflare Tunnel container running." \
@@ -1031,9 +1976,11 @@ setup_cloudflare_tunnel_client() {
 		fi
 		log_info "Cloudflare Tunnel setup complete."
 		if [ "$CF_TUNNEL_MODE" == "2" ]; then
+			local panel_port
+			panel_port=$(get_panel_port)
 			echo -e "\033[0;33mYou have chosen Semi-Automatic Cloudflare Tunnel setup.\033[0m"
 			echo -e "\033[0;33mPlease manually create a DNS record for your hostname pointing to the tunnel in your Cloudflare dashboard.\033[0m"
-			echo -e "\033[0;33mThe ingress rule should point to http://localhost:4831.\033[0m"
+			echo -e "\033[0;33mThe ingress rule should point to http://localhost:${panel_port}.\033[0m"
 			echo -e "\033[0;33mMore information: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/create-remote-tunnel-api/\033[0m"
 		fi
 	else
@@ -1051,8 +1998,8 @@ install_wings() {
 	else
 		log_step "Installing Docker engine (required for Wings, this may take a minute)..."
 		curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
-		sudo systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
-		sudo usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
+		systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
+		usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
 		log_success "Docker installed. You may need to re-login for group changes to take effect."
 	fi
 
@@ -1065,28 +2012,28 @@ install_wings() {
 		log_warn "Kernel version $KERNEL_VERSION detected (older than 6.1)"
 		log_info "For Docker swap support, you may need to enable swap in GRUB:"
 		log_info "Add 'swapaccount=1' to GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub"
-		log_info "Then run: sudo update-grub && sudo reboot"
+		log_info "Then run: update-grub && reboot"
 	else
 		log_info "Kernel version $KERNEL_VERSION detected (6.1+) - swap enabled by default"
 	fi
 
 	# Create directory structure
 	log_info "Creating FeatherWings directory structure..."
-	sudo mkdir -p /etc/featherpanel
-	sudo mkdir -p /var/lib/featherpanel/volumes
-	sudo mkdir -p /var/lib/featherpanel/archives
-	sudo mkdir -p /var/lib/featherpanel/backups
-	sudo mkdir -p /var/log/featherpanel
-	sudo mkdir -p /tmp/featherpanel
-	sudo mkdir -p /var/run/featherwings
+	mkdir -p /etc/featherpanel
+	mkdir -p /var/lib/featherpanel/volumes
+	mkdir -p /var/lib/featherpanel/archives
+	mkdir -p /var/lib/featherpanel/backups
+	mkdir -p /var/log/featherpanel
+	mkdir -p /tmp/featherpanel
+	mkdir -p /var/run/featherwings
 
 	# Download and install featherwings binary
 	log_info "Downloading FeatherWings binary..."
-	sudo curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
-	sudo chmod +x /usr/local/bin/featherwings
+	curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
+	chmod +x /usr/local/bin/featherwings
 
 	# Create systemd service
-	cat <<EOF | sudo tee /etc/systemd/system/featherwings.service >/dev/null
+	cat <<EOF | tee /etc/systemd/system/featherwings.service >/dev/null
 [Unit]
 Description=FeatherWings Daemon
 After=docker.service
@@ -1109,38 +2056,38 @@ WantedBy=multi-user.target
 EOF
 
 	# Enable but don't start yet (needs configuration)
-	sudo systemctl daemon-reload
-	sudo systemctl enable featherwings
+	systemctl daemon-reload
+	systemctl enable featherwings
 
 	log_success "FeatherWings daemon installed successfully."
 	log_info "Next steps:"
 	log_info "1. Create a node in your FeatherPanel admin panel"
 	log_info "2. Copy the configuration from the node to /etc/featherpanel/config.yml"
 	log_info "   (For home hosting: you can use your server IP and, if needed, a self-signed certificate in config.yml)"
-	log_info "3. Start FeatherWings with: sudo systemctl start featherwings"
-	log_info "4. Or run in debug mode first: sudo featherwings --debug"
+	log_info "3. Start FeatherWings with: systemctl start featherwings"
+	log_info "4. Or run in debug mode first: featherwings --debug"
 }
 
 uninstall_wings() {
 	log_step "Uninstalling FeatherWings daemon..."
 
 	# Stop and disable service
-	sudo systemctl stop featherwings >/dev/null 2>&1 || true
-	sudo systemctl disable featherwings >/dev/null 2>&1 || true
+	systemctl stop featherwings >/dev/null 2>&1 || true
+	systemctl disable featherwings >/dev/null 2>&1 || true
 
 	# Remove service file
-	sudo rm -f /etc/systemd/system/featherwings.service
-	sudo systemctl daemon-reload
+	rm -f /etc/systemd/system/featherwings.service
+	systemctl daemon-reload
 
 	# Remove binary
-	sudo rm -f /usr/local/bin/featherwings
+	rm -f /usr/local/bin/featherwings
 
 	# Remove configuration (ask first)
 	if [ -d /etc/featherpanel ]; then
 		log_info "Remove FeatherWings configuration directory (/etc/featherpanel)? (y/n): "
 		read -r remove_config
 		if [[ "$remove_config" =~ ^[yY]$ ]]; then
-			sudo rm -rf /etc/featherpanel
+			rm -rf /etc/featherpanel
 		fi
 	fi
 
@@ -1149,12 +2096,12 @@ uninstall_wings() {
 		log_info "Remove FeatherWings data directory (/var/lib/featherpanel)? (y/n): "
 		read -r remove_data
 		if [[ "$remove_data" =~ ^[yY]$ ]]; then
-			sudo rm -rf /var/lib/featherpanel
+			rm -rf /var/lib/featherpanel
 		fi
 	fi
 
 	# Remove logs
-	sudo rm -rf /var/log/featherpanel
+	rm -rf /var/log/featherpanel
 
 	log_success "FeatherWings daemon uninstalled successfully."
 }
@@ -1168,17 +2115,75 @@ update_wings() {
 	fi
 
 	# Stop featherwings service
-	sudo systemctl stop featherwings
+	systemctl stop featherwings
 
 	# Download latest FeatherWings binary
 	log_info "Downloading latest FeatherWings binary..."
-	sudo curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
-	sudo chmod +x /usr/local/bin/featherwings
+	curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
+	chmod +x /usr/local/bin/featherwings
 
 	# Restart service
-	sudo systemctl start featherwings
+	systemctl start featherwings
 
 	log_success "FeatherWings daemon updated successfully."
+}
+
+install_proxmox_vnc_agent() {
+	log_step "Installing Proxmox VNC Agent files..."
+
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	echo -e "${BOLD}${CYAN}Proxmox VNC Agent Installation${NC}"
+	draw_hr
+	echo ""
+	echo -e "${YELLOW}This installer should be run on the Proxmox node you want to integrate with FeatherPanel.${NC}"
+	echo ""
+	confirm_node=""
+	prompt "${BOLD}Are you on the proxmox node right now that you want to setup FeatherPanel with?${NC} ${BLUE}(This will add additional vnc files for PVE token forwarding, it is completely safe) (y/n)${NC}: " confirm_node
+
+	if [[ ! "$confirm_node" =~ ^[yY]$ ]]; then
+		log_warn "Installation cancelled. Please run this on your Proxmox node when ready."
+		return 0
+	fi
+
+	if [ ! -d /usr/share/novnc-pve ]; then
+		log_warn "Proxmox noVNC path /usr/share/novnc-pve was not found."
+		log_warn "This does not look like a standard Proxmox node, continuing anyway by request."
+	fi
+
+	install_packages curl unzip
+
+	local tmp_zip="/tmp/featherpanel-vnc-agent.zip"
+	local tmp_dir="/tmp/FeatherPanel-VNC-main"
+
+	if ! run_with_spinner "Downloading Proxmox VNC agent package" "Proxmox VNC agent package downloaded." \
+		curl -fsSL -o "$tmp_zip" "https://github.com/MythicalLTD/FeatherPanel-VNC/archive/refs/heads/main.zip"; then
+		return 1
+	fi
+
+	rm -rf "$tmp_dir"
+	if ! run_with_spinner "Extracting Proxmox VNC agent package" "Proxmox VNC agent package extracted." \
+		unzip -o "$tmp_zip" -d /tmp; then
+		return 1
+	fi
+
+	if [ ! -d "$tmp_dir/usr/share/novnc-pve" ]; then
+		log_error "Expected files not found in extracted package: $tmp_dir/usr/share/novnc-pve"
+		return 1
+	fi
+
+	mkdir -p /usr/share/novnc-pve
+	if ! run_with_spinner "Installing Proxmox VNC forwarding files" "Proxmox VNC forwarding files installed." \
+		bash -c "cp -r '$tmp_dir/usr/share/novnc-pve/'* /usr/share/novnc-pve/"; then
+		return 1
+	fi
+
+	rm -f "$tmp_zip"
+	rm -rf "$tmp_dir"
+
+	log_success "Proxmox VNC agent installation completed."
+	log_info "If your Proxmox web UI is open, refresh the page to load updated noVNC assets."
 }
 
 # CLI installation functions
@@ -1211,13 +2216,13 @@ install_feathercli() {
 	DOWNLOAD_URL="https://github.com/MythicalLTD/FeatherPanel-CLI/releases/latest/download/${BINARY_NAME}"
 
 	log_info "Downloading: ${BINARY_NAME}"
-	if sudo curl -L -f -o /usr/local/bin/feathercli "$DOWNLOAD_URL" 2>>"$LOG_FILE"; then
+	if curl -L -f -o /usr/local/bin/feathercli "$DOWNLOAD_URL" 2>>"$LOG_FILE"; then
 		# Check if the downloaded file is actually a binary (not HTML error page)
 		if file /usr/local/bin/feathercli 2>/dev/null | grep -qE "(ELF|executable|binary)"; then
 			log_success "Downloaded CLI binary: ${BINARY_NAME}"
 		else
 			log_error "Downloaded file doesn't appear to be a binary."
-			sudo rm -f /usr/local/bin/feathercli
+			rm -f /usr/local/bin/feathercli
 			log_error "Failed to download FeatherPanel CLI binary."
 			log_info "Please check the GitHub releases page for available binaries:"
 			log_info "https://github.com/MythicalLTD/FeatherPanel-CLI/releases"
@@ -1231,7 +2236,7 @@ install_feathercli() {
 	fi
 
 	# Make it executable
-	sudo chmod +x /usr/local/bin/feathercli
+	chmod +x /usr/local/bin/feathercli
 
 	# Verify installation
 	if command -v feathercli >/dev/null 2>&1; then
@@ -1259,7 +2264,7 @@ uninstall_feathercli() {
 	fi
 
 	# Remove binary
-	sudo rm -f /usr/local/bin/feathercli
+	rm -f /usr/local/bin/feathercli
 
 	log_success "FeatherPanel CLI uninstalled successfully."
 }
@@ -1299,7 +2304,7 @@ install_certbot() {
 	log_info "To monitor progress in another terminal: tail -f $LOG_FILE"
 
 	# Update package list (muted)
-	sudo apt-get update -qq >>"$LOG_FILE" 2>&1
+	apt-get update -qq >>"$LOG_FILE" 2>&1
 
 	# Install base certbot (with spinner - can take several minutes)
 	if ! run_with_spinner "Installing Certbot and dependencies..." "Certbot installed." true install_packages certbot; then
@@ -1433,14 +2438,14 @@ create_ssl_certificate_http() {
 		else
 			log_warn "Nginx plugin not installed. Falling back to standalone method."
 			log_info "Stopping Nginx temporarily to free port 80..."
-			sudo systemctl stop nginx
+			systemctl stop nginx
 			certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
 				log_error "Failed to create certificate with standalone method"
-				sudo systemctl start nginx
+				systemctl start nginx
 				return 1
 			}
 			log_info "Restarting Nginx..."
-			sudo systemctl start nginx
+			systemctl start nginx
 		fi
 		;;
 	apache)
@@ -1454,14 +2459,14 @@ create_ssl_certificate_http() {
 		else
 			log_warn "Apache plugin not installed. Falling back to standalone method."
 			log_info "Stopping Apache temporarily to free port 80..."
-			sudo systemctl stop apache2
+			systemctl stop apache2
 			certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
 				log_error "Failed to create certificate with standalone method"
-				sudo systemctl start apache2
+				systemctl start apache2
 				return 1
 			}
 			log_info "Restarting Apache..."
-			sudo systemctl start apache2
+			systemctl start apache2
 		fi
 		;;
 	standalone)
@@ -1483,7 +2488,7 @@ create_ssl_certificate_http() {
 		log_info "Updating existing Nginx configuration to use SSL..."
 		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" |
 			sed "s/your-domain.com/$domain/g" |
-			sudo tee /etc/nginx/sites-available/featherpanel >/dev/null
+			tee /etc/nginx/sites-available/featherpanel >/dev/null
 		if nginx -t 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
 			systemctl reload nginx 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Nginx SSL configuration updated and reloaded successfully"
@@ -1495,7 +2500,7 @@ create_ssl_certificate_http() {
 		log_info "Updating existing Apache configuration to use SSL..."
 		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" |
 			sed "s/your-domain.com/$domain/g" |
-			sudo tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
+			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
 		if apache2ctl configtest 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
 			systemctl reload apache2 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Apache SSL configuration updated and reloaded successfully"
@@ -1523,8 +2528,8 @@ create_ssl_certificate_http() {
 			draw_hr
 			echo -e "${BLUE}A web server ($webserver_detected) is detected but not configured for FeatherPanel.${NC}"
 			echo -e "${BLUE}Would you like to automatically configure it with SSL for this domain?${NC}"
-			setup_reverse_proxy=""
-			prompt "${BOLD}Configure $webserver_detected with SSL?${NC} ${BLUE}(y/n)${NC}: " setup_reverse_proxy
+			setup_reverse_proxy="n"
+			prompt "${BOLD}Configure $webserver_detected with SSL now?${NC} ${BLUE}(y/n, default: n)${NC}: " setup_reverse_proxy
 
 			if [[ "$setup_reverse_proxy" =~ ^[yY]$ ]]; then
 				if [ "$webserver_detected" = "nginx" ]; then
@@ -1542,12 +2547,14 @@ create_ssl_certificate_http() {
 		fi
 
 		if [ "$config_updated" = false ]; then
+			local panel_port
+			panel_port=$(get_panel_port)
 			draw_hr
 			log_warn "Reverse proxy not automatically configured."
 			log_info "To configure your web server manually:"
 			log_info "  - Certificate: /etc/letsencrypt/live/$domain/fullchain.pem"
 			log_info "  - Private Key: /etc/letsencrypt/live/$domain/privkey.pem"
-			log_info "  - Configure your web server to proxy to http://localhost:4831"
+			log_info "  - Configure your web server to proxy to http://localhost:${panel_port}"
 			draw_hr
 		fi
 	fi
@@ -1601,7 +2608,7 @@ create_ssl_certificate_dns() {
 		log_info "Updating existing Nginx configuration to use SSL..."
 		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" |
 			sed "s/your-domain.com/$domain/g" |
-			sudo tee /etc/nginx/sites-available/featherpanel >/dev/null
+			tee /etc/nginx/sites-available/featherpanel >/dev/null
 		if nginx -t 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
 			systemctl reload nginx 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Nginx SSL configuration updated and reloaded successfully"
@@ -1613,7 +2620,7 @@ create_ssl_certificate_dns() {
 		log_info "Updating existing Apache configuration to use SSL..."
 		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" |
 			sed "s/your-domain.com/$domain/g" |
-			sudo tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
+			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
 		if apache2ctl configtest 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
 			systemctl reload apache2 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Apache SSL configuration updated and reloaded successfully"
@@ -1641,8 +2648,8 @@ create_ssl_certificate_dns() {
 			draw_hr
 			echo -e "${BLUE}A web server ($webserver_detected) is detected but not configured for FeatherPanel.${NC}"
 			echo -e "${BLUE}Would you like to automatically configure it with SSL for this domain?${NC}"
-			setup_reverse_proxy=""
-			prompt "${BOLD}Configure $webserver_detected with SSL?${NC} ${BLUE}(y/n)${NC}: " setup_reverse_proxy
+			setup_reverse_proxy="n"
+			prompt "${BOLD}Configure $webserver_detected with SSL now?${NC} ${BLUE}(y/n, default: n)${NC}: " setup_reverse_proxy
 
 			if [[ "$setup_reverse_proxy" =~ ^[yY]$ ]]; then
 				if [ "$webserver_detected" = "nginx" ]; then
@@ -1660,12 +2667,14 @@ create_ssl_certificate_dns() {
 		fi
 
 		if [ "$config_updated" = false ]; then
+			local panel_port
+			panel_port=$(get_panel_port)
 			draw_hr
 			log_warn "Reverse proxy not automatically configured."
 			log_info "To configure your web server manually:"
 			log_info "  - Certificate: /etc/letsencrypt/live/$domain/fullchain.pem"
 			log_info "  - Private Key: /etc/letsencrypt/live/$domain/privkey.pem"
-			log_info "  - Configure your web server to proxy to http://localhost:4831"
+			log_info "  - Configure your web server to proxy to http://localhost:${panel_port}"
 			draw_hr
 		fi
 	fi
@@ -1677,7 +2686,7 @@ create_wings_ssl_certificate() {
 	if ! command -v certbot >/dev/null 2>&1; then
 		log_info "Certbot is not installed. Installing Certbot (standalone mode) for Wings..."
 		log_info "Certbot has many dependencies - installation may take 5-15 minutes. Please wait..."
-		sudo apt-get update -qq >>"$LOG_FILE" 2>&1
+		apt-get update -qq >>"$LOG_FILE" 2>&1
 		if ! run_with_spinner "Installing Certbot and dependencies..." "Certbot installed." true install_packages certbot; then
 			return 1
 		fi
@@ -1720,11 +2729,11 @@ create_wings_ssl_certificate() {
 		local stopped_service=""
 		if systemctl is-active --quiet nginx; then
 			log_info "Stopping Nginx temporarily to free port 80..."
-			sudo systemctl stop nginx
+			systemctl stop nginx
 			stopped_service="nginx"
 		elif systemctl is-active --quiet apache2; then
 			log_info "Stopping Apache temporarily to free port 80..."
-			sudo systemctl stop apache2
+			systemctl stop apache2
 			stopped_service="apache2"
 		fi
 
@@ -1733,7 +2742,7 @@ create_wings_ssl_certificate() {
 			# Restart the web server if we stopped it
 			if [ -n "$stopped_service" ]; then
 				log_info "Restarting $stopped_service..."
-				sudo systemctl start "$stopped_service"
+				systemctl start "$stopped_service"
 			fi
 			return 1
 		}
@@ -1741,7 +2750,7 @@ create_wings_ssl_certificate() {
 		# Restart the web server if we stopped it
 		if [ -n "$stopped_service" ]; then
 			log_info "Restarting $stopped_service..."
-			sudo systemctl start "$stopped_service"
+			systemctl start "$stopped_service"
 		fi
 		;;
 	2)
@@ -1763,11 +2772,12 @@ create_wings_ssl_certificate() {
 	esac
 
 	# Set proper permissions for FeatherWings (running as root)
-	sudo chown -R root:root /etc/letsencrypt/live/"$domain" 2>/dev/null || true
-	sudo chown -R root:root /etc/letsencrypt/archive/"$domain" 2>/dev/null || true
+	chown -R root:root /etc/letsencrypt/live/"$domain" 2>/dev/null || true
+	chown -R root:root /etc/letsencrypt/archive/"$domain" 2>/dev/null || true
 
 	log_success "SSL certificate created successfully for FeatherWings ($domain)"
 	log_info "Certificate location: /etc/letsencrypt/live/$domain/"
+	log_info "No Apache or Nginx setup is required for Wings certificate creation."
 	log_info "You can now configure FeatherWings to use these certificates in /etc/featherpanel/config.yml"
 	log_info "Certificate paths:"
 	log_info "  - Certificate: /etc/letsencrypt/live/$domain/fullchain.pem"
@@ -1838,29 +2848,29 @@ setup_nginx_reverse_proxy() {
 	systemctl start nginx 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
 
 	# Create config directory if it doesn't exist
-	sudo mkdir -p /etc/nginx/sites-available
-	sudo mkdir -p /etc/nginx/sites-enabled
+	mkdir -p /etc/nginx/sites-available
+	mkdir -p /etc/nginx/sites-enabled
 
 	# Download and customize nginx config
 	if [ "$has_ssl" = "true" ]; then
 		log_info "Downloading SSL-enabled Nginx configuration..."
 		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" |
 			sed "s/your-domain.com/$domain/g" |
-			sudo tee /etc/nginx/sites-available/featherpanel >/dev/null
+			tee /etc/nginx/sites-available/featherpanel >/dev/null
 	else
 		log_info "Downloading HTTP-only Nginx configuration..."
 		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/plaintext/nginx.conf" |
 			sed "s/your-domain.com/$domain/g" |
-			sudo tee /etc/nginx/sites-available/featherpanel >/dev/null
+			tee /etc/nginx/sites-available/featherpanel >/dev/null
 	fi
 
 	# Enable the site
-	sudo ln -sf /etc/nginx/sites-available/featherpanel /etc/nginx/sites-enabled/
+	ln -sf /etc/nginx/sites-available/featherpanel /etc/nginx/sites-enabled/
 
 	# Test nginx configuration
 	if nginx -t 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
 		log_success "Nginx configuration is valid"
-		if ! run_with_spinner "Reloading Nginx" "Nginx reloaded." sudo systemctl reload nginx; then
+		if ! run_with_spinner "Reloading Nginx" "Nginx reloaded." systemctl reload nginx; then
 			return 1
 		fi
 	else
@@ -1882,19 +2892,19 @@ setup_apache_reverse_proxy() {
 	a2enmod ssl proxy proxy_http proxy_wstunnel rewrite 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
 
 	# Create config directory if it doesn't exist
-	sudo mkdir -p /etc/apache2/sites-available
+	mkdir -p /etc/apache2/sites-available
 
 	# Download and customize apache config
 	if [ "$has_ssl" = "true" ]; then
 		log_info "Downloading SSL-enabled Apache configuration..."
 		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" |
 			sed "s/your-domain.com/$domain/g" |
-			sudo tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
+			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
 	else
 		log_info "Downloading HTTP-only Apache configuration..."
 		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/plaintext/apache2.conf" |
 			sed "s/your-domain.com/$domain/g" |
-			sudo tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
+			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
 	fi
 
 	# Enable the site
@@ -1903,7 +2913,7 @@ setup_apache_reverse_proxy() {
 	# Test apache configuration
 	if apache2ctl configtest 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
 		log_success "Apache configuration is valid"
-		if ! run_with_spinner "Reloading Apache" "Apache reloaded." sudo systemctl reload apache2; then
+		if ! run_with_spinner "Reloading Apache" "Apache reloaded." systemctl reload apache2; then
 			return 1
 		fi
 	else
@@ -1922,6 +2932,7 @@ install_acme_sh() {
 	}
 
 	# Source acme.sh for current session
+	# shellcheck disable=SC1090
 	source ~/.bashrc
 
 	log_success "acme.sh installed successfully."
@@ -1934,7 +2945,7 @@ install_featherpanel_command() {
 	log_step "Installing global 'featherpanel' command..."
 
 	# Create the featherpanel command script
-	cat <<'EOF' | sudo tee /usr/local/bin/featherpanel >/dev/null
+	cat <<'EOF' | tee /usr/local/bin/featherpanel >/dev/null
 #!/bin/bash
 # FeatherPanel CLI wrapper
 # Executes commands in the FeatherPanel backend container
@@ -1964,7 +2975,7 @@ fi
 EOF
 
 	# Make it executable
-	sudo chmod +x /usr/local/bin/featherpanel
+	chmod +x /usr/local/bin/featherpanel
 
 	log_success "Global 'featherpanel' command installed successfully."
 	log_info "You can now use 'featherpanel <command>' to run CLI commands."
@@ -1982,10 +2993,10 @@ is_featherpanel_installed() {
 
 	# Docker containers/volumes (covers cases where .installed was removed)
 	if command -v docker >/dev/null 2>&1; then
-		if sudo docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q '^featherpanel_'; then
+		if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q '^featherpanel_'; then
 			return 0
 		fi
-		if sudo docker volume ls --format '{{.Name}}' 2>/dev/null | grep -q '^featherpanel_'; then
+		if docker volume ls --format '{{.Name}}' 2>/dev/null | grep -q '^featherpanel_'; then
 			return 0
 		fi
 	fi
@@ -2075,24 +3086,24 @@ setup_remote_mysql_host() {
 
 	# Backup config
 	if [ ! -f "${db_conf}.featherpanel.bak" ]; then
-		sudo cp "$db_conf" "${db_conf}.featherpanel.bak" 2>>"$LOG_FILE" || true
+		cp "$db_conf" "${db_conf}.featherpanel.bak" 2>>"$LOG_FILE" || true
 	fi
 
 	log_step "Enabling remote access (bind-address = 0.0.0.0)..."
 
 	# Ensure bind-address is 0.0.0.0 under [mysqld]
 	if grep -q "bind-address" "$db_conf" 2>/dev/null; then
-		sudo sed -i 's/^[[:space:]]*bind-address.*/bind-address = 0.0.0.0/' "$db_conf"
+		sed -i 's/^[[:space:]]*bind-address.*/bind-address = 0.0.0.0/' "$db_conf"
 	else
 		# Append under [mysqld] section if present, otherwise at end
 		if grep -q "^\[mysqld\]" "$db_conf" 2>/dev/null; then
-			sudo sed -i '/^\[mysqld\]/a bind-address = 0.0.0.0' "$db_conf"
+			sed -i '/^\[mysqld\]/a bind-address = 0.0.0.0' "$db_conf"
 		else
-			echo -e "\n[mysqld]\nbind-address = 0.0.0.0" | sudo tee -a "$db_conf" >/dev/null
+			echo -e "\n[mysqld]\nbind-address = 0.0.0.0" | tee -a "$db_conf" >/dev/null
 		fi
 	fi
 
-	if sudo systemctl restart "$db_service" 2>>"$LOG_FILE"; then
+	if systemctl restart "$db_service" 2>>"$LOG_FILE"; then
 		log_success "Database service restarted with bind-address = 0.0.0.0"
 	else
 		log_error "Failed to restart $db_service. Check your config and logs."
@@ -2105,12 +3116,12 @@ setup_remote_mysql_host() {
 	if [[ "$open_fw" =~ ^[yY]$ ]]; then
 		if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
 			log_info "Allowing 3306/tcp via ufw..."
-			sudo ufw allow 3306/tcp >>"$LOG_FILE" 2>&1 || log_warn "Failed to update ufw rules for 3306"
+			ufw allow 3306/tcp >>"$LOG_FILE" 2>&1 || log_warn "Failed to update ufw rules for 3306"
 		elif command -v firewall-cmd >/dev/null 2>&1; then
 			log_info "Allowing 3306/tcp via firewalld..."
-			sudo firewall-cmd --add-service=mysql --permanent >>"$LOG_FILE" 2>&1 || \
-				sudo firewall-cmd --add-port=3306/tcp --permanent >>"$LOG_FILE" 2>&1 || true
-			sudo firewall-cmd --reload >>"$LOG_FILE" 2>&1 || true
+			firewall-cmd --add-service=mysql --permanent >>"$LOG_FILE" 2>&1 || \
+				firewall-cmd --add-port=3306/tcp --permanent >>"$LOG_FILE" 2>&1 || true
+			firewall-cmd --reload >>"$LOG_FILE" 2>&1 || true
 		else
 			log_warn "No supported firewall tool detected (ufw/firewalld)."
 			log_info "If you use iptables or another firewall, open port 3306/tcp manually."
@@ -2123,8 +3134,8 @@ setup_remote_mysql_host() {
 	log_step "Creating 'featherworker' MySQL user for Remote Databases..."
 	local MYSQL_CMD=""
 
-	if sudo mysql -e "SELECT 1" >/dev/null 2>&1; then
-		MYSQL_CMD="sudo mysql"
+	if mysql -e "SELECT 1" >/dev/null 2>&1; then
+		MYSQL_CMD="mysql"
 	else
 		local MYSQL_ROOT_PASSWORD=""
 		prompt_secret "${BOLD}Enter MySQL/MariaDB root password${NC}: " MYSQL_ROOT_PASSWORD
@@ -2136,13 +3147,12 @@ setup_remote_mysql_host() {
 	FEATHERWORKER_PASS=$(tr -dc 'A-Za-z0-9' </dev/urandom 2>/dev/null | head -c 32)
 
 	# Create user and grant full privileges
-	$MYSQL_CMD <<EOF 2>>"$LOG_FILE"
+	if ! $MYSQL_CMD <<EOF 2>>"$LOG_FILE"
 CREATE USER IF NOT EXISTS 'featherworker'@'%' IDENTIFIED BY '${FEATHERWORKER_PASS}';
 GRANT ALL PRIVILEGES ON *.* TO 'featherworker'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 EOF
-
-	if [ $? -ne 0 ]; then
+	then
 		log_error "Failed to create or grant privileges to 'featherworker' user."
 		log_info "Check MySQL/MariaDB logs and credentials, then try again."
 		return 1
@@ -2181,13 +3191,13 @@ create_backup() {
 	fi
 
 	# Check if containers are running
-	if ! sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel_backend\|featherpanel_mysql"; then
+	if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel_backend\|featherpanel_mysql"; then
 		log_error "FeatherPanel containers are not running. Cannot create backup."
 		return 1
 	fi
 
 	# Create backup directory
-	sudo mkdir -p "$BACKUP_DIR"
+	mkdir -p "$BACKUP_DIR"
 
 	# Generate backup filename with timestamp
 	BACKUP_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -2211,13 +3221,13 @@ create_backup() {
 
 	# Get volumes directly from running containers
 	for container in featherpanel_mysql featherpanel_backend featherpanel_redis; do
-		if sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${container}$"; then
+		if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${container}$"; then
 			# Get volume names from container mounts
 			while IFS= read -r volume_name; do
-				if [ -n "$volume_name" ] && [[ ! " ${ACTUAL_VOLUMES[*]} " =~ " ${volume_name} " ]]; then
+				if [ -n "$volume_name" ] && [[ ! " ${ACTUAL_VOLUMES[*]} " =~ ${volume_name} ]]; then
 					ACTUAL_VOLUMES+=("$volume_name")
 				fi
-			done < <(sudo docker inspect "$container" --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{println}}{{end}}{{end}}' 2>/dev/null | grep -v "^$" || true)
+			done < <(docker inspect "$container" --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{println}}{{end}}{{end}}' 2>/dev/null | grep -v "^$" || true)
 		fi
 	done
 
@@ -2226,11 +3236,11 @@ create_backup() {
 		log_info "Getting volumes from docker volume list..."
 		while IFS= read -r volume_name; do
 			if [ -n "$volume_name" ] && [[ "$volume_name" =~ ^featherpanel_ ]]; then
-				if [[ ! " ${ACTUAL_VOLUMES[*]} " =~ " ${volume_name} " ]]; then
+				if [[ ! " ${ACTUAL_VOLUMES[*]} " =~ ${volume_name} ]]; then
 					ACTUAL_VOLUMES+=("$volume_name")
 				fi
 			fi
-		done < <(sudo docker volume ls --format "{{.Name}}" 2>/dev/null | grep "^featherpanel_" || true)
+		done < <(docker volume ls --format "{{.Name}}" 2>/dev/null | grep "^featherpanel_" || true)
 	fi
 
 	# Fallback: Try known volume names if still nothing found
@@ -2241,9 +3251,9 @@ create_backup() {
 
 	# Backup each volume that actually exists
 	for volume in "${ACTUAL_VOLUMES[@]}"; do
-		if sudo docker volume inspect "$volume" >/dev/null 2>&1; then
+		if docker volume inspect "$volume" >/dev/null 2>&1; then
 			log_info "Backing up volume: $volume"
-			if sudo docker run --rm -v "$volume":/source -v "$VOLUMES_DIR":/backup alpine tar czf "/backup/${volume}.tar.gz" -C /source . 2>>"$LOG_FILE"; then
+			if docker run --rm -v "$volume":/source -v "$VOLUMES_DIR":/backup alpine tar czf "/backup/${volume}.tar.gz" -C /source . 2>>"$LOG_FILE"; then
 				log_success "Volume $volume backed up"
 				VOLUMES_FOUND=$((VOLUMES_FOUND + 1))
 			else
@@ -2255,7 +3265,7 @@ create_backup() {
 	# Check if we got the critical mariadb_data volume
 	MARIADB_BACKED_UP=false
 	for volume in "${ACTUAL_VOLUMES[@]}"; do
-		if [[ "$volume" =~ mariadb_data ]] && sudo docker volume inspect "$volume" >/dev/null 2>&1; then
+		if [[ "$volume" =~ mariadb_data ]] && docker volume inspect "$volume" >/dev/null 2>&1; then
 			if [ -f "${VOLUMES_DIR}/${volume}.tar.gz" ]; then
 				MARIADB_BACKED_UP=true
 				break
@@ -2282,10 +3292,10 @@ create_backup() {
 
 	# Copy important config files
 	if [ -f /var/www/featherpanel/docker-compose.yml ]; then
-		sudo cp /var/www/featherpanel/docker-compose.yml "$CONFIG_DIR/" 2>>"$LOG_FILE"
+		cp /var/www/featherpanel/docker-compose.yml "$CONFIG_DIR/" 2>>"$LOG_FILE"
 	fi
 	if [ -f /var/www/featherpanel/.env ]; then
-		sudo cp /var/www/featherpanel/.env "$CONFIG_DIR/" 2>>"$LOG_FILE"
+		cp /var/www/featherpanel/.env "$CONFIG_DIR/" 2>>"$LOG_FILE"
 	fi
 
 	# Create backup info file
@@ -2301,8 +3311,8 @@ EOF
 
 	log_info "Compressing backup..."
 	# Create compressed archive
-	if sudo tar -czf "$BACKUP_PATH" -C "$TEMP_BACKUP_DIR" . 2>>"$LOG_FILE"; then
-		sudo chmod 600 "$BACKUP_PATH"
+	if tar -czf "$BACKUP_PATH" -C "$TEMP_BACKUP_DIR" . 2>>"$LOG_FILE"; then
+		chmod 600 "$BACKUP_PATH"
 		BACKUP_SIZE=$(du -h "$BACKUP_PATH" | cut -f1)
 		log_success "Backup created successfully: $BACKUP_NAME ($BACKUP_SIZE)"
 		log_info "Backup location: $BACKUP_PATH"
@@ -2313,6 +3323,49 @@ EOF
 	fi
 }
 
+ask_backup_before_update() {
+	# Check if FeatherPanel is installed and containers are running
+	if ! is_featherpanel_installed; then
+		return 0  # Not installed, no backup needed
+	fi
+
+	if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel_backend\|featherpanel_mysql"; then
+		return 0  # Containers not running, no backup needed
+	fi
+
+	# Ask user if they want to backup
+	echo ""
+	draw_hr
+	echo -e "${BOLD}${CYAN}Update Safety${NC}"
+	draw_hr
+	echo -e "${BLUE}You're about to update FeatherPanel to a new version.${NC}"
+	echo ""
+	echo -e "${YELLOW}Would you like to create a backup first?${NC}"
+	echo -e "${BLUE}This is recommended for safety before any update.${NC}"
+	echo ""
+	backup_confirm=""
+	prompt "${BOLD}Create a backup before updating?${NC} ${BLUE}(y/n)${NC}: " backup_confirm
+
+	if [[ "$backup_confirm" =~ ^[yY]$ ]]; then
+		if create_backup; then
+			log_success "Backup created successfully before update"
+		else
+			log_error "Backup creation failed"
+			echo ""
+			proceed_without_backup=""
+			prompt "${BOLD}${YELLOW}Continue with update anyway?${NC} ${BLUE}(y/n)${NC}: " proceed_without_backup
+			if [[ ! "$proceed_without_backup" =~ ^[yY]$ ]]; then
+				log_info "Update cancelled by user"
+				exit 0
+			fi
+		fi
+	else
+		log_info "Skipping backup and proceeding with update"
+	fi
+	draw_hr
+	echo ""
+}
+
 list_backups() {
 	log_step "Listing FeatherPanel backups..."
 
@@ -2321,7 +3374,7 @@ list_backups() {
 		return 0
 	fi
 
-	mapfile -t BACKUP_FILES < <(sudo find "$BACKUP_DIR" -name "featherpanel_backup_*.tar.gz" -type f 2>/dev/null | sort -r)
+	mapfile -t BACKUP_FILES < <(find "$BACKUP_DIR" -name "featherpanel_backup_*.tar.gz" -type f 2>/dev/null | sort -r)
 
 	if [ ${#BACKUP_FILES[@]} -eq 0 ]; then
 		log_warn "No backups found in $BACKUP_DIR"
@@ -2338,8 +3391,8 @@ list_backups() {
 	local index=1
 	for backup_file in "${BACKUP_FILES[@]}"; do
 		BACKUP_NAME=$(basename "$backup_file")
-		BACKUP_SIZE=$(sudo du -h "$backup_file" | cut -f1)
-		BACKUP_DATE=$(sudo stat -c %y "$backup_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
+		BACKUP_SIZE=$(du -h "$backup_file" | cut -f1)
+		BACKUP_DATE=$(stat -c %y "$backup_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
 
 		# Extract timestamp from filename
 		BACKUP_TIMESTAMP=$(echo "$BACKUP_NAME" | sed -n 's/featherpanel_backup_\(.*\)\.tar\.gz/\1/p')
@@ -2370,7 +3423,7 @@ restore_backup() {
 		return 1
 	fi
 
-	mapfile -t BACKUP_FILES < <(sudo find "$BACKUP_DIR" -name "featherpanel_backup_*.tar.gz" -type f 2>/dev/null | sort -r)
+	mapfile -t BACKUP_FILES < <(find "$BACKUP_DIR" -name "featherpanel_backup_*.tar.gz" -type f 2>/dev/null | sort -r)
 
 	if [ ${#BACKUP_FILES[@]} -eq 0 ]; then
 		log_error "No backups found in $BACKUP_DIR"
@@ -2388,8 +3441,8 @@ restore_backup() {
 	declare -A BACKUP_MAP
 	for backup_file in "${BACKUP_FILES[@]}"; do
 		BACKUP_NAME=$(basename "$backup_file")
-		BACKUP_SIZE=$(sudo du -h "$backup_file" | cut -f1)
-		BACKUP_DATE=$(sudo stat -c %y "$backup_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
+		BACKUP_SIZE=$(du -h "$backup_file" | cut -f1)
+		BACKUP_DATE=$(stat -c %y "$backup_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
 
 		echo -e "  ${GREEN}[$index]${NC} ${BOLD}$BACKUP_NAME${NC}"
 		echo -e "     ${BLUE}• Size:${NC} $BACKUP_SIZE"
@@ -2433,7 +3486,7 @@ restore_backup() {
 
 	log_info "Stopping FeatherPanel containers..."
 	if ! run_with_spinner "Stopping containers" "Containers stopped." \
-		bash -c "cd /var/www/featherpanel && sudo docker compose down"; then
+		bash -c "cd /var/www/featherpanel && docker compose down"; then
 		log_error "Failed to stop containers"
 		return 1
 	fi
@@ -2443,7 +3496,7 @@ restore_backup() {
 	trap 'rm -rf "$TEMP_RESTORE_DIR"' EXIT
 
 	log_info "Extracting backup..."
-	if ! sudo tar -xzf "$SELECTED_BACKUP" -C "$TEMP_RESTORE_DIR" 2>>"$LOG_FILE"; then
+	if ! tar -xzf "$SELECTED_BACKUP" -C "$TEMP_RESTORE_DIR" 2>>"$LOG_FILE"; then
 		log_error "Failed to extract backup"
 		return 1
 	fi
@@ -2481,11 +3534,11 @@ restore_backup() {
 			log_info "Restoring volume: $VOLUME_NAME (database will be restored from this)"
 
 			# Remove existing volume if it exists
-			sudo docker volume rm "$VOLUME_NAME" >/dev/null 2>&1 || true
+			docker volume rm "$VOLUME_NAME" >/dev/null 2>&1 || true
 
 			# Create new volume and restore data
-			if sudo docker volume create "$VOLUME_NAME" >/dev/null 2>&1; then
-				if sudo docker run --rm -v "$VOLUME_NAME":/target -v "$(dirname "$MARIADB_VOLUME_FILE")":/backup alpine sh -c "cd /target && tar xzf /backup/$(basename "$MARIADB_VOLUME_FILE")" 2>>"$LOG_FILE"; then
+			if docker volume create "$VOLUME_NAME" >/dev/null 2>&1; then
+				if docker run --rm -v "$VOLUME_NAME":/target -v "$(dirname "$MARIADB_VOLUME_FILE")":/backup alpine sh -c "cd /target && tar xzf /backup/$(basename "$MARIADB_VOLUME_FILE")" 2>>"$LOG_FILE"; then
 					log_success "Volume $VOLUME_NAME restored (database restored from raw files)"
 				else
 					log_error "Failed to restore $VOLUME_NAME volume"
@@ -2510,11 +3563,11 @@ restore_backup() {
 				log_info "Restoring volume: $VOLUME_NAME"
 
 				# Remove existing volume if it exists
-				sudo docker volume rm "$VOLUME_NAME" >/dev/null 2>&1 || true
+				docker volume rm "$VOLUME_NAME" >/dev/null 2>&1 || true
 
 				# Create new volume and restore data
-				if sudo docker volume create "$VOLUME_NAME" >/dev/null 2>&1; then
-					if sudo docker run --rm -v "$VOLUME_NAME":/target -v "$(dirname "$volume_file")":/backup alpine sh -c "cd /target && tar xzf /backup/$(basename "$volume_file")" 2>>"$LOG_FILE"; then
+				if docker volume create "$VOLUME_NAME" >/dev/null 2>&1; then
+					if docker run --rm -v "$VOLUME_NAME":/target -v "$(dirname "$volume_file")":/backup alpine sh -c "cd /target && tar xzf /backup/$(basename "$volume_file")" 2>>"$LOG_FILE"; then
 						log_success "Volume $VOLUME_NAME restored"
 					else
 						log_warn "Failed to restore volume $VOLUME_NAME"
@@ -2536,12 +3589,12 @@ restore_backup() {
 		prompt "${BOLD}Restore configuration files (docker-compose.yml, .env)?${NC} ${BLUE}(y/n)${NC}: " restore_config
 		if [[ "$restore_config" =~ ^[yY]$ ]]; then
 			if [ -f "${TEMP_RESTORE_DIR}/config/docker-compose.yml" ]; then
-				sudo cp "${TEMP_RESTORE_DIR}/config/docker-compose.yml" /var/www/featherpanel/docker-compose.yml
+				cp "${TEMP_RESTORE_DIR}/config/docker-compose.yml" /var/www/featherpanel/docker-compose.yml
 				log_info "docker-compose.yml restored"
 			fi
 			if [ -f "${TEMP_RESTORE_DIR}/config/.env" ]; then
-				sudo cp "${TEMP_RESTORE_DIR}/config/.env" /var/www/featherpanel/.env
-				sudo chmod 600 /var/www/featherpanel/.env
+				cp "${TEMP_RESTORE_DIR}/config/.env" /var/www/featherpanel/.env
+				chmod 600 /var/www/featherpanel/.env
 				log_info ".env restored"
 			fi
 		fi
@@ -2549,7 +3602,7 @@ restore_backup() {
 
 	log_info "Starting FeatherPanel containers..."
 	if ! run_with_spinner "Starting containers" "Containers started." \
-		bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+		bash -c "cd /var/www/featherpanel && docker compose up -d"; then
 		log_error "Failed to start containers"
 		return 1
 	fi
@@ -2567,7 +3620,7 @@ delete_backup() {
 		return 1
 	fi
 
-	mapfile -t BACKUP_FILES < <(sudo find "$BACKUP_DIR" -name "featherpanel_backup_*.tar.gz" -type f 2>/dev/null | sort -r)
+	mapfile -t BACKUP_FILES < <(find "$BACKUP_DIR" -name "featherpanel_backup_*.tar.gz" -type f 2>/dev/null | sort -r)
 
 	if [ ${#BACKUP_FILES[@]} -eq 0 ]; then
 		log_error "No backups found in $BACKUP_DIR"
@@ -2585,8 +3638,8 @@ delete_backup() {
 	declare -A BACKUP_MAP
 	for backup_file in "${BACKUP_FILES[@]}"; do
 		BACKUP_NAME=$(basename "$backup_file")
-		BACKUP_SIZE=$(sudo du -h "$backup_file" | cut -f1)
-		BACKUP_DATE=$(sudo stat -c %y "$backup_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
+		BACKUP_SIZE=$(du -h "$backup_file" | cut -f1)
+		BACKUP_DATE=$(stat -c %y "$backup_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
 
 		echo -e "  ${GREEN}[$index]${NC} ${BOLD}$BACKUP_NAME${NC}"
 		echo -e "     ${BLUE}• Size:${NC} $BACKUP_SIZE"
@@ -2622,7 +3675,7 @@ delete_backup() {
 		return 0
 	fi
 
-	if sudo rm -f "$SELECTED_BACKUP" 2>>"$LOG_FILE"; then
+	if rm -f "$SELECTED_BACKUP" 2>>"$LOG_FILE"; then
 		log_success "Backup deleted: $BACKUP_NAME"
 		return 0
 	else
@@ -2640,14 +3693,14 @@ export_migration() {
 	fi
 
 	# Check if containers are running
-	if ! sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel_backend\|featherpanel_mysql"; then
+	if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel_backend\|featherpanel_mysql"; then
 		log_error "FeatherPanel containers are not running. Cannot create migration package."
 		return 1
 	fi
 
 	# Create migration directory
 	MIGRATION_DIR="/var/www/featherpanel/migrations"
-	sudo mkdir -p "$MIGRATION_DIR"
+	mkdir -p "$MIGRATION_DIR"
 
 	# Generate migration filename with timestamp
 	MIGRATION_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -2671,13 +3724,13 @@ export_migration() {
 
 	# Get volumes directly from running containers
 	for container in featherpanel_mysql featherpanel_backend featherpanel_redis; do
-		if sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${container}$"; then
+		if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${container}$"; then
 			# Get volume names from container mounts
 			while IFS= read -r volume_name; do
-				if [ -n "$volume_name" ] && [[ ! " ${ACTUAL_VOLUMES[*]} " =~ " ${volume_name} " ]]; then
+				if [ -n "$volume_name" ] && [[ ! " ${ACTUAL_VOLUMES[*]} " =~ ${volume_name} ]]; then
 					ACTUAL_VOLUMES+=("$volume_name")
 				fi
-			done < <(sudo docker inspect "$container" --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{println}}{{end}}{{end}}' 2>/dev/null | grep -v "^$" || true)
+			done < <(docker inspect "$container" --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{println}}{{end}}{{end}}' 2>/dev/null | grep -v "^$" || true)
 		fi
 	done
 
@@ -2686,11 +3739,11 @@ export_migration() {
 		log_info "Getting volumes from docker volume list..."
 		while IFS= read -r volume_name; do
 			if [ -n "$volume_name" ] && [[ "$volume_name" =~ ^featherpanel_ ]]; then
-				if [[ ! " ${ACTUAL_VOLUMES[*]} " =~ " ${volume_name} " ]]; then
+				if [[ ! " ${ACTUAL_VOLUMES[*]} " =~ ${volume_name} ]]; then
 					ACTUAL_VOLUMES+=("$volume_name")
 				fi
 			fi
-		done < <(sudo docker volume ls --format "{{.Name}}" 2>/dev/null | grep "^featherpanel_" || true)
+		done < <(docker volume ls --format "{{.Name}}" 2>/dev/null | grep "^featherpanel_" || true)
 	fi
 
 	# Fallback: Try known volume names if still nothing found
@@ -2701,9 +3754,9 @@ export_migration() {
 
 	# Export each volume that actually exists
 	for volume in "${ACTUAL_VOLUMES[@]}"; do
-		if sudo docker volume inspect "$volume" >/dev/null 2>&1; then
+		if docker volume inspect "$volume" >/dev/null 2>&1; then
 			log_info "Exporting volume: $volume"
-			if sudo docker run --rm -v "$volume":/source -v "$VOLUMES_DIR":/backup alpine tar czf "/backup/${volume}.tar.gz" -C /source . 2>>"$LOG_FILE"; then
+			if docker run --rm -v "$volume":/source -v "$VOLUMES_DIR":/backup alpine tar czf "/backup/${volume}.tar.gz" -C /source . 2>>"$LOG_FILE"; then
 				log_success "Volume $volume exported"
 				VOLUMES_FOUND=$((VOLUMES_FOUND + 1))
 			else
@@ -2715,7 +3768,7 @@ export_migration() {
 	# Check if we got the critical mariadb_data volume
 	MARIADB_EXPORTED=false
 	for volume in "${ACTUAL_VOLUMES[@]}"; do
-		if [[ "$volume" =~ mariadb_data ]] && sudo docker volume inspect "$volume" >/dev/null 2>&1; then
+		if [[ "$volume" =~ mariadb_data ]] && docker volume inspect "$volume" >/dev/null 2>&1; then
 			if [ -f "${VOLUMES_DIR}/${volume}.tar.gz" ]; then
 				MARIADB_EXPORTED=true
 				break
@@ -2742,10 +3795,10 @@ export_migration() {
 
 	# Copy important config files
 	if [ -f /var/www/featherpanel/docker-compose.yml ]; then
-		sudo cp /var/www/featherpanel/docker-compose.yml "$CONFIG_DIR/" 2>>"$LOG_FILE"
+		cp /var/www/featherpanel/docker-compose.yml "$CONFIG_DIR/" 2>>"$LOG_FILE"
 	fi
 	if [ -f /var/www/featherpanel/.env ]; then
-		sudo cp /var/www/featherpanel/.env "$CONFIG_DIR/" 2>>"$LOG_FILE"
+		cp /var/www/featherpanel/.env "$CONFIG_DIR/" 2>>"$LOG_FILE"
 	fi
 
 	# Create migration info file
@@ -2814,8 +3867,8 @@ EOF
 
 	log_info "Compressing migration package..."
 	# Create compressed archive
-	if sudo tar -czf "$MIGRATION_PATH" -C "$TEMP_MIGRATION_DIR" . 2>>"$LOG_FILE"; then
-		sudo chmod 600 "$MIGRATION_PATH"
+	if tar -czf "$MIGRATION_PATH" -C "$TEMP_MIGRATION_DIR" . 2>>"$LOG_FILE"; then
+		chmod 600 "$MIGRATION_PATH"
 		MIGRATION_SIZE=$(du -h "$MIGRATION_PATH" | cut -f1)
 		log_success "Migration package created: $MIGRATION_NAME ($MIGRATION_SIZE)"
 
@@ -2873,13 +3926,13 @@ import_migration() {
 
 	# Check if already installed (optional - can import during fresh install)
 	MIGRATION_DIR="/var/www/featherpanel/migrations"
-	sudo mkdir -p "$MIGRATION_DIR"
+	mkdir -p "$MIGRATION_DIR"
 
 	# Look for migration packages
-	mapfile -t MIGRATION_FILES < <(sudo find "$MIGRATION_DIR" -name "featherpanel_migration_*.tar.gz" -type f 2>/dev/null | sort -r)
+	mapfile -t MIGRATION_FILES < <(find "$MIGRATION_DIR" -name "featherpanel_migration_*.tar.gz" -type f 2>/dev/null | sort -r)
 
 	# Also check current directory and common locations
-	mapfile -t ADDITIONAL_FILES < <(sudo find /root /home -maxdepth 2 -name "featherpanel_migration_*.tar.gz" -type f 2>/dev/null | head -5)
+	mapfile -t ADDITIONAL_FILES < <(find /root /home -maxdepth 2 -name "featherpanel_migration_*.tar.gz" -type f 2>/dev/null | head -5)
 	MIGRATION_FILES+=("${ADDITIONAL_FILES[@]}")
 
 	if [ ${#MIGRATION_FILES[@]} -eq 0 ]; then
@@ -2920,8 +3973,8 @@ import_migration() {
 		declare -A MIGRATION_MAP
 		for migration_file in "${MIGRATION_FILES[@]}"; do
 			MIGRATION_NAME=$(basename "$migration_file")
-			MIGRATION_SIZE=$(sudo du -h "$migration_file" | cut -f1)
-			MIGRATION_DATE=$(sudo stat -c %y "$migration_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
+			MIGRATION_SIZE=$(du -h "$migration_file" | cut -f1)
+			MIGRATION_DATE=$(stat -c %y "$migration_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
 
 			echo -e "  ${GREEN}[$index]${NC} ${BOLD}$MIGRATION_NAME${NC}"
 			echo -e "     ${BLUE}• Size:${NC} $MIGRATION_SIZE"
@@ -2991,15 +4044,15 @@ import_migration() {
 	if [ -f /var/www/featherpanel/.installed ]; then
 		log_info "Stopping FeatherPanel containers..."
 		if ! run_with_spinner "Stopping containers" "Containers stopped." \
-			bash -c "cd /var/www/featherpanel && sudo docker compose down"; then
+			bash -c "cd /var/www/featherpanel && docker compose down"; then
 			log_error "Failed to stop containers"
 			return 1
 		fi
 	else
 		log_info "FeatherPanel not installed. Will install with imported data."
 		# Ensure directories exist
-		sudo mkdir -p /var/www/featherpanel
-		sudo mkdir -p "$BACKUP_DIR"
+		mkdir -p /var/www/featherpanel
+		mkdir -p "$BACKUP_DIR"
 	fi
 
 	# Create temporary directory for extraction
@@ -3007,7 +4060,7 @@ import_migration() {
 	trap 'rm -rf "$TEMP_IMPORT_DIR"' EXIT
 
 	log_info "Extracting migration package..."
-	if ! sudo tar -xzf "$SELECTED_MIGRATION" -C "$TEMP_IMPORT_DIR" 2>>"$LOG_FILE"; then
+	if ! tar -xzf "$SELECTED_MIGRATION" -C "$TEMP_IMPORT_DIR" 2>>"$LOG_FILE"; then
 		log_error "Failed to extract migration package"
 		return 1
 	fi
@@ -3020,15 +4073,15 @@ import_migration() {
 		if ! command -v docker &>/dev/null; then
 			log_step "Installing Docker engine (required for import)..."
 			curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
-			sudo systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
-			sudo usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
+			systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
+			usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
 			log_success "Docker installed"
 		fi
 
 		# Download docker-compose.yml if not present
 		if [ ! -f /var/www/featherpanel/docker-compose.yml ]; then
 			if [ -f "${TEMP_IMPORT_DIR}/config/docker-compose.yml" ]; then
-				sudo cp "${TEMP_IMPORT_DIR}/config/docker-compose.yml" /var/www/featherpanel/docker-compose.yml
+				cp "${TEMP_IMPORT_DIR}/config/docker-compose.yml" /var/www/featherpanel/docker-compose.yml
 				log_info "Using docker-compose.yml from migration package"
 			else
 				log_info "Downloading docker-compose.yml..."
@@ -3043,8 +4096,8 @@ import_migration() {
 
 		# Copy .env if present in migration
 		if [ -f "${TEMP_IMPORT_DIR}/config/.env" ]; then
-			sudo cp "${TEMP_IMPORT_DIR}/config/.env" /var/www/featherpanel/.env
-			sudo chmod 600 /var/www/featherpanel/.env
+			cp "${TEMP_IMPORT_DIR}/config/.env" /var/www/featherpanel/.env
+			chmod 600 /var/www/featherpanel/.env
 			log_info "Restored .env from migration package"
 		fi
 	fi
@@ -3054,7 +4107,7 @@ import_migration() {
 	if [ -f "${TEMP_IMPORT_DIR}/database.sql" ]; then
 		# Start MySQL container
 		if ! run_with_spinner "Starting MySQL for import" "MySQL started." \
-			bash -c "cd /var/www/featherpanel && sudo docker compose up -d mysql"; then
+			bash -c "cd /var/www/featherpanel && docker compose up -d mysql"; then
 			log_error "Failed to start MySQL container"
 			return 1
 		fi
@@ -3064,7 +4117,7 @@ import_migration() {
 		max_attempts=30
 		attempt=0
 		while [ $attempt -lt $max_attempts ]; do
-			if sudo docker exec featherpanel_mysql mysql -u root -pfeatherpanel_root -e "SELECT 1" >/dev/null 2>&1; then
+			if docker exec featherpanel_mysql mysql -u root -pfeatherpanel_root -e "SELECT 1" >/dev/null 2>&1; then
 				break
 			fi
 			attempt=$((attempt + 1))
@@ -3078,13 +4131,13 @@ import_migration() {
 
 		# Drop and recreate database
 		log_info "Preparing database for import..."
-		sudo docker exec -i featherpanel_mysql mysql -u root -pfeatherpanel_root <<EOF 2>>"$LOG_FILE" || true
+		docker exec -i featherpanel_mysql mysql -u root -pfeatherpanel_root <<EOF 2>>"$LOG_FILE" || true
 DROP DATABASE IF EXISTS featherpanel;
 CREATE DATABASE featherpanel;
 EOF
 
 		# Restore database
-		if sudo docker exec -i featherpanel_mysql mysql -u root -pfeatherpanel_root featherpanel <"${TEMP_IMPORT_DIR}/database.sql" 2>>"$LOG_FILE"; then
+		if docker exec -i featherpanel_mysql mysql -u root -pfeatherpanel_root featherpanel <"${TEMP_IMPORT_DIR}/database.sql" 2>>"$LOG_FILE"; then
 			log_success "Database imported"
 		else
 			log_error "Failed to import database"
@@ -3103,11 +4156,11 @@ EOF
 				log_info "Restoring volume: $VOLUME_NAME"
 
 				# Remove existing volume if it exists
-				sudo docker volume rm "$VOLUME_NAME" >/dev/null 2>&1 || true
+				docker volume rm "$VOLUME_NAME" >/dev/null 2>&1 || true
 
 				# Create new volume and restore data
-				if sudo docker volume create "$VOLUME_NAME" >/dev/null 2>&1; then
-					if sudo docker run --rm -v "$VOLUME_NAME":/target -v "$(dirname "$volume_file")":/backup alpine sh -c "cd /target && tar xzf /backup/$(basename "$volume_file")" 2>>"$LOG_FILE"; then
+				if docker volume create "$VOLUME_NAME" >/dev/null 2>&1; then
+					if docker run --rm -v "$VOLUME_NAME":/target -v "$(dirname "$volume_file")":/backup alpine sh -c "cd /target && tar xzf /backup/$(basename "$volume_file")" 2>>"$LOG_FILE"; then
 						log_success "Volume $VOLUME_NAME restored"
 					else
 						log_warn "Failed to restore volume $VOLUME_NAME"
@@ -3123,13 +4176,13 @@ EOF
 
 	log_info "Starting FeatherPanel containers..."
 	if ! run_with_spinner "Starting containers" "Containers started." \
-		bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+		bash -c "cd /var/www/featherpanel && docker compose up -d"; then
 		log_error "Failed to start containers"
 		return 1
 	fi
 
 	# Mark as installed
-	sudo touch /var/www/featherpanel/.installed
+	touch /var/www/featherpanel/.installed
 
 	# Install global featherpanel command
 	install_featherpanel_command
@@ -3162,32 +4215,55 @@ EOF
 }
 
 # Function to modify docker-compose.yml to use dev image tags
+get_registry_base() {
+	case "${IMAGE_REGISTRY:-ghcr}" in
+	ghcr)
+		echo "ghcr.io"
+		;;
+	docker)
+		echo "docker.io"
+		;;
+	quay)
+		echo "quay.io"
+		;;
+	custom)
+		echo "${CUSTOM_REGISTRY_URL:-ghcr.io}"
+		;;
+	*)
+		echo "ghcr.io"
+		;;
+	esac
+}
+
 modify_compose_for_dev() {
 	local compose_file="$1"
 	local backend_tag="$2"
 	local frontend_tag="$3"
+	local registry_base
+	registry_base=$(get_registry_base)
 
 	log_info "Modifying docker-compose.yml to use dev images..."
 	log_info "Backend tag: $backend_tag"
 	log_info "Frontend tag: $frontend_tag"
+	log_info "Registry: $registry_base"
 
 	# Backup original file
 	if [ -f "$compose_file" ]; then
-		sudo cp "$compose_file" "${compose_file}.backup"
+		cp "$compose_file" "${compose_file}.backup"
 	fi
 
 	# Use sed to replace image tags
 	# Replace backend image
-	sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-backend:latest|image: ghcr.io/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
-	sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-backend:.*|image: ghcr.io/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-backend:latest|image: ${registry_base}/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-backend:.*|image: ${registry_base}/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
 
 	# Replace frontend image
-	sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-frontend:latest|image: ghcr.io/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
-	sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-frontend:.*|image: ghcr.io/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-frontend:latest|image: ${registry_base}/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-frontend:.*|image: ${registry_base}/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
 
 	# Replace frontendv2 image
-	sudo sed -i "s|image: ghcr.io/mythicalltd/frontendv2:latest|image: ghcr.io/mythicalltd/frontendv2:${frontend_tag}|g" "$compose_file"
-	sudo sed -i "s|image: ghcr.io/mythicalltd/frontendv2:.*|image: ghcr.io/mythicalltd/frontendv2:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/frontendv2:latest|image: ${registry_base}/mythicalltd/frontendv2:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/frontendv2:.*|image: ${registry_base}/mythicalltd/frontendv2:${frontend_tag}|g" "$compose_file"
 
 	log_success "docker-compose.yml modified for dev images"
 }
@@ -3198,12 +4274,14 @@ get_dev_image_tag() {
 
 	if [ -n "$DEV_BRANCH" ]; then
 		# Sanitize branch name (replace / with -)
-		local sanitized_branch=$(echo "$DEV_BRANCH" | sed 's/\//-/g')
+		local sanitized_branch
+		sanitized_branch=$(echo "$DEV_BRANCH" | sed 's/\//-/g')
 		tag="dev-${sanitized_branch}"
 
 		if [ -n "$DEV_SHA" ]; then
 			# Use short SHA (first 7 characters)
-			local short_sha=$(echo "$DEV_SHA" | cut -c1-7)
+			local short_sha
+			short_sha=$(echo "$DEV_SHA" | cut -c1-7)
 			tag="dev-${sanitized_branch}-${short_sha}"
 		fi
 	else
@@ -3253,18 +4331,18 @@ uninstall_docker() {
 	fi
 	if [ -f /var/www/featherpanel/docker-compose.yml ]; then
 		log_step "Stopping and removing Docker containers..."
-		(cd /var/www/featherpanel && sudo docker compose down -v) >>"$LOG_FILE" 2>&1 || true
+		(cd /var/www/featherpanel && docker compose down -v) >>"$LOG_FILE" 2>&1 || true
 	fi
 	# Remove secrets and sensitive files
 	if [ -f /var/www/featherpanel/.env ]; then
 		echo "Removing .env file containing secrets..."
-		sudo rm -f /var/www/featherpanel/.env
+		rm -f /var/www/featherpanel/.env
 	fi
 
 	# Remove global featherpanel command
 	if [ -f /usr/local/bin/featherpanel ]; then
 		log_info "Removing global 'featherpanel' command..."
-		sudo rm -f /usr/local/bin/featherpanel
+		rm -f /usr/local/bin/featherpanel
 	fi
 
 	rm -rf /var/www/featherpanel
@@ -3278,7 +4356,7 @@ ensure_env_cloudflare() {
 		return 0
 	fi
 	log_info "Creating /var/www/featherpanel/.env for Cloudflare settings..."
-	cat <<EOF | sudo tee "$ENV_FILE" >/dev/null
+	cat <<EOF | tee "$ENV_FILE" >/dev/null
 # Cloudflare settings used by the installer/uninstaller
 CF_EMAIL=""
 CF_API_KEY=""
@@ -3290,7 +4368,7 @@ TUNNEL_ID=""
 TUNNEL_NAME=""
 ZONE_ID=""
 EOF
-	sudo chmod 600 "$ENV_FILE"
+	chmod 600 "$ENV_FILE"
 	log_info ".env created for Cloudflare."
 }
 
@@ -3298,20 +4376,16 @@ EOF
 check_eol_status() {
 	local os="$1"
 	local version="$2"
-	local current_date=$(date +%s)
+	local current_date
+	current_date=$(date +%s)
 	local eol_date=""
 	local eol_extended_date=""
-	local eol_name=""
-	local eol_extended_name=""
 	local status="supported"
 
 	# Skip EOL check if OS or version is unknown
 	if [ -z "$os" ] || [ "$os" = "unknown" ] || [ -z "$version" ] || [ "$version" = "unknown" ]; then
 		EOL_STATUS="supported"
-		EOL_DATE=""
 		EOL_EXTENDED_DATE=""
-		EOL_NAME=""
-		EOL_EXTENDED_NAME=""
 		return 0
 	fi
 
@@ -3323,20 +4397,14 @@ check_eol_status() {
 		11)
 			eol_date=$(date -d "2024-08-14" +%s 2>/dev/null || echo "")
 			eol_extended_date=$(date -d "2026-08-31" +%s 2>/dev/null || echo "")
-			eol_name="Standard Support"
-			eol_extended_name="Extended LTS Support"
 			;;
 		12)
 			eol_date=$(date -d "2026-06-10" +%s 2>/dev/null || echo "")
 			eol_extended_date=$(date -d "2028-06-30" +%s 2>/dev/null || echo "")
-			eol_name="Standard Support"
-			eol_extended_name="Extended LTS Support"
 			;;
 		13)
 			eol_date=$(date -d "2028-08-09" +%s 2>/dev/null || echo "")
 			eol_extended_date=$(date -d "2030-06-30" +%s 2>/dev/null || echo "")
-			eol_name="Standard Support"
-			eol_extended_name="Extended LTS Support"
 			;;
 		esac
 		;;
@@ -3345,20 +4413,14 @@ check_eol_status() {
 		22.04)
 			eol_date=$(date -d "2027-04-01" +%s 2>/dev/null || echo "")
 			eol_extended_date=$(date -d "2032-04-01" +%s 2>/dev/null || echo "")
-			eol_name="Standard LTS Support"
-			eol_extended_name="Extended Security Maintenance"
 			;;
 		24.04)
 			eol_date=$(date -d "2029-04-01" +%s 2>/dev/null || echo "")
 			eol_extended_date=$(date -d "2034-04-01" +%s 2>/dev/null || echo "")
-			eol_name="Standard LTS Support"
-			eol_extended_name="Extended Security Maintenance"
 			;;
 		25.04)
 			eol_date=$(date -d "2026-01-01" +%s 2>/dev/null || echo "")
 			eol_extended_date=""
-			eol_name="Standard Support"
-			eol_extended_name=""
 			;;
 		esac
 		;;
@@ -3388,11 +4450,13 @@ check_eol_status() {
 
 	# Return status via global variables (bash limitation)
 	EOL_STATUS="$status"
-	EOL_DATE="$eol_date"
 	EOL_EXTENDED_DATE="$eol_extended_date"
-	EOL_NAME="$eol_name"
-	EOL_EXTENDED_NAME="$eol_extended_name"
 }
+
+	# Initialize and load configuration
+	# This should be done after all functions are defined but before main execution
+	init_config
+	load_config
 
 if [ -f /etc/os-release ]; then
 	# shellcheck source=/dev/null
@@ -3529,10 +4593,10 @@ if [ -f /etc/os-release ]; then
 		# Check if docker command exists
 		if command -v docker >/dev/null 2>&1; then
 			docker_installed=true
-			docker_version=$(sudo docker --version 2>/dev/null || echo "unknown")
+			docker_version=$(docker --version 2>/dev/null || echo "unknown")
 
 			# Check if Docker daemon is running
-			if sudo docker info >/dev/null 2>&1; then
+			if docker info >/dev/null 2>&1; then
 				docker_daemon_running=true
 			fi
 		fi
@@ -3540,13 +4604,13 @@ if [ -f /etc/os-release ]; then
 		# Check if docker compose works (requires daemon to be running)
 		if [ "$docker_installed" = true ] && [ "$docker_daemon_running" = true ]; then
 			# Try docker compose (v2 plugin)
-			if sudo docker compose version >/dev/null 2>&1; then
+			if docker compose version >/dev/null 2>&1; then
 				docker_compose_works=true
-				compose_version=$(sudo docker compose version 2>/dev/null | head -n1 || echo "unknown")
+				compose_version=$(docker compose version 2>/dev/null | head -n1 || echo "unknown")
 			# Fallback: try docker-compose (v1 standalone)
-			elif command -v docker-compose >/dev/null 2>&1 && sudo docker-compose version >/dev/null 2>&1; then
+			elif command -v docker-compose >/dev/null 2>&1 && docker-compose version >/dev/null 2>&1; then
 				docker_compose_works=true
-				compose_version=$(sudo docker-compose version 2>/dev/null | head -n1 || echo "unknown")
+				compose_version=$(docker-compose version 2>/dev/null | head -n1 || echo "unknown")
 			fi
 		elif [ "$docker_installed" = true ] && [ "$docker_daemon_running" != true ]; then
 			# Docker is installed but daemon is not running - we can't test compose
@@ -3774,6 +4838,11 @@ if [ -f /etc/os-release ]; then
 		fi
 	}
 
+	# Handle configuration menu if requested via --config flag
+	if [ "$SHOW_CONFIG_MENU" = true ]; then
+		COMPONENT_TYPE="8"
+	fi
+
 	# Environment overrides for non-interactive mode
 	case "${FP_COMPONENT:-}" in
 	panel) COMPONENT_TYPE="1" ;;
@@ -3783,14 +4852,15 @@ if [ -f /etc/os-release ]; then
 	db | databases) COMPONENT_TYPE="5" ;;
 	proxmox) COMPONENT_TYPE="6" ;;
 	featherfly) COMPONENT_TYPE="7" ;;
+	config | configuration) COMPONENT_TYPE="8" ;;
 	*) COMPONENT_TYPE="" ;;
 	esac
 
-	while [[ ! "$COMPONENT_TYPE" =~ ^[1-7]$ ]]; do
+	while [[ ! "$COMPONENT_TYPE" =~ ^[1-8]$ ]]; do
 		show_main_menu
-		prompt "${BOLD}Enter component${NC} ${BLUE}(1/2/3/4/5/6/7)${NC}: " COMPONENT_TYPE
-		if [[ ! "$COMPONENT_TYPE" =~ ^[1-7]$ ]]; then
-			echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC}, ${YELLOW}2${NC}, ${YELLOW}3${NC}, ${YELLOW}4${NC}, ${YELLOW}5${NC}, ${YELLOW}6${NC} or ${YELLOW}7${NC}."
+		prompt "${BOLD}Enter component${NC} ${BLUE}(1/2/3/4/5/6/7/8)${NC}: " COMPONENT_TYPE
+		if [[ ! "$COMPONENT_TYPE" =~ ^[1-8]$ ]]; then
+			echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC}, ${YELLOW}2${NC}, ${YELLOW}3${NC}, ${YELLOW}4${NC}, ${YELLOW}5${NC}, ${YELLOW}6${NC}, ${YELLOW}7${NC}, or ${YELLOW}8${NC}."
 			sleep 1
 		fi
 	done
@@ -3798,14 +4868,14 @@ if [ -f /etc/os-release ]; then
 	# Show appropriate menu based on component selection
 	if [ "$COMPONENT_TYPE" = "1" ]; then
 		# Panel operations
-		while [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; do
+		while [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; do
 			show_panel_menu
 			echo ""
-			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4)${NC}: " INST_TYPE
-			if [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; then
+			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4/5/6)${NC}: " INST_TYPE
+			if [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; then
 				echo ""
 				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), or ${BOLD}4${NC} (Backup)${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), ${BOLD}4${NC} (Backup), ${BOLD}5${NC} (Info), or ${BOLD}6${NC} (Firewall)${NC}"
 				echo ""
 				sleep 2
 			fi
@@ -3925,23 +4995,24 @@ if [ -f /etc/os-release ]; then
 				sleep 2
 			fi
 		done
-	elif [ "$COMPONENT_TYPE" = "6" ] || [ "$COMPONENT_TYPE" = "7" ]; then
-		# Proxmox Agent / FeatherFly Daemon – Coming Soon
+	elif [ "$COMPONENT_TYPE" = "7" ]; then
+		# FeatherFly Daemon – Coming Soon
 		if [ -t 1 ]; then clear; fi
 		print_banner
 		draw_hr
 		print_centered "Coming Soon" "$YELLOW"
 		draw_hr
 		echo ""
-		if [ "$COMPONENT_TYPE" = "6" ]; then
-			echo -e "  ${BLUE}Proxmox Agent (DHCP) for virtual machines is currently in development.${NC}"
-		else
-			echo -e "  ${BLUE}FeatherFly Daemon (WebHosting Daemon) is currently in development.${NC}"
-		fi
+		echo -e "  ${BLUE}FeatherFly Daemon (WebHosting Daemon) is currently in development.${NC}"
 		echo -e "  ${YELLOW}This feature is not yet available in this installer build.${NC}"
 		echo ""
 		draw_hr
 		exit 0
+	elif [ "$COMPONENT_TYPE" = "8" ]; then
+		# Configuration Management
+		manage_configuration
+		SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+		exec bash "$SCRIPT_PATH" "$@"
 	fi
 
 	# Environment overrides for non-interactive mode
@@ -3998,7 +5069,7 @@ if [ -f /etc/os-release ]; then
 
 			# Check if containers are running
 			if command -v docker >/dev/null 2>&1; then
-				if sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel_backend\|featherpanel_frontend\|featherpanel_mysql\|featherpanel_redis"; then
+				if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel_backend\|featherpanel_frontend\|featherpanel_mysql\|featherpanel_redis"; then
 					INSTALLED=true
 				fi
 			fi
@@ -4015,7 +5086,7 @@ if [ -f /etc/os-release ]; then
 				echo -e "${BLUE}Detected installation indicators:${NC}"
 				[ -f /var/www/featherpanel/.installed ] && echo -e "  ${GREEN}✓${NC} Installation marker file exists"
 				[ -f /var/www/featherpanel/docker-compose.yml ] && echo -e "  ${GREEN}✓${NC} docker-compose.yml found"
-				if command -v docker >/dev/null 2>&1 && sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel"; then
+				if command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel"; then
 					echo -e "  ${GREEN}✓${NC} FeatherPanel containers are running"
 				fi
 				echo ""
@@ -4058,10 +5129,11 @@ if [ -f /etc/os-release ]; then
 					# Stop and remove existing containers before reinstalling
 					if [ -f /var/www/featherpanel/docker-compose.yml ] && command -v docker >/dev/null 2>&1; then
 						log_info "Stopping existing FeatherPanel containers..."
-						cd /var/www/featherpanel && sudo docker compose down -v >/dev/null 2>&1 || true
+						cd /var/www/featherpanel || true
+						docker compose down -v >/dev/null 2>&1 || true
 					fi
 					# Remove .installed marker to allow fresh installation
-					sudo rm -f /var/www/featherpanel/.installed
+					rm -f /var/www/featherpanel/.installed
 					# Continue with installation (will overwrite)
 					;;
 				3)
@@ -4251,8 +5323,9 @@ if [ -f /etc/os-release ]; then
 			# Direct Access (home hosting / no domain)
 			CF_TUNNEL_SETUP="n"
 			REVERSE_PROXY_TYPE="none"
+			panel_port=$(get_panel_port)
 			log_info "Direct access selected – no domain or SSL needed."
-			log_info "Access the Panel at http://YOUR_IP:4831 (open port 4831 in your firewall if needed)."
+			log_info "Access the Panel at http://YOUR_IP:${panel_port} (open port ${panel_port} in your firewall if needed)."
 			;;
 		esac
 
@@ -4265,8 +5338,8 @@ if [ -f /etc/os-release ]; then
 		else
 			log_step "Installing Docker engine (this may take a minute)..."
 			curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
-			sudo systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
-			sudo usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
+			systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
+			usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
 			log_success "Docker installed. You may need to re-login for group changes to take effect."
 		fi
 
@@ -4311,8 +5384,8 @@ if [ -f /etc/os-release ]; then
 			setup_qemu_emulation
 		fi
 
-		sudo mkdir -p /var/www/featherpanel
-		sudo mkdir -p "$BACKUP_DIR"
+		mkdir -p /var/www/featherpanel
+		mkdir -p "$BACKUP_DIR"
 		cd /var/www/featherpanel || exit 1
 
 		# Only create Cloudflare .env if Cloudflare Tunnel is selected
@@ -4327,6 +5400,8 @@ if [ -f /etc/os-release ]; then
 				exit 1
 			fi
 		fi
+
+		apply_panel_port_to_compose "/var/www/featherpanel/docker-compose.yml"
 
 		# Modify docker-compose.yml for dev images if dev mode is enabled
 		# (Only show confirmation if not already confirmed via GUI)
@@ -4387,7 +5462,7 @@ if [ -f /etc/os-release ]; then
 		# Stop all existing FeatherPanel containers (including old v1 containers) before starting
 		stop_all_featherpanel_containers
 
-		if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." sudo docker compose up -d; then
+		if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." docker compose up -d; then
 			log_error "Failed to start FeatherPanel stack"
 			echo ""
 			draw_hr
@@ -4398,7 +5473,7 @@ if [ -f /etc/os-release ]; then
 			log_info "Checking Docker container logs..."
 			if command -v docker >/dev/null 2>&1; then
 				cd /var/www/featherpanel || true
-				CONTAINER_LOGS=$(sudo docker compose logs --tail=50 2>&1 || sudo docker-compose logs --tail=50 2>&1 || echo "")
+				CONTAINER_LOGS=$(docker compose logs --tail=50 2>&1 || docker-compose logs --tail=50 2>&1 || echo "")
 
 				if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
 					echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
@@ -4407,7 +5482,7 @@ if [ -f /etc/os-release ]; then
 					echo -e "${YELLOW}Your system architecture: ${BOLD}$ARCH${NC}"
 					echo ""
 					echo -e "${BLUE}Solution:${NC} Ensure QEMU and binfmt-support are installed and properly configured."
-					echo -e "${BLUE}Try:${NC} sudo apt-get install -y qemu qemu-user-static binfmt-support"
+					echo -e "${BLUE}Try:${NC} apt-get install -y qemu qemu-user-static binfmt-support"
 				elif echo "$CONTAINER_LOGS" | grep -qi "no space left"; then
 					echo -e "${RED}${BOLD}Detected: No Space Left on Device${NC}"
 					echo -e "${YELLOW}Your system is out of disk space.${NC}"
@@ -4425,8 +5500,8 @@ if [ -f /etc/os-release ]; then
 			echo ""
 			draw_hr
 			echo -e "${BLUE}For more details, check:${NC}"
-			echo -e "  ${CYAN}•${NC} Docker logs: ${BOLD}sudo docker compose -f /var/www/featherpanel/docker-compose.yml logs${NC}"
-			echo -e "  ${CYAN}•${NC} Container status: ${BOLD}sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps${NC}"
+			echo -e "  ${CYAN}•${NC} Docker logs: ${BOLD}docker compose -f /var/www/featherpanel/docker-compose.yml logs${NC}"
+			echo -e "  ${CYAN}•${NC} Container status: ${BOLD}docker compose -f /var/www/featherpanel/docker-compose.yml ps${NC}"
 			echo -e "  ${CYAN}•${NC} Installation log: ${BOLD}$LOG_FILE${NC}"
 			draw_hr
 
@@ -4441,17 +5516,17 @@ if [ -f /etc/os-release ]; then
 
 		# Verify containers are actually running
 		sleep 2
-		if ! sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
+		if ! docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
 			log_error "Containers started but are not running"
 			echo ""
 			draw_hr
 			echo -e "${RED}${BOLD}Container Status Check Failed${NC}"
 			draw_hr
 			log_info "Container status:"
-			sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps
+			docker compose -f /var/www/featherpanel/docker-compose.yml ps
 			echo ""
 			log_info "Recent container logs:"
-			sudo docker compose -f /var/www/featherpanel/docker-compose.yml logs --tail=30
+			docker compose -f /var/www/featherpanel/docker-compose.yml logs --tail=30
 			echo ""
 			draw_hr
 
@@ -4554,13 +5629,13 @@ if [ -f /etc/os-release ]; then
 					else
 						log_warn "Nginx plugin not installed. Using standalone method..."
 						log_info "Stopping Nginx temporarily to free port 80..."
-						sudo systemctl stop nginx
+						systemctl stop nginx
 						if certbot certonly --standalone -d "$panel_domain" --non-interactive --agree-tos --email admin@"$panel_domain" >>"$LOG_FILE" 2>&1; then
 							ssl_created=true
 							has_ssl="true"
 						fi
 						log_info "Restarting Nginx..."
-						sudo systemctl start nginx
+						systemctl start nginx
 					fi
 					;;
 				apache)
@@ -4573,13 +5648,13 @@ if [ -f /etc/os-release ]; then
 					else
 						log_warn "Apache plugin not installed. Using standalone method..."
 						log_info "Stopping Apache temporarily to free port 80..."
-						sudo systemctl stop apache2
+						systemctl stop apache2
 						if certbot certonly --standalone -d "$panel_domain" --non-interactive --agree-tos --email admin@"$panel_domain" >>"$LOG_FILE" 2>&1; then
 							ssl_created=true
 							has_ssl="true"
 						fi
 						log_info "Restarting Apache..."
-						sudo systemctl start apache2
+						systemctl start apache2
 					fi
 					;;
 				standalone)
@@ -4620,7 +5695,7 @@ if [ -f /etc/os-release ]; then
 			fi
 
 			# Ensure Panel is running
-			if ! sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
+			if ! docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
 				log_info "Ensuring FeatherPanel containers are running..."
 
 				# Check architecture - ARM64 is natively supported
@@ -4629,7 +5704,7 @@ if [ -f /etc/os-release ]; then
 					log_info "ARM64 architecture detected: $ARCH - native images available"
 					# Try to start with native images
 					if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
-						bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+						bash -c "cd /var/www/featherpanel && docker compose up -d"; then
 						log_warn "Failed to start FeatherPanel. Reverse proxy configured but Panel is not running."
 					fi
 				elif [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
@@ -4640,13 +5715,13 @@ if [ -f /etc/os-release ]; then
 					fi
 					# Try to start anyway (QEMU should be configured)
 					if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
-						bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+						bash -c "cd /var/www/featherpanel && docker compose up -d"; then
 						log_warn "Failed to start FeatherPanel. Reverse proxy configured but Panel is not running."
 						log_info "Ensure QEMU emulation is properly configured."
 					fi
 				else
 					if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
-						bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+						bash -c "cd /var/www/featherpanel && docker compose up -d"; then
 						log_error "Failed to start FeatherPanel stack"
 						echo ""
 						draw_hr
@@ -4656,7 +5731,7 @@ if [ -f /etc/os-release ]; then
 						# Check Docker logs for common errors
 						log_info "Checking Docker container logs..."
 						cd /var/www/featherpanel || true
-						CONTAINER_LOGS=$(sudo docker compose logs --tail=50 2>&1 || sudo docker-compose logs --tail=50 2>&1 || echo "")
+						CONTAINER_LOGS=$(docker compose logs --tail=50 2>&1 || docker-compose logs --tail=50 2>&1 || echo "")
 
 						if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
 							echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
@@ -4674,14 +5749,14 @@ if [ -f /etc/os-release ]; then
 						echo ""
 						draw_hr
 						log_warn "Failed to start FeatherPanel. Reverse proxy is configured but Panel is not running."
-						log_info "Check logs: sudo docker compose -f /var/www/featherpanel/docker-compose.yml logs"
+						log_info "Check logs: docker compose -f /var/www/featherpanel/docker-compose.yml logs"
 					else
 						# Verify containers are actually running
 						sleep 2
-						if ! sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
+						if ! docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
 							log_error "Containers started but are not running"
 							log_info "Container status:"
-							sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps
+							docker compose -f /var/www/featherpanel/docker-compose.yml ps
 							log_warn "Panel containers failed to start. Check Docker logs for details."
 						fi
 					fi
@@ -4700,7 +5775,7 @@ if [ -f /etc/os-release ]; then
 			draw_hr
 		fi
 
-		sudo touch /var/www/featherpanel/.installed
+		touch /var/www/featherpanel/.installed
 
 		# Install global featherpanel command
 		install_featherpanel_command
@@ -4779,15 +5854,16 @@ if [ -f /etc/os-release ]; then
 			fi
 			echo -e "     ${BLUE}• Configure DNS to point to your server${NC}"
 		else
+			panel_port=$(get_panel_port)
 			echo -e "  ${GREEN}${BOLD}✓${NC} ${BOLD}Direct Access (home hosting / no domain):${NC}"
 			echo -e "     ${BLUE}• No domain or SSL required${NC}"
-			echo -e "     ${BLUE}• Local: ${CYAN}http://localhost:4831${NC}"
+			echo -e "     ${BLUE}• Local: ${CYAN}http://localhost:${panel_port}${NC}"
 			if [ "$PUBLIC_IP" != "Unable to detect" ]; then
-				echo -e "     ${BLUE}• On your network: ${CYAN}http://$PUBLIC_IP:4831${NC}"
-				echo -e "     ${YELLOW}• Open port 4831 in your router/firewall if accessing from other devices${NC}"
+				echo -e "     ${BLUE}• On your network: ${CYAN}http://$PUBLIC_IP:${panel_port}${NC}"
+				echo -e "     ${YELLOW}• Open port ${panel_port} in your router/firewall if accessing from other devices${NC}"
 			else
-				echo -e "     ${BLUE}• On your network: ${CYAN}http://YOUR_SERVER_IP:4831${NC}"
-				echo -e "     ${YELLOW}• Replace with your machine's IP; open port 4831 if needed${NC}"
+				echo -e "     ${BLUE}• On your network: ${CYAN}http://YOUR_SERVER_IP:${panel_port}${NC}"
+				echo -e "     ${YELLOW}• Replace with your machine's IP; open port ${panel_port} if needed${NC}"
 			fi
 		fi
 
@@ -4898,19 +5974,37 @@ if [ -f /etc/os-release ]; then
 				echo ""
 				echo -e "${BLUE}Your current installation is using ${BOLD}stable release${NC}.${NC}"
 				echo ""
+				
+				# Show configuration preference if set
+				if [ "$PREFER_DEV" = "yes" ]; then
+					echo -e "${YELLOW}(Preference configured: Development builds)${NC}"
+					echo ""
+				fi
+				
 				echo -e "${BOLD}What would you like to do?${NC}"
 				echo -e "  ${GREEN}[1]${NC} ${BOLD}Update to Latest Stable Release${NC} ${BLUE}(Recommended)${NC}"
 				echo -e "  ${YELLOW}[2]${NC} ${BOLD}Switch to Development Build${NC} ${BLUE}(Latest from main branch)${NC}"
 				echo -e "  ${CYAN}[3]${NC} ${BOLD}Switch to Custom Development Build${NC} ${BLUE}(Specific branch/commit)${NC}"
 				draw_hr
+				
+				# Auto-select based on configuration preference if available
 				update_choice=""
-				while [[ ! "$update_choice" =~ ^[1-3]$ ]]; do
-					prompt "${BOLD}Enter choice${NC} ${BLUE}(1/2/3)${NC}: " update_choice
-					if [[ ! "$update_choice" =~ ^[1-3]$ ]]; then
-						echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC}, ${YELLOW}2${NC}, or ${YELLOW}3${NC}."
-						sleep 1
-					fi
-				done
+				if [ "$PREFER_DEV" = "yes" ] && [ -z "$DEV_BRANCH" ]; then
+					update_choice="2"
+					DEV_BRANCH="main"
+					log_info "Auto-selecting development build based on configuration preference"
+				elif [ "$PREFER_DEV" = "yes" ] && [ -n "$DEV_BRANCH" ]; then
+					update_choice="3"
+					log_info "Auto-selecting custom development build based on configuration preference"
+				else
+					while [[ ! "$update_choice" =~ ^[1-3]$ ]]; do
+						prompt "${BOLD}Enter choice${NC} ${BLUE}(1/2/3)${NC}: " update_choice
+						if [[ ! "$update_choice" =~ ^[1-3]$ ]]; then
+							echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC}, ${YELLOW}2${NC}, or ${YELLOW}3${NC}."
+							sleep 1
+						fi
+					done
+				fi
 
 				case $update_choice in
 				1)
@@ -4977,12 +6071,17 @@ if [ -f /etc/os-release ]; then
 			modify_compose_for_dev "/var/www/featherpanel/docker-compose.yml" "latest" "latest"
 		fi
 
+		apply_panel_port_to_compose "/var/www/featherpanel/docker-compose.yml"
+
+		# Ask user if they want to create a backup before updating
+		ask_backup_before_update
+
 		# Stop all existing FeatherPanel containers first (including old v1 containers)
 		if ! run_with_spinner "Stopping all FeatherPanel containers" "All containers stopped." stop_all_featherpanel_containers; then
 			log_warn "Some containers may not have stopped cleanly, continuing..."
 		fi
 
-		if ! run_with_spinner "Pulling FeatherPanel Docker images" "Docker images updated." bash -c "cd /var/www/featherpanel && sudo docker compose pull"; then
+		if ! run_with_spinner "Pulling FeatherPanel Docker images" "Docker images updated." bash -c "cd /var/www/featherpanel && docker compose pull"; then
 			upload_logs_on_fail
 			exit 1
 		fi
@@ -5002,7 +6101,7 @@ if [ -f /etc/os-release ]; then
 			setup_qemu_emulation
 		fi
 
-		if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+		if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." bash -c "cd /var/www/featherpanel && docker compose up -d"; then
 			log_error "Failed to start FeatherPanel stack"
 			echo ""
 			draw_hr
@@ -5012,7 +6111,7 @@ if [ -f /etc/os-release ]; then
 			# Check Docker logs for common errors
 			log_info "Checking Docker container logs..."
 			cd /var/www/featherpanel || true
-			CONTAINER_LOGS=$(sudo docker compose logs --tail=50 2>&1 || sudo docker-compose logs --tail=50 2>&1 || echo "")
+			CONTAINER_LOGS=$(docker compose logs --tail=50 2>&1 || docker-compose logs --tail=50 2>&1 || echo "")
 
 			if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
 				echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
@@ -5021,7 +6120,7 @@ if [ -f /etc/os-release ]; then
 				echo -e "${YELLOW}Your system architecture: ${BOLD}$ARCH${NC}"
 				echo ""
 				echo -e "${BLUE}Solution:${NC} Ensure QEMU and binfmt-support are installed and properly configured."
-				echo -e "${BLUE}Try:${NC} sudo apt-get install -y qemu qemu-user-static binfmt-support"
+				echo -e "${BLUE}Try:${NC} apt-get install -y qemu qemu-user-static binfmt-support"
 			elif echo "$CONTAINER_LOGS" | grep -qi "no space left"; then
 				echo -e "${RED}${BOLD}Detected: No Space Left on Device${NC}"
 				echo -e "${YELLOW}Your system is out of disk space.${NC}"
@@ -5038,8 +6137,8 @@ if [ -f /etc/os-release ]; then
 			echo ""
 			draw_hr
 			echo -e "${BLUE}For more details, check:${NC}"
-			echo -e "  ${CYAN}•${NC} Docker logs: ${BOLD}sudo docker compose -f /var/www/featherpanel/docker-compose.yml logs${NC}"
-			echo -e "  ${CYAN}•${NC} Container status: ${BOLD}sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps${NC}"
+			echo -e "  ${CYAN}•${NC} Docker logs: ${BOLD}docker compose -f /var/www/featherpanel/docker-compose.yml logs${NC}"
+			echo -e "  ${CYAN}•${NC} Container status: ${BOLD}docker compose -f /var/www/featherpanel/docker-compose.yml ps${NC}"
 			echo -e "  ${CYAN}•${NC} Installation log: ${BOLD}$LOG_FILE${NC}"
 			draw_hr
 			upload_logs_on_fail
@@ -5048,17 +6147,17 @@ if [ -f /etc/os-release ]; then
 
 		# Verify containers are actually running
 		sleep 2
-		if ! sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
+		if ! docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
 			log_error "Containers started but are not running"
 			echo ""
 			draw_hr
 			echo -e "${RED}${BOLD}Container Status Check Failed${NC}"
 			draw_hr
 			log_info "Container status:"
-			sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps
+			docker compose -f /var/www/featherpanel/docker-compose.yml ps
 			echo ""
 			log_info "Recent container logs:"
-			sudo docker compose -f /var/www/featherpanel/docker-compose.yml logs --tail=30
+			docker compose -f /var/www/featherpanel/docker-compose.yml logs --tail=30
 			echo ""
 			draw_hr
 			upload_logs_on_fail
@@ -5143,6 +6242,18 @@ if [ -f /etc/os-release ]; then
 			fi
 			;;
 		esac
+	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "5" ]; then
+		# Panel Info
+		show_panel_info
+		log_success "Panel info displayed."
+	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "6" ]; then
+		# Panel Firewall Manager
+		if manage_panel_firewall; then
+			log_success "Panel firewall manager completed."
+		else
+			log_error "Panel firewall manager failed. See log at $LOG_FILE"
+			exit 1
+		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then
 		# Wings Install
 		if [ -f /usr/local/bin/featherwings ]; then
@@ -5330,6 +6441,14 @@ if [ -f /etc/os-release ]; then
 			log_success "Remote Database host setup completed. See log at $LOG_FILE"
 		else
 			log_error "Remote Database host setup failed. See log at $LOG_FILE"
+			exit 1
+		fi
+	elif [ "$COMPONENT_TYPE" = "6" ]; then
+		# Proxmox VNC Agent install
+		if install_proxmox_vnc_agent; then
+			log_success "Proxmox VNC agent install finished. See log at $LOG_FILE"
+		else
+			log_error "Proxmox VNC agent install failed. See log at $LOG_FILE"
 			exit 1
 		fi
 	else

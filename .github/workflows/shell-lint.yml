@@ -1,0 +1,29 @@
+name: Installer Lint
+
+on: [push, pull_request]
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck
+        run: shellcheck installer/install.bash
+
+  bash-syntax:
+    name: Bash Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate installer syntax
+        run: bash -n installer/install.bash
