@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mariadb:12.1
+    image: mariadb:latest
     container_name: featherpanel_mysql
     restart: unless-stopped
     environment:
@@ -30,7 +30,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:8.4-alpine
+    image: redis:latest
     container_name: featherpanel_redis
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-featherpanel_redis}
@@ -87,7 +87,15 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:80",
+        ]
       timeout: 20s
       retries: 10
     ports:
