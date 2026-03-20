@@ -992,18 +992,20 @@ show_panel_info() {
 
 		local container_ids
 		container_ids=$(cd /var/www/featherpanel && docker compose ps -q 2>/dev/null | tr '\n' ' ')
-		local container_names=""
+		local -a container_name_arr=()
 		local cid
 		for cid in $container_ids; do
 			local cname
 			cname=$(docker inspect -f '{{.Name}}' "$cid" 2>/dev/null | sed 's#^/##')
 			if [ -n "$cname" ]; then
-				container_names="$container_names $cname"
+				container_name_arr+=("$cname")
 			fi
 		done
 
-		if [ -z "$container_names" ]; then
-			container_names=$(docker ps -a --format '{{.Names}}' | grep '^featherpanel_' | tr '\n' ' ')
+		if [ ${#container_name_arr[@]} -eq 0 ]; then
+			while IFS= read -r cname; do
+				[ -n "$cname" ] && container_name_arr+=("$cname")
+			done < <(docker ps -a --format '{{.Names}}' | grep '^featherpanel_' || true)
 		fi
 
 		local container_count=0
@@ -1013,8 +1015,8 @@ show_panel_info() {
 		local now_epoch
 		now_epoch=$(date +%s)
 
-		if [ -n "$container_names" ]; then
-			for container in $container_names; do
+		if [ ${#container_name_arr[@]} -gt 0 ]; then
+			for container in "${container_name_arr[@]}"; do
 				container_count=$((container_count + 1))
 				run_state=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null || echo "unknown")
 				health_state=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}}' "$container" 2>/dev/null || echo "unknown")
@@ -1086,8 +1088,8 @@ show_panel_info() {
 			awk -v n="$number" -v m="$mult" 'BEGIN { printf "%.0f", n*m }'
 		}
 
-		if [ -n "$container_names" ]; then
-			stats_raw=$(docker stats --no-stream --format '{{.Name}};{{.CPUPerc}};{{.MemUsage}};{{.NetIO}};{{.BlockIO}}' $container_names 2>/dev/null || true)
+		if [ ${#container_name_arr[@]} -gt 0 ]; then
+			stats_raw=$(docker stats --no-stream --format '{{.Name}};{{.CPUPerc}};{{.MemUsage}};{{.NetIO}};{{.BlockIO}}' "${container_name_arr[@]}" 2>/dev/null || true)
 			if [ -n "$stats_raw" ]; then
 				while IFS=';' read -r _name cpu_pct mem_usage net_io block_io; do
 					cpu_val=$(echo "$cpu_pct" | tr -d '%' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
@@ -1132,16 +1134,16 @@ show_panel_info() {
 		echo ""
 
 		echo -e "${BOLD}Container Resource Usage:${NC}"
-		if [ -n "$container_names" ]; then
-			docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}\t{{.BlockIO}}" $container_names 2>/dev/null || echo "docker stats unavailable"
+		if [ ${#container_name_arr[@]} -gt 0 ]; then
+			docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}\t{{.BlockIO}}" "${container_name_arr[@]}" 2>/dev/null || echo "docker stats unavailable"
 		else
 			echo "No FeatherPanel containers found."
 		fi
 		echo ""
 
 		echo -e "${BOLD}Health Summary:${NC}"
-		if [ -n "$container_names" ]; then
-			for container in $container_names; do
+		if [ ${#container_name_arr[@]} -gt 0 ]; then
+			for container in "${container_name_arr[@]}"; do
 				run_state=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null || echo "unknown")
 				health_state=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}}' "$container" 2>/dev/null || echo "unknown")
 				echo -e "  ${CYAN}•${NC} ${container}: run=${run_state}, health=${health_state}"
