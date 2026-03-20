@@ -731,17 +731,19 @@ export const getServerNavigationItems = (
         });
     }
 
-    items.push({
-        id: 'server-subdomains',
-        name: t('navigation.items.subdomains'),
-        title: t('navigation.items.subdomains'),
-        url: `/server/${serverUuid}/subdomains`,
-        icon: Globe,
-        isActive: false,
-        category: 'server',
-        group: 'networking',
-        permission: 'subdomain.manage',
-    });
+    if (isEnabled(settings?.server_allow_user_made_subdomains)) {
+        items.push({
+            id: 'server-subdomains',
+            name: t('navigation.items.subdomains'),
+            title: t('navigation.items.subdomains'),
+            url: `/server/${serverUuid}/subdomains`,
+            icon: Globe,
+            isActive: false,
+            category: 'server',
+            group: 'networking',
+            permission: 'subdomain.manage',
+        });
+    }
 
     return items;
 };

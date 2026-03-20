@@ -29,117 +29,124 @@ use App\Config\ConfigInterface;
  */
 class GetSubdomainsTool implements ToolInterface
 {
-    private $app;
+	private $app;
 
-    public function __construct()
-    {
-        $this->app = App::getInstance(true);
-    }
+	public function __construct()
+	{
+		$this->app = App::getInstance(true);
+	}
 
-    public function execute(array $params, array $user, array $pageContext = []): mixed
-    {
-        // Get server identifier
-        $serverIdentifier = $params['server_uuid'] ?? $params['server_name'] ?? null;
-        $server = null;
+	public function execute(array $params, array $user, array $pageContext = []): mixed
+	{
+		// Get server identifier
+		$serverIdentifier = $params['server_uuid'] ?? $params['server_name'] ?? null;
+		$server = null;
 
-        // If no identifier provided, try to get server from pageContext
-        if (!$serverIdentifier && isset($pageContext['server'])) {
-            $contextServer = $pageContext['server'];
-            $serverUuidShort = $contextServer['uuidShort'] ?? null;
+		// If no identifier provided, try to get server from pageContext
+		if (!$serverIdentifier && isset($pageContext['server'])) {
+			$contextServer = $pageContext['server'];
+			$serverUuidShort = $contextServer['uuidShort'] ?? null;
 
-            if ($serverUuidShort) {
-                $server = Server::getServerByUuidShort($serverUuidShort);
-            }
-        }
+			if ($serverUuidShort) {
+				$server = Server::getServerByUuidShort($serverUuidShort);
+			}
+		}
 
-        // Resolve server if identifier provided
-        if ($serverIdentifier && !$server) {
-            $server = Server::getServerByUuid($serverIdentifier);
+		// Resolve server if identifier provided
+		if ($serverIdentifier && !$server) {
+			$server = Server::getServerByUuid($serverIdentifier);
 
-            if (!$server) {
-                $server = Server::getServerByUuidShort($serverIdentifier);
-            }
+			if (!$server) {
+				$server = Server::getServerByUuidShort($serverIdentifier);
+			}
 
-            if (!$server) {
-                $servers = Server::searchServers(
-                    page: 1,
-                    limit: 10,
-                    search: $serverIdentifier,
-                    ownerId: $user['id']
-                );
-                if (!empty($servers)) {
-                    $server = $servers[0];
-                }
-            }
-        }
+			if (!$server) {
+				$servers = Server::searchServers(
+					page: 1,
+					limit: 10,
+					search: $serverIdentifier,
+					ownerId: $user['id']
+				);
+				if (!empty($servers)) {
+					$server = $servers[0];
+				}
+			}
+		}
 
-        if (!$server) {
-            return [
-                'success' => false,
-                'error' => 'Server not found. Please specify a server UUID or name, or ensure you are viewing a server page.',
-            ];
-        }
+		if (!$server) {
+			return [
+				'success' => false,
+				'error' => 'Server not found. Please specify a server UUID or name, or ensure you are viewing a server page.',
+			];
+		}
 
-        // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-            return [
-                'success' => false,
-                'error' => 'Access denied to server',
-            ];
-        }
+		// Verify user has access
+		if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+			return [
+				'success' => false,
+				'error' => 'Access denied to server',
+			];
+		}
 
-        // Get subdomains
-        $subdomains = Subdomain::getByServerId($server['id']);
+		$config = $this->app->getConfig();
+		if ($config->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS, 'false') !== 'true') {
+			return [
+				'success' => false,
+				'error' => 'Subdomain management is disabled',
+			];
+		}
 
-        // Get available domains
-        $config = $this->app->getConfig();
-        $maxAllowed = (int) $config->getSetting(ConfigInterface::SUBDOMAIN_MAX_PER_SERVER, '1');
-        if ($maxAllowed < 1) {
-            $maxAllowed = 1;
-        }
+		// Get subdomains
+		$subdomains = Subdomain::getByServerId($server['id']);
 
-        $domains = SubdomainDomain::getActiveDomainsForSpell((int) $server['spell_id']);
+		// Get available domains
+		$maxAllowed = (int) $config->getSetting(ConfigInterface::SUBDOMAIN_MAX_PER_SERVER, '1');
+		if ($maxAllowed < 1) {
+			$maxAllowed = 1;
+		}
 
-        // Format subdomains with domain names
-        $formattedSubdomains = [];
-        foreach ($subdomains as $subdomain) {
-            $domain = SubdomainDomain::getDomainById((int) $subdomain['domain_id']);
-            $formattedSubdomains[] = [
-                'uuid' => $subdomain['uuid'],
-                'subdomain' => $subdomain['subdomain'],
-                'domain' => $domain['domain'] ?? '',
-                'fqdn' => $subdomain['subdomain'] . '.' . ($domain['domain'] ?? ''),
-                'record_type' => $subdomain['record_type'],
-                'port' => $subdomain['port'],
-                'created_at' => $subdomain['created_at'] ?? null,
-            ];
-        }
+		$domains = SubdomainDomain::getActiveDomainsForSpell((int) $server['spell_id']);
 
-        return [
-            'success' => true,
-            'server_name' => $server['name'],
-            'max_allowed' => $maxAllowed,
-            'current_total' => count($formattedSubdomains),
-            'subdomains' => $formattedSubdomains,
-            'available_domains' => array_map(function ($domain) {
-                return [
-                    'uuid' => $domain['uuid'],
-                    'domain' => $domain['domain'],
-                ];
-            }, $domains),
-        ];
-    }
+		// Format subdomains with domain names
+		$formattedSubdomains = [];
+		foreach ($subdomains as $subdomain) {
+			$domain = SubdomainDomain::getDomainById((int) $subdomain['domain_id']);
+			$formattedSubdomains[] = [
+				'uuid' => $subdomain['uuid'],
+				'subdomain' => $subdomain['subdomain'],
+				'domain' => $domain['domain'] ?? '',
+				'fqdn' => $subdomain['subdomain'] . '.' . ($domain['domain'] ?? ''),
+				'record_type' => $subdomain['record_type'],
+				'port' => $subdomain['port'],
+				'created_at' => $subdomain['created_at'] ?? null,
+			];
+		}
 
-    public function getDescription(): string
-    {
-        return 'Get all subdomains for a server. Returns subdomain list, available domains, and limits.';
-    }
+		return [
+			'success' => true,
+			'server_name' => $server['name'],
+			'max_allowed' => $maxAllowed,
+			'current_total' => count($formattedSubdomains),
+			'subdomains' => $formattedSubdomains,
+			'available_domains' => array_map(function ($domain) {
+				return [
+					'uuid' => $domain['uuid'],
+					'domain' => $domain['domain'],
+				];
+			}, $domains),
+		];
+	}
 
-    public function getParameters(): array
-    {
-        return [
-            'server_uuid' => 'Server UUID (optional, can use server_name instead)',
-            'server_name' => 'Server name (optional, can use server_uuid instead)',
-        ];
-    }
+	public function getDescription(): string
+	{
+		return 'Get all subdomains for a server. Returns subdomain list, available domains, and limits.';
+	}
+
+	public function getParameters(): array
+	{
+		return [
+			'server_uuid' => 'Server UUID (optional, can use server_name instead)',
+			'server_name' => 'Server name (optional, can use server_uuid instead)',
+		];
+	}
 }

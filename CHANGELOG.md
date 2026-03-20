@@ -23,7 +23,8 @@
 - Added support for SFTP subdomains for nodes and databases. by @nayskutzu
 - Introduced fully public knowledgebases, allowing anyone to access helpful documentation and resources without needing to log in. by @nayskutzu
 - Public status pages, enabling anyone to view real-time system and server status without requiring authentication. by @nayskutzu
-- Added the ability to send system emails to users directly from the user edit page, enabling streamlined communication and support workflows. by @nayskutzu
+- Added streamlined system email sending directly from the user edit page, enabling administrators to communicate with users and provide support without leaving the panel. by @nayskutzu
+- Subdomains are now disabled by default, with the option to enable them per-server for improved security and reduced complexity. by @nayskutzu
 
 ### Improved
 
