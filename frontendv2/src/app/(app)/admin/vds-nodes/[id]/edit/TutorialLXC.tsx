@@ -65,16 +65,24 @@ export function TutorialLXC() {
                     </li>
                 </ul>
 
-                <p className='font-medium'>3. Prepare for FeatherPanel</p>
+                <p className='font-medium'>3. Prepare for FeatherPanel (before converting to template)</p>
                 <p className='text-xs'>
-                    Once the container is created, you should ensure it has the necessary tools for FeatherPanel to
-                    manage it. Start the container, log in, and run:
+                    Before you convert this CT to a template, start it once and configure SSH so deployed clients can
+                    actually connect. Open <code>/etc/ssh/sshd_config</code> and make sure
+                    <code> PasswordAuthentication yes</code> is enabled (and if you use direct root login,
+                    <code> PermitRootLogin yes</code>). Then restart SSH.
+                </p>
+                <p className='text-xs'>
+                    Once SSH settings are correct, ensure the container also has the needed tools for FeatherPanel. Run:
                 </p>
                 <pre className='bg-muted/60 rounded-md p-3 overflow-x-auto text-xs'>
                     <code>{`apt update && apt install -y openssh-server curl
-# Ensure root login is allowed if you plan to use it (optional)
-# sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-# systemctl restart ssh
+
+# Edit SSH settings before templating (if your plans use password SSH logins)
+nano /etc/ssh/sshd_config
+# Set: PasswordAuthentication yes
+# Optional for root login flows: PermitRootLogin yes
+systemctl restart ssh
 
 apt upgrade -y
 `}</code>

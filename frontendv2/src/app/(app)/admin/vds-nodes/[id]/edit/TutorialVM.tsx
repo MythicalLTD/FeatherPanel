@@ -113,6 +113,13 @@ qm set 9000 --serial0 socket --vga serial0`}</code>
                     the tree, choose <code>Convert to template</code> and confirm. This gives you a ready‑to‑use
                     cloud-init template for that OS.
                 </p>
+                <p className='text-xs'>
+                    Important before converting: start the VM once from Proxmox and verify SSH settings in
+                    <code> /etc/ssh/sshd_config</code>. If your products use password-based SSH login, ensure
+                    <code> PasswordAuthentication yes</code> is enabled (and set <code> PermitRootLogin yes</code> only
+                    if you intentionally allow root password logins). Restart SSH after changes. Skipping this can cause
+                    clients to fail SSH logins after deployment.
+                </p>
 
                 <p className='font-medium'>3. Create an Ubuntu 24.04 cloud-init template (example VMID 9001)</p>
                 <p>In the Proxmox UI, repeat the same VM creation flow for Ubuntu:</p>
@@ -172,6 +179,11 @@ qm set 9001 --serial0 socket --vga serial0`}</code>
                     required for FeatherPanel to inject IP, user, password and SSH keys. Finally, right‑click the VM in
                     the tree, choose <code>Convert to template</code> and confirm. This gives you a ready‑to‑use
                     cloud-init template for that OS.
+                </p>
+                <p className='text-xs'>
+                    Important before converting: boot the VM once and verify <code>/etc/ssh/sshd_config</code>. For
+                    password-login plans, set <code>PasswordAuthentication yes</code> and restart SSH. If this is not
+                    configured, deployed clients may not be able to SSH into their servers.
                 </p>
 
                 <p className='font-medium'>4. Hook into FeatherPanel</p>
