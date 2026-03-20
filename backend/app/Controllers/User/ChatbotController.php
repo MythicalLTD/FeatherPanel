@@ -23,382 +23,402 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\ChatConversation;
 use App\Services\Chatbot\ChatbotService;
+use App\Plugins\Events\Events\ChatbotEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 #[OA\Schema(
-    schema: 'ChatbotRequest',
-    type: 'object',
-    required: ['message'],
-    properties: [
-        new OA\Property(property: 'message', type: 'string', description: 'User message'),
-        new OA\Property(property: 'history', type: 'array', items: new OA\Items(type: 'object'), description: 'Chat history'),
-    ]
+	schema: 'ChatbotRequest',
+	type: 'object',
+	required: ['message'],
+	properties: [
+		new OA\Property(property: 'message', type: 'string', description: 'User message'),
+		new OA\Property(property: 'history', type: 'array', items: new OA\Items(type: 'object'), description: 'Chat history'),
+	]
 )]
 #[OA\Schema(
-    schema: 'ChatbotResponse',
-    type: 'object',
-    properties: [
-        new OA\Property(property: 'response', type: 'string', description: 'AI assistant response'),
-    ]
+	schema: 'ChatbotResponse',
+	type: 'object',
+	properties: [
+		new OA\Property(property: 'response', type: 'string', description: 'AI assistant response'),
+	]
 )]
 class ChatbotController
 {
-    #[OA\Post(
-        path: '/api/user/chatbot/chat',
-        summary: 'Send a message to the AI chatbot',
-        description: 'Send a message to the AI assistant and receive a response. Optionally include chat history for context.',
-        tags: ['User - Chatbot'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/ChatbotRequest')
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Chat response received successfully',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'response', type: 'string'),
-                    ]
-                )
-            ),
-            new OA\Response(response: 400, description: 'Invalid request'),
-            new OA\Response(response: 401, description: 'Unauthorized'),
-        ]
-    )]
-    public function chat(Request $request): Response
-    {
-        $currentUser = $request->get('user');
+	#[OA\Post(
+		path: '/api/user/chatbot/chat',
+		summary: 'Send a message to the AI chatbot',
+		description: 'Send a message to the AI assistant and receive a response. Optionally include chat history for context.',
+		tags: ['User - Chatbot'],
+		requestBody: new OA\RequestBody(
+			required: true,
+			content: new OA\JsonContent(ref: '#/components/schemas/ChatbotRequest')
+		),
+		responses: [
+			new OA\Response(
+				response: 200,
+				description: 'Chat response received successfully',
+				content: new OA\JsonContent(
+					properties: [
+						new OA\Property(property: 'response', type: 'string'),
+					]
+				)
+			),
+			new OA\Response(response: 400, description: 'Invalid request'),
+			new OA\Response(response: 401, description: 'Unauthorized'),
+		]
+	)]
+	public function chat(Request $request): Response
+	{
+		$currentUser = $request->get('user');
 
-        if (!$currentUser || !isset($currentUser['id'])) {
-            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
-        }
+		if (!$currentUser || !isset($currentUser['id'])) {
+			return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+		}
 
-        // Check if chatbot is enabled
-        $app = App::getInstance(true);
-        $config = $app->getConfig();
-        $enabled = $config->getSetting(\App\Config\ConfigInterface::CHATBOT_ENABLED, 'true');
-        if ($enabled !== 'true') {
-            return ApiResponse::error('The AI chatbot is currently disabled by the administrator.', 'CHATBOT_DISABLED', 403);
-        }
+		// Check if chatbot is enabled
+		$app = App::getInstance(true);
+		$config = $app->getConfig();
+		$enabled = $config->getSetting(\App\Config\ConfigInterface::CHATBOT_ENABLED, 'true');
+		if ($enabled !== 'true') {
+			return ApiResponse::error('The AI chatbot is currently disabled by the administrator.', 'CHATBOT_DISABLED', 403);
+		}
 
-        $data = json_decode($request->getContent(), true);
+		$data = json_decode($request->getContent(), true);
 
-        if (!isset($data['message']) || empty(trim($data['message']))) {
-            return ApiResponse::error('Message is required', 'INVALID_REQUEST', 400);
-        }
+		if (!isset($data['message']) || empty(trim($data['message']))) {
+			return ApiResponse::error('Message is required', 'INVALID_REQUEST', 400);
+		}
 
-        $message = trim($data['message']);
-        $history = $data['history'] ?? [];
-        $pageContext = $data['pageContext'] ?? [];
-        $conversationId = $data['conversation_id'] ?? null;
+		$message = trim($data['message']);
+		$history = $data['history'] ?? [];
+		$pageContext = $data['pageContext'] ?? [];
+		$conversationId = $data['conversation_id'] ?? null;
 
-        try {
-            // Get or create conversation
-            $conversation = null;
-            if ($conversationId) {
-                $conversation = ChatConversation::getConversationById((int) $conversationId);
-                // Verify conversation belongs to user
-                if ($conversation && $conversation['user_uuid'] !== $currentUser['uuid']) {
-                    return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
-                }
-            }
+		try {
+			// Get or create conversation
+			$conversation = null;
+			if ($conversationId) {
+				$conversation = ChatConversation::getConversationById((int) $conversationId);
+				// Verify conversation belongs to user
+				if ($conversation && $conversation['user_uuid'] !== $currentUser['uuid']) {
+					return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
+				}
+			}
 
-            // Create new conversation if needed
-            if (!$conversation) {
-                $conversationId = ChatConversation::createConversation([
-                    'user_uuid' => $currentUser['uuid'],
-                    'title' => substr($message, 0, 255), // Use first message as title
-                ]);
-                if (!$conversationId) {
-                    return ApiResponse::error('Failed to create conversation', 'SERVER_ERROR', 500);
-                }
-                $conversation = ChatConversation::getConversationById($conversationId);
-            }
+			// Create new conversation if needed
+			if (!$conversation) {
+				$conversationId = ChatConversation::createConversation([
+					'user_uuid' => $currentUser['uuid'],
+					'title' => substr($message, 0, 255), // Use first message as title
+				]);
+				if (!$conversationId) {
+					return ApiResponse::error('Failed to create conversation', 'SERVER_ERROR', 500);
+				}
+				$conversation = ChatConversation::getConversationById($conversationId);
+			}
 
-            // Load conversation history from database if not provided
-            if (empty($history) && $conversation) {
-                $dbMessages = ChatMessage::getMessagesByConversation($conversation['id'], 50);
-                $history = array_map(function ($msg) {
-                    return [
-                        'role' => $msg['role'],
-                        'content' => $msg['content'],
-                    ];
-                }, $dbMessages);
-            }
+			// Load conversation history from database if not provided
+			if (empty($history) && $conversation) {
+				$dbMessages = ChatMessage::getMessagesByConversation($conversation['id'], 50);
+				$history = array_map(function ($msg) {
+					return [
+						'role' => $msg['role'],
+						'content' => $msg['content'],
+					];
+				}, $dbMessages);
+			}
 
-            // Save user message to database
-            ChatMessage::createMessage([
-                'conversation_id' => $conversation['id'],
-                'role' => 'user',
-                'content' => $message,
-            ]);
+			// Save user message to database
+			ChatMessage::createMessage([
+				'conversation_id' => $conversation['id'],
+				'role' => 'user',
+				'content' => $message,
+			]);
 
-            // Get conversation memory
-            $conversationMemory = $conversation['memory'] ?? '';
-            $pageContext['conversation_memory'] = $conversationMemory;
+			// Get conversation memory
+			$conversationMemory = $conversation['memory'] ?? '';
+			$pageContext['conversation_memory'] = $conversationMemory;
 
-            // Process message through AI
-            $chatbotService = new ChatbotService();
-            $result = $chatbotService->processMessage($message, $history, $currentUser, $pageContext);
+			// Process message through AI
+			$chatbotService = new ChatbotService();
+			$result = $chatbotService->processMessage($message, $history, $currentUser, $pageContext);
 
-            // Update message count
-            $messageCount = ChatMessage::getMessageCount($conversation['id']);
-            ChatConversation::updateConversation($conversation['id'], [
-                'message_count' => $messageCount,
-            ]);
+			// Update message count
+			$messageCount = ChatMessage::getMessageCount($conversation['id']);
+			ChatConversation::updateConversation($conversation['id'], [
+				'message_count' => $messageCount,
+			]);
 
-            // Save AI response to database
-            ChatMessage::createMessage([
-                'conversation_id' => $conversation['id'],
-                'role' => 'assistant',
-                'content' => $result['response'],
-                'model' => $result['model'] ?? null,
-            ]);
+			// Save AI response to database
+			ChatMessage::createMessage([
+				'conversation_id' => $conversation['id'],
+				'role' => 'assistant',
+				'content' => $result['response'],
+				'model' => $result['model'] ?? null,
+			]);
 
-            // Update conversation timestamp
-            ChatConversation::updateConversation($conversation['id'], [
-                'updated_at' => date('Y-m-d H:i:s'),
-            ]);
+			// Update conversation timestamp
+			ChatConversation::updateConversation($conversation['id'], [
+				'updated_at' => date('Y-m-d H:i:s'),
+			]);
 
-            return ApiResponse::success([
-                'response' => $result['response'],
-                'model' => $result['model'] ?? 'FeatherPanel AI',
-                'conversation_id' => $conversation['id'],
-                'tool_executions' => $result['tool_executions'] ?? [], // Include tool execution results
-            ], 'Message processed successfully');
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Chatbot error: ' . $e->getMessage());
+			return ApiResponse::success([
+				'response' => $result['response'],
+				'model' => $result['model'] ?? 'FeatherPanel AI',
+				'conversation_id' => $conversation['id'],
+				'tool_executions' => $result['tool_executions'] ?? [], // Include tool execution results
+			], 'Message processed successfully');
+		} catch (\Exception $e) {
+			App::getInstance(true)->getLogger()->error('Chatbot error: ' . $e->getMessage());
 
-            return ApiResponse::error(
-                'Failed to process message. Please try again.',
-                'CHATBOT_ERROR',
-                500
-            );
-        }
-    }
+			return ApiResponse::error(
+				'Failed to process message. Please try again.',
+				'CHATBOT_ERROR',
+				500
+			);
+		}
+	}
 
-    #[OA\Get(
-        path: '/api/user/chatbot/conversations',
-        summary: 'Get user conversations',
-        description: 'Retrieve all conversations for the authenticated user.',
-        tags: ['User - Chatbot'],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Conversations retrieved successfully',
-                content: new OA\JsonContent(
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'conversations', type: 'array', items: new OA\Items(type: 'object')),
-                    ]
-                )
-            ),
-            new OA\Response(response: 401, description: 'Unauthorized'),
-        ]
-    )]
-    public function getConversations(Request $request): Response
-    {
-        $currentUser = $request->get('user');
+	#[OA\Get(
+		path: '/api/user/chatbot/conversations',
+		summary: 'Get user conversations',
+		description: 'Retrieve all conversations for the authenticated user.',
+		tags: ['User - Chatbot'],
+		responses: [
+			new OA\Response(
+				response: 200,
+				description: 'Conversations retrieved successfully',
+				content: new OA\JsonContent(
+					type: 'object',
+					properties: [
+						new OA\Property(property: 'conversations', type: 'array', items: new OA\Items(type: 'object')),
+					]
+				)
+			),
+			new OA\Response(response: 401, description: 'Unauthorized'),
+		]
+	)]
+	public function getConversations(Request $request): Response
+	{
+		$currentUser = $request->get('user');
 
-        if (!$currentUser || !isset($currentUser['uuid'])) {
-            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
-        }
+		if (!$currentUser || !isset($currentUser['uuid'])) {
+			return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+		}
 
-        try {
-            $conversations = ChatConversation::getConversationsByUser($currentUser['uuid'], 50);
+		try {
+			$conversations = ChatConversation::getConversationsByUser($currentUser['uuid'], 50);
 
-            return ApiResponse::success(['conversations' => $conversations], 'Conversations retrieved successfully');
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to get conversations: ' . $e->getMessage());
+			return ApiResponse::success(['conversations' => $conversations], 'Conversations retrieved successfully');
+		} catch (\Exception $e) {
+			App::getInstance(true)->getLogger()->error('Failed to get conversations: ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to retrieve conversations', 'SERVER_ERROR', 500);
-        }
-    }
+			return ApiResponse::error('Failed to retrieve conversations', 'SERVER_ERROR', 500);
+		}
+	}
 
-    #[OA\Get(
-        path: '/api/user/chatbot/conversations/{id}',
-        summary: 'Get conversation messages',
-        description: 'Retrieve all messages for a specific conversation.',
-        tags: ['User - Chatbot'],
-        parameters: [
-            new OA\Parameter(
-                name: 'id',
-                in: 'path',
-                description: 'Conversation ID',
-                required: true,
-                schema: new OA\Schema(type: 'integer')
-            ),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Messages retrieved successfully',
-                content: new OA\JsonContent(
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'conversation', type: 'object'),
-                        new OA\Property(property: 'messages', type: 'array', items: new OA\Items(type: 'object')),
-                    ]
-                )
-            ),
-            new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 404, description: 'Conversation not found'),
-        ]
-    )]
-    public function getConversation(Request $request, int $id): Response
-    {
-        $currentUser = $request->get('user');
+	#[OA\Get(
+		path: '/api/user/chatbot/conversations/{id}',
+		summary: 'Get conversation messages',
+		description: 'Retrieve all messages for a specific conversation.',
+		tags: ['User - Chatbot'],
+		parameters: [
+			new OA\Parameter(
+				name: 'id',
+				in: 'path',
+				description: 'Conversation ID',
+				required: true,
+				schema: new OA\Schema(type: 'integer')
+			),
+		],
+		responses: [
+			new OA\Response(
+				response: 200,
+				description: 'Messages retrieved successfully',
+				content: new OA\JsonContent(
+					type: 'object',
+					properties: [
+						new OA\Property(property: 'conversation', type: 'object'),
+						new OA\Property(property: 'messages', type: 'array', items: new OA\Items(type: 'object')),
+					]
+				)
+			),
+			new OA\Response(response: 401, description: 'Unauthorized'),
+			new OA\Response(response: 404, description: 'Conversation not found'),
+		]
+	)]
+	public function getConversation(Request $request, int $id): Response
+	{
+		$currentUser = $request->get('user');
 
-        if (!$currentUser || !isset($currentUser['uuid'])) {
-            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
-        }
+		if (!$currentUser || !isset($currentUser['uuid'])) {
+			return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+		}
 
-        try {
-            $conversation = ChatConversation::getConversationById($id);
+		try {
+			$conversation = ChatConversation::getConversationById($id);
 
-            if (!$conversation) {
-                return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
-            }
+			if (!$conversation) {
+				return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
+			}
 
-            // Verify conversation belongs to user
-            if ($conversation['user_uuid'] !== $currentUser['uuid']) {
-                return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
-            }
+			// Verify conversation belongs to user
+			if ($conversation['user_uuid'] !== $currentUser['uuid']) {
+				return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
+			}
 
-            $messages = ChatMessage::getMessagesByConversation($id, 100);
+			$messages = ChatMessage::getMessagesByConversation($id, 100);
 
-            return ApiResponse::success([
-                'conversation' => $conversation,
-                'messages' => $messages,
-            ], 'Messages retrieved successfully');
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to get conversation: ' . $e->getMessage());
+			return ApiResponse::success([
+				'conversation' => $conversation,
+				'messages' => $messages,
+			], 'Messages retrieved successfully');
+		} catch (\Exception $e) {
+			App::getInstance(true)->getLogger()->error('Failed to get conversation: ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to retrieve conversation', 'SERVER_ERROR', 500);
-        }
-    }
+			return ApiResponse::error('Failed to retrieve conversation', 'SERVER_ERROR', 500);
+		}
+	}
 
-    #[OA\Delete(
-        path: '/api/user/chatbot/conversations/{id}',
-        summary: 'Delete conversation',
-        description: 'Delete a conversation and all its messages.',
-        tags: ['User - Chatbot'],
-        parameters: [
-            new OA\Parameter(
-                name: 'id',
-                in: 'path',
-                description: 'Conversation ID',
-                required: true,
-                schema: new OA\Schema(type: 'integer')
-            ),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Conversation deleted successfully'),
-            new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 404, description: 'Conversation not found'),
-        ]
-    )]
-    public function deleteConversation(Request $request, int $id): Response
-    {
-        $currentUser = $request->get('user');
+	#[OA\Delete(
+		path: '/api/user/chatbot/conversations/{id}',
+		summary: 'Delete conversation',
+		description: 'Delete a conversation and all its messages.',
+		tags: ['User - Chatbot'],
+		parameters: [
+			new OA\Parameter(
+				name: 'id',
+				in: 'path',
+				description: 'Conversation ID',
+				required: true,
+				schema: new OA\Schema(type: 'integer')
+			),
+		],
+		responses: [
+			new OA\Response(response: 200, description: 'Conversation deleted successfully'),
+			new OA\Response(response: 401, description: 'Unauthorized'),
+			new OA\Response(response: 404, description: 'Conversation not found'),
+		]
+	)]
+	public function deleteConversation(Request $request, int $id): Response
+	{
+		$currentUser = $request->get('user');
 
-        if (!$currentUser || !isset($currentUser['uuid'])) {
-            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
-        }
+		if (!$currentUser || !isset($currentUser['uuid'])) {
+			return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+		}
 
-        try {
-            $conversation = ChatConversation::getConversationById($id);
+		try {
+			$conversation = ChatConversation::getConversationById($id);
 
-            if (!$conversation) {
-                return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
-            }
+			if (!$conversation) {
+				return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
+			}
 
-            // Verify conversation belongs to user
-            if ($conversation['user_uuid'] !== $currentUser['uuid']) {
-                return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
-            }
+			// Verify conversation belongs to user
+			if ($conversation['user_uuid'] !== $currentUser['uuid']) {
+				return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
+			}
 
-            $deleted = ChatConversation::deleteConversation($id);
+			$deleted = ChatConversation::deleteConversation($id);
 
-            if (!$deleted) {
-                return ApiResponse::error('Failed to delete conversation', 'SERVER_ERROR', 500);
-            }
+			if (!$deleted) {
+				return ApiResponse::error('Failed to delete conversation', 'SERVER_ERROR', 500);
+			}
 
-            return ApiResponse::success([], 'Conversation deleted successfully');
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to delete conversation: ' . $e->getMessage());
+			self::emitEvent(ChatbotEvent::onConversationDeleted(), [
+				'user_uuid' => $currentUser['uuid'],
+				'conversation_id' => $id,
+			]);
 
-            return ApiResponse::error('Failed to delete conversation', 'SERVER_ERROR', 500);
-        }
-    }
+			return ApiResponse::success([], 'Conversation deleted successfully');
+		} catch (\Exception $e) {
+			App::getInstance(true)->getLogger()->error('Failed to delete conversation: ' . $e->getMessage());
 
-    #[OA\Patch(
-        path: '/api/user/chatbot/conversations/{id}/memory',
-        summary: 'Update conversation memory',
-        description: 'Update the memory field for a conversation. This memory is included in the AI context for future messages.',
-        tags: ['User - Chatbot'],
-        parameters: [
-            new OA\Parameter(
-                name: 'id',
-                in: 'path',
-                description: 'Conversation ID',
-                required: true,
-                schema: new OA\Schema(type: 'integer')
-            ),
-        ],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                type: 'object',
-                properties: [
-                    new OA\Property(property: 'memory', type: 'string', description: 'Memory content'),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(response: 200, description: 'Memory updated successfully'),
-            new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 404, description: 'Conversation not found'),
-        ]
-    )]
-    public function updateMemory(Request $request, int $id): Response
-    {
-        $currentUser = $request->get('user');
+			return ApiResponse::error('Failed to delete conversation', 'SERVER_ERROR', 500);
+		}
+	}
 
-        if (!$currentUser || !isset($currentUser['uuid'])) {
-            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
-        }
+	#[OA\Patch(
+		path: '/api/user/chatbot/conversations/{id}/memory',
+		summary: 'Update conversation memory',
+		description: 'Update the memory field for a conversation. This memory is included in the AI context for future messages.',
+		tags: ['User - Chatbot'],
+		parameters: [
+			new OA\Parameter(
+				name: 'id',
+				in: 'path',
+				description: 'Conversation ID',
+				required: true,
+				schema: new OA\Schema(type: 'integer')
+			),
+		],
+		requestBody: new OA\RequestBody(
+			required: true,
+			content: new OA\JsonContent(
+				type: 'object',
+				properties: [
+					new OA\Property(property: 'memory', type: 'string', description: 'Memory content'),
+				]
+			)
+		),
+		responses: [
+			new OA\Response(response: 200, description: 'Memory updated successfully'),
+			new OA\Response(response: 401, description: 'Unauthorized'),
+			new OA\Response(response: 404, description: 'Conversation not found'),
+		]
+	)]
+	public function updateMemory(Request $request, int $id): Response
+	{
+		$currentUser = $request->get('user');
 
-        try {
-            $conversation = ChatConversation::getConversationById($id);
+		if (!$currentUser || !isset($currentUser['uuid'])) {
+			return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+		}
 
-            if (!$conversation) {
-                return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
-            }
+		try {
+			$conversation = ChatConversation::getConversationById($id);
 
-            // Verify conversation belongs to user
-            if ($conversation['user_uuid'] !== $currentUser['uuid']) {
-                return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
-            }
+			if (!$conversation) {
+				return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
+			}
 
-            $data = json_decode($request->getContent(), true);
-            $memory = $data['memory'] ?? '';
+			// Verify conversation belongs to user
+			if ($conversation['user_uuid'] !== $currentUser['uuid']) {
+				return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
+			}
 
-            $updated = ChatConversation::updateConversation($id, [
-                'memory' => $memory,
-            ]);
+			$data = json_decode($request->getContent(), true);
+			$memory = $data['memory'] ?? '';
 
-            if (!$updated) {
-                return ApiResponse::error('Failed to update memory', 'SERVER_ERROR', 500);
-            }
+			$updated = ChatConversation::updateConversation($id, [
+				'memory' => $memory,
+			]);
 
-            return ApiResponse::success([], 'Memory updated successfully');
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to update memory: ' . $e->getMessage());
+			if (!$updated) {
+				return ApiResponse::error('Failed to update memory', 'SERVER_ERROR', 500);
+			}
 
-            return ApiResponse::error('Failed to update memory', 'SERVER_ERROR', 500);
-        }
-    }
+			self::emitEvent(ChatbotEvent::onConversationMemoryUpdated(), [
+				'user_uuid' => $currentUser['uuid'],
+				'conversation_id' => $id,
+				'memory' => $memory,
+			]);
+
+			return ApiResponse::success([], 'Memory updated successfully');
+		} catch (\Exception $e) {
+			App::getInstance(true)->getLogger()->error('Failed to update memory: ' . $e->getMessage());
+
+			return ApiResponse::error('Failed to update memory', 'SERVER_ERROR', 500);
+		}
+	}
+
+	private static function emitEvent(string $eventName, array $payload): void
+	{
+		global $eventManager;
+		if (isset($eventManager) && $eventManager !== null) {
+			$eventManager->emit($eventName, $payload);
+		}
+	}
 }
