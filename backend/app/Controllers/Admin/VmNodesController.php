@@ -22,6 +22,7 @@ use App\Chat\VmIp;
 use App\Chat\VmNode;
 use App\Chat\Activity;
 use App\Chat\Location;
+use App\Chat\VmInstance;
 use App\Chat\VmTemplate;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -534,6 +535,20 @@ class VmNodesController
         $vmNode = VmNode::getVmNodeById($id);
         if (!$vmNode) {
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        // Check if any VM templates are using this node
+        if (count(VmTemplate::getByNodeId($id)) > 0) {
+            return ApiResponse::error('Cannot delete VM node - it is being used by one or more VM templates', 'VM_NODE_IN_USE', 400);
+        }
+
+        // Check if any VM IPs are using this node
+        if (count(VmIp::getByVmNodeId($id)) > 0) {
+            return ApiResponse::error('Cannot delete VM node - it is being used by one or more VM IPs', 'VM_NODE_IN_USE', 400);
+        }
+
+        if (count(VmInstance::getByNodeId($id)) > 0) {
+            return ApiResponse::error('Cannot delete VM node - it is being used by one or more VM instances', 'VM_NODE_IN_USE', 400);
         }
 
         $success = VmNode::hardDeleteVmNode($id);
