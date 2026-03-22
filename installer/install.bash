@@ -380,8 +380,8 @@ apply_panel_port_to_compose() {
 
 	# FeatherPanel only publishes the panel service externally. Keep container port 80 and
 	# ensure compose always reads a sanitized, non-random host port value.
-	sed -E -i "s|- \"\$\{(PANEL_PORT|FEATHERPANEL_PANEL_PORT):-4831\}:80\"|- \"\${FEATHERPANEL_PANEL_PORT:-4831}:80\"|g" "$compose_file"
-	sed -E -i "s|- \"[0-9]{1,5}:80\"|- \"${panel_port}:80\"|g" "$compose_file"
+	sed -E -i "s#- \"\\\$\\\{(PANEL_PORT|FEATHERPANEL_PANEL_PORT):-4831\\\}:80\"#- \"\${FEATHERPANEL_PANEL_PORT:-4831}:80\"#g" "$compose_file"
+	sed -E -i "s#- \"[0-9]{1,5}:80\"#- \"${panel_port}:80\"#g" "$compose_file"
 	log_info "Applied panel port mapping: ${panel_port}:80 (effective env: FEATHERPANEL_PANEL_PORT=${FEATHERPANEL_PANEL_PORT})"
 }
 
@@ -857,7 +857,7 @@ print_banner() {
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 
-	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.0${NC}"
+	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.1${NC}"
 
 	echo -e "${CYAN}${BOLD}┌────────────────────────────────────────────────────────────┐${NC}"
 	echo -e "${CYAN}${BOLD}${NC}  🌐 Website:  ${BLUE}www.mythical.systems${NC}           ${CYAN}${BOLD}${NC}"
