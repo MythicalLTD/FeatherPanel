@@ -8,25 +8,6 @@ if [ "$EUID" -ne 0 ]; then
 	exit 1
 fi
 
-echo -e "${YELLOW}${BOLD}⚠️  MAINTENANCE NOTICE${NC}"
-echo ""
-echo -e "${RED}${BOLD}The installer is currently under short maintenance.${NC}"
-echo ""
-echo -e "${YELLOW}Some tasks might fail during this period.${NC}"
-echo -e "${BLUE}We recommend waiting for this message to disappear.${NC}"
-echo ""
-echo -e "${CYAN}Reason:${NC} We are working on releasing the new version of the Panel"
-echo -e "         and conducting pre-release testing."
-echo ""
-echo -e "${GREEN}Expected duration:${NC} ~30 minutes"
-echo ""
-echo ""
-echo -e "${CYAN}${BOLD}Maintenance will conclude shortly.${NC}"
-echo -e "${BLUE}Resuming installation in 30 seconds...${NC}"
-echo ""
-sleep 30
-echo ""
-
 apt update -y 
 apt upgrade -y 
 apt purge -y 
