@@ -370,7 +370,7 @@ sync_panel_port_env() {
 
 apply_panel_port_to_compose() {
 	local compose_file="$1"
-	local compose_port_template='${FEATHERPANEL_PANEL_PORT:-4831}:80'
+	local compose_port_template="\${FEATHERPANEL_PANEL_PORT:-4831}:80"
 	local panel_port
 	panel_port="$(get_panel_port)"
 	sync_panel_port_env
@@ -858,7 +858,7 @@ print_banner() {
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 
-	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.2${NC}"
+	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.3${NC}"
 
 	echo -e "${CYAN}${BOLD}┌────────────────────────────────────────────────────────────┐${NC}"
 	echo -e "${CYAN}${BOLD}${NC}  🌐 Website:  ${BLUE}www.mythical.systems${NC}           ${CYAN}${BOLD}${NC}"
