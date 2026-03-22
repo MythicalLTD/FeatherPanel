@@ -362,18 +362,27 @@ get_panel_port() {
 	fi
 }
 
+sync_panel_port_env() {
+	local panel_port
+	panel_port="$(get_panel_port)"
+	export FEATHERPANEL_PANEL_PORT="$panel_port"
+}
+
 apply_panel_port_to_compose() {
 	local compose_file="$1"
 	local panel_port
-	panel_port=$(get_panel_port)
+	panel_port="$(get_panel_port)"
+	sync_panel_port_env
 
 	if [ ! -f "$compose_file" ]; then
 		return 0
 	fi
 
-	# FeatherPanel only publishes the panel service externally. Keep container port 80 and only change host port.
+	# FeatherPanel only publishes the panel service externally. Keep container port 80 and
+	# ensure compose always reads a sanitized, non-random host port value.
+	sed -E -i "s|- \"\$\{(PANEL_PORT|FEATHERPANEL_PANEL_PORT):-4831\}:80\"|- \"\${FEATHERPANEL_PANEL_PORT:-4831}:80\"|g" "$compose_file"
 	sed -E -i "s|- \"[0-9]{1,5}:80\"|- \"${panel_port}:80\"|g" "$compose_file"
-	log_info "Applied panel port mapping: ${panel_port}:80"
+	log_info "Applied panel port mapping: ${panel_port}:80 (effective env: FEATHERPANEL_PANEL_PORT=${FEATHERPANEL_PANEL_PORT})"
 }
 
 # Save configuration to file
@@ -814,6 +823,7 @@ manage_configuration() {
 			if [[ "$confirm" =~ ^[yY]$ ]]; then
 				init_config
 				load_config
+				sync_panel_port_env
 				log_success "Configuration reset to defaults"
 				sleep 2
 			fi
@@ -4478,6 +4488,7 @@ check_eol_status() {
 	# This should be done after all functions are defined but before main execution
 	init_config
 	load_config
+	sync_panel_port_env
 
 if [ -f /etc/os-release ]; then
 	# shellcheck source=/dev/null

@@ -106,7 +106,7 @@ services:
       timeout: 20s
       retries: 10
     ports:
-      - "${PANEL_PORT:-4831}:80"
+      - "${FEATHERPANEL_PANEL_PORT:-4831}:80"
     networks:
       - featherpanel_network
 
