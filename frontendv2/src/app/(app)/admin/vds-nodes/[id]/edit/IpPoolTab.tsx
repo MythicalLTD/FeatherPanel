@@ -22,10 +22,12 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
+import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Plus, Trash2, Search, RefreshCw, Network, Star, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Search, RefreshCw, Network, Star, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { TabBlankState, TabHintCard, TabTableShell, TabToolbar } from './TabPrimitives';
 
 interface VmIp {
     id: number;
@@ -242,7 +244,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                 }
             >
                 <div className='space-y-4'>
-                    <div className='flex items-center gap-4'>
+                    <TabToolbar>
                         <div className='relative flex-1'>
                             <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
@@ -255,7 +257,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                         <Button variant='outline' size='icon' onClick={loadIps} loading={loading}>
                             <RefreshCw className='h-4 w-4' />
                         </Button>
-                    </div>
+                    </TabToolbar>
 
                     {pagination.totalPages > 1 && (
                         <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
@@ -285,48 +287,41 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                         </div>
                     )}
 
-                    <div className='rounded-xl border border-border/50 overflow-hidden'>
-                        <table className='w-full text-sm'>
-                            <thead className='bg-muted/30 border-b border-border/50'>
-                                <tr>
-                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>ID</th>
-                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
-                                        {t('admin.vdsNodes.ips.col_ip')}
-                                    </th>
-                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
-                                        {t('admin.vdsNodes.ips.col_cidr')}
-                                    </th>
-                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
-                                        {t('admin.vdsNodes.ips.col_gateway')}
-                                    </th>
-                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
-                                        {t('admin.vdsNodes.ips.col_notes')}
-                                    </th>
-                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
-                                        {t('admin.vdsNodes.ips.col_status')}
-                                    </th>
-                                    <th className='px-4 py-3 text-right font-medium text-muted-foreground'>
-                                        {t('common.actions')}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className='divide-y divide-border/50'>
-                                {loading ? (
+                    {loading ? (
+                        <TableSkeleton count={3} />
+                    ) : filteredIps.length === 0 ? (
+                        <TabBlankState
+                            icon={Network}
+                            title={searchQuery ? t('admin.vdsNodes.ips.no_results') : t('admin.vdsNodes.ips.empty')}
+                        />
+                    ) : (
+                        <TabTableShell>
+                            <table className='w-full text-sm'>
+                                <thead className='bg-muted/20 border-b border-border/50'>
                                     <tr>
-                                        <td colSpan={7} className='px-4 py-8 text-center'>
-                                            <Loader2 className='h-6 w-6 animate-spin mx-auto text-primary' />
-                                        </td>
+                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>ID</th>
+                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                            {t('admin.vdsNodes.ips.col_ip')}
+                                        </th>
+                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                            {t('admin.vdsNodes.ips.col_cidr')}
+                                        </th>
+                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                            {t('admin.vdsNodes.ips.col_gateway')}
+                                        </th>
+                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                            {t('admin.vdsNodes.ips.col_notes')}
+                                        </th>
+                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                            {t('admin.vdsNodes.ips.col_status')}
+                                        </th>
+                                        <th className='px-4 py-3 text-right font-medium text-muted-foreground'>
+                                            {t('common.actions')}
+                                        </th>
                                     </tr>
-                                ) : filteredIps.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className='px-4 py-8 text-center text-muted-foreground italic'>
-                                            {searchQuery
-                                                ? t('admin.vdsNodes.ips.no_results')
-                                                : t('admin.vdsNodes.ips.empty')}
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredIps.map((ip) => (
+                                </thead>
+                                <tbody className='divide-y divide-border/50'>
+                                    {filteredIps.map((ip) => (
                                         <tr key={ip.id} className='hover:bg-muted/20 transition-colors'>
                                             <td className='px-4 py-3 font-mono text-xs text-muted-foreground'>
                                                 {ip.id}
@@ -391,7 +386,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                         }}
                                                         title={t('common.edit')}
                                                     >
-                                                        <Search className='h-4 w-4' />
+                                                        <Pencil className='h-4 w-4' />
                                                     </Button>
                                                     {deleteConfirmId === ip.id ? (
                                                         <div className='flex items-center gap-1'>
@@ -435,11 +430,11 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </TabTableShell>
+                    )}
 
                     {pagination.totalPages > 1 && (
                         <div className='flex items-center justify-between mt-4'>
@@ -477,24 +472,16 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
             </PageCard>
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <div className='p-6 bg-card/40 border border-border/50 rounded-2xl space-y-3'>
-                    <div className='flex items-center gap-3 text-primary'>
-                        <Network className='h-5 w-5' />
-                        <h4 className='font-bold'>{t('admin.vdsNodes.ips.help.what_are_ips')}</h4>
-                    </div>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
-                        {t('admin.vdsNodes.ips.help.what_are_ips_text')}
-                    </p>
-                </div>
-                <div className='p-6 bg-card/40 border border-border/50 rounded-2xl space-y-3'>
-                    <div className='flex items-center gap-3 text-primary'>
-                        <Star className='h-5 w-5' />
-                        <h4 className='font-bold'>{t('admin.vdsNodes.ips.help.primary_ip')}</h4>
-                    </div>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
-                        {t('admin.vdsNodes.ips.help.primary_ip_text')}
-                    </p>
-                </div>
+                <TabHintCard
+                    icon={Network}
+                    title={t('admin.vdsNodes.ips.help.what_are_ips')}
+                    description={t('admin.vdsNodes.ips.help.what_are_ips_text')}
+                />
+                <TabHintCard
+                    icon={Star}
+                    title={t('admin.vdsNodes.ips.help.primary_ip')}
+                    description={t('admin.vdsNodes.ips.help.primary_ip_text')}
+                />
             </div>
 
             <Sheet open={createOpen} onOpenChange={(open) => !open && setCreateOpen(false)}>

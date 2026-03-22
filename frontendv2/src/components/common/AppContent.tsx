@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import TopLoadingBar from '@/components/common/TopLoadingBar';
 import AppPreloader from '@/components/common/AppPreloader';
@@ -24,8 +24,17 @@ import HackerEasterEgg from '@/components/common/HackerEasterEgg';
 
 export default function AppContent({ children }: { children: React.ReactNode }) {
     const { initialLoading } = useTranslation();
+    const [forceUnblock, setForceUnblock] = useState(false);
 
-    if (initialLoading) {
+    useEffect(() => {
+        if (!initialLoading) return;
+
+        // Guard against indefinite preloader state caused by challenge loops or hanging requests.
+        const timer = window.setTimeout(() => setForceUnblock(true), 12000);
+        return () => window.clearTimeout(timer);
+    }, [initialLoading]);
+
+    if (initialLoading && !forceUnblock) {
         return <AppPreloader />;
     }
 

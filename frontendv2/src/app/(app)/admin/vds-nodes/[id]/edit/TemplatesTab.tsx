@@ -21,16 +21,17 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select } from '@/components/ui/select-native';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Plus, Trash2, RefreshCw, Layers, Loader2, Monitor, Cpu, ShieldAlert } from 'lucide-react';
-import { EmptyState } from '@/components/featherui/EmptyState';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { TutorialVM } from './TutorialVM';
 import { TutorialLXC } from './TutorialLXC';
+import { TabBlankState, TabTableShell, TabToolbar } from './TabPrimitives';
 
 interface VmTemplateRow {
     id: number;
@@ -187,7 +188,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                 icon={Layers}
                 description={t('admin.vdsNodes.templates.description')}
             >
-                <div className='flex items-center justify-between gap-4 mb-4'>
+                <TabToolbar className='mb-4'>
                     <Button size='sm' variant='outline' onClick={loadTemplates} loading={loading}>
                         <RefreshCw className='h-4 w-4' />
                     </Button>
@@ -195,14 +196,12 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                         <Plus className='h-4 w-4 mr-2' />
                         {t('admin.vdsNodes.templates.add')}
                     </Button>
-                </div>
+                </TabToolbar>
 
                 {loading ? (
-                    <div className='flex items-center justify-center py-12'>
-                        <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
-                    </div>
+                    <TableSkeleton count={3} />
                 ) : templates.length === 0 ? (
-                    <EmptyState
+                    <TabBlankState
                         icon={Layers}
                         title={t('admin.vdsNodes.templates.empty')}
                         description={t('admin.vdsNodes.templates.empty_desc')}
@@ -214,10 +213,10 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                         }
                     />
                 ) : (
-                    <div className='rounded-xl border border-border/30 overflow-hidden'>
+                    <TabTableShell>
                         <table className='w-full text-sm'>
                             <thead>
-                                <tr className='border-b border-border/40 bg-muted/30'>
+                                <tr className='border-b border-border/50 bg-muted/20'>
                                     <th className='text-left p-3 font-medium'>
                                         {t('admin.vdsNodes.templates.col_name')}
                                     </th>
@@ -232,9 +231,9 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className='divide-y divide-border/50'>
                                 {templates.map((tpl) => (
-                                    <tr key={tpl.id} className='border-b border-border/20 hover:bg-muted/20'>
+                                    <tr key={tpl.id} className='hover:bg-muted/20 transition-colors'>
                                         <td className='p-3 font-medium'>{tpl.name}</td>
                                         <td className='p-3 font-mono text-muted-foreground'>
                                             {tpl.template_file ?? '—'}
@@ -278,17 +277,23 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                    </TabTableShell>
                 )}
             </PageCard>
 
             <Tabs defaultValue='qemu'>
-                <TabsList className='w-full grid grid-cols-2 mb-6'>
-                    <TabsTrigger value='qemu' className='flex items-center gap-2'>
+                <TabsList className='w-full grid grid-cols-2 rounded-2xl border border-border/50 bg-card/30 p-2 mb-6 h-auto gap-2'>
+                    <TabsTrigger
+                        value='qemu'
+                        className='flex items-center gap-2 rounded-xl border border-transparent py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10'
+                    >
                         <Monitor className='h-4 w-4' />
                         QEMU/KVM Tutorial
                     </TabsTrigger>
-                    <TabsTrigger value='lxc' className='flex items-center gap-2'>
+                    <TabsTrigger
+                        value='lxc'
+                        className='flex items-center gap-2 rounded-xl border border-transparent py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10'
+                    >
                         <Cpu className='h-4 w-4' />
                         LXC Tutorial
                     </TabsTrigger>

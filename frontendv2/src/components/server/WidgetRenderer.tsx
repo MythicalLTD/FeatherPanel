@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { RotateCcw, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PluginWidget } from '@/types/plugin-widgets';
+import { isCloudflareChallengeDocument, withCacheBuster } from '@/lib/cloudflare-challenge';
 
 interface WidgetRendererProps {
     widgets: PluginWidget[];
@@ -35,6 +36,9 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
     const pathname = usePathname();
     const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
     const [errorStates, setErrorStates] = useState<Record<string, string | null>>({});
+    const [challengeRetries, setChallengeRetries] = useState<Record<string, number>>({});
+
+    const MAX_CHALLENGE_RETRIES = 4;
 
     if (!widgets || widgets.length === 0) return null;
 
@@ -55,7 +59,36 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
         return `${baseUrl}?${params.toString()}`;
     };
 
-    const handleIframeLoad = (widgetId: string) => {
+    const handleIframeLoad = (widgetId: string, iframe: HTMLIFrameElement) => {
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (isCloudflareChallengeDocument(iframeDoc)) {
+                const currentRetries = challengeRetries[widgetId] || 0;
+                if (currentRetries < MAX_CHALLENGE_RETRIES) {
+                    const nextRetry = currentRetries + 1;
+                    setChallengeRetries((prev) => ({ ...prev, [widgetId]: nextRetry }));
+                    setLoadingStates((prev) => ({ ...prev, [widgetId]: true }));
+
+                    const retryDelayMs = 800 * nextRetry;
+                    const retryTarget = iframe.src;
+                    setTimeout(() => {
+                        iframe.src = withCacheBuster(retryTarget);
+                    }, retryDelayMs);
+                    return;
+                }
+
+                setLoadingStates((prev) => ({ ...prev, [widgetId]: false }));
+                setErrorStates((prev) => ({
+                    ...prev,
+                    [widgetId]: 'Cloudflare verification is still in progress. Please wait a moment and try again.',
+                }));
+                return;
+            }
+        } catch {
+            // Ignore cross-origin access errors and treat as normal content.
+        }
+
+        setChallengeRetries((prev) => ({ ...prev, [widgetId]: 0 }));
         setLoadingStates((prev) => ({ ...prev, [widgetId]: false }));
         setErrorStates((prev) => ({ ...prev, [widgetId]: null }));
     };
@@ -66,6 +99,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
     };
 
     const retryLoad = (widgetId: string) => {
+        setChallengeRetries((prev) => ({ ...prev, [widgetId]: 0 }));
         setErrorStates((prev) => ({ ...prev, [widgetId]: null }));
         setLoadingStates((prev) => ({ ...prev, [widgetId]: true }));
 
@@ -74,7 +108,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
             const src = iframe.src;
             iframe.src = '';
             setTimeout(() => {
-                iframe.src = src;
+                iframe.src = withCacheBuster(src);
             }, 100);
         }
     };
@@ -234,7 +268,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                             referrerPolicy={
                                                 widget.iframe?.referrerPolicy as React.HTMLAttributeReferrerPolicy
                                             }
-                                            onLoad={() => handleIframeLoad(widget.id)}
+                                            onLoad={(event) => handleIframeLoad(widget.id, event.currentTarget)}
                                             onError={() => handleIframeError(widget.id)}
                                             allowTransparency={true}
                                         />
@@ -267,7 +301,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                             minHeight: widget.iframe?.minHeight || height,
                                             background: 'transparent',
                                         }}
-                                        onLoad={() => handleIframeLoad(widget.id)}
+                                        onLoad={(event) => handleIframeLoad(widget.id, event.currentTarget)}
                                         onError={() => handleIframeError(widget.id)}
                                         {...{ allowtransparency: true }}
                                     />

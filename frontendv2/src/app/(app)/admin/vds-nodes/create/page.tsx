@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { AffiliatesShowcase } from '@/components/admin/AffiliatesShowcase';
 
 interface Location {
     id: number;
@@ -234,6 +235,7 @@ export default function CreateVdsNodePage() {
             />
 
             <WidgetRenderer widgets={getWidgets('admin-vds-nodes-create', 'after-header')} />
+            <AffiliatesShowcase endpoint='/api/admin/vm-nodes/affiliates' />
 
             <form onSubmit={handleSubmit} className='space-y-8 mt-8'>
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
@@ -327,6 +329,13 @@ export default function CreateVdsNodePage() {
                                             {errors.user}
                                         </p>
                                     )}
+                                </div>
+                                <div className='space-y-2'>
+                                    <div className='rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100'>
+                                        When creating the API token, make sure to create it for the user{' '}
+                                        <span className='font-semibold'>root</span> with{' '}
+                                        <span className='font-semibold'>no privilege separation</span>.
+                                    </div>
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.token_id')}</Label>

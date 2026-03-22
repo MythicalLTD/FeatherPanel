@@ -14,6 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import axios, { AxiosError } from 'axios';
+import { isCloudflareChallengeResponseData, triggerCloudflareRecovery } from '@/lib/cloudflare-challenge';
 
 // API base configuration
 const api = axios.create({
@@ -26,8 +27,25 @@ const api = axios.create({
 
 // Response interceptor
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        const contentType = String(response.headers?.['content-type'] || '').toLowerCase();
+        if (contentType.includes('text/html') && isCloudflareChallengeResponseData(response.data)) {
+            triggerCloudflareRecovery();
+        }
+        return response;
+    },
     (error: AxiosError<{ error_code?: string; error_message?: string }>) => {
+        const responseData = error.response?.data;
+        const responseHeaders = error.response?.headers;
+        const contentType = String(responseHeaders?.['content-type'] || '').toLowerCase();
+
+        if (
+            isCloudflareChallengeResponseData(responseData) ||
+            (contentType.includes('text/html') && typeof responseData === 'string')
+        ) {
+            triggerCloudflareRecovery();
+        }
+
         // Handle common errors
         const errorCode = error.response?.data?.error_code;
         const status = error.response?.status;

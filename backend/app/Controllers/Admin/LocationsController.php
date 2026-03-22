@@ -18,6 +18,7 @@
 namespace App\Controllers\Admin;
 
 use App\Chat\Node;
+use App\Chat\VmNode;
 use App\Chat\Activity;
 use App\Chat\Location;
 use App\Helpers\ApiResponse;
@@ -468,6 +469,15 @@ class LocationsController
 
         if (Node::count(['location_id' => $id]) > 0) {
             return ApiResponse::error('Cannot delete location: there are nodes assigned to this location. Please remove or reassign all nodes before deleting the location.', 'LOCATION_HAS_NODES', 400);
+        }
+
+        // Check if there are nodes assigned to this location
+        if (count(Node::getNodesByLocationId($id)) > 0) {
+            return ApiResponse::error('Cannot delete location: there are nodes assigned to this location. Please remove or reassign all nodes before deleting the location.', 'LOCATION_HAS_NODES', 400);
+        }
+
+        if (count(VmNode::getByLocationId($id)) > 0) {
+            return ApiResponse::error('Cannot delete location: there are VM nodes assigned to this location. Please remove or reassign all VM nodes before deleting the location.', 'LOCATION_HAS_VM_NODES', 400);
         }
 
         $success = Location::delete($id);

@@ -16,10 +16,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/featherui/Button';
 import { Settings, Plus, Trash2 } from 'lucide-react';
 import type { KVPair } from './page';
+import { TabHintCard, TabSection } from './TabPrimitives';
 
 interface AdvancedTabProps {
     headers: KVPair[];
@@ -30,6 +30,84 @@ interface AdvancedTabProps {
     onParamChange: (index: number, field: 'key' | 'value', value: string) => void;
     onAddParam: () => void;
     onRemoveParam: (index: number) => void;
+}
+
+interface KeyValueListProps {
+    title: string;
+    description: string;
+    emptyLabel: string;
+    addLabel: string;
+    keyPlaceholder: string;
+    valuePlaceholder: string;
+    pairs: KVPair[];
+    onChange: (index: number, field: 'key' | 'value', value: string) => void;
+    onAdd: () => void;
+    onRemove: (index: number) => void;
+}
+
+function KeyValueList({
+    title,
+    description,
+    emptyLabel,
+    addLabel,
+    keyPlaceholder,
+    valuePlaceholder,
+    pairs,
+    onChange,
+    onAdd,
+    onRemove,
+}: KeyValueListProps) {
+    return (
+        <PageCard title={title} icon={Settings} description={description}>
+            <TabSection
+                action={
+                    <Button type='button' size='sm' variant='outline' onClick={onAdd}>
+                        <Plus className='h-4 w-4 mr-2' />
+                        {addLabel}
+                    </Button>
+                }
+            >
+                {pairs.length === 0 ? (
+                    <div className='rounded-2xl border border-dashed border-border/60 bg-card/20 px-4 py-8 text-center'>
+                        <p className='text-xs text-muted-foreground italic'>{emptyLabel}</p>
+                    </div>
+                ) : (
+                    <div className='space-y-3'>
+                        {pairs.map((pair, index) => (
+                            <div
+                                key={index}
+                                className='grid grid-cols-1 gap-3 rounded-2xl border border-border/40 bg-background/40 p-3 md:grid-cols-[1fr_1fr_auto] md:items-center'
+                            >
+                                <Input
+                                    className='flex-1'
+                                    placeholder={keyPlaceholder}
+                                    value={pair.key}
+                                    onChange={(e) => onChange(index, 'key', e.target.value)}
+                                />
+                                <Input
+                                    type='password'
+                                    autoComplete='new-password'
+                                    className='flex-1'
+                                    placeholder={valuePlaceholder}
+                                    value={pair.value}
+                                    onChange={(e) => onChange(index, 'value', e.target.value)}
+                                />
+                                <Button
+                                    type='button'
+                                    size='icon'
+                                    variant='ghost'
+                                    className='text-destructive hover:text-destructive hover:bg-destructive/10'
+                                    onClick={() => onRemove(index)}
+                                >
+                                    <Trash2 className='h-4 w-4' />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </TabSection>
+        </PageCard>
+    );
 }
 
 export function AdvancedTab({
@@ -46,99 +124,80 @@ export function AdvancedTab({
 
     return (
         <div className='space-y-8'>
-            <PageCard
+            <KeyValueList
                 title={t('admin.vdsNodes.advanced.headers_title')}
-                icon={Settings}
                 description={t('admin.vdsNodes.advanced.headers_description')}
-            >
-                <div className='space-y-3'>
-                    {headers.length === 0 && (
-                        <p className='text-xs text-muted-foreground italic py-1'>
-                            {t('admin.vdsNodes.advanced.no_headers')}
-                        </p>
-                    )}
-                    {headers.map((pair, index) => (
-                        <div key={index} className='flex items-center gap-2'>
-                            <Input
-                                className='flex-1'
-                                placeholder={t('admin.vdsNodes.advanced.key_placeholder')}
-                                value={pair.key}
-                                onChange={(e) => onHeaderChange(index, 'key', e.target.value)}
-                            />
-                            <Input
-                                className='flex-1'
-                                placeholder={t('admin.vdsNodes.advanced.value_placeholder')}
-                                value={pair.value}
-                                onChange={(e) => onHeaderChange(index, 'value', e.target.value)}
-                            />
-                            <Button
-                                type='button'
-                                size='icon'
-                                variant='ghost'
-                                className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                onClick={() => onRemoveHeader(index)}
-                            >
-                                <Trash2 className='h-4 w-4' />
-                            </Button>
-                        </div>
-                    ))}
-                    <Button type='button' size='sm' variant='outline' onClick={onAddHeader} className='mt-1'>
-                        <Plus className='h-4 w-4 mr-2' />
-                        {t('admin.vdsNodes.advanced.add_header')}
-                    </Button>
-                </div>
-            </PageCard>
+                emptyLabel={t('admin.vdsNodes.advanced.no_headers')}
+                addLabel={t('admin.vdsNodes.advanced.add_header')}
+                keyPlaceholder={t('admin.vdsNodes.advanced.key_placeholder')}
+                valuePlaceholder={t('admin.vdsNodes.advanced.value_placeholder')}
+                pairs={headers}
+                onChange={onHeaderChange}
+                onAdd={onAddHeader}
+                onRemove={onRemoveHeader}
+            />
 
             <PageCard
                 title={t('admin.vdsNodes.advanced.params_title')}
                 icon={Settings}
                 description={t('admin.vdsNodes.advanced.params_description')}
             >
-                <div className='space-y-3'>
-                    {params.length === 0 && (
-                        <p className='text-xs text-muted-foreground italic py-1'>
-                            {t('admin.vdsNodes.advanced.no_params')}
-                        </p>
-                    )}
-                    {params.map((pair, index) => (
-                        <div key={index} className='flex items-center gap-2'>
-                            <Input
-                                className='flex-1'
-                                placeholder={t('admin.vdsNodes.advanced.key_placeholder')}
-                                value={pair.key}
-                                onChange={(e) => onParamChange(index, 'key', e.target.value)}
-                            />
-                            <Input
-                                className='flex-1'
-                                placeholder={t('admin.vdsNodes.advanced.value_placeholder')}
-                                value={pair.value}
-                                onChange={(e) => onParamChange(index, 'value', e.target.value)}
-                            />
-                            <Button
-                                type='button'
-                                size='icon'
-                                variant='ghost'
-                                className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                onClick={() => onRemoveParam(index)}
-                            >
-                                <Trash2 className='h-4 w-4' />
-                            </Button>
+                <TabSection
+                    action={
+                        <Button type='button' size='sm' variant='outline' onClick={onAddParam}>
+                            <Plus className='h-4 w-4 mr-2' />
+                            {t('admin.vdsNodes.advanced.add_param')}
+                        </Button>
+                    }
+                >
+                    {params.length === 0 ? (
+                        <div className='rounded-2xl border border-dashed border-border/60 bg-card/20 px-4 py-8 text-center'>
+                            <p className='text-xs text-muted-foreground italic'>
+                                {t('admin.vdsNodes.advanced.no_params')}
+                            </p>
                         </div>
-                    ))}
-                    <Button type='button' size='sm' variant='outline' onClick={onAddParam} className='mt-1'>
-                        <Plus className='h-4 w-4 mr-2' />
-                        {t('admin.vdsNodes.advanced.add_param')}
-                    </Button>
-                </div>
+                    ) : (
+                        <div className='space-y-3'>
+                            {params.map((pair, index) => (
+                                <div
+                                    key={index}
+                                    className='grid grid-cols-1 gap-3 rounded-2xl border border-border/40 bg-background/40 p-3 md:grid-cols-[1fr_1fr_auto] md:items-center'
+                                >
+                                    <Input
+                                        className='flex-1'
+                                        placeholder={t('admin.vdsNodes.advanced.key_placeholder')}
+                                        value={pair.key}
+                                        onChange={(e) => onParamChange(index, 'key', e.target.value)}
+                                    />
+                                    <Input
+                                        type='password'
+                                        autoComplete='new-password'
+                                        className='flex-1'
+                                        placeholder={t('admin.vdsNodes.advanced.value_placeholder')}
+                                        value={pair.value}
+                                        onChange={(e) => onParamChange(index, 'value', e.target.value)}
+                                    />
+                                    <Button
+                                        type='button'
+                                        size='icon'
+                                        variant='ghost'
+                                        className='text-destructive hover:text-destructive hover:bg-destructive/10'
+                                        onClick={() => onRemoveParam(index)}
+                                    >
+                                        <Trash2 className='h-4 w-4' />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </TabSection>
 
-                <div className='mt-6 p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl'>
-                    <Label className='text-xs font-bold uppercase tracking-wider text-amber-600'>
-                        {t('admin.vdsNodes.advanced.warning_title')}
-                    </Label>
-                    <p className='text-xs text-muted-foreground mt-1 leading-relaxed'>
-                        {t('admin.vdsNodes.advanced.warning_text')}
-                    </p>
-                </div>
+                <TabHintCard
+                    icon={Settings}
+                    title={t('admin.vdsNodes.advanced.warning_title')}
+                    description={t('admin.vdsNodes.advanced.warning_text')}
+                    className='border-amber-500/20 bg-amber-500/5'
+                />
             </PageCard>
         </div>
     );

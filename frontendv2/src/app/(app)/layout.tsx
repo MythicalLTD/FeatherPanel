@@ -176,6 +176,90 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             `,
                     }}
                 />
+                <script
+                    type='text/javascript'
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            (function () {
+                                var markers = [
+                                    'just a moment',
+                                    'checking your browser before accessing',
+                                    'cf-browser-verification',
+                                    'challenges.cloudflare.com',
+                                    '__cf_chl_',
+                                    'cf-chl-'
+                                ];
+
+                                function hasChallengeText(input) {
+                                    var text = String(input || '').toLowerCase();
+                                    if (!text) return false;
+                                    for (var i = 0; i < markers.length; i++) {
+                                        if (text.indexOf(markers[i]) !== -1) return true;
+                                    }
+                                    return false;
+                                }
+
+                                function recover() {
+                                    try {
+                                        var key = 'fp_cf_recovery_cooldown';
+                                        var now = Date.now();
+                                        var last = Number(sessionStorage.getItem(key) || '0');
+                                        if (now - last < 2500) return;
+
+                                        var url = new URL(window.location.href);
+                                        var current = Number(url.searchParams.get('_fp_cf_retry') || '0');
+                                        if (isFinite(current) && current >= 3) return;
+
+                                        url.searchParams.set('_fp_cf_retry', String(isFinite(current) ? current + 1 : 1));
+                                        sessionStorage.setItem(key, String(now));
+                                        window.location.replace(url.toString());
+                                    } catch (e) {}
+                                }
+
+                                try {
+                                    var nativeFetch = window.fetch && window.fetch.bind(window);
+                                    if (nativeFetch) {
+                                        window.fetch = function () {
+                                            var args = arguments;
+                                            return nativeFetch.apply(window, args).then(function (response) {
+                                                try {
+                                                    var request = args && args[0];
+                                                    var requestUrl = '';
+                                                    if (typeof request === 'string') requestUrl = request;
+                                                    else if (request && typeof request.url === 'string') requestUrl = request.url;
+
+                                                    var sameOrigin = !requestUrl || requestUrl.charAt(0) === '/' || requestUrl.indexOf(window.location.origin) === 0;
+                                                    if (!sameOrigin || !response || !response.headers) return response;
+
+                                                    var contentType = String(response.headers.get('content-type') || '').toLowerCase();
+                                                    if (!contentType.includes('text/html')) return response;
+
+                                                    response.clone().text().then(function (html) {
+                                                        if (hasChallengeText(html)) recover();
+                                                    }).catch(function () {});
+                                                } catch (e) {}
+
+                                                return response;
+                                            });
+                                        };
+                                    }
+
+                                    window.addEventListener('unhandledrejection', function (event) {
+                                        try {
+                                            var reason = event && event.reason;
+                                            var message = '';
+                                            if (typeof reason === 'string') message = reason;
+                                            else if (reason && typeof reason.message === 'string') message = reason.message;
+                                            if (hasChallengeText(message) || String(message).toLowerCase().indexOf('unexpected token <') !== -1) {
+                                                recover();
+                                            }
+                                        } catch (e) {}
+                                    });
+                                } catch (e) {}
+                            })();
+                        `,
+                    }}
+                />
             </head>
             <body className='bg-background text-foreground'>
                 <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_APP_PLACEHOLDER_START -->' }} />

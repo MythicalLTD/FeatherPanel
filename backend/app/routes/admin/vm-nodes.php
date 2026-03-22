@@ -21,6 +21,7 @@ use App\Helpers\ApiResponse;
 use App\Controllers\Admin\VmNodesController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\AffiliatesController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
@@ -31,6 +32,17 @@ return function (RouteCollection $routes): void {
             return (new VmNodesController())->index($request);
         },
         Permissions::ADMIN_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-affiliates',
+        '/api/admin/vm-nodes/affiliates',
+        function (Request $request) {
+            return (new AffiliatesController())->list($request);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
     );
 
     App::getInstance(true)->registerAdminRoute(

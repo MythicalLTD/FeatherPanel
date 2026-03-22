@@ -2776,6 +2776,42 @@
 	},
 	"admin": {
 		"navbar": {},
+		"affiliates": {
+			"title": "Recommended Partners",
+			"description": "Affiliate hosting partners for game and VDS infrastructure.",
+			"banner_title": "Sponsors & Affiliates",
+			"banner_description": "These partners help us keep FeatherPanel free and actively maintained.",
+			"hide_this": "Hide this",
+			"hide_confirm": "Hide this section permanently on this browser?",
+			"hide_cancel_title": "Okay :(((",
+			"hide_cancel_description": "Just know that affiliates or sponsorships help us keep this project fully free. We would really appreciate if you buy from our affiliates or support us via cloud.mythical.systems, GitHub Sponsors, PayPal, or Stripe.",
+			"load_failed": "Failed to load affiliate partners.",
+			"no_results": "No affiliate partners are available right now.",
+			"visit_partner": "Visit Partner",
+			"bgp_tools": "BGP Tools",
+			"view_on_bgp_tools": "View on BGP Tools",
+			"rating": "Rating",
+			"pricing_minimums": "Pricing Minimums",
+			"affiliate_alt": "Affiliate",
+			"vps": "VPS",
+			"dedicated": "Dedicated",
+			"storage_vps": "Storage VPS",
+			"webhosting": "Web Hosting",
+			"currency": "Currency",
+			"asn": "ASN",
+			"primary_asn": "Primary ASN",
+			"network": "Network",
+			"upstreams": "Upstreams",
+			"port_speeds": "Port Speeds",
+			"ddos_protection": "DDoS Protection",
+			"features": "Features",
+			"support_title": "Support FeatherPanel",
+			"support_description": "Affiliate purchases and sponsorships help us keep FeatherPanel free. You can support us with partner purchases, addons at cloud.mythical.systems, or direct donations.",
+			"support_cloud": "Buy Addons",
+			"support_github": "GitHub Sponsors",
+			"support_paypal": "PayPal",
+			"support_stripe": "Stripe"
+		},
 		"logs": {
 			"title": "Logs",
 			"description": "View application, web, and mail logs",
@@ -2997,8 +3033,11 @@
 				"details": "Details",
 				"connection": "Connection",
 				"advanced": "Advanced",
+				"storage": "Storage Configuration",
 				"ip_pool": "IP Pool",
 				"templates": "Templates",
+				"dhcp": "DHCP Agent",
+				"firewall": "Firewall",
 				"info": "Info",
 				"plans": "Plans"
 			},
@@ -3073,6 +3112,7 @@
 				"basic_details": "Basic Details",
 				"proxmox": "Proxmox API Access",
 				"network": "Network & SSL",
+				"storage_config": "Storage Configuration",
 				"name": "Display Name",
 				"name_required": "A display name is required",
 				"description": "Description",
@@ -3105,6 +3145,8 @@
 				"fqdn_required": "A Proxmox hostname or IP is required",
 				"fqdn_invalid": "Please enter a valid hostname or IP",
 				"scheme": "Scheme",
+				"scheme_https": "HTTPS",
+				"scheme_http": "HTTP",
 				"port": "Port",
 				"port_invalid": "Port must be a valid TCP port (1-65535)",
 				"tls_no_verify": "TLS Verification",
@@ -3152,7 +3194,44 @@
 				"unknown": "Unknown",
 				"test_button": "Test Connection",
 				"success": "Connected — {count} node(s) returned in {ms}ms.",
-				"failed": "Connection failed."
+				"failed": "Connection failed.",
+				"token_setup_reminder_title": "Token setup reminder",
+				"token_setup_reminder_description": "Use a Proxmox API token created for the intended account, and verify the permissions match the actions FeatherPanel will perform on this node."
+			},
+			"storage": {
+				"fetch_failed": "Failed to fetch storages",
+				"image_storages_title": "Image Storages",
+				"image_storages_description": "Configure where VM disk images are stored",
+				"backup_storage_title": "Backup Storage",
+				"backup_storage_description": "Configure where VM backups are stored"
+			},
+			"dhcp": {
+				"title": "DHCP Agent",
+				"blank_title": "DHCP Agent - Coming Soon",
+				"blank_description": "Unlock the full potential of your VMs with dynamic DHCP-driven network configuration",
+				"cards": {
+					"dynamic_ip_title": "Dynamic IP Assignment",
+					"dynamic_ip_description": "Leverage the ISC DHCP protocol to automatically assign and manage IP addresses for your Virtual Machines with zero manual intervention.",
+					"multiple_ip_title": "Multiple IP Assignment",
+					"multiple_ip_description": "Assign multiple IP addresses to single VMs through advanced DHCP configuration, enabling complex networking scenarios and failover capabilities.",
+					"automation_title": "Extensive Actions & Automation",
+					"automation_description": "Execute custom hooks and automated actions triggered by DHCP events. Automate DNS updates, firewall rules, load balancer configuration, VM provisioning workflows, and enterprise networking policies."
+				},
+				"footer_description": "The DHCP Agent feature is currently being developed. Once available, it will provide a powerful interface to manage VM network configuration through industry-standard DHCP protocols, with extensive customization options for enterprise environments."
+			},
+			"firewall_tab": {
+				"title": "Firewall Rules",
+				"blank_title": "Firewall - Coming Soon",
+				"blank_description": "Advanced network security and traffic control for your VMs",
+				"cards": {
+					"inbound_title": "Inbound Rules",
+					"inbound_description": "Create and manage inbound firewall rules to control which traffic is allowed into your virtual machines and services.",
+					"outbound_title": "Outbound Rules",
+					"outbound_description": "Restrict outbound connections to prevent data exfiltration and control which external services your VMs can reach.",
+					"advanced_title": "Advanced Rule Sets",
+					"advanced_description": "Build sophisticated firewall policies with stateful inspection, protocol-specific rules, rate limiting, and integration with threat intelligence feeds for enhanced security."
+				},
+				"footer_description": "Firewall management capabilities are currently under development. This feature will provide granular network access control, DDoS protection, and compliance-ready security policies for your infrastructure."
 			},
 			"messages": {
 				"fetch_failed": "Failed to fetch VDS nodes",

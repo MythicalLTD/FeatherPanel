@@ -26,6 +26,7 @@ import { cn, isEnabled } from '@/lib/utils';
 import type { PluginSidebarItem } from '@/types/navigation';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
+import { isCloudflareChallengeDocument, withCacheBuster } from '@/lib/cloudflare-challenge';
 
 interface PluginPageProps {
     context: 'admin' | 'client' | 'server' | 'vds';
@@ -39,6 +40,8 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
     const pathname = usePathname();
     const router = useRouter();
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const challengeRetryCountRef = useRef(0);
+    const challengeRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const pluginData = usePluginRoutes();
 
@@ -50,6 +53,25 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
     const [error, setError] = useState<string | null>(null);
     const [iframeError, setIframeError] = useState<string | null>(null);
     const [iframeSrc, setIframeSrc] = useState<string | null>(null);
+
+    const MAX_CHALLENGE_RETRIES = 4;
+
+    useEffect(() => {
+        challengeRetryCountRef.current = 0;
+        if (challengeRetryTimerRef.current) {
+            clearTimeout(challengeRetryTimerRef.current);
+            challengeRetryTimerRef.current = null;
+        }
+    }, [iframeSrc]);
+
+    useEffect(() => {
+        return () => {
+            if (challengeRetryTimerRef.current) {
+                clearTimeout(challengeRetryTimerRef.current);
+                challengeRetryTimerRef.current = null;
+            }
+        };
+    }, []);
 
     useEffect(() => {
         const processPluginData = () => {
@@ -204,6 +226,34 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
     };
 
     const onIframeLoad = () => {
+        if (iframeRef.current) {
+            try {
+                const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
+                if (isCloudflareChallengeDocument(iframeDoc)) {
+                    if (challengeRetryCountRef.current < MAX_CHALLENGE_RETRIES) {
+                        challengeRetryCountRef.current += 1;
+                        setIframeLoading(true);
+
+                        const retryDelayMs = 800 * challengeRetryCountRef.current;
+                        const retryTarget = iframeRef.current.src || iframeSrc || '';
+                        challengeRetryTimerRef.current = setTimeout(() => {
+                            if (iframeRef.current && retryTarget) {
+                                iframeRef.current.src = withCacheBuster(retryTarget);
+                            }
+                        }, retryDelayMs);
+                        return;
+                    }
+
+                    setIframeError('Cloudflare verification is still in progress. Please wait a moment and try again.');
+                    setIframeLoading(false);
+                    return;
+                }
+            } catch {
+                // Ignore cross-origin access errors and treat as normal content.
+            }
+        }
+
+        challengeRetryCountRef.current = 0;
         setIframeError(null);
         setIframeLoading(false);
         setTimeout(injectScrollbarStyles, 100);
@@ -215,12 +265,13 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
     };
 
     const retryLoad = () => {
+        challengeRetryCountRef.current = 0;
         setIframeError(null);
         setIframeLoading(true);
         if (iframeRef.current && iframeSrc) {
             iframeRef.current.src = '';
             setTimeout(() => {
-                if (iframeRef.current) iframeRef.current.src = iframeSrc;
+                if (iframeRef.current) iframeRef.current.src = withCacheBuster(iframeSrc);
             }, 100);
         }
     };

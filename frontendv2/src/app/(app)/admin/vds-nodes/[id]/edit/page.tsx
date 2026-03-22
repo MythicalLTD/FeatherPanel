@@ -25,7 +25,23 @@ import { Input } from '@/components/featherui/Input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Server, ArrowLeft, Save, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import {
+    Server,
+    ArrowLeft,
+    Save,
+    RefreshCw,
+    Wifi,
+    WifiOff,
+    Database,
+    Network,
+    Settings,
+    Globe,
+    Layers,
+    Activity,
+    HardDrive,
+    Zap,
+    Shield,
+} from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -34,6 +50,9 @@ import { ConnectionTab } from './ConnectionTab';
 import { AdvancedTab } from './AdvancedTab';
 import { IpPoolTab } from './IpPoolTab';
 import { TemplatesTab } from './TemplatesTab';
+import { StorageConfigurationTab } from './StorageConfigurationTab';
+import { DhcpAgentTab } from './DhcpAgentTab';
+import { FirewallTab } from './FirewallTab';
 import { InfoTab } from './InfoTab';
 
 interface Location {
@@ -265,6 +284,18 @@ export default function EditVdsNodePage() {
             l.description?.toLowerCase().includes(locationSearch.toLowerCase()),
     );
 
+    const tabs = [
+        { value: 'details', label: t('admin.vdsNodes.tabs.details'), icon: Database },
+        { value: 'connection', label: t('admin.vdsNodes.tabs.connection'), icon: Network },
+        { value: 'advanced', label: t('admin.vdsNodes.tabs.advanced'), icon: Settings },
+        { value: 'storage', label: t('admin.vdsNodes.tabs.storage'), icon: HardDrive },
+        { value: 'ip-pool', label: t('admin.vdsNodes.tabs.ip_pool'), icon: Globe },
+        { value: 'templates', label: t('admin.vdsNodes.tabs.templates'), icon: Layers },
+        { value: 'dhcp', label: t('admin.vdsNodes.tabs.dhcp'), icon: Zap },
+        { value: 'firewall', label: t('admin.vdsNodes.tabs.firewall'), icon: Shield },
+        { value: 'info', label: t('admin.vdsNodes.tabs.info'), icon: Activity },
+    ] as const;
+
     if (loadingNode) {
         return (
             <div className='flex items-center justify-center min-h-[60vh]'>
@@ -280,7 +311,7 @@ export default function EditVdsNodePage() {
                 description={t('admin.vdsNodes.edit.description')}
                 icon={Server}
                 actions={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex flex-wrap items-center gap-3'>
                         <Button variant='outline' size='sm' onClick={() => router.push('/admin/vds-nodes')}>
                             <ArrowLeft className='h-4 w-4 mr-2' />
                             {t('common.back')}
@@ -327,73 +358,90 @@ export default function EditVdsNodePage() {
 
             <WidgetRenderer widgets={getWidgets('admin-vds-node-edit', 'top-of-page')} context={{ id }} />
 
-            <Tabs defaultValue='details' className='space-y-6'>
-                <TabsList className='w-full justify-start h-auto p-1 bg-muted/40 rounded-xl flex-wrap gap-1'>
-                    <TabsTrigger value='details' className='rounded-lg px-4 py-2 text-sm'>
-                        {t('admin.vdsNodes.tabs.details')}
-                    </TabsTrigger>
-                    <TabsTrigger value='connection' className='rounded-lg px-4 py-2 text-sm'>
-                        {t('admin.vdsNodes.tabs.connection')}
-                    </TabsTrigger>
-                    <TabsTrigger value='advanced' className='rounded-lg px-4 py-2 text-sm'>
-                        {t('admin.vdsNodes.tabs.advanced')}
-                    </TabsTrigger>
-                    <TabsTrigger value='ip-pool' className='rounded-lg px-4 py-2 text-sm'>
-                        {t('admin.vdsNodes.tabs.ip_pool')}
-                    </TabsTrigger>
-                    <TabsTrigger value='templates' className='rounded-lg px-4 py-2 text-sm'>
-                        {t('admin.vdsNodes.tabs.templates')}
-                    </TabsTrigger>
-                    <TabsTrigger value='info' className='rounded-lg px-4 py-2 text-sm'>
-                        {t('admin.vdsNodes.tabs.info')}
-                    </TabsTrigger>
-                </TabsList>
+            <div className='block'>
+                <Tabs defaultValue='details' orientation='vertical' className='w-full flex flex-col md:flex-row gap-6'>
+                    <aside className='w-full md:w-64 shrink-0 overflow-x-auto md:overflow-visible pb-2 md:pb-0'>
+                        <TabsList className='flex flex-row md:flex-col h-auto w-max md:w-full bg-card/30 border border-border/50 p-2 rounded-2xl gap-2 md:gap-1'>
+                            {tabs.map((tab) => {
+                                const Icon = tab.icon;
 
-                <TabsContent value='details' className='mt-0'>
-                    <DetailsTab
-                        nodeId={id}
-                        form={form}
-                        setForm={setForm}
-                        errors={errors}
-                        selectedLocationName={selectedLocationName}
-                        setLocationModalOpen={setLocationModalOpen}
-                        fetchLocations={fetchLocations}
-                    />
-                </TabsContent>
+                                return (
+                                    <TabsTrigger
+                                        key={tab.value}
+                                        value={tab.value}
+                                        className='w-auto md:w-full justify-start px-4 py-3 h-auto text-sm md:text-base font-normal data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-medium transition-all rounded-xl border border-transparent data-[state=active]:border-primary/10 whitespace-nowrap'
+                                    >
+                                        <Icon className='w-4 h-4 mr-3' />
+                                        {tab.label}
+                                    </TabsTrigger>
+                                );
+                            })}
+                        </TabsList>
+                    </aside>
 
-                <TabsContent value='connection' className='mt-0'>
-                    <ConnectionTab form={form} setForm={setForm} errors={errors} />
-                </TabsContent>
+                    <div className='flex-1 space-y-6 min-w-0'>
+                        <TabsContent value='details' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <DetailsTab
+                                nodeId={id}
+                                form={form}
+                                setForm={setForm}
+                                errors={errors}
+                                selectedLocationName={selectedLocationName}
+                                setLocationModalOpen={setLocationModalOpen}
+                                fetchLocations={fetchLocations}
+                            />
+                        </TabsContent>
 
-                <TabsContent value='advanced' className='mt-0'>
-                    <AdvancedTab
-                        headers={headers}
-                        params={queryParams}
-                        onHeaderChange={(i, f, v) =>
-                            setHeaders((prev) => prev.map((h, idx) => (idx === i ? { ...h, [f]: v } : h)))
-                        }
-                        onAddHeader={() => setHeaders((prev) => [...prev, { key: '', value: '' }])}
-                        onRemoveHeader={(i) => setHeaders((prev) => prev.filter((_, idx) => idx !== i))}
-                        onParamChange={(i, f, v) =>
-                            setQueryParams((prev) => prev.map((p, idx) => (idx === i ? { ...p, [f]: v } : p)))
-                        }
-                        onAddParam={() => setQueryParams((prev) => [...prev, { key: '', value: '' }])}
-                        onRemoveParam={(i) => setQueryParams((prev) => prev.filter((_, idx) => idx !== i))}
-                    />
-                </TabsContent>
+                        <TabsContent
+                            value='connection'
+                            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
+                        >
+                            <ConnectionTab form={form} setForm={setForm} errors={errors} />
+                        </TabsContent>
 
-                <TabsContent value='ip-pool' className='mt-0'>
-                    <IpPoolTab nodeId={id} nodeName={nodeName} />
-                </TabsContent>
+                        <TabsContent value='advanced' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <AdvancedTab
+                                headers={headers}
+                                params={queryParams}
+                                onHeaderChange={(i, f, v) =>
+                                    setHeaders((prev) => prev.map((h, idx) => (idx === i ? { ...h, [f]: v } : h)))
+                                }
+                                onAddHeader={() => setHeaders((prev) => [...prev, { key: '', value: '' }])}
+                                onRemoveHeader={(i) => setHeaders((prev) => prev.filter((_, idx) => idx !== i))}
+                                onParamChange={(i, f, v) =>
+                                    setQueryParams((prev) => prev.map((p, idx) => (idx === i ? { ...p, [f]: v } : p)))
+                                }
+                                onAddParam={() => setQueryParams((prev) => [...prev, { key: '', value: '' }])}
+                                onRemoveParam={(i) => setQueryParams((prev) => prev.filter((_, idx) => idx !== i))}
+                            />
+                        </TabsContent>
 
-                <TabsContent value='templates' className='mt-0'>
-                    <TemplatesTab nodeId={id} nodeName={nodeName} />
-                </TabsContent>
+                        <TabsContent value='storage' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <StorageConfigurationTab nodeId={id} form={form} setForm={setForm} errors={errors} />
+                        </TabsContent>
 
-                <TabsContent value='info' className='mt-0'>
-                    <InfoTab nodeId={id} nodeName={nodeName} />
-                </TabsContent>
-            </Tabs>
+                        <TabsContent value='ip-pool' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <IpPoolTab nodeId={id} nodeName={nodeName} />
+                        </TabsContent>
+
+                        <TabsContent value='dhcp' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <DhcpAgentTab />
+                        </TabsContent>
+
+                        <TabsContent value='firewall' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <FirewallTab />
+                        </TabsContent>
+
+                        <TabsContent value='templates' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <TemplatesTab nodeId={id} nodeName={nodeName} />
+                        </TabsContent>
+
+                        <TabsContent value='info' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <InfoTab nodeId={id} nodeName={nodeName} />
+                        </TabsContent>
+                    </div>
+                </Tabs>
+            </div>
 
             <WidgetRenderer widgets={getWidgets('admin-vds-node-edit', 'bottom-of-page')} context={{ id }} />
 

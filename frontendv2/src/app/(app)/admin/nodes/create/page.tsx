@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import { Server, ArrowLeft, Save, Search as SearchIcon, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { AffiliatesShowcase } from '@/components/admin/AffiliatesShowcase';
 
 interface Location {
     id: number;
@@ -223,6 +224,7 @@ export default function CreateNodePage() {
             />
 
             <WidgetRenderer widgets={getWidgets('admin-nodes-create', 'after-header')} />
+            <AffiliatesShowcase endpoint='/api/admin/nodes/affiliates' />
 
             <form onSubmit={handleSubmit} className='space-y-8 mt-8'>
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>

@@ -75,7 +75,7 @@ interface Pagination {
 }
 
 /** Set to false to allow selecting VPS and Web hosting (Proxmox / FeatherFly). */
-const GAME_HOSTING_ONLY = false;
+const NO_WEBHOSTING = true;
 
 const LOCATION_TYPES: {
     value: LocationType;
@@ -102,7 +102,7 @@ const LOCATION_TYPES: {
         selectedBorderClass: 'border-blue-500/60',
         selectedBgClass: 'bg-blue-500/10',
         badgeClass: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-        comingSoon: GAME_HOSTING_ONLY,
+        comingSoon: false,
     },
     {
         value: 'web',
@@ -111,7 +111,7 @@ const LOCATION_TYPES: {
         selectedBorderClass: 'border-violet-500/60',
         selectedBgClass: 'bg-violet-500/10',
         badgeClass: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
-        comingSoon: GAME_HOSTING_ONLY,
+        comingSoon: NO_WEBHOSTING,
     },
 ];
 

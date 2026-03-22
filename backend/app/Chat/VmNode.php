@@ -431,6 +431,20 @@ class VmNode
         return (int) $stmt->fetchColumn();
     }
 
+    public static function getByLocationId(int $locationId): array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE location_id = :location_id ORDER BY name ASC');
+        $stmt->execute(['location_id' => $locationId]);
+
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            $row = self::decryptSensitiveFields($row);
+        }
+
+        return $rows;
+    }
+
     /**
      * Sanitize data for logging by excluding sensitive fields.
      *
