@@ -6251,7 +6251,7 @@
 					"title": "Update Plugin",
 					"available": "Update Available",
 					"version_info": "Update from {current} to {latest}",
-					"backup_warning": "It's recommended to backup your plugin configuration and data before updating. The update will replace the current plugin files."
+					"backup_warning": "Updating can wipe custom translations, installed plugins, and custom modifications. Add-ons purchased from the official store can be bulk reinstalled after the update. If you developed custom add-ons yourself, back them up before continuing."
 				},
 				"reinstall": {
 					"title": "Select Plugins to Reinstall",

@@ -3352,6 +3352,9 @@ ask_backup_before_update() {
 	echo -e "${BOLD}${CYAN}Update Safety${NC}"
 	draw_hr
 	echo -e "${BLUE}You're about to update FeatherPanel to a new version.${NC}"
+	echo -e "${RED}${BOLD}Important:${NC} ${YELLOW}Plugins, themes, custom modifications, and 3rd-party modifications may be removed during update.${NC}"
+	echo -e "${YELLOW}If you modified FeatherPanel code, create a backup before continuing.${NC}"
+	echo -e "${YELLOW}If you have custom addons, export them before the update.${NC}"
 	echo ""
 	echo -e "${YELLOW}Would you like to create a backup first?${NC}"
 	echo -e "${BLUE}This is recommended for safety before any update.${NC}"
