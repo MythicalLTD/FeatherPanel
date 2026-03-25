@@ -74,7 +74,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
         let backendLangTranslations: Record<string, unknown> = {};
 
         try {
-            const frontendResponse = await fetch(`/locales/${PRIMARY_LOCALE}.json`);
+            const frontendResponse = await fetch(`/locales/${lang}.json`);
             if (frontendResponse.ok) {
                 frontendTranslations = await frontendResponse.json();
             }
