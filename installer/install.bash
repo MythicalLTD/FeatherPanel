@@ -104,6 +104,7 @@ LOG_DIR=/var/www/featherpanel
 LOG_FILE=$LOG_DIR/install.log
 BACKUP_DIR="/var/www/featherpanel/backups"
 CONFIG_FILE="/var/www/featherpanel/.featherpanel.conf"
+COMPOSE_FILE_PATH="$LOG_DIR/docker-compose.yml"
 
 # Colors (use real ANSI escapes)
 NC=$'\033[0m'
@@ -5489,8 +5490,7 @@ if [ -f /etc/os-release ]; then
             # Check Docker logs for common errors
 			log_info "Checking Docker container logs..."
 			if command -v docker >/dev/null 2>&1; then
-				cd /var/www/featherpanel || true
-				CONTAINER_LOGS=$(docker compose logs --tail=50 2>&1 || docker-compose logs --tail=50 2>&1 || echo "")
+				CONTAINER_LOGS=$(docker compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || docker-compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || echo "")
 
 				if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
 					echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
@@ -5533,17 +5533,17 @@ if [ -f /etc/os-release ]; then
 
 		# Verify containers are actually running
 		sleep 2
-		if ! docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
+		if ! docker compose -f "$COMPOSE_FILE_PATH" ps | grep -q "Up"; then
 			log_error "Containers started but are not running"
 			echo ""
 			draw_hr
 			echo -e "${RED}${BOLD}Container Status Check Failed${NC}"
 			draw_hr
 			log_info "Container status:"
-			docker compose -f /var/www/featherpanel/docker-compose.yml ps
+			docker compose -f "$COMPOSE_FILE_PATH" ps
 			echo ""
 			log_info "Recent container logs:"
-			docker compose -f /var/www/featherpanel/docker-compose.yml logs --tail=30
+			docker compose -f "$COMPOSE_FILE_PATH" logs --tail 30
 			echo ""
 			draw_hr
 
@@ -5747,8 +5747,7 @@ if [ -f /etc/os-release ]; then
 
 						# Check Docker logs for common errors
 						log_info "Checking Docker container logs..."
-						cd /var/www/featherpanel || true
-						CONTAINER_LOGS=$(docker compose logs --tail=50 2>&1 || docker-compose logs --tail=50 2>&1 || echo "")
+						CONTAINER_LOGS=$(docker compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || docker-compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || echo "")
 
 						if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
 							echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
@@ -5770,10 +5769,10 @@ if [ -f /etc/os-release ]; then
 					else
 						# Verify containers are actually running
 						sleep 2
-						if ! docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
+						if ! docker compose -f "$COMPOSE_FILE_PATH" ps | grep -q "Up"; then
 							log_error "Containers started but are not running"
 							log_info "Container status:"
-							docker compose -f /var/www/featherpanel/docker-compose.yml ps
+							docker compose -f "$COMPOSE_FILE_PATH" ps
 							log_warn "Panel containers failed to start. Check Docker logs for details."
 						fi
 					fi
@@ -6127,8 +6126,7 @@ if [ -f /etc/os-release ]; then
 
 			# Check Docker logs for common errors
 			log_info "Checking Docker container logs..."
-			cd /var/www/featherpanel || true
-			CONTAINER_LOGS=$(docker compose logs --tail=50 2>&1 || docker-compose logs --tail=50 2>&1 || echo "")
+			CONTAINER_LOGS=$(docker compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || docker-compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || echo "")
 
 			if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
 				echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
@@ -6164,17 +6162,17 @@ if [ -f /etc/os-release ]; then
 
 		# Verify containers are actually running
 		sleep 2
-		if ! docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
+		if ! docker compose -f "$COMPOSE_FILE_PATH" ps | grep -q "Up"; then
 			log_error "Containers started but are not running"
 			echo ""
 			draw_hr
 			echo -e "${RED}${BOLD}Container Status Check Failed${NC}"
 			draw_hr
 			log_info "Container status:"
-			docker compose -f /var/www/featherpanel/docker-compose.yml ps
+			docker compose -f "$COMPOSE_FILE_PATH" ps
 			echo ""
 			log_info "Recent container logs:"
-			docker compose -f /var/www/featherpanel/docker-compose.yml logs --tail=30
+			docker compose -f "$COMPOSE_FILE_PATH" logs --tail 30
 			echo ""
 			draw_hr
 			upload_logs_on_fail

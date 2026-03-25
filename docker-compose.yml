@@ -38,6 +38,9 @@ services:
       - redis_data:/data
     networks:
       - featherpanel_network
+    depends_on:
+      mysql:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       timeout: 20s
