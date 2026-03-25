@@ -368,6 +368,64 @@ apply_panel_port_to_compose() {
 	log_info "Applied panel port mapping: ${panel_port}:80 (effective env: FEATHERPANEL_PANEL_PORT=${FEATHERPANEL_PANEL_PORT})"
 }
 
+get_compose_file_path() {
+	local configured_path="${COMPOSE_FILE_PATH:-/var/www/featherpanel/docker-compose.yml}"
+
+	if [ -f "$configured_path" ]; then
+		echo "$configured_path"
+		return 0
+	fi
+
+	if [ -f "./docker-compose.yml" ]; then
+		echo "./docker-compose.yml"
+		return 0
+	fi
+
+	if [ -f "/var/www/featherpanel/docker-compose.yml" ]; then
+		echo "/var/www/featherpanel/docker-compose.yml"
+		return 0
+	fi
+
+	echo "$configured_path"
+}
+
+compose_logs() {
+	local lines="${1:-50}"
+	local compose_file
+	compose_file="$(get_compose_file_path)"
+
+	if docker compose version >/dev/null 2>&1; then
+		docker compose -f "$compose_file" logs --tail "$lines"
+		return $?
+	fi
+
+	if command -v docker-compose >/dev/null 2>&1 && docker-compose version >/dev/null 2>&1; then
+		docker-compose -f "$compose_file" logs --tail "$lines"
+		return $?
+	fi
+
+	echo "Docker Compose is not available. Install docker-compose-plugin (recommended) or docker-compose."
+	return 1
+}
+
+compose_ps() {
+	local compose_file
+	compose_file="$(get_compose_file_path)"
+
+	if docker compose version >/dev/null 2>&1; then
+		docker compose -f "$compose_file" ps
+		return $?
+	fi
+
+	if command -v docker-compose >/dev/null 2>&1 && docker-compose version >/dev/null 2>&1; then
+		docker-compose -f "$compose_file" ps
+		return $?
+	fi
+
+	echo "Docker Compose is not available. Install docker-compose-plugin (recommended) or docker-compose."
+	return 1
+}
+
 # Save configuration to file
 save_config() {
 	tee "$CONFIG_FILE" >/dev/null <<EOF
@@ -840,7 +898,7 @@ print_banner() {
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 
-	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.3${NC}"
+	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.4${NC}"
 
 	echo -e "${CYAN}${BOLD}┌────────────────────────────────────────────────────────────┐${NC}"
 	echo -e "${CYAN}${BOLD}${NC}  🌐 Website:  ${BLUE}www.mythical.systems${NC}           ${CYAN}${BOLD}${NC}"
@@ -5490,7 +5548,7 @@ if [ -f /etc/os-release ]; then
             # Check Docker logs for common errors
 			log_info "Checking Docker container logs..."
 			if command -v docker >/dev/null 2>&1; then
-				CONTAINER_LOGS=$(docker compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || docker-compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || echo "")
+				CONTAINER_LOGS=$(compose_logs 50 2>&1 || echo "")
 
 				if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
 					echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
@@ -5533,17 +5591,17 @@ if [ -f /etc/os-release ]; then
 
 		# Verify containers are actually running
 		sleep 2
-		if ! docker compose -f "$COMPOSE_FILE_PATH" ps | grep -q "Up"; then
+		if ! compose_ps | grep -q "Up"; then
 			log_error "Containers started but are not running"
 			echo ""
 			draw_hr
 			echo -e "${RED}${BOLD}Container Status Check Failed${NC}"
 			draw_hr
 			log_info "Container status:"
-			docker compose -f "$COMPOSE_FILE_PATH" ps
+			compose_ps
 			echo ""
 			log_info "Recent container logs:"
-			docker compose -f "$COMPOSE_FILE_PATH" logs --tail 30
+			compose_logs 30
 			echo ""
 			draw_hr
 
@@ -5747,7 +5805,7 @@ if [ -f /etc/os-release ]; then
 
 						# Check Docker logs for common errors
 						log_info "Checking Docker container logs..."
-						CONTAINER_LOGS=$(docker compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || docker-compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || echo "")
+						CONTAINER_LOGS=$(compose_logs 50 2>&1 || echo "")
 
 						if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
 							echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
@@ -5769,10 +5827,10 @@ if [ -f /etc/os-release ]; then
 					else
 						# Verify containers are actually running
 						sleep 2
-						if ! docker compose -f "$COMPOSE_FILE_PATH" ps | grep -q "Up"; then
+						if ! compose_ps | grep -q "Up"; then
 							log_error "Containers started but are not running"
 							log_info "Container status:"
-							docker compose -f "$COMPOSE_FILE_PATH" ps
+							compose_ps
 							log_warn "Panel containers failed to start. Check Docker logs for details."
 						fi
 					fi
@@ -6126,7 +6184,7 @@ if [ -f /etc/os-release ]; then
 
 			# Check Docker logs for common errors
 			log_info "Checking Docker container logs..."
-			CONTAINER_LOGS=$(docker compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || docker-compose -f "$COMPOSE_FILE_PATH" logs --tail 50 2>&1 || echo "")
+			CONTAINER_LOGS=$(compose_logs 50 2>&1 || echo "")
 
 			if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
 				echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
@@ -6162,17 +6220,17 @@ if [ -f /etc/os-release ]; then
 
 		# Verify containers are actually running
 		sleep 2
-		if ! docker compose -f "$COMPOSE_FILE_PATH" ps | grep -q "Up"; then
+		if ! compose_ps | grep -q "Up"; then
 			log_error "Containers started but are not running"
 			echo ""
 			draw_hr
 			echo -e "${RED}${BOLD}Container Status Check Failed${NC}"
 			draw_hr
 			log_info "Container status:"
-			docker compose -f "$COMPOSE_FILE_PATH" ps
+			compose_ps
 			echo ""
 			log_info "Recent container logs:"
-			docker compose -f "$COMPOSE_FILE_PATH" logs --tail 30
+			compose_logs 30
 			echo ""
 			draw_hr
 			upload_logs_on_fail
