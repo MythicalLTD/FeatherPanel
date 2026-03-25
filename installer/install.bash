@@ -898,7 +898,7 @@ print_banner() {
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 
-	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.4${NC}"
+	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.5${NC}"
 
 	echo -e "${CYAN}${BOLD}┌────────────────────────────────────────────────────────────┐${NC}"
 	echo -e "${CYAN}${BOLD}${NC}  🌐 Website:  ${BLUE}www.mythical.systems${NC}           ${CYAN}${BOLD}${NC}"
@@ -914,11 +914,18 @@ draw_hr() {
 
 # Helper: detect public IPv4 and IPv6 for DNS setup (forces correct protocol, trims output)
 detect_public_ips() {
-	PUBLIC_IPV4=$(curl -4 -s --max-time 10 ifconfig.me 2>/dev/null || curl -4 -s --max-time 10 ipinfo.io/ip 2>/dev/null || true | tr -d '\r\n' | xargs || true)
-	PUBLIC_IPV6=$(curl -6 -s --max-time 10 ifconfig.co 2>/dev/null | tr -d '\r\n' | xargs || true)
+	PUBLIC_IPV4=$(
+		{ curl -4 -s --max-time 10 ifconfig.me 2>/dev/null || curl -4 -s --max-time 10 ipinfo.io/ip 2>/dev/null; } |
+		tr -d '[:space:]' || true
+	)
+	PUBLIC_IPV6=$(
+		curl -6 -s --max-time 10 ifconfig.co 2>/dev/null |
+		tr -d '[:space:]' || true
+	)
 	# Validate: A record must be IPv4 (no colons), AAAA must be IPv6 (has colons)
-	[[ -n "$PUBLIC_IPV4" && "$PUBLIC_IPV4" == *:* ]] && PUBLIC_IPV4=""
-	[[ -n "$PUBLIC_IPV6" && "$PUBLIC_IPV6" != *:* ]] && PUBLIC_IPV6=""
+	# Use if-statements to avoid triggering set -e when the condition is false
+	if [[ -n "$PUBLIC_IPV4" && "$PUBLIC_IPV4" == *:* ]]; then PUBLIC_IPV4=""; fi
+	if [[ -n "$PUBLIC_IPV6" && "$PUBLIC_IPV6" != *:* ]]; then PUBLIC_IPV6=""; fi
 }
 
 # Helper: show DNS setup instructions (domain in $1, e.g. $domain or $panel_domain)
