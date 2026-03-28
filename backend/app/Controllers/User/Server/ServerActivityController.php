@@ -17,12 +17,14 @@
 
 namespace App\Controllers\User\Server;
 
+use App\App;
 use App\Chat\User;
 use App\Chat\Server;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use App\Helpers\ServerGateway;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -165,6 +167,18 @@ class ServerActivityController
             search: $search,
             serverId: $serverId,
         );
+
+        // Mask IPs if the setting is enabled
+        $app = App::getInstance(true);
+        $hideIps = $app->getConfig()->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false') === 'true';
+        if ($hideIps && isset($result['data'])) {
+            foreach ($result['data'] as &$activity) {
+                if (!empty($activity['ip'])) {
+                    $activity['ip'] = '***.***.***.***';
+                }
+            }
+            unset($activity);
+        }
 
         return ApiResponse::success([
             'activities' => $result,

@@ -787,13 +787,21 @@ class SessionController
 
         // Process activities to format them properly
         $formattedActivities = [];
+        $hideIps = $app->getConfig()->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false') === 'true';
         foreach ($activities as $activity) {
+            if ($app->isDemoMode()) {
+                $ipAddress = $app->getIPIntoFBIFormat();
+            } elseif ($hideIps) {
+                $ipAddress = '***.***.***.***';
+            } else {
+                $ipAddress = $activity['ip_address'] ?? null;
+            }
             $activityData = [
                 'id' => (int) $activity['id'],
                 'user_uuid' => $activity['user_uuid'] ?? '',
                 'name' => $activity['name'] ?? '',
                 'context' => $activity['context'] ?? null,
-                'ip_address' => $app->isDemoMode() ? $app->getIPIntoFBIFormat() : $activity['ip_address'] ?? null,
+                'ip_address' => $ipAddress,
                 'created_at' => $activity['created_at'] ?? '',
                 'updated_at' => $activity['updated_at'] ?? '',
             ];
