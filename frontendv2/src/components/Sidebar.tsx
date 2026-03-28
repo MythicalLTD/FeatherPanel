@@ -425,7 +425,13 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
     const router = useRouter();
     const { settings } = useSettings();
     const { navigationItems } = useNavigation();
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(() => {
+        try {
+            return localStorage.getItem('featherpanel_sidebar_collapsed') === 'true';
+        } catch {
+            return false;
+        }
+    });
 
     const groupedItems = useMemo(() => {
         return navigationItems.reduce(
@@ -440,7 +446,16 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
     }, [navigationItems]);
 
     useEffect(() => {
-        const handleToggle = () => setCollapsed((prev) => !prev);
+        const handleToggle = () =>
+            setCollapsed((prev) => {
+                const next = !prev;
+                try {
+                    localStorage.setItem('featherpanel_sidebar_collapsed', String(next));
+                } catch {
+                    // ignore
+                }
+                return next;
+            });
         window.addEventListener('toggle-sidebar', handleToggle);
         return () => window.removeEventListener('toggle-sidebar', handleToggle);
     }, []);
