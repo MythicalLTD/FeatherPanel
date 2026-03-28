@@ -420,17 +420,22 @@ function SidebarContent({
     );
 }
 
+const SIDEBAR_COLLAPSED_KEY = 'featherpanel_sidebar_collapsed';
+
 export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { settings } = useSettings();
     const { navigationItems } = useNavigation();
     const [collapsed, setCollapsed] = useState(() => {
-        try {
-            return localStorage.getItem('featherpanel_sidebar_collapsed') === 'true';
-        } catch {
-            return false;
+        if (typeof window !== 'undefined') {
+            try {
+                return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+            } catch {
+                return false;
+            }
         }
+        return false;
     });
 
     const groupedItems = useMemo(() => {
@@ -446,16 +451,15 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
     }, [navigationItems]);
 
     useEffect(() => {
-        const handleToggle = () =>
-            setCollapsed((prev) => {
-                const next = !prev;
-                try {
-                    localStorage.setItem('featherpanel_sidebar_collapsed', String(next));
-                } catch {
-                    // ignore
-                }
-                return next;
-            });
+        try {
+            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+        } catch {
+            // ignore
+        }
+    }, [collapsed]);
+
+    useEffect(() => {
+        const handleToggle = () => setCollapsed((prev) => !prev);
         window.addEventListener('toggle-sidebar', handleToggle);
         return () => window.removeEventListener('toggle-sidebar', handleToggle);
     }, []);
