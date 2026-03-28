@@ -84,7 +84,10 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const { t } = useTranslation();
         const [commandInput, setCommandInput] = useState('');
         const [showScrollButton, setShowScrollButton] = useState(false);
-        const [autoScroll, setAutoScroll] = useState(true);
+        const [autoScroll, setAutoScroll] = useState(() => {
+            const saved = localStorage.getItem('featherpanel_terminal_autoscroll');
+            return saved !== null ? saved === 'true' : true;
+        });
         const [commandHistory, setCommandHistory] = useState<string[]>([]);
         const [historyIndex, setHistoryIndex] = useState(-1);
         const [showSettings, setShowSettings] = useState(false);
@@ -100,6 +103,10 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 }
             }
         }, []);
+
+        useEffect(() => {
+            localStorage.setItem('featherpanel_terminal_autoscroll', String(autoScroll));
+        }, [autoScroll]);
 
         const saveToHistory = (cmd: string) => {
             const newHistory = [cmd, ...commandHistory.filter((c) => c !== cmd)].slice(0, 50);
