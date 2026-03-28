@@ -420,12 +420,23 @@ function SidebarContent({
     );
 }
 
+const SIDEBAR_COLLAPSED_KEY = 'featherpanel_sidebar_collapsed';
+
 export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { settings } = useSettings();
     const { navigationItems } = useNavigation();
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+            } catch {
+                return false;
+            }
+        }
+        return false;
+    });
 
     const groupedItems = useMemo(() => {
         return navigationItems.reduce(
@@ -438,6 +449,14 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
             {} as Record<string, NavigationItem[]>,
         );
     }, [navigationItems]);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+        } catch {
+            // ignore
+        }
+    }, [collapsed]);
 
     useEffect(() => {
         const handleToggle = () => setCollapsed((prev) => !prev);
