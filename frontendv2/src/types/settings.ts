@@ -30,6 +30,7 @@ export interface AppSettings {
     server_allow_user_made_fastdl: string;
     server_allow_user_made_subdomains: string;
     server_allow_user_server_deletion: string;
+    server_hide_ips: string;
     smtp_enabled: string;
     status_page_enabled: string;
     status_page_public_enabled: string;

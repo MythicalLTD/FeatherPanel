@@ -154,6 +154,7 @@ interface ConfigInterface
     public const SERVER_ALLOW_USER_MADE_IMPORT = 'server_allow_user_made_import';
     public const SERVER_ALLOW_USER_MADE_FASTDL = 'server_allow_user_made_fastdl';
     public const SERVER_ALLOW_USER_MADE_SUBDOMAINS = 'server_allow_user_made_subdomains';
+    public const SERVER_HIDE_IPS = 'server_hide_ips';
 
     /**
      * User Related Configs.
