@@ -32,9 +32,9 @@
 use App\Cli\App;
 
 if (!empty($_SERVER['DOCUMENT_ROOT'])) {
-    define('APP_PUBLIC', $_SERVER['DOCUMENT_ROOT'] . '/backend');
+	define('APP_PUBLIC', $_SERVER['DOCUMENT_ROOT'] . '/backend');
 } else {
-    define('APP_PUBLIC', __DIR__ . '/backend');
+	define('APP_PUBLIC', __DIR__ . '/backend');
 }
 
 define('APP_STORAGE_DIR', APP_PUBLIC . '/storage/');
@@ -48,7 +48,7 @@ define('APP_ADDONS_DIR', APP_STORAGE_DIR . 'addons');
 define('APP_SOURCECODE_DIR', APP_DIR . 'app');
 define('APP_ROUTES_DIR', APP_SOURCECODE_DIR . '/Api');
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
-define('APP_VERSION', 'v1.3.2');
+define('APP_VERSION', 'v1.3.3');
 define('APP_UPSTREAM', 'stable');
 define('TELEMETRY', true);
 define('IS_CLI', true);
@@ -57,8 +57,8 @@ define('REQUEST_ID', uniqid());
 require_once APP_DIR . '/boot/kernel.php';
 
 try {
-    $args = array_slice($argv, 1); // Exclude the command name and the first argument
-    new App($argv[1] ?? '', $args);
+	$args = array_slice($argv, 1); // Exclude the command name and the first argument
+	new App($argv[1] ?? '', $args);
 } catch (Exception $e) {
-    echo $e->getMessage();
+	echo $e->getMessage();
 }

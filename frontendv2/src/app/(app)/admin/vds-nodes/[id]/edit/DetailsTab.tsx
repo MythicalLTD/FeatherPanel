@@ -33,7 +33,6 @@ interface DetailsTabProps {
 }
 
 export function DetailsTab({
-    nodeId: _nodeId,
     form,
     setForm,
     errors,

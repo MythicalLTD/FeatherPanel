@@ -32,9 +32,9 @@
 use App\Cli\App;
 
 if (!empty($_SERVER['DOCUMENT_ROOT'])) {
-    define('APP_PUBLIC', $_SERVER['DOCUMENT_ROOT']);
+	define('APP_PUBLIC', $_SERVER['DOCUMENT_ROOT']);
 } else {
-    define('APP_PUBLIC', __DIR__);
+	define('APP_PUBLIC', __DIR__);
 }
 
 define('ENV_PATH', APP_PUBLIC . '/storage/');
@@ -42,7 +42,7 @@ define('APP_START', microtime(true));
 define('APP_DIR', APP_PUBLIC . '/');
 define('APP_CRON_DIR', APP_PUBLIC . '/storage/cron/');
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
-define('APP_VERSION', 'v1.3.2');
+define('APP_VERSION', 'v1.3.3');
 define('APP_UPSTREAM', 'stable');
 define('REQUEST_ID', uniqid());
 define('TELEMETRY', true);
@@ -51,8 +51,8 @@ define('IS_CLI', true);
 require_once APP_DIR . '/boot/kernel.php';
 try {
 
-    $args = array_slice($argv, 1); // Exclude the command name and the first argument
-    new App($argv[1] ?? '', $args);
+	$args = array_slice($argv, 1); // Exclude the command name and the first argument
+	new App($argv[1] ?? '', $args);
 } catch (Exception $e) {
-    echo $e->getMessage();
+	echo $e->getMessage();
 }

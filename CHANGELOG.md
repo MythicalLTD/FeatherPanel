@@ -1,6 +1,22 @@
 # Changelog
 
-## v1.3.2 STABLE
+## v1.3.3 STABLE
+
+### Added
+
+- Added a new admin setting to hide IP addresses across server activity logs and account activity views, masking them as `***.***.***.***` for improved privacy. by @nayskutzu
+
+### Fixed
+
+- Fixed an issue where the selected frontend locale file was not loaded first for translations, causing incorrect fallback behavior and less reliable localization. by @nayskutzu
+- Fixed an issue where the sidebar collapsed state would reset after refreshes, ensuring your preferred layout now persists correctly. by @nayskutzu
+- Fixed an issue where the server terminal auto-scroll preference was not remembered between sessions, preserving the chosen behavior more reliably. by @nayskutzu
+
+### Improved
+
+- Improved privacy handling so IP masking is now applied consistently across server activity and user activity responses when the setting is enabled. by @nayskutzu
+
+## v1.3.3 STABLE
 
 ### Fixed
 

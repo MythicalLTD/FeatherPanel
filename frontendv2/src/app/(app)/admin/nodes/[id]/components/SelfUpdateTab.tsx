@@ -17,7 +17,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
-import { RefreshCw, ArrowUpCircle, Shield, Info, Github, Globe, Settings2, Terminal } from 'lucide-react';
+import { RefreshCw, ArrowUpCircle, Shield, Info, GitBranch, Globe, Settings2, Terminal } from 'lucide-react';
 import axios from 'axios';
 import { SystemInfoResponse, VersionStatus } from '../types';
 import { toast } from 'sonner';
@@ -173,7 +173,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                                             : 'bg-muted text-muted-foreground group-hover:scale-105'
                                     }`}
                                 >
-                                    <Github className='h-5 w-5' />
+                                    <GitBranch className='h-5 w-5' />
                                 </div>
                                 <div className='flex-1'>
                                     <h4 className='font-bold text-sm'>

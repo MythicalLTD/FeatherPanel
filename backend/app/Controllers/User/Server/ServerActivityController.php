@@ -24,8 +24,8 @@ use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Config\ConfigInterface;
 use App\Helpers\ServerGateway;
+use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
