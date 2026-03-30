@@ -19,6 +19,8 @@
 
 - Improved privacy handling so IP masking is now applied consistently across server activity and user activity responses when the setting is enabled. by @nayskutzu
 - Enhance server activity page with IP address blurring and dropdown filter integration; update locale strings for better user experience by @nayskutzu
+- Enhanced widget rendering framework for plugins, enabling seamless integration of interactive widgets for user actions. by @nayskutzu
+- Improved Wings error handling for more accurate responses and clearer error messages. by @nayskutzu
 
 ## v1.3.3 STABLE
 
