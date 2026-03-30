@@ -59,6 +59,84 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
         return `${baseUrl}?${params.toString()}`;
     };
 
+    const applyIframeTheme = (iframe: HTMLIFrameElement) => {
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (!iframeDoc) return;
+
+            const iframeRoot = iframeDoc.documentElement;
+            const iframeBody = iframeDoc.body;
+            const parentRoot = document.documentElement;
+
+            // Keep iframe background transparent so card/background styling from host remains visible.
+            if (iframeRoot) {
+                iframeRoot.style.background = 'transparent';
+                iframeRoot.style.colorScheme = parentRoot.classList.contains('dark') ? 'dark' : 'light';
+            }
+
+            if (iframeBody) {
+                iframeBody.style.background = 'transparent';
+                iframeBody.style.margin = '0';
+            }
+
+            // Sync dark mode class so widgets that rely on .dark selectors render correctly.
+            if (iframeRoot) {
+                iframeRoot.classList.toggle('dark', parentRoot.classList.contains('dark'));
+            }
+
+            // Mirror host design tokens into iframe root to avoid fallback light variables.
+            if (iframeRoot) {
+                const parentComputed = window.getComputedStyle(parentRoot);
+                const normalizeTokenValue = (tokenName: string, tokenValue: string): string => {
+                    if (tokenName === '--radius') {
+                        return tokenValue;
+                    }
+
+                    // App tokens are often stored as HSL triplets (e.g. "220 15% 8%").
+                    // Widget bundles may expect real CSS color values for var(--token).
+                    const hslTripletPattern = /^\d+(?:\.\d+)?\s+\d+(?:\.\d+)?%\s+\d+(?:\.\d+)?%$/;
+                    if (hslTripletPattern.test(tokenValue)) {
+                        return `hsl(${tokenValue})`;
+                    }
+
+                    return tokenValue;
+                };
+
+                const tokenNames = [
+                    '--background',
+                    '--foreground',
+                    '--card',
+                    '--card-foreground',
+                    '--popover',
+                    '--popover-foreground',
+                    '--primary',
+                    '--primary-foreground',
+                    '--secondary',
+                    '--secondary-foreground',
+                    '--muted',
+                    '--muted-foreground',
+                    '--accent',
+                    '--accent-foreground',
+                    '--destructive',
+                    '--destructive-foreground',
+                    '--border',
+                    '--input',
+                    '--ring',
+                    '--radius',
+                ];
+
+                tokenNames.forEach((tokenName) => {
+                    const tokenValue = parentComputed.getPropertyValue(tokenName).trim();
+                    if (tokenValue) {
+                        iframeRoot.style.setProperty(tokenName, normalizeTokenValue(tokenName, tokenValue));
+                    }
+                });
+            }
+        } catch {
+            // Ignore cross-origin access errors and keep default behavior.
+        }
+    };
+
     const handleIframeLoad = (widgetId: string, iframe: HTMLIFrameElement) => {
         try {
             const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -87,6 +165,8 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
         } catch {
             // Ignore cross-origin access errors and treat as normal content.
         }
+
+        applyIframeTheme(iframe);
 
         setChallengeRetries((prev) => ({ ...prev, [widgetId]: 0 }));
         setLoadingStates((prev) => ({ ...prev, [widgetId]: false }));

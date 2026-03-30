@@ -1016,6 +1016,7 @@
 		"description": "View the audit logs for this server.",
 		"events": "Events",
 		"allEvents": "All Events",
+		"viewDetails": "View details",
 		"searchPlaceholder": "Search activities...",
 		"noActivityPermission": "You do not have permission to view server activities.",
 		"failedToFetch": "Failed to fetch activities",
@@ -1025,6 +1026,9 @@
 		"daysAgo": "{days} days ago",
 		"details": {
 			"description": "Detailed information about this server event.",
+			"eventSummary": "Event summary",
+			"ipAddress": "IP address",
+			"fieldsCount": "{count} fields",
 			"timestamp": "Timestamp",
 			"executingUser": "Executing User",
 			"metadataPayload": "Metadata Payload",
@@ -1032,6 +1036,7 @@
 			"copyPayload": "Copy Payload",
 			"payloadCopied": "Log payload copied",
 			"closeEntry": "Close Entry",
+			"noMetadata": "No additional metadata for this event.",
 			"system": "System"
 		},
 		"noActivitiesFound": "No Activities Found",

@@ -15,12 +15,19 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React, { useState, useEffect, use, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { Dialog, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Activity,
     RefreshCw,
@@ -50,7 +57,7 @@ import {
     Globe,
     Loader2,
     SlidersHorizontal,
-    Check,
+    MoreVertical,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -121,10 +128,33 @@ type ActivityItem = {
     user?: ActivityUser | null;
 };
 
-export default function ServerActivityPage({ params }: { params: Promise<{ uuidShort: string }> }) {
-    const { uuidShort } = use(params);
+function shouldBlurIpMetadata(key: string, value: string): boolean {
+    const k = key.toLowerCase();
+    if (k === 'ip' || k.endsWith('_ip') || k.includes('ip_address')) return true;
+    const v = value.trim();
+    if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(v)) return true;
+    if (v.includes(':') && /^[0-9a-f:]+$/i.test(v.replace(/^\[|\]$/g, ''))) return true;
+    return false;
+}
+
+function BlurredIp({ ip, className }: { ip: string; className?: string }) {
+    return (
+        <span
+            className={cn(
+                'font-mono font-bold italic blur-sm hover:blur-none transition-all duration-200',
+                'text-xs opacity-60',
+                className,
+            )}
+        >
+            {ip}
+        </span>
+    );
+}
+
+export default function ServerActivityPage() {
+    const params = useParams();
+    const uuidShort = params.uuidShort as string;
     const router = useRouter();
-    const pathname = usePathname();
     const { t } = useTranslation();
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
@@ -151,8 +181,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
 
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ActivityItem | null>(null);
-    const [filterDialogOpen, setFilterDialogOpen] = useState(false);
-    const [pendingFilter, setPendingFilter] = useState('all');
 
     const fetchActivities = useCallback(
         async (page = 1) => {
@@ -380,24 +408,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
     const selectedFilterLabel =
         filterOptions.find((o) => o.id === selectedEventFilter)?.name ?? t('serverActivities.allEvents');
 
-    const openFilterDialog = () => {
-        setPendingFilter(selectedEventFilter);
-        setFilterDialogOpen(true);
-    };
-
-    const applyFilter = () => {
-        setSelectedEventFilter(pendingFilter);
-        setFilterDialogOpen(false);
-        setTimeout(() => fetchActivities(1), 0);
-    };
-
-    const clearFilterInDialog = () => {
-        setPendingFilter('all');
-        setSelectedEventFilter('all');
-        setFilterDialogOpen(false);
-        setTimeout(() => fetchActivities(1), 0);
-    };
-
     if (permissionsLoading || (loading && activities.length === 0)) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
@@ -408,7 +418,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
     }
 
     return (
-        <div key={pathname} className='space-y-8 pb-12 '>
+        <div className='space-y-8 pb-12'>
             <PageHeader
                 title={t('serverActivities.title')}
                 description={
@@ -431,48 +441,77 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
 
             <WidgetRenderer widgets={getWidgets('server-activities', 'activity-top')} />
 
-            <div className='flex flex-col md:flex-row gap-4'>
-                <div className='relative flex-1 group'>
-                    <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors' />
-                    <Input
-                        placeholder={t('serverActivities.searchPlaceholder')}
-                        className='pl-12 h-14 text-base'
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-                <div className='w-full md:w-auto flex gap-2'>
-                    <Button
-                        variant='glass'
-                        size='default'
-                        onClick={openFilterDialog}
-                        className='h-14 min-w-[12rem] md:min-w-[14rem] bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-base px-6 hover:bg-[#0A0A0A]/40 transition-colors font-medium flex items-center justify-between gap-3'
-                    >
-                        <SlidersHorizontal className='h-5 w-5 shrink-0 text-muted-foreground' />
-                        <span className='truncate'>{selectedFilterLabel}</span>
-                        {(selectedEventFilter !== 'all' || searchQuery) && (
-                            <span className='shrink-0 w-2 h-2 rounded-full bg-primary' aria-hidden />
+            <div className='space-y-6'>
+                <div className='flex flex-col sm:flex-row sm:items-center gap-4'>
+                    <div className='relative flex-1 group'>
+                        <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors' />
+                        <Input
+                            placeholder={t('serverActivities.searchPlaceholder')}
+                            className='pl-12 h-14 text-base'
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <div className='flex items-center gap-2 shrink-0'>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger className='h-14 min-w-48 md:min-w-56 rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm px-4 flex items-center justify-between gap-3 outline-none hover:bg-accent/50 transition-colors text-left font-medium'>
+                                <SlidersHorizontal className='h-5 w-5 shrink-0 text-muted-foreground' />
+                                <span className='truncate flex-1'>{selectedFilterLabel}</span>
+                                {(selectedEventFilter !== 'all' || searchQuery) && (
+                                    <span className='shrink-0 w-2 h-2 rounded-full bg-primary' aria-hidden />
+                                )}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align='end'
+                                className='w-64 max-h-[min(60vh,400px)] overflow-y-auto bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl'
+                            >
+                                {filterOptions.map((option) => (
+                                    <DropdownMenuItem
+                                        key={option.id}
+                                        onClick={() => setSelectedEventFilter(option.id)}
+                                        className={cn(
+                                            'flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer',
+                                            selectedEventFilter === option.id && 'bg-primary/10 text-primary',
+                                        )}
+                                    >
+                                        <span className='font-bold'>{option.name}</span>
+                                    </DropdownMenuItem>
+                                ))}
+                                {(searchQuery || selectedEventFilter !== 'all') && (
+                                    <>
+                                        <DropdownMenuSeparator className='bg-border/40 my-1' />
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                setSearchQuery('');
+                                                setSelectedEventFilter('all');
+                                            }}
+                                            className='flex items-center gap-3 p-3 rounded-xl cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10'
+                                        >
+                                            <X className='h-4 w-4' />
+                                            <span className='font-bold'>{t('common.clear')}</span>
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        {(searchQuery || selectedEventFilter !== 'all') && (
+                            <Button
+                                variant='glass'
+                                size='icon'
+                                className='h-14 w-14 rounded-xl hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50'
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setSelectedEventFilter('all');
+                                }}
+                            >
+                                <X className='h-6 w-6' />
+                            </Button>
                         )}
-                    </Button>
-                    {(searchQuery || selectedEventFilter !== 'all') && (
-                        <Button
-                            variant='glass'
-                            size='icon'
-                            className='h-14 w-14 rounded-xl hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50'
-                            onClick={() => {
-                                setSearchQuery('');
-                                setSelectedEventFilter('all');
-                                setTimeout(() => fetchActivities(1), 0);
-                            }}
-                        >
-                            <X className='h-6 w-6' />
-                        </Button>
-                    )}
+                    </div>
                 </div>
-            </div>
 
-            {pagination.total_records > pagination.per_page && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                {pagination.total_records > pagination.per_page && (
+                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
                     <Button
                         variant='glass'
                         size='sm'
@@ -497,10 +536,10 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                         <ChevronRight className='h-4 w-4' />
                     </Button>
                 </div>
-            )}
+                )}
 
-            {activities.length === 0 ? (
-                <EmptyState
+                {activities.length === 0 ? (
+                    <EmptyState
                     title={t('serverActivities.noActivitiesFound')}
                     description={
                         searchQuery || selectedEventFilter !== 'all'
@@ -516,7 +555,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                                 onClick={() => {
                                     setSearchQuery('');
                                     setSelectedEventFilter('all');
-                                    setTimeout(() => fetchActivities(1), 0);
                                 }}
                                 className='h-14 px-10 text-lg rounded-xl'
                             >
@@ -524,19 +562,15 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                             </Button>
                         ) : undefined
                     }
-                />
-            ) : (
-                <div className='space-y-4'>
+                    />
+                ) : (
+                    <div className='grid grid-cols-1 gap-4'>
                     {activities.map((activity, index) => {
                         return (
                             <ResourceCard
                                 key={activity.id}
-                                onClick={() => {
-                                    setSelectedItem(activity);
-                                    setDetailsOpen(true);
-                                }}
                                 style={{ animationDelay: `${index * 50}ms` }}
-                                className='cursor-pointer animate-in slide-in-from-bottom-2 duration-500 fill-mode-both'
+                                className='animate-in slide-in-from-bottom-2 duration-500 fill-mode-both'
                                 icon={getEventIcon(activity.event)}
                                 iconWrapperClassName={getEventIconClass(activity.event)}
                                 title={formatEvent(activity.event)}
@@ -566,26 +600,44 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                                             {activity.ip && (
                                                 <div className='flex items-center gap-2 text-muted-foreground'>
                                                     <Globe className='h-4 w-4 opacity-50' />
-                                                    <span className='text-xs font-mono font-bold opacity-60 italic'>
-                                                        {activity.ip}
-                                                    </span>
+                                                    <BlurredIp ip={activity.ip} />
                                                 </div>
                                             )}
                                         </div>
                                     </>
                                 }
                                 actions={
-                                    <div className='h-12 w-12 rounded-xl group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary transition-all flex items-center justify-center'>
-                                        <Eye className='h-6 w-6' />
-                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger
+                                            className='h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center outline-none'
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <MoreVertical className='h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors' />
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                            align='end'
+                                            className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl'
+                                        >
+                                            <DropdownMenuItem
+                                                onClick={() => {
+                                                    setSelectedItem(activity);
+                                                    setDetailsOpen(true);
+                                                }}
+                                                className='flex items-center gap-3 p-3 rounded-xl cursor-pointer'
+                                            >
+                                                <Eye className='h-4 w-4 text-primary' />
+                                                <span className='font-bold'>{t('serverActivities.viewDetails')}</span>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 }
                             />
                         );
                     })}
-                </div>
-            )}
+                    </div>
+                )}
 
-            {pagination.total_records > pagination.per_page && (
+                {pagination.total_records > pagination.per_page && (
                 <div className='flex items-center justify-between py-8 border-t border-border/40 px-6'>
                     <p className='text-sm font-bold opacity-40 uppercase tracking-widest'>
                         {t('serverActivities.pagination.showing', {
@@ -618,150 +670,128 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                         </Button>
                     </div>
                 </div>
-            )}
+                )}
+            </div>
 
             <WidgetRenderer widgets={getWidgets('server-activities', 'activity-bottom')} />
 
-            {/* Filter & view options dialog */}
-            <Dialog open={filterDialogOpen} onClose={() => setFilterDialogOpen(false)} className='max-w-md'>
-                <DialogHeader>
-                    <DialogTitle className='text-xl font-bold'>{t('serverActivities.filterDialog.title')}</DialogTitle>
-                    <DialogDescription className='text-muted-foreground'>
-                        {t('serverActivities.filterDialog.whatToShow')}
-                    </DialogDescription>
-                </DialogHeader>
-                <div className='mt-6 space-y-2 max-h-[min(60vh,400px)] overflow-y-auto pr-1 custom-scrollbar'>
-                    {filterOptions.map((option) => (
-                        <button
-                            key={option.id}
-                            type='button'
-                            onClick={() => setPendingFilter(option.id)}
-                            className={cn(
-                                'w-full flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5 text-left font-medium transition-all',
-                                pendingFilter === option.id
-                                    ? 'bg-primary/15 border-primary/40 text-primary'
-                                    : 'bg-muted/20 border-border/30 text-foreground hover:bg-muted/40 hover:border-border/50',
-                            )}
-                        >
-                            <span>{option.name}</span>
-                            {pendingFilter === option.id && <Check className='h-5 w-5 shrink-0 text-primary' />}
-                        </button>
-                    ))}
-                </div>
-                <DialogFooter className='mt-6 flex flex-wrap gap-2 sm:gap-3'>
-                    <Button variant='glass' size='default' onClick={clearFilterInDialog} className='order-2 sm:order-1'>
-                        {t('common.clear')}
-                    </Button>
-                    <Button
-                        variant='glass'
-                        size='default'
-                        onClick={() => setFilterDialogOpen(false)}
-                        className='order-3'
-                    >
-                        {t('common.cancel')}
-                    </Button>
-                    <Button size='default' onClick={applyFilter} className='order-1 sm:order-3 px-8 font-semibold'>
-                        {t('serverActivities.filterDialog.apply')}
-                    </Button>
-                </DialogFooter>
-            </Dialog>
-
-            <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} className='max-w-[1200px]'>
+            <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} className='max-w-3xl'>
                 {selectedItem && (
-                    <div className='space-y-8 p-2 w-full'>
-                        <DialogHeader>
-                            <div className='flex items-center gap-6'>
-                                <div
-                                    className={cn(
-                                        'h-20 w-20 rounded-4xl flex items-center justify-center border-4 transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0',
-                                        getEventIconClass(selectedItem.event),
-                                    )}
-                                >
-                                    {React.createElement(getEventIcon(selectedItem.event), { className: 'h-10 w-10' })}
+                    <div className='space-y-6 p-2'>
+                        <DialogHeader className='mb-0'>
+                            <div className='flex items-start gap-4'>
+                                <div className='h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0'>
+                                    {React.createElement(getEventIcon(selectedItem.event), {
+                                        className: 'h-6 w-6 text-primary',
+                                    })}
                                 </div>
-                                <div className='space-y-1.5 flex-1'>
-                                    <div className='flex items-center gap-3'>
-                                        <DialogTitle className='text-4xl font-black uppercase tracking-tighter leading-none'>
+                                <div className='min-w-0 flex-1 space-y-1'>
+                                    <div className='flex flex-wrap items-baseline gap-x-2 gap-y-1'>
+                                        <DialogTitle className='text-xl font-bold leading-tight text-foreground'>
                                             {formatEvent(selectedItem.event)}
                                         </DialogTitle>
-                                        <span className='px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-[0.2em] bg-white/10 border border-white/5 opacity-40'>
+                                        <span className='text-xs font-medium tabular-nums text-muted-foreground'>
                                             #{selectedItem.id}
                                         </span>
                                     </div>
-                                    <DialogDescription className='text-xl font-medium opacity-70 leading-relaxed max-w-4xl'>
+                                    <DialogDescription className='text-sm'>
                                         {selectedItem.message || t('serverActivities.details.description')}
                                     </DialogDescription>
                                 </div>
                             </div>
                         </DialogHeader>
 
-                        <div className='grid grid-cols-1 xl:grid-cols-2 gap-8'>
-                            <div className='space-y-6'>
-                                <div className='flex items-center justify-between border-b border-white/5 pb-4'>
-                                    <h3 className='text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3'>
-                                        <div className='w-1.5 h-4 bg-primary rounded-full' />
-                                        {t('serverActivities.details.metadataPayload')}
-                                    </h3>
-                                    <span className='text-[10px] font-black opacity-30 uppercase tracking-widest'>
-                                        {detailsPairs.length} Keys found
-                                    </span>
-                                </div>
-
-                                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                                    <div className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0'>
-                                        <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                        <div className='space-y-4 px-1'>
+                            <div className='rounded-2xl border border-border/50 bg-card/40 p-5 space-y-4'>
+                                <h3 className='text-[10px] font-semibold uppercase tracking-widest text-muted-foreground'>
+                                    {t('serverActivities.details.eventSummary')}
+                                </h3>
+                                <dl className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                                    <div className='space-y-1.5'>
+                                        <dt className='text-[10px] uppercase font-bold text-muted-foreground tracking-widest'>
                                             {t('serverActivities.details.executingUser')}
-                                        </span>
-                                        <div className='flex items-center gap-3'>
-                                            <div className='h-8 w-8 rounded-xl bg-primary/20 flex items-center justify-center font-black text-xs border border-primary/20'>
+                                        </dt>
+                                        <dd className='flex items-center gap-2 text-sm font-semibold'>
+                                            <div className='h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold border border-primary/15 text-primary'>
                                                 {selectedItem.user?.username?.substring(0, 2).toUpperCase() || 'S'}
                                             </div>
-                                            <span className='text-lg font-bold truncate'>
+                                            <span className='truncate'>
                                                 {selectedItem.user?.username || t('serverActivities.details.system')}
                                             </span>
-                                        </div>
+                                        </dd>
                                     </div>
-                                    <div className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0'>
-                                        <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                                    <div className='space-y-1.5'>
+                                        <dt className='text-[10px] uppercase font-bold text-muted-foreground tracking-widest'>
                                             {t('serverActivities.details.timestamp')}
-                                        </span>
-                                        <div className='flex items-center gap-3'>
-                                            <Clock className='h-5 w-5 text-primary opacity-50' />
-                                            <span className='text-lg font-bold'>
+                                        </dt>
+                                        <dd className='flex items-center gap-2 text-sm font-semibold'>
+                                            <Clock className='h-4 w-4 text-muted-foreground shrink-0' />
+                                            <span>
                                                 {selectedItem.timestamp
                                                     ? new Date(selectedItem.timestamp).toLocaleString()
-                                                    : '-'}
+                                                    : '—'}
                                             </span>
-                                        </div>
+                                        </dd>
                                     </div>
-                                    {detailsPairs.map((pair) => (
-                                        <div
-                                            key={pair.key}
-                                            className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all'
-                                        >
-                                            <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest underline decoration-primary/20 decoration-2 underline-offset-4'>
-                                                {pair.key}
-                                            </span>
-                                            <span className='text-base font-mono font-bold break-all leading-tight opacity-90 group-hover:opacity-100'>
-                                                {pair.value}
-                                            </span>
+                                    {selectedItem.ip ? (
+                                        <div className='space-y-1.5 sm:col-span-2'>
+                                            <dt className='text-[10px] uppercase font-bold text-muted-foreground tracking-widest'>
+                                                {t('serverActivities.details.ipAddress')}
+                                            </dt>
+                                            <dd className='flex items-center gap-2 text-sm'>
+                                                <Globe className='h-4 w-4 text-muted-foreground shrink-0' />
+                                                <BlurredIp ip={selectedItem.ip} className='text-sm opacity-90' />
+                                            </dd>
                                         </div>
-                                    ))}
-                                </div>
+                                    ) : null}
+                                </dl>
                             </div>
 
-                            <div className='space-y-6'>
-                                <div className='flex items-center justify-between border-b border-white/5 pb-4'>
-                                    <h3 className='text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3'>
-                                        <div className='w-1.5 h-4 bg-primary rounded-full' />
+                            {detailsPairs.length > 0 ? (
+                                <div className='rounded-2xl border border-border/50 bg-card/40 p-5 space-y-3'>
+                                    <div className='flex items-center justify-between gap-2'>
+                                        <h3 className='text-[10px] font-semibold uppercase tracking-widest text-muted-foreground'>
+                                            {t('serverActivities.details.metadataPayload')}
+                                        </h3>
+                                        <span className='text-[10px] text-muted-foreground tabular-nums'>
+                                            {t('serverActivities.details.fieldsCount', {
+                                                count: String(detailsPairs.length),
+                                            })}
+                                        </span>
+                                    </div>
+                                    <dl className='space-y-4'>
+                                        {detailsPairs.map((pair) => (
+                                            <div key={pair.key} className='space-y-1.5 border-b border-border/30 pb-4 last:border-0 last:pb-0'>
+                                                <dt className='text-[10px] uppercase font-bold text-muted-foreground tracking-widest wrap-break-word'>
+                                                    {pair.key}
+                                                </dt>
+                                                <dd
+                                                    className={cn(
+                                                        'text-sm font-mono break-all text-foreground',
+                                                        shouldBlurIpMetadata(pair.key, pair.value) &&
+                                                            'blur-sm hover:blur-none transition-all duration-200',
+                                                    )}
+                                                >
+                                                    {pair.value}
+                                                </dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                </div>
+                            ) : null}
+
+                            <div className='rounded-2xl border border-border/50 bg-muted/30 p-4 space-y-3'>
+                                <div className='flex items-center justify-between gap-2'>
+                                    <h3 className='text-[10px] font-semibold uppercase tracking-widest text-muted-foreground'>
                                         {t('serverActivities.details.diagnosticOutput')}
                                     </h3>
                                     <Button
+                                        type='button'
                                         variant='glass'
                                         size='sm'
-                                        className='h-8 px-4 font-black uppercase tracking-wider opacity-40 hover:opacity-100 border-white/5'
+                                        className='h-8 rounded-lg font-medium shrink-0'
                                         onClick={() => {
-                                            navigator.clipboard.writeText(rawJson);
+                                            navigator.clipboard.writeText(rawJson || '');
                                             toast.success(t('serverActivities.details.payloadCopied'));
                                         }}
                                     >
@@ -769,21 +799,20 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                                         {t('serverActivities.details.copyPayload')}
                                     </Button>
                                 </div>
-                                <div className='relative group h-full'>
-                                    <pre className='h-full max-h-[600px] bg-black/40 text-emerald-400 p-8 rounded-4xl overflow-x-auto font-mono text-base border border-white/5 custom-scrollbar leading-relaxed backdrop-blur-3xl'>
-                                        {rawJson || '// No additional metadata available'}
-                                    </pre>
-                                </div>
+                                <pre className='max-h-56 overflow-auto rounded-xl border border-border/40 bg-background/80 px-3 py-3 text-xs font-mono leading-relaxed text-muted-foreground custom-scrollbar'>
+                                    {rawJson || t('serverActivities.details.noMetadata')}
+                                </pre>
                             </div>
                         </div>
 
-                        <DialogFooter className='border-t border-white/5 pt-8 mt-4 flex items-center justify-end'>
+                        <DialogFooter className='border-t border-border/40 pt-6 mt-2 px-1'>
                             <Button
-                                size='default'
-                                className='px-12 h-14 rounded-2xl font-black uppercase tracking-[0.2em]'
+                                type='button'
+                                variant='ghost'
+                                className='h-12 rounded-xl font-bold'
                                 onClick={() => setDetailsOpen(false)}
                             >
-                                {t('serverActivities.details.closeEntry')}
+                                {t('common.close')}
                             </Button>
                         </DialogFooter>
                     </div>
