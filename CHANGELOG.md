@@ -13,6 +13,7 @@
 - Fixed an issue where the server terminal auto-scroll preference was not remembered between sessions, preserving the chosen behavior more reliably. by @nayskutzu
 - Fixed an issue where dark mode could be ignored in File Manager when the operating system theme was set to light mode. by @nayskutzu
 - Fixed an issue where IP address blur in activity logs was triggered by row hover instead of direct hover on the IP value. by @nayskutzu
+- Resolved an issue where chatbot settings were not always saving correctly. by @nayskutzu
 
 ### Improved
 
