@@ -19,6 +19,8 @@ namespace App\Services\Wings\Services;
 
 use App\Services\Wings\WingsResponse;
 use App\Services\Wings\WingsConnection;
+use App\Services\Wings\Exceptions\WingsAuthenticationException;
+use App\Services\Wings\Exceptions\WingsRequestException;
 
 /**
  * Server Service for Wings API.
@@ -33,7 +35,7 @@ class ServerService
 {
     private WingsConnection $connection;
 
-    /**dasjkl
+    /**
      * Create a new ServerService instance.
      */
     public function __construct(WingsConnection $connection)
@@ -251,7 +253,7 @@ class ServerService
 
             return new WingsResponse($response, 200);
         } catch (\Exception $e) {
-            return new WingsResponse(['error' => $e->getMessage()], 500);
+            return $this->wingsErrorResponse($e);
         }
     }
 
@@ -269,7 +271,7 @@ class ServerService
 
             return new WingsResponse($rawResponse, 200);
         } catch (\Exception $e) {
-            return new WingsResponse(['error' => $e->getMessage()], 500);
+            return $this->wingsErrorResponse($e);
         }
     }
 
@@ -285,7 +287,7 @@ class ServerService
 
             return new WingsResponse($rawResponse, 200);
         } catch (\Exception $e) {
-            return new WingsResponse(['error' => $e->getMessage()], 500);
+            return $this->wingsErrorResponse($e);
         }
     }
 
@@ -303,7 +305,7 @@ class ServerService
 
             return new WingsResponse($response, 204);
         } catch (\Exception $e) {
-            return new WingsResponse(['error' => $e->getMessage()], 500);
+            return $this->wingsErrorResponse($e);
         }
     }
 
@@ -907,5 +909,24 @@ class ServerService
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Map Wings HTTP exceptions to a response with the correct status; other errors become 500.
+     */
+    private function wingsErrorResponse(\Exception $e): WingsResponse
+    {
+        if ($e instanceof WingsAuthenticationException) {
+            $code = $e->getCode();
+
+            return new WingsResponse(['error' => $e->getMessage()], ($code >= 400 && $code < 600) ? $code : 401);
+        }
+        if ($e instanceof WingsRequestException) {
+            $code = $e->getCode();
+
+            return new WingsResponse(['error' => $e->getMessage()], ($code >= 400 && $code < 600) ? $code : 502);
+        }
+
+        return new WingsResponse(['error' => $e->getMessage()], 500);
     }
 }

@@ -418,11 +418,16 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         );
     }
 
+    const widgetContext = {
+        id: user.uuid,
+        ...(user.id != null && user.id !== undefined ? { userId: user.id } : {}),
+    };
+
     return (
         <div className='space-y-6'>
             <WidgetRenderer
                 widgets={getWidgets('admin-users-edit', 'top-of-page')}
-                context={{ id: user.uuid, userId: user.id }}
+                context={widgetContext}
             />
 
             <PageHeader
@@ -439,7 +444,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
             <WidgetRenderer
                 widgets={getWidgets('admin-users-edit', 'after-header')}
-                context={{ id: user.uuid, userId: user.id }}
+                context={widgetContext}
             />
 
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
@@ -1157,7 +1162,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
             <WidgetRenderer
                 widgets={getWidgets('admin-users-edit', 'bottom-of-page')}
-                context={{ id: user.uuid, userId: user.id }}
+                context={widgetContext}
             />
         </div>
     );

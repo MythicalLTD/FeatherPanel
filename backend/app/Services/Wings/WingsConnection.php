@@ -223,6 +223,8 @@ class WingsConnection
                 }
 
                 throw new WingsConnectionException('Request failed: ' . $e->getMessage());
+            } catch (WingsRequestException | WingsAuthenticationException $e) {
+                throw $e;
             } catch (\Exception $e) {
                 $lastException = $e;
 
@@ -326,6 +328,8 @@ class WingsConnection
                 }
 
                 throw new WingsConnectionException('Request failed: ' . $e->getMessage());
+            } catch (WingsRequestException | WingsAuthenticationException $e) {
+                throw $e;
             } catch (\Exception $e) {
                 $lastException = $e;
 
@@ -624,17 +628,17 @@ class WingsConnection
 
         switch ($httpCode) {
             case 401:
-                throw new WingsAuthenticationException("Authentication failed: {$errorDetails}");
+                throw new WingsAuthenticationException("Authentication failed: {$errorDetails}", 401);
             case 403:
-                throw new WingsAuthenticationException("Access forbidden: {$errorDetails}");
+                throw new WingsAuthenticationException("Access forbidden: {$errorDetails}", 403);
             case 404:
-                throw new WingsRequestException("Endpoint not found: {$endpoint}");
+                throw new WingsRequestException("Endpoint not found: {$endpoint}", 404);
             case 429:
-                throw new WingsRequestException("Rate limit exceeded: {$errorDetails}");
+                throw new WingsRequestException("Rate limit exceeded: {$errorDetails}", 429);
             case 500:
-                throw new WingsRequestException("Server error: {$errorDetails}");
+                throw new WingsRequestException("Server error: {$errorDetails}", 500);
             default:
-                throw new WingsRequestException("HTTP {$httpCode}: {$errorDetails}");
+                throw new WingsRequestException("HTTP {$httpCode}: {$errorDetails}", $httpCode);
         }
     }
 

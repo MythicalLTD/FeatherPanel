@@ -43,20 +43,33 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
     if (!widgets || widgets.length === 0) return null;
 
     const getWidgetSrc = (widget: PluginWidget): string => {
-        const baseUrl = `/components/${widget.plugin}/${widget.component}`;
-        const params = new URLSearchParams();
-        params.set('route', pathname || '');
+        const raw = widget.component;
+        const pluginBase = `/components/${widget.plugin}/`;
+        let pathWithFile: string;
+        const merged = new URLSearchParams();
 
-        // Add context parameters if provided
+        if (raw.includes('?')) {
+            const q = raw.indexOf('?');
+            pathWithFile = raw.slice(0, q);
+            const existing = new URLSearchParams(raw.slice(q + 1));
+            existing.forEach((v, k) => merged.set(k, v));
+        } else {
+            pathWithFile = raw;
+        }
+
+        const baseUrl = `${pluginBase}${pathWithFile}`;
+        merged.set('route', pathname || '');
+
         if (context) {
             Object.entries(context).forEach(([key, value]) => {
                 if (value !== null && value !== undefined) {
-                    params.set(key, String(value));
+                    merged.set(key, String(value));
                 }
             });
         }
 
-        return `${baseUrl}?${params.toString()}`;
+        const qs = merged.toString();
+        return qs ? `${baseUrl}?${qs}` : baseUrl;
     };
 
     const handleIframeLoad = (widgetId: string, iframe: HTMLIFrameElement) => {
