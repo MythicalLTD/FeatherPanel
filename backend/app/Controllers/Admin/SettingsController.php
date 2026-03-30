@@ -1822,15 +1822,19 @@ class SettingsController
     )]
     public function update(Request $request): Response
     {
-        $data = $request->getContent();
-        $data = json_decode($data, true);
+        $raw = $request->getContent();
+        $data = json_decode($raw ?? '', true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+        }
+
         $app = App::getInstance(true);
         $updatedSettings = [];
 
         // Validate and update each setting
         foreach ($data as $setting => $value) {
-            if (!isset($this->settings[$setting])) {
-                return ApiResponse::error("Invalid setting: {$setting}", 400);
+            if (!is_string($setting) || !isset($this->settings[$setting])) {
+                return ApiResponse::error('Invalid or unknown setting key', 'INVALID_SETTING', 400);
             }
 
             $settingConfig = $this->settings[$setting];
@@ -1838,27 +1842,29 @@ class SettingsController
             // Handle sensitive settings - only update if value is not masked
             if ($this->isSensitiveSetting($setting)) {
                 // If the value is the masked value (••••••••), skip updating
-                if ($value === '••••••••' || empty($value)) {
+                if ($value === '••••••••' || $value === '' || $value === null) {
                     $app->getLogger()->debug("Skipping sensitive setting update for {$setting} - value not changed");
                     continue;
                 }
             }
 
-            // Basic validation
-            if ($settingConfig['required'] && empty($value)) {
+            $stringValue = $this->normalizeSettingValueForStorage($settingConfig, $value);
+
+            // Basic validation (use normalized string so 0 / "false" are handled correctly)
+            if ($settingConfig['required'] && $stringValue === '') {
                 return ApiResponse::error("Setting {$setting} is required", 400);
             }
 
-            // Get max length from setting config, default to 255
+            // Match UI "max length" as Unicode characters, not raw bytes (strlen breaks UTF-8 prompts)
             $maxLength = $settingConfig['max_length'] ?? 255;
-            if (!empty($value) && strlen($value) > $maxLength) {
+            if ($stringValue !== '' && $this->settingValueTextLength($stringValue) > $maxLength) {
                 return ApiResponse::error("Setting {$setting} value is too long (max {$maxLength} characters)", 400);
             }
 
-            $app->getLogger()->debug("Updating setting: {$setting} with value: " . ($this->isSensitiveSetting($setting) ? '[MASKED]' : $value));
+            $app->getLogger()->debug("Updating setting: {$setting} with value: " . ($this->isSensitiveSetting($setting) ? '[MASKED]' : $stringValue));
 
             // Update the setting
-            if ($app->getConfig()->setSetting($setting, $value)) {
+            if ($app->getConfig()->setSetting($setting, $stringValue)) {
                 $updatedSettings[] = $setting;
             } else {
                 return ApiResponse::error("Failed to update setting: {$setting}", 500);
@@ -1961,6 +1967,40 @@ class SettingsController
         }
 
         return $organized;
+    }
+
+    /**
+     * Normalize an incoming setting value to the string stored in the database.
+     *
+     * @param array<string,mixed> $settingConfig
+     */
+    private function normalizeSettingValueForStorage(array $settingConfig, mixed $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+        if (is_array($value) || is_object($value)) {
+            return '';
+        }
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        $type = $settingConfig['type'] ?? 'text';
+        if ($type === 'number') {
+            if ($value === '' || !is_numeric($value)) {
+                return '';
+            }
+
+            return (string) ($value + 0);
+        }
+
+        return (string) $value;
+    }
+
+    private function settingValueTextLength(string $value): int
+    {
+        return mb_strlen($value, 'UTF-8');
     }
 
     /**
