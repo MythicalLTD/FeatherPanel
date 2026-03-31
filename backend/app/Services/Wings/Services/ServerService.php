@@ -805,8 +805,36 @@ class ServerService
             $response = $this->connection->post("/api/servers/{$serverUuid}/proxy/create", $data);
 
             return new WingsResponse($response, 202);
+        } catch (WingsRequestException $e) {
+            // Some Wings builds expose proxy creation at /proxy instead of /proxy/create.
+            if ((int) $e->getCode() === 404) {
+                try {
+                    $response = $this->connection->post("/api/servers/{$serverUuid}/proxy", $data);
+
+                    return new WingsResponse($response, 202);
+                } catch (\Exception $fallbackException) {
+                    $statusCode = (int) $fallbackException->getCode();
+                    if ($statusCode < 400 || $statusCode > 599) {
+                        $statusCode = 500;
+                    }
+
+                    return new WingsResponse(['error' => $fallbackException->getMessage()], $statusCode);
+                }
+            }
+
+            $statusCode = (int) $e->getCode();
+            if ($statusCode < 400 || $statusCode > 599) {
+                $statusCode = 500;
+            }
+
+            return new WingsResponse(['error' => $e->getMessage()], $statusCode);
         } catch (\Exception $e) {
-            return new WingsResponse(['error' => $e->getMessage()], 500);
+            $statusCode = (int) $e->getCode();
+            if ($statusCode < 400 || $statusCode > 599) {
+                $statusCode = 500;
+            }
+
+            return new WingsResponse(['error' => $e->getMessage()], $statusCode);
         }
     }
 

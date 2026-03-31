@@ -425,10 +425,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
     return (
         <div className='space-y-6'>
-            <WidgetRenderer
-                widgets={getWidgets('admin-users-edit', 'top-of-page')}
-                context={widgetContext}
-            />
+            <WidgetRenderer widgets={getWidgets('admin-users-edit', 'top-of-page')} context={widgetContext} />
 
             <PageHeader
                 title={t('admin.users.edit.title', { username: user.username })}
@@ -442,10 +439,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 }
             />
 
-            <WidgetRenderer
-                widgets={getWidgets('admin-users-edit', 'after-header')}
-                context={widgetContext}
-            />
+            <WidgetRenderer widgets={getWidgets('admin-users-edit', 'after-header')} context={widgetContext} />
 
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
                 <div className='lg:col-span-2 space-y-6'>
@@ -1160,10 +1154,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 </DialogContent>
             </Dialog>
 
-            <WidgetRenderer
-                widgets={getWidgets('admin-users-edit', 'bottom-of-page')}
-                context={widgetContext}
-            />
+            <WidgetRenderer widgets={getWidgets('admin-users-edit', 'bottom-of-page')} context={widgetContext} />
         </div>
     );
 }

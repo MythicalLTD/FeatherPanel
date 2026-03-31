@@ -511,152 +511,18 @@ export default function ServerActivityPage() {
                 </div>
 
                 {pagination.total_records > pagination.per_page && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
-                    <Button
-                        variant='glass'
-                        size='sm'
-                        disabled={!pagination.has_prev || loading}
-                        onClick={() => changePage(pagination.current_page - 1)}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {pagination.current_page} / {pagination.total_pages}
-                    </span>
-                    <Button
-                        variant='glass'
-                        size='sm'
-                        disabled={!pagination.has_next || loading}
-                        onClick={() => changePage(pagination.current_page + 1)}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
-                )}
-
-                {activities.length === 0 ? (
-                    <EmptyState
-                    title={t('serverActivities.noActivitiesFound')}
-                    description={
-                        searchQuery || selectedEventFilter !== 'all'
-                            ? t('serverActivities.noActivitiesSearchDescription')
-                            : t('serverActivities.noActivitiesDescription')
-                    }
-                    icon={Activity}
-                    action={
-                        searchQuery || selectedEventFilter !== 'all' ? (
-                            <Button
-                                variant='glass'
-                                size='default'
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setSelectedEventFilter('all');
-                                }}
-                                className='h-14 px-10 text-lg rounded-xl'
-                            >
-                                {t('common.clear')}
-                            </Button>
-                        ) : undefined
-                    }
-                    />
-                ) : (
-                    <div className='grid grid-cols-1 gap-4'>
-                    {activities.map((activity, index) => {
-                        return (
-                            <ResourceCard
-                                key={activity.id}
-                                style={{ animationDelay: `${index * 50}ms` }}
-                                className='animate-in slide-in-from-bottom-2 duration-500 fill-mode-both'
-                                icon={getEventIcon(activity.event)}
-                                iconWrapperClassName={getEventIconClass(activity.event)}
-                                title={formatEvent(activity.event)}
-                                badges={
-                                    <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40'>
-                                        {activity.id}
-                                    </span>
-                                }
-                                description={
-                                    <>
-                                        <p className='w-full text-muted-foreground font-medium line-clamp-1 opacity-80 group-hover:opacity-100 transition-opacity mb-2'>
-                                            {displayMessage(activity)}
-                                        </p>
-                                        <div className='flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 border-t border-border/10 w-full'>
-                                            <div className='flex items-center gap-2 text-muted-foreground'>
-                                                <User className='h-4 w-4 opacity-50' />
-                                                <span className='text-sm font-bold uppercase tracking-tight'>
-                                                    {activity.user?.username || t('serverActivities.details.system')}
-                                                </span>
-                                            </div>
-                                            <div className='flex items-center gap-2 text-muted-foreground'>
-                                                <Clock className='h-4 w-4 opacity-50' />
-                                                <span className='text-sm font-semibold'>
-                                                    {activity.timestamp ? formatRelativeTime(activity.timestamp) : '-'}
-                                                </span>
-                                            </div>
-                                            {activity.ip && (
-                                                <div className='flex items-center gap-2 text-muted-foreground'>
-                                                    <Globe className='h-4 w-4 opacity-50' />
-                                                    <BlurredIp ip={activity.ip} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </>
-                                }
-                                actions={
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger
-                                            className='h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center outline-none'
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <MoreVertical className='h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors' />
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent
-                                            align='end'
-                                            className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl'
-                                        >
-                                            <DropdownMenuItem
-                                                onClick={() => {
-                                                    setSelectedItem(activity);
-                                                    setDetailsOpen(true);
-                                                }}
-                                                className='flex items-center gap-3 p-3 rounded-xl cursor-pointer'
-                                            >
-                                                <Eye className='h-4 w-4 text-primary' />
-                                                <span className='font-bold'>{t('serverActivities.viewDetails')}</span>
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                }
-                            />
-                        );
-                    })}
-                    </div>
-                )}
-
-                {pagination.total_records > pagination.per_page && (
-                <div className='flex items-center justify-between py-8 border-t border-border/40 px-6'>
-                    <p className='text-sm font-bold opacity-40 uppercase tracking-widest'>
-                        {t('serverActivities.pagination.showing', {
-                            from: String(pagination.from),
-                            to: String(pagination.to),
-                            total: String(pagination.total_records),
-                        })}
-                    </p>
-                    <div className='flex items-center gap-3'>
+                    <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
                         <Button
                             variant='glass'
                             size='sm'
                             disabled={!pagination.has_prev || loading}
                             onClick={() => changePage(pagination.current_page - 1)}
-                            className='h-10 w-10 p-0 rounded-xl'
+                            className='gap-1.5'
                         >
-                            <ChevronLeft className='h-5 w-5' />
+                            <ChevronLeft className='h-4 w-4' />
+                            {t('common.previous')}
                         </Button>
-                        <span className='h-10 px-4 rounded-xl text-sm font-black bg-primary/5 text-primary border border-primary/20 flex items-center justify-center min-w-12'>
+                        <span className='text-sm font-medium'>
                             {pagination.current_page} / {pagination.total_pages}
                         </span>
                         <Button
@@ -664,12 +530,151 @@ export default function ServerActivityPage() {
                             size='sm'
                             disabled={!pagination.has_next || loading}
                             onClick={() => changePage(pagination.current_page + 1)}
-                            className='h-10 w-10 p-0 rounded-xl'
+                            className='gap-1.5'
                         >
-                            <ChevronRight className='h-5 w-5' />
+                            {t('common.next')}
+                            <ChevronRight className='h-4 w-4' />
                         </Button>
                     </div>
-                </div>
+                )}
+
+                {activities.length === 0 ? (
+                    <EmptyState
+                        title={t('serverActivities.noActivitiesFound')}
+                        description={
+                            searchQuery || selectedEventFilter !== 'all'
+                                ? t('serverActivities.noActivitiesSearchDescription')
+                                : t('serverActivities.noActivitiesDescription')
+                        }
+                        icon={Activity}
+                        action={
+                            searchQuery || selectedEventFilter !== 'all' ? (
+                                <Button
+                                    variant='glass'
+                                    size='default'
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        setSelectedEventFilter('all');
+                                    }}
+                                    className='h-14 px-10 text-lg rounded-xl'
+                                >
+                                    {t('common.clear')}
+                                </Button>
+                            ) : undefined
+                        }
+                    />
+                ) : (
+                    <div className='grid grid-cols-1 gap-4'>
+                        {activities.map((activity, index) => {
+                            return (
+                                <ResourceCard
+                                    key={activity.id}
+                                    style={{ animationDelay: `${index * 50}ms` }}
+                                    className='animate-in slide-in-from-bottom-2 duration-500 fill-mode-both'
+                                    icon={getEventIcon(activity.event)}
+                                    iconWrapperClassName={getEventIconClass(activity.event)}
+                                    title={formatEvent(activity.event)}
+                                    badges={
+                                        <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40'>
+                                            {activity.id}
+                                        </span>
+                                    }
+                                    description={
+                                        <>
+                                            <p className='w-full text-muted-foreground font-medium line-clamp-1 opacity-80 group-hover:opacity-100 transition-opacity mb-2'>
+                                                {displayMessage(activity)}
+                                            </p>
+                                            <div className='flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 border-t border-border/10 w-full'>
+                                                <div className='flex items-center gap-2 text-muted-foreground'>
+                                                    <User className='h-4 w-4 opacity-50' />
+                                                    <span className='text-sm font-bold uppercase tracking-tight'>
+                                                        {activity.user?.username ||
+                                                            t('serverActivities.details.system')}
+                                                    </span>
+                                                </div>
+                                                <div className='flex items-center gap-2 text-muted-foreground'>
+                                                    <Clock className='h-4 w-4 opacity-50' />
+                                                    <span className='text-sm font-semibold'>
+                                                        {activity.timestamp
+                                                            ? formatRelativeTime(activity.timestamp)
+                                                            : '-'}
+                                                    </span>
+                                                </div>
+                                                {activity.ip && (
+                                                    <div className='flex items-center gap-2 text-muted-foreground'>
+                                                        <Globe className='h-4 w-4 opacity-50' />
+                                                        <BlurredIp ip={activity.ip} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
+                                    }
+                                    actions={
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger
+                                                className='h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center outline-none'
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <MoreVertical className='h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors' />
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                align='end'
+                                                className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl'
+                                            >
+                                                <DropdownMenuItem
+                                                    onClick={() => {
+                                                        setSelectedItem(activity);
+                                                        setDetailsOpen(true);
+                                                    }}
+                                                    className='flex items-center gap-3 p-3 rounded-xl cursor-pointer'
+                                                >
+                                                    <Eye className='h-4 w-4 text-primary' />
+                                                    <span className='font-bold'>
+                                                        {t('serverActivities.viewDetails')}
+                                                    </span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    }
+                                />
+                            );
+                        })}
+                    </div>
+                )}
+
+                {pagination.total_records > pagination.per_page && (
+                    <div className='flex items-center justify-between py-8 border-t border-border/40 px-6'>
+                        <p className='text-sm font-bold opacity-40 uppercase tracking-widest'>
+                            {t('serverActivities.pagination.showing', {
+                                from: String(pagination.from),
+                                to: String(pagination.to),
+                                total: String(pagination.total_records),
+                            })}
+                        </p>
+                        <div className='flex items-center gap-3'>
+                            <Button
+                                variant='glass'
+                                size='sm'
+                                disabled={!pagination.has_prev || loading}
+                                onClick={() => changePage(pagination.current_page - 1)}
+                                className='h-10 w-10 p-0 rounded-xl'
+                            >
+                                <ChevronLeft className='h-5 w-5' />
+                            </Button>
+                            <span className='h-10 px-4 rounded-xl text-sm font-black bg-primary/5 text-primary border border-primary/20 flex items-center justify-center min-w-12'>
+                                {pagination.current_page} / {pagination.total_pages}
+                            </span>
+                            <Button
+                                variant='glass'
+                                size='sm'
+                                disabled={!pagination.has_next || loading}
+                                onClick={() => changePage(pagination.current_page + 1)}
+                                className='h-10 w-10 p-0 rounded-xl'
+                            >
+                                <ChevronRight className='h-5 w-5' />
+                            </Button>
+                        </div>
+                    </div>
                 )}
             </div>
 
@@ -761,7 +766,10 @@ export default function ServerActivityPage() {
                                     </div>
                                     <dl className='space-y-4'>
                                         {detailsPairs.map((pair) => (
-                                            <div key={pair.key} className='space-y-1.5 border-b border-border/30 pb-4 last:border-0 last:pb-0'>
+                                            <div
+                                                key={pair.key}
+                                                className='space-y-1.5 border-b border-border/30 pb-4 last:border-0 last:pb-0'
+                                            >
                                                 <dt className='text-[10px] uppercase font-bold text-muted-foreground tracking-widest wrap-break-word'>
                                                     {pair.key}
                                                 </dt>
