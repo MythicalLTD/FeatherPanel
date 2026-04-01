@@ -19,8 +19,8 @@ namespace App\Services\Wings\Services;
 
 use App\Services\Wings\WingsResponse;
 use App\Services\Wings\WingsConnection;
-use App\Services\Wings\Exceptions\WingsAuthenticationException;
 use App\Services\Wings\Exceptions\WingsRequestException;
+use App\Services\Wings\Exceptions\WingsAuthenticationException;
 
 /**
  * Server Service for Wings API.
