@@ -5,6 +5,7 @@ use sqlx::MySqlPool;
 use std::time::Duration;
 use tracing::{error, info, warn};
 
+use crate::database;
 use crate::processor;
 use crate::types::{MailNotification, VmNotification};
 
@@ -31,6 +32,8 @@ async fn connect_and_listen(redis_url: &str, pool: MySqlPool, encryption_key: St
     let client = redis::Client::open(redis_url)?;
     let mut pubsub: PubSub = client.get_async_pubsub().await?;
 
+    recover_pending_mail(&pool).await?;
+
     pubsub.subscribe("featherpanel:mail:pending").await?;
     pubsub.subscribe("featherpanel:vm:pending").await?;
     info!("✅ Redis connected");
@@ -49,8 +52,7 @@ async fn connect_and_listen(redis_url: &str, pool: MySqlPool, encryption_key: St
                     tokio::spawn({
                         let pool = pool.clone();
                         async move {
-                            if let Err(e) = processor::process_mail(&pool, &notification.queue_id).await
-                            {
+                            if let Err(e) = process_mail_with_timeout(&pool, &notification.queue_id).await {
                                 error!(
                                     "❌ Failed to process mail {}: {}",
                                     notification.queue_id, e
@@ -88,4 +90,47 @@ async fn connect_and_listen(redis_url: &str, pool: MySqlPool, encryption_key: St
     }
 
     Ok(())
+}
+
+async fn recover_pending_mail(pool: &MySqlPool) -> Result<()> {
+    let released = database::release_stale_mail_locks(pool).await?;
+    if released > 0 {
+        warn!(
+            "🔓 Released {} stale pending mail lock(s) after runner reconnect",
+            released
+        );
+    }
+
+    let pending_queue_ids = database::get_pending_mail_queue_ids(pool, 500).await?;
+    if pending_queue_ids.is_empty() {
+        info!("📭 No pending mail to recover");
+        return Ok(());
+    }
+
+    info!(
+        "♻️ Recovering {} pending mail item(s) after runner reconnect",
+        pending_queue_ids.len()
+    );
+
+    for queue_id in pending_queue_ids {
+        let pool = pool.clone();
+        tokio::spawn(async move {
+            if let Err(e) = process_mail_with_timeout(&pool, &queue_id).await {
+                error!("❌ Failed to recover pending mail {}: {}", queue_id, e);
+            }
+        });
+    }
+
+    Ok(())
+}
+
+async fn process_mail_with_timeout(pool: &MySqlPool, queue_id: &str) -> Result<()> {
+    match tokio::time::timeout(Duration::from_secs(120), processor::process_mail(pool, queue_id)).await {
+        Ok(result) => result,
+        Err(_) => {
+            error!("❌ Mail processing timed out for queue {}", queue_id);
+            database::mark_failed(pool, queue_id).await?;
+            Ok(())
+        }
+    }
 }

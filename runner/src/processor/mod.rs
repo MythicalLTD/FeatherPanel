@@ -1,5 +1,6 @@
 use anyhow::Result;
 use sqlx::MySqlPool;
+use std::time::Duration;
 use tracing::{error, info, warn};
 
 use crate::database;
@@ -18,8 +19,14 @@ pub async fn process_mail(pool: &MySqlPool, queue_id: &str) -> Result<()> {
         anyhow::bail!("MySQL connection lost, will retry on reconnect");
     }
 
-    // Lock the mail
-    database::lock_mail(pool, queue_id).await?;
+    // Acquire lock atomically to avoid duplicate processing across workers.
+    if !database::try_lock_mail(pool, queue_id).await? {
+        info!(
+            "ℹ️  Mail {} already locked or no longer pending, skipping",
+            queue_id
+        );
+        return Ok(());
+    }
 
     // Get mail queue entry
     let mail_queue = match database::get_mail_queue(pool, queue_id).await? {
@@ -68,20 +75,18 @@ pub async fn process_mail(pool: &MySqlPool, queue_id: &str) -> Result<()> {
             attempt, max_retries, user.email
         );
 
-        match mail::send_email(
-            &smtp_config,
-            &user.email,
-            &mail_queue.subject,
-            &mail_queue.body,
+        match tokio::time::timeout(
+            Duration::from_secs(35),
+            mail::send_email(&smtp_config, &user.email, &mail_queue.subject, &mail_queue.body),
         )
         .await
         {
-            Ok(_) => {
+            Ok(Ok(_)) => {
                 success = true;
                 info!("✅ Mail sent to {}", user.email);
                 break;
             }
-            Err(e) => {
+            Ok(Err(e)) => {
                 let err_str = e.to_string();
                 error!("❌ Attempt {} failed: {}", attempt, err_str);
                 
@@ -89,6 +94,16 @@ pub async fn process_mail(pool: &MySqlPool, queue_id: &str) -> Result<()> {
                     warn!("⚠️ Fatal SMTP error encountered. Aborting retries for this mail.");
                     break;
                 }
+
+                if attempt < max_retries {
+                    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                }
+            }
+            Err(_) => {
+                error!(
+                    "❌ Attempt {} timed out while sending mail {}",
+                    attempt, queue_id
+                );
 
                 if attempt < max_retries {
                     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;

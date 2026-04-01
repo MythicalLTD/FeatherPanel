@@ -21,6 +21,7 @@
 - Enhance server activity page with IP address blurring and dropdown filter integration; update locale strings for better user experience by @nayskutzu
 - Enhanced widget rendering framework for plugins, enabling seamless integration of interactive widgets for user actions. by @nayskutzu
 - Improved Wings error handling for more accurate responses and clearer error messages. by @nayskutzu
+- Resolved an issue where pending emails would never be sent if the async task runner was unavailable or offline, ensuring reliable mail delivery under all conditions. by @nayskutzu
 
 ## v1.3.3 STABLE
 

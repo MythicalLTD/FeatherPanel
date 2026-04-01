@@ -46,6 +46,22 @@ pub async fn get_mail_queue(pool: &MySqlPool, queue_id: &str) -> Result<Option<M
     }
 }
 
+pub async fn get_pending_mail_queue_ids(pool: &MySqlPool, limit: u32) -> Result<Vec<String>> {
+    let rows = sqlx::query(
+        "SELECT CAST(id AS CHAR) AS id FROM featherpanel_mail_queue WHERE status = 'pending' ORDER BY created_at ASC LIMIT ?",
+    )
+    .bind(limit)
+    .fetch_all(pool)
+    .await?;
+
+    let mut queue_ids = Vec::with_capacity(rows.len());
+    for row in rows {
+        queue_ids.push(row.try_get("id")?);
+    }
+
+    Ok(queue_ids)
+}
+
 pub async fn get_mail_list(pool: &MySqlPool, queue_id: &str) -> Result<Option<MailListEntry>> {
     let row = sqlx::query("SELECT user_uuid FROM featherpanel_mail_list WHERE queue_id = ? AND deleted = 'false'")
         .bind(queue_id)
@@ -97,12 +113,25 @@ pub async fn get_smtp_config(_pool: &MySqlPool) -> Result<SmtpConfig> {
     })
 }
 
-pub async fn lock_mail(pool: &MySqlPool, queue_id: &str) -> Result<()> {
-    sqlx::query("UPDATE featherpanel_mail_queue SET locked = 'true' WHERE id = ?")
-        .bind(queue_id)
-        .execute(pool)
-        .await?;
-    Ok(())
+pub async fn try_lock_mail(pool: &MySqlPool, queue_id: &str) -> Result<bool> {
+    let result = sqlx::query(
+        "UPDATE featherpanel_mail_queue SET locked = 'true' WHERE id = ? AND status = 'pending' AND locked = 'false'",
+    )
+    .bind(queue_id)
+    .execute(pool)
+    .await?;
+
+    Ok(result.rows_affected() > 0)
+}
+
+pub async fn release_stale_mail_locks(pool: &MySqlPool) -> Result<u64> {
+    let result = sqlx::query(
+        "UPDATE featherpanel_mail_queue SET locked = 'false' WHERE status = 'pending' AND locked = 'true'",
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(result.rows_affected())
 }
 
 pub async fn mark_sent(pool: &MySqlPool, queue_id: &str) -> Result<()> {
