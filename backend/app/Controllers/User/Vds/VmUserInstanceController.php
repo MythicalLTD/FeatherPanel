@@ -1407,8 +1407,6 @@ class VmUserInstanceController
             return ApiResponse::error('Only http/https URLs are allowed', 'INVALID_URL_SCHEME', 400);
         }
 
-        $maxBytes = 1024 * 1024 * 1024; // 1 GiB
-
         $vmNode = VmNode::getVmNodeById((int) ($vmInstance['vm_node_id'] ?? 0));
         if (!$vmNode) {
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
@@ -1438,7 +1436,6 @@ class VmUserInstanceController
             'vm_type' => 'qemu',
             'url' => $url,
             'storage' => $storage,
-            'max_bytes' => $maxBytes,
         ];
 
         $saved = VmTask::create([

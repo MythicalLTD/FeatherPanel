@@ -959,7 +959,6 @@ async fn handle_iso_fetch_and_mount_task(
 
     let url = meta["url"].as_str().unwrap_or_default().to_string();
     let storage = meta["storage"].as_str().unwrap_or_default().to_string();
-    let max_bytes: i64 = meta["max_bytes"].as_i64().unwrap_or(1024 * 1024 * 1024);
 
     if target_node.is_empty() || vmid <= 0 || url.is_empty() || storage.is_empty() {
         mark_failed(pool, task_id, "Missing required ISO task parameters").await?;
@@ -968,7 +967,7 @@ async fn handle_iso_fetch_and_mount_task(
 
     let verify_certificates = true;
 
-    // Query size + filename so we can enforce the max size before triggering the download.
+    // Query filename before triggering the download.
     let md_res = match client
         .query_iso_url_metadata(&target_node, &url, verify_certificates)
         .await
@@ -980,13 +979,7 @@ async fn handle_iso_fetch_and_mount_task(
         }
     };
 
-    let size_bytes = md_res["data"]["size"].as_i64().unwrap_or(-1);
     let raw_filename = md_res["data"]["filename"].as_str().unwrap_or("uploaded.iso");
-
-    if size_bytes >= 0 && size_bytes > max_bytes {
-        mark_failed(pool, task_id, "ISO too large for panel limit (max 1 GiB)").await?;
-        return Ok(());
-    }
 
     // extjs returns a filename; sanitize it so we can build a safe volid.
     let mut filename = raw_filename
