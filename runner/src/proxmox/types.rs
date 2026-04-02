@@ -1,6 +1,3 @@
-/// Result type for Proxmox operations
-pub type ProxmoxResult<T> = anyhow::Result<T>;
-
 /// Power action types
 #[derive(Debug, Clone, Copy)]
 pub enum PowerAction {

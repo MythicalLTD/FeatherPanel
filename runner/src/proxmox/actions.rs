@@ -78,16 +78,7 @@ impl ProxmoxClient {
     pub async fn stop_vm(&self, node: &str, vmid: u32, vm_type: VmType) -> Result<String> {
         self.power_action(node, vmid, vm_type, PowerAction::Stop).await
     }
-    
-    /// Reboot a VM
-    pub async fn reboot_vm(&self, node: &str, vmid: u32, vm_type: VmType) -> Result<String> {
-        self.power_action(node, vmid, vm_type, PowerAction::Reboot).await
-    }
-    
-    /// Shutdown a VM gracefully
-    pub async fn shutdown_vm(&self, node: &str, vmid: u32, vm_type: VmType) -> Result<String> {
-        self.power_action(node, vmid, vm_type, PowerAction::Shutdown).await
-    }
+
     
     /// Delete a VM
     pub async fn delete_vm(&self, node: &str, vmid: u32, vm_type: VmType) -> Result<String> {

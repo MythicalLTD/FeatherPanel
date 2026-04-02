@@ -30,6 +30,7 @@ impl Settings {
         self.data.insert(key, value);
     }
 
+    #[allow(dead_code)]
     pub fn get_all(&self) -> &HashMap<String, String> {
         &self.data
     }

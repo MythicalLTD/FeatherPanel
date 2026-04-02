@@ -569,47 +569,6 @@ pub async fn handle_reinstall_task(
     Ok(())
 }
 
-/// Cleanup a damaged/failed VM creation
-pub async fn cleanup_failed_vm(
-    pool: &MySqlPool,
-    instance_id: i64,
-    client: &ProxmoxClient,
-) -> Result<()> {
-    // Get VM instance details
-    let vm = sqlx::query("SELECT * FROM featherpanel_vm_instances WHERE id = ?")
-        .bind(instance_id)
-        .fetch_optional(pool)
-        .await?;
-    
-    if let Some(vm_row) = vm {
-        let vmid: i32 = vm_row.try_get("vmid").unwrap_or(0);
-        let pve_node: String = vm_row.try_get("pve_node").unwrap_or_default();
-        let vm_type_str: String = vm_row.try_get("vm_type").unwrap_or_else(|_| "qemu".to_string());
-        let vm_type = VmType::from_str(&vm_type_str);
-        
-        if vmid > 0 && !pve_node.is_empty() {
-            info!("🧹 Cleaning up damaged VM {} on node {}", vmid, pve_node);
-            
-            // Try to stop and delete the VM
-            let _ = client.stop_vm(&pve_node, vmid as u32, vm_type).await;
-            tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-            let _ = client.delete_vm(&pve_node, vmid as u32, vm_type).await;
-            
-            info!("✅ Deleted damaged VM {} from Proxmox", vmid);
-        }
-        
-        // Delete from database
-        sqlx::query("DELETE FROM featherpanel_vm_instances WHERE id = ?")
-            .bind(instance_id)
-            .execute(pool)
-            .await?;
-        
-        info!("✅ Removed VM instance {} from database", instance_id);
-    }
-    
-    Ok(())
-}
-
 async fn apply_reinstall_config(
     pool: &MySqlPool,
     task_id: &str,

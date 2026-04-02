@@ -8,8 +8,6 @@ use std::collections::HashSet;
 use crate::proxmox::{ProxmoxClient, VmType, PowerAction};
 use super::create::{handle_create_task, handle_reinstall_task, send_vm_email};
 
-// 🐛 DEBUG MODE - Set to true to print decrypted credentials (ONLY FOR DEVELOPMENT!)
-const DEBUG_DECRYPT: bool = false;
 
 pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &str, _debug_decrypt: bool) -> Result<()> {
     info!("🔄 Processing VM task: {}", task_id);
