@@ -952,7 +952,7 @@ class ServerService
         if ($e instanceof WingsRequestException) {
             $code = $e->getCode();
 
-            return new WingsResponse(['error' => $e->getMessage()], ($code >= 400 && $code < 600) ? $code : 502);
+            return new WingsResponse(['error' => $e->getMessage()], ($code >= 400 && $code < 600) ? $code : 503);
         }
 
         return new WingsResponse(['error' => $e->getMessage()], 500);

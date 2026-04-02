@@ -764,7 +764,7 @@ final class VmInstanceUtil
                 'ok' => false,
                 'error' => 'VNC proxy failed: ' . ($vnc['error'] ?? 'unknown'),
                 'code' => 'VNC_PROXY_FAILED',
-                'http_status' => 502,
+                'http_status' => 503,
             ];
         }
 

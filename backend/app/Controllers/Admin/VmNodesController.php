@@ -834,7 +834,7 @@ class VmNodesController
             );
             $result = $client->listVms();
             if (!$result['ok']) {
-                return ApiResponse::error($result['error'] ?? 'Failed to list VMs', 'PROXMOX_LIST_FAILED', 502, $result);
+                return ApiResponse::error($result['error'] ?? 'Failed to list VMs', 'PROXMOX_LIST_FAILED', 503, $result);
             }
 
             return ApiResponse::success(['vms' => $result['vms']], 'Proxmox VMs fetched', 200);
@@ -907,13 +907,13 @@ class VmNodesController
                 return ApiResponse::error(
                     'Could not get Proxmox nodes: ' . ($nodesResult['error'] ?? 'unknown'),
                     'PROXMOX_ERROR',
-                    502,
+                    503,
                 );
             }
             $pveNode = (string) $nodesResult['nodes'][0]['node'];
             $result = $client->getBridges($pveNode);
             if (!$result['ok']) {
-                return ApiResponse::error($result['error'] ?? 'Failed to fetch bridges', 'PROXMOX_ERROR', 502);
+                return ApiResponse::error($result['error'] ?? 'Failed to fetch bridges', 'PROXMOX_ERROR', 503);
             }
 
             return ApiResponse::success(['bridges' => $result['bridges']], 'Bridges fetched', 200);
@@ -986,13 +986,13 @@ class VmNodesController
                 return ApiResponse::error(
                     'Could not get Proxmox nodes: ' . ($nodesResult['error'] ?? 'unknown'),
                     'PROXMOX_ERROR',
-                    502,
+                    503,
                 );
             }
             $pveNode = (string) $nodesResult['nodes'][0]['node'];
             $result = $client->getStorage($pveNode);
             if (!$result['ok']) {
-                return ApiResponse::error($result['error'] ?? 'Failed to fetch storage', 'PROXMOX_ERROR', 502);
+                return ApiResponse::error($result['error'] ?? 'Failed to fetch storage', 'PROXMOX_ERROR', 503);
             }
 
             return ApiResponse::success(['storage' => $result['storage']], 'Storage list fetched', 200);
@@ -1067,14 +1067,14 @@ class VmNodesController
                 return ApiResponse::error(
                     'Could not get Proxmox nodes: ' . ($nodesResult['error'] ?? 'unknown'),
                     'PROXMOX_ERROR',
-                    502,
+                    503,
                 );
             }
 
             $pveNode = (string) $nodesResult['nodes'][0]['node'];
             $result = $client->getBackupStorages($pveNode);
             if (!$result['ok']) {
-                return ApiResponse::error($result['error'] ?? 'Failed to fetch backup storage', 'PROXMOX_ERROR', 502);
+                return ApiResponse::error($result['error'] ?? 'Failed to fetch backup storage', 'PROXMOX_ERROR', 503);
             }
 
             return ApiResponse::success(['storages' => $result['storages']], 'Backup storage list fetched', 200);

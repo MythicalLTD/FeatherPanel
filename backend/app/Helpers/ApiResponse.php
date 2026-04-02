@@ -23,8 +23,19 @@ class ApiResponse
 {
     public const PRETTYPRINT = true;
 
+    /**
+     * Some reverse proxies (notably Cloudflare) replace 502 response bodies with HTML error pages,
+     * which breaks API clients expecting JSON. Never emit 502 from the panel; use 503 instead.
+     */
+    private static function normalizeStatusForCdnSafeJson(int $status): int
+    {
+        return $status === 502 ? 503 : $status;
+    }
+
     public static function success(?array $data = null, string $message = 'OK', int $status = 200): Response
     {
+        $status = self::normalizeStatusForCdnSafeJson($status);
+
         return new Response(json_encode([
             'success' => true,
             'message' => $message,
@@ -43,6 +54,8 @@ class ApiResponse
 
     public static function error(string $error_message = 'Error', ?string $error_code = null, int $status = 400, ?array $data = null): Response
     {
+        $status = self::normalizeStatusForCdnSafeJson($status);
+
         return new Response(json_encode([
             'success' => false,
             'message' => $error_message,
@@ -98,6 +111,8 @@ class ApiResponse
 
     public static function sendManualResponse(array $data, int $status = 200): Response
     {
+        $status = self::normalizeStatusForCdnSafeJson($status);
+
         return new Response(json_encode($data, self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, [
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',

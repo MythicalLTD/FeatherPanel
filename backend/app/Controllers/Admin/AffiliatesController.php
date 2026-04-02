@@ -45,12 +45,12 @@ class AffiliatesController
 
             $statusCode = $response->getStatusCode();
             if ($statusCode < 200 || $statusCode >= 300) {
-                return ApiResponse::error('Failed to fetch affiliates feed', 'AFFILIATES_FETCH_FAILED', 502);
+                return ApiResponse::error('Failed to fetch affiliates feed', 'AFFILIATES_FETCH_FAILED', 503);
             }
 
             $decoded = json_decode((string) $response->getBody(), true);
             if (!is_array($decoded)) {
-                return ApiResponse::error('Invalid affiliates payload', 'AFFILIATES_INVALID_PAYLOAD', 502);
+                return ApiResponse::error('Invalid affiliates payload', 'AFFILIATES_INVALID_PAYLOAD', 503);
             }
 
             $affiliates = $this->normalizeAffiliates($decoded);
@@ -63,7 +63,7 @@ class AffiliatesController
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->warning('Affiliates feed fetch failed: ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to fetch affiliates feed', 'AFFILIATES_FETCH_FAILED', 502);
+            return ApiResponse::error('Failed to fetch affiliates feed', 'AFFILIATES_FETCH_FAILED', 503);
         }
     }
 

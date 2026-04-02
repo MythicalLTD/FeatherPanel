@@ -249,7 +249,7 @@ class VmUserInstanceController
         $result = $client->getVmStatusCurrent($node, (int) $vmInstance['vmid'], $vmType);
 
         if (!$result['ok']) {
-            return ApiResponse::error('Failed to fetch status: ' . ($result['error'] ?? ''), 'PROXMOX_ERROR', 502);
+            return ApiResponse::error('Failed to fetch status: ' . ($result['error'] ?? ''), 'PROXMOX_ERROR', 503);
         }
 
         return ApiResponse::success(['status' => $result['status'] ?? []], 'Status fetched', 200);
@@ -280,7 +280,7 @@ class VmUserInstanceController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox error'),
+            new OA\Response(response: 503, description: 'Proxmox error'),
         ]
     )]
     public function getQemuHardware(Request $request, int $id): Response
@@ -321,7 +321,7 @@ class VmUserInstanceController
 
         $result = $client->getVmConfig($node, (int) $vmInstance['vmid'], 'qemu');
         if (!$result['ok'] || !is_array($result['config'] ?? null)) {
-            return ApiResponse::error('Failed to fetch QEMU hardware config', 'PROXMOX_ERROR', 502);
+            return ApiResponse::error('Failed to fetch QEMU hardware config', 'PROXMOX_ERROR', 503);
         }
 
         $cfg = $result['config'];
@@ -368,7 +368,7 @@ class VmUserInstanceController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox error'),
+            new OA\Response(response: 503, description: 'Proxmox error'),
         ]
     )]
     public function patchQemuHardware(Request $request, int $id): Response
@@ -456,7 +456,7 @@ class VmUserInstanceController
 
         $curCfg = $client->getVmConfig($node, $vmid, 'qemu');
         if (!$curCfg['ok'] || !is_array($curCfg['config'] ?? null)) {
-            return ApiResponse::error('Failed to fetch current QEMU config', 'PROXMOX_ERROR', 502);
+            return ApiResponse::error('Failed to fetch current QEMU config', 'PROXMOX_ERROR', 503);
         }
         /** @var array<string, mixed> $curQemuConfig */
         $curQemuConfig = $curCfg['config'];
@@ -493,7 +493,7 @@ class VmUserInstanceController
 
             $unlinkEfi = $client->unlinkQemuDisks($node, $vmid, ['efidisk0']);
             if (!$unlinkEfi['ok']) {
-                return ApiResponse::error('Failed to unlink EFI disk', 'PROXMOX_UPDATE_FAILED', 502);
+                return ApiResponse::error('Failed to unlink EFI disk', 'PROXMOX_UPDATE_FAILED', 503);
             }
 
             if ($efiVolRef !== null && $efiVolRef !== '') {
@@ -545,7 +545,7 @@ class VmUserInstanceController
 
             $unlinkTpm = $client->unlinkQemuDisks($node, $vmid, ['tpmstate0']);
             if (!$unlinkTpm['ok']) {
-                return ApiResponse::error('Failed to unlink TPM disk', 'PROXMOX_UPDATE_FAILED', 502);
+                return ApiResponse::error('Failed to unlink TPM disk', 'PROXMOX_UPDATE_FAILED', 503);
             }
 
             if ($tpmVolRef !== null && $tpmVolRef !== '') {
@@ -593,7 +593,7 @@ class VmUserInstanceController
         if (!empty($config) || !empty($deleteKeys)) {
             $res = $client->setVmConfig($node, $vmid, 'qemu', $config, $deleteKeys);
             if (!$res['ok']) {
-                return ApiResponse::error('Proxmox config update failed: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+                return ApiResponse::error('Proxmox config update failed: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 503);
             }
         }
 
@@ -665,7 +665,7 @@ class VmUserInstanceController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox error'),
+            new OA\Response(response: 503, description: 'Proxmox error'),
         ]
     )]
     public function getNetworkOptions(Request $request, int $id): Response
@@ -841,7 +841,7 @@ class VmUserInstanceController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox error'),
+            new OA\Response(response: 503, description: 'Proxmox error'),
         ]
     )]
     public function patchNetworkDns(Request $request, int $id): Response
@@ -932,7 +932,7 @@ class VmUserInstanceController
         if (!empty($config)) {
             $res = $client->setVmConfig((string) $node, $vmid, $vmType, $config, []);
             if (!$res['ok']) {
-                return ApiResponse::error('Proxmox config update failed: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+                return ApiResponse::error('Proxmox config update failed: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 503);
             }
         }
 
@@ -972,7 +972,7 @@ class VmUserInstanceController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox error'),
+            new OA\Response(response: 503, description: 'Proxmox error'),
         ]
     )]
     public function getIsoStorages(Request $request, int $id): Response
@@ -1041,7 +1041,7 @@ class VmUserInstanceController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox error'),
+            new OA\Response(response: 503, description: 'Proxmox error'),
         ]
     )]
     public function getIsoCurrent(Request $request, int $id): Response
@@ -1084,7 +1084,7 @@ class VmUserInstanceController
         $vmid = (int) $vmInstance['vmid'];
         $cfgRes = $client->getVmConfig((string) $node, $vmid, 'qemu');
         if (!$cfgRes['ok'] || !is_array($cfgRes['config'] ?? null)) {
-            return ApiResponse::error('Failed to fetch VM config', 'PROXMOX_ERROR', 502);
+            return ApiResponse::error('Failed to fetch VM config', 'PROXMOX_ERROR', 503);
         }
 
         /** @var array<string, mixed> $cfg */
@@ -1174,7 +1174,7 @@ class VmUserInstanceController
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox error'),
+            new OA\Response(response: 503, description: 'Proxmox error'),
         ]
     )]
     public function uploadAndMountIso(Request $request, int $id): Response
@@ -1272,12 +1272,12 @@ class VmUserInstanceController
                     );
                 }
 
-                return ApiResponse::error('Failed to upload ISO: ' . $uploadErrStr, 'PROXMOX_ERROR', 502);
+                return ApiResponse::error('Failed to upload ISO: ' . $uploadErrStr, 'PROXMOX_ERROR', 503);
             }
 
             $volid = $uploadRes['volid'] ?? null;
             if (!is_string($volid) || $volid === '') {
-                return ApiResponse::error('ISO upload did not return a volid', 'UPLOAD_FAILED', 502);
+                return ApiResponse::error('ISO upload did not return a volid', 'UPLOAD_FAILED', 503);
             }
 
             // Enforce only one cdrom/iso at a time: unlink all media=cdrom devices.
@@ -1298,7 +1298,7 @@ class VmUserInstanceController
             if (!empty($cdromKeys)) {
                 $unlinkRes = $client->unlinkQemuDisks((string) $node, $vmid, $cdromKeys);
                 if (!$unlinkRes['ok']) {
-                    return ApiResponse::error('Failed to unmount previous cdrom: ' . ($unlinkRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+                    return ApiResponse::error('Failed to unmount previous cdrom: ' . ($unlinkRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 503);
                 }
             }
 
@@ -1322,7 +1322,7 @@ class VmUserInstanceController
             ];
             $setRes = $client->setVmConfig((string) $node, $vmid, 'qemu', $config, []);
             if (!$setRes['ok']) {
-                return ApiResponse::error('Proxmox mount/config update failed: ' . ($setRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+                return ApiResponse::error('Proxmox mount/config update failed: ' . ($setRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 503);
             }
 
             self::emitVdsEvent(VdsEvent::onVdsIsoMounted(), [
@@ -1368,7 +1368,7 @@ class VmUserInstanceController
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox error'),
+            new OA\Response(response: 503, description: 'Proxmox error'),
         ]
     )]
     public function fetchAndMountIsoFromUrl(Request $request, int $id): Response
@@ -1493,7 +1493,7 @@ class VmUserInstanceController
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox error'),
+            new OA\Response(response: 503, description: 'Proxmox error'),
         ]
     )]
     public function unmountIso(Request $request, int $id): Response
@@ -1537,7 +1537,7 @@ class VmUserInstanceController
 
         $cfgRes = $client->getVmConfig((string) $node, $vmid, 'qemu');
         if (!$cfgRes['ok'] || !is_array($cfgRes['config'] ?? null)) {
-            return ApiResponse::error('Failed to fetch VM config', 'PROXMOX_ERROR', 502);
+            return ApiResponse::error('Failed to fetch VM config', 'PROXMOX_ERROR', 503);
         }
 
         /** @var array<string, mixed> $cfg */
@@ -1608,7 +1608,7 @@ class VmUserInstanceController
             if (!empty($cdromKeys)) {
                 $unlinkRes = $client->unlinkQemuDisks((string) $node, $vmid, $cdromKeys);
                 if (!$unlinkRes['ok']) {
-                    return ApiResponse::error('Failed to unmount cdrom: ' . ($unlinkRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+                    return ApiResponse::error('Failed to unmount cdrom: ' . ($unlinkRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 503);
                 }
             }
 
@@ -1634,7 +1634,7 @@ class VmUserInstanceController
             return ApiResponse::error(
                 'Cloud-init seed ISO was not restored after ISO unmount',
                 'CLOUDINIT_NOT_RESTORED',
-                502
+                503
             );
         }
 
@@ -1649,7 +1649,7 @@ class VmUserInstanceController
         }
         $setRes = $client->setVmConfig((string) $node, $vmid, 'qemu', ['boot' => 'order=' . $bootDisk], []);
         if (!$setRes['ok']) {
-            return ApiResponse::error('Proxmox boot order update failed: ' . ($setRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+            return ApiResponse::error('Proxmox boot order update failed: ' . ($setRes['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 503);
         }
 
         self::emitVdsEvent(VdsEvent::onVdsIsoUnmounted(), [

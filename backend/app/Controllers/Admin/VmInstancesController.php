@@ -605,7 +605,7 @@ class VmInstancesController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox update failed'),
+            new OA\Response(response: 503, description: 'Proxmox update failed'),
         ]
     )]
     public function update(Request $request, int $id): Response
@@ -925,7 +925,7 @@ class VmInstancesController
             if (!empty($config) || !empty($deleteKeys)) {
                 $res = $client->setVmConfig($node, (int) $instance['vmid'], $vmType, $config, $deleteKeys);
                 if (!$res['ok']) {
-                    return ApiResponse::error('Proxmox config update failed: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+                    return ApiResponse::error('Proxmox config update failed: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 503);
                 }
             }
 
@@ -1010,7 +1010,7 @@ class VmInstancesController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox error'),
+            new OA\Response(response: 503, description: 'Proxmox error'),
         ]
     )]
     public function getConfig(Request $request, int $id): Response
@@ -1039,7 +1039,7 @@ class VmInstancesController
         $vmType = ($instance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
         $result = $client->getVmConfig($node, (int) $instance['vmid'], $vmType);
         if (!$result['ok']) {
-            return ApiResponse::error('Failed to fetch Proxmox config: ' . ($result['error'] ?? ''), 'PROXMOX_ERROR', 502);
+            return ApiResponse::error('Failed to fetch Proxmox config: ' . ($result['error'] ?? ''), 'PROXMOX_ERROR', 503);
         }
 
         return ApiResponse::success(['config' => $result['config'] ?? []], 'Config fetched', 200);
@@ -1067,7 +1067,7 @@ class VmInstancesController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox error'),
+            new OA\Response(response: 503, description: 'Proxmox error'),
         ]
     )]
     public function getStatus(Request $request, int $id): Response
@@ -1096,7 +1096,7 @@ class VmInstancesController
         $vmType = ($instance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu';
         $result = $client->getVmStatusCurrent($node, (int) $instance['vmid'], $vmType);
         if (!$result['ok']) {
-            return ApiResponse::error('Failed to fetch status: ' . ($result['error'] ?? ''), 'PROXMOX_ERROR', 502);
+            return ApiResponse::error('Failed to fetch status: ' . ($result['error'] ?? ''), 'PROXMOX_ERROR', 503);
         }
 
         return ApiResponse::success(['status' => $result['status'] ?? []], 'Status fetched', 200);
@@ -1131,7 +1131,7 @@ class VmInstancesController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'VNC proxy failed'),
+            new OA\Response(response: 503, description: 'VNC proxy failed'),
         ]
     )]
     public function vncTicket(Request $request, int $id): Response
@@ -1237,7 +1237,7 @@ class VmInstancesController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Resize failed'),
+            new OA\Response(response: 503, description: 'Resize failed'),
         ]
     )]
     public function resizeDisk(Request $request, int $id): Response
@@ -1289,12 +1289,12 @@ class VmInstancesController
             $res = $client->resizeQemuDisk($node, (int) $instance['vmid'], $disk, $size);
         }
         if (!$res['ok']) {
-            return ApiResponse::error('Resize failed: ' . ($res['error'] ?? 'unknown'), 'RESIZE_FAILED', 502);
+            return ApiResponse::error('Resize failed: ' . ($res['error'] ?? 'unknown'), 'RESIZE_FAILED', 503);
         }
         if (is_string($res['upid'] ?? null) && $res['upid'] !== '') {
             $wait = $client->waitTask($node, (string) $res['upid'], 600, 5);
             if (!$wait['ok']) {
-                return ApiResponse::error('Resize task failed: ' . ($wait['error'] ?? 'unknown'), 'RESIZE_FAILED', 502);
+                return ApiResponse::error('Resize task failed: ' . ($wait['error'] ?? 'unknown'), 'RESIZE_FAILED', 503);
             }
         }
 
@@ -1335,7 +1335,7 @@ class VmInstancesController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox update failed'),
+            new OA\Response(response: 503, description: 'Proxmox update failed'),
         ]
     )]
     public function createDisk(Request $request, int $id): Response
@@ -1378,7 +1378,7 @@ class VmInstancesController
 
         $result = $client->getVmConfig($node, (int) $instance['vmid'], $vmType);
         if (!$result['ok'] || !is_array($result['config'] ?? null)) {
-            return ApiResponse::error('Failed to fetch config', 'PROXMOX_ERROR', 502);
+            return ApiResponse::error('Failed to fetch config', 'PROXMOX_ERROR', 503);
         }
         $curConfig = $result['config'];
 
@@ -1413,7 +1413,7 @@ class VmInstancesController
             $res = $client->setVmConfig($node, (int) $instance['vmid'], 'qemu', [$nextKey => $diskValue], []);
         }
         if (!$res['ok']) {
-            return ApiResponse::error('Failed to add disk: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+            return ApiResponse::error('Failed to add disk: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 503);
         }
 
         return ApiResponse::success(['disk' => $nextKey, 'config_key' => $nextKey], 'Disk added successfully', 200);
@@ -1443,7 +1443,7 @@ class VmInstancesController
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'VM instance not found'),
             new OA\Response(response: 500, description: 'Internal server error'),
-            new OA\Response(response: 502, description: 'Proxmox update failed'),
+            new OA\Response(response: 503, description: 'Proxmox update failed'),
         ]
     )]
     public function deleteDisk(Request $request, int $id, string $key): Response
@@ -1477,7 +1477,7 @@ class VmInstancesController
         // Fetch current config so we can protect main OS disk and cloud-init drives.
         $cfg = $client->getVmConfig($node, (int) $instance['vmid'], $vmType);
         if (!$cfg['ok'] || !is_array($cfg['config'] ?? null)) {
-            return ApiResponse::error('Failed to fetch config', 'PROXMOX_ERROR', 502);
+            return ApiResponse::error('Failed to fetch config', 'PROXMOX_ERROR', 503);
         }
         /** @var array<string, mixed> $curConfig */
         $curConfig = $cfg['config'];
@@ -1517,7 +1517,7 @@ class VmInstancesController
         if ($vmType === 'lxc') {
             $res = $client->setVmConfig($node, (int) $instance['vmid'], 'lxc', [], [$key]);
             if (!$res['ok']) {
-                return ApiResponse::error('Failed to remove disk: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+                return ApiResponse::error('Failed to remove disk: ' . ($res['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 503);
             }
 
             return ApiResponse::success(['deleted' => $key], 'Disk removed successfully', 200);
@@ -1531,7 +1531,7 @@ class VmInstancesController
 
         $unlink1 = $client->unlinkQemuDisks($node, (int) $instance['vmid'], [$key]);
         if (!$unlink1['ok']) {
-            return ApiResponse::error('Failed to unlink disk: ' . ($unlink1['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 502);
+            return ApiResponse::error('Failed to unlink disk: ' . ($unlink1['error'] ?? 'unknown'), 'PROXMOX_UPDATE_FAILED', 503);
         }
 
         if ($volRef !== null && $volRef !== '') {
