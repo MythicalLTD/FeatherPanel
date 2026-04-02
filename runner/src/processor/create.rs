@@ -722,6 +722,146 @@ async fn delete_instance_backups(
     Ok(())
 }
 
+/// True when Proxmox failed due to a transient lock/timeout (safe to retry after delay).
+fn is_transient_proxmox_vm_delete_error(msg: &str) -> bool {
+    let m = msg.to_lowercase();
+    m.contains("can't lock")
+        || m.contains("got timeout")
+        || m.contains("unable to lock")
+        || m.contains("vm is locked")
+        || m.contains("qemu is busy")
+        || m.contains("container is running")
+}
+
+/// After Proxmox reports stopped, qemu-server may still hold `lock-<vmid>.conf` briefly.
+const VM_POST_STOP_SETTLE_SECS: u64 = 20;
+
+/// Growing wait before the next delete attempt after a transient failure (caps total stall).
+fn delete_retry_backoff_secs(failed_attempt: u32) -> u64 {
+    // failed_attempt 1 -> 20s, 2 -> 40, 3 -> 80, 4+ -> 120s cap
+    let exp = 20u64.saturating_mul(1u64 << failed_attempt.saturating_sub(1));
+    exp.min(120)
+}
+
+/// Seconds to wait for the destroy UPID (large disks can be slow; lock retries need headroom).
+const VM_DELETE_TASK_WAIT_SECS: u64 = 600;
+
+/// Wait for `qmstop` / `pct stop` UPID (slow guests or lock contention).
+const VM_STOP_TASK_WAIT_SECS: u64 = 600;
+
+const MAX_STOP_COMMAND_ATTEMPTS: u32 = 5;
+
+async fn ensure_vm_stopped(
+    client: &ProxmoxClient,
+    node: &str,
+    vmid: u32,
+    vm_type: VmType,
+) -> Result<()> {
+    match client.get_vm_power_state(node, vmid, vm_type).await {
+        Ok(state) if state == "stopped" => {
+            info!("ℹ️ Old VM {} is already stopped", vmid);
+            return Ok(());
+        }
+        Ok(_) => {}
+        Err(e) => {
+            let error_msg = format!("{}", e);
+            if error_msg.contains("404")
+                || error_msg.contains("not exist")
+                || error_msg.contains("not found")
+            {
+                info!("ℹ️ Old VM {} no longer exists", vmid);
+                return Ok(());
+            }
+        }
+    }
+
+    for attempt in 1..=MAX_STOP_COMMAND_ATTEMPTS {
+        match client.stop_vm(node, vmid, vm_type).await {
+            Ok(stop_upid) => {
+                if stop_upid.is_empty() {
+                    break;
+                }
+                match client
+                    .wait_task(node, &stop_upid, VM_STOP_TASK_WAIT_SECS)
+                    .await
+                {
+                    Ok(()) => {
+                        break;
+                    }
+                    Err(e) => {
+                        let error_msg = format!("{}", e);
+                        if attempt < MAX_STOP_COMMAND_ATTEMPTS
+                            && is_transient_proxmox_vm_delete_error(&error_msg)
+                        {
+                            warn!(
+                                "⚠️ Stop task for VM {} failed (attempt {}/{}): {}. Backing off and retrying stop...",
+                                vmid,
+                                attempt,
+                                MAX_STOP_COMMAND_ATTEMPTS,
+                                error_msg
+                            );
+                            tokio::time::sleep(tokio::time::Duration::from_secs(
+                                delete_retry_backoff_secs(attempt),
+                            ))
+                            .await;
+                            continue;
+                        }
+                        return Err(e);
+                    }
+                }
+            }
+            Err(e) => {
+                let error_msg = format!("{}", e);
+                if error_msg.contains("not running") || error_msg.contains("already stopped") {
+                    break;
+                }
+                if attempt < MAX_STOP_COMMAND_ATTEMPTS
+                    && is_transient_proxmox_vm_delete_error(&error_msg)
+                {
+                    warn!(
+                        "⚠️ Stop request for VM {} failed (attempt {}/{}): {}. Retrying...",
+                        vmid,
+                        attempt,
+                        MAX_STOP_COMMAND_ATTEMPTS,
+                        error_msg
+                    );
+                    tokio::time::sleep(tokio::time::Duration::from_secs(delete_retry_backoff_secs(
+                        attempt,
+                    )))
+                    .await;
+                    continue;
+                }
+                return Err(e);
+            }
+        }
+    }
+
+    for _ in 0..60 {
+        match client.get_vm_power_state(node, vmid, vm_type).await {
+            Ok(state) if state == "stopped" => {
+                info!("✅ Old VM {} stopped", vmid);
+                return Ok(());
+            }
+            Ok(_) => {
+                tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+            }
+            Err(e) => {
+                let error_msg = format!("{}", e);
+                if error_msg.contains("404")
+                    || error_msg.contains("not exist")
+                    || error_msg.contains("not found")
+                {
+                    info!("ℹ️ Old VM {} no longer exists", vmid);
+                    return Ok(());
+                }
+                return Err(e);
+            }
+        }
+    }
+
+    anyhow::bail!("Timed out waiting for old VM {} to stop", vmid)
+}
+
 async fn cleanup_old_vm(
     pool: &MySqlPool,
     task_id: &str,
@@ -748,100 +888,90 @@ async fn cleanup_old_vm(
     
     info!("🗑️ Stopping and deleting old VM {}...", old_vmid);
 
-        ensure_vm_stopped(client, node, old_vmid, vm_type).await?;
+    ensure_vm_stopped(client, node, old_vmid, vm_type).await?;
+    info!(
+        "⏳ Waiting {}s after stop so Proxmox can release qemu-server locks before destroy...",
+        VM_POST_STOP_SETTLE_SECS
+    );
+    tokio::time::sleep(tokio::time::Duration::from_secs(VM_POST_STOP_SETTLE_SECS)).await;
 
-        let mut deleted = false;
-        for attempt in 1..=2 {
-            match client.delete_vm(node, old_vmid, vm_type).await {
-                Ok(delete_upid) => {
-                    if !delete_upid.is_empty() {
-                        client.wait_task(node, &delete_upid, 180).await?;
-                    }
+    const MAX_DELETE_ATTEMPTS: u32 = 8;
+    let mut deleted = false;
+    for attempt in 1..=MAX_DELETE_ATTEMPTS {
+        match client.delete_vm(node, old_vmid, vm_type).await {
+            Ok(delete_upid) => {
+                if delete_upid.is_empty() {
                     info!("✅ Old VM {} deleted", old_vmid);
                     deleted = true;
                     break;
                 }
-                Err(e) => {
-                    let error_msg = format!("{}", e);
-                    if attempt == 1 && error_msg.contains("container is running") {
-                        warn!(
-                            "⚠️ Delete reported VM {} still running after stop. Re-checking state and retrying once...",
-                            old_vmid
-                        );
-                        ensure_vm_stopped(client, node, old_vmid, vm_type).await?;
-                        continue;
+                match client
+                    .wait_task(node, &delete_upid, VM_DELETE_TASK_WAIT_SECS)
+                    .await
+                {
+                    Ok(()) => {
+                        info!("✅ Old VM {} deleted", old_vmid);
+                        deleted = true;
+                        break;
                     }
-
-                    return Err(e);
+                    Err(e) => {
+                        let error_msg = format!("{}", e);
+                        if attempt < MAX_DELETE_ATTEMPTS
+                            && is_transient_proxmox_vm_delete_error(&error_msg)
+                        {
+                            let wait = delete_retry_backoff_secs(attempt);
+                            warn!(
+                                "⚠️ Delete task for VM {} failed (attempt {}/{}): {}. Waiting {}s, re-syncing stop, retrying...",
+                                old_vmid,
+                                attempt,
+                                MAX_DELETE_ATTEMPTS,
+                                error_msg,
+                                wait
+                            );
+                            tokio::time::sleep(tokio::time::Duration::from_secs(wait)).await;
+                            ensure_vm_stopped(client, node, old_vmid, vm_type).await?;
+                            tokio::time::sleep(tokio::time::Duration::from_secs(
+                                VM_POST_STOP_SETTLE_SECS,
+                            ))
+                            .await;
+                            continue;
+                        }
+                        return Err(e);
+                    }
                 }
             }
-        }
+            Err(e) => {
+                let error_msg = format!("{}", e);
+                if attempt < MAX_DELETE_ATTEMPTS && is_transient_proxmox_vm_delete_error(&error_msg)
+                {
+                    let wait = delete_retry_backoff_secs(attempt);
+                    warn!(
+                        "⚠️ Delete request for VM {} failed (attempt {}/{}): {}. Waiting {}s, retrying...",
+                        old_vmid,
+                        attempt,
+                        MAX_DELETE_ATTEMPTS,
+                        error_msg,
+                        wait
+                    );
+                    tokio::time::sleep(tokio::time::Duration::from_secs(wait)).await;
+                    ensure_vm_stopped(client, node, old_vmid, vm_type).await?;
+                    tokio::time::sleep(tokio::time::Duration::from_secs(VM_POST_STOP_SETTLE_SECS))
+                        .await;
+                    continue;
+                }
 
-        if !deleted {
-            anyhow::bail!("Failed to delete old VM {} after retries", old_vmid);
+                return Err(e);
+            }
         }
-    
+    }
+
+    if !deleted {
+        anyhow::bail!("Failed to delete old VM {} after retries", old_vmid);
+    }
+
     advance_step(pool, task_id, "update_db").await?;
     Ok(())
 }
-
-    async fn ensure_vm_stopped(
-        client: &ProxmoxClient,
-        node: &str,
-        vmid: u32,
-        vm_type: VmType,
-    ) -> Result<()> {
-        match client.get_vm_power_state(node, vmid, vm_type).await {
-            Ok(state) if state == "stopped" => {
-                info!("ℹ️ Old VM {} is already stopped", vmid);
-                return Ok(());
-            }
-            Ok(_) => {}
-            Err(e) => {
-                let error_msg = format!("{}", e);
-                if error_msg.contains("404") || error_msg.contains("not exist") || error_msg.contains("not found") {
-                    info!("ℹ️ Old VM {} no longer exists", vmid);
-                    return Ok(());
-                }
-            }
-        }
-
-        match client.stop_vm(node, vmid, vm_type).await {
-            Ok(stop_upid) => {
-                if !stop_upid.is_empty() {
-                    client.wait_task(node, &stop_upid, 180).await?;
-                }
-            }
-            Err(e) => {
-                let error_msg = format!("{}", e);
-                if !(error_msg.contains("not running") || error_msg.contains("already stopped")) {
-                    return Err(e);
-                }
-            }
-        }
-
-        for _ in 0..10 {
-            match client.get_vm_power_state(node, vmid, vm_type).await {
-                Ok(state) if state == "stopped" => {
-                    info!("✅ Old VM {} stopped", vmid);
-                    return Ok(());
-                }
-                Ok(_) => {
-                    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-                }
-                Err(e) => {
-                    let error_msg = format!("{}", e);
-                    if error_msg.contains("404") || error_msg.contains("not exist") || error_msg.contains("not found") {
-                        info!("ℹ️ Old VM {} no longer exists", vmid);
-                        return Ok(());
-                    }
-                    return Err(e);
-                }
-            }
-        }
-
-        anyhow::bail!("Timed out waiting for old VM {} to stop", vmid)
-    }
 
 async fn update_reinstall_db(
     pool: &MySqlPool,
