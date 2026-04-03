@@ -293,7 +293,9 @@ export default function EditServerPage() {
                     ? server.mount_ids.map((id: number) => Number(id))
                     : [];
                 try {
-                    const assignRes = await axios.get(`/api/admin/servers/${serverId}/mounts/assignable`);
+                    const assignRes = await axios.get(`/api/admin/servers/${serverId}/mounts/assignable`, {
+                        params: server.spell_id ? { spell_id: server.spell_id } : undefined,
+                    });
                     if (assignRes.data.success && assignRes.data.data?.mounts) {
                         const assignList = assignRes.data.data.mounts as AssignableMountRow[];
                         setAssignableMounts(assignList);
@@ -301,10 +303,14 @@ export default function EditServerPage() {
                         mountIds = mountIds.filter((id) => allowed.has(id));
                     } else {
                         setAssignableMounts([]);
+                        mountIds = [];
+                        toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
                     }
                 } catch (assignErr) {
                     console.error('Error loading assignable mounts:', assignErr);
                     setAssignableMounts([]);
+                    mountIds = [];
+                    toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
                 }
                 spellBaselineForMounts.current = server.spell_id ?? null;
 
@@ -366,8 +372,11 @@ export default function EditServerPage() {
 
     const reloadAssignableMounts = useCallback(async () => {
         setAssignableLoading(true);
+        const spellForRequest = form.spell_id;
         try {
-            const { data } = await axios.get(`/api/admin/servers/${serverId}/mounts/assignable`);
+            const { data } = await axios.get(`/api/admin/servers/${serverId}/mounts/assignable`, {
+                params: spellForRequest != null && spellForRequest > 0 ? { spell_id: spellForRequest } : undefined,
+            });
             if (data.success && data.data?.mounts) {
                 const list = data.data.mounts as AssignableMountRow[];
                 setAssignableMounts(list);
@@ -376,18 +385,27 @@ export default function EditServerPage() {
                     ...prev,
                     mount_ids: prev.mount_ids.filter((id) => allowed.has(id)),
                 }));
+                spellBaselineForMounts.current = spellForRequest;
+            } else {
+                setAssignableMounts([]);
+                setForm((prev) => ({ ...prev, mount_ids: [] }));
+                spellBaselineForMounts.current = spellForRequest;
+                toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
             }
         } catch (e) {
             console.error('Error refreshing assignable mounts:', e);
+            setAssignableMounts([]);
+            setForm((prev) => ({ ...prev, mount_ids: [] }));
+            spellBaselineForMounts.current = spellForRequest;
+            toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
         } finally {
             setAssignableLoading(false);
         }
-    }, [serverId]);
+    }, [serverId, form.spell_id, t]);
 
     useEffect(() => {
         if (loading) return;
         if (form.spell_id === spellBaselineForMounts.current) return;
-        spellBaselineForMounts.current = form.spell_id;
         void reloadAssignableMounts();
     }, [form.spell_id, loading, reloadAssignableMounts]);
 

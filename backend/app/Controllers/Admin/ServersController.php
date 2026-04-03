@@ -21,6 +21,7 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\User;
 use App\Chat\Mount;
+use App\Chat\Database;
 use App\Chat\Realm;
 use App\Chat\Spell;
 use App\Chat\Server;
@@ -1555,6 +1556,17 @@ class ServersController
             }
         }
 
+        $effectiveNodeId = (int) $server['node_id'];
+        $effectiveSpellId = array_key_exists('spell_id', $serverUpdateData)
+            ? (int) $serverUpdateData['spell_id']
+            : (int) $server['spell_id'];
+        if ($mountIdsToSync !== null) {
+            $mErr = Mount::validateMountIdsForContext($effectiveNodeId, $effectiveSpellId, $mountIdsToSync);
+            if ($mErr !== null) {
+                return ApiResponse::error($mErr, 'INVALID_MOUNTS', 422);
+            }
+        }
+
         // Handle owner change: deauthorize old owner from Wings before updating
         // Note: server table stores owner_id (integer), not UUID, so we need to look up the User record
         if (isset($data['owner_id']) && (int) $data['owner_id'] !== (int) $server['owner_id']) {
@@ -1595,51 +1607,68 @@ class ServersController
         // Log the data being sent for debugging
         App::getInstance(true)->getLogger()->debug('Updating server ID ' . $id . ' with data: ' . json_encode($serverUpdateData));
 
-        $updated = Server::updateServerById($id, $serverUpdateData);
-        if (!$updated) {
-            // Check backend logs for detailed error message
-            App::getInstance(true)->getLogger()->error('Server update failed for ID: ' . $id);
+        $pdo = Database::getPdoConnection();
+        $pdo->beginTransaction();
+        try {
+            $updated = Server::updateServerById($id, $serverUpdateData);
+            if (!$updated) {
+                $pdo->rollBack();
+                App::getInstance(true)->getLogger()->error('Server update failed for ID: ' . $id);
 
-            return ApiResponse::error('Failed to update server. Check server logs for details.', 'FAILED_TO_UPDATE_SERVER', 500);
-        }
+                return ApiResponse::error('Failed to update server. Check server logs for details.', 'FAILED_TO_UPDATE_SERVER', 500);
+            }
 
-        // Handle allocation changes if allocation_id is being updated
-        if (isset($data['allocation_id']) && $data['allocation_id'] !== $server['allocation_id']) {
-            // Unclaim the old allocation
-            if (isset($server['allocation_id'])) {
-                $oldAllocationUnclaimed = Allocation::unassignFromServer($server['allocation_id']);
-                if (!$oldAllocationUnclaimed) {
-                    App::getInstance(true)->getLogger()->error('Failed to unclaim old allocation (ID: ' . $server['allocation_id'] . ') for server ID: ' . $id);
+            if (isset($data['allocation_id']) && $data['allocation_id'] !== $server['allocation_id']) {
+                if (isset($server['allocation_id'])) {
+                    $oldAllocationUnclaimed = Allocation::unassignFromServer($server['allocation_id']);
+                    if (!$oldAllocationUnclaimed) {
+                        $pdo->rollBack();
+                        App::getInstance(true)->getLogger()->error('Failed to unclaim old allocation (ID: ' . $server['allocation_id'] . ') for server ID: ' . $id);
+
+                        return ApiResponse::error('Failed to unassign previous allocation', 'ALLOCATION_UPDATE_FAILED', 500);
+                    }
+                }
+
+                $newAllocationClaimed = Allocation::assignToServer($data['allocation_id'], $id);
+                if (!$newAllocationClaimed) {
+                    $pdo->rollBack();
+                    App::getInstance(true)->getLogger()->error('Failed to claim new allocation (ID: ' . $data['allocation_id'] . ') for server ID: ' . $id);
+
+                    return ApiResponse::error('Failed to claim new allocation', 'ALLOCATION_UPDATE_FAILED', 500);
                 }
             }
 
-            // Claim the new allocation
-            $newAllocationClaimed = Allocation::assignToServer($data['allocation_id'], $id);
-            if (!$newAllocationClaimed) {
-                App::getInstance(true)->getLogger()->error('Failed to claim new allocation (ID: ' . $data['allocation_id'] . ') for server ID: ' . $id);
-            }
-        }
+            if ($variablesPayload !== null && !$spellChanged) {
+                $ok = ServerVariable::createOrUpdateServerVariables((int) $id, $variablesPayload);
+                if (!$ok) {
+                    $pdo->rollBack();
 
-        // Update variables if provided (only if spell hasn't changed)
-        if ($variablesPayload !== null && !$spellChanged) {
-            $ok = ServerVariable::createOrUpdateServerVariables((int) $id, $variablesPayload);
-            if (!$ok) {
-                return ApiResponse::error('Failed to update server variables', 'VARIABLES_UPDATE_FAILED', 500);
+                    return ApiResponse::error('Failed to update server variables', 'VARIABLES_UPDATE_FAILED', 500);
+                }
             }
-        }
 
-        if ($mountIdsToSync !== null) {
-            $mErr = Mount::validateMountsForServer((int) $id, $mountIdsToSync);
-            if ($mErr !== null) {
-                return ApiResponse::error($mErr, 'INVALID_MOUNTS', 422);
+            if ($mountIdsToSync !== null) {
+                if (!Mount::syncServerMounts((int) $id, $mountIdsToSync)) {
+                    $pdo->rollBack();
+
+                    return ApiResponse::error('Failed to sync mounts', 'MOUNT_SYNC_FAILED', 500);
+                }
+            } elseif ($spellChanged) {
+                if (!Mount::pruneServerMountsToMatchContext((int) $id)) {
+                    $pdo->rollBack();
+
+                    return ApiResponse::error('Failed to update mounts after spell change', 'MOUNT_SYNC_FAILED', 500);
+                }
             }
-            if (!Mount::syncServerMounts((int) $id, $mountIdsToSync)) {
-                return ApiResponse::error('Failed to sync mounts', 'MOUNT_SYNC_FAILED', 500);
+
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
             }
-        } elseif ($spellChanged) {
-            if (!Mount::pruneServerMountsToMatchContext((int) $id)) {
-                return ApiResponse::error('Failed to update mounts after spell change', 'MOUNT_SYNC_FAILED', 500);
-            }
+            App::getInstance(true)->getLogger()->error('Server update transaction failed for ID ' . $id . ': ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to update server', 'SERVER_UPDATE_FAILED', 500);
         }
 
         // Sync with Wings if node information is available

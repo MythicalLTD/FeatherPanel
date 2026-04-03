@@ -553,6 +553,7 @@ class Node
 
             return false;
         }
+        Mount::deletePivotLinksForMountable(Mount::MOUNTABLE_NODE, $id);
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
 

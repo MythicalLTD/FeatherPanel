@@ -4107,7 +4107,7 @@
 		},
 		"mounts": {
 			"title": "Mounts",
-			"description": "Define host folders Wings may bind into containers. Link each mount to nodes (allowed_mounts), spells (optional restrict), then enable per server.",
+			"description": "Define host folders Wings may bind into containers. Link each mount to nodes for Wings allowed_mounts, optionally restrict by spell, then enable per server.",
 			"create": "Create mount",
 			"search_placeholder": "Search by name or path…",
 			"no_results": "No mounts defined",
@@ -4132,6 +4132,8 @@
 			},
 			"drawer_create_title": "New mount",
 			"drawer_edit_title": "Edit mount",
+			"links_nodes_failed": "Failed to save node links for this mount.",
+			"links_spells_failed": "Node links were saved, but saving spell links failed. Reopen the editor to try again.",
 			"links": {
 				"nodes": "Nodes (required for Wings allow list)",
 				"spells": "Spells (empty = all spells)",
@@ -4471,8 +4473,9 @@
 				"mounts": {
 					"title": "Bind mounts",
 					"description": "Mount host directories into this server container (same as Pelican mounts). Node must allow the source path; save to sync Wings.",
-					"empty": "No mounts available for this node and spell. Create mounts under Admin → Mounts and link them to this node (and optionally spell).",
-					"loading": "Loading mounts…"
+					"empty": "No mounts available for this node and spell. Create mounts under Admin → Mounts and link them to this node (and to this spell if you restrict by spell).",
+					"loading": "Loading mounts…",
+					"assignable_load_failed": "Could not load assignable mounts. Mount selection was reset; try again or refresh the page."
 				},
 				"allocations": {
 					"title": "Network Allocations",

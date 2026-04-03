@@ -159,7 +159,7 @@ class Mount
             'description' => isset($data['description']) && $data['description'] !== '' ? (string) $data['description'] : null,
             'source' => $source,
             'target' => $target,
-            'read_only' => !empty($data['read_only']) ? 1 : 0,
+            'read_only' => filter_var($data['read_only'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 1 : 0,
             'user_mountable' => $userMountable ? 1 : 0,
         ];
         $fields = array_keys($row);
@@ -297,11 +297,23 @@ class Mount
             return [];
         }
         $pdo = Database::getPdoConnection();
-        $sql = 'SELECT DISTINCT m.`source` FROM ' . self::$table . ' m
-            INNER JOIN ' . self::$pivot . ' p ON p.mount_id = m.id
-            WHERE p.mountable_type = :nt AND p.mountable_id = :nid';
+        // Mounts linked to this node, plus mounts with no node restriction (empty node pivot = all nodes).
+        $sql = 'SELECT DISTINCT m.`source` FROM ' . self::$table . ' m WHERE (
+            EXISTS (
+                SELECT 1 FROM ' . self::$pivot . ' p
+                WHERE p.mount_id = m.id AND p.mountable_type = :nt AND p.mountable_id = :nid
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM ' . self::$pivot . ' p2
+                WHERE p2.mount_id = m.id AND p2.mountable_type = :nt2
+            )
+        )';
         $stmt = $pdo->prepare($sql);
-        $stmt->execute(['nt' => self::MOUNTABLE_NODE, 'nid' => $nodeId]);
+        $stmt->execute([
+            'nt' => self::MOUNTABLE_NODE,
+            'nid' => $nodeId,
+            'nt2' => self::MOUNTABLE_NODE,
+        ]);
         $out = [];
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $out[] = (string) $row['source'];
@@ -358,29 +370,71 @@ class Mount
     /**
      * Mounts that may be toggled for this server (node + spell constraints).
      *
+     * @param ?int $spellIdOverride When set (e.g. draft spell in admin UI), filter by this spell instead of the server's stored spell_id.
+     *
      * @return array<int, array<string, mixed>>
      */
-    public static function getAssignableMountsForServer(int $serverId): array
+    public static function getAssignableMountsForServer(int $serverId, ?int $spellIdOverride = null): array
     {
         $server = Server::getServerById($serverId);
         if (!$server) {
             return [];
         }
         $nodeId = (int) $server['node_id'];
-        $spellId = (int) $server['spell_id'];
+        $spellId = ($spellIdOverride !== null && $spellIdOverride > 0) ? $spellIdOverride : (int) $server['spell_id'];
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' ORDER BY name ASC');
-        $stmt->execute();
-        $all = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        $out = [];
-        foreach ($all as $m) {
-            $mid = (int) $m['id'];
-            if (self::mountAppliesToNode($mid, $nodeId) && self::mountAppliesToSpell($mid, $spellId)) {
-                $out[] = $m;
-            }
-        }
+        $sql = 'SELECT m.* FROM ' . self::$table . ' m WHERE (
+                NOT EXISTS (
+                    SELECT 1 FROM ' . self::$pivot . ' pn
+                    WHERE pn.mount_id = m.id AND pn.mountable_type = :nodeType
+                )
+                OR EXISTS (
+                    SELECT 1 FROM ' . self::$pivot . ' pn
+                    WHERE pn.mount_id = m.id
+                        AND pn.mountable_type = :nodeType2
+                        AND pn.mountable_id = :nodeId
+                )
+            )
+            AND (
+                NOT EXISTS (
+                    SELECT 1 FROM ' . self::$pivot . ' ps
+                    WHERE ps.mount_id = m.id AND ps.mountable_type = :spellType
+                )
+                OR EXISTS (
+                    SELECT 1 FROM ' . self::$pivot . ' ps
+                    WHERE ps.mount_id = m.id
+                        AND ps.mountable_type = :spellType2
+                        AND ps.mountable_id = :spellId
+                )
+            )
+            ORDER BY m.name ASC';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            'nodeType' => self::MOUNTABLE_NODE,
+            'nodeType2' => self::MOUNTABLE_NODE,
+            'nodeId' => $nodeId,
+            'spellType' => self::MOUNTABLE_SPELL,
+            'spellType2' => self::MOUNTABLE_SPELL,
+            'spellId' => $spellId,
+        ]);
 
-        return $out;
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Remove all pivot rows for a deleted node, spell, or server (polymorphic target).
+     */
+    public static function deletePivotLinksForMountable(string $type, int $entityId): bool
+    {
+        if ($entityId <= 0 || !in_array($type, [self::MOUNTABLE_NODE, self::MOUNTABLE_SPELL, self::MOUNTABLE_SERVER], true)) {
+            return false;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'DELETE FROM ' . self::$pivot . ' WHERE mountable_type = :t AND mountable_id = :id'
+        );
+
+        return $stmt->execute(['t' => $type, 'id' => $entityId]);
     }
 
     public static function mountAppliesToNode(int $mountId, int $nodeId): bool

@@ -366,6 +366,7 @@ class Spell
         if ($id <= 0) {
             return false;
         }
+        Mount::deletePivotLinksForMountable(Mount::MOUNTABLE_SPELL, $id);
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
 

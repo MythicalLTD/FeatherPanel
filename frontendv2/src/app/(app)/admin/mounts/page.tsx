@@ -70,6 +70,8 @@ interface Pagination {
     hasPrev: boolean;
 }
 
+const MAX_ADMIN_LIST_PAGES = 500;
+
 async function fetchAllNodes(): Promise<PickNode[]> {
     const out: PickNode[] = [];
     let page = 1;
@@ -81,6 +83,7 @@ async function fetchAllNodes(): Promise<PickNode[]> {
         const p = data.data?.pagination;
         if (!p?.has_next || batch.length === 0) break;
         page += 1;
+        if (page > MAX_ADMIN_LIST_PAGES) break;
     }
     return out;
 }
@@ -96,6 +99,7 @@ async function fetchAllSpells(): Promise<PickSpell[]> {
         const p = data.data?.pagination;
         if (!p?.has_next || batch.length === 0) break;
         page += 1;
+        if (page > MAX_ADMIN_LIST_PAGES) break;
     }
     return out;
 }
@@ -243,8 +247,26 @@ export default function AdminMountsPage() {
     };
 
     const persistLinks = async (mountId: number) => {
-        await axios.patch(`/api/admin/mounts/${mountId}/nodes`, { node_ids: selectedNodeIds });
-        await axios.patch(`/api/admin/mounts/${mountId}/spells`, { spell_ids: selectedSpellIds });
+        try {
+            await axios.patch(`/api/admin/mounts/${mountId}/nodes`, { node_ids: selectedNodeIds });
+        } catch (e) {
+            if (isAxiosError(e) && e.response?.data?.message) {
+                toast.error(String(e.response.data.message));
+            } else {
+                toast.error(t('admin.mounts.links_nodes_failed'));
+            }
+            throw e;
+        }
+        try {
+            await axios.patch(`/api/admin/mounts/${mountId}/spells`, { spell_ids: selectedSpellIds });
+        } catch (e) {
+            if (isAxiosError(e) && e.response?.data?.message) {
+                toast.error(String(e.response.data.message));
+            } else {
+                toast.error(t('admin.mounts.links_spells_failed'));
+            }
+            throw e;
+        }
     };
 
     const handleSave = async () => {

@@ -22,7 +22,9 @@ use App\Chat\Mount;
 use App\Chat\Spell;
 use App\Chat\Server;
 use App\Chat\Activity;
+use App\Permissions;
 use App\Helpers\ApiResponse;
+use App\Helpers\PermissionHelper;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
@@ -102,12 +104,16 @@ class MountsController
         if (array_key_exists('user_mountable', $data)) {
             $userMountable = self::requestBoolean($data['user_mountable']);
         }
+        $readOnly = false;
+        if (array_key_exists('read_only', $data)) {
+            $readOnly = self::requestBoolean($data['read_only']);
+        }
         $newId = Mount::createMount([
             'name' => $name,
             'description' => $desc,
             'source' => trim((string) $data['source']),
             'target' => trim((string) $data['target']),
-            'read_only' => !empty($data['read_only']),
+            'read_only' => $readOnly,
             'user_mountable' => $userMountable,
         ]);
         if ($newId === false) {
@@ -163,8 +169,8 @@ class MountsController
             $update['source'] = trim((string) $source);
             $update['target'] = trim((string) $target);
         }
-        if (isset($data['read_only'])) {
-            $update['read_only'] = !empty($data['read_only']);
+        if (array_key_exists('read_only', $data)) {
+            $update['read_only'] = self::requestBoolean($data['read_only']);
         }
         if (array_key_exists('user_mountable', $data)) {
             $update['user_mountable'] = self::requestBoolean($data['user_mountable']);
@@ -214,11 +220,21 @@ class MountsController
 
     public function setSpells(Request $request, int $id): Response
     {
+        $user = $request->get('user');
+        if (!PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SPELLS_EDIT)) {
+            return ApiResponse::error('Insufficient permissions to modify spell mount links', 'FORBIDDEN', 403);
+        }
+
         return $this->replaceLinks($request, $id, Mount::MOUNTABLE_SPELL, 'spell_ids');
     }
 
     public function setServers(Request $request, int $id): Response
     {
+        $user = $request->get('user');
+        if (!PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SERVERS_EDIT)) {
+            return ApiResponse::error('Insufficient permissions to modify server mount links', 'FORBIDDEN', 403);
+        }
+
         return $this->replaceLinks($request, $id, Mount::MOUNTABLE_SERVER, 'server_ids');
     }
 
@@ -228,7 +244,18 @@ class MountsController
         if (!Server::getServerById($serverId)) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
-        $rows = Mount::getAssignableMountsForServer($serverId);
+        $spellOverride = null;
+        $q = $request->query->get('spell_id');
+        if ($q !== null && $q !== '') {
+            if (!is_numeric($q)) {
+                return ApiResponse::error('spell_id must be numeric', 'VALIDATION_ERROR', 400);
+            }
+            $spellOverride = (int) $q;
+            if ($spellOverride <= 0 || !Spell::getSpellById($spellOverride)) {
+                return ApiResponse::error('Invalid spell_id', 'INVALID_SPELL_ID', 400);
+            }
+        }
+        $rows = Mount::getAssignableMountsForServer($serverId, $spellOverride);
         foreach ($rows as &$r) {
             $r = self::enrichMount($r);
         }
@@ -263,14 +290,38 @@ class MountsController
         if ($sourceN === '' || $targetN === '') {
             return 'Source and target paths are required';
         }
+        if (($err = self::pathMustBeAbsoluteAndCanonical($sourceN)) !== null) {
+            return 'Source: ' . $err;
+        }
+        if (($err = self::pathMustBeAbsoluteAndCanonical($targetN)) !== null) {
+            return 'Target: ' . $err;
+        }
         foreach (Mount::$invalidSourcePaths as $bad) {
             if (str_starts_with($sourceN, rtrim(str_replace('\\', '/', $bad), '/'))) {
                 return 'Source path is not allowed (reserved panel or volume path)';
             }
         }
         foreach (Mount::$invalidTargetPaths as $bad) {
-            if ($targetN === rtrim(str_replace('\\', '/', $bad), '/') || str_starts_with($targetN, rtrim($bad, '/') . '/')) {
+            $badN = rtrim(str_replace('\\', '/', $bad), '/');
+            if ($targetN === $badN || str_starts_with($targetN, $badN . '/')) {
                 return 'Target path conflicts with the default server directory';
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Bind-mount paths must be absolute and must not contain traversal segments.
+     */
+    private static function pathMustBeAbsoluteAndCanonical(string $normalized): ?string
+    {
+        if ($normalized === '' || $normalized[0] !== '/') {
+            return 'path must be absolute (start with /)';
+        }
+        foreach (explode('/', $normalized) as $part) {
+            if ($part === '..') {
+                return 'path must not contain .. segments';
             }
         }
 

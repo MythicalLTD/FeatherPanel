@@ -631,6 +631,8 @@ class Server
         // This ensures we don't leave orphaned allocations pointing to a deleted server
         Allocation::unassignAllByServerId($id);
 
+        Mount::deletePivotLinksForMountable(Mount::MOUNTABLE_SERVER, $id);
+
         $pdo = Database::getPdoConnection();
         $sql = 'DELETE FROM ' . self::$table . ' WHERE id = :id';
         $stmt = $pdo->prepare($sql);
