@@ -1000,6 +1000,14 @@ class ServerUserController
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST', 400);
         }
 
+        if (array_key_exists('backup_limit', $data)) {
+            return ApiResponse::error(
+                'The backup limit can only be changed by an administrator.',
+                'BACKUP_LIMIT_ADMIN_ONLY',
+                403
+            );
+        }
+
         // Save wipe_files flag early (before any processing that might modify $data)
         $wipeFilesRequested = isset($data['wipe_files']) && ($data['wipe_files'] === true || $data['wipe_files'] === 'true' || $data['wipe_files'] === 1 || $data['wipe_files'] === '1');
 
@@ -1161,9 +1169,9 @@ class ServerUserController
             $updateData['spell_id'] = $spellId;
         }
 
-        if (isset($data['backup_limit']) || array_key_exists('backup_retention_mode', $data)) {
+        if (array_key_exists('backup_retention_mode', $data)) {
             if (!$isOwner) {
-                return ApiResponse::error('Only the server owner can change backup policy', 'FORBIDDEN', 403);
+                return ApiResponse::error('Only the server owner can change backup retention policy', 'FORBIDDEN', 403);
             }
             $appCfg = App::getInstance(true)->getConfig();
             $allowPolicy = $appCfg->getSetting(ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT, 'true');
@@ -1171,31 +1179,23 @@ class ServerUserController
             if (!$allowPolicy) {
                 return ApiResponse::error('Backup policy changes are disabled by the administrator', 'BACKUP_POLICY_EDIT_DISABLED', 403);
             }
-            if (isset($data['backup_limit'])) {
-                if (!is_numeric($data['backup_limit']) || (int) $data['backup_limit'] < 0) {
-                    return ApiResponse::error('backup_limit must be a non-negative integer', 'INVALID_BACKUP_LIMIT', 400);
-                }
-                $updateData['backup_limit'] = (int) $data['backup_limit'];
-            }
-            if (array_key_exists('backup_retention_mode', $data)) {
-                $rawBr = $data['backup_retention_mode'];
-                if ($rawBr === null || $rawBr === '') {
+            $rawBr = $data['backup_retention_mode'];
+            if ($rawBr === null || $rawBr === '') {
+                $updateData['backup_retention_mode'] = null;
+            } elseif (!is_string($rawBr)) {
+                return ApiResponse::error('backup_retention_mode must be a string or null', 'INVALID_DATA_TYPE', 400);
+            } else {
+                $t = strtolower(trim($rawBr));
+                if (in_array($t, ['inherit', 'panel', 'default'], true)) {
                     $updateData['backup_retention_mode'] = null;
-                } elseif (!is_string($rawBr)) {
-                    return ApiResponse::error('backup_retention_mode must be a string or null', 'INVALID_DATA_TYPE', 400);
+                } elseif ($t === BackupFifoEviction::MODE_FIFO_ROLLING || $t === BackupFifoEviction::MODE_HARD_LIMIT) {
+                    $updateData['backup_retention_mode'] = $t;
                 } else {
-                    $t = strtolower(trim($rawBr));
-                    if (in_array($t, ['inherit', 'panel', 'default'], true)) {
-                        $updateData['backup_retention_mode'] = null;
-                    } elseif ($t === BackupFifoEviction::MODE_FIFO_ROLLING || $t === BackupFifoEviction::MODE_HARD_LIMIT) {
-                        $updateData['backup_retention_mode'] = $t;
-                    } else {
-                        return ApiResponse::error(
-                            'Invalid backup_retention_mode. Use hard_limit, fifo_rolling, inherit, or null.',
-                            'INVALID_BACKUP_RETENTION',
-                            400
-                        );
-                    }
+                    return ApiResponse::error(
+                        'Invalid backup_retention_mode. Use hard_limit, fifo_rolling, inherit, or null.',
+                        'INVALID_BACKUP_RETENTION',
+                        400
+                    );
                 }
             }
         }
@@ -1230,7 +1230,7 @@ class ServerUserController
         }
 
         // Additional security check: only allow specific fields
-        $allowedFields = ['name', 'description', 'startup', 'image', 'spell_id', 'realms_id', 'backup_limit', 'backup_retention_mode'];
+        $allowedFields = ['name', 'description', 'startup', 'image', 'spell_id', 'realms_id', 'backup_retention_mode'];
         $updateData = array_intersect_key($updateData, array_flip($allowedFields));
 
         // Double check that we only have allowed fields

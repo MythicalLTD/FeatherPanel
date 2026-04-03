@@ -98,7 +98,6 @@ export default function ServerSettingsPage() {
 
     const [name, setName] = React.useState('');
     const [description, setDescription] = React.useState('');
-    const [backupLimit, setBackupLimit] = React.useState(0);
     const [backupRetentionMode, setBackupRetentionMode] = React.useState<'inherit' | 'hard_limit' | 'fifo_rolling'>(
         'inherit',
     );
@@ -139,7 +138,6 @@ export default function ServerSettingsPage() {
                 setServer(data.data);
                 setName(data.data.name);
                 setDescription(data.data.description || '');
-                setBackupLimit(Number(data.data.backup_limit ?? 0));
                 const br = data.data.backup_retention_mode;
                 setBackupRetentionMode(br === 'fifo_rolling' || br === 'hard_limit' ? br : 'inherit');
             }
@@ -217,17 +215,15 @@ export default function ServerSettingsPage() {
         Boolean(server && !server.is_subuser) && isEnabled(settings?.server_allow_user_backup_policy_edit ?? 'true');
     const hasBackupPolicyChanges =
         server &&
-        (Number(server.backup_limit) !== backupLimit ||
-            (server.backup_retention_mode === 'fifo_rolling' || server.backup_retention_mode === 'hard_limit'
-                ? server.backup_retention_mode
-                : 'inherit') !== backupRetentionMode);
+        (server.backup_retention_mode === 'fifo_rolling' || server.backup_retention_mode === 'hard_limit'
+            ? server.backup_retention_mode
+            : 'inherit') !== backupRetentionMode;
 
     const handleSaveBackupPolicy = async () => {
         if (!canEditBackupPolicy || !server) return;
         setSavingBackupPolicy(true);
         try {
             const { data } = await axios.put(`/api/user/servers/${uuidShort}`, {
-                backup_limit: backupLimit,
                 backup_retention_mode: backupRetentionMode === 'inherit' ? null : backupRetentionMode,
             });
             if (data.success) {
@@ -365,18 +361,13 @@ export default function ServerSettingsPage() {
                             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                                 <div className='space-y-2'>
                                     <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1'>
-                                        {t('admin.servers.form.backup_limit')}
+                                        {t('serverSettings.backupLimitReadOnlyLabel')}
                                     </Label>
-                                    <Input
-                                        type='number'
-                                        min={0}
-                                        value={backupLimit}
-                                        onChange={(e) => setBackupLimit(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                                        disabled={savingBackupPolicy}
-                                        className='h-12 bg-secondary/50 border-border/10 rounded-xl'
-                                    />
+                                    <div className='h-12 px-4 flex items-center rounded-xl border border-border/10 bg-muted/40 text-sm font-medium'>
+                                        {server?.backup_limit === 0 ? '∞' : String(server?.backup_limit ?? '—')}
+                                    </div>
                                     <p className='text-xs text-muted-foreground ml-1'>
-                                        {t('admin.servers.form.backup_limit_help')}
+                                        {t('serverSettings.backupLimitReadOnlyHelp')}
                                     </p>
                                 </div>
                                 <div className='space-y-2'>

@@ -958,7 +958,7 @@ class SettingsController
             ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT => [
                 'name' => ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT,
                 'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT, 'true'),
-                'description' => 'Allow server owners to change backup slot count and retention mode from the panel (user API). Admins can always edit servers and VM instances.',
+                'description' => 'Allow server owners to change backup retention mode (inherit / hard limit / FIFO) from the panel and user API. Backup slot count (backup limit) is admin-only. Admins can always edit servers and VM instances.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'true',
