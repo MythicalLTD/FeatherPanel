@@ -392,6 +392,12 @@ export default function PluginsPage() {
                             </div>
                         )}
                     </div>
+                    <div className='flex justify-end'>
+                        <Button variant='outline' onClick={() => router.push('/admin/cloud-management')}>
+                            <Key className='h-4 w-4 mr-2' />
+                            {t('admin.marketplace.plugins.cloud_connected.action')}
+                        </Button>
+                    </div>
                 </PageCard>
             )}
 

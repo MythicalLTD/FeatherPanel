@@ -140,6 +140,9 @@ export interface ServerFormData {
 
     // Spell variables
     variables: Record<string, string>;
+
+    /** Wings bind mounts enabled for this server (subset of assignable for node+spell) */
+    mount_ids: number[];
 }
 
 export interface SelectedEntities {

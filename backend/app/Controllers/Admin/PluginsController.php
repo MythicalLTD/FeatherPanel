@@ -23,6 +23,7 @@ use App\Helpers\ApiResponse;
 use App\Chat\InstalledPlugin;
 use App\Plugins\PluginConfig;
 use OpenApi\Attributes as OA;
+use App\Helpers\PanelAssetUrl;
 use App\Config\ConfigInterface;
 use App\Plugins\PluginSettings;
 use App\Plugins\PluginDependencies;
@@ -150,6 +151,12 @@ class PluginsController
                 $info['plugin']['unmetDependencies'] = $unmet;
                 $info['plugin']['missingConfigs'] = $missingConfigs;
                 $info['configSchema'] = $configSchema;
+                if (isset($info['plugin']['icon']) && is_string($info['plugin']['icon'])) {
+                    $rewritten = PanelAssetUrl::rewriteCloudStorageIcon($info['plugin']['icon']);
+                    if ($rewritten !== null) {
+                        $info['plugin']['icon'] = $rewritten;
+                    }
+                }
                 $pluginsList[$identifier] = $info;
             }
 

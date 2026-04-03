@@ -354,23 +354,30 @@ class Allocation
     /**
      * Assign allocation to a server.
      */
-    public static function assignToServer(int $allocationId, int $serverId): bool
+    public static function assignToServer(int $allocationId, int $serverId, ?\PDO $pdo = null): bool
     {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = :server_id WHERE id = :id');
-
-        return $stmt->execute([
+        $pdo ??= Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'UPDATE ' . self::$table . ' SET server_id = :server_id WHERE id = :id AND server_id IS NULL'
+        );
+        if (
+            !$stmt->execute([
             'id' => $allocationId,
             'server_id' => $serverId,
-        ]);
+            ])
+        ) {
+            return false;
+        }
+
+        return $stmt->rowCount() > 0;
     }
 
     /**
      * Unassign allocation from server.
      */
-    public static function unassignFromServer(int $allocationId): bool
+    public static function unassignFromServer(int $allocationId, ?\PDO $pdo = null): bool
     {
-        $pdo = Database::getPdoConnection();
+        $pdo ??= Database::getPdoConnection();
         $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = NULL WHERE id = :id');
 
         return $stmt->execute(['id' => $allocationId]);
@@ -633,9 +640,9 @@ class Allocation
     /**
      * Unassign all allocations for a specific server (set server_id to NULL).
      */
-    public static function unassignAllByServerId(int $serverId): bool
+    public static function unassignAllByServerId(int $serverId, ?\PDO $pdo = null): bool
     {
-        $pdo = Database::getPdoConnection();
+        $pdo ??= Database::getPdoConnection();
         $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = NULL WHERE server_id = :server_id');
 
         return $stmt->execute(['server_id' => $serverId]);

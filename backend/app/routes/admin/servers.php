@@ -18,6 +18,7 @@
 use App\App;
 use App\Permissions;
 use App\Helpers\ApiResponse;
+use App\Controllers\Admin\MountsController;
 use App\Controllers\Admin\ServersController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -34,6 +35,21 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_SERVERS_VIEW,
     );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-mounts-assignable',
+        '/api/admin/servers/{id}/mounts/assignable',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new MountsController())->assignableForServer($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_VIEW,
+    );
+
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-servers-show',

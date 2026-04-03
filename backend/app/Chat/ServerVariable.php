@@ -250,17 +250,16 @@ class ServerVariable
      *
      * @return bool True on success, false on failure
      */
-    public static function deleteServerVariablesByServerId(int $serverId): bool
+    public static function deleteServerVariablesByServerId(int $serverId, ?\PDO $pdo = null): bool
     {
         if ($serverId <= 0) {
             return false;
         }
 
-        $pdo = Database::getPdoConnection();
+        $pdo ??= Database::getPdoConnection();
         $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE server_id = :server_id');
-        $stmt->execute(['server_id' => $serverId]);
 
-        return $stmt->rowCount() > 0;
+        return $stmt->execute(['server_id' => $serverId]);
     }
 
     /**
@@ -270,55 +269,76 @@ class ServerVariable
      *
      * @param int $serverId The server ID
      * @param array $variables Array of variables with variable_id and variable_value
+     * @param \PDO|null $externalPdo When provided and already in a transaction, run without nested begin/commit
      *
      * @return bool True on success, false on failure
      */
-    public static function createOrUpdateServerVariables(int $serverId, array $variables): bool
+    public static function createOrUpdateServerVariables(int $serverId, array $variables, ?\PDO $externalPdo = null): bool
     {
-        if ($serverId <= 0 || empty($variables)) {
+        if ($serverId <= 0) {
             return false;
         }
 
-        // Validate server exists
-        $server = Server::getServerById($serverId);
-        if (!$server) {
+        if (!Server::getServerById($serverId, $externalPdo)) {
             return false;
         }
 
-        $pdo = Database::getPdoConnection();
-        $pdo->beginTransaction();
+        $ownTransaction = $externalPdo === null;
+        $pdo = $externalPdo ?? Database::getPdoConnection();
+
+        if ($ownTransaction) {
+            $pdo->beginTransaction();
+        }
 
         try {
-            // Delete existing variables for this server
-            self::deleteServerVariablesByServerId($serverId);
-
-            // Insert new variables
-            foreach ($variables as $variable) {
-                if (!isset($variable['variable_id']) || !isset($variable['variable_value'])) {
+            $del = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE server_id = :server_id');
+            if (!$del->execute(['server_id' => $serverId])) {
+                if ($ownTransaction && $pdo->inTransaction()) {
                     $pdo->rollBack();
+                }
+
+                return false;
+            }
+
+            $ins = $pdo->prepare(
+                'INSERT INTO ' . self::$table . ' (server_id, variable_id, variable_value) VALUES (:server_id, :variable_id, :variable_value)'
+            );
+
+            foreach ($variables as $variable) {
+                if (!isset($variable['variable_id'], $variable['variable_value'])) {
+                    if ($ownTransaction && $pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
 
                     return false;
                 }
 
-                $data = [
-                    'server_id' => $serverId,
-                    'variable_id' => (int) $variable['variable_id'],
-                    'variable_value' => (string) $variable['variable_value'],
-                ];
-
-                $result = self::createServerVariable($data);
-                if (!$result) {
-                    $pdo->rollBack();
+                if (
+                    !$ins->execute([
+                        'server_id' => $serverId,
+                        'variable_id' => (int) $variable['variable_id'],
+                        'variable_value' => (string) $variable['variable_value'],
+                    ])
+                ) {
+                    if ($ownTransaction && $pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
 
                     return false;
                 }
             }
 
-            $pdo->commit();
+            if ($ownTransaction) {
+                $pdo->commit();
+            }
 
             return true;
-        } catch (\Exception $e) {
-            $pdo->rollBack();
+        } catch (\Throwable $e) {
+            if ($ownTransaction) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+            }
             App::getInstance(true)->getLogger()->error('Failed to create/update server variables: ' . $e->getMessage());
 
             return false;
