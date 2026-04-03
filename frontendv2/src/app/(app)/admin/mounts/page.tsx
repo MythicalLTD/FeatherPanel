@@ -324,6 +324,8 @@ export default function AdminMountsPage() {
                     return;
                 }
                 if (!(await persistLinks(newId))) {
+                    await axios.delete(`/api/admin/mounts/${newId}`).catch(() => {});
+                    await loadMounts();
                     return;
                 }
                 toast.success(t('admin.mounts.saved'));
