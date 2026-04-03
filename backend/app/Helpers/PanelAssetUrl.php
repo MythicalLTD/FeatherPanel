@@ -46,7 +46,7 @@ class PanelAssetUrl
         }
         $icon = trim($icon);
         if ($icon === '') {
-            return '';
+            return null;
         }
 
         foreach (self::CLOUD_STORAGE_ICON_PREFIXES as $prefix) {

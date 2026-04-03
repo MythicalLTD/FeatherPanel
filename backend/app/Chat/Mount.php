@@ -134,7 +134,7 @@ class Mount
     }
 
     /**
-     * @param array{name:string,description?:?string,source:string,target:string,read_only?:bool,user_mountable?:bool} $data Omit user_mountable for default true (Pelican admin create always enables this).
+     * @param array{name:string,description?:?string,source:string,target:string,read_only?:bool,user_mountable?:bool} $data omit user_mountable for default true (Pelican admin create always enables this)
      */
     public static function createMount(array $data): int | false
     {
@@ -277,7 +277,9 @@ class Mount
             }
             $pdo->commit();
         } catch (\PDOException $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             App::getInstance(true)->getLogger()->error('Mount replaceLinksFromMount failed: ' . $e->getMessage());
 
             return false;
@@ -424,12 +426,12 @@ class Mount
     /**
      * Remove all pivot rows for a deleted node, spell, or server (polymorphic target).
      */
-    public static function deletePivotLinksForMountable(string $type, int $entityId): bool
+    public static function deletePivotLinksForMountable(string $type, int $entityId, ?\PDO $pdo = null): bool
     {
         if ($entityId <= 0 || !in_array($type, [self::MOUNTABLE_NODE, self::MOUNTABLE_SPELL, self::MOUNTABLE_SERVER], true)) {
             return false;
         }
-        $pdo = Database::getPdoConnection();
+        $pdo ??= Database::getPdoConnection();
         $stmt = $pdo->prepare(
             'DELETE FROM ' . self::$pivot . ' WHERE mountable_type = :t AND mountable_id = :id'
         );
@@ -514,7 +516,7 @@ class Mount
      * Remove server→mount links that no longer match the server's node and spell (e.g. after spell_id change).
      * Pelican/Filament does not auto-run this in all cases; we enforce consistency so Wings never receives invalid mounts.
      */
-    public static function pruneServerMountsToMatchContext(int $serverId): bool
+    public static function pruneServerMountsToMatchContext(int $serverId, ?\PDO $txPdo = null): bool
     {
         $server = Server::getServerById($serverId);
         if (!$server) {
@@ -531,7 +533,7 @@ class Mount
             }
         }
 
-        return self::syncServerMounts($serverId, $keep);
+        return self::syncServerMounts($serverId, $keep, $txPdo);
     }
 
     /**
@@ -539,15 +541,18 @@ class Mount
      *
      * @param int[] $mountIds
      */
-    public static function syncServerMounts(int $serverId, array $mountIds): bool
+    public static function syncServerMounts(int $serverId, array $mountIds, ?\PDO $txPdo = null): bool
     {
         if ($serverId <= 0) {
             return false;
         }
         $mountIds = array_values(array_unique(array_filter(array_map('intval', $mountIds), fn ($i) => $i > 0)));
-        $pdo = Database::getPdoConnection();
+        $ownTransaction = $txPdo === null;
+        $pdo = $txPdo ?? Database::getPdoConnection();
         try {
-            $pdo->beginTransaction();
+            if ($ownTransaction) {
+                $pdo->beginTransaction();
+            }
             $del = $pdo->prepare(
                 'DELETE FROM ' . self::$pivot . ' WHERE mountable_type = :st AND mountable_id = :sid'
             );
@@ -560,9 +565,13 @@ class Mount
                     $ins->execute(['m' => $m, 't' => self::MOUNTABLE_SERVER, 'sid' => $serverId]);
                 }
             }
-            $pdo->commit();
+            if ($ownTransaction) {
+                $pdo->commit();
+            }
         } catch (\PDOException $e) {
-            $pdo->rollBack();
+            if ($ownTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             App::getInstance(true)->getLogger()->error('syncServerMounts failed: ' . $e->getMessage());
 
             return false;

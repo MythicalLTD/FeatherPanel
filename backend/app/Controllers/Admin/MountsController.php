@@ -21,11 +21,11 @@ use App\Chat\Node;
 use App\Chat\Mount;
 use App\Chat\Spell;
 use App\Chat\Server;
-use App\Chat\Activity;
 use App\Permissions;
+use App\Chat\Activity;
 use App\Helpers\ApiResponse;
-use App\Helpers\PermissionHelper;
 use OpenApi\Attributes as OA;
+use App\Helpers\PermissionHelper;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -89,9 +89,9 @@ class MountsController
         if (Mount::getMountByName($name)) {
             return ApiResponse::error('A mount with this name already exists', 'MOUNT_NAME_EXISTS', 409);
         }
-        $err = self::validatePaths((string) ($data['source'] ?? ''), (string) ($data['target'] ?? ''));
-        if ($err !== null) {
-            return ApiResponse::error($err, 'VALIDATION_ERROR', 400);
+        $paths = self::validatedStoragePaths((string) ($data['source'] ?? ''), (string) ($data['target'] ?? ''));
+        if ($paths['error'] !== null) {
+            return ApiResponse::error($paths['error'], 'VALIDATION_ERROR', 400);
         }
         $desc = $data['description'] ?? null;
         if ($desc !== null && !is_string($desc)) {
@@ -102,17 +102,25 @@ class MountsController
         }
         $userMountable = true;
         if (array_key_exists('user_mountable', $data)) {
-            $userMountable = self::requestBoolean($data['user_mountable']);
+            $parsedUm = self::requestBoolean($data['user_mountable']);
+            if ($parsedUm === null) {
+                return ApiResponse::error('user_mountable must be a boolean', 'VALIDATION_ERROR', 400);
+            }
+            $userMountable = $parsedUm;
         }
         $readOnly = false;
         if (array_key_exists('read_only', $data)) {
-            $readOnly = self::requestBoolean($data['read_only']);
+            $parsedRo = self::requestBoolean($data['read_only']);
+            if ($parsedRo === null) {
+                return ApiResponse::error('read_only must be a boolean', 'VALIDATION_ERROR', 400);
+            }
+            $readOnly = $parsedRo;
         }
         $newId = Mount::createMount([
             'name' => $name,
             'description' => $desc,
-            'source' => trim((string) $data['source']),
-            'target' => trim((string) $data['target']),
+            'source' => $paths['source'],
+            'target' => $paths['target'],
             'read_only' => $readOnly,
             'user_mountable' => $userMountable,
         ]);
@@ -162,18 +170,26 @@ class MountsController
         $source = $data['source'] ?? $m['source'];
         $target = $data['target'] ?? $m['target'];
         if (isset($data['source']) || isset($data['target'])) {
-            $err = self::validatePaths((string) $source, (string) $target);
-            if ($err !== null) {
-                return ApiResponse::error($err, 'VALIDATION_ERROR', 400);
+            $paths = self::validatedStoragePaths((string) $source, (string) $target);
+            if ($paths['error'] !== null) {
+                return ApiResponse::error($paths['error'], 'VALIDATION_ERROR', 400);
             }
-            $update['source'] = trim((string) $source);
-            $update['target'] = trim((string) $target);
+            $update['source'] = $paths['source'];
+            $update['target'] = $paths['target'];
         }
         if (array_key_exists('read_only', $data)) {
-            $update['read_only'] = self::requestBoolean($data['read_only']);
+            $parsedRo = self::requestBoolean($data['read_only']);
+            if ($parsedRo === null) {
+                return ApiResponse::error('read_only must be a boolean', 'VALIDATION_ERROR', 400);
+            }
+            $update['read_only'] = $parsedRo;
         }
         if (array_key_exists('user_mountable', $data)) {
-            $update['user_mountable'] = self::requestBoolean($data['user_mountable']);
+            $parsedUm = self::requestBoolean($data['user_mountable']);
+            if ($parsedUm === null) {
+                return ApiResponse::error('user_mountable must be a boolean', 'VALIDATION_ERROR', 400);
+            }
+            $update['user_mountable'] = $parsedUm;
         }
         if ($update === []) {
             return ApiResponse::error('No valid fields to update', 'NO_DATA', 400);
@@ -276,11 +292,28 @@ class MountsController
     }
 
     /**
-     * JSON/body boolean (Pelican defaults new mounts to user_mountable true; API may set false).
+     * JSON/body boolean; invalid values yield null.
      */
-    private static function requestBoolean(mixed $value): bool
+    private static function requestBoolean(mixed $value): ?bool
     {
-        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    }
+
+    /**
+     * @return array{error: ?string, source: string, target: string}
+     */
+    private static function validatedStoragePaths(string $source, string $target): array
+    {
+        $err = self::validatePaths($source, $target);
+        if ($err !== null) {
+            return ['error' => $err, 'source' => '', 'target' => ''];
+        }
+
+        return [
+            'error' => null,
+            'source' => self::normalizePath($source),
+            'target' => self::normalizePath($target),
+        ];
     }
 
     private static function validatePaths(string $source, string $target): ?string
@@ -353,7 +386,11 @@ class MountsController
         if (!is_array($data) || !isset($data[$bodyKey]) || !is_array($data[$bodyKey])) {
             return ApiResponse::error('Missing array field: ' . $bodyKey, 'INVALID_JSON', 400);
         }
-        $ids = array_values(array_filter(array_map('intval', $data[$bodyKey]), fn ($i) => $i > 0));
+        $parsed = $this->parseBodyPositiveIntIds($data[$bodyKey], $bodyKey);
+        if ($parsed instanceof Response) {
+            return $parsed;
+        }
+        $ids = $parsed;
         foreach ($ids as $eid) {
             if ($type === Mount::MOUNTABLE_NODE && !Node::getNodeById($eid)) {
                 return ApiResponse::error('Invalid node_id: ' . $eid, 'INVALID_NODE_ID', 400);
@@ -384,5 +421,40 @@ class MountsController
         ]);
 
         return ApiResponse::success(['mount' => self::enrichMount(Mount::getMountById($mountId) ?? [])], 'Mount links updated', 200);
+    }
+
+    /**
+     * @param array<mixed> $items Per API item in the request body array
+     *
+     * @return list<int>|Response
+     */
+    private function parseBodyPositiveIntIds(array $items, string $bodyKey): array | Response
+    {
+        $ids = [];
+        foreach ($items as $item) {
+            if (is_int($item)) {
+                if ($item < 1) {
+                    return ApiResponse::error('Invalid id in ' . $bodyKey, 'INVALID_JSON', 400);
+                }
+                $ids[] = $item;
+
+                continue;
+            }
+            if (is_float($item)) {
+                return ApiResponse::error('Invalid id in ' . $bodyKey, 'INVALID_JSON', 400);
+            }
+            if (is_string($item)) {
+                if ($item === '' || !ctype_digit($item)) {
+                    return ApiResponse::error('Invalid id in ' . $bodyKey, 'INVALID_JSON', 400);
+                }
+                $ids[] = (int) $item;
+
+                continue;
+            }
+
+            return ApiResponse::error('Invalid id in ' . $bodyKey, 'INVALID_JSON', 400);
+        }
+
+        return $ids;
     }
 }

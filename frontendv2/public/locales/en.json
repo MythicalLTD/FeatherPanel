@@ -4132,6 +4132,8 @@
 			},
 			"drawer_create_title": "New mount",
 			"drawer_edit_title": "Edit mount",
+			"form_required": "Name, source path, and target path are required.",
+			"links_filter_placeholder": "Filter nodes or spells…",
 			"links_nodes_failed": "Failed to save node links for this mount.",
 			"links_spells_failed": "Node links were saved, but saving spell links failed. Reopen the editor to try again.",
 			"links": {
@@ -5083,7 +5085,8 @@
 				"cloud_connected": {
 					"title": "Cloud Account Connected",
 					"credits": "Credits",
-					"team": "Team"
+					"team": "Team",
+					"action": "Cloud management"
 				},
 				"popular": "Popular Plugins",
 				"search_placeholder": "Search online addons...",

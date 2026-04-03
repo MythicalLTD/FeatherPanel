@@ -567,7 +567,7 @@ class Server
     /**
      * Update a server by ID.
      */
-    public static function updateServerById(int $id, array $data): bool
+    public static function updateServerById(int $id, array $data, ?\PDO $pdo = null): bool
     {
         try {
             if ($id <= 0) {
@@ -590,7 +590,7 @@ class Server
 
                 return false;
             }
-            $pdo = Database::getPdoConnection();
+            $pdo ??= Database::getPdoConnection();
             $fields = array_keys($data);
             if (empty($fields)) {
                 App::getInstance(true)->getLogger()->error('No fields to update');
@@ -627,25 +627,42 @@ class Server
             return false;
         }
 
-        // Unassign all allocations from this server before deletion
-        // This ensures we don't leave orphaned allocations pointing to a deleted server
-        Allocation::unassignAllByServerId($id);
-
-        Mount::deletePivotLinksForMountable(Mount::MOUNTABLE_SERVER, $id);
-
         $pdo = Database::getPdoConnection();
-        $sql = 'DELETE FROM ' . self::$table . ' WHERE id = :id';
-        $stmt = $pdo->prepare($sql);
+        $pdo->beginTransaction();
+        try {
+            if (!Allocation::unassignAllByServerId($id, $pdo)) {
+                $pdo->rollBack();
 
-        $result = $stmt->execute(['id' => $id]);
+                return false;
+            }
+            if (!Mount::deletePivotLinksForMountable(Mount::MOUNTABLE_SERVER, $id, $pdo)) {
+                $pdo->rollBack();
 
-        // Auto-heal: Run cleanup for any other orphans that might exist
-        // This fixes historical data issues where allocations pointed to non-existent servers
-        if ($result) {
-            Allocation::cleanupOrphans();
+                return false;
+            }
+            $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
+            if (!$stmt->execute(['id' => $id])) {
+                $pdo->rollBack();
+
+                return false;
+            }
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            App::getInstance(true)->getLogger()->error('hardDeleteServer transaction failed for id ' . $id . ': ' . $e->getMessage());
+
+            return false;
         }
 
-        return $result;
+        try {
+            Allocation::cleanupOrphans();
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('cleanupOrphans after server delete failed: ' . $e->getMessage());
+        }
+
+        return true;
     }
 
     /**

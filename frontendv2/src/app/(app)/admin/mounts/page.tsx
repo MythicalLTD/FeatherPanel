@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -139,8 +139,25 @@ export default function AdminMountsPage() {
     });
     const [selectedNodeIds, setSelectedNodeIds] = useState<number[]>([]);
     const [selectedSpellIds, setSelectedSpellIds] = useState<number[]>([]);
+    const [linkPickerFilter, setLinkPickerFilter] = useState('');
 
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+    const filteredNodesForPicker = useMemo(() => {
+        const q = linkPickerFilter.trim().toLowerCase();
+        if (!q) {
+            return nodes;
+        }
+        return nodes.filter((n) => n.name.toLowerCase().includes(q) || (n.fqdn && n.fqdn.toLowerCase().includes(q)));
+    }, [nodes, linkPickerFilter]);
+
+    const filteredSpellsForPicker = useMemo(() => {
+        const q = linkPickerFilter.trim().toLowerCase();
+        if (!q) {
+            return spells;
+        }
+        return spells.filter((s) => s.name.toLowerCase().includes(q));
+    }, [spells, linkPickerFilter]);
 
     useEffect(() => {
         fetchWidgets();
@@ -215,6 +232,7 @@ export default function AdminMountsPage() {
     const openCreate = () => {
         setMode('create');
         setEditingId(null);
+        setLinkPickerFilter('');
         setForm({
             name: '',
             description: '',
@@ -232,6 +250,7 @@ export default function AdminMountsPage() {
     const openEdit = (m: AdminMount) => {
         setMode('edit');
         setEditingId(m.id);
+        setLinkPickerFilter('');
         setForm({
             name: m.name,
             description: m.description || '',
@@ -270,14 +289,22 @@ export default function AdminMountsPage() {
     };
 
     const handleSave = async () => {
+        const nameTrim = form.name.trim();
+        const sourceTrim = form.source.trim();
+        const targetTrim = form.target.trim();
+        if (!nameTrim || !sourceTrim || !targetTrim) {
+            toast.error(t('admin.mounts.form_required'));
+            return;
+        }
+
         setSaving(true);
         try {
             if (mode === 'create') {
                 const { data } = await axios.put('/api/admin/mounts', {
-                    name: form.name.trim(),
+                    name: nameTrim,
                     description: form.description.trim() || null,
-                    source: form.source.trim(),
-                    target: form.target.trim(),
+                    source: sourceTrim,
+                    target: targetTrim,
                     read_only: form.read_only,
                     user_mountable: form.user_mountable,
                 });
@@ -299,10 +326,10 @@ export default function AdminMountsPage() {
 
             if (!editingId) return;
             const { data } = await axios.patch(`/api/admin/mounts/${editingId}`, {
-                name: form.name.trim(),
+                name: nameTrim,
                 description: form.description.trim() || null,
-                source: form.source.trim(),
-                target: form.target.trim(),
+                source: sourceTrim,
+                target: targetTrim,
                 read_only: form.read_only,
                 user_mountable: form.user_mountable,
             });
@@ -572,7 +599,9 @@ export default function AdminMountsPage() {
                         <div className='flex items-start justify-between gap-4'>
                             <div className='space-y-1 pr-2'>
                                 <Label>{t('admin.mounts.form.user_mountable')}</Label>
-                                <p className='text-xs text-muted-foreground'>{t('admin.mounts.form.user_mountable_help')}</p>
+                                <p className='text-xs text-muted-foreground'>
+                                    {t('admin.mounts.form.user_mountable_help')}
+                                </p>
                             </div>
                             <Switch
                                 className='shrink-0 mt-1'
@@ -587,22 +616,32 @@ export default function AdminMountsPage() {
                                     {t('admin.servers.edit.mounts.loading')}
                                 </p>
                             ) : (
-                                <div className='max-h-48 overflow-y-auto space-y-2 pr-1'>
-                                    {nodes.map((n) => (
-                                        <label
-                                            key={n.id}
-                                            className='flex items-center gap-3 cursor-pointer rounded-lg border border-border/60 p-2'
-                                        >
-                                            <Checkbox
-                                                checked={selectedNodeIds.includes(n.id)}
-                                                onCheckedChange={() => toggleNode(n.id)}
-                                            />
-                                            <span className='text-sm'>
-                                                <span className='font-medium'>{n.name}</span>
-                                                <span className='text-muted-foreground block text-xs'>{n.fqdn}</span>
-                                            </span>
-                                        </label>
-                                    ))}
+                                <div className='space-y-2'>
+                                    <Input
+                                        value={linkPickerFilter}
+                                        onChange={(e) => setLinkPickerFilter(e.target.value)}
+                                        placeholder={t('admin.mounts.links_filter_placeholder')}
+                                        className='bg-muted/30'
+                                    />
+                                    <div className='max-h-48 overflow-y-auto space-y-2 pr-1'>
+                                        {filteredNodesForPicker.map((n) => (
+                                            <label
+                                                key={n.id}
+                                                className='flex items-center gap-3 cursor-pointer rounded-lg border border-border/60 p-2'
+                                            >
+                                                <Checkbox
+                                                    checked={selectedNodeIds.includes(n.id)}
+                                                    onCheckedChange={() => toggleNode(n.id)}
+                                                />
+                                                <span className='text-sm'>
+                                                    <span className='font-medium'>{n.name}</span>
+                                                    <span className='text-muted-foreground block text-xs'>
+                                                        {n.fqdn}
+                                                    </span>
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </PageCard>
@@ -613,19 +652,27 @@ export default function AdminMountsPage() {
                                     {t('admin.servers.edit.mounts.loading')}
                                 </p>
                             ) : (
-                                <div className='max-h-48 overflow-y-auto space-y-2 pr-1'>
-                                    {spells.map((s) => (
-                                        <label
-                                            key={s.id}
-                                            className='flex items-center gap-3 cursor-pointer rounded-lg border border-border/60 p-2'
-                                        >
-                                            <Checkbox
-                                                checked={selectedSpellIds.includes(s.id)}
-                                                onCheckedChange={() => toggleSpell(s.id)}
-                                            />
-                                            <span className='text-sm font-medium'>{s.name}</span>
-                                        </label>
-                                    ))}
+                                <div className='space-y-2'>
+                                    <Input
+                                        value={linkPickerFilter}
+                                        onChange={(e) => setLinkPickerFilter(e.target.value)}
+                                        placeholder={t('admin.mounts.links_filter_placeholder')}
+                                        className='bg-muted/30'
+                                    />
+                                    <div className='max-h-48 overflow-y-auto space-y-2 pr-1'>
+                                        {filteredSpellsForPicker.map((s) => (
+                                            <label
+                                                key={s.id}
+                                                className='flex items-center gap-3 cursor-pointer rounded-lg border border-border/60 p-2'
+                                            >
+                                                <Checkbox
+                                                    checked={selectedSpellIds.includes(s.id)}
+                                                    onCheckedChange={() => toggleSpell(s.id)}
+                                                />
+                                                <span className='text-sm font-medium'>{s.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </PageCard>

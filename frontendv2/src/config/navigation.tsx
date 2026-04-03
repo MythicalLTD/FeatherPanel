@@ -36,7 +36,7 @@ import {
     Gauge,
     PlayCircle,
     Package,
-  //  Cloud,
+    //  Cloud,
     Bot,
     Bell,
     Download,
@@ -467,9 +467,9 @@ export const getAdminNavigationItems = (
             permission: Permissions.ADMIN_PLUGINS_VIEW,
             group: 'feathercloud',
         },
-		/**
-		 * We already have it in the plugins section, so we don't need to show it here.
-		 */
+        /**
+         * We already have it in the plugins section, so we don't need to show it here.
+         */
         //{
         //    id: 'admin-cloud-management',
         //    name: t('navigation.items.cloudManagement'),

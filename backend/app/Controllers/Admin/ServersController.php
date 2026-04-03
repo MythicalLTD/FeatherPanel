@@ -21,11 +21,11 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\User;
 use App\Chat\Mount;
-use App\Chat\Database;
 use App\Chat\Realm;
 use App\Chat\Spell;
 use App\Chat\Server;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\Allocation;
 use App\Helpers\UUIDUtils;
 use App\Chat\SpellVariable;
@@ -786,7 +786,11 @@ class ServersController
             if (!is_array($data['mount_ids'])) {
                 return ApiResponse::error('mount_ids must be an array', 'INVALID_MOUNTS', 400);
             }
-            $mountIdsForCreate = array_values(array_filter(array_map('intval', $data['mount_ids']), fn ($i) => $i > 0));
+            $parsedMount = self::parseStrictPositiveIntegerIds($data['mount_ids'], 'mount_ids');
+            if ($parsedMount instanceof Response) {
+                return $parsedMount;
+            }
+            $mountIdsForCreate = $parsedMount;
             $mErr = Mount::validateMountIdsForContext((int) $data['node_id'], (int) $data['spell_id'], $mountIdsForCreate);
             if ($mErr !== null) {
                 return ApiResponse::error($mErr, 'INVALID_MOUNTS', 422);
@@ -1187,7 +1191,11 @@ class ServersController
             if (!is_array($data['mount_ids'])) {
                 return ApiResponse::error('mount_ids must be an array', 'INVALID_MOUNTS', 400);
             }
-            $mountIdsToSync = array_values(array_filter(array_map('intval', $data['mount_ids']), fn ($i) => $i > 0));
+            $parsedMount = self::parseStrictPositiveIntegerIds($data['mount_ids'], 'mount_ids');
+            if ($parsedMount instanceof Response) {
+                return $parsedMount;
+            }
+            $mountIdsToSync = $parsedMount;
         }
         unset($data['mount_ids']);
 
@@ -1438,29 +1446,20 @@ class ServersController
             }
         }
 
-        // Handle spell change: delete old variables and create new ones (before updating server)
+        /** @var list<array{variable_id: int, variable_value: string}>|null Rows to insert after spell change (DB write deferred to transaction). */
+        $spellChangeVariableRows = null;
         if ($spellChanged) {
-            // Delete all old server variables
-            $deleted = ServerVariable::deleteServerVariablesByServerId((int) $id);
-            if (!$deleted) {
-                // Log but don't fail - variables might not exist
-                App::getInstance(true)->getLogger()->warning('Failed to delete old variables for server ID: ' . $id);
-            }
-
-            // Get new spell variables
             $newSpellId = (int) $data['spell_id'];
             $newSpell = Spell::getSpellById($newSpellId);
 
-            // Update startup command from new spell if not explicitly provided
             if ($newSpell) {
                 if (!isset($data['startup']) && !empty($newSpell['startup'])) {
                     $serverUpdateData['startup'] = $newSpell['startup'];
                 }
-                // Auto-select first Docker image if not provided and available
                 if (!isset($data['image']) && !empty($newSpell['docker_images'])) {
                     try {
                         $dockerImages = json_decode($newSpell['docker_images'], true);
-                        if (is_array($dockerImages) && !empty($dockerImages)) {
+                        if (is_array($dockerImages) && $dockerImages !== []) {
                             $imageArray = array_values($dockerImages);
                             if (!empty($imageArray[0])) {
                                 $serverUpdateData['image'] = $imageArray[0];
@@ -1474,10 +1473,7 @@ class ServersController
 
             $newSpellVariables = SpellVariable::getVariablesBySpellId($newSpellId);
 
-            // Create new server variables with values from variables payload (admin-provided)
-            // The variables payload should contain all variables for the new spell
-            if ($variablesPayload !== null && !empty($variablesPayload)) {
-                // Validate that all variables belong to the new spell
+            if ($variablesPayload !== null && $variablesPayload !== []) {
                 $spellVarMap = [];
                 foreach ($newSpellVariables as $sv) {
                     $spellVarMap[(int) $sv['id']] = $sv;
@@ -1498,27 +1494,14 @@ class ServersController
                     ];
                 }
 
-                if (!empty($validatedVariables)) {
-                    $created = ServerVariable::createOrUpdateServerVariables((int) $id, $validatedVariables);
-                    if (!$created) {
-                        return ApiResponse::error('Failed to create new server variables', 'VARIABLES_CREATE_FAILED', 500);
-                    }
-                }
+                $spellChangeVariableRows = $validatedVariables;
             } else {
-                // No variables provided - create with default values (fallback)
-                $newVariables = [];
+                $spellChangeVariableRows = [];
                 foreach ($newSpellVariables as $sv) {
-                    $newVariables[] = [
+                    $spellChangeVariableRows[] = [
                         'variable_id' => (int) $sv['id'],
                         'variable_value' => (string) ($sv['default_value'] ?? ''),
                     ];
-                }
-
-                if (!empty($newVariables)) {
-                    $created = ServerVariable::createOrUpdateServerVariables((int) $id, $newVariables);
-                    if (!$created) {
-                        return ApiResponse::error('Failed to create new server variables', 'VARIABLES_CREATE_FAILED', 500);
-                    }
                 }
             }
         }
@@ -1610,7 +1593,22 @@ class ServersController
         $pdo = Database::getPdoConnection();
         $pdo->beginTransaction();
         try {
-            $updated = Server::updateServerById($id, $serverUpdateData);
+            if ($spellChanged) {
+                if (!ServerVariable::deleteServerVariablesByServerId((int) $id, $pdo)) {
+                    $pdo->rollBack();
+
+                    return ApiResponse::error('Failed to delete old server variables', 'VARIABLES_DELETE_FAILED', 500);
+                }
+                if ($spellChangeVariableRows !== []) {
+                    if (!ServerVariable::createOrUpdateServerVariables((int) $id, $spellChangeVariableRows, $pdo)) {
+                        $pdo->rollBack();
+
+                        return ApiResponse::error('Failed to create new server variables', 'VARIABLES_CREATE_FAILED', 500);
+                    }
+                }
+            }
+
+            $updated = Server::updateServerById($id, $serverUpdateData, $pdo);
             if (!$updated) {
                 $pdo->rollBack();
                 App::getInstance(true)->getLogger()->error('Server update failed for ID: ' . $id);
@@ -1620,7 +1618,7 @@ class ServersController
 
             if (isset($data['allocation_id']) && $data['allocation_id'] !== $server['allocation_id']) {
                 if (isset($server['allocation_id'])) {
-                    $oldAllocationUnclaimed = Allocation::unassignFromServer($server['allocation_id']);
+                    $oldAllocationUnclaimed = Allocation::unassignFromServer($server['allocation_id'], $pdo);
                     if (!$oldAllocationUnclaimed) {
                         $pdo->rollBack();
                         App::getInstance(true)->getLogger()->error('Failed to unclaim old allocation (ID: ' . $server['allocation_id'] . ') for server ID: ' . $id);
@@ -1629,7 +1627,7 @@ class ServersController
                     }
                 }
 
-                $newAllocationClaimed = Allocation::assignToServer($data['allocation_id'], $id);
+                $newAllocationClaimed = Allocation::assignToServer($data['allocation_id'], $id, $pdo);
                 if (!$newAllocationClaimed) {
                     $pdo->rollBack();
                     App::getInstance(true)->getLogger()->error('Failed to claim new allocation (ID: ' . $data['allocation_id'] . ') for server ID: ' . $id);
@@ -1639,7 +1637,7 @@ class ServersController
             }
 
             if ($variablesPayload !== null && !$spellChanged) {
-                $ok = ServerVariable::createOrUpdateServerVariables((int) $id, $variablesPayload);
+                $ok = ServerVariable::createOrUpdateServerVariables((int) $id, $variablesPayload, $pdo);
                 if (!$ok) {
                     $pdo->rollBack();
 
@@ -1648,13 +1646,13 @@ class ServersController
             }
 
             if ($mountIdsToSync !== null) {
-                if (!Mount::syncServerMounts((int) $id, $mountIdsToSync)) {
+                if (!Mount::syncServerMounts((int) $id, $mountIdsToSync, $pdo)) {
                     $pdo->rollBack();
 
                     return ApiResponse::error('Failed to sync mounts', 'MOUNT_SYNC_FAILED', 500);
                 }
             } elseif ($spellChanged) {
-                if (!Mount::pruneServerMountsToMatchContext((int) $id)) {
+                if (!Mount::pruneServerMountsToMatchContext((int) $id, $pdo)) {
                     $pdo->rollBack();
 
                     return ApiResponse::error('Failed to update mounts after spell change', 'MOUNT_SYNC_FAILED', 500);
@@ -3095,5 +3093,56 @@ class ServersController
     private function quoteIdentifierMySQL(string $identifier): string
     {
         return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    /**
+     * @param array<mixed> $raw
+     *
+     * @return list<int>|Response
+     */
+    private static function parseStrictPositiveIntegerIds(array $raw, string $fieldLabel): array | Response
+    {
+        $ids = [];
+        foreach ($raw as $idx => $item) {
+            if (is_int($item)) {
+                if ($item < 1) {
+                    return ApiResponse::error(
+                        $fieldLabel . ' must contain only positive integers',
+                        'INVALID_MOUNTS',
+                        400
+                    );
+                }
+                $ids[] = $item;
+
+                continue;
+            }
+            if (is_float($item)) {
+                return ApiResponse::error(
+                    $fieldLabel . ' must contain only whole numbers',
+                    'INVALID_MOUNTS',
+                    400
+                );
+            }
+            if (is_string($item)) {
+                if ($item === '' || !ctype_digit($item)) {
+                    return ApiResponse::error(
+                        'Invalid value in ' . $fieldLabel . ' at index ' . $idx,
+                        'INVALID_MOUNTS',
+                        400
+                    );
+                }
+                $ids[] = (int) $item;
+
+                continue;
+            }
+
+            return ApiResponse::error(
+                'Invalid value in ' . $fieldLabel . ' at index ' . $idx,
+                'INVALID_MOUNTS',
+                400
+            );
+        }
+
+        return array_values(array_unique($ids));
     }
 }

@@ -21,9 +21,9 @@ use App\App;
 use App\Chat\Activity;
 use App\Chat\Database;
 use App\Helpers\ApiResponse;
-use App\Helpers\PanelAssetUrl;
 use App\Chat\InstalledPlugin;
 use OpenApi\Attributes as OA;
+use App\Helpers\PanelAssetUrl;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -216,48 +216,7 @@ class CloudPluginsController
             }
 
             $packages = $data['data']['packages'];
-            $addons = array_map(static function (array $pkg): array {
-                $latest = $pkg['latest_version'] ?? [];
-                $downloadUrl = isset($latest['download_url']) ? ('https://api.featherpanel.com' . $latest['download_url']) : null;
-
-                $iconUrl = $pkg['icon_url'] ?? null;
-                // If iconUrl is set and not empty, ensure it is https
-                if (!empty($iconUrl) && is_string($iconUrl)) {
-                    if (strpos($iconUrl, 'http://') === 0) {
-                        $iconUrl = 'https://' . substr($iconUrl, 7);
-                    }
-                }
-
-                return [
-                    // Basic identity
-                    'id' => $pkg['id'] ?? null,
-                    'identifier' => $pkg['name'] ?? '',
-                    'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
-                    'description' => $pkg['description'] ?? null,
-                    'icon' => PanelAssetUrl::rewriteCloudStorageIcon(is_string($iconUrl) ? $iconUrl : null),
-                    'website' => $pkg['website'] ?? null,
-                    // Authors/maintainers
-                    'author' => $pkg['author'] ?? null,
-                    'author_email' => $pkg['author_email'] ?? null,
-                    'maintainers' => $pkg['maintainers'] ?? [],
-                    // Meta
-                    'tags' => $pkg['tags'] ?? [],
-                    'verified' => isset($pkg['verified']) ? (int) $pkg['verified'] === 1 : false,
-                    'premium' => isset($pkg['premium']) ? (int) $pkg['premium'] : 0,
-                    'premium_link' => $pkg['premium_link'] ?? null,
-                    'premium_price' => $pkg['premium_price'] ?? null,
-                    'downloads' => $pkg['downloads'] ?? 0,
-                    'created_at' => $pkg['created_at'] ?? null,
-                    'updated_at' => $pkg['updated_at'] ?? null,
-                    // Latest version
-                    'latest_version' => [
-                        'version' => $latest['version'] ?? null,
-                        'download_url' => $downloadUrl,
-                        'file_size' => $latest['file_size'] ?? null,
-                        'created_at' => $latest['created_at'] ?? null,
-                    ],
-                ];
-            }, $packages);
+            $addons = array_map(static fn (array $pkg): array => self::normalizePackageForResponse($pkg), $packages);
 
             $pagination = $data['data']['pagination'] ?? null;
 
@@ -391,43 +350,7 @@ class CloudPluginsController
 
                 return $downloadsB <=> $downloadsA; // Descending order
             });
-            $addons = array_map(static function (array $pkg): array {
-                $latest = $pkg['latest_version'] ?? [];
-                $downloadUrl = isset($latest['download_url']) ? ('https://api.featherpanel.com' . $latest['download_url']) : null;
-
-                $iconUrl = $pkg['icon_url'] ?? null;
-                if (!empty($iconUrl) && is_string($iconUrl)) {
-                    if (strpos($iconUrl, 'http://') === 0) {
-                        $iconUrl = 'https://' . substr($iconUrl, 7);
-                    }
-                }
-
-                return [
-                    'id' => $pkg['id'] ?? null,
-                    'identifier' => $pkg['name'] ?? '',
-                    'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
-                    'description' => $pkg['description'] ?? null,
-                    'icon' => PanelAssetUrl::rewriteCloudStorageIcon(is_string($iconUrl) ? $iconUrl : null),
-                    'website' => $pkg['website'] ?? null,
-                    'author' => $pkg['author'] ?? null,
-                    'author_email' => $pkg['author_email'] ?? null,
-                    'maintainers' => $pkg['maintainers'] ?? [],
-                    'tags' => $pkg['tags'] ?? [],
-                    'verified' => isset($pkg['verified']) ? (int) $pkg['verified'] === 1 : false,
-                    'premium' => isset($pkg['premium']) ? (int) $pkg['premium'] : 0,
-                    'premium_link' => $pkg['premium_link'] ?? null,
-                    'premium_price' => $pkg['premium_price'] ?? null,
-                    'downloads' => $pkg['downloads'] ?? 0,
-                    'created_at' => $pkg['created_at'] ?? null,
-                    'updated_at' => $pkg['updated_at'] ?? null,
-                    'latest_version' => [
-                        'version' => $latest['version'] ?? null,
-                        'download_url' => $downloadUrl,
-                        'file_size' => $latest['file_size'] ?? null,
-                        'created_at' => $latest['created_at'] ?? null,
-                    ],
-                ];
-            }, $packages);
+            $addons = array_map(static fn (array $pkg): array => self::normalizePackageForResponse($pkg), $packages);
 
             return ApiResponse::success(['addons' => $addons], 'Popular packages fetched', 200);
         } catch (\Exception $e) {
@@ -490,44 +413,10 @@ class CloudPluginsController
 
             $pkg = $data['data']['package'];
             $versions = $data['data']['versions'] ?? [];
+            /** @var array<string, mixed> $latestVersion */
             $latestVersion = $data['data']['latest_version'] ?? [];
 
-            $iconUrl = $pkg['icon_url'] ?? null;
-            if (!empty($iconUrl) && is_string($iconUrl)) {
-                if (strpos($iconUrl, 'http://') === 0) {
-                    $iconUrl = 'https://' . substr($iconUrl, 7);
-                }
-            }
-
-            $package = [
-                'id' => $pkg['id'] ?? null,
-                'identifier' => $pkg['name'] ?? '',
-                'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
-                'description' => $pkg['description'] ?? null,
-                'icon' => PanelAssetUrl::rewriteCloudStorageIcon(is_string($iconUrl) ? $iconUrl : null),
-                'website' => $pkg['website'] ?? null,
-                'author' => $pkg['author'] ?? null,
-                'author_email' => $pkg['author_email'] ?? null,
-                'maintainers' => $pkg['maintainers'] ?? [],
-                'tags' => $pkg['tags'] ?? [],
-                'verified' => isset($pkg['verified']) ? (int) $pkg['verified'] === 1 : false,
-                'premium' => isset($pkg['premium']) ? (int) $pkg['premium'] : 0,
-                'premium_link' => $pkg['premium_link'] ?? null,
-                'premium_price' => $pkg['premium_price'] ?? null,
-                'downloads' => $pkg['downloads'] ?? 0,
-                'created_at' => $pkg['created_at'] ?? null,
-                'updated_at' => $pkg['updated_at'] ?? null,
-                'latest_version' => $latestVersion ? [
-                    'version' => $latestVersion['version'] ?? null,
-                    'download_url' => isset($latestVersion['download_url']) ? ('https://api.featherpanel.com' . $latestVersion['download_url']) : null,
-                    'file_size' => $latestVersion['file_size'] ?? null,
-                    'created_at' => $latestVersion['created_at'] ?? null,
-                    'changelog' => $latestVersion['changelog'] ?? null,
-                    'dependencies' => $latestVersion['dependencies'] ?? [],
-                    'min_panel_version' => $latestVersion['min_panel_version'] ?? null,
-                    'max_panel_version' => $latestVersion['max_panel_version'] ?? null,
-                ] : null,
-            ];
+            $package = self::normalizePackageForResponse($pkg, $latestVersion !== [] ? $latestVersion : null);
 
             $formattedVersions = array_map(static function (array $ver): array {
                 return [
@@ -633,43 +522,7 @@ class CloudPluginsController
             }
 
             $packages = $data['data']['packages'];
-            $addons = array_map(static function (array $pkg): array {
-                $latest = $pkg['latest_version'] ?? [];
-                $downloadUrl = isset($latest['download_url']) ? ('https://api.featherpanel.com' . $latest['download_url']) : null;
-
-                $iconUrl = $pkg['icon_url'] ?? null;
-                if (!empty($iconUrl) && is_string($iconUrl)) {
-                    if (strpos($iconUrl, 'http://') === 0) {
-                        $iconUrl = 'https://' . substr($iconUrl, 7);
-                    }
-                }
-
-                return [
-                    'id' => $pkg['id'] ?? null,
-                    'identifier' => $pkg['name'] ?? '',
-                    'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
-                    'description' => $pkg['description'] ?? null,
-                    'icon' => PanelAssetUrl::rewriteCloudStorageIcon(is_string($iconUrl) ? $iconUrl : null),
-                    'website' => $pkg['website'] ?? null,
-                    'author' => $pkg['author'] ?? null,
-                    'author_email' => $pkg['author_email'] ?? null,
-                    'maintainers' => $pkg['maintainers'] ?? [],
-                    'tags' => $pkg['tags'] ?? [],
-                    'verified' => isset($pkg['verified']) ? (int) $pkg['verified'] === 1 : false,
-                    'premium' => isset($pkg['premium']) ? (int) $pkg['premium'] : 0,
-                    'premium_link' => $pkg['premium_link'] ?? null,
-                    'premium_price' => $pkg['premium_price'] ?? null,
-                    'downloads' => $pkg['downloads'] ?? 0,
-                    'created_at' => $pkg['created_at'] ?? null,
-                    'updated_at' => $pkg['updated_at'] ?? null,
-                    'latest_version' => [
-                        'version' => $latest['version'] ?? null,
-                        'download_url' => $downloadUrl,
-                        'file_size' => $latest['file_size'] ?? null,
-                        'created_at' => $latest['created_at'] ?? null,
-                    ],
-                ];
-            }, $packages);
+            $addons = array_map(static fn (array $pkg): array => self::normalizePackageForResponse($pkg), $packages);
 
             $pagination = $data['data']['pagination'] ?? null;
             $tagName = $data['data']['tag'] ?? $tag;
@@ -1401,6 +1254,66 @@ class CloudPluginsController
         }
 
         return self::$instance;
+    }
+
+    /**
+     * Map a FeatherCloud API package row to the panel's online-addon shape.
+     *
+     * @param array<string, mixed> $pkg
+     * @param array<string, mixed>|null $latestOverride When set, use instead of $pkg['latest_version']; pass empty array for no latest block
+     *
+     * @return array<string, mixed>
+     */
+    private static function normalizePackageForResponse(array $pkg, ?array $latestOverride = null): array
+    {
+        $latest = $latestOverride ?? ($pkg['latest_version'] ?? []);
+        $downloadUrl = null;
+        if ($latest !== [] && isset($latest['download_url']) && $latest['download_url'] !== null && $latest['download_url'] !== '') {
+            $du = (string) $latest['download_url'];
+            if (preg_match('#^https?://#i', $du)) {
+                $downloadUrl = $du;
+            } else {
+                $downloadUrl = 'https://api.featherpanel.com' . (str_starts_with($du, '/') ? $du : '/' . $du);
+            }
+        }
+
+        $iconUrl = $pkg['icon_url'] ?? null;
+
+        $latestBlock = null;
+        if ($latest !== []) {
+            $latestBlock = [
+                'version' => $latest['version'] ?? null,
+                'download_url' => $downloadUrl,
+                'file_size' => $latest['file_size'] ?? null,
+                'created_at' => $latest['created_at'] ?? null,
+            ];
+            foreach (['changelog', 'dependencies', 'min_panel_version', 'max_panel_version'] as $k) {
+                if (array_key_exists($k, $latest)) {
+                    $latestBlock[$k] = $latest[$k];
+                }
+            }
+        }
+
+        return [
+            'id' => $pkg['id'] ?? null,
+            'identifier' => $pkg['name'] ?? '',
+            'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
+            'description' => $pkg['description'] ?? null,
+            'icon' => PanelAssetUrl::rewriteCloudStorageIcon(is_string($iconUrl) ? $iconUrl : null),
+            'website' => $pkg['website'] ?? null,
+            'author' => $pkg['author'] ?? null,
+            'author_email' => $pkg['author_email'] ?? null,
+            'maintainers' => $pkg['maintainers'] ?? [],
+            'tags' => $pkg['tags'] ?? [],
+            'verified' => isset($pkg['verified']) ? (int) $pkg['verified'] === 1 : false,
+            'premium' => isset($pkg['premium']) ? (int) $pkg['premium'] : 0,
+            'premium_link' => $pkg['premium_link'] ?? null,
+            'premium_price' => $pkg['premium_price'] ?? null,
+            'downloads' => $pkg['downloads'] ?? 0,
+            'created_at' => $pkg['created_at'] ?? null,
+            'updated_at' => $pkg['updated_at'] ?? null,
+            'latest_version' => $latestBlock,
+        ];
     }
 
     /**

@@ -16,10 +16,10 @@
  */
 
 use App\App;
-use App\Controllers\System\PanelStorageIconController;
 use RateLimit\Rate;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\System\PanelStorageIconController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerApiRoute(
