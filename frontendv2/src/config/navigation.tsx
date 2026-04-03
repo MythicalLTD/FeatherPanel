@@ -508,7 +508,7 @@ export const getAdminNavigationItems = (
                 isActive: false,
                 category: 'admin',
                 permission: Permissions.ADMIN_TICKETS_VIEW,
-                group: 'tickets',
+                group: 'users',
             },
             {
                 id: 'ticket-configs',
@@ -519,7 +519,7 @@ export const getAdminNavigationItems = (
                 isActive: false,
                 category: 'admin',
                 permission: Permissions.ADMIN_TICKETS_VIEW,
-                group: 'tickets',
+                group: 'users',
                 children: [
                     {
                         id: 'admin-ticket-categories',

@@ -39,6 +39,7 @@ use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
+use App\Services\Backup\BackupFifoEviction;
 use App\Cli\Utils\MinecraftColorCodeSupport;
 
 class AServerScheduleProcessor implements TimeTask
@@ -440,8 +441,9 @@ class AServerScheduleProcessor implements TimeTask
             $ignoredFiles = $this->normalizeIgnoredFiles($ignoredFiles);
             $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
             $backupLimit = (int) ($server['backup_limit'] ?? 0);
+            $atBackupLimit = $backupLimit > 0 && $currentBackups >= $backupLimit;
 
-            if ($backupLimit > 0 && $currentBackups >= $backupLimit) {
+            if ($atBackupLimit && !BackupFifoEviction::isFifoRollingForServer($server)) {
                 MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping backup: limit reached (' . $currentBackups . '/' . $backupLimit . ') for server: ' . $server['name'] . ')');
                 $app->getLogger()->info('Skipped scheduled backup for server ' . ($server['name'] ?? 'unknown') . ': backup limit reached (' . $currentBackups . '/' . $backupLimit . ')');
                 ServerActivity::createActivity([
@@ -455,6 +457,29 @@ class AServerScheduleProcessor implements TimeTask
                 ]);
 
                 return;
+            }
+
+            $wings = $this->getWingsConnection($server);
+
+            if ($atBackupLimit) {
+                $evict = BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], (string) $server['uuid'], $wings);
+                if ($evict !== null) {
+                    MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping backup: FIFO rotation failed (' . ($evict['code'] ?? '') . ') for server: ' . $server['name']);
+                    $app->getLogger()->warning('Scheduled backup FIFO eviction failed for ' . ($server['name'] ?? 'unknown') . ': ' . ($evict['message'] ?? ''));
+                    ServerActivity::createActivity([
+                        'server_id' => $server['id'],
+                        'node_id' => $server['node_id'],
+                        'event' => 'schedule_backup_skipped_fifo',
+                        'metadata' => json_encode([
+                            'current_backups' => $currentBackups,
+                            'backup_limit' => $backupLimit,
+                            'error' => $evict['message'] ?? '',
+                            'code' => $evict['code'] ?? '',
+                        ]),
+                    ]);
+
+                    return;
+                }
             }
 
             $adapter = 'wings';
@@ -476,7 +501,6 @@ class AServerScheduleProcessor implements TimeTask
                 throw new \Exception('Failed to create backup record');
             }
 
-            $wings = $this->getWingsConnection($server);
             $response = $wings->getServer()->createBackup($server['uuid'], $adapter, $backupUuid, $ignoredFiles);
 
             if (!$response->isSuccessful()) {

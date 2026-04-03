@@ -101,6 +101,8 @@ export default function VmInstanceEditPage() {
     const [nodeEfiStorageDefault, setNodeEfiStorageDefault] = useState('');
     const [nodeTpmStorageDefault, setNodeTpmStorageDefault] = useState('');
     const [suspending, setSuspending] = useState(false);
+    const [vmBackupLimit, setVmBackupLimit] = useState(5);
+    const [vmBackupRetention, setVmBackupRetention] = useState<'inherit' | 'hard_limit' | 'fifo_rolling'>('inherit');
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instance-edit');
 
@@ -116,6 +118,11 @@ export default function VmInstanceEditPage() {
             setInstance(inst);
             setHostname((inst.hostname as string) ?? '');
             setNotes((inst.notes as string) ?? '');
+            setVmBackupLimit(Math.max(0, Math.min(100, Number(inst.backup_limit ?? 5))));
+            const br = (inst.backup_retention_mode as string) || '';
+            setVmBackupRetention(
+                br === 'fifo_rolling' || br === 'hard_limit' ? (br as 'fifo_rolling' | 'hard_limit') : 'inherit',
+            );
             setVmIpId(inst.vm_ip_id != null ? Number(inst.vm_ip_id) : null);
             const uuid = (inst.user_uuid as string) ?? '';
             if (uuid) {
@@ -194,6 +201,13 @@ export default function VmInstanceEditPage() {
                     setInstance(inst);
                     setHostname((inst.hostname as string) ?? '');
                     setNotes((inst.notes as string) ?? '');
+                    setVmBackupLimit(Math.max(0, Math.min(100, Number(inst.backup_limit ?? 5))));
+                    const br0 = (inst.backup_retention_mode as string) || '';
+                    setVmBackupRetention(
+                        br0 === 'fifo_rolling' || br0 === 'hard_limit'
+                            ? (br0 as 'fifo_rolling' | 'hard_limit')
+                            : 'inherit',
+                    );
                     setVmIpId(inst.vm_ip_id != null ? Number(inst.vm_ip_id) : null);
                     const uuid = (inst.user_uuid as string) ?? '';
                     if (uuid) {
@@ -428,6 +442,8 @@ export default function VmInstanceEditPage() {
                 payload.tpm_enabled = tpmEnabled;
                 // TPM storage is enforced server-side from the VDS node default.
             }
+            payload.backup_limit = vmBackupLimit;
+            payload.backup_retention_mode = vmBackupRetention === 'inherit' ? null : vmBackupRetention;
             await axios.patch(`/api/admin/vm-instances/${id}`, payload);
             toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
             await fetchConfig();
@@ -677,6 +693,10 @@ export default function VmInstanceEditPage() {
 
                     <TabsContent value='resources' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
                         <ResourcesTab
+                            vmBackupLimit={vmBackupLimit}
+                            setVmBackupLimit={setVmBackupLimit}
+                            vmBackupRetention={vmBackupRetention}
+                            setVmBackupRetention={setVmBackupRetention}
                             config={config}
                             memory={memory}
                             setMemory={setMemory}

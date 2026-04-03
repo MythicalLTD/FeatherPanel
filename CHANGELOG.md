@@ -7,6 +7,7 @@
 - Added a new admin setting to hide IP addresses across server activity logs and account activity views, masking them as `***.***.***.***` for improved privacy. by @nayskutzu
 - Crushed those pesky bugs blocking seamless VM ISO mounting for images larger than 1GB—run your massive ISOs with blana bomba smoothness! by @nayskutzu
 - Introduced comprehensive mounts support to FeatherPanel, empowering flexible volume management and unlocking new deployment possibilities. by @nayskutzu
+- Implemented an advanced rotation scheme featuring FIFO (First-In, First-Out) logic, also known as Rolling Backup Retention, delivering reliable and automated backup management for your servers. by @nayskutzu
 
 ### Fixed
 
@@ -18,6 +19,7 @@
 - Resolved an issue where chatbot settings were not always saving correctly. by @nayskutzu
 - Updated the panel to return a 503 Service Unavailable response instead of 502 to prevent Cloudflare compatibility issues. by @nayskutzu
 - Resolved an issue with plugin icons failing to load due to CORS restrictions introduced in the latest Next.js update. Now loading seamlessly! by @nayskutzu
+- Resolved multiple issues affecting SFTP button functionality for improved reliability and compatibility. by @nayskutzu
 
 ### Improved
 

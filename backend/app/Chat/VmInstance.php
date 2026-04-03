@@ -17,6 +17,8 @@
 
 namespace App\Chat;
 
+use App\Services\Backup\BackupFifoEviction;
+
 class VmInstance
 {
     private static string $table = 'featherpanel_vm_instances';
@@ -282,13 +284,20 @@ class VmInstance
         $stmt = $pdo->prepare('
             INSERT INTO featherpanel_vm_instances
                 (vmid, vm_node_id, user_uuid, pve_node, plan_id, template_id, vm_type,
-                 hostname, status, ip_address, ip6_prefix, subnet_mask, gateway, vm_ip_id, notes, backup_limit,
+                 hostname, status, ip_address, ip6_prefix, subnet_mask, gateway, vm_ip_id, notes, backup_limit, backup_retention_mode,
                  memory, cpus, cores, disk_gb, on_boot)
             VALUES
                 (:vmid, :vm_node_id, :user_uuid, :pve_node, :plan_id, :template_id, :vm_type,
-                 :hostname, :status, :ip_address, :ip6_prefix, :subnet_mask, :gateway, :vm_ip_id, :notes, :backup_limit,
+                 :hostname, :status, :ip_address, :ip6_prefix, :subnet_mask, :gateway, :vm_ip_id, :notes, :backup_limit, :backup_retention_mode,
                  :memory, :cpus, :cores, :disk_gb, :on_boot)
         ');
+        $brm = null;
+        if (isset($data['backup_retention_mode']) && is_string($data['backup_retention_mode'])) {
+            $t = trim($data['backup_retention_mode']);
+            if ($t === 'hard_limit' || $t === 'fifo_rolling') {
+                $brm = $t;
+            }
+        }
         $stmt->execute([
             'vmid' => (int) $data['vmid'],
             'vm_node_id' => (int) $data['vm_node_id'],
@@ -306,6 +315,7 @@ class VmInstance
             'vm_ip_id' => isset($data['vm_ip_id']) ? (int) $data['vm_ip_id'] : null,
             'notes' => $data['notes'] ?? null,
             'backup_limit' => isset($data['backup_limit']) ? (int) $data['backup_limit'] : 5,
+            'backup_retention_mode' => $brm,
             'memory' => isset($data['memory']) ? (int) $data['memory'] : 512,
             'cpus' => isset($data['cpus']) ? (int) $data['cpus'] : 1,
             'cores' => isset($data['cores']) ? (int) $data['cores'] : 1,
@@ -325,12 +335,38 @@ class VmInstance
      */
     public static function update(int $id, array $data): bool
     {
-        $allowed = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'memory', 'cpus', 'cores', 'disk_gb', 'on_boot', 'suspended'];
+        $allowed = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'memory', 'cpus', 'cores', 'disk_gb', 'on_boot', 'suspended', 'backup_limit', 'backup_retention_mode'];
         $updates = [];
         $params = ['id' => $id];
 
         foreach ($allowed as $key) {
             if (!array_key_exists($key, $data)) {
+                continue;
+            }
+            if ($key === 'backup_limit') {
+                $val = (int) $data[$key];
+                if ($val < 0 || $val > 100) {
+                    continue;
+                }
+                $updates[] = 'backup_limit = :backup_limit';
+                $params['backup_limit'] = $val;
+
+                continue;
+            }
+            if ($key === 'backup_retention_mode') {
+                $raw = $data[$key];
+                if ($raw === null || $raw === '') {
+                    $updates[] = 'backup_retention_mode = NULL';
+                } elseif (is_string($raw)) {
+                    $t = strtolower(trim($raw));
+                    if (in_array($t, ['inherit', 'panel', 'default'], true)) {
+                        $updates[] = 'backup_retention_mode = NULL';
+                    } elseif ($t === BackupFifoEviction::MODE_FIFO_ROLLING || $t === BackupFifoEviction::MODE_HARD_LIMIT) {
+                        $updates[] = 'backup_retention_mode = :backup_retention_mode';
+                        $params['backup_retention_mode'] = $t;
+                    }
+                }
+
                 continue;
             }
             if ($key === 'user_uuid') {

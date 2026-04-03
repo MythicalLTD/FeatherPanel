@@ -37,6 +37,7 @@ use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\VmUnsuspended;
 use App\Plugins\Events\Events\VdsEvent;
+use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -255,6 +256,28 @@ class VmInstancesController
         $bridge = isset($data['bridge']) && is_string($data['bridge']) && $data['bridge'] !== '' ? trim($data['bridge']) : 'vmbr0';
         $onBoot = isset($data['on_boot']) ? (int) (bool) $data['on_boot'] : 1;
         $backupLimit = isset($data['backup_limit']) && is_numeric($data['backup_limit']) ? max(0, min(100, (int) $data['backup_limit'])) : 5;
+        $backupRetentionForMeta = null;
+        if (array_key_exists('backup_retention_mode', $data)) {
+            $rawBr = $data['backup_retention_mode'];
+            if ($rawBr === null || $rawBr === '') {
+                $backupRetentionForMeta = null;
+            } elseif (!is_string($rawBr)) {
+                return ApiResponse::error('backup_retention_mode must be a string or null', 'INVALID_DATA_TYPE', 400);
+            } else {
+                $t = strtolower(trim($rawBr));
+                if (in_array($t, ['inherit', 'panel', 'default'], true)) {
+                    $backupRetentionForMeta = null;
+                } elseif ($t === BackupFifoEviction::MODE_FIFO_ROLLING || $t === BackupFifoEviction::MODE_HARD_LIMIT) {
+                    $backupRetentionForMeta = $t;
+                } else {
+                    return ApiResponse::error(
+                        'Invalid backup_retention_mode. Use hard_limit, fifo_rolling, inherit, or null.',
+                        'INVALID_BACKUP_RETENTION',
+                        400
+                    );
+                }
+            }
+        }
 
         $hostnameRaw = isset($data['hostname']) && is_string($data['hostname']) ? trim($data['hostname']) : null;
         $hostname = self::sanitizeHostnameForProxmox($hostnameRaw);
@@ -421,6 +444,7 @@ class VmInstancesController
             'bridge' => $bridge,
             'on_boot' => $onBoot,
             'backup_limit' => $backupLimit,
+            'backup_retention_mode' => $backupRetentionForMeta,
             'ci_user' => $ciUserInput,
             'ci_password' => $ciPasswordInput,
             'current_step' => 'initial',
@@ -621,7 +645,34 @@ class VmInstancesController
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
 
-        $dbKeys = ['hostname', 'notes', 'user_uuid', 'vm_ip_id'];
+        if (isset($data['backup_limit'])) {
+            if (!is_numeric($data['backup_limit']) || (int) $data['backup_limit'] < 0 || (int) $data['backup_limit'] > 100) {
+                return ApiResponse::error('backup_limit must be an integer between 0 and 100', 'INVALID_BACKUP_LIMIT', 400);
+            }
+        }
+        if (array_key_exists('backup_retention_mode', $data)) {
+            $rawBr = $data['backup_retention_mode'];
+            if ($rawBr === null || $rawBr === '') {
+                $data['backup_retention_mode'] = null;
+            } elseif (!is_string($rawBr)) {
+                return ApiResponse::error('backup_retention_mode must be a string or null', 'INVALID_DATA_TYPE', 400);
+            } else {
+                $t = strtolower(trim($rawBr));
+                if (in_array($t, ['inherit', 'panel', 'default'], true)) {
+                    $data['backup_retention_mode'] = null;
+                } elseif ($t === BackupFifoEviction::MODE_FIFO_ROLLING || $t === BackupFifoEviction::MODE_HARD_LIMIT) {
+                    $data['backup_retention_mode'] = $t;
+                } else {
+                    return ApiResponse::error(
+                        'Invalid backup_retention_mode. Use hard_limit, fifo_rolling, inherit, or null.',
+                        'INVALID_BACKUP_RETENTION',
+                        400
+                    );
+                }
+            }
+        }
+
+        $dbKeys = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'backup_limit', 'backup_retention_mode'];
         $dbUpdate = array_intersect_key($data, array_flip($dbKeys));
         $proxmoxKeys = ['memory', 'cpus', 'cores', 'on_boot', 'vm_ip_id', 'bios', 'efi_enabled', 'efi_storage', 'tpm_enabled', 'tpm_storage'];
         $proxmoxUpdate = array_intersect_key($data, array_flip($proxmoxKeys));
@@ -1927,12 +1978,18 @@ class VmInstancesController
 
         $backupLimit = (int) ($instance['backup_limit'] ?? 5);
         $existingCount = VmInstanceBackup::countByInstanceId((int) $instance['id']);
-        if ($existingCount >= $backupLimit) {
-            return ApiResponse::error(
-                'Backup limit reached (' . $backupLimit . '). Delete an existing backup first.',
-                'BACKUP_LIMIT_REACHED',
-                422
-            );
+        if ($backupLimit > 0 && $existingCount >= $backupLimit) {
+            if (!BackupFifoEviction::isFifoRollingForVm($instance)) {
+                return ApiResponse::error(
+                    'Backup limit reached (' . $backupLimit . '). Delete an existing backup first.',
+                    'BACKUP_LIMIT_REACHED',
+                    422
+                );
+            }
+            $evict = BackupFifoEviction::evictOldestVmBackup($instance, $client);
+            if ($evict !== null) {
+                return ApiResponse::error($evict['message'], $evict['code'], $evict['status']);
+            }
         }
 
         if ($vmType === 'lxc' && $mode === 'snapshot') {
@@ -2351,10 +2408,42 @@ class VmInstancesController
             return ApiResponse::error('limit must be an integer between 0 and 100', 'INVALID_LIMIT', 400);
         }
 
+        $retentionParam = null;
+        $retentionSqlPart = '';
+        if (array_key_exists('backup_retention_mode', $data)) {
+            $rawBr = $data['backup_retention_mode'];
+            if ($rawBr === null || $rawBr === '') {
+                $retentionParam = '__null__';
+                $retentionSqlPart = ', backup_retention_mode = NULL';
+            } elseif (!is_string($rawBr)) {
+                return ApiResponse::error('backup_retention_mode must be a string or null', 'INVALID_DATA_TYPE', 400);
+            } else {
+                $t = strtolower(trim($rawBr));
+                if (in_array($t, ['inherit', 'panel', 'default'], true)) {
+                    $retentionParam = '__null__';
+                    $retentionSqlPart = ', backup_retention_mode = NULL';
+                } elseif ($t === BackupFifoEviction::MODE_FIFO_ROLLING || $t === BackupFifoEviction::MODE_HARD_LIMIT) {
+                    $retentionSqlPart = ', backup_retention_mode = :brm';
+                    $retentionParam = $t;
+                } else {
+                    return ApiResponse::error(
+                        'Invalid backup_retention_mode. Use hard_limit, fifo_rolling, inherit, or null.',
+                        'INVALID_BACKUP_RETENTION',
+                        400
+                    );
+                }
+            }
+        }
+
         try {
             $pdo = Database::getPdoConnection();
-            $stmt = $pdo->prepare('UPDATE featherpanel_vm_instances SET backup_limit = :limit WHERE id = :id');
-            $stmt->execute(['limit' => $limit, 'id' => $id]);
+            $sql = 'UPDATE featherpanel_vm_instances SET backup_limit = :limit' . $retentionSqlPart . ' WHERE id = :id';
+            $stmt = $pdo->prepare($sql);
+            $exec = ['limit' => $limit, 'id' => $id];
+            if ($retentionParam !== null && $retentionParam !== '__null__') {
+                $exec['brm'] = $retentionParam;
+            }
+            $stmt->execute($exec);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to update backup limit', 'DB_ERROR', 500);
         }
@@ -2367,15 +2456,24 @@ class VmInstancesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        $changed = ['backup_limit'];
+        if ($retentionSqlPart !== '') {
+            $changed[] = 'backup_retention_mode';
+        }
         self::emitVdsEvent(VdsEvent::onVdsUpdated(), [
             'user_uuid' => $admin['uuid'] ?? null,
             'vds_id' => $id,
             'vmid' => (int) ($instance['vmid'] ?? 0),
-            'changed_fields' => ['backup_limit'],
+            'changed_fields' => $changed,
             'context' => ['source' => 'admin'],
         ]);
 
-        return ApiResponse::success(['backup_limit' => $limit], 'Backup limit updated', 200);
+        $fresh = VmInstance::getById($id);
+
+        return ApiResponse::success([
+            'backup_limit' => $limit,
+            'backup_retention_mode' => $fresh['backup_retention_mode'] ?? null,
+        ], 'Backup limit updated', 200);
     }
 
     #[OA\Post(

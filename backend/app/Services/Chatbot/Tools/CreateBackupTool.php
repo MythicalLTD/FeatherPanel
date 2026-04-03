@@ -24,6 +24,7 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
+use App\Services\Backup\BackupFifoEviction;
 use App\Plugins\Events\Events\ServerBackupEvent;
 
 /**
@@ -92,21 +93,7 @@ class CreateBackupTool implements ToolInterface
             ];
         }
 
-        // Check backup limit
-        $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
-        $backupLimit = (int) ($server['backup_limit'] ?? 1);
-
-        if ($currentBackups >= $backupLimit) {
-            return [
-                'success' => false,
-                'error' => 'Backup limit reached for this server',
-                'action_type' => 'create_backup',
-                'current_count' => $currentBackups,
-                'limit' => $backupLimit,
-            ];
-        }
-
-        // Get node information
+        // Get node information (needed for limit / FIFO eviction)
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return [
@@ -114,6 +101,47 @@ class CreateBackupTool implements ToolInterface
                 'error' => 'Node not found',
                 'action_type' => 'create_backup',
             ];
+        }
+
+        $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
+        $backupLimit = (int) ($server['backup_limit'] ?? 1);
+
+        if ($backupLimit > 0 && $currentBackups >= $backupLimit) {
+            if (!BackupFifoEviction::isFifoRollingForServer($server)) {
+                return [
+                    'success' => false,
+                    'error' => 'Backup limit reached for this server',
+                    'action_type' => 'create_backup',
+                    'current_count' => $currentBackups,
+                    'limit' => $backupLimit,
+                ];
+            }
+            try {
+                $wingsFifo = new Wings(
+                    $node['fqdn'],
+                    (int) $node['daemonListen'],
+                    $node['scheme'],
+                    $node['daemon_token'],
+                    30
+                );
+            } catch (\Exception $e) {
+                $this->app->getLogger()->error('CreateBackupTool FIFO: ' . $e->getMessage());
+
+                return [
+                    'success' => false,
+                    'error' => 'Failed to connect to node for backup rotation',
+                    'action_type' => 'create_backup',
+                ];
+            }
+            $evict = BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], (string) $server['uuid'], $wingsFifo);
+            if ($evict !== null) {
+                return [
+                    'success' => false,
+                    'error' => $evict['message'],
+                    'action_type' => 'create_backup',
+                    'code' => $evict['code'],
+                ];
+            }
         }
 
         // Generate backup UUID

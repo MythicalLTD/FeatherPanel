@@ -185,4 +185,25 @@ class VmInstanceBackup
 
         return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * Oldest tracked VM backup for FIFO rotation.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function getOldestForInstanceId(int $vmInstanceId): ?array
+    {
+        if ($vmInstanceId <= 0) {
+            return null;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT * FROM ' . self::$table . ' WHERE vm_instance_id = :vm_instance_id ORDER BY created_at ASC, id ASC LIMIT 1'
+        );
+        $stmt->execute(['vm_instance_id' => $vmInstanceId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
 }

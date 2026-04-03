@@ -118,6 +118,7 @@ export interface AppSettings {
     app_background_image_fit_default?: string;
     /** When 'true', force the configured background image fit for all users. */
     app_background_image_fit_lock?: string;
+    server_allow_user_backup_policy_edit: string;
 }
 
 export interface CoreInfo {

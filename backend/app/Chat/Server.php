@@ -200,7 +200,7 @@ class Server
         }
 
         // Add optional fields if provided
-        $optionalFields = ['description', 'status', 'skip_scripts', 'skip_zerotrust', 'parent_id', 'external_id', 'threads', 'allocation_limit', 'database_limit', 'backup_limit', 'installed_at'];
+        $optionalFields = ['description', 'status', 'skip_scripts', 'skip_zerotrust', 'parent_id', 'external_id', 'threads', 'allocation_limit', 'database_limit', 'backup_limit', 'backup_retention_mode', 'installed_at'];
         foreach ($optionalFields as $field) {
             if (isset($data[$field])) {
                 $insert[$field] = $data[$field];

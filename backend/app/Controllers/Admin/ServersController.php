@@ -44,6 +44,7 @@ use App\Mail\templates\ServerCreated;
 use App\Mail\templates\ServerDeleted;
 use App\Mail\templates\ServerUnbanned;
 use App\Plugins\Events\Events\ServerEvent;
+use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Subdomain\SubdomainCleanupService;
@@ -920,6 +921,27 @@ class ServersController
         $data['allocation_limit'] = $data['allocation_limit'] ?? null;
         $data['database_limit'] = isset($data['database_limit']) ? (int) $data['database_limit'] : 0;
         $data['backup_limit'] = isset($data['backup_limit']) ? (int) $data['backup_limit'] : 0;
+        if (array_key_exists('backup_retention_mode', $data)) {
+            $rawBr = $data['backup_retention_mode'];
+            if ($rawBr === null || $rawBr === '') {
+                $data['backup_retention_mode'] = null;
+            } elseif (is_string($rawBr)) {
+                $t = strtolower(trim($rawBr));
+                if (in_array($t, ['inherit', 'panel', 'default'], true)) {
+                    $data['backup_retention_mode'] = null;
+                } elseif ($t === BackupFifoEviction::MODE_FIFO_ROLLING || $t === BackupFifoEviction::MODE_HARD_LIMIT) {
+                    $data['backup_retention_mode'] = $t;
+                } else {
+                    return ApiResponse::error(
+                        'Invalid backup_retention_mode. Use hard_limit, fifo_rolling, inherit, or null.',
+                        'INVALID_BACKUP_RETENTION',
+                        400
+                    );
+                }
+            } else {
+                return ApiResponse::error('backup_retention_mode must be a string or null', 'INVALID_DATA_TYPE', 400);
+            }
+        }
         $data['external_id'] = $data['external_id'] ?? null;
         $data['threads'] = $data['threads'] ?? null;
 
@@ -1202,6 +1224,28 @@ class ServersController
             $mountIdsToSync = $parsedMount;
         }
         unset($data['mount_ids']);
+
+        if (array_key_exists('backup_retention_mode', $data)) {
+            $rawBr = $data['backup_retention_mode'];
+            if ($rawBr === null || $rawBr === '') {
+                $data['backup_retention_mode'] = null;
+            } elseif (!is_string($rawBr)) {
+                return ApiResponse::error('backup_retention_mode must be a string or null', 'INVALID_DATA_TYPE', 400);
+            } else {
+                $t = strtolower(trim($rawBr));
+                if (in_array($t, ['inherit', 'panel', 'default'], true)) {
+                    $data['backup_retention_mode'] = null;
+                } elseif ($t === BackupFifoEviction::MODE_FIFO_ROLLING || $t === BackupFifoEviction::MODE_HARD_LIMIT) {
+                    $data['backup_retention_mode'] = $t;
+                } else {
+                    return ApiResponse::error(
+                        'Invalid backup_retention_mode. Use hard_limit, fifo_rolling, inherit, or null.',
+                        'INVALID_BACKUP_RETENTION',
+                        400
+                    );
+                }
+            }
+        }
 
         // Prevent direct modification of node_id - use server transfer instead
         if (isset($data['node_id'])) {

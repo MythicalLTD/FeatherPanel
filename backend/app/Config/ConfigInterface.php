@@ -146,6 +146,13 @@ interface ConfigInterface
     public const SERVER_ALLOW_STARTUP_CHANGE = 'server_allow_startup_change';
     public const SERVER_ALLOW_SUBUSERS = 'server_allow_subusers';
     public const SERVER_ALLOW_SCHEDULES = 'server_allow_schedules';
+    /**
+     * Wings server backups and VM instance backups: hard_limit blocks new backups at the limit;
+     * fifo_rolling deletes the oldest eligible backup to make room.
+     */
+    public const SERVER_BACKUP_RETENTION_MODE = 'server_backup_retention_mode';
+    /** When true, server owners may change backup_limit and backup_retention_mode via the user API. */
+    public const SERVER_ALLOW_USER_BACKUP_POLICY_EDIT = 'server_allow_user_backup_policy_edit';
     public const SERVER_ALLOW_ALLOCATION_SELECT = 'server_allow_allocation_select';
     public const SERVER_ALLOW_USER_MADE_FIREWALL = 'server_allow_user_made_firewall';
     public const SERVER_ALLOW_USER_MADE_PROXY = 'server_allow_user_made_proxy';

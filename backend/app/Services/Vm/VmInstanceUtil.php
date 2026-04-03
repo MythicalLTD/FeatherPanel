@@ -40,6 +40,7 @@ use App\Chat\VmInstanceBackup;
 use App\Config\ConfigInterface;
 use App\Chat\VmInstanceActivity;
 use App\Services\Proxmox\Proxmox;
+use App\Services\Backup\BackupFifoEviction;
 
 final class VmInstanceUtil
 {
@@ -1185,6 +1186,10 @@ final class VmInstanceUtil
             'disk_gb' => (int) ($meta['disk'] ?? 10),
             'on_boot' => $onBoot ? 1 : 0,
         ];
+        $brNorm = BackupFifoEviction::normalizeEntityOverride($meta['backup_retention_mode'] ?? null);
+        if ($brNorm !== null) {
+            $instanceData['backup_retention_mode'] = $brNorm;
+        }
 
         $instance = VmInstance::create($instanceData, $pdo);
 

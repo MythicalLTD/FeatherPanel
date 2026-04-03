@@ -372,6 +372,10 @@ export default function SettingsPage() {
                                                                 let label = opt;
                                                                 if (opt === 'true') label = 'Enabled';
                                                                 if (opt === 'false') label = 'Disabled';
+                                                                if (opt === 'hard_limit')
+                                                                    label = 'Hard limit (block at max)';
+                                                                if (opt === 'fifo_rolling')
+                                                                    label = 'FIFO rolling (drop oldest)';
                                                                 return (
                                                                     <option
                                                                         key={opt}

@@ -18,7 +18,18 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
-import { Plus, Loader2, Archive, RefreshCw, Search, HardDrive, Calendar, AlertTriangle, RotateCcw } from 'lucide-react';
+import {
+    Plus,
+    Loader2,
+    Archive,
+    RefreshCw,
+    Search,
+    HardDrive,
+    Calendar,
+    AlertTriangle,
+    RotateCcw,
+    Info,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
@@ -51,6 +62,9 @@ type ListBackupsResponse = {
         backups: VmBackup[];
         backup_limit: number;
         storages: string[];
+        fifo_rolling_enabled?: boolean;
+        panel_backup_retention_mode?: string;
+        effective_backup_retention_mode?: string;
     };
     message?: string;
 };
@@ -64,6 +78,7 @@ export default function VdsBackupsPage() {
 
     const [backups, setBackups] = useState<VmBackup[]>([]);
     const [backupLimit, setBackupLimit] = useState<number>(0);
+    const [fifoRolling, setFifoRolling] = useState(false);
     const [, setStorages] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
@@ -88,6 +103,7 @@ export default function VdsBackupsPage() {
             }
             setBackups(data.data.backups || []);
             setBackupLimit(data.data.backup_limit ?? 0);
+            setFifoRolling(Boolean(data.data.fifo_rolling_enabled));
             setStorages(data.data.storages || []);
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
@@ -127,7 +143,7 @@ export default function VdsBackupsPage() {
         return () => clearInterval(interval);
     }, [backups, fetchBackups]);
 
-    const limitReached = backupLimit > 0 && backups.length >= backupLimit;
+    const limitReached = backupLimit > 0 && backups.length >= backupLimit && !fifoRolling;
 
     const handleCreateBackup = async () => {
         if (limitReached) {
@@ -276,7 +292,8 @@ export default function VdsBackupsPage() {
                             {t('serverBackups.description') || 'Manage filesystem backups for this VDS instance.'}
                         </span>
                         <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'>
-                            {backups.length} / {backupLimit}
+                            {backups.length} / {backupLimit === 0 ? '∞' : backupLimit}
+                            {fifoRolling ? ' · FIFO' : ''}
                         </span>
                     </div>
                 }
@@ -298,6 +315,24 @@ export default function VdsBackupsPage() {
                     </div>
                 }
             />
+
+            {fifoRolling && backupLimit > 0 && (
+                <div className='relative overflow-hidden p-6 rounded-3xl bg-sky-500/10 border border-sky-500/20 backdrop-blur-xl'>
+                    <div className='relative z-10 flex items-start gap-5'>
+                        <div className='h-12 w-12 rounded-2xl bg-sky-500/20 flex items-center justify-center border border-sky-500/30'>
+                            <Info className='h-6 w-6 text-sky-500' />
+                        </div>
+                        <div className='space-y-1'>
+                            <h3 className='text-lg font-bold text-sky-600 dark:text-sky-400 leading-none'>
+                                {t('serverBackups.fifoRollingTitle')}
+                            </h3>
+                            <p className='text-sm text-sky-600/85 dark:text-sky-400/85 leading-relaxed font-medium'>
+                                {t('serverBackups.fifoRollingDescription', { limit: String(backupLimit) })}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {limitReached && (
                 <div className='relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl'>

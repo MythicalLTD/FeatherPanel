@@ -319,7 +319,9 @@ export default function ServerBackupsPage() {
         );
     }
 
-    const limitReached = server && backups.length >= server.backup_limit;
+    const backupCountTotal = pagination.total;
+    const fifoRolling = Boolean(server?.fifo_rolling_enabled);
+    const limitReached = server && server.backup_limit > 0 && backupCountTotal >= server.backup_limit && !fifoRolling;
 
     return (
         <div className='space-y-8 pb-12 '>
@@ -330,7 +332,8 @@ export default function ServerBackupsPage() {
                         <span>{t('serverBackups.description')}</span>
                         {server && (
                             <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'>
-                                {backups.length} / {server.backup_limit}
+                                {backupCountTotal} / {server.backup_limit === 0 ? '∞' : server.backup_limit}
+                                {fifoRolling ? ' · FIFO' : ''}
                             </span>
                         )}
                     </div>
@@ -361,6 +364,26 @@ export default function ServerBackupsPage() {
             />
 
             <WidgetRenderer widgets={getWidgets('server-backups', 'backup-header')} />
+
+            {server && fifoRolling && server.backup_limit > 0 && (
+                <div className='relative overflow-hidden p-6 rounded-3xl bg-sky-500/10 border border-sky-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500'>
+                    <div className='relative z-10 flex items-start gap-5'>
+                        <div className='h-12 w-12 rounded-2xl bg-sky-500/20 flex items-center justify-center border border-sky-500/30'>
+                            <Info className='h-6 w-6 text-sky-500' />
+                        </div>
+                        <div className='space-y-1'>
+                            <h3 className='text-lg font-bold text-sky-600 dark:text-sky-400 leading-none'>
+                                {t('serverBackups.fifoRollingTitle')}
+                            </h3>
+                            <p className='text-sm text-sky-600/85 dark:text-sky-400/85 leading-relaxed font-medium'>
+                                {t('serverBackups.fifoRollingDescription', {
+                                    limit: String(server.backup_limit),
+                                })}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {limitReached && (
                 <div className='relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500'>
@@ -433,7 +456,7 @@ export default function ServerBackupsPage() {
                         }
                         icon={Archive}
                         action={
-                            canCreate && server && server.backup_limit > 0 ? (
+                            canCreate && server ? (
                                 <Button
                                     size='default'
                                     onClick={() => {

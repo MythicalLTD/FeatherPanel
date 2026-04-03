@@ -33,6 +33,7 @@ import {
     KeyRound,
     Info,
     Settings,
+    Archive,
     AlertTriangle,
     Loader2,
     Lock,
@@ -97,6 +98,11 @@ export default function ServerSettingsPage() {
 
     const [name, setName] = React.useState('');
     const [description, setDescription] = React.useState('');
+    const [backupLimit, setBackupLimit] = React.useState(0);
+    const [backupRetentionMode, setBackupRetentionMode] = React.useState<'inherit' | 'hard_limit' | 'fifo_rolling'>(
+        'inherit',
+    );
+    const [savingBackupPolicy, setSavingBackupPolicy] = React.useState(false);
 
     const [showReinstallDialog, setShowReinstallDialog] = React.useState(false);
     const [confirmReinstallText, setConfirmReinstallText] = React.useState('');
@@ -133,6 +139,9 @@ export default function ServerSettingsPage() {
                 setServer(data.data);
                 setName(data.data.name);
                 setDescription(data.data.description || '');
+                setBackupLimit(Number(data.data.backup_limit ?? 0));
+                const br = data.data.backup_retention_mode;
+                setBackupRetentionMode(br === 'fifo_rolling' || br === 'hard_limit' ? br : 'inherit');
             }
         } catch (error) {
             console.error(error);
@@ -204,12 +213,43 @@ export default function ServerSettingsPage() {
     };
 
     const hasChanges = server?.name !== name || (server?.description || '') !== description;
+    const canEditBackupPolicy =
+        Boolean(server && !server.is_subuser) && isEnabled(settings?.server_allow_user_backup_policy_edit ?? 'true');
+    const hasBackupPolicyChanges =
+        server &&
+        (Number(server.backup_limit) !== backupLimit ||
+            (server.backup_retention_mode === 'fifo_rolling' || server.backup_retention_mode === 'hard_limit'
+                ? server.backup_retention_mode
+                : 'inherit') !== backupRetentionMode);
+
+    const handleSaveBackupPolicy = async () => {
+        if (!canEditBackupPolicy || !server) return;
+        setSavingBackupPolicy(true);
+        try {
+            const { data } = await axios.put(`/api/user/servers/${uuidShort}`, {
+                backup_limit: backupLimit,
+                backup_retention_mode: backupRetentionMode === 'inherit' ? null : backupRetentionMode,
+            });
+            if (data.success) {
+                toast.success(t('serverSettings.backupPolicySaveSuccess'));
+                await fetchData();
+            }
+        } catch (error) {
+            console.error(error);
+            const msg = axios.isAxiosError(error)
+                ? (error.response?.data as { message?: string } | undefined)?.message
+                : undefined;
+            toast.error(msg || t('serverSettings.backupPolicySaveError'));
+        } finally {
+            setSavingBackupPolicy(false);
+        }
+    };
     const resolvedSftpHost = server?.node?.sftp_subdomain || server?.sftp?.host || '';
     const resolvedSftpPort = server?.sftp?.port;
     const resolvedSftpUsername = server?.sftp?.username || '';
     const resolvedSftpUrl =
-        resolvedSftpHost && resolvedSftpPort
-            ? `sftp://${resolvedSftpHost}:${resolvedSftpPort}/${resolvedSftpUsername}`
+        resolvedSftpUsername && resolvedSftpHost && resolvedSftpPort
+            ? `sftp://${resolvedSftpUsername}@${resolvedSftpHost}:${resolvedSftpPort}`
             : server?.sftp?.url || '';
 
     if (permissionsLoading || settingsLoading) return null;
@@ -315,6 +355,86 @@ export default function ServerSettingsPage() {
                             )}
                         </div>
                     </PageCard>
+
+                    {canEditBackupPolicy && (
+                        <PageCard
+                            title={t('serverSettings.backupPolicyTitle')}
+                            description={t('serverSettings.backupPolicyDescription')}
+                            icon={Archive}
+                        >
+                            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                                <div className='space-y-2'>
+                                    <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1'>
+                                        {t('admin.servers.form.backup_limit')}
+                                    </Label>
+                                    <Input
+                                        type='number'
+                                        min={0}
+                                        value={backupLimit}
+                                        onChange={(e) => setBackupLimit(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                                        disabled={savingBackupPolicy}
+                                        className='h-12 bg-secondary/50 border-border/10 rounded-xl'
+                                    />
+                                    <p className='text-xs text-muted-foreground ml-1'>
+                                        {t('admin.servers.form.backup_limit_help')}
+                                    </p>
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1'>
+                                        {t('admin.servers.form.backup_retention_mode')}
+                                    </Label>
+                                    <select
+                                        className='w-full h-12 rounded-xl border border-border/10 bg-secondary/50 px-3 text-sm'
+                                        value={backupRetentionMode}
+                                        onChange={(e) =>
+                                            setBackupRetentionMode(
+                                                e.target.value as 'inherit' | 'hard_limit' | 'fifo_rolling',
+                                            )
+                                        }
+                                        disabled={savingBackupPolicy}
+                                    >
+                                        <option value='inherit'>
+                                            {t('admin.servers.form.backup_retention_inherit')}
+                                        </option>
+                                        <option value='hard_limit'>
+                                            {t('admin.servers.form.backup_retention_hard_limit')}
+                                        </option>
+                                        <option value='fifo_rolling'>
+                                            {t('admin.servers.form.backup_retention_fifo')}
+                                        </option>
+                                    </select>
+                                    <p className='text-xs text-muted-foreground ml-1'>
+                                        {t('admin.servers.form.backup_retention_mode_help')}
+                                    </p>
+                                </div>
+                            </div>
+                            {server?.fifo_rolling_enabled && server.backup_limit > 0 && (
+                                <p className='text-sm text-sky-600 dark:text-sky-400 mt-4 flex gap-2 items-start'>
+                                    <Info className='h-4 w-4 shrink-0 mt-0.5' />
+                                    <span>
+                                        {t('serverBackups.fifoRollingDescription', {
+                                            limit: String(server.backup_limit),
+                                        })}
+                                    </span>
+                                </p>
+                            )}
+                            <div className='flex gap-3 pt-4'>
+                                <Button
+                                    onClick={handleSaveBackupPolicy}
+                                    disabled={savingBackupPolicy || !hasBackupPolicyChanges}
+                                    size='sm'
+                                >
+                                    {savingBackupPolicy ? (
+                                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                                    ) : (
+                                        <Save className='h-4 w-4 mr-2' />
+                                    )}
+                                    {t('serverSettings.backupPolicySave')}
+                                </Button>
+                            </div>
+                        </PageCard>
+                    )}
+
                     <WidgetRenderer widgets={getWidgets('server-settings', 'after-server-info')} />
 
                     <PageCard

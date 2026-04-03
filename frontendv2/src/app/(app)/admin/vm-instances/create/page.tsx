@@ -141,6 +141,9 @@ export default function VmInstancesCreatePage() {
     const [ciUser, setCiUser] = useState('debian');
     const [ciPassword, setCiPassword] = useState('');
     const [backupLimit, setBackupLimit] = useState(5);
+    const [backupRetentionMode, setBackupRetentionMode] = useState<'inherit' | 'hard_limit' | 'fifo_rolling'>(
+        'inherit',
+    );
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instances-create');
 
@@ -347,6 +350,7 @@ export default function VmInstancesCreatePage() {
                 on_boot: onBoot,
                 hostname: hostname.trim(),
                 backup_limit: backupLimit,
+                backup_retention_mode: backupRetentionMode === 'inherit' ? null : backupRetentionMode,
                 vm_ip_id: primaryNetwork.vm_ip_id,
                 networks: networks
                     .filter((row) => row.vm_ip_id != null)
@@ -738,6 +742,34 @@ export default function VmInstancesCreatePage() {
                                     <p className='text-xs text-muted-foreground'>
                                         {t('admin.vmInstances.backups.limit_help') ??
                                             'Maximum number of backups allowed for this instance (0 = no backups).'}
+                                    </p>
+                                </div>
+                                <div className='space-y-3'>
+                                    <Label>
+                                        {t('admin.vmInstances.backups.retention_label_create') ?? 'Backup retention'}
+                                    </Label>
+                                    <select
+                                        className='w-full h-11 rounded-md border border-input bg-muted/30 px-3 text-sm'
+                                        value={backupRetentionMode}
+                                        onChange={(e) =>
+                                            setBackupRetentionMode(
+                                                e.target.value as 'inherit' | 'hard_limit' | 'fifo_rolling',
+                                            )
+                                        }
+                                    >
+                                        <option value='inherit'>
+                                            {t('admin.servers.form.backup_retention_inherit')}
+                                        </option>
+                                        <option value='hard_limit'>
+                                            {t('admin.servers.form.backup_retention_hard_limit')}
+                                        </option>
+                                        <option value='fifo_rolling'>
+                                            {t('admin.servers.form.backup_retention_fifo')}
+                                        </option>
+                                    </select>
+                                    <p className='text-xs text-muted-foreground'>
+                                        {t('admin.vmInstances.backups.retention_help_create') ??
+                                            'Inherit uses the panel default. FIFO rolls the oldest backup when full.'}
                                     </p>
                                 </div>
                             </div>

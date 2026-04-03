@@ -62,6 +62,27 @@ export function LimitsTab({ form, setForm }: TabProps) {
                     />
                     <p className='text-xs text-muted-foreground'>{t('admin.servers.form.backup_limit_help')}</p>
                 </div>
+
+                <div className='space-y-3 md:col-span-3'>
+                    <Label>{t('admin.servers.form.backup_retention_mode')}</Label>
+                    <select
+                        className='w-full h-11 rounded-md border border-input bg-muted/30 px-3 text-sm'
+                        value={form.backup_retention_mode}
+                        onChange={(e) =>
+                            setForm((prev) => ({
+                                ...prev,
+                                backup_retention_mode: e.target.value as 'inherit' | 'hard_limit' | 'fifo_rolling',
+                            }))
+                        }
+                    >
+                        <option value='inherit'>{t('admin.servers.form.backup_retention_inherit')}</option>
+                        <option value='hard_limit'>{t('admin.servers.form.backup_retention_hard_limit')}</option>
+                        <option value='fifo_rolling'>{t('admin.servers.form.backup_retention_fifo')}</option>
+                    </select>
+                    <p className='text-xs text-muted-foreground'>
+                        {t('admin.servers.form.backup_retention_mode_help')}
+                    </p>
+                </div>
             </div>
         </PageCard>
     );

@@ -23,6 +23,10 @@ import { Label } from '@/components/ui/label';
 import { Cpu, Loader2, Save } from 'lucide-react';
 
 interface ResourcesTabProps {
+    vmBackupLimit?: number;
+    setVmBackupLimit?: (v: number) => void;
+    vmBackupRetention?: 'inherit' | 'hard_limit' | 'fifo_rolling';
+    setVmBackupRetention?: (v: 'inherit' | 'hard_limit' | 'fifo_rolling') => void;
     config: Record<string, unknown> | null;
     memory: number;
     setMemory: (v: number) => void;
@@ -51,6 +55,10 @@ interface ResourcesTabProps {
 }
 
 export function ResourcesTab({
+    vmBackupLimit,
+    setVmBackupLimit,
+    vmBackupRetention,
+    setVmBackupRetention,
     config,
     memory,
     setMemory,
@@ -74,6 +82,8 @@ export function ResourcesTab({
     saving,
 }: ResourcesTabProps) {
     const { t } = useTranslation();
+    const showBackup =
+        vmBackupLimit !== undefined && setVmBackupLimit && vmBackupRetention !== undefined && setVmBackupRetention;
 
     return (
         <form onSubmit={onSave}>
@@ -195,6 +205,61 @@ export function ResourcesTab({
                                             ))}
                                         </select>
                                     )}
+                                </div>
+                            </>
+                        )}
+
+                        {showBackup && (
+                            <>
+                                <div className='sm:col-span-2 border-t border-border/40 pt-4 mt-2'>
+                                    <p className='text-sm font-medium mb-3'>
+                                        {t('admin.vmInstances.backups.policy_section') ?? 'Backup policy'}
+                                    </p>
+                                </div>
+                                <div className='space-y-3'>
+                                    <Label>{t('admin.vmInstances.backups.limit_label_create') ?? 'Backup limit'}</Label>
+                                    <Input
+                                        type='number'
+                                        min={0}
+                                        max={100}
+                                        value={vmBackupLimit}
+                                        onChange={(e) =>
+                                            setVmBackupLimit(
+                                                Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0)),
+                                            )
+                                        }
+                                        className='bg-muted/30 h-11 rounded-xl'
+                                    />
+                                    <p className='text-xs text-muted-foreground'>
+                                        {t('admin.vmInstances.backups.limit_help')}
+                                    </p>
+                                </div>
+                                <div className='space-y-3'>
+                                    <Label>
+                                        {t('admin.vmInstances.backups.retention_label_edit') ?? 'Retention override'}
+                                    </Label>
+                                    <select
+                                        className='w-full h-11 rounded-xl border border-input bg-muted/30 px-3 text-sm'
+                                        value={vmBackupRetention}
+                                        onChange={(e) =>
+                                            setVmBackupRetention(
+                                                e.target.value as 'inherit' | 'hard_limit' | 'fifo_rolling',
+                                            )
+                                        }
+                                    >
+                                        <option value='inherit'>
+                                            {t('admin.servers.form.backup_retention_inherit')}
+                                        </option>
+                                        <option value='hard_limit'>
+                                            {t('admin.servers.form.backup_retention_hard_limit')}
+                                        </option>
+                                        <option value='fifo_rolling'>
+                                            {t('admin.servers.form.backup_retention_fifo')}
+                                        </option>
+                                    </select>
+                                    <p className='text-xs text-muted-foreground'>
+                                        {t('admin.vmInstances.backups.retention_help_edit')}
+                                    </p>
                                 </div>
                             </>
                         )}

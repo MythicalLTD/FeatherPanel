@@ -207,6 +207,26 @@ class Backup
     }
 
     /**
+     * Oldest backup eligible for FIFO rotation: not soft-deleted, not locked (unlocked or in-progress backups use lock).
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function getOldestUnlockedBackupForServer(int $serverId): ?array
+    {
+        if ($serverId <= 0) {
+            return null;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT * FROM ' . self::$table . ' WHERE server_id = :server_id AND deleted_at IS NULL AND is_locked = 0 ORDER BY created_at ASC, id ASC LIMIT 1'
+        );
+        $stmt->execute(['server_id' => $serverId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
      * Update a backup.
      *
      * @param int $id The backup ID

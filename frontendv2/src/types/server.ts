@@ -147,6 +147,12 @@ export interface Server {
     primary_allocation_id?: number;
     database_limit: number;
     backup_limit: number;
+    /** DB override; null/omit = inherit panel default */
+    backup_retention_mode?: string | null;
+    panel_backup_retention_mode?: string;
+    backup_retention_mode_override?: string | null;
+    effective_backup_retention_mode?: string;
+    fifo_rolling_enabled?: boolean;
 
     // Timestamps
     created_at: string;
@@ -291,6 +297,10 @@ export interface BackupsResponse {
             from: number;
             to: number;
         };
+        panel_backup_retention_mode?: string;
+        backup_retention_mode_override?: string | null;
+        effective_backup_retention_mode?: string;
+        fifo_rolling_enabled?: boolean;
     };
     message?: string;
 }

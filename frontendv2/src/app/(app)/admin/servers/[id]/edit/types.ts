@@ -35,6 +35,7 @@ export interface Server {
     database_limit: number;
     allocation_limit: number;
     backup_limit: number;
+    backup_retention_mode: string | null;
     startup: string;
     image: string;
     skip_scripts: number;
@@ -134,6 +135,8 @@ export interface ServerFormData {
     database_limit: number;
     allocation_limit: number;
     backup_limit: number;
+    /** inherit = use panel default; stored as null in API */
+    backup_retention_mode: 'inherit' | 'hard_limit' | 'fifo_rolling';
 
     // Allocations
     allocation_id: number | null;

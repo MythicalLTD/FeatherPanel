@@ -29,6 +29,7 @@ use App\Chat\VmInstanceActivity;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\VdsEvent;
+use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -109,10 +110,16 @@ class VmUserBackupController
             }
         }
 
+        $retention = BackupFifoEviction::retentionMetaForVm($vmInstance);
+
         return ApiResponse::success([
             'backups' => $backups,
             'backup_limit' => (int) ($vmInstance['backup_limit'] ?? 5),
             'storages' => $storages,
+            'panel_backup_retention_mode' => $retention['panel_backup_retention_mode'],
+            'backup_retention_mode_override' => $retention['backup_retention_mode_override'],
+            'effective_backup_retention_mode' => $retention['effective_backup_retention_mode'],
+            'fifo_rolling_enabled' => $retention['fifo_rolling_enabled'],
         ], 'Backups listed', 200);
     }
 
@@ -202,12 +209,18 @@ class VmUserBackupController
 
         $backupLimit = (int) ($instance['backup_limit'] ?? 5);
         $existingCount = VmInstanceBackup::countByInstanceId((int) $instance['id']);
-        if ($existingCount >= $backupLimit) {
-            return ApiResponse::error(
-                'Backup limit reached (' . $backupLimit . '). Delete an existing backup first.',
-                'BACKUP_LIMIT_REACHED',
-                422
-            );
+        if ($backupLimit > 0 && $existingCount >= $backupLimit) {
+            if (!BackupFifoEviction::isFifoRollingForVm($instance)) {
+                return ApiResponse::error(
+                    'Backup limit reached (' . $backupLimit . '). Delete an existing backup first.',
+                    'BACKUP_LIMIT_REACHED',
+                    422
+                );
+            }
+            $evict = BackupFifoEviction::evictOldestVmBackup($instance, $client);
+            if ($evict !== null) {
+                return ApiResponse::error($evict['message'], $evict['code'], $evict['status']);
+            }
         }
 
         if ($vmType === 'lxc' && $mode === 'snapshot') {

@@ -91,6 +91,7 @@ const initialFormData: ServerFormData = {
     database_limit: 0,
     allocation_limit: 1,
     backup_limit: 0,
+    backup_retention_mode: 'inherit',
     allocation_id: null,
     variables: {},
     mount_ids: [],
@@ -335,6 +336,12 @@ export default function EditServerPage() {
                     database_limit: server.database_limit,
                     allocation_limit: server.allocation_limit,
                     backup_limit: server.backup_limit,
+                    backup_retention_mode:
+                        server.backup_retention_mode === 'fifo_rolling'
+                            ? 'fifo_rolling'
+                            : server.backup_retention_mode === 'hard_limit'
+                              ? 'hard_limit'
+                              : 'inherit',
                     allocation_id: server.allocation_id,
                     variables: variablesMap,
                     mount_ids: mountIds,
@@ -718,6 +725,7 @@ export default function EditServerPage() {
                 database_limit: form.database_limit,
                 allocation_limit: form.allocation_limit,
                 backup_limit: form.backup_limit,
+                backup_retention_mode: form.backup_retention_mode === 'inherit' ? null : form.backup_retention_mode,
                 allocation_id: form.allocation_id,
                 variables: Object.entries(form.variables)
                     .map(([key, value]) => {

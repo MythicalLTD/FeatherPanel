@@ -133,6 +133,8 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE => 'true',
             ConfigInterface::SERVER_ALLOW_SUBUSERS => 'true',
             ConfigInterface::SERVER_ALLOW_SCHEDULES => 'true',
+            ConfigInterface::SERVER_BACKUP_RETENTION_MODE => 'hard_limit',
+            ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT => 'true',
             ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT => 'false',
             ConfigInterface::SERVER_ALLOW_USER_MADE_FIREWALL => 'false',
             ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY => 'false',

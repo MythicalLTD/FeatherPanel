@@ -362,8 +362,8 @@ class Allocation
         );
         if (
             !$stmt->execute([
-            'id' => $allocationId,
-            'server_id' => $serverId,
+                'id' => $allocationId,
+                'server_id' => $serverId,
             ])
         ) {
             return false;

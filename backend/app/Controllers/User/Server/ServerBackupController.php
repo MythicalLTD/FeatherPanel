@@ -27,6 +27,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\ServerEvent;
+use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerBackupEvent;
@@ -181,6 +182,8 @@ class ServerBackupController
         $offset = ($page - 1) * $perPage;
         $paginatedBackups = array_slice($backups, $offset, $perPage);
 
+        $retention = BackupFifoEviction::retentionMetaForServer($server);
+
         return ApiResponse::success([
             'data' => $paginatedBackups,
             'pagination' => [
@@ -191,6 +194,10 @@ class ServerBackupController
                 'from' => $offset + 1,
                 'to' => min($offset + $perPage, $total),
             ],
+            'panel_backup_retention_mode' => $retention['panel_backup_retention_mode'],
+            'backup_retention_mode_override' => $retention['backup_retention_mode_override'],
+            'effective_backup_retention_mode' => $retention['effective_backup_retention_mode'],
+            'fifo_rolling_enabled' => $retention['fifo_rolling_enabled'],
         ]);
     }
 
@@ -317,12 +324,35 @@ class ServerBackupController
             return $permissionCheck;
         }
 
-        // Check backup limit
-        $currentBackups = count(Backup::getBackupsByServerId($server['id']));
+        // Check backup limit (optional FIFO rotation per panel setting)
+        $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
         $backupLimit = (int) ($server['backup_limit'] ?? 1);
 
-        if ($currentBackups >= $backupLimit) {
-            return ApiResponse::error('Backup limit reached', 'BACKUP_LIMIT_REACHED', 400);
+        if ($backupLimit > 0 && $currentBackups >= $backupLimit) {
+            if (!BackupFifoEviction::isFifoRollingForServer($server)) {
+                return ApiResponse::error('Backup limit reached', 'BACKUP_LIMIT_REACHED', 400);
+            }
+            $nodeForEvict = Node::getNodeById((int) $server['node_id']);
+            if (!$nodeForEvict) {
+                return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+            }
+            try {
+                $wingsEvict = new Wings(
+                    $nodeForEvict['fqdn'],
+                    (int) $nodeForEvict['daemonListen'],
+                    $nodeForEvict['scheme'],
+                    $nodeForEvict['daemon_token'],
+                    30
+                );
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->error('FIFO backup eviction: Wings client error: ' . $e->getMessage());
+
+                return ApiResponse::error('Failed to connect to node for backup rotation', 'FIFO_EVICTION_FAILED', 500);
+            }
+            $evictErr = BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], $serverUuid, $wingsEvict);
+            if ($evictErr !== null) {
+                return ApiResponse::error($evictErr['message'], $evictErr['code'], $evictErr['status']);
+            }
         }
 
         // Parse request body
