@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
     },
     // Enable standalone output for optimized Docker builds
     output: 'standalone',
-	allowedDevOrigins: ['testingpanel.mythical.systems'],
+    allowedDevOrigins: ['testingpanel.mythical.systems'],
     // Prevent caching of HTML so users always get fresh chunk references after deploys
     async headers() {
         return [

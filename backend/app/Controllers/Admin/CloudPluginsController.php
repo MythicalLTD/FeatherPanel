@@ -21,6 +21,7 @@ use App\App;
 use App\Chat\Activity;
 use App\Chat\Database;
 use App\Helpers\ApiResponse;
+use App\Helpers\PanelAssetUrl;
 use App\Chat\InstalledPlugin;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
@@ -219,7 +220,7 @@ class CloudPluginsController
                 $latest = $pkg['latest_version'] ?? [];
                 $downloadUrl = isset($latest['download_url']) ? ('https://api.featherpanel.com' . $latest['download_url']) : null;
 
-                $iconUrl = $pkg['icon_url'];
+                $iconUrl = $pkg['icon_url'] ?? null;
                 // If iconUrl is set and not empty, ensure it is https
                 if (!empty($iconUrl) && is_string($iconUrl)) {
                     if (strpos($iconUrl, 'http://') === 0) {
@@ -233,7 +234,7 @@ class CloudPluginsController
                     'identifier' => $pkg['name'] ?? '',
                     'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
                     'description' => $pkg['description'] ?? null,
-                    'icon' => $iconUrl,
+                    'icon' => PanelAssetUrl::rewriteCloudStorageIcon(is_string($iconUrl) ? $iconUrl : null),
                     'website' => $pkg['website'] ?? null,
                     // Authors/maintainers
                     'author' => $pkg['author'] ?? null,
@@ -406,7 +407,7 @@ class CloudPluginsController
                     'identifier' => $pkg['name'] ?? '',
                     'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
                     'description' => $pkg['description'] ?? null,
-                    'icon' => $iconUrl,
+                    'icon' => PanelAssetUrl::rewriteCloudStorageIcon(is_string($iconUrl) ? $iconUrl : null),
                     'website' => $pkg['website'] ?? null,
                     'author' => $pkg['author'] ?? null,
                     'author_email' => $pkg['author_email'] ?? null,
@@ -503,7 +504,7 @@ class CloudPluginsController
                 'identifier' => $pkg['name'] ?? '',
                 'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
                 'description' => $pkg['description'] ?? null,
-                'icon' => $iconUrl,
+                'icon' => PanelAssetUrl::rewriteCloudStorageIcon(is_string($iconUrl) ? $iconUrl : null),
                 'website' => $pkg['website'] ?? null,
                 'author' => $pkg['author'] ?? null,
                 'author_email' => $pkg['author_email'] ?? null,
@@ -648,7 +649,7 @@ class CloudPluginsController
                     'identifier' => $pkg['name'] ?? '',
                     'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
                     'description' => $pkg['description'] ?? null,
-                    'icon' => $iconUrl,
+                    'icon' => PanelAssetUrl::rewriteCloudStorageIcon(is_string($iconUrl) ? $iconUrl : null),
                     'website' => $pkg['website'] ?? null,
                     'author' => $pkg['author'] ?? null,
                     'author_email' => $pkg['author_email'] ?? null,

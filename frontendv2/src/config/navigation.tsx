@@ -36,7 +36,7 @@ import {
     Gauge,
     PlayCircle,
     Package,
-    Cloud,
+  //  Cloud,
     Bot,
     Bell,
     Download,
@@ -238,17 +238,6 @@ export const getAdminNavigationItems = (
             ],
         },
         {
-            id: 'admin-subdomains',
-            name: t('navigation.items.subdomains'),
-            title: t('navigation.items.subdomains'),
-            url: '/admin/subdomains',
-            icon: Link,
-            isActive: false,
-            category: 'admin',
-            permission: Permissions.ADMIN_SUBDOMAINS_VIEW,
-            group: 'infrastructure',
-        },
-        {
             id: 'admin-realms-parent',
             name: t('navigation.items.realms'),
             title: t('navigation.items.realms'),
@@ -292,7 +281,7 @@ export const getAdminNavigationItems = (
             isActive: false,
             category: 'admin',
             permission: Permissions.ADMIN_FEATHERZEROTRUST_VIEW,
-            group: 'infrastructure',
+            group: 'system',
         },
 
         {
@@ -304,6 +293,17 @@ export const getAdminNavigationItems = (
             isActive: false,
             category: 'admin',
             permission: Permissions.ADMIN_IMAGES_VIEW,
+            group: 'content',
+        },
+        {
+            id: 'admin-subdomains',
+            name: t('navigation.items.subdomains'),
+            title: t('navigation.items.subdomains'),
+            url: '/admin/subdomains',
+            icon: Link,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_SUBDOMAINS_VIEW,
             group: 'content',
         },
         {
@@ -467,17 +467,20 @@ export const getAdminNavigationItems = (
             permission: Permissions.ADMIN_PLUGINS_VIEW,
             group: 'feathercloud',
         },
-        {
-            id: 'admin-cloud-management',
-            name: t('navigation.items.cloudManagement'),
-            title: t('navigation.items.cloudManagement'),
-            url: '/admin/cloud-management',
-            icon: Cloud,
-            isActive: false,
-            category: 'admin',
-            permission: Permissions.ADMIN_ROOT,
-            group: 'feathercloud',
-        },
+		/**
+		 * We already have it in the plugins section, so we don't need to show it here.
+		 */
+        //{
+        //    id: 'admin-cloud-management',
+        //    name: t('navigation.items.cloudManagement'),
+        //    title: t('navigation.items.cloudManagement'),
+        //    url: '/admin/cloud-management',
+        //    icon: Cloud,
+        //    isActive: false,
+        //    category: 'admin',
+        //    permission: Permissions.ADMIN_ROOT,
+        //    group: 'feathercloud',
+        //},
     ];
 
     if (isEnabled(settings?.knowledgebase_enabled)) {
@@ -490,7 +493,7 @@ export const getAdminNavigationItems = (
             isActive: false,
             category: 'admin',
             permission: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW,
-            group: 'users',
+            group: 'content',
         });
     }
 
