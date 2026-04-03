@@ -37,6 +37,7 @@ import {
     Box,
     ChevronLeft,
     ChevronRight,
+    HardDrive,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
@@ -51,6 +52,8 @@ import { ApplicationTab } from './ApplicationTab';
 import { LimitsTab } from './LimitsTab';
 import { StartupTab } from './StartupTab';
 import { AllocationsTab } from './AllocationsTab';
+import { MountsTab } from './MountsTab';
+import type { AssignableMountRow } from './MountsTab';
 import { ActionsTab } from './ActionsTab';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -90,6 +93,7 @@ const initialFormData: ServerFormData = {
     backup_limit: 0,
     allocation_id: null,
     variables: {},
+    mount_ids: [],
 };
 
 const initialSelectedEntities: SelectedEntities = {
@@ -224,6 +228,10 @@ export default function EditServerPage() {
     const originalSpellId = useRef<number | null>(null);
     const originalVariables = useRef<Record<string, string>>({});
     const hasInitialLoaded = useRef(false);
+    const spellBaselineForMounts = useRef<number | null>(null);
+
+    const [assignableMounts, setAssignableMounts] = useState<AssignableMountRow[]>([]);
+    const [assignableLoading, setAssignableLoading] = useState(false);
 
     const fetchServerData = useCallback(async () => {
         setLoading(true);
@@ -281,6 +289,25 @@ export default function EditServerPage() {
                     originalVariables.current = variablesMap;
                 }
 
+                let mountIds: number[] = Array.isArray(server.mount_ids)
+                    ? server.mount_ids.map((id: number) => Number(id))
+                    : [];
+                try {
+                    const assignRes = await axios.get(`/api/admin/servers/${serverId}/mounts/assignable`);
+                    if (assignRes.data.success && assignRes.data.data?.mounts) {
+                        const assignList = assignRes.data.data.mounts as AssignableMountRow[];
+                        setAssignableMounts(assignList);
+                        const allowed = new Set(assignList.map((m) => m.id));
+                        mountIds = mountIds.filter((id) => allowed.has(id));
+                    } else {
+                        setAssignableMounts([]);
+                    }
+                } catch (assignErr) {
+                    console.error('Error loading assignable mounts:', assignErr);
+                    setAssignableMounts([]);
+                }
+                spellBaselineForMounts.current = server.spell_id ?? null;
+
                 setForm({
                     name: server.name || '',
                     description: server.description || '',
@@ -304,6 +331,7 @@ export default function EditServerPage() {
                     backup_limit: server.backup_limit,
                     allocation_id: server.allocation_id,
                     variables: variablesMap,
+                    mount_ids: mountIds,
                 });
 
                 setIsSuspended(Boolean(server.suspended));
@@ -335,6 +363,33 @@ export default function EditServerPage() {
             setLoading(false);
         }
     }, [serverId, router, t]);
+
+    const reloadAssignableMounts = useCallback(async () => {
+        setAssignableLoading(true);
+        try {
+            const { data } = await axios.get(`/api/admin/servers/${serverId}/mounts/assignable`);
+            if (data.success && data.data?.mounts) {
+                const list = data.data.mounts as AssignableMountRow[];
+                setAssignableMounts(list);
+                const allowed = new Set(list.map((m) => m.id));
+                setForm((prev) => ({
+                    ...prev,
+                    mount_ids: prev.mount_ids.filter((id) => allowed.has(id)),
+                }));
+            }
+        } catch (e) {
+            console.error('Error refreshing assignable mounts:', e);
+        } finally {
+            setAssignableLoading(false);
+        }
+    }, [serverId]);
+
+    useEffect(() => {
+        if (loading) return;
+        if (form.spell_id === spellBaselineForMounts.current) return;
+        spellBaselineForMounts.current = form.spell_id;
+        void reloadAssignableMounts();
+    }, [form.spell_id, loading, reloadAssignableMounts]);
 
     useEffect(() => {
         fetchServerData();
@@ -653,6 +708,7 @@ export default function EditServerPage() {
                         return { variable_id: sv.id, variable_value: String(value ?? '') };
                     })
                     .filter((v) => v !== null),
+                mount_ids: form.mount_ids,
             };
 
             const { data } = await axios.patch(`/api/admin/servers/${serverId}`, payload);
@@ -688,6 +744,7 @@ export default function EditServerPage() {
         { id: 'application', label: t('admin.servers.edit.tabs.application'), icon: Wand2 },
         { id: 'limits', label: t('admin.servers.edit.tabs.limits'), icon: Shield },
         { id: 'startup', label: t('admin.servers.edit.tabs.startup'), icon: Terminal },
+        { id: 'mounts', label: t('admin.servers.edit.tabs.mounts'), icon: HardDrive },
         { id: 'allocations', label: t('admin.servers.edit.tabs.allocations'), icon: Network },
         { id: 'actions', label: t('admin.servers.edit.tabs.actions'), icon: Settings },
     ];
@@ -780,6 +837,15 @@ export default function EditServerPage() {
 
                     <TabsContent value='startup' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
                         <StartupTab form={form} setForm={setForm} errors={errors} />
+                    </TabsContent>
+
+                    <TabsContent value='mounts' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                        <MountsTab
+                            form={form}
+                            setForm={setForm}
+                            assignableMounts={assignableMounts}
+                            loading={assignableLoading}
+                        />
                     </TabsContent>
 
                     <TabsContent value='allocations' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>

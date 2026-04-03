@@ -18,6 +18,7 @@
 namespace App\Chat;
 
 use App\App;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Node service/model for CRUD operations on the featherpanel_nodes table.
@@ -830,7 +831,8 @@ class Node
         $yaml .= '  data: ' . $dataPath . "\n";
         $yaml .= "  sftp:\n";
         $yaml .= '    bind_port: ' . $sftpPort . "\n";
-        $yaml .= "allowed_mounts: []\n";
+        $allowedMounts = Mount::getAllowedSourcesForNode((int) ($node['id'] ?? 0));
+        $yaml .= rtrim(Yaml::dump(['allowed_mounts' => $allowedMounts], 3, 2, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE)) . "\n";
         $yaml .= "remote: '" . $remote . "'\n";
 
         return $yaml;

@@ -20,6 +20,7 @@ namespace App\Controllers\Admin;
 use App\App;
 use App\Chat\Node;
 use App\Chat\User;
+use App\Chat\Mount;
 use App\Chat\Realm;
 use App\Chat\Spell;
 use App\Chat\Server;
@@ -122,6 +123,7 @@ use App\Services\Subdomain\SubdomainCleanupService;
         new OA\Property(property: 'skip_scripts', type: 'boolean', description: 'Skip scripts flag'),
         new OA\Property(property: 'oom_disabled', type: 'boolean', description: 'OOM disabled flag'),
         new OA\Property(property: 'variables', type: 'object', description: 'Server variables as key-value pairs'),
+        new OA\Property(property: 'mount_ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'Optional: Wings bind mounts to attach (validated against node/spell rules)'),
     ]
 )]
 #[OA\Schema(
@@ -151,6 +153,7 @@ use App\Services\Subdomain\SubdomainCleanupService;
         new OA\Property(property: 'skip_scripts', type: 'boolean', description: 'Skip scripts flag'),
         new OA\Property(property: 'oom_disabled', type: 'boolean', description: 'OOM disabled flag'),
         new OA\Property(property: 'variables', type: 'object', description: 'Server variables as key-value pairs'),
+        new OA\Property(property: 'mount_ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'Optional: replace Wings bind mounts for this server'),
     ]
 )]
 #[OA\Schema(
@@ -533,6 +536,10 @@ class ServersController
 
         $server['variables'] = $mergedVariables;
 
+        $attachedMounts = Mount::getMountsAttachedToServer((int) $server['id']);
+        $server['mounts'] = $attachedMounts;
+        $server['mount_ids'] = array_map(static fn (array $m): int => (int) $m['id'], $attachedMounts);
+
         // Add SFTP information (similar to user controller)
         $sftpHost = Node::getSftpHostname($server['node']);
         $sftp = [
@@ -668,6 +675,10 @@ class ServersController
 
         $server['variables'] = $mergedVariables;
 
+        $attachedMounts = Mount::getMountsAttachedToServer((int) $server['id']);
+        $server['mounts'] = $attachedMounts;
+        $server['mount_ids'] = array_map(static fn (array $m): int => (int) $m['id'], $attachedMounts);
+
         // Add SFTP information (similar to user controller)
         $sftpHost = Node::getSftpHostname($server['node']);
         $sftp = [
@@ -767,6 +778,18 @@ class ServersController
 
         if (!empty($missingFields)) {
             return ApiResponse::error('Missing required fields: ' . implode(', ', $missingFields), 'MISSING_REQUIRED_FIELDS', 400);
+        }
+
+        $mountIdsForCreate = null;
+        if (array_key_exists('mount_ids', $data)) {
+            if (!is_array($data['mount_ids'])) {
+                return ApiResponse::error('mount_ids must be an array', 'INVALID_MOUNTS', 400);
+            }
+            $mountIdsForCreate = array_values(array_filter(array_map('intval', $data['mount_ids']), fn ($i) => $i > 0));
+            $mErr = Mount::validateMountIdsForContext((int) $data['node_id'], (int) $data['spell_id'], $mountIdsForCreate);
+            if ($mErr !== null) {
+                return ApiResponse::error($mErr, 'INVALID_MOUNTS', 422);
+            }
         }
 
         // Validate data types
@@ -893,7 +916,7 @@ class ServersController
 
         // Remove variables from data before creating server (variables are handled separately)
         $serverData = $data;
-        unset($serverData['variables']);
+        unset($serverData['variables'], $serverData['mount_ids']);
 
         $serverId = Server::createServer($serverData);
         if (!$serverId) {
@@ -985,6 +1008,14 @@ class ServersController
                 return ApiResponse::error('Missing required spell variables: ' . implode(', ', $requiredVariables), 'MISSING_REQUIRED_VARIABLES', 400);
             }
             App::getInstance(true)->getLogger()->info('No server variables provided for server ID: ' . $serverId);
+        }
+
+        if ($mountIdsForCreate !== null) {
+            if (!Mount::syncServerMounts((int) $serverId, $mountIdsForCreate)) {
+                Server::hardDeleteServer($serverId);
+
+                return ApiResponse::error('Failed to attach mounts to the new server', 'MOUNT_SYNC_FAILED', 500);
+            }
         }
 
         $scheme = $nodeInfo['scheme'];
@@ -1149,6 +1180,15 @@ class ServersController
 
         // Prevent updating primary keys
         unset($data['id'], $data['uuid'], $data['uuidShort']);
+
+        $mountIdsToSync = null;
+        if (array_key_exists('mount_ids', $data)) {
+            if (!is_array($data['mount_ids'])) {
+                return ApiResponse::error('mount_ids must be an array', 'INVALID_MOUNTS', 400);
+            }
+            $mountIdsToSync = array_values(array_filter(array_map('intval', $data['mount_ids']), fn ($i) => $i > 0));
+        }
+        unset($data['mount_ids']);
 
         // Prevent direct modification of node_id - use server transfer instead
         if (isset($data['node_id'])) {
@@ -1380,7 +1420,7 @@ class ServersController
 
         // Update the server fields (exclude variables from direct update payload)
         $serverUpdateData = $data;
-        unset($serverUpdateData['variables']);
+        unset($serverUpdateData['variables'], $serverUpdateData['mount_ids']);
 
         // Map oom_killer to oom_disabled for DB
         if (array_key_exists('oom_killer', $serverUpdateData)) {
@@ -1588,9 +1628,23 @@ class ServersController
             }
         }
 
+        if ($mountIdsToSync !== null) {
+            $mErr = Mount::validateMountsForServer((int) $id, $mountIdsToSync);
+            if ($mErr !== null) {
+                return ApiResponse::error($mErr, 'INVALID_MOUNTS', 422);
+            }
+            if (!Mount::syncServerMounts((int) $id, $mountIdsToSync)) {
+                return ApiResponse::error('Failed to sync mounts', 'MOUNT_SYNC_FAILED', 500);
+            }
+        } elseif ($spellChanged) {
+            if (!Mount::pruneServerMountsToMatchContext((int) $id)) {
+                return ApiResponse::error('Failed to update mounts after spell change', 'MOUNT_SYNC_FAILED', 500);
+            }
+        }
+
         // Sync with Wings if node information is available
         // If spell changed, trigger reinstall instead of just sync
-        if (isset($data['node_id']) || isset($data['allocation_id']) || isset($data['spell_id']) || isset($data['variables']) || isset($data['image']) || isset($data['startup'])) {
+        if (isset($data['node_id']) || isset($data['allocation_id']) || isset($data['spell_id']) || isset($data['variables']) || isset($data['image']) || isset($data['startup']) || $mountIdsToSync !== null || $spellChanged) {
             $nodeInfo = Node::getNodeById($data['node_id'] ?? $server['node_id']);
             if ($nodeInfo) {
                 $scheme = $nodeInfo['scheme'];

@@ -18,6 +18,7 @@
 namespace App\Controllers\Wings\Server;
 
 use App\Chat\Node;
+use App\Chat\Mount;
 use App\Chat\Realm;
 use App\Chat\Spell;
 use App\Chat\Server;
@@ -438,46 +439,51 @@ class WingsServerInfoController
         }
 
         // Build the Wings configuration format using actual database fields
-        $wingsConfig = [
-            'settings' => [
-                'uuid' => $server['uuid'],
-                'meta' => [
-                    'name' => $serverName,
-                    'description' => $serverDescription,
-                ],
-                'suspended' => $server['status'] === 'suspended',
-                'invocation' => $startupCommand,
-                'skip_egg_scripts' => (bool) $server['skip_scripts'],
-                'environment' => $sanitizedEnvironment,
-                'allocations' => [
-                    'force_outgoing_ip' => (bool) $spell['force_outgoing_ip'],
-                    'default' => [
-                        'ip' => $allocation['ip'],
-                        'port' => $allocation['port'],
-                    ],
-                    'mappings' => $this->buildAllocationMappings($allAllocations),
-                ],
-                'build' => [
-                    'memory_limit' => $server['memory'],
-                    'swap' => $server['swap'],
-                    'io_weight' => $server['io'],
-                    'cpu_limit' => $server['cpu'],
-                    'disk_space' => $server['disk'],
-                    'threads' => $server['threads'] ?? null,
-                    'oom_disabled' => (bool) $server['oom_disabled'],
-                ],
-                'mounts' => [],
-                'egg' => [
-                    'id' => $spell['uuid'] ?? $spell['id'],
-                    'file_denylist' => $fileDenylist,
-                    'features' => $spellFeatures,
-                ],
-                'container' => [
-                    'image' => $dockerImage,
-                    'oom_disabled' => (bool) $server['oom_disabled'],
-                    'requires_rebuild' => false,
-                ],
+        $settingsBlock = [
+            'uuid' => $server['uuid'],
+            'meta' => [
+                'name' => $serverName,
+                'description' => $serverDescription,
             ],
+            'suspended' => $server['status'] === 'suspended',
+            'invocation' => $startupCommand,
+            'skip_egg_scripts' => (bool) $server['skip_scripts'],
+            'environment' => $sanitizedEnvironment,
+            'allocations' => [
+                'force_outgoing_ip' => (bool) $spell['force_outgoing_ip'],
+                'default' => [
+                    'ip' => $allocation['ip'],
+                    'port' => $allocation['port'],
+                ],
+                'mappings' => $this->buildAllocationMappings($allAllocations),
+            ],
+            'build' => [
+                'memory_limit' => $server['memory'],
+                'swap' => $server['swap'],
+                'io_weight' => $server['io'],
+                'cpu_limit' => $server['cpu'],
+                'disk_space' => $server['disk'],
+                'threads' => $server['threads'] ?? null,
+                'oom_disabled' => (bool) $server['oom_disabled'],
+            ],
+            'egg' => [
+                'id' => $spell['uuid'] ?? $spell['id'],
+                'file_denylist' => $fileDenylist,
+                'features' => $spellFeatures,
+            ],
+            'container' => [
+                'image' => $dockerImage,
+                'oom_disabled' => (bool) $server['oom_disabled'],
+                'requires_rebuild' => false,
+            ],
+        ];
+        $wingsMounts = Mount::getWingsMountsForServer((int) $server['id']);
+        if ($wingsMounts !== []) {
+            $settingsBlock['mounts'] = $wingsMounts;
+        }
+
+        $wingsConfig = [
+            'settings' => $settingsBlock,
             'process_configuration' => [
                 'configs' => $configFiles,
                 'startup' => [

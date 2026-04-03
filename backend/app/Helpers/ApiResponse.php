@@ -23,15 +23,6 @@ class ApiResponse
 {
     public const PRETTYPRINT = true;
 
-    /**
-     * Some reverse proxies (notably Cloudflare) replace 502 response bodies with HTML error pages,
-     * which breaks API clients expecting JSON. Never emit 502 from the panel; use 503 instead.
-     */
-    private static function normalizeStatusForCdnSafeJson(int $status): int
-    {
-        return $status === 502 ? 503 : $status;
-    }
-
     public static function success(?array $data = null, string $message = 'OK', int $status = 200): Response
     {
         $status = self::normalizeStatusForCdnSafeJson($status);
@@ -120,5 +111,14 @@ class ApiResponse
             'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
             'Access-Control-Allow-Credentials' => 'true',
         ]);
+    }
+
+    /**
+     * Some reverse proxies (notably Cloudflare) replace 502 response bodies with HTML error pages,
+     * which breaks API clients expecting JSON. Never emit 502 from the panel; use 503 instead.
+     */
+    private static function normalizeStatusForCdnSafeJson(int $status): int
+    {
+        return $status === 502 ? 503 : $status;
     }
 }

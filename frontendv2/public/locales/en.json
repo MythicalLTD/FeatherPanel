@@ -920,6 +920,7 @@
 			"vmInstances": "VM Instances",
 			"nodeDatabases": "Node Databases",
 			"nodeStatus": "Node Status",
+			"mounts": "Mounts",
 			"subdomains": "Subdomains",
 			"realms": "Realms (Nests)",
 			"spells": "Spells (Eggs)",
@@ -4104,6 +4105,43 @@
 				}
 			}
 		},
+		"mounts": {
+			"title": "Mounts",
+			"description": "Define host folders Wings may bind into containers. Link each mount to nodes (allowed_mounts), spells (optional restrict), then enable per server.",
+			"create": "Create mount",
+			"search_placeholder": "Search by name or path…",
+			"no_results": "No mounts defined",
+			"columns": {
+				"name": "Name",
+				"paths": "Source → target",
+				"nodes": "Nodes",
+				"spells": "Spells",
+				"read_only": "Access"
+			},
+			"read_only": "Read-only",
+			"read_write": "Read/write",
+			"admin_only": "Admin-assigned only",
+			"form": {
+				"name": "Name",
+				"source": "Host source path",
+				"target": "Container path",
+				"read_only": "Read-only in container",
+				"user_mountable": "Users can self-attach",
+				"user_mountable_help": "When enabled, end users may attach this mount to their own servers wherever your panel exposes mounts (client API / user UI). Disabled = administrators assign mounts only. Defaults to on for new mounts, matching Pelican.",
+				"description": "Description"
+			},
+			"drawer_create_title": "New mount",
+			"drawer_edit_title": "Edit mount",
+			"links": {
+				"nodes": "Nodes (required for Wings allow list)",
+				"spells": "Spells (empty = all spells)",
+				"hint": "Assign to nodes so Wings adds the source to allowed_mounts. Optionally restrict to specific spells."
+			},
+			"saved": "Mount saved",
+			"deleted": "Mount deleted",
+			"confirm_delete": "Delete this mount? Servers must be detached first.",
+			"fetch_failed": "Failed to load mounts"
+		},
 		"servers": {
 			"title": "Servers",
 			"description": "Manage all servers in your system.",
@@ -4392,6 +4430,7 @@
 					"application": "Application",
 					"limits": "Limits",
 					"startup": "Startup",
+					"mounts": "Mounts",
 					"allocations": "Allocations",
 					"actions": "Actions"
 				},
@@ -4428,6 +4467,12 @@
 					"title": "Startup Configuration",
 					"description": "Configure the startup command for this server",
 					"available_variables": "Available Variables:"
+				},
+				"mounts": {
+					"title": "Bind mounts",
+					"description": "Mount host directories into this server container (same as Pelican mounts). Node must allow the source path; save to sync Wings.",
+					"empty": "No mounts available for this node and spell. Create mounts under Admin → Mounts and link them to this node (and optionally spell).",
+					"loading": "Loading mounts…"
 				},
 				"allocations": {
 					"title": "Network Allocations",
