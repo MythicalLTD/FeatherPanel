@@ -473,6 +473,8 @@ class ServersController
                         new OA\Property(property: 'spell', type: 'object', description: 'Spell information'),
                         new OA\Property(property: 'allocation', type: 'object', description: 'Allocation information'),
                         new OA\Property(property: 'variables', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerVariable'), description: 'Server variables'),
+                        new OA\Property(property: 'mounts', type: 'array', items: new OA\Items(type: 'object'), description: 'Full mount rows attached to this server'),
+                        new OA\Property(property: 'mount_ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'IDs of mounts attached to this server'),
                         new OA\Property(property: 'sftp', ref: '#/components/schemas/ServerSFTP', description: 'SFTP connection information'),
                         new OA\Property(property: 'activity', type: 'array', items: new OA\Items(type: 'object'), description: 'Recent server activity'),
                     ]
@@ -608,6 +610,8 @@ class ServersController
                         new OA\Property(property: 'spell', type: 'object', description: 'Spell information'),
                         new OA\Property(property: 'allocation', type: 'object', description: 'Allocation information'),
                         new OA\Property(property: 'variables', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerVariable'), description: 'Server variables'),
+                        new OA\Property(property: 'mounts', type: 'array', items: new OA\Items(type: 'object'), description: 'Full mount rows attached to this server'),
+                        new OA\Property(property: 'mount_ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'IDs of mounts attached to this server'),
                         new OA\Property(property: 'sftp', ref: '#/components/schemas/ServerSFTP', description: 'SFTP connection information'),
                         new OA\Property(property: 'activity', type: 'array', items: new OA\Items(type: 'object'), description: 'Recent server activity'),
                     ]
@@ -1502,6 +1506,28 @@ class ServersController
                         'variable_id' => (int) $sv['id'],
                         'variable_value' => (string) ($sv['default_value'] ?? ''),
                     ];
+                }
+            }
+
+            $byVarId = [];
+            foreach ($spellChangeVariableRows as $row) {
+                $byVarId[(int) $row['variable_id']] = (string) $row['variable_value'];
+            }
+            foreach ($newSpellVariables as $sv) {
+                if (strpos((string) ($sv['rules'] ?? ''), 'required') === false) {
+                    continue;
+                }
+                $vid = (int) $sv['id'];
+                $submitted = $byVarId[$vid] ?? null;
+                $effective = ($submitted !== null && $submitted !== '' && trim($submitted) !== '')
+                    ? $submitted
+                    : (string) ($sv['default_value'] ?? '');
+                if ($effective === '' || trim($effective) === '') {
+                    return ApiResponse::error(
+                        'Missing required variable for new spell: ' . $vid,
+                        'MISSING_REQUIRED_VARIABLE',
+                        422
+                    );
                 }
             }
         }

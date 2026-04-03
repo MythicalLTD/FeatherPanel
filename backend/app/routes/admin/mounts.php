@@ -125,6 +125,22 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-mounts-set-links',
+        '/api/admin/mounts/{id}/links',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new MountsController())->setNodesAndSpells($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['PATCH']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-mounts-set-servers',
         '/api/admin/mounts/{id}/servers',
         function (Request $request, array $args) {

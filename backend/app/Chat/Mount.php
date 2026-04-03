@@ -48,6 +48,57 @@ class Mount
 
     private static string $pivot = 'featherpanel_mountables';
 
+    /**
+     * Canonical bind-mount path: backslashes to '/', collapsed slashes, resolved . and ..
+     * Absolute paths keep a leading slash; root is '/'. Relative paths return without leading slash (invalid for mounts).
+     */
+    public static function canonicalizeStoragePath(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return '';
+        }
+        $path = str_replace('\\', '/', $path);
+        $path = preg_replace('#/+#', '/', $path) ?? $path;
+        $absolute = str_starts_with($path, '/');
+        $parts = explode('/', $path);
+        $stack = [];
+        foreach ($parts as $part) {
+            if ($part === '' || $part === '.') {
+                continue;
+            }
+            if ($part === '..') {
+                if ($stack !== []) {
+                    array_pop($stack);
+                }
+
+                continue;
+            }
+            $stack[] = $part;
+        }
+        if ($absolute) {
+            return $stack === [] ? '/' : '/' . implode('/', $stack);
+        }
+
+        return implode('/', $stack);
+    }
+
+    /**
+     * @return array{error: ?string, source: string, target: string}
+     */
+    public static function normalizeAndValidateBindMountPaths(string $source, string $target): array
+    {
+        $sourceN = self::canonicalizeStoragePath($source);
+        $targetN = self::canonicalizeStoragePath($target);
+        $err = self::bindMountPathPairError($sourceN, $targetN);
+
+        return [
+            'error' => $err,
+            'source' => $sourceN,
+            'target' => $targetN,
+        ];
+    }
+
     public static function getMountById(int $id): ?array
     {
         if ($id <= 0) {
@@ -142,11 +193,15 @@ class Mount
             return false;
         }
         $name = trim((string) $data['name']);
-        $source = trim((string) $data['source']);
-        $target = trim((string) $data['target']);
-        if ($name === '' || $source === '' || $target === '') {
+        if ($name === '') {
             return false;
         }
+        $paths = self::normalizeAndValidateBindMountPaths((string) $data['source'], (string) $data['target']);
+        if ($paths['error'] !== null) {
+            return false;
+        }
+        $source = $paths['source'];
+        $target = $paths['target'];
 
         $userMountable = true;
         if (array_key_exists('user_mountable', $data)) {
@@ -177,6 +232,24 @@ class Mount
     {
         if ($id <= 0) {
             return false;
+        }
+        if (array_key_exists('source', $data) || array_key_exists('target', $data)) {
+            $current = self::getMountById($id);
+            if (!$current) {
+                return false;
+            }
+            $src = array_key_exists('source', $data) ? (string) $data['source'] : (string) $current['source'];
+            $tgt = array_key_exists('target', $data) ? (string) $data['target'] : (string) $current['target'];
+            $paths = self::normalizeAndValidateBindMountPaths($src, $tgt);
+            if ($paths['error'] !== null) {
+                return false;
+            }
+            if (array_key_exists('source', $data)) {
+                $data['source'] = $paths['source'];
+            }
+            if (array_key_exists('target', $data)) {
+                $data['target'] = $paths['target'];
+            }
         }
         $allowed = ['name', 'description', 'source', 'target', 'read_only', 'user_mountable'];
         $set = [];
@@ -233,12 +306,12 @@ class Mount
     /**
      * @return int[]
      */
-    public static function getMountableIds(int $mountId, string $type): array
+    public static function getMountableIds(int $mountId, string $type, ?\PDO $pdo = null): array
     {
         if ($mountId <= 0 || !in_array($type, [self::MOUNTABLE_NODE, self::MOUNTABLE_SPELL, self::MOUNTABLE_SERVER], true)) {
             return [];
         }
-        $pdo = Database::getPdoConnection();
+        $pdo ??= Database::getPdoConnection();
         $stmt = $pdo->prepare(
             'SELECT mountable_id FROM ' . self::$pivot . ' WHERE mount_id = :m AND mountable_type = :t ORDER BY mountable_id ASC'
         );
@@ -353,12 +426,12 @@ class Mount
     /**
      * @return array<int, array<string, mixed>>
      */
-    public static function getMountsAttachedToServer(int $serverId): array
+    public static function getMountsAttachedToServer(int $serverId, ?\PDO $pdo = null): array
     {
         if ($serverId <= 0) {
             return [];
         }
-        $pdo = Database::getPdoConnection();
+        $pdo ??= Database::getPdoConnection();
         $sql = 'SELECT m.* FROM ' . self::$table . ' m
             INNER JOIN ' . self::$pivot . ' p ON p.mount_id = m.id
             WHERE p.mountable_type = :st AND p.mountable_id = :sid
@@ -439,16 +512,16 @@ class Mount
         return $stmt->execute(['t' => $type, 'id' => $entityId]);
     }
 
-    public static function mountAppliesToNode(int $mountId, int $nodeId): bool
+    public static function mountAppliesToNode(int $mountId, int $nodeId, ?\PDO $pdo = null): bool
     {
-        $ids = self::getMountableIds($mountId, self::MOUNTABLE_NODE);
+        $ids = self::getMountableIds($mountId, self::MOUNTABLE_NODE, $pdo);
 
         return $ids === [] || in_array($nodeId, $ids, true);
     }
 
-    public static function mountAppliesToSpell(int $mountId, int $spellId): bool
+    public static function mountAppliesToSpell(int $mountId, int $spellId, ?\PDO $pdo = null): bool
     {
-        $ids = self::getMountableIds($mountId, self::MOUNTABLE_SPELL);
+        $ids = self::getMountableIds($mountId, self::MOUNTABLE_SPELL, $pdo);
 
         return $ids === [] || in_array($spellId, $ids, true);
     }
@@ -518,22 +591,63 @@ class Mount
      */
     public static function pruneServerMountsToMatchContext(int $serverId, ?\PDO $txPdo = null): bool
     {
-        $server = Server::getServerById($serverId);
+        $server = Server::getServerById($serverId, $txPdo);
         if (!$server) {
             return false;
         }
         $nodeId = (int) $server['node_id'];
         $spellId = (int) $server['spell_id'];
-        $attached = self::getMountsAttachedToServer($serverId);
+        $attached = self::getMountsAttachedToServer($serverId, $txPdo);
         $keep = [];
         foreach ($attached as $m) {
             $mid = (int) $m['id'];
-            if (self::mountAppliesToNode($mid, $nodeId) && self::mountAppliesToSpell($mid, $spellId)) {
+            if (self::mountAppliesToNode($mid, $nodeId, $txPdo) && self::mountAppliesToSpell($mid, $spellId, $txPdo)) {
                 $keep[] = $mid;
             }
         }
 
         return self::syncServerMounts($serverId, $keep, $txPdo);
+    }
+
+    /**
+     * Replace node and spell pivot links for one mount in a single transaction.
+     *
+     * @param int[] $nodeIds
+     * @param int[] $spellIds integer IDs (>0) after validation
+     */
+    public static function replaceNodeAndSpellLinksForMount(int $mountId, array $nodeIds, array $spellIds): bool
+    {
+        if ($mountId <= 0) {
+            return false;
+        }
+        $nodeIds = array_values(array_unique(array_filter(array_map('intval', $nodeIds), fn ($i) => $i > 0)));
+        $spellIds = array_values(array_unique(array_filter(array_map('intval', $spellIds), fn ($i) => $i > 0)));
+        $pdo = Database::getPdoConnection();
+        try {
+            $pdo->beginTransaction();
+            foreach ([self::MOUNTABLE_NODE => $nodeIds, self::MOUNTABLE_SPELL => $spellIds] as $type => $entityIds) {
+                $del = $pdo->prepare('DELETE FROM ' . self::$pivot . ' WHERE mount_id = :m AND mountable_type = :t');
+                $del->execute(['m' => $mountId, 't' => $type]);
+                if ($entityIds !== []) {
+                    $ins = $pdo->prepare(
+                        'INSERT INTO ' . self::$pivot . ' (mount_id, mountable_type, mountable_id) VALUES (:m, :t, :id)'
+                    );
+                    foreach ($entityIds as $i) {
+                        $ins->execute(['m' => $mountId, 't' => $type, 'id' => $i]);
+                    }
+                }
+            }
+            $pdo->commit();
+        } catch (\PDOException $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            App::getInstance(true)->getLogger()->error('replaceNodeAndSpellLinksForMount failed: ' . $e->getMessage());
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -578,5 +692,35 @@ class Mount
         }
 
         return true;
+    }
+
+    private static function bindMountPathPairError(string $sourceN, string $targetN): ?string
+    {
+        if ($sourceN === '' || $targetN === '') {
+            return 'Source and target paths are required';
+        }
+        if ($sourceN[0] !== '/') {
+            return 'Source: path must be absolute (start with /)';
+        }
+        if ($targetN[0] !== '/') {
+            return 'Target: path must be absolute (start with /)';
+        }
+        foreach (self::$invalidSourcePaths as $bad) {
+            $badN = rtrim(str_replace('\\', '/', $bad), '/');
+            if ($badN === '') {
+                continue;
+            }
+            if ($sourceN === $badN || str_starts_with($sourceN, $badN . '/')) {
+                return 'Source path is not allowed (reserved panel or volume path)';
+            }
+        }
+        foreach (self::$invalidTargetPaths as $bad) {
+            $badN = rtrim(str_replace('\\', '/', $bad), '/');
+            if ($targetN === $badN || str_starts_with($targetN, $badN . '/')) {
+                return 'Target path conflicts with the default server directory';
+            }
+        }
+
+        return null;
     }
 }

@@ -17,6 +17,7 @@
 - Fixed an issue where IP address blur in activity logs was triggered by row hover instead of direct hover on the IP value. by @nayskutzu
 - Resolved an issue where chatbot settings were not always saving correctly. by @nayskutzu
 - Updated the panel to return a 503 Service Unavailable response instead of 502 to prevent Cloudflare compatibility issues. by @nayskutzu
+- Resolved an issue with plugin icons failing to load due to CORS restrictions introduced in the latest Next.js update. Now loading seamlessly! by @nayskutzu
 
 ### Improved
 

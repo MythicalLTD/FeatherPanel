@@ -275,11 +275,11 @@ class ServerVariable
      */
     public static function createOrUpdateServerVariables(int $serverId, array $variables, ?\PDO $externalPdo = null): bool
     {
-        if ($serverId <= 0 || $variables === []) {
+        if ($serverId <= 0) {
             return false;
         }
 
-        if (!Server::getServerById($serverId)) {
+        if (!Server::getServerById($serverId, $externalPdo)) {
             return false;
         }
 
@@ -315,9 +315,9 @@ class ServerVariable
 
                 if (
                     !$ins->execute([
-                    'server_id' => $serverId,
-                    'variable_id' => (int) $variable['variable_id'],
-                    'variable_value' => (string) $variable['variable_value'],
+                        'server_id' => $serverId,
+                        'variable_id' => (int) $variable['variable_id'],
+                        'variable_value' => (string) $variable['variable_value'],
                     ])
                 ) {
                     if ($ownTransaction && $pdo->inTransaction()) {

@@ -4134,6 +4134,9 @@
 			"drawer_edit_title": "Edit mount",
 			"form_required": "Name, source path, and target path are required.",
 			"links_filter_placeholder": "Filter nodes or spells…",
+			"links_nodes_filter_placeholder": "Filter nodes…",
+			"links_spells_filter_placeholder": "Filter spells…",
+			"links_atomic_failed": "Failed to save node and spell links for this mount.",
 			"links_nodes_failed": "Failed to save node links for this mount.",
 			"links_spells_failed": "Node links were saved, but saving spell links failed. Reopen the editor to try again.",
 			"links": {

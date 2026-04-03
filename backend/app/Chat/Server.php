@@ -251,12 +251,12 @@ class Server
     /**
      * Fetch a server by ID.
      */
-    public static function getServerById(int $id): ?array
+    public static function getServerById(int $id, ?\PDO $pdo = null): ?array
     {
         if ($id <= 0) {
             return null;
         }
-        $pdo = Database::getPdoConnection();
+        $pdo ??= Database::getPdoConnection();
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
 

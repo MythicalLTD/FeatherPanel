@@ -139,25 +139,26 @@ export default function AdminMountsPage() {
     });
     const [selectedNodeIds, setSelectedNodeIds] = useState<number[]>([]);
     const [selectedSpellIds, setSelectedSpellIds] = useState<number[]>([]);
-    const [linkPickerFilter, setLinkPickerFilter] = useState('');
+    const [nodeLinkPickerFilter, setNodeLinkPickerFilter] = useState('');
+    const [spellLinkPickerFilter, setSpellLinkPickerFilter] = useState('');
 
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
     const filteredNodesForPicker = useMemo(() => {
-        const q = linkPickerFilter.trim().toLowerCase();
+        const q = nodeLinkPickerFilter.trim().toLowerCase();
         if (!q) {
             return nodes;
         }
         return nodes.filter((n) => n.name.toLowerCase().includes(q) || (n.fqdn && n.fqdn.toLowerCase().includes(q)));
-    }, [nodes, linkPickerFilter]);
+    }, [nodes, nodeLinkPickerFilter]);
 
     const filteredSpellsForPicker = useMemo(() => {
-        const q = linkPickerFilter.trim().toLowerCase();
+        const q = spellLinkPickerFilter.trim().toLowerCase();
         if (!q) {
             return spells;
         }
         return spells.filter((s) => s.name.toLowerCase().includes(q));
-    }, [spells, linkPickerFilter]);
+    }, [spells, spellLinkPickerFilter]);
 
     useEffect(() => {
         fetchWidgets();
@@ -232,7 +233,8 @@ export default function AdminMountsPage() {
     const openCreate = () => {
         setMode('create');
         setEditingId(null);
-        setLinkPickerFilter('');
+        setNodeLinkPickerFilter('');
+        setSpellLinkPickerFilter('');
         setForm({
             name: '',
             description: '',
@@ -250,7 +252,8 @@ export default function AdminMountsPage() {
     const openEdit = (m: AdminMount) => {
         setMode('edit');
         setEditingId(m.id);
-        setLinkPickerFilter('');
+        setNodeLinkPickerFilter('');
+        setSpellLinkPickerFilter('');
         setForm({
             name: m.name,
             description: m.description || '',
@@ -265,26 +268,29 @@ export default function AdminMountsPage() {
         void loadLinkOptions();
     };
 
-    const persistLinks = async (mountId: number) => {
+    const persistLinks = async (mountId: number): Promise<boolean> => {
         try {
-            await axios.patch(`/api/admin/mounts/${mountId}/nodes`, { node_ids: selectedNodeIds });
-        } catch (e) {
-            if (isAxiosError(e) && e.response?.data?.message) {
-                toast.error(String(e.response.data.message));
-            } else {
-                toast.error(t('admin.mounts.links_nodes_failed'));
+            const { data } = await axios.patch(`/api/admin/mounts/${mountId}/links`, {
+                node_ids: selectedNodeIds,
+                spell_ids: selectedSpellIds,
+            });
+            if (!data.success) {
+                toast.error(data.message || t('admin.mounts.links_atomic_failed'));
+                return false;
             }
-            throw e;
-        }
-        try {
-            await axios.patch(`/api/admin/mounts/${mountId}/spells`, { spell_ids: selectedSpellIds });
+            return true;
         } catch (e) {
-            if (isAxiosError(e) && e.response?.data?.message) {
-                toast.error(String(e.response.data.message));
+            if (isAxiosError(e)) {
+                const payload = e.response?.data;
+                const msg =
+                    payload && typeof payload === 'object' && payload !== null && 'message' in payload
+                        ? String((payload as { message?: unknown }).message)
+                        : '';
+                toast.error(msg || t('admin.mounts.links_atomic_failed'));
             } else {
-                toast.error(t('admin.mounts.links_spells_failed'));
+                toast.error(t('admin.mounts.links_atomic_failed'));
             }
-            throw e;
+            return false;
         }
     };
 
@@ -317,7 +323,9 @@ export default function AdminMountsPage() {
                     toast.error(t('admin.servers.edit.update_failed'));
                     return;
                 }
-                await persistLinks(newId);
+                if (!(await persistLinks(newId))) {
+                    return;
+                }
                 toast.success(t('admin.mounts.saved'));
                 setSheetOpen(false);
                 await loadMounts();
@@ -337,7 +345,9 @@ export default function AdminMountsPage() {
                 toast.error(data.message || t('admin.servers.edit.update_failed'));
                 return;
             }
-            await persistLinks(editingId);
+            if (!(await persistLinks(editingId))) {
+                return;
+            }
             toast.success(t('admin.mounts.saved'));
             setSheetOpen(false);
             await loadMounts();
@@ -503,6 +513,7 @@ export default function AdminMountsPage() {
                                             variant='ghost'
                                             onClick={() => openEdit(m)}
                                             title={t('common.edit')}
+                                            aria-label={t('common.edit')}
                                         >
                                             <Pencil className='h-4 w-4' />
                                         </Button>
@@ -530,6 +541,7 @@ export default function AdminMountsPage() {
                                                 className='text-destructive'
                                                 onClick={() => setConfirmDeleteId(m.id)}
                                                 title={t('common.delete')}
+                                                aria-label={t('common.delete')}
                                             >
                                                 <Trash2 className='h-4 w-4' />
                                             </Button>
@@ -618,9 +630,9 @@ export default function AdminMountsPage() {
                             ) : (
                                 <div className='space-y-2'>
                                     <Input
-                                        value={linkPickerFilter}
-                                        onChange={(e) => setLinkPickerFilter(e.target.value)}
-                                        placeholder={t('admin.mounts.links_filter_placeholder')}
+                                        value={nodeLinkPickerFilter}
+                                        onChange={(e) => setNodeLinkPickerFilter(e.target.value)}
+                                        placeholder={t('admin.mounts.links_nodes_filter_placeholder')}
                                         className='bg-muted/30'
                                     />
                                     <div className='max-h-48 overflow-y-auto space-y-2 pr-1'>
@@ -654,9 +666,9 @@ export default function AdminMountsPage() {
                             ) : (
                                 <div className='space-y-2'>
                                     <Input
-                                        value={linkPickerFilter}
-                                        onChange={(e) => setLinkPickerFilter(e.target.value)}
-                                        placeholder={t('admin.mounts.links_filter_placeholder')}
+                                        value={spellLinkPickerFilter}
+                                        onChange={(e) => setSpellLinkPickerFilter(e.target.value)}
+                                        placeholder={t('admin.mounts.links_spells_filter_placeholder')}
                                         className='bg-muted/30'
                                     />
                                     <div className='max-h-48 overflow-y-auto space-y-2 pr-1'>

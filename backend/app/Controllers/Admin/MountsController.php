@@ -244,6 +244,61 @@ class MountsController
         return $this->replaceLinks($request, $id, Mount::MOUNTABLE_SPELL, 'spell_ids');
     }
 
+    /**
+     * Atomically replace node + spell links for a mount (single transaction).
+     */
+    public function setNodesAndSpells(Request $request, int $id): Response
+    {
+        $user = $request->get('user');
+        if (!PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SPELLS_EDIT)) {
+            return ApiResponse::error('Insufficient permissions to modify spell mount links', 'FORBIDDEN', 403);
+        }
+        $m = Mount::getMountById($id);
+        if (!$m) {
+            return ApiResponse::error('Mount not found', 'MOUNT_NOT_FOUND', 404);
+        }
+        $data = json_decode($request->getContent(), true);
+        if (
+            !is_array($data) || !isset($data['node_ids'], $data['spell_ids'])
+            || !is_array($data['node_ids']) || !is_array($data['spell_ids'])
+        ) {
+            return ApiResponse::error(
+                'Missing node_ids and spell_ids arrays',
+                'INVALID_JSON',
+                400
+            );
+        }
+        $nodeParsed = $this->parseBodyPositiveIntIds($data['node_ids'], 'node_ids');
+        if ($nodeParsed instanceof Response) {
+            return $nodeParsed;
+        }
+        $spellParsed = $this->parseBodyPositiveIntIds($data['spell_ids'], 'spell_ids');
+        if ($spellParsed instanceof Response) {
+            return $spellParsed;
+        }
+        foreach ($nodeParsed as $eid) {
+            if (!Node::getNodeById($eid)) {
+                return ApiResponse::error('Invalid node_id: ' . $eid, 'INVALID_NODE_ID', 400);
+            }
+        }
+        foreach ($spellParsed as $eid) {
+            if (!Spell::getSpellById($eid)) {
+                return ApiResponse::error('Invalid spell_id: ' . $eid, 'INVALID_SPELL_ID', 400);
+            }
+        }
+        if (!Mount::replaceNodeAndSpellLinksForMount($id, $nodeParsed, $spellParsed)) {
+            return ApiResponse::error('Failed to update mount links', 'UPDATE_FAILED', 500);
+        }
+        Activity::createActivity([
+            'user_uuid' => $request->get('user')['uuid'],
+            'name' => 'update_mount_nodes_spells',
+            'context' => 'Updated node and spell links for mount ' . $id,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success(['mount' => self::enrichMount(Mount::getMountById($id) ?? [])], 'Mount links updated', 200);
+    }
+
     public function setServers(Request $request, int $id): Response
     {
         $user = $request->get('user');
@@ -280,17 +335,6 @@ class MountsController
         return ApiResponse::success(['mounts' => $rows], 'Assignable mounts fetched', 200);
     }
 
-    private static function normalizePath(string $path): string
-    {
-        $path = trim($path);
-        if ($path === '') {
-            return '';
-        }
-        $clean = str_replace('\\', '/', $path);
-
-        return rtrim($clean, '/') ?: '/';
-    }
-
     /**
      * JSON/body boolean; invalid values yield null.
      */
@@ -304,61 +348,16 @@ class MountsController
      */
     private static function validatedStoragePaths(string $source, string $target): array
     {
-        $err = self::validatePaths($source, $target);
-        if ($err !== null) {
-            return ['error' => $err, 'source' => '', 'target' => ''];
+        $r = Mount::normalizeAndValidateBindMountPaths($source, $target);
+        if ($r['error'] !== null) {
+            return ['error' => $r['error'], 'source' => '', 'target' => ''];
         }
 
         return [
             'error' => null,
-            'source' => self::normalizePath($source),
-            'target' => self::normalizePath($target),
+            'source' => $r['source'],
+            'target' => $r['target'],
         ];
-    }
-
-    private static function validatePaths(string $source, string $target): ?string
-    {
-        $sourceN = self::normalizePath($source);
-        $targetN = self::normalizePath($target);
-        if ($sourceN === '' || $targetN === '') {
-            return 'Source and target paths are required';
-        }
-        if (($err = self::pathMustBeAbsoluteAndCanonical($sourceN)) !== null) {
-            return 'Source: ' . $err;
-        }
-        if (($err = self::pathMustBeAbsoluteAndCanonical($targetN)) !== null) {
-            return 'Target: ' . $err;
-        }
-        foreach (Mount::$invalidSourcePaths as $bad) {
-            if (str_starts_with($sourceN, rtrim(str_replace('\\', '/', $bad), '/'))) {
-                return 'Source path is not allowed (reserved panel or volume path)';
-            }
-        }
-        foreach (Mount::$invalidTargetPaths as $bad) {
-            $badN = rtrim(str_replace('\\', '/', $bad), '/');
-            if ($targetN === $badN || str_starts_with($targetN, $badN . '/')) {
-                return 'Target path conflicts with the default server directory';
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Bind-mount paths must be absolute and must not contain traversal segments.
-     */
-    private static function pathMustBeAbsoluteAndCanonical(string $normalized): ?string
-    {
-        if ($normalized === '' || $normalized[0] !== '/') {
-            return 'path must be absolute (start with /)';
-        }
-        foreach (explode('/', $normalized) as $part) {
-            if ($part === '..') {
-                return 'path must not contain .. segments';
-            }
-        }
-
-        return null;
     }
 
     private static function enrichMount(array $mount): array

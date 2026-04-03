@@ -37,7 +37,7 @@ use App\Plugins\Events\Events\CloudPluginsEvent;
         new OA\Property(property: 'identifier', type: 'string', description: 'Addon identifier'),
         new OA\Property(property: 'name', type: 'string', description: 'Addon display name'),
         new OA\Property(property: 'description', type: 'string', description: 'Addon description'),
-        new OA\Property(property: 'icon', type: 'string', description: 'Addon icon URL'),
+        new OA\Property(property: 'icon', type: 'string', nullable: true, description: 'Addon icon URL'),
         new OA\Property(property: 'website', type: 'string', description: 'Addon website URL'),
         new OA\Property(property: 'author', type: 'string', description: 'Addon author'),
         new OA\Property(property: 'author_email', type: 'string', description: 'Author email'),
@@ -50,12 +50,27 @@ use App\Plugins\Events\Events\CloudPluginsEvent;
         new OA\Property(property: 'downloads', type: 'integer', description: 'Download count'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
-        new OA\Property(property: 'latest_version', type: 'object', properties: [
-            new OA\Property(property: 'version', type: 'string', description: 'Latest version number'),
-            new OA\Property(property: 'download_url', type: 'string', description: 'Download URL'),
-            new OA\Property(property: 'file_size', type: 'integer', description: 'File size in bytes'),
-            new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Version creation timestamp'),
-        ]),
+        new OA\Property(
+            property: 'latest_version',
+            type: 'object',
+            nullable: true,
+            description: 'Latest published version metadata when available',
+            properties: [
+                new OA\Property(property: 'version', type: 'string', nullable: true, description: 'Latest version number'),
+                new OA\Property(property: 'download_url', type: 'string', nullable: true, description: 'Download URL'),
+                new OA\Property(property: 'file_size', type: 'integer', nullable: true, description: 'File size in bytes'),
+                new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true, description: 'Version creation timestamp'),
+                new OA\Property(property: 'changelog', type: 'string', nullable: true),
+                new OA\Property(
+                    property: 'dependencies',
+                    type: 'array',
+                    items: new OA\Items(type: 'object'),
+                    nullable: true
+                ),
+                new OA\Property(property: 'min_panel_version', type: 'string', nullable: true),
+                new OA\Property(property: 'max_panel_version', type: 'string', nullable: true),
+            ]
+        ),
     ]
 )]
 #[OA\Schema(
@@ -413,10 +428,15 @@ class CloudPluginsController
 
             $pkg = $data['data']['package'];
             $versions = $data['data']['versions'] ?? [];
-            /** @var array<string, mixed> $latestVersion */
-            $latestVersion = $data['data']['latest_version'] ?? [];
+            $dataBlock = $data['data'] ?? [];
+            if (array_key_exists('latest_version', $dataBlock)) {
+                $rawLatest = $dataBlock['latest_version'];
+                $latestForNorm = is_array($rawLatest) ? $rawLatest : [];
+            } else {
+                $latestForNorm = null;
+            }
 
-            $package = self::normalizePackageForResponse($pkg, $latestVersion !== [] ? $latestVersion : null);
+            $package = self::normalizePackageForResponse($pkg, $latestForNorm);
 
             $formattedVersions = array_map(static function (array $ver): array {
                 return [

@@ -357,12 +357,19 @@ class Allocation
     public static function assignToServer(int $allocationId, int $serverId, ?\PDO $pdo = null): bool
     {
         $pdo ??= Database::getPdoConnection();
-        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = :server_id WHERE id = :id');
-
-        return $stmt->execute([
+        $stmt = $pdo->prepare(
+            'UPDATE ' . self::$table . ' SET server_id = :server_id WHERE id = :id AND server_id IS NULL'
+        );
+        if (
+            !$stmt->execute([
             'id' => $allocationId,
             'server_id' => $serverId,
-        ]);
+            ])
+        ) {
+            return false;
+        }
+
+        return $stmt->rowCount() > 0;
     }
 
     /**
