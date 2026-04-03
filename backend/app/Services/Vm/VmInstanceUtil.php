@@ -895,6 +895,69 @@ final class VmInstanceUtil
         }
     }
 
+    /**
+     * QEMU cdrom slots that reference a real ISO/import image (not the cloud-init seed).
+     *
+     * @param array<string, mixed> $config Proxmox qemu config key => value
+     *
+     * @return array<int, string> Full volids e.g. local:iso/my.iso
+     */
+    private static function qemuCdromIsoVolidsFromConfig(array $config): array
+    {
+        $out = [];
+        foreach ($config as $key => $value) {
+            if (!is_string($key) || !is_string($value) || $value === '') {
+                continue;
+            }
+            if (!preg_match('/^(?:ide|sata|scsi)\d+$/i', $key)) {
+                continue;
+            }
+            $lower = strtolower($value);
+            if (!str_contains($lower, 'media=cdrom')) {
+                continue;
+            }
+            if (str_contains($lower, 'cloudinit') || str_contains($lower, 'cloud-init')) {
+                continue;
+            }
+            if (str_contains($lower, 'none')) {
+                continue;
+            }
+            $first = trim(explode(',', $value, 2)[0]);
+            if ($first === '' || !str_contains($first, ':')) {
+                continue;
+            }
+            $out[] = $first;
+        }
+
+        return array_values(array_unique($out));
+    }
+
+    /**
+     * Remove storage volumes after VM deletion. Purge removes VM-owned images but ISO/import
+     * files on ISO-capable storages often remain unless deleted explicitly.
+     *
+     * @param array<int, string> $volids
+     */
+    private static function deleteProxmoxStorageVolidsBestEffort(Proxmox $client, string $node, array $volids): void
+    {
+        foreach ($volids as $volid) {
+            $colon = strpos($volid, ':');
+            if ($colon === false || $colon === 0) {
+                continue;
+            }
+            $storage = substr($volid, 0, $colon);
+            if ($storage === '') {
+                continue;
+            }
+            $res = $client->deleteBackupVolume($node, $storage, $volid);
+            if (!$res['ok']) {
+                App::getInstance(true)->getLogger()->warning(
+                    'Post-delete ISO/storage cleanup failed for volid=' . $volid . ': ' . ($res['error'] ?? 'unknown')
+                );
+            }
+        }
+    }
+
     private static function completeDeletion(string $taskId, array $task, array $meta, Proxmox $client): void
     {
         $instanceId = (int) ($meta['instance_id'] ?? 0);
@@ -904,6 +967,14 @@ final class VmInstanceUtil
         $instance = $instanceId > 0 ? VmInstance::getById($instanceId) : null;
 
         if ($node !== '' && $vmid > 0) {
+            $cdromIsoVolids = [];
+            if ($vmType === 'qemu') {
+                $cfgSnap = $client->getVmConfig($node, $vmid, 'qemu');
+                if ($cfgSnap['ok'] && is_array($cfgSnap['config'] ?? null)) {
+                    $cdromIsoVolids = self::qemuCdromIsoVolidsFromConfig($cfgSnap['config']);
+                }
+            }
+
             // 1. Try to stop first
             $client->stopVm($node, $vmid, $vmType);
             sleep(2);
@@ -913,10 +984,15 @@ final class VmInstanceUtil
                 self::deleteInstanceBackups($instance, $client);
             }
 
-            // 3. Delete from Proxmox
+            // 3. Delete from Proxmox (purge volumes including cloud-init / main disks)
             $result = $client->deleteVm($node, $vmid, $vmType);
             if (!$result['ok']) {
                 throw new \Exception('Failed to delete from Proxmox: ' . ($result['error'] ?? 'unknown'));
+            }
+
+            // 4. Drop mounted ISO/import files that purge often leaves on ISO storage
+            if ($vmType === 'qemu' && $cdromIsoVolids !== []) {
+                self::deleteProxmoxStorageVolidsBestEffort($client, $node, $cdromIsoVolids);
             }
         } else {
             if ($instance) {
@@ -924,7 +1000,7 @@ final class VmInstanceUtil
             }
         }
 
-        // 4. DB cleanup
+        // 5. DB cleanup
         if ($instanceId > 0) {
             VmInstance::delete($instanceId);
             \App\Chat\Activity::createActivity([

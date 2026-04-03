@@ -87,7 +87,7 @@ async fn initiate_clone(
     let vm_type_str = meta["vm_type"].as_str().unwrap_or("qemu");
     let storage = meta["storage"].as_str().unwrap_or("local");
 
-    let mut vmid: i32 = task.try_get("vmid").unwrap_or(0);
+    let vmid: i32 = task.try_get("vmid").unwrap_or(0);
     let max_clone_attempts = 5;
     let mut last_err: Option<String> = None;
     
@@ -149,22 +149,25 @@ async fn initiate_clone(
                 let err_str = format!("{}", e);
                 last_err = Some(err_str.clone());
 
-                // Proxmox can fail when the cloud-init disk already exists for that vmid.
-                // In that case, try a new vmid.
+                // Proxmox can fail when the cloud-init disk already exists for that vmid
+                // (e.g. aborted clone). Bumping vmid without purging leaves orphan volumes.
+                // Stop+purge-delete the current vmid and retry clone on the same vmid.
                 let is_cloudinit_exists = err_str.contains("cloudinit.qcow2") && err_str.contains("already exists");
                 if is_cloudinit_exists && attempt + 1 < max_clone_attempts {
                     warn!(
-                        "⚠️ Clone failed due to existing cloud-init disk for vmid {}. Retrying with vmid+1. (attempt {}/{})",
+                        "⚠️ Clone failed due to existing cloud-init disk for vmid {}. Purging VM/volumes and retrying same vmid. (attempt {}/{})",
                         vmid,
                         attempt + 1,
                         max_clone_attempts
                     );
-                    vmid += 1;
-                    sqlx::query("UPDATE featherpanel_vm_tasks SET vmid = ? WHERE task_id = ?")
-                        .bind(vmid)
-                        .bind(task_id)
-                        .execute(pool)
-                        .await?;
+                    let vm_type = VmType::from_str(vm_type_str);
+                    let _ = client.stop_vm(&target_node, vmid as u32, vm_type).await;
+                    if let Ok(del_upid) = client.delete_vm(&target_node, vmid as u32, vm_type).await {
+                        if !del_upid.is_empty() {
+                            let _ = client.wait_task(&target_node, &del_upid, 300).await;
+                        }
+                    }
+                    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                     continue;
                 }
 
