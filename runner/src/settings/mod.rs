@@ -48,7 +48,7 @@ pub async fn load_settings(pool: &MySqlPool, encryption_key: &str) -> Result<Set
         .await?;
 
     let mut settings = Settings::new();
-    let mut decrypted_count = 0;
+    let mut processed_count = 0;
 
     for row in rows {
         let name: String = row.try_get("name")?;
@@ -60,7 +60,7 @@ pub async fn load_settings(pool: &MySqlPool, encryption_key: &str) -> Result<Set
         match encryptor.decrypt(&encrypted_value) {
             Ok(decrypted) => {
                 settings.set(name, decrypted);
-                decrypted_count += 1;
+                processed_count += 1;
             }
             Err(e) => {
                 tracing::debug!(
@@ -69,14 +69,14 @@ pub async fn load_settings(pool: &MySqlPool, encryption_key: &str) -> Result<Set
                     e
                 );
                 settings.set(name, encrypted_value);
-                decrypted_count += 1;
+                processed_count += 1;
             }
         }
     }
 
     let app_name = settings.get("app_name").unwrap_or_else(|| "FeatherPanel".to_string());
     
-    info!("✅ XChaCha20 bridge: Decrypted {} settings from table", decrypted_count);
+    info!("✅ XChaCha20 bridge: Processed {} settings from table", processed_count);
     info!("🚀 Running for: {}", app_name);
     info!("💾 Settings loaded into memory");
 
