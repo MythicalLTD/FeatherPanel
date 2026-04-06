@@ -2137,8 +2137,12 @@ class ServerUserController
             return $subuserPerms;
         }
 
-        // Admin check required
-        if (PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_SERVERS_EDIT)) {
+        // Staff with server access (same gate as ServerMiddleware for non-owner routes)
+        if (
+            PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_SERVERS_VIEW)
+            || PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_SERVERS_EDIT)
+            || PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_SERVERS_DELETE)
+        ) {
             return $fullPermissions;
         }
 

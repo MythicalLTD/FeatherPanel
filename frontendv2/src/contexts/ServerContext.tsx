@@ -21,6 +21,11 @@ import { Server } from '@/types/server';
 import { useSession } from '@/contexts/SessionContext';
 import PermissionsClass from '@/lib/permissions';
 
+const hasStaffServerAccess = (check: (perm: string) => boolean): boolean =>
+    check(PermissionsClass.ADMIN_SERVERS_VIEW) ||
+    check(PermissionsClass.ADMIN_SERVERS_EDIT) ||
+    check(PermissionsClass.ADMIN_SERVERS_DELETE);
+
 interface ServerContextType {
     server: Server | null;
     loading: boolean;
@@ -164,6 +169,11 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
 
             if (server.is_subuser && server.subuser_permissions) {
                 return server.subuser_permissions.includes('*') || server.subuser_permissions.includes(permission);
+            }
+
+            // Match ServerMiddleware + JWT: staff with server admin access can use the server UI the same as owners.
+            if (hasStaffServerAccess(hasGlobalPermission)) {
+                return true;
             }
 
             return false;

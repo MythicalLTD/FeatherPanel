@@ -38,6 +38,7 @@
 - Improved Wings error handling for more accurate responses and clearer error messages. by @nayskutzu
 - Resolved an issue where pending emails would never be sent if the async task runner was unavailable or offline, ensuring reliable mail delivery under all conditions. by @nayskutzu
 - Redesigned the navigation bar with a refreshed look and significantly improved mobile experience for seamless usability on phones. by @nayskutzu
+- Enhanced visibility into daemon errors and related issues, providing clearer diagnostics to streamline debugging and troubleshooting. by @nayskutzu
 
 ## v1.3.3 STABLE
 

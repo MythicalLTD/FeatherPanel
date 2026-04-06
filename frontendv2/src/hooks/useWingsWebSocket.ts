@@ -292,6 +292,32 @@ export function useWingsWebSocket({
                             return;
                         }
 
+                        // Wings/FeatherWings: Docker/power failures and other inbound handler errors (SendErrorJson)
+                        if (data.event === 'daemon error' && onConsoleOutputRef.current) {
+                            const raw = (data.args?.[0] as string) || 'An error occurred while handling a daemon request.';
+                            onConsoleOutputRef.current(`\u001b[31m${raw}\u001b[0m`);
+                            return;
+                        }
+
+                        if (data.event === 'jwt error' && onConsoleOutputRef.current) {
+                            const raw = (data.args?.[0] as string) || 'WebSocket authentication error.';
+                            onConsoleOutputRef.current(`\u001b[31m[JWT] ${raw}\u001b[0m`);
+                            return;
+                        }
+
+                        // Optional daemon notices published as events (same as stock Wings "daemon message")
+                        if (data.event === 'daemon message' && onConsoleOutputRef.current) {
+                            onConsoleOutputRef.current((data.args?.[0] as string) || '');
+                            return;
+                        }
+
+                        if (data.event === 'throttled' && onConsoleOutputRef.current) {
+                            onConsoleOutputRef.current(
+                                '\u001b[33m[FeatherPanel] Console output is being rate-limited by the node.\u001b[0m',
+                            );
+                            return;
+                        }
+
                         // Handle stats
                         if (data.event === 'stats') {
                             // data.args[0] is a JSON string, need to parse it
