@@ -103,7 +103,7 @@ pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &s
                             // Failsafe: reinstall/create clone can fail when the cloud-init disk
                             // already exists for the intended vmid (leftovers from previous attempts).
                             // Retry by bumping vmid and resetting task step back to "initial".
-                            let err_str = error.clone();
+                            let err_str = &error;
                             let is_cloudinit_exists =
                                 err_str.contains("cloudinit.qcow2") && err_str.contains("already exists");
                             let is_conf_atomic_exists =
@@ -167,7 +167,6 @@ pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &s
                                     
                                     // Try to delete the backup from Proxmox if it exists
                                     let target_node: String = task.try_get("target_node").unwrap_or_default();
-                                    let _vmid: i32 = task.try_get("vmid").unwrap_or(0);
                                     
                                     // Get the volid if backup was partially created
                                     if let Ok(Some(backup_row)) = sqlx::query("SELECT volid FROM featherpanel_vm_instance_backups WHERE id = ?")
@@ -365,7 +364,10 @@ fn build_proxmox_client(node: &sqlx::mysql::MySqlRow, encryption_key: &str) -> R
     let enc_secret: String = node.try_get("secret").unwrap_or_default();
     let user: String = node.try_get("user").unwrap_or_default();
     let tls_no_verify: String = node.try_get("tls_no_verify").unwrap_or_else(|_| "false".to_string());
-    let dynamic_headers_str: String = node.try_get("addional_headers").unwrap_or_else(|_| "{}".to_string());
+    let dynamic_headers_str: String = node
+        .try_get("additional_headers")
+        .or_else(|_| node.try_get("addional_headers"))
+        .unwrap_or_else(|_| "{}".to_string());
     let dynamic_params_str: String = node.try_get("additional_params").unwrap_or_else(|_| "{}".to_string());
 
     let encryptor = crate::encryption::Encryptor::new(encryption_key)?;
