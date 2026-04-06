@@ -35,7 +35,7 @@ export function StatusBadge({ status, t }: StatusBadgeProps) {
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-full border',
+                'inline-flex items-center gap-1.5 sm:gap-2 px-2 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-sm font-medium rounded-full border max-w-full',
                 colors[status as keyof typeof colors] || colors.stopped,
             )}
         >

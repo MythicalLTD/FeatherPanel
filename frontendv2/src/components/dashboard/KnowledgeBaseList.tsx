@@ -87,14 +87,14 @@ export function KnowledgeBaseList({ t }: KnowledgeBaseListProps) {
 
     return (
         <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl'>
-            <div className='flex items-center justify-between p-6 border-b border-border'>
-                <div className='flex items-center gap-2'>
+            <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-6 border-b border-border min-w-0'>
+                <div className='flex items-center gap-2 min-w-0'>
                     <BookOpen className='h-5 w-5 text-muted-foreground' />
-                    <h2 className='text-lg font-bold'>{t('dashboard.knowledgebase.title')}</h2>
+                    <h2 className='text-base sm:text-lg font-bold truncate'>{t('dashboard.knowledgebase.title')}</h2>
                 </div>
                 <Link
                     href='/dashboard/knowledgebase'
-                    className='text-sm font-medium text-primary hover:text-primary/80 transition-colors'
+                    className='text-xs sm:text-sm font-medium text-primary hover:text-primary/80 transition-colors self-start sm:self-auto whitespace-nowrap'
                 >
                     {t('dashboard.knowledgebase.view_all')} &rarr;
                 </Link>
@@ -108,8 +108,8 @@ export function KnowledgeBaseList({ t }: KnowledgeBaseListProps) {
                             href={`/dashboard/knowledgebase/category/${category.id}`}
                             className='block p-4 hover:bg-muted/50 transition-colors group'
                         >
-                            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
-                                <div className='flex items-start gap-4'>
+                            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 min-w-0'>
+                                <div className='flex items-start gap-3 sm:gap-4 min-w-0'>
                                     <div className='p-2 rounded-full bg-primary/5 text-primary shrink-0 mt-1 sm:mt-0 transition-transform group-hover:scale-110'>
                                         {category.icon ? (
                                             <div className='h-5 w-5 relative overflow-hidden rounded-sm'>
@@ -125,19 +125,22 @@ export function KnowledgeBaseList({ t }: KnowledgeBaseListProps) {
                                             <BookOpen className='h-5 w-5' />
                                         )}
                                     </div>
-                                    <div>
-                                        <h4 className='font-medium text-foreground group-hover:text-primary transition-colors text-sm sm:text-base'>
+                                    <div className='min-w-0'>
+                                        <h4
+                                            className='font-medium text-foreground group-hover:text-primary transition-colors text-sm sm:text-base break-words line-clamp-2'
+                                            title={category.name}
+                                        >
                                             {category.name}
                                         </h4>
                                         {category.description && (
-                                            <p className='text-xs text-muted-foreground mt-1 line-clamp-1'>
+                                            <p className='text-xs text-muted-foreground mt-1 line-clamp-2 break-words'>
                                                 {category.description}
                                             </p>
                                         )}
                                     </div>
                                 </div>
 
-                                <ChevronRight className='h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all' />
+                                <ChevronRight className='hidden sm:block h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0' />
                             </div>
                         </Link>
                     ))

@@ -318,6 +318,39 @@
 			"of": "of",
 			"attachments": "Attachments",
 			"no_articles_desc": "No articles found in this category."
+		},
+		"recent_mails": {
+			"title": "Recent mail",
+			"subtitle": "Latest system emails sent to you",
+			"view_all": "View all mail",
+			"open_mail_tab": "Open mail inbox"
+		},
+		"layout": {
+			"customize": "Customize",
+			"customize_layout": "Customize layout",
+			"stop_customizing": "Stop customizing",
+			"stop": "Done",
+			"swap_columns": "Swap columns",
+			"hero_bottom": "Banner at bottom",
+			"hero_top": "Banner at top",
+			"move_up": "Move up",
+			"move_down": "Move down",
+			"remove_block": "Remove from layout",
+			"add_to_main": "Add to main column",
+			"add_to_side": "Add to side column",
+			"available_widgets": "Available widgets",
+			"reset": "Reset layout",
+			"feature_disabled": "This section is turned off for your panel. Remove it from the layout or ask an administrator to enable it.",
+			"block_labels": {
+				"hero": "Welcome banner",
+				"announcements": "Announcements",
+				"recent_mails": "Recent mail",
+				"resources": "Resources",
+				"tickets": "Support tickets",
+				"knowledgebase": "Knowledge base",
+				"profile": "Profile card",
+				"activity": "Recent activity"
+			}
 		}
 	},
 	"account": {

@@ -53,7 +53,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
                         {vm.ip_address && <p className='text-xs text-muted-foreground mt-1'>{vm.ip_address}</p>}
                     </div>
 
-                    <div className='grid grid-cols-3 gap-3'>
+                    <div className='grid grid-cols-3 gap-2 sm:gap-3'>
                         {vm.cpu_cores && (
                             <div className='flex items-center gap-2 p-2 bg-background/50 rounded-lg'>
                                 <Cpu className='h-4 w-4 text-primary' />
@@ -85,42 +85,42 @@ export function VmCard({ vm, layout }: VmCardProps) {
                 </div>
             ) : (
                 // List Layout
-                <div className='flex items-center justify-between gap-4'>
-                    <div className='flex items-center gap-4 flex-1 min-w-0'>
-                        <div className='flex-shrink-0'>
-                            <Server className='h-8 w-8 text-primary/60' />
+                <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 w-full min-w-0'>
+                    <div className='flex items-start sm:items-center gap-3 flex-1 min-w-0'>
+                        <div className='shrink-0 pt-0.5 sm:pt-0'>
+                            <Server className='h-7 w-7 sm:h-8 sm:w-8 text-primary/60' />
                         </div>
                         <div className='flex-1 min-w-0'>
-                            <h3 className='font-semibold text-foreground truncate'>{vm.hostname}</h3>
-                            <p className='text-sm text-muted-foreground truncate'>
+                            <h3 className='font-semibold text-foreground text-sm sm:text-base truncate'>{vm.hostname}</h3>
+                            <p className='text-xs sm:text-sm text-muted-foreground line-clamp-2 break-words'>
                                 {vm.vm_type === 'qemu' ? 'QEMU' : 'LXC'} • {vm.pve_node}
                                 {vm.ip_address && ` • ${vm.ip_address}`}
                             </p>
                         </div>
                     </div>
 
-                    <div className='flex items-center gap-6 flex-shrink-0'>
+                    <div className='flex flex-wrap items-center gap-2 sm:gap-3 sm:justify-end sm:flex-shrink-0 pl-10 sm:pl-0'>
                         {vm.cpu_cores && (
-                            <div className='flex items-center gap-1'>
-                                <Cpu className='h-4 w-4 text-muted-foreground' />
-                                <span className='text-sm font-medium'>{vm.cpu_cores}</span>
+                            <div className='flex items-center gap-1 text-xs sm:text-sm'>
+                                <Cpu className='h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0' />
+                                <span className='font-medium tabular-nums'>{vm.cpu_cores}</span>
                             </div>
                         )}
                         {vm.memory_mb && (
-                            <div className='flex items-center gap-1'>
-                                <Zap className='h-4 w-4 text-muted-foreground' />
-                                <span className='text-sm font-medium'>{Math.round(vm.memory_mb / 1024)}GB</span>
+                            <div className='flex items-center gap-1 text-xs sm:text-sm'>
+                                <Zap className='h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0' />
+                                <span className='font-medium tabular-nums'>{Math.round(vm.memory_mb / 1024)}GB</span>
                             </div>
                         )}
                         {vm.disk_gb && (
-                            <div className='flex items-center gap-1'>
-                                <HardDrive className='h-4 w-4 text-muted-foreground' />
-                                <span className='text-sm font-medium'>{vm.disk_gb}GB</span>
+                            <div className='flex items-center gap-1 text-xs sm:text-sm'>
+                                <HardDrive className='h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0' />
+                                <span className='font-medium tabular-nums'>{vm.disk_gb}GB</span>
                             </div>
                         )}
                         <span
                             className={cn(
-                                'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium',
+                                'inline-flex items-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium',
                                 statusBg,
                                 statusColor,
                             )}
@@ -137,7 +137,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
         <Link href={`/vds/${vm.id}`}>
             <div
                 className={cn(
-                    'rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl hover:bg-card/70 hover:border-primary/30 transition-all cursor-pointer p-4',
+                    'rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl hover:bg-card/70 hover:border-primary/30 transition-all cursor-pointer p-3 sm:p-4',
                     layout === 'grid' ? 'col-span-1' : 'w-full',
                 )}
             >

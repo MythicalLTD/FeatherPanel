@@ -64,7 +64,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const canAccessAdmin = hasPermission(Permissions.ADMIN_DASHBOARD_VIEW);
 
     return (
-        <div className='sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card/80 backdrop-blur-xl supports-backdrop-filter:bg-card/60 px-4 sm:gap-x-6 sm:px-6 lg:px-8'>
+        <div className='sticky top-0 z-30 flex h-14 sm:h-16 shrink-0 items-center gap-x-2 sm:gap-x-4 border-b border-border bg-card/80 backdrop-blur-xl supports-backdrop-filter:bg-card/60 px-2 sm:px-6 lg:px-8'>
             <button
                 type='button'
                 className='-m-2.5 p-2.5 text-muted-foreground lg:hidden hover:text-foreground transition-colors'
@@ -74,23 +74,26 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                 <MenuIcon className='h-6 w-6' aria-hidden='true' />
             </button>
 
-            <div className='h-6 w-px bg-border lg:hidden' aria-hidden='true' />
+            <div className='h-5 sm:h-6 w-px bg-border lg:hidden shrink-0' aria-hidden='true' />
 
-            <div className='flex flex-1 gap-x-4 self-stretch lg:gap-x-6'>
+            <div className='flex flex-1 gap-x-2 sm:gap-x-4 self-stretch lg:gap-x-6 min-w-0'>
                 <div className='flex flex-1 items-center min-w-0'>
-                    <h1 className='text-lg font-semibold text-foreground truncate' title={headerTitle}>
+                    <h1
+                        className='text-base sm:text-lg font-semibold text-foreground truncate pr-1'
+                        title={headerTitle}
+                    >
                         {headerTitle}
                     </h1>
                 </div>
 
-                <div className='flex items-center gap-x-2 sm:gap-x-4 lg:gap-x-6'>
+                <div className='flex items-center gap-x-1 sm:gap-x-3 lg:gap-x-6 shrink-0'>
                     {canAccessAdmin && (
                         <button
                             onClick={() => router.push('/admin')}
-                            className='flex items-center gap-2 rounded-lg px-2 sm:px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all'
+                            className='flex items-center gap-2 rounded-lg p-2 sm:px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all'
                             title={t('navbar.adminPanelTooltip')}
                         >
-                            <ShieldCheck className='h-5 w-5' />
+                            <ShieldCheck className='h-5 w-5 shrink-0' />
                             <span className='hidden lg:inline'>{t('navbar.adminArea')}</span>
                         </button>
                     )}
@@ -100,7 +103,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                     <div className='hidden lg:block lg:h-6 lg:w-px lg:bg-border' aria-hidden='true' />
 
                     <Menu as='div' className='relative'>
-                        <Menu.Button className='flex items-center gap-x-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all focus:ring-0 focus:outline-none'>
+                        <Menu.Button className='flex items-center gap-x-2 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all focus:ring-0 focus:outline-none'>
                             <span className='sr-only'>{t('navbar.openUserMenu')}</span>
                             {user?.avatar ? (
                                 <Image

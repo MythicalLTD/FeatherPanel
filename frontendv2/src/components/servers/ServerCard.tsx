@@ -78,7 +78,7 @@ export function ServerCard({
         return (
             <div
                 className={cn(
-                    'flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 transition-all relative group',
+                    'flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 p-4 sm:p-5 md:p-6 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 transition-all relative group',
                     accessible ? 'hover:border-primary' : 'opacity-60',
                 )}
             >
@@ -94,7 +94,7 @@ export function ServerCard({
                 {server.spell?.banner && (
                     <Link
                         href={serverUrl}
-                        className='w-full sm:w-24 h-32 sm:h-16 rounded-lg overflow-hidden shrink-0 block cursor-pointer'
+                        className='w-full sm:w-24 h-28 sm:h-16 rounded-lg overflow-hidden shrink-0 block cursor-pointer'
                     >
                         <div
                             className='w-full h-full bg-cover bg-center'
@@ -104,37 +104,59 @@ export function ServerCard({
                 )}
 
                 <Link href={serverUrl} className='flex-1 min-w-0 w-full block cursor-pointer'>
-                    <div className='flex items-center gap-3 mb-2'>
-                        <h3 className='text-lg font-semibold truncate'>{server.name}</h3>
-                        <StatusBadge status={status} t={t} />
-                        {isSuspended && (
-                            <span className='px-2 py-1 bg-red-500/20 text-red-600 text-xs font-bold rounded-lg border border-red-500/30 uppercase'>
-                                {t('servers.status.suspended')}
-                            </span>
-                        )}
-                        {isConnected && status === 'running' && !isSuspended && (
-                            <span
-                                className='h-2 w-2 bg-green-500 rounded-full animate-pulse'
-                                title={t('servers.liveConnected')}
-                            />
-                        )}
+                    <div className='flex flex-col gap-2 mb-1'>
+                        <div className='flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0'>
+                            <h3 className='text-base sm:text-lg font-semibold truncate min-w-0 w-full sm:w-auto sm:max-w-[12rem] md:max-w-none flex-1'>
+                                {server.name}
+                            </h3>
+                            <div className='flex flex-wrap items-center gap-2'>
+                                {isSuspended ? (
+                                    <span className='px-2 py-0.5 bg-red-500/20 text-red-600 dark:text-red-400 text-[10px] sm:text-xs font-bold rounded-lg border border-red-500/30 uppercase tracking-wide'>
+                                        {t('servers.status.suspended')}
+                                    </span>
+                                ) : (
+                                    <StatusBadge status={status} t={t} />
+                                )}
+                                {isConnected && status === 'running' && !isSuspended && (
+                                    <span
+                                        className='h-2 w-2 bg-green-500 rounded-full animate-pulse shrink-0'
+                                        title={t('servers.liveConnected')}
+                                    />
+                                )}
+                            </div>
+                        </div>
+                        {server.description ? (
+                            <p className='text-xs sm:text-sm text-muted-foreground line-clamp-2 break-words'>
+                                {server.description}
+                            </p>
+                        ) : null}
                     </div>
-                    <p className='text-sm text-muted-foreground truncate'>{server.description}</p>
                 </Link>
 
-                <div className='flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0'>
-                    <Link href={serverUrl} className='flex items-center gap-4 sm:gap-6 cursor-pointer'>
-                        <div className='text-sm'>
-                            <div className='text-muted-foreground text-xs sm:text-sm'>{t('servers.node')}</div>
-                            <div className='font-medium text-sm sm:text-base'>{server.node?.name}</div>
+                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between w-full sm:w-auto gap-3 sm:gap-4 mt-1 sm:mt-0 sm:shrink-0'>
+                    <Link
+                        href={serverUrl}
+                        className='flex flex-wrap items-start gap-x-6 gap-y-2 cursor-pointer text-sm min-w-0'
+                    >
+                        <div className='min-w-0'>
+                            <div className='text-muted-foreground text-[10px] sm:text-xs uppercase tracking-wider'>
+                                {t('servers.node')}
+                            </div>
+                            <div className='font-medium text-xs sm:text-sm truncate max-w-[10rem] sm:max-w-[14rem]'>
+                                {server.node?.name}
+                            </div>
                         </div>
-                        <div className='text-sm'>
-                            <div className='text-muted-foreground text-xs sm:text-sm'>{t('servers.spell')}</div>
-                            <div className='font-medium text-sm sm:text-base'>{server.spell?.name}</div>
+                        <div className='min-w-0'>
+                            <div className='text-muted-foreground text-[10px] sm:text-xs uppercase tracking-wider'>
+                                {t('servers.spell')}
+                            </div>
+                            <div className='font-medium text-xs sm:text-sm truncate max-w-[10rem] sm:max-w-[14rem]'>
+                                {server.spell?.name}
+                            </div>
                         </div>
                     </Link>
 
-                    <Menu as='div' className='relative'>
+                    <Menu as='div' className='relative self-end sm:self-auto'>
                         <MenuButton
                             className='p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none'
                             onClick={(e) => e.stopPropagation()}
@@ -336,12 +358,13 @@ export function ServerCard({
                     </Menu>
                 </div>
 
-                <Link href={serverUrl} className='flex items-center gap-2 cursor-pointer'>
-                    <StatusBadge status={status} t={t} />
-                    {isSuspended && (
-                        <span className='px-2 py-1 bg-red-500/20 text-red-600 text-xs font-bold rounded-lg border border-red-500/30 uppercase'>
+                <Link href={serverUrl} className='flex flex-wrap items-center gap-2 cursor-pointer'>
+                    {isSuspended ? (
+                        <span className='px-2 py-1 bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-lg border border-red-500/30 uppercase'>
                             {t('servers.status.suspended')}
                         </span>
+                    ) : (
+                        <StatusBadge status={status} t={t} />
                     )}
                     {server.is_subuser && (
                         <span className='px-2 py-1 bg-blue-500/10 text-blue-500 text-xs font-medium rounded-lg'>
@@ -350,18 +373,21 @@ export function ServerCard({
                     )}
                 </Link>
 
-                <Link href={serverUrl} className='grid grid-cols-2 gap-3 pt-2 cursor-pointer'>
-                    <div className='text-sm'>
-                        <div className='text-muted-foreground mb-1'>{t('servers.node')}</div>
+                <Link
+                    href={serverUrl}
+                    className='grid grid-cols-1 min-[400px]:grid-cols-2 gap-3 pt-2 cursor-pointer'
+                >
+                    <div className='text-sm min-w-0'>
+                        <div className='text-muted-foreground mb-1 text-xs'>{t('servers.node')}</div>
                         <div className='font-medium truncate'>{server.node?.name || 'N/A'}</div>
                     </div>
-                    <div className='text-sm'>
-                        <div className='text-muted-foreground mb-1'>{t('servers.spell')}</div>
+                    <div className='text-sm min-w-0'>
+                        <div className='text-muted-foreground mb-1 text-xs'>{t('servers.spell')}</div>
                         <div className='font-medium truncate'>{server.spell?.name || 'N/A'}</div>
                     </div>
                 </Link>
 
-                <Link href={serverUrl} className='space-y-2 pt-2 block cursor-pointer'>
+                <Link href={serverUrl} className='space-y-2 sm:space-y-2.5 pt-2 block cursor-pointer min-w-0'>
                     <ResourceBar
                         label={t('servers.memoryShort')}
                         used={memory}
