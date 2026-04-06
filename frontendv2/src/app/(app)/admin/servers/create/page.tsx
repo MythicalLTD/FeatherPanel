@@ -322,6 +322,7 @@ export default function CreateServerPage() {
                     search: debouncedLocationSearch,
                     page: locationPagination.current_page,
                     limit: locationPagination.per_page,
+                    type: 'game',
                 },
             });
             setLocations(data.data.locations || []);

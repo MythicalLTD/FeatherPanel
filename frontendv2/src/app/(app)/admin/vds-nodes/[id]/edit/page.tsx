@@ -134,9 +134,10 @@ export default function EditVdsNodePage() {
 
     const fetchLocations = useCallback(async () => {
         try {
-            const { data } = await axios.get('/api/admin/locations');
-            const all: Location[] = data.data?.locations ?? data.data ?? [];
-            setLocations(all.filter((l) => l.type === 'vps'));
+            const { data } = await axios.get('/api/admin/locations', {
+                params: { type: 'vps', limit: 100 },
+            });
+            setLocations((data.data?.locations ?? []) as Location[]);
         } catch {
             toast.error(t('admin.vdsNodes.errors.fetch_locations_failed'));
         }
@@ -149,20 +150,28 @@ export default function EditVdsNodePage() {
                 // Load node and locations in parallel
                 const [nodeRes, locRes] = await Promise.all([
                     axios.get(`/api/admin/vm-nodes/${id}`),
-                    axios.get('/api/admin/locations'),
+                    axios.get('/api/admin/locations', { params: { type: 'vps', limit: 100 } }),
                 ]);
 
                 // API wraps the node under data.data.vm_node
                 const node = nodeRes.data.data?.vm_node ?? nodeRes.data.data;
 
-                // Build VPS locations list
-                const allLocs: Location[] = locRes.data.data?.locations ?? locRes.data.data ?? [];
-                const vpsLocs = allLocs.filter((l: Location) => l.type === 'vps');
+                const vpsLocs: Location[] = locRes.data.data?.locations ?? [];
                 setLocations(vpsLocs);
 
-                // Resolve location name from the fetched list
                 const matchedLoc = vpsLocs.find((l: Location) => l.id === node.location_id);
-                if (matchedLoc) setSelectedLocationName(matchedLoc.name);
+                if (matchedLoc) {
+                    setSelectedLocationName(matchedLoc.name);
+                } else if (node.location_id) {
+                    try {
+                        const lr = await axios.get(`/api/admin/locations/${node.location_id}`);
+                        if (lr.data?.data?.location?.name) {
+                            setSelectedLocationName(lr.data.data.location.name);
+                        }
+                    } catch {
+                        /* ignore */
+                    }
+                }
 
                 setNodeName(node.name);
                 setForm({

@@ -127,7 +127,7 @@ export default function NodesPage() {
         const fetchLocations = async () => {
             try {
                 const { data } = await axios.get('/api/admin/locations', {
-                    params: { limit: 100 },
+                    params: { limit: 100, type: 'game' },
                 });
                 setLocations(data.data.locations || []);
             } catch (error) {

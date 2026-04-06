@@ -367,8 +367,15 @@ class NodesController
         $data['daemon_token'] = Node::generateDaemonToken();
 
         $locationId = $data['location_id'] ?? null;
-        if (!$locationId || !is_numeric($locationId) || !Location::getById((int) $locationId)) {
+        if (!$locationId || !is_numeric($locationId)) {
             return ApiResponse::error('Location does not exist', 'LOCATION_NOT_FOUND', 400);
+        }
+        $locationRow = Location::getById((int) $locationId);
+        if (!$locationRow) {
+            return ApiResponse::error('Location does not exist', 'LOCATION_NOT_FOUND', 400);
+        }
+        if (($locationRow['type'] ?? 'game') !== 'game') {
+            return ApiResponse::error('Location must be a game server location', 'INVALID_LOCATION_TYPE', 400);
         }
         $data['location_id'] = (int) $locationId;
 
@@ -474,8 +481,15 @@ class NodesController
         }
         if (array_key_exists('location_id', $data)) {
             $locationId = $data['location_id'];
-            if ($locationId === null || $locationId === '' || !is_numeric($locationId) || !Location::getById((int) $locationId)) {
+            if ($locationId === null || $locationId === '' || !is_numeric($locationId)) {
                 return ApiResponse::error('Location does not exist', 'LOCATION_NOT_FOUND', 400);
+            }
+            $locationRow = Location::getById((int) $locationId);
+            if (!$locationRow) {
+                return ApiResponse::error('Location does not exist', 'LOCATION_NOT_FOUND', 400);
+            }
+            if (($locationRow['type'] ?? 'game') !== 'game') {
+                return ApiResponse::error('Location must be a game server location', 'INVALID_LOCATION_TYPE', 400);
             }
             $data['location_id'] = (int) $locationId;
         }

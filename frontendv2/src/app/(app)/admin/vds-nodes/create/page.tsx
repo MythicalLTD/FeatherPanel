@@ -112,12 +112,11 @@ export default function CreateVdsNodePage() {
                     page: currentPage,
                     limit: perPage,
                     search: debouncedLocationSearch || undefined,
+                    type: 'vps',
                 },
             });
 
-            const allLocations = (data.data.locations || []) as Location[];
-            const vpsLocations = allLocations.filter((l) => l.type === 'vps');
-            setLocations(vpsLocations);
+            setLocations((data.data.locations || []) as Location[]);
 
             if (data.data.pagination) {
                 setLocationPagination((prev) => ({

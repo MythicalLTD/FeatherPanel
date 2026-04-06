@@ -3954,6 +3954,7 @@
 				"fqdn_required": "FQDN is required",
 				"fqdn_invalid": "Invalid FQDN format",
 				"location_required": "Location is required",
+				"location_invalid_type": "Wings nodes must use a game server location, not a VPS/VDS or web location.",
 				"daemon_base_required": "Daemon base path is required",
 				"ipv4_invalid": "Invalid IPv4 address",
 				"ipv6_invalid": "Invalid IPv6 address",

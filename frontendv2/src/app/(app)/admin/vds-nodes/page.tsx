@@ -125,11 +125,9 @@ export default function VdsNodesPage() {
         const fetchLocations = async () => {
             try {
                 const { data } = await axios.get('/api/admin/locations', {
-                    params: { limit: 100 },
+                    params: { limit: 100, type: 'vps' },
                 });
-                const allLocations = (data.data.locations || []) as Location[];
-                const vpsLocations = allLocations.filter((l) => l.type === 'vps');
-                setLocations(vpsLocations);
+                setLocations((data.data.locations || []) as Location[]);
             } catch (error) {
                 console.error('Error fetching locations:', error);
             }

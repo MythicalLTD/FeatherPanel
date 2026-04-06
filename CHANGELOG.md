@@ -26,6 +26,7 @@
 - Updated the panel to return a 503 Service Unavailable response instead of 502 to prevent Cloudflare compatibility issues. by @nayskutzu
 - Resolved an issue with plugin icons failing to load due to CORS restrictions introduced in the latest Next.js update. Now loading seamlessly! by @nayskutzu
 - Resolved multiple issues affecting SFTP button functionality for improved reliability and compatibility. by @nayskutzu
+- Resolved several issues where game locations or VDS locations appeared in inappropriate or unintended areas throughout the panel. by @nayskutzu
 
 ### Improved
 

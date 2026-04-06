@@ -548,7 +548,7 @@ export default function ServersPage() {
                                 if (!locationsList.length) {
                                     axios
                                         .get('/api/admin/locations', {
-                                            params: { page: 1, limit: 25 },
+                                            params: { page: 1, limit: 25, type: 'game' },
                                         })
                                         .then(({ data }) => setLocationsList(data?.data?.locations || []))
                                         .catch(() => setLocationsList([]));
@@ -1512,6 +1512,7 @@ export default function ServersPage() {
                                             page: 1,
                                             limit: 25,
                                             search: value || undefined,
+                                            type: 'game',
                                         },
                                     });
                                     setLocationsList(data?.data?.locations || []);

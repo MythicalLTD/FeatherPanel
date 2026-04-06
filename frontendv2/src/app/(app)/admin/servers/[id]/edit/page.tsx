@@ -240,7 +240,7 @@ export default function EditServerPage() {
         try {
             const [serverRes, locationsRes] = await Promise.all([
                 axios.get(`/api/admin/servers/${serverId}`),
-                axios.get('/api/admin/locations'),
+                axios.get('/api/admin/locations', { params: { limit: 500, type: 'game' } }),
             ]);
 
             const data = serverRes.data;
@@ -258,6 +258,16 @@ export default function EditServerPage() {
                 if (locationsData.success && locationsData.data?.locations && serverNode?.location_id) {
                     serverLocation =
                         locationsData.data.locations.find((loc: Location) => loc.id === serverNode.location_id) || null;
+                }
+                if (!serverLocation && serverNode?.location_id) {
+                    try {
+                        const locRes = await axios.get(`/api/admin/locations/${serverNode.location_id}`);
+                        if (locRes.data?.success && locRes.data?.data?.location) {
+                            serverLocation = locRes.data.data.location as Location;
+                        }
+                    } catch {
+                        /* ignore — legacy or missing location */
+                    }
                 }
 
                 const variablesList = (server.variables || []) as ServerVariableResponse[];

@@ -79,4 +79,37 @@ api.interceptors.response.use(
     },
 );
 
+export type FeatherpanelApiErrorBody = {
+    success?: boolean;
+    message?: string;
+    error_message?: string;
+    error_code?: string | null;
+};
+
+/** Human-readable message from panel JSON errors (e.g. ApiResponse::error). */
+export function getFeatherpanelApiErrorMessage(error: unknown): string | null {
+    if (!axios.isAxiosError(error)) {
+        return null;
+    }
+    const d = error.response?.data;
+    if (!d || typeof d !== 'object') {
+        return null;
+    }
+    const body = d as FeatherpanelApiErrorBody;
+    const msg = body.message ?? body.error_message;
+    return typeof msg === 'string' && msg.trim() !== '' ? msg : null;
+}
+
+export function getFeatherpanelApiErrorCode(error: unknown): string | null {
+    if (!axios.isAxiosError(error)) {
+        return null;
+    }
+    const d = error.response?.data;
+    if (!d || typeof d !== 'object') {
+        return null;
+    }
+    const code = (d as FeatherpanelApiErrorBody).error_code;
+    return typeof code === 'string' && code !== '' ? code : null;
+}
+
 export default api;

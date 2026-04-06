@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { getFeatherpanelApiErrorCode, getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -105,6 +106,7 @@ export default function CreateNodePage() {
                     page: currentPage,
                     limit: perPage,
                     search: debouncedLocationSearch,
+                    type: 'game',
                 },
             });
             setLocations(data.data.locations || []);
@@ -200,8 +202,13 @@ export default function CreateNodePage() {
             }
         } catch (error: unknown) {
             console.error('Error creating node:', error);
-            const axiosError = error as { response?: { data?: { message?: string } } };
-            toast.error(axiosError.response?.data?.message || t('admin.node.messages.create_failed'));
+            const apiMsg = getFeatherpanelApiErrorMessage(error);
+            const code = getFeatherpanelApiErrorCode(error);
+            if (code === 'INVALID_LOCATION_TYPE') {
+                const detail = apiMsg ?? t('admin.node.form.location_invalid_type');
+                setErrors((prev) => ({ ...prev, location_id: detail }));
+            }
+            toast.error(apiMsg ?? t('admin.node.messages.create_failed'));
         } finally {
             setLoading(false);
         }

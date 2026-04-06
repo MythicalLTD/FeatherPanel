@@ -106,6 +106,13 @@ class LocationsController
                 required: false,
                 schema: new OA\Schema(type: 'string')
             ),
+            new OA\Parameter(
+                name: 'type',
+                in: 'query',
+                description: 'Filter by location purpose (game = Wings/game servers, vps = VDS/VM nodes, web = web hosting)',
+                required: false,
+                schema: new OA\Schema(type: 'string', enum: ['game', 'vps', 'web'])
+            ),
         ],
         responses: [
             new OA\Response(
@@ -131,11 +138,23 @@ class LocationsController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
+        $typeRaw = strtolower(trim((string) $request->query->get('type', '')));
+        $typeFilter = in_array($typeRaw, ['game', 'vps', 'web'], true) ? $typeRaw : null;
+
+        if ($page < 1) {
+            $page = 1;
+        }
+        if ($limit < 1) {
+            $limit = 10;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
 
         // Fetch locations with search, limit, and offset directly from the database
         $offset = ($page - 1) * $limit;
-        $locations = Location::getAll($search, $limit, $offset);
-        $total = Location::getCount($search);
+        $locations = Location::getAll($search, $limit, $offset, $typeFilter);
+        $total = Location::getCount($search, $typeFilter);
 
         $totalPages = ceil($total / $limit);
         $from = ($page - 1) * $limit + 1;
