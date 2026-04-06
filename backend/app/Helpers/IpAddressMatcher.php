@@ -173,7 +173,7 @@ class IpAddressMatcher
         return false;
     }
 
-    private static function addressInCidrBinary(string|false $ipBin, string|false $subBin, int $prefix): bool
+    private static function addressInCidrBinary(string | false $ipBin, string | false $subBin, int $prefix): bool
     {
         if ($ipBin === false || $subBin === false) {
             return false;

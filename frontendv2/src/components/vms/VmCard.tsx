@@ -91,7 +91,9 @@ export function VmCard({ vm, layout }: VmCardProps) {
                             <Server className='h-7 w-7 sm:h-8 sm:w-8 text-primary/60' />
                         </div>
                         <div className='flex-1 min-w-0'>
-                            <h3 className='font-semibold text-foreground text-sm sm:text-base truncate'>{vm.hostname}</h3>
+                            <h3 className='font-semibold text-foreground text-sm sm:text-base truncate'>
+                                {vm.hostname}
+                            </h3>
                             <p className='text-xs sm:text-sm text-muted-foreground line-clamp-2 break-words'>
                                 {vm.vm_type === 'qemu' ? 'QEMU' : 'LXC'} • {vm.pve_node}
                                 {vm.ip_address && ` • ${vm.ip_address}`}

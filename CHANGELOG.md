@@ -11,6 +11,7 @@
 - Unleashed API key sign-in: authenticate seamlessly with either API public or private keys—flexibility and security both ways. by @nayskutzu
 - Enhanced API key security with robust access controls and advanced IP restriction support, ensuring even greater protection for your integrations. by @nayskutzu
 - Introduced the Favorite Servers feature: effortlessly mark your most-used servers for instant access and seamless management from your dashboard. by @nayskutzu
+- Introduced the Storage Sense feature: effortlessly analyze and manage old log data with automated cleanup and retention controls for optimal performance and storage efficiency. by @nayskutzu
 
 ### Fixed
 

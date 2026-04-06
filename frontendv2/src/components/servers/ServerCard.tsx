@@ -175,7 +175,9 @@ export function ServerCard({
                                 }}
                                 className={cn(
                                     'p-2 rounded-lg transition-colors focus:outline-none',
-                                    isFavorite ? 'text-amber-500 hover:bg-amber-500/10' : 'text-muted-foreground hover:bg-muted',
+                                    isFavorite
+                                        ? 'text-amber-500 hover:bg-amber-500/10'
+                                        : 'text-muted-foreground hover:bg-muted',
                                 )}
                             >
                                 <Star className={cn('h-5 w-5', isFavorite && 'fill-current')} />
@@ -199,54 +201,54 @@ export function ServerCard({
                             >
                                 <MenuItems className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-popover border border-border focus:outline-none py-1'>
                                     {server.folder_id ? (
-                                    <MenuItem>
-                                        {({ active }) => (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onUnassignFolder();
-                                                }}
-                                                className={cn(
-                                                    'flex w-full items-center gap-2 px-4 py-2 text-sm',
-                                                    active ? 'bg-muted' : '',
-                                                )}
-                                            >
-                                                <FolderMinus className='h-4 w-4' />
-                                                {t('servers.removeFromFolder')}
-                                            </button>
-                                        )}
-                                    </MenuItem>
-                                ) : (
-                                    <div className='px-1 py-1'>
-                                        <div className='px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
-                                            {t('servers.moveToFolder')}
-                                        </div>
-                                        {folders.map((folder) => (
-                                            <MenuItem key={folder.id}>
-                                                {({ active }) => (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onAssignFolder(folder.id);
-                                                        }}
-                                                        className={cn(
-                                                            'flex w-full items-center gap-2 px-4 py-2 text-sm rounded-lg',
-                                                            active ? 'bg-muted' : '',
-                                                        )}
-                                                    >
-                                                        <FolderInput className='h-4 w-4' />
-                                                        {folder.name}
-                                                    </button>
-                                                )}
-                                            </MenuItem>
-                                        ))}
-                                        {folders.length === 0 && (
-                                            <div className='px-4 py-2 text-sm text-muted-foreground italic'>
-                                                {t('servers.noFolders')}
+                                        <MenuItem>
+                                            {({ active }) => (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onUnassignFolder();
+                                                    }}
+                                                    className={cn(
+                                                        'flex w-full items-center gap-2 px-4 py-2 text-sm',
+                                                        active ? 'bg-muted' : '',
+                                                    )}
+                                                >
+                                                    <FolderMinus className='h-4 w-4' />
+                                                    {t('servers.removeFromFolder')}
+                                                </button>
+                                            )}
+                                        </MenuItem>
+                                    ) : (
+                                        <div className='px-1 py-1'>
+                                            <div className='px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
+                                                {t('servers.moveToFolder')}
                                             </div>
-                                        )}
-                                    </div>
-                                )}
+                                            {folders.map((folder) => (
+                                                <MenuItem key={folder.id}>
+                                                    {({ active }) => (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onAssignFolder(folder.id);
+                                                            }}
+                                                            className={cn(
+                                                                'flex w-full items-center gap-2 px-4 py-2 text-sm rounded-lg',
+                                                                active ? 'bg-muted' : '',
+                                                            )}
+                                                        >
+                                                            <FolderInput className='h-4 w-4' />
+                                                            {folder.name}
+                                                        </button>
+                                                    )}
+                                                </MenuItem>
+                                            ))}
+                                            {folders.length === 0 && (
+                                                <div className='px-4 py-2 text-sm text-muted-foreground italic'>
+                                                    {t('servers.noFolders')}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </MenuItems>
                             </Transition>
                         </Menu>
@@ -325,7 +327,9 @@ export function ServerCard({
                                 }}
                                 className={cn(
                                     'p-2 rounded-lg transition-colors focus:outline-none',
-                                    isFavorite ? 'text-amber-500 hover:bg-amber-500/10' : 'text-muted-foreground hover:bg-muted',
+                                    isFavorite
+                                        ? 'text-amber-500 hover:bg-amber-500/10'
+                                        : 'text-muted-foreground hover:bg-muted',
                                 )}
                             >
                                 <Star className={cn('h-5 w-5', isFavorite && 'fill-current')} />
@@ -418,10 +422,7 @@ export function ServerCard({
                     )}
                 </Link>
 
-                <Link
-                    href={serverUrl}
-                    className='grid grid-cols-1 min-[400px]:grid-cols-2 gap-3 pt-2 cursor-pointer'
-                >
+                <Link href={serverUrl} className='grid grid-cols-1 min-[400px]:grid-cols-2 gap-3 pt-2 cursor-pointer'>
                     <div className='text-sm min-w-0'>
                         <div className='text-muted-foreground mb-1 text-xs'>{t('servers.node')}</div>
                         <div className='font-medium truncate'>{server.node?.name || 'N/A'}</div>

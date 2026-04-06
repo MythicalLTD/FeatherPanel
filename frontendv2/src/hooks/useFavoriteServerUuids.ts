@@ -63,11 +63,9 @@ export function useFavoriteServerUuids() {
         setFavoriteUuids((prev) => {
             const has = prev.includes(serverUuid);
             const next = has ? prev.filter((u) => u !== serverUuid) : [...prev, serverUuid];
-            void axios
-                .patch('/api/user/preferences', { favorite_server_uuids: next })
-                .catch(() => {
-                    setFavoriteUuids(prev);
-                });
+            void axios.patch('/api/user/preferences', { favorite_server_uuids: next }).catch(() => {
+                setFavoriteUuids(prev);
+            });
             return next;
         });
     }, []);

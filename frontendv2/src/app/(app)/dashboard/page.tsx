@@ -109,7 +109,11 @@ function DashboardBlockChrome({
                         title={hidden ? t('common.show') : t('common.hide')}
                         className='p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground shadow-sm'
                     >
-                        {hidden ? <Eye className='h-3.5 w-3.5 sm:h-4 sm:w-4' /> : <EyeOff className='h-3.5 w-3.5 sm:h-4 sm:w-4' />}
+                        {hidden ? (
+                            <Eye className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
+                        ) : (
+                            <EyeOff className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
+                        )}
                     </button>
                     {moveControls && (
                         <>
@@ -419,7 +423,9 @@ export default function DashboardPage() {
                                               ? t('dashboard.resources.no_servers')
                                               : t('dashboard.resources.no_vms')}
                                     </p>
-                                    <p className='text-sm text-muted-foreground/70 mt-1'>{t('dashboard.resources.create_first')}</p>
+                                    <p className='text-sm text-muted-foreground/70 mt-1'>
+                                        {t('dashboard.resources.create_first')}
+                                    </p>
                                 </div>
                             );
                         }
@@ -557,7 +563,9 @@ export default function DashboardPage() {
                         >
                             <LayoutDashboard className='h-4 w-4 shrink-0' />
                             <span>
-                                {isCustomizing ? t('dashboard.layout.stop_customizing') : t('dashboard.layout.customize_layout')}
+                                {isCustomizing
+                                    ? t('dashboard.layout.stop_customizing')
+                                    : t('dashboard.layout.customize_layout')}
                             </span>
                         </button>
                     </div>
@@ -569,49 +577,48 @@ export default function DashboardPage() {
         </div>
     );
 
-    const profileBlock =
-        user && (
-            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
-                <div className='flex items-center gap-4'>
-                    {user.avatar ? (
-                        <Image
-                            src={user.avatar}
-                            alt={`${user.first_name} ${user.last_name}`}
-                            width={64}
-                            height={64}
-                            unoptimized
-                            className='h-16 w-16 rounded-full border-2 border-primary/20 object-cover'
-                        />
-                    ) : (
-                        <div className='h-16 w-16 rounded-full bg-linear-to-br from-primary/20 to-primary/10 border-2 border-primary/20 flex items-center justify-center'>
-                            <span className='text-2xl font-semibold text-primary'>
-                                {`${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase()}
+    const profileBlock = user && (
+        <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
+            <div className='flex items-center gap-4'>
+                {user.avatar ? (
+                    <Image
+                        src={user.avatar}
+                        alt={`${user.first_name} ${user.last_name}`}
+                        width={64}
+                        height={64}
+                        unoptimized
+                        className='h-16 w-16 rounded-full border-2 border-primary/20 object-cover'
+                    />
+                ) : (
+                    <div className='h-16 w-16 rounded-full bg-linear-to-br from-primary/20 to-primary/10 border-2 border-primary/20 flex items-center justify-center'>
+                        <span className='text-2xl font-semibold text-primary'>
+                            {`${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase()}
+                        </span>
+                    </div>
+                )}
+                <div className='flex-1 min-w-0'>
+                    <h2 className='text-xl font-semibold text-foreground truncate mb-1'>
+                        {user.first_name} {user.last_name}
+                    </h2>
+                    {user.role && (
+                        <div className='mb-1'>
+                            <span
+                                className='inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold'
+                                style={{
+                                    backgroundColor: `${user.role.color}20`,
+                                    color: user.role.color,
+                                    border: `1px solid ${user.role.color}40`,
+                                }}
+                            >
+                                {user.role.display_name}
                             </span>
                         </div>
                     )}
-                    <div className='flex-1 min-w-0'>
-                        <h2 className='text-xl font-semibold text-foreground truncate mb-1'>
-                            {user.first_name} {user.last_name}
-                        </h2>
-                        {user.role && (
-                            <div className='mb-1'>
-                                <span
-                                    className='inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold'
-                                    style={{
-                                        backgroundColor: `${user.role.color}20`,
-                                        color: user.role.color,
-                                        border: `1px solid ${user.role.color}40`,
-                                    }}
-                                >
-                                    {user.role.display_name}
-                                </span>
-                            </div>
-                        )}
-                        <p className='text-sm text-muted-foreground truncate'>@{user.username}</p>
-                    </div>
+                    <p className='text-sm text-muted-foreground truncate'>@{user.username}</p>
                 </div>
             </div>
-        );
+        </div>
+    );
 
     const activityBlock = (
         <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
@@ -786,19 +793,17 @@ export default function DashboardPage() {
         ) : null;
 
     const mainColumn = (
-        <div
-            className={cn(
-                'lg:col-span-2 space-y-6 md:space-y-8',
-                !columnsReversed ? 'lg:order-1' : 'lg:order-2',
-            )}
-        >
+        <div className={cn('lg:col-span-2 space-y-6 md:space-y-8', !columnsReversed ? 'lg:order-1' : 'lg:order-2')}>
             {leftOrder.map((id) => {
                 const node = renderLeftBlock(id);
                 if (!node) return null;
                 return (
                     <div
                         key={id}
-                        className={cn('transition-all duration-500', !isVisible(id as DashboardBlockId, isCustomizing) && 'hidden')}
+                        className={cn(
+                            'transition-all duration-500',
+                            !isVisible(id as DashboardBlockId, isCustomizing) && 'hidden',
+                        )}
                     >
                         {node}
                     </div>
@@ -815,7 +820,10 @@ export default function DashboardPage() {
                 return (
                     <div
                         key={id}
-                        className={cn('transition-all duration-500', !isVisible(id as DashboardBlockId, isCustomizing) && 'hidden')}
+                        className={cn(
+                            'transition-all duration-500',
+                            !isVisible(id as DashboardBlockId, isCustomizing) && 'hidden',
+                        )}
                     >
                         {node}
                     </div>

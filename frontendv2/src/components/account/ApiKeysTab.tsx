@@ -19,7 +19,14 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { Dialog, DialogPanel, DialogTitle, Description as DialogDescription, Field, Label as HeadlessLabel } from '@headlessui/react';
+import {
+    Dialog,
+    DialogPanel,
+    DialogTitle,
+    Description as DialogDescription,
+    Field,
+    Label as HeadlessLabel,
+} from '@headlessui/react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';

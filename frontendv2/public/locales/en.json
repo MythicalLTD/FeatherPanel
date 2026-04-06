@@ -987,6 +987,7 @@
 			"oidcProviders": "OIDC / SSO Providers",
 			"rateLimits": "Rate Limits",
 			"databaseManagement": "Database Management",
+			"storageSense": "Storage Sense",
 			"pterodactylImporter": "Pterodactyl Importer",
 			"apiKeys": "API Keys",
 			"plugins": "Plugins",
@@ -2902,6 +2903,92 @@
 				"fetch_files_failed": "Failed to fetch log files",
 				"cleared": "Logs cleared successfully",
 				"clear_failed": "Failed to clear logs"
+			}
+		},
+		"storage_sense": {
+			"title": "Storage Sense",
+			"subtitle": "Audit database history tables, preview reclaimable rows, and run safe retention purges.",
+			"warning": "This permanently deletes rows. Take a database backup first. Wings backups and server files are not touched — only panel MySQL data you select.",
+			"retention_label": "Retention period (days)",
+			"retention_hint": "Rows older than this age are counted as eligible (7–3650). SSO tokens use expiry time instead.",
+			"retention_presets": "Quick presets",
+			"refresh": "Refresh",
+			"loading": "Loading…",
+			"load_failed": "Failed to load Storage Sense data.",
+			"table": "Table",
+			"rows_total": "Total rows",
+			"rows_purgeable": "Eligible",
+			"approx_size": "Approx. size",
+			"share_of_db": "of tracked tables",
+			"not_installed": "Not installed",
+			"purge": "Purge",
+			"no_edit_permission": "View only: grant Storage Sense manage permission to run purges.",
+			"purge_confirm_title": "Delete old rows?",
+			"purge_confirm_desc": "Permanently remove {count} rows from {label} (older than {days} days).",
+			"purge_confirm_desc_sso": "Permanently remove {count} expired SSO tokens from {label}. Retention days do not apply.",
+			"purge_success": "Removed {count} rows.",
+			"purge_failed": "Purge failed.",
+			"purge_none": "Nothing matched this rule.",
+			"stats_tables": "Tracked tables",
+			"stats_total_rows": "Total rows",
+			"stats_purgeable": "Purgeable rows",
+			"stats_db_bytes": "Tracked data (approx.)",
+			"disk_card_title": "Panel log files",
+			"disk_card_desc": "PHP / app logs under storage/logs. Truncate from the Log viewer when needed.",
+			"open_logs": "Open log viewer",
+			"estimate_note": "Sizes come from MySQL information_schema (data + indexes). Run ANALYZE TABLE occasionally for accuracy.",
+			"search_placeholder": "Filter by name or table…",
+			"select_visible": "Select eligible on page",
+			"clear_selection": "Clear",
+			"batch_purge": "Purge selected",
+			"batch_selected": "{count} selected",
+			"batch_confirm_title": "Purge multiple targets?",
+			"batch_confirm_desc": "Run retention purge on {count} targets for rows older than {days} days. Expired SSO tokens use their own rule.",
+			"batch_success": "Batch complete: {count} rows removed total.",
+			"batch_done_with_skips": "Removed {count} rows. Some targets were unavailable or had nothing to delete.",
+			"copy_summary": "Copy JSON summary",
+			"select": "Select",
+			"tracked_percent": "{percent}% tracked",
+			"eligible_percent": "{percent}% eligible",
+			"retention_na": "Expiry-based",
+			"progress_legend": "Eligible share of table",
+			"categories": {
+				"user_activity": {
+					"title": "User activity log",
+					"description": "Account security and action history."
+				},
+				"server_activity": {
+					"title": "Game server activity",
+					"description": "Panel-side server events and console-related history."
+				},
+				"vm_instance_activity": {
+					"title": "VDS / VM activity",
+					"description": "Virtual instance lifecycle and panel actions."
+				},
+				"vm_panel_logs": {
+					"title": "VDS provisioning logs",
+					"description": "VM provisioning and lifecycle log lines stored in the panel DB."
+				},
+				"chatbot_data": {
+					"title": "AI chatbot data",
+					"description": "Conversations and messages (messages cascade when a thread is removed)."
+				},
+				"mail_history": {
+					"title": "Mail queue (sent / failed)",
+					"description": "Completed mail jobs only — pending mail is never deleted."
+				},
+				"admin_notifications": {
+					"title": "Admin notifications",
+					"description": "Legacy rows in the global notifications table (dashboard banners)."
+				},
+				"featherzerotrust_logs": {
+					"title": "FeatherZeroTrust logs",
+					"description": "Scan batches and per-server results (child rows cascade)."
+				},
+				"sso_expired_tokens": {
+					"title": "Expired SSO tokens",
+					"description": "OIDC / SSO flow tokens that are already past expires_at (safe cleanup)."
+				}
 			}
 		},
 		"oidcProviders": {

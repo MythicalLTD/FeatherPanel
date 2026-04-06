@@ -122,6 +122,12 @@ class Permissions {
     /** Edit and manage settings */
     public static ADMIN_SETTINGS_EDIT = 'admin.settings.edit';
 
+    // Admin Storage Sense Permissions
+    /** View Storage Sense insights and cleanup candidates */
+    public static ADMIN_STORAGE_SENSE_VIEW = 'admin.storage_sense.view';
+    /** Run Storage Sense cleanup actions */
+    public static ADMIN_STORAGE_SENSE_MANAGE = 'admin.storage_sense.manage';
+
     // Admin Allocations Permissions
     /** View allocations */
     public static ADMIN_ALLOCATIONS_VIEW = 'admin.allocations.view';
@@ -542,6 +548,18 @@ class Permissions {
                 value: Permissions.ADMIN_SETTINGS_EDIT,
                 category: 'Admin Settings',
                 description: 'Edit and manage settings',
+            },
+            {
+                constant: 'ADMIN_STORAGE_SENSE_VIEW',
+                value: Permissions.ADMIN_STORAGE_SENSE_VIEW,
+                category: 'Admin Storage Sense',
+                description: 'View Storage Sense insights and cleanup candidates',
+            },
+            {
+                constant: 'ADMIN_STORAGE_SENSE_MANAGE',
+                value: Permissions.ADMIN_STORAGE_SENSE_MANAGE,
+                category: 'Admin Storage Sense',
+                description: 'Run Storage Sense cleanup actions',
             },
             {
                 constant: 'ADMIN_ALLOCATIONS_VIEW',
