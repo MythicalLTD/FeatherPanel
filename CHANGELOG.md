@@ -13,6 +13,7 @@
 - Introduced the Favorite Servers feature: effortlessly mark your most-used servers for instant access and seamless management from your dashboard. by @nayskutzu
 - Introduced the Storage Sense feature: effortlessly analyze and manage old log data with automated cleanup and retention controls for optimal performance and storage efficiency. by @nayskutzu
 - Introduced a convenient new button for seamless management of your FeatherPanel local storage—giving you greater control and visibility right from the panel. by @nayskutzu
+- Introduced robust file integrity checks, empowering users to effortlessly identify and address anomalies or unexpected changes in their files. by @nayskutzu
 
 ### Fixed
 

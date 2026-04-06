@@ -4981,6 +4981,31 @@
 			"recommended_php": "Recommended PHP Version: ",
 			"view_changelog": "View Detailed Changelog",
 			"verify_integrity": "Verify Integrity",
+			"integrity_modal_title": "File integrity scan",
+			"integrity_modal_desc": "SHA-256 hashes of core backend code (app tree, public/index.php, composer metadata). Compare results to a baseline stored on the server after a known-good state.",
+			"integrity_scan_running": "Hashing files…",
+			"integrity_scan_failed": "Integrity scan failed.",
+			"integrity_files": "Files hashed",
+			"integrity_duration": "Duration",
+			"integrity_bytes": "Bytes hashed",
+			"integrity_scope": "Does not include vendor, storage data, or uploaded assets — only panel source and bootstrap files.",
+			"integrity_baseline_title": "Saved baseline",
+			"integrity_baseline_saved_at": "Recorded {date}",
+			"integrity_baseline_unknown_date": "Baseline file present (record date unknown)",
+			"integrity_baseline_version": "Panel version at record: {v}",
+			"integrity_no_baseline": "No baseline yet. After you trust this installation (e.g. fresh install or post-update), save a baseline. Future scans will flag added, removed, or modified files.",
+			"integrity_drift_heading": "Comparison vs baseline",
+			"integrity_modified": "Modified",
+			"integrity_missing": "Missing",
+			"integrity_extra": "New",
+			"integrity_read_errors": "{count} file(s) could not be read.",
+			"integrity_skipped_large": "{count} file(s) skipped (over size limit).",
+			"integrity_match_ok": "All tracked paths match the saved baseline.",
+			"integrity_drift_warning": "Differences detected — review modified or missing paths. New files may be normal after an update; update your baseline if intentional.",
+			"integrity_save_baseline": "Save current scan as baseline",
+			"integrity_copy_report": "Copy full report",
+			"integrity_baseline_saved": "Baseline saved to storage/config.",
+			"integrity_baseline_failed": "Could not save baseline.",
 			"official_site": "Official Site",
 			"last_checked": "Last checked: {date}",
 			"changelog": {
@@ -5005,8 +5030,7 @@
 					"follow_prompts": "Follow the on-screen prompts",
 					"complete": "The update will complete automatically"
 				}
-			},
-			"integrity_coming_soon": "This feature is coming soon in a future update."
+			}
 		},
 		"quick_links": {
 			"title": "Quick Actions",

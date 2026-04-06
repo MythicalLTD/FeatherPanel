@@ -15,7 +15,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { toast } from 'sonner';
 import { useState } from 'react';
 import {
     Package,
@@ -32,6 +31,7 @@ import {
 import { PageCard } from '@/components/featherui/PageCard';
 import ReactMarkdown from 'react-markdown';
 import { ChangelogSection } from './ChangelogSection';
+import { IntegrityCheckDialog } from './IntegrityCheckDialog';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { copyToClipboard } from '@/lib/utils';
 
@@ -78,6 +78,7 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
     const { t } = useTranslation();
     const [showChangelog, setShowChangelog] = useState(version?.update_available ?? false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [integrityOpen, setIntegrityOpen] = useState(false);
 
     const isLatest = !version?.update_available;
     const current = version?.current;
@@ -223,9 +224,8 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                     )}
                     <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 mt-2'>
                         <button
-                            onClick={() =>
-                                toast.info('Integrity Check', { description: t('admin.version.integrity_coming_soon') })
-                            }
+                            type='button'
+                            onClick={() => setIntegrityOpen(true)}
                             className='flex items-center justify-center gap-2 p-2.5 md:p-3 rounded-xl bg-muted/20 border border-border/50 hover:bg-muted/30 transition-all text-[9px] md:text-[10px] font-black uppercase tracking-widest group'
                         >
                             <ShieldCheck className='h-3.5 w-3.5 md:h-4 md:w-4 text-primary group-hover:scale-110 transition-transform shrink-0' />
@@ -249,6 +249,8 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                     )}
                 </div>
             </div>
+
+            <IntegrityCheckDialog open={integrityOpen} onOpenChange={setIntegrityOpen} />
 
             {showUpdateModal && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'>

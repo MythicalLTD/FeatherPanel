@@ -21,15 +21,24 @@ class Location
 {
     private static string $table = 'featherpanel_locations';
 
-    public static function getAll(?string $search = null, int $limit = 10, int $offset = 0): array
+    public static function getAll(?string $search = null, int $limit = 10, int $offset = 0, ?string $type = null): array
     {
         $pdo = Database::getPdoConnection();
-        $sql = 'SELECT * FROM ' . self::$table;
+        $conditions = [];
         $params = [];
 
         if ($search !== null) {
-            $sql .= ' WHERE name LIKE :search OR description LIKE :search';
+            $conditions[] = '(name LIKE :search OR description LIKE :search)';
             $params['search'] = '%' . $search . '%';
+        }
+        if ($type !== null && $type !== '' && in_array($type, ['game', 'vps', 'web'], true)) {
+            $conditions[] = 'type = :loc_type';
+            $params['loc_type'] = $type;
+        }
+
+        $sql = 'SELECT * FROM ' . self::$table;
+        if (!empty($conditions)) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
         }
 
         $sql .= ' LIMIT :limit OFFSET :offset';
@@ -64,15 +73,24 @@ class Location
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function getCount(?string $search = null): int
+    public static function getCount(?string $search = null, ?string $type = null): int
     {
         $pdo = Database::getPdoConnection();
-        $sql = 'SELECT COUNT(*) FROM ' . self::$table;
+        $conditions = [];
         $params = [];
 
         if ($search !== null) {
-            $sql .= ' WHERE name LIKE :search OR description LIKE :search';
+            $conditions[] = '(name LIKE :search OR description LIKE :search)';
             $params['search'] = '%' . $search . '%';
+        }
+        if ($type !== null && $type !== '' && in_array($type, ['game', 'vps', 'web'], true)) {
+            $conditions[] = 'type = :loc_type';
+            $params['loc_type'] = $type;
+        }
+
+        $sql = 'SELECT COUNT(*) FROM ' . self::$table;
+        if (!empty($conditions)) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
         }
 
         $stmt = $pdo->prepare($sql);
