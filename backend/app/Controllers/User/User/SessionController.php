@@ -22,6 +22,7 @@ use App\Chat\Role;
 use App\Chat\User;
 use App\Chat\Activity;
 use App\Chat\MailList;
+use App\Chat\ApiClient;
 use App\Chat\Permission;
 use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
@@ -75,6 +76,21 @@ use Symfony\Component\HttpFoundation\Response;
     type: 'object',
     properties: [
         new OA\Property(property: 'preferences', ref: '#/components/schemas/UserPreferences', description: 'User preferences object'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SignApiKeyRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'api_key', type: 'string', description: 'API key to sign'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SignApiKeyResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'signature', type: 'string', description: 'Signature'),
+        new OA\Property(property: 'api_key', type: 'string', description: 'API key'),
     ]
 )]
 class SessionController
@@ -830,5 +846,53 @@ class SessionController
                 'has_results' => count($formattedActivities) > 0,
             ],
         ], 'Activities retrieved successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/sign-api-key',
+        summary: 'Sign API key',
+        description: 'Sign an API key',
+        tags: ['User - Session'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                ref: '#/components/schemas/SignApiKeyRequest'
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'API key signed successfully', content: new OA\JsonContent(
+                ref: '#/components/schemas/SignApiKeyResponse'
+            )),
+            new OA\Response(response: 400, description: 'Bad request - Invalid request data, API key cannot be empty, or Invalid API key'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to sign API key'),
+        ]
+    )]
+    public function signApiKey(Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        if ($data == null || !isset($data['api_key'])) {
+            return ApiResponse::error('API key is required', 'API_KEY_REQUIRED', 400, []);
+        }
+
+        $apiKey = $data['api_key'];
+        if (empty($apiKey)) {
+            return ApiResponse::error('API key cannot be empty', 'API_KEY_EMPTY', 400, []);
+        }
+
+        $apiClient = ApiClient::getApiClientByPrivateKey($apiKey);
+        if ($apiClient == null) {
+            $apiClient = ApiClient::getApiClientByPublicKey($apiKey);
+            if ($apiClient == null) {
+                return ApiResponse::error('Invalid API key', 'INVALID_API_KEY', 400, []);
+            }
+        }
+
+        $signature = hash_hmac('sha256', $apiKey, $apiClient['private_key']);
+
+        return ApiResponse::success([
+            'signature' => $signature,
+            'api_key' => $apiKey,
+        ], 'API key signed successfully', 200);
     }
 }

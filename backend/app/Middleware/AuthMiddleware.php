@@ -51,7 +51,10 @@ class AuthMiddleware implements MiddlewareInterface
                 // Validate the API client using the public key
                 $apiClient = ApiClient::getApiClientByPublicKey($publicKey);
                 if ($apiClient == null) {
-                    return ApiResponse::error('Invalid API key', 'INVALID_API_KEY', 401, []);
+                    $apiClient = ApiClient::getApiClientByPrivateKey($publicKey);
+                    if ($apiClient == null) {
+                        return ApiResponse::error('Invalid API key', 'INVALID_API_KEY', 401, []);
+                    }
                 }
 
                 // Get the user associated with this API client

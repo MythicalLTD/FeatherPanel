@@ -114,6 +114,21 @@ class ApiClient
     }
 
     /**
+     * Fetch an API client by private key.
+     */
+    public static function getApiClientByPrivateKey(string $privateKey): ?array
+    {
+        if (empty($privateKey)) {
+            return null;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE private_key = :private_key LIMIT 1');
+        $stmt->execute(['private_key' => $privateKey]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
      * Get all API clients.
      */
     public static function getAllApiClients(): array

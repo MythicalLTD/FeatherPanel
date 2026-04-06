@@ -106,4 +106,15 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(5), // Default: Admin can override in ratelimit.json
         'user-auth-discord'
     );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'sign-api-key',
+        '/api/user/sign-api-key',
+        function (Request $request) {
+            return (new SessionController())->signApiKey($request);
+        },
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-api-key-sign'
+    );
 };
