@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { Fragment } from 'react';
 import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/react';
-import { MoreVertical, FolderMinus, FolderInput } from 'lucide-react';
+import { MoreVertical, FolderMinus, FolderInput, Star } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import {
@@ -50,6 +50,10 @@ interface ServerCardProps {
     selectable?: boolean;
     selected?: boolean;
     onToggleSelect?: () => void;
+    /** Pin server to dashboard favorites (synced via user preferences) */
+    showFavoriteToggle?: boolean;
+    isFavorite?: boolean;
+    onToggleFavorite?: () => void;
 }
 
 export function ServerCard({
@@ -65,6 +69,9 @@ export function ServerCard({
     selectable = false,
     selected = false,
     onToggleSelect,
+    showFavoriteToggle = false,
+    isFavorite = false,
+    onToggleFavorite,
 }: ServerCardProps) {
     const accessible = isServerAccessible(server);
     const status = liveStats?.status || displayStatus(server);
@@ -156,24 +163,42 @@ export function ServerCard({
                         </div>
                     </Link>
 
-                    <Menu as='div' className='relative self-end sm:self-auto'>
-                        <MenuButton
-                            className='p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none'
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <MoreVertical className='h-5 w-5 text-muted-foreground' />
-                        </MenuButton>
-                        <Transition
-                            as={Fragment}
-                            enter='transition ease-out duration-100'
-                            enterFrom='transform opacity-0 scale-95'
-                            enterTo='transform opacity-100 scale-100'
-                            leave='transition ease-in duration-75'
-                            leaveFrom='transform opacity-100 scale-100'
-                            leaveTo='transform opacity-0 scale-95'
-                        >
-                            <MenuItems className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-popover border border-border focus:outline-none py-1'>
-                                {server.folder_id ? (
+                    <div className='flex items-center gap-0.5 self-end sm:self-auto shrink-0'>
+                        {showFavoriteToggle && onToggleFavorite ? (
+                            <button
+                                type='button'
+                                title={isFavorite ? t('servers.favorite_remove') : t('servers.favorite_add')}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onToggleFavorite();
+                                }}
+                                className={cn(
+                                    'p-2 rounded-lg transition-colors focus:outline-none',
+                                    isFavorite ? 'text-amber-500 hover:bg-amber-500/10' : 'text-muted-foreground hover:bg-muted',
+                                )}
+                            >
+                                <Star className={cn('h-5 w-5', isFavorite && 'fill-current')} />
+                            </button>
+                        ) : null}
+                        <Menu as='div' className='relative'>
+                            <MenuButton
+                                className='p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none'
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <MoreVertical className='h-5 w-5 text-muted-foreground' />
+                            </MenuButton>
+                            <Transition
+                                as={Fragment}
+                                enter='transition ease-out duration-100'
+                                enterFrom='transform opacity-0 scale-95'
+                                enterTo='transform opacity-100 scale-100'
+                                leave='transition ease-in duration-75'
+                                leaveFrom='transform opacity-100 scale-100'
+                                leaveTo='transform opacity-0 scale-95'
+                            >
+                                <MenuItems className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-popover border border-border focus:outline-none py-1'>
+                                    {server.folder_id ? (
                                     <MenuItem>
                                         {({ active }) => (
                                             <button
@@ -222,9 +247,10 @@ export function ServerCard({
                                         )}
                                     </div>
                                 )}
-                            </MenuItems>
-                        </Transition>
-                    </Menu>
+                                </MenuItems>
+                            </Transition>
+                        </Menu>
+                    </div>
                 </div>
             </div>
         );
@@ -287,75 +313,94 @@ export function ServerCard({
                         </p>
                     </Link>
 
-                    <Menu as='div' className='relative shrink-0'>
-                        <MenuButton
-                            className='p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none'
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <MoreVertical className='h-5 w-5 text-muted-foreground' />
-                        </MenuButton>
-                        <Transition
-                            as={Fragment}
-                            enter='transition ease-out duration-100'
-                            enterFrom='transform opacity-0 scale-95'
-                            enterTo='transform opacity-100 scale-100'
-                            leave='transition ease-in duration-75'
-                            leaveFrom='transform opacity-100 scale-100'
-                            leaveTo='transform opacity-0 scale-95'
-                        >
-                            <MenuItems className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-popover border border-border focus:outline-none py-1'>
-                                {server.folder_id ? (
-                                    <MenuItem>
-                                        {({ active }) => (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onUnassignFolder();
-                                                }}
-                                                className={cn(
-                                                    'flex w-full items-center gap-2 px-4 py-2 text-sm',
-                                                    active ? 'bg-muted' : '',
-                                                )}
-                                            >
-                                                <FolderMinus className='h-4 w-4' />
-                                                {t('servers.removeFromFolder')}
-                                            </button>
-                                        )}
-                                    </MenuItem>
-                                ) : (
-                                    <div className='px-1 py-1'>
-                                        <div className='px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
-                                            {t('servers.moveToFolder')}
-                                        </div>
-                                        {folders.map((folder) => (
-                                            <MenuItem key={folder.id}>
-                                                {({ active }) => (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onAssignFolder(folder.id);
-                                                        }}
-                                                        className={cn(
-                                                            'flex w-full items-center gap-2 px-4 py-2 text-sm rounded-lg',
-                                                            active ? 'bg-muted' : '',
-                                                        )}
-                                                    >
-                                                        <FolderInput className='h-4 w-4' />
-                                                        {folder.name}
-                                                    </button>
-                                                )}
-                                            </MenuItem>
-                                        ))}
-                                        {folders.length === 0 && (
-                                            <div className='px-4 py-2 text-sm text-muted-foreground italic'>
-                                                {t('servers.noFolders')}
-                                            </div>
-                                        )}
-                                    </div>
+                    <div className='flex items-center gap-0.5 shrink-0'>
+                        {showFavoriteToggle && onToggleFavorite ? (
+                            <button
+                                type='button'
+                                title={isFavorite ? t('servers.favorite_remove') : t('servers.favorite_add')}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onToggleFavorite();
+                                }}
+                                className={cn(
+                                    'p-2 rounded-lg transition-colors focus:outline-none',
+                                    isFavorite ? 'text-amber-500 hover:bg-amber-500/10' : 'text-muted-foreground hover:bg-muted',
                                 )}
-                            </MenuItems>
-                        </Transition>
-                    </Menu>
+                            >
+                                <Star className={cn('h-5 w-5', isFavorite && 'fill-current')} />
+                            </button>
+                        ) : null}
+                        <Menu as='div' className='relative'>
+                            <MenuButton
+                                className='p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none'
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <MoreVertical className='h-5 w-5 text-muted-foreground' />
+                            </MenuButton>
+                            <Transition
+                                as={Fragment}
+                                enter='transition ease-out duration-100'
+                                enterFrom='transform opacity-0 scale-95'
+                                enterTo='transform opacity-100 scale-100'
+                                leave='transition ease-in duration-75'
+                                leaveFrom='transform opacity-100 scale-100'
+                                leaveTo='transform opacity-0 scale-95'
+                            >
+                                <MenuItems className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-popover border border-border focus:outline-none py-1'>
+                                    {server.folder_id ? (
+                                        <MenuItem>
+                                            {({ active }) => (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onUnassignFolder();
+                                                    }}
+                                                    className={cn(
+                                                        'flex w-full items-center gap-2 px-4 py-2 text-sm',
+                                                        active ? 'bg-muted' : '',
+                                                    )}
+                                                >
+                                                    <FolderMinus className='h-4 w-4' />
+                                                    {t('servers.removeFromFolder')}
+                                                </button>
+                                            )}
+                                        </MenuItem>
+                                    ) : (
+                                        <div className='px-1 py-1'>
+                                            <div className='px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
+                                                {t('servers.moveToFolder')}
+                                            </div>
+                                            {folders.map((folder) => (
+                                                <MenuItem key={folder.id}>
+                                                    {({ active }) => (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onAssignFolder(folder.id);
+                                                            }}
+                                                            className={cn(
+                                                                'flex w-full items-center gap-2 px-4 py-2 text-sm rounded-lg',
+                                                                active ? 'bg-muted' : '',
+                                                            )}
+                                                        >
+                                                            <FolderInput className='h-4 w-4' />
+                                                            {folder.name}
+                                                        </button>
+                                                    )}
+                                                </MenuItem>
+                                            ))}
+                                            {folders.length === 0 && (
+                                                <div className='px-4 py-2 text-sm text-muted-foreground italic'>
+                                                    {t('servers.noFolders')}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </MenuItems>
+                            </Transition>
+                        </Menu>
+                    </div>
                 </div>
 
                 <Link href={serverUrl} className='flex flex-wrap items-center gap-2 cursor-pointer'>

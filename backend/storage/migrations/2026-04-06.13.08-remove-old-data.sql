@@ -1,0 +1,1 @@
+TRUNCATE TABLE `featherpanel_user_preferences`;

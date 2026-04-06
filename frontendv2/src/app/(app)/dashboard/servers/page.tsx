@@ -22,6 +22,7 @@ import { Server, ServerFolder } from '@/types/server';
 import { cn } from '@/lib/utils';
 import { serversApi } from '@/lib/servers-api';
 import { useServersWebSocket } from '@/hooks/useServersWebSocket';
+import { useFavoriteServerUuids } from '@/hooks/useFavoriteServerUuids';
 import { useServersState } from '@/hooks/useServersState';
 import { useFolders } from '@/hooks/useFolders';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -92,6 +93,8 @@ export default function ServersPage() {
     } = useServersState();
 
     const { serverLiveData, isServerConnected, connectServers, disconnectAll } = useServersWebSocket();
+
+    const { favoriteUuids, toggleFavorite } = useFavoriteServerUuids();
 
     const {
         folders,
@@ -687,6 +690,9 @@ export default function ServersPage() {
                                                 folders={[]}
                                                 onAssignFolder={() => {}}
                                                 onUnassignFolder={() => {}}
+                                                showFavoriteToggle
+                                                isFavorite={favoriteUuids.includes(server.uuid)}
+                                                onToggleFavorite={() => toggleFavorite(server.uuid)}
                                                 selectable
                                                 selected={selectedServerIds.includes(server.id)}
                                                 onToggleSelect={() => toggleServerSelection(server.id)}
@@ -787,6 +793,9 @@ export default function ServersPage() {
                                                             assignServerToFolder(server.uuidShort, folderId)
                                                         }
                                                         onUnassignFolder={() => unassignServer(server.uuidShort)}
+                                                        showFavoriteToggle
+                                                        isFavorite={favoriteUuids.includes(server.uuid)}
+                                                        onToggleFavorite={() => toggleFavorite(server.uuid)}
                                                         selectable
                                                         selected={selectedServerIds.includes(server.id)}
                                                         onToggleSelect={() => toggleServerSelection(server.id)}
@@ -900,6 +909,9 @@ export default function ServersPage() {
                                                                 onUnassignFolder={() =>
                                                                     unassignServer(server.uuidShort)
                                                                 }
+                                                                showFavoriteToggle
+                                                                isFavorite={favoriteUuids.includes(server.uuid)}
+                                                                onToggleFavorite={() => toggleFavorite(server.uuid)}
                                                                 selectable
                                                                 selected={selectedServerIds.includes(server.id)}
                                                                 onToggleSelect={() => toggleServerSelection(server.id)}
@@ -940,6 +952,9 @@ export default function ServersPage() {
                                                                 assignServerToFolder(server.uuidShort, folderId)
                                                             }
                                                             onUnassignFolder={() => unassignServer(server.uuidShort)}
+                                                            showFavoriteToggle
+                                                            isFavorite={favoriteUuids.includes(server.uuid)}
+                                                            onToggleFavorite={() => toggleFavorite(server.uuid)}
                                                             selectable
                                                             selected={selectedServerIds.includes(server.id)}
                                                             onToggleSelect={() => toggleServerSelection(server.id)}

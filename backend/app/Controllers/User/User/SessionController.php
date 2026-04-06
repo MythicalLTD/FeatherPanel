@@ -532,8 +532,10 @@ class SessionController
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
 
+        $preferences = UserPreference::getPreferences($user['uuid']);
+
         return ApiResponse::success([
-            'preferences' => [],
+            'preferences' => $preferences,
         ], 'Preferences retrieved successfully', 200);
     }
 
@@ -572,6 +574,28 @@ class SessionController
         $data = json_decode($request->getContent(), true);
         if ($data == null || !is_array($data)) {
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400, []);
+        }
+
+        if (array_key_exists('favorite_server_uuids', $data)) {
+            if (!is_array($data['favorite_server_uuids'])) {
+                return ApiResponse::error('favorite_server_uuids must be an array', 'INVALID_PREFERENCES', 400, []);
+            }
+            $cleanFavorites = [];
+            foreach ($data['favorite_server_uuids'] as $u) {
+                if (!is_string($u)) {
+                    continue;
+                }
+                if (!preg_match('/^[a-f0-9\-]{36}$/i', $u)) {
+                    continue;
+                }
+                if (!in_array($u, $cleanFavorites, true)) {
+                    $cleanFavorites[] = $u;
+                }
+                if (count($cleanFavorites) >= 50) {
+                    break;
+                }
+            }
+            $data['favorite_server_uuids'] = $cleanFavorites;
         }
 
         // Update preferences (merges with existing)

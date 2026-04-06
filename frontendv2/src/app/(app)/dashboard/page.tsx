@@ -62,6 +62,7 @@ import {
     type DashboardLeftBlockId,
     type DashboardRightBlockId,
 } from '@/hooks/useDashboardLayout';
+import { useFavoriteServerUuids } from '@/hooks/useFavoriteServerUuids';
 
 type ResourceFilter = 'all' | 'servers' | 'vds';
 
@@ -152,7 +153,7 @@ function DashboardBlockChrome({
 export default function DashboardPage() {
     const { t } = useTranslation();
     const { user } = useSession();
-    const [servers, setServers] = useState<ServerData[]>([]);
+    const [allServers, setAllServers] = useState<ServerData[]>([]);
     const [vms, setVms] = useState<VmInstance[]>([]);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loadingServers, setLoadingServers] = useState(true);
@@ -163,6 +164,8 @@ export default function DashboardPage() {
     const { fetchWidgets, getWidgets } = usePluginWidgets('dashboard');
 
     const { serverLiveData, isServerConnected, connectServers, disconnectAll } = useServersWebSocket();
+
+    const { favoriteUuids, toggleFavorite, isFavorite } = useFavoriteServerUuids();
 
     const {
         hidden,
@@ -232,12 +235,7 @@ export default function DashboardPage() {
                     orderedServers = serversArray;
                 }
 
-                setServers(orderedServers.slice(0, 5));
-
-                if (serversArray.length > 0) {
-                    const serverUuids = serversArray.slice(0, 5).map((s) => s.uuidShort);
-                    connectServers(serverUuids);
-                }
+                setAllServers(orderedServers);
             } catch (err) {
                 console.error('Failed to fetch servers', err);
             } finally {
@@ -276,6 +274,18 @@ export default function DashboardPage() {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    useEffect(() => {
+        if (loadingServers) return;
+        const favSet = new Set(favoriteUuids);
+        const favoriteList = favoriteUuids
+            .map((u) => allServers.find((s) => s.uuid === u))
+            .filter((s): s is ServerData => Boolean(s));
+        const recent = allServers.filter((s) => !favSet.has(s.uuid)).slice(0, 5);
+        const ids = [...new Set([...favoriteList, ...recent].map((s) => s.uuidShort))];
+        if (ids.length === 0) return;
+        void connectServers(ids);
+    }, [loadingServers, allServers, favoriteUuids, connectServers]);
 
     const getServerLiveStats = (server: ServerData) => {
         const liveData = serverLiveData[server.uuidShort];
@@ -380,14 +390,25 @@ export default function DashboardPage() {
             ) : (
                 <>
                     {(() => {
-                        const displayServers = resourceFilter === 'all' || resourceFilter === 'servers' ? servers : [];
+                        const favSet = new Set(favoriteUuids);
+                        const favoriteServerList = favoriteUuids
+                            .map((u) => allServers.find((s) => s.uuid === u))
+                            .filter((s): s is ServerData => Boolean(s));
+
+                        const showFavoriteBlock =
+                            (resourceFilter === 'all' || resourceFilter === 'servers') && favoriteServerList.length > 0;
+
+                        const displayServers =
+                            resourceFilter === 'all' || resourceFilter === 'servers'
+                                ? allServers.filter((s) => !favSet.has(s.uuid)).slice(0, 5)
+                                : [];
                         const displayVms = resourceFilter === 'all' || resourceFilter === 'vds' ? vms : [];
-                        const allResources = [
+                        const otherResources = [
                             ...displayServers.map((s) => ({ type: 'server' as const, data: s })),
                             ...displayVms.map((v) => ({ type: 'vm' as const, data: v })),
                         ];
 
-                        if (allResources.length === 0) {
+                        if (!showFavoriteBlock && otherResources.length === 0) {
                             return (
                                 <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-12 text-center'>
                                     <Server className='h-12 w-12 text-muted-foreground/50 mx-auto mb-3' />
@@ -403,27 +424,52 @@ export default function DashboardPage() {
                             );
                         }
 
+                        const serverCardProps = (s: ServerData) => ({
+                            server: s,
+                            layout: 'list' as const,
+                            serverUrl: `/server/${s.uuidShort}`,
+                            liveStats: getServerLiveStats(s),
+                            isConnected: isServerConnected(s.uuidShort),
+                            t,
+                            folders: [],
+                            onAssignFolder: () => {},
+                            onUnassignFolder: () => {},
+                            showFavoriteToggle: true,
+                            isFavorite: isFavorite(s.uuid),
+                            onToggleFavorite: () => toggleFavorite(s.uuid),
+                        });
+
                         return (
-                            <div className='space-y-4 stagger-children'>
-                                {allResources.map((resource, idx) => (
-                                    <div key={`${resource.type}-${idx}`} className='stagger-child'>
-                                        {resource.type === 'server' ? (
-                                            <ServerCard
-                                                server={resource.data as ServerData}
-                                                layout='list'
-                                                serverUrl={`/server/${(resource.data as ServerData).uuidShort}`}
-                                                liveStats={getServerLiveStats(resource.data as ServerData)}
-                                                isConnected={isServerConnected((resource.data as ServerData).uuidShort)}
-                                                t={t}
-                                                folders={[]}
-                                                onAssignFolder={() => {}}
-                                                onUnassignFolder={() => {}}
-                                            />
-                                        ) : (
-                                            <VmCard vm={resource.data as VmInstance} layout='list' />
-                                        )}
+                            <div className='space-y-6'>
+                                {showFavoriteBlock ? (
+                                    <div className='space-y-3'>
+                                        <div className='flex items-center justify-between gap-3 min-w-0'>
+                                            <h3 className='text-sm font-semibold text-foreground truncate'>
+                                                {t('dashboard.favorite_servers.title')}
+                                            </h3>
+                                        </div>
+                                        <div className='space-y-3 stagger-children'>
+                                            {favoriteServerList.map((s) => (
+                                                <div key={`fav-${s.uuid}`} className='stagger-child'>
+                                                    <ServerCard {...serverCardProps(s)} />
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                ))}
+                                ) : null}
+                                {otherResources.length > 0 ? (
+                                    <div className='space-y-4 stagger-children'>
+                                        {otherResources.map((resource, idx) => (
+                                            <div key={`${resource.type}-${idx}`} className='stagger-child'>
+                                                {resource.type === 'server' ? (
+                                                    <ServerCard {...serverCardProps(resource.data as ServerData)} />
+                                                ) : (
+                                                    <VmCard vm={resource.data as VmInstance} layout='list' />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : null}
                             </div>
                         );
                     })()}

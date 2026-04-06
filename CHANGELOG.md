@@ -10,6 +10,7 @@
 - Implemented an advanced rotation scheme featuring FIFO (First-In, First-Out) logic, also known as Rolling Backup Retention, delivering reliable and automated backup management for your servers. by @nayskutzu
 - Unleashed API key sign-in: authenticate seamlessly with either API public or private keys—flexibility and security both ways. by @nayskutzu
 - Enhanced API key security with robust access controls and advanced IP restriction support, ensuring even greater protection for your integrations. by @nayskutzu
+- Introduced the Favorite Servers feature: effortlessly mark your most-used servers for instant access and seamless management from your dashboard. by @nayskutzu
 
 ### Fixed
 

@@ -287,6 +287,9 @@
 			"create_first": "Create your first resource to get started",
 			"loading": "Loading resources..."
 		},
+		"favorite_servers": {
+			"title": "Favorite servers"
+		},
 		"announcements": {},
 		"tickets": {
 			"title": "Recent Support Tickets",
@@ -612,6 +615,8 @@
 		"liveConnected": "Live",
 		"live": "LIVE",
 		"removeFromFolder": "Remove from Folder",
+		"favorite_add": "Add to favorites",
+		"favorite_remove": "Remove from favorites",
 		"noFolders": "No folders created",
 		"sort": {
 			"name": "Name",
