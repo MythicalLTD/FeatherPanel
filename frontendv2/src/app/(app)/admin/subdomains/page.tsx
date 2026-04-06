@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
@@ -121,6 +122,7 @@ export interface SubdomainSettings {
     cloudflare_email: string;
     max_subdomains_per_server: number;
     cloudflare_api_key_set: boolean;
+    allow_user_subdomains?: boolean;
 }
 
 export interface SubdomainSettingsPayload {
@@ -147,6 +149,7 @@ interface Pagination {
 
 export default function AdminSubdomainsPage() {
     const { t } = useTranslation();
+    const router = useRouter();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-subdomains');
     const [loading, setLoading] = useState(true);
     const [domains, setDomains] = useState<SubdomainDomain[]>([]);
@@ -191,6 +194,8 @@ export default function AdminSubdomainsPage() {
         max_subdomains_per_server: 1,
     });
     const [settingsKeySet, setSettingsKeySet] = useState(false);
+    const [userSubdomainsEnabled, setUserSubdomainsEnabled] = useState(false);
+    const [togglingUserSubdomains, setTogglingUserSubdomains] = useState(false);
 
     const [processing, setProcessing] = useState(false);
     const [savingSettings, setSavingSettings] = useState(false);
@@ -255,6 +260,7 @@ export default function AdminSubdomainsPage() {
                 max_subdomains_per_server: settingsData.max_subdomains_per_server || 1,
             });
             setSettingsKeySet(settingsData.cloudflare_api_key_set);
+            setUserSubdomainsEnabled(Boolean(settingsData.allow_user_subdomains));
             setSpells(spellsData || []);
         } catch (error) {
             console.error('Error fetching initial data:', error);
@@ -270,6 +276,25 @@ export default function AdminSubdomainsPage() {
     useEffect(() => {
         fetchInitialData();
     }, [fetchInitialData]);
+
+    const handleUserSubdomainsToggle = async (enabled: boolean) => {
+        setTogglingUserSubdomains(true);
+        try {
+            await axios.patch('/api/admin/subdomains/settings', { allow_user_subdomains: enabled });
+            setUserSubdomainsEnabled(enabled);
+            toast.success(
+                enabled ? t('admin.subdomains.userSubdomainsEnabledToast') : t('admin.subdomains.userSubdomainsDisabledToast'),
+            );
+        } catch (error: unknown) {
+            let msg = t('admin.subdomains.userSubdomainsToggleFailed');
+            if (isAxiosError(error) && error.response?.data?.message) {
+                msg = String(error.response.data.message);
+            }
+            toast.error(msg);
+        } finally {
+            setTogglingUserSubdomains(false);
+        }
+    };
 
     const handleSaveSettings = async () => {
         setSavingSettings(true);
@@ -450,6 +475,104 @@ export default function AdminSubdomainsPage() {
                 }
             />
 
+            {!userSubdomainsEnabled && (
+                <Alert className='border-destructive/35 bg-destructive/[0.07] dark:bg-destructive/10 shadow-md rounded-2xl'>
+                    <AlertCircle className='h-5 w-5 text-destructive shrink-0' />
+                    <AlertTitle className='text-base font-bold text-foreground tracking-tight'>
+                        {t('admin.subdomains.featureDisabledAlertTitle')}
+                    </AlertTitle>
+                    <AlertDescription className='text-sm leading-relaxed text-muted-foreground space-y-4 mt-2'>
+                        <p>{t('admin.subdomains.featureDisabledAlertBody')}</p>
+                        <div className='flex flex-col sm:flex-row sm:items-center gap-4 justify-between rounded-xl border border-border/60 bg-background/60 p-4'>
+                            <div className='space-y-1'>
+                                <Label className='text-sm font-semibold text-foreground'>
+                                    {t('admin.subdomains.userSubdomainsToggleLabel')}
+                                </Label>
+                                <p className='text-xs text-muted-foreground'>
+                                    {t('admin.subdomains.userSubdomainsToggleHint')}
+                                </p>
+                            </div>
+                            <Switch
+                                checked={false}
+                                disabled={togglingUserSubdomains}
+                                onCheckedChange={(v) => {
+                                    if (v) void handleUserSubdomainsToggle(true);
+                                }}
+                                className='shrink-0 scale-110'
+                            />
+                        </div>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            className='w-full sm:w-auto'
+                            onClick={() => router.push('/admin/settings?category=servers')}
+                        >
+                            <Settings className='h-4 w-4 mr-2' />
+                            {t('admin.subdomains.featureDisabledOpenSettings')}
+                        </Button>
+                    </AlertDescription>
+                </Alert>
+            )}
+
+            {userSubdomainsEnabled && (
+                <Alert className='border-amber-500/45 bg-amber-500/[0.08] dark:bg-amber-950/25 shadow-md rounded-2xl'>
+                    <Settings className='h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0' />
+                    <AlertTitle className='text-base font-bold text-amber-950 dark:text-amber-50 tracking-tight'>
+                        {t('admin.subdomains.featureEnabledAlertTitle')}
+                    </AlertTitle>
+                    <AlertDescription className='text-amber-950/85 dark:text-amber-50/85 text-sm leading-relaxed space-y-4 mt-2'>
+                        <p>{t('admin.subdomains.featureEnabledAlertBody')}</p>
+                        {(!settingsKeySet || !settingsForm.cloudflare_email.trim()) && (
+                            <p className='font-semibold text-amber-900 dark:text-amber-100'>
+                                {t('admin.subdomains.featureEnabledAlertIncomplete')}
+                            </p>
+                        )}
+                        <div className='flex flex-col sm:flex-row sm:items-center gap-4 justify-between rounded-xl border border-amber-600/25 bg-background/50 dark:bg-background/20 p-4'>
+                            <div className='space-y-1'>
+                                <Label className='text-sm font-semibold text-amber-950 dark:text-amber-50'>
+                                    {t('admin.subdomains.userSubdomainsToggleLabel')}
+                                </Label>
+                                <p className='text-xs text-amber-900/70 dark:text-amber-100/80'>
+                                    {t('admin.subdomains.userSubdomainsToggleHint')}
+                                </p>
+                            </div>
+                            <Switch
+                                checked={userSubdomainsEnabled}
+                                disabled={togglingUserSubdomains}
+                                onCheckedChange={(v) => void handleUserSubdomainsToggle(v)}
+                                className='shrink-0 scale-110'
+                            />
+                        </div>
+                        <div className='flex flex-col sm:flex-row gap-2 flex-wrap'>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                className='border-amber-600/40 bg-background/80 hover:bg-amber-500/10 text-amber-950 dark:text-amber-50'
+                                onClick={() =>
+                                    document
+                                        .getElementById('admin-subdomains-cloudflare-settings')
+                                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                }
+                            >
+                                <Settings className='h-4 w-4 mr-2' />
+                                {t('admin.subdomains.featureEnabledAlertCta')}
+                            </Button>
+                            <Button
+                                type='button'
+                                variant='ghost'
+                                size='sm'
+                                className='text-amber-900 dark:text-amber-100'
+                                onClick={() => router.push('/admin/settings?category=servers')}
+                            >
+                                {t('admin.subdomains.featureDisabledOpenSettings')}
+                            </Button>
+                        </div>
+                    </AlertDescription>
+                </Alert>
+            )}
+
             <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -599,7 +722,11 @@ export default function AdminSubdomainsPage() {
 
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-border/50'>
                 <div className='lg:col-span-2 space-y-6'>
-                    <PageCard title={t('admin.subdomains.settingsTitle')} icon={Settings}>
+                    <PageCard
+                        id='admin-subdomains-cloudflare-settings'
+                        title={t('admin.subdomains.settingsTitle')}
+                        icon={Settings}
+                    >
                         <div className='grid gap-6'>
                             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                                 <div className='space-y-2'>

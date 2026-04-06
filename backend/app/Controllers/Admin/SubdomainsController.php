@@ -448,6 +448,7 @@ class SubdomainsController
                 'cloudflare_email' => $config->getSetting(ConfigInterface::SUBDOMAIN_CF_EMAIL, ''),
                 'cloudflare_api_key_set' => $storedApiKey !== '',
                 'max_subdomains_per_server' => (int) $config->getSetting(ConfigInterface::SUBDOMAIN_MAX_PER_SERVER, '1'),
+                'allow_user_subdomains' => $config->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS, 'false') === 'true',
             ],
         ], 'Settings fetched successfully');
     }
@@ -527,6 +528,42 @@ class SubdomainsController
         $emailProvided = array_key_exists('cloudflare_email', $payload);
         $apiKeyProvided = array_key_exists('cloudflare_api_key', $payload);
         $maxProvided = array_key_exists('max_subdomains_per_server', $payload);
+        $allowUserProvided = array_key_exists('allow_user_subdomains', $payload);
+
+        if ($allowUserProvided && !$emailProvided && !$apiKeyProvided && !$maxProvided) {
+            $raw = $payload['allow_user_subdomains'];
+            $enabled = $raw === true || $raw === 1 || $raw === '1' || $raw === 'true';
+            $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS, $enabled ? 'true' : 'false');
+            $this->logActivity(
+                $request,
+                'update_subdomain_settings',
+                'Updated panel setting server_allow_user_made_subdomains: ' . ($enabled ? 'true' : 'false')
+            );
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    SubdomainsEvent::onSubdomainSettingsUpdated(),
+                    [
+                        'settings' => [
+                            'cloudflare_email' => $currentEmail,
+                            'cloudflare_api_key_set' => $currentApiKey !== '',
+                            'max_subdomains_per_server' => $currentMax,
+                            'allow_user_subdomains' => $enabled,
+                        ],
+                        'updated_by' => $request->get('user'),
+                    ]
+                );
+            }
+
+            return ApiResponse::success([
+                'settings' => [
+                    'cloudflare_email' => $config->getSetting(ConfigInterface::SUBDOMAIN_CF_EMAIL, ''),
+                    'cloudflare_api_key_set' => trim((string) $config->getSetting(ConfigInterface::SUBDOMAIN_CF_API_KEY, '')) !== '',
+                    'max_subdomains_per_server' => (int) $config->getSetting(ConfigInterface::SUBDOMAIN_MAX_PER_SERVER, '1'),
+                    'allow_user_subdomains' => $config->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS, 'false') === 'true',
+                ],
+            ], 'Settings updated successfully');
+        }
 
         $email = $emailProvided ? trim((string) $payload['cloudflare_email']) : $currentEmail;
         $apiKey = $apiKeyProvided ? trim((string) $payload['cloudflare_api_key']) : $currentApiKey;

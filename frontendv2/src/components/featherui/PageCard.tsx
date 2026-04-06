@@ -18,6 +18,7 @@ import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PageCardProps {
+    id?: string;
     title?: string;
     description?: string;
     icon?: LucideIcon;
@@ -63,6 +64,7 @@ const variantStyles = {
 };
 
 export function PageCard({
+    id,
     title,
     description,
     icon: Icon,
@@ -77,6 +79,7 @@ export function PageCard({
 
     return (
         <div
+            id={id}
             className={cn(
                 'backdrop-blur-xl border rounded-3xl p-8 space-y-6 relative overflow-hidden group transition-all',
                 styles.bg,

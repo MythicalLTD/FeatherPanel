@@ -414,8 +414,8 @@ export default function StorageSensePage() {
                         />
                         <p className='text-xs text-muted-foreground'>{t('admin.storage_sense.retention_hint')}</p>
                     </div>
-                    <div className='flex flex-1 flex-wrap gap-2 items-center min-w-[12rem]'>
-                        <div className='relative flex-1 min-w-[10rem]'>
+                    <div className='flex flex-1 flex-wrap gap-2 items-center min-w-48'>
+                        <div className='relative flex-1 min-w-40'>
                             <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
                                 placeholder={t('admin.storage_sense.search_placeholder')}
@@ -500,7 +500,7 @@ export default function StorageSensePage() {
                                             <span className='sr-only'>{t('admin.storage_sense.select')}</span>
                                         </th>
                                     ) : null}
-                                    <th className='p-3 min-w-[14rem]'>{t('admin.storage_sense.table')}</th>
+                                    <th className='p-3 min-w-56'>{t('admin.storage_sense.table')}</th>
                                     <th className='p-3 text-right tabular-nums whitespace-nowrap'>
                                         {t('admin.storage_sense.rows_total')}
                                     </th>
@@ -510,7 +510,7 @@ export default function StorageSensePage() {
                                     <th className='p-3 text-right whitespace-nowrap hidden md:table-cell'>
                                         {t('admin.storage_sense.approx_size')}
                                     </th>
-                                    <th className='p-3 min-w-[8rem] hidden lg:table-cell'>
+                                    <th className='p-3 min-w-32 hidden lg:table-cell'>
                                         {t('admin.storage_sense.progress_legend')}
                                     </th>
                                     <th className='p-3 text-right'>{t('common.actions')}</th>

@@ -28,6 +28,7 @@
 - Resolved an issue with plugin icons failing to load due to CORS restrictions introduced in the latest Next.js update. Now loading seamlessly! by @nayskutzu
 - Resolved multiple issues affecting SFTP button functionality for improved reliability and compatibility. by @nayskutzu
 - Resolved several issues where game locations or VDS locations appeared in inappropriate or unintended areas throughout the panel. by @nayskutzu
+- The Subdomains admin page now clearly indicates when subdomain functionality is disabled, providing transparent feedback to prevent confusion. by @nayskutzu
 
 ### Improved
 
