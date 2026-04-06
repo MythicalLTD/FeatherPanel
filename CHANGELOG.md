@@ -12,6 +12,7 @@
 - Enhanced API key security with robust access controls and advanced IP restriction support, ensuring even greater protection for your integrations. by @nayskutzu
 - Introduced the Favorite Servers feature: effortlessly mark your most-used servers for instant access and seamless management from your dashboard. by @nayskutzu
 - Introduced the Storage Sense feature: effortlessly analyze and manage old log data with automated cleanup and retention controls for optimal performance and storage efficiency. by @nayskutzu
+- Introduced a convenient new button for seamless management of your FeatherPanel local storage—giving you greater control and visibility right from the panel. by @nayskutzu
 
 ### Fixed
 
@@ -32,6 +33,7 @@
 - Enhanced widget rendering framework for plugins, enabling seamless integration of interactive widgets for user actions. by @nayskutzu
 - Improved Wings error handling for more accurate responses and clearer error messages. by @nayskutzu
 - Resolved an issue where pending emails would never be sent if the async task runner was unavailable or offline, ensuring reliable mail delivery under all conditions. by @nayskutzu
+- Redesigned the navigation bar with a refreshed look and significantly improved mobile experience for seamless usability on phones. by @nayskutzu
 
 ## v1.3.3 STABLE
 
