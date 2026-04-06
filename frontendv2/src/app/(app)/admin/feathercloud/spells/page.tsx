@@ -28,6 +28,7 @@ import { ResourceCard, type ResourceBadge } from '@/components/featherui/Resourc
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { Textarea } from '@/components/featherui/Textarea';
 import { PageCard } from '@/components/featherui/PageCard';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
@@ -87,6 +88,9 @@ export default function SpellsPage() {
     const [confirmInstallOpen, setConfirmInstallOpen] = useState(false);
     const [selectedSpell, setSelectedSpell] = useState<OnlineSpell | null>(null);
     const [selectedRealmId, setSelectedRealmId] = useState<string>('');
+    const [realmInstallMode, setRealmInstallMode] = useState<'existing' | 'new'>('existing');
+    const [newRealmName, setNewRealmName] = useState('');
+    const [newRealmDescription, setNewRealmDescription] = useState('');
     const [installedSpellIds, setInstalledSpellIds] = useState<string[]>([]);
     const [installingId, setInstallingId] = useState<string | null>(null);
 
@@ -101,13 +105,13 @@ export default function SpellsPage() {
     const fetchRealms = useCallback(async (page = 1, search = '') => {
         setRealmsLoading(true);
         try {
-            const params = new URLSearchParams({
-                page: String(page),
-                per_page: '10',
+            const response = await axios.get('/api/admin/realms', {
+                params: {
+                    page,
+                    limit: 10,
+                    ...(search ? { search } : {}),
+                },
             });
-            if (search) params.set('q', search);
-
-            const response = await axios.get(`/api/admin/realms?${params.toString()}`);
             setRealms(response.data?.data?.realms || []);
             setRealmsPagination(response.data?.data?.pagination || null);
         } catch (error) {
@@ -169,20 +173,51 @@ export default function SpellsPage() {
 
     const openInstallDialog = (spell: OnlineSpell) => {
         setSelectedSpell(spell);
+        setRealmInstallMode('existing');
+        setSelectedRealmId('');
+        setNewRealmName('');
+        setNewRealmDescription('');
+        setRealmsPage(1);
+        setRealmsSearch('');
         setConfirmInstallOpen(true);
     };
 
     const handleInstall = async () => {
-        if (!selectedSpell || !selectedRealmId) {
+        if (!selectedSpell) return;
+
+        if (realmInstallMode === 'existing' && !selectedRealmId) {
             toast.error(t('admin.marketplace.spells.select_realm_error'));
+            return;
+        }
+
+        const trimmedNewName = newRealmName.trim();
+        if (realmInstallMode === 'new' && trimmedNewName.length < 2) {
+            toast.error(t('admin.marketplace.spells.dialog.new_realm_name_error'));
             return;
         }
 
         setInstallingId(selectedSpell.identifier);
         try {
+            let realmId: number;
+            if (realmInstallMode === 'new') {
+                const createRes = await axios.put('/api/admin/realms', {
+                    name: trimmedNewName,
+                    description: newRealmDescription.trim() || undefined,
+                });
+                const created = createRes.data?.data?.realm as { id?: number } | undefined;
+                if (!created?.id) {
+                    toast.error(t('admin.marketplace.spells.dialog.create_realm_failed'));
+                    return;
+                }
+                realmId = created.id;
+                void fetchRealms(1, '');
+            } else {
+                realmId = parseInt(selectedRealmId, 10);
+            }
+
             await axios.post('/api/admin/spells/online/install', {
                 identifier: selectedSpell.identifier,
-                realm_id: parseInt(selectedRealmId, 10),
+                realm_id: realmId,
             });
             toast.success(t('admin.marketplace.spells.install_success', { identifier: selectedSpell.identifier }));
             fetchInstalledSpells();
@@ -477,110 +512,180 @@ export default function SpellsPage() {
                                     {t('admin.marketplace.spells.dialog.realm')}
                                 </label>
                                 <p className='text-xs text-muted-foreground'>
-                                    {t('admin.marketplace.spells.dialog.realm_help')}
+                                    {realmInstallMode === 'existing'
+                                        ? t('admin.marketplace.spells.dialog.realm_help')
+                                        : t('admin.marketplace.spells.dialog.new_realm_help')}
                                 </p>
                             </div>
 
-                            <div className='relative group'>
-                                <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
-                                <Input
-                                    placeholder={t('common.search')}
-                                    value={realmsSearch}
-                                    onChange={(e) => {
-                                        setRealmsSearch(e.target.value);
-                                        setRealmsPage(1);
+                            <div className='flex flex-col sm:flex-row gap-2'>
+                                <Button
+                                    type='button'
+                                    variant={realmInstallMode === 'existing' ? 'default' : 'outline'}
+                                    className='flex-1 h-11 rounded-xl font-semibold'
+                                    onClick={() => {
+                                        setRealmInstallMode('existing');
                                     }}
-                                    className='pl-10 h-11'
-                                />
+                                >
+                                    {t('admin.marketplace.spells.dialog.realm_mode_existing')}
+                                </Button>
+                                <Button
+                                    type='button'
+                                    variant={realmInstallMode === 'new' ? 'default' : 'outline'}
+                                    className='flex-1 h-11 rounded-xl font-semibold'
+                                    onClick={() => {
+                                        setRealmInstallMode('new');
+                                        setSelectedRealmId('');
+                                        setNewRealmName((selectedSpell?.name ?? '').slice(0, 255));
+                                    }}
+                                >
+                                    {t('admin.marketplace.spells.dialog.realm_mode_new')}
+                                </Button>
                             </div>
 
-                            {realmsPagination && realmsPagination.total_pages > 1 && (
-                                <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        disabled={realmsPage === 1}
-                                        onClick={() => setRealmsPage((p) => p - 1)}
-                                        className='gap-1 h-8'
-                                    >
-                                        <ChevronLeft className='h-3 w-3' />
-                                        {t('common.previous')}
-                                    </Button>
-                                    <span className='text-xs font-medium'>
-                                        {realmsPage} / {realmsPagination.total_pages}
-                                    </span>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        disabled={realmsPage === realmsPagination.total_pages}
-                                        onClick={() => setRealmsPage((p) => p + 1)}
-                                        className='gap-1 h-8'
-                                    >
-                                        {t('common.next')}
-                                        <ChevronRight className='h-3 w-3' />
-                                    </Button>
+                            {realmInstallMode === 'new' ? (
+                                <div className='space-y-4'>
+                                    <div className='space-y-2'>
+                                        <label className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>
+                                            {t('admin.marketplace.spells.dialog.new_realm_name')}
+                                        </label>
+                                        <Input
+                                            value={newRealmName}
+                                            onChange={(e) => setNewRealmName(e.target.value)}
+                                            placeholder={t('admin.marketplace.spells.dialog.new_realm_name_placeholder')}
+                                            className='h-11 rounded-xl'
+                                            maxLength={255}
+                                        />
+                                    </div>
+                                    <div className='space-y-2'>
+                                        <label className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>
+                                            {t('admin.marketplace.spells.dialog.new_realm_description')}
+                                        </label>
+                                        <Textarea
+                                            value={newRealmDescription}
+                                            onChange={(e) => setNewRealmDescription(e.target.value)}
+                                            className='min-h-[88px] rounded-xl resize-y'
+                                            maxLength={65535}
+                                        />
+                                    </div>
                                 </div>
-                            )}
+                            ) : (
+                                <>
+                                    <div className='relative group'>
+                                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                                        <Input
+                                            placeholder={t('common.search')}
+                                            value={realmsSearch}
+                                            onChange={(e) => {
+                                                setRealmsSearch(e.target.value);
+                                                setRealmsPage(1);
+                                            }}
+                                            className='pl-10 h-11'
+                                        />
+                                    </div>
 
-                            <div className='space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar'>
-                                {realmsLoading ? (
-                                    <div className='flex items-center justify-center py-10'>
-                                        <RefreshCw className='h-6 w-6 animate-spin text-primary' />
-                                    </div>
-                                ) : realms.length === 0 ? (
-                                    <div className='text-center py-10 text-muted-foreground text-sm'>
-                                        {t('common.no_results')}
-                                    </div>
-                                ) : (
-                                    realms.map((realm) => (
-                                        <div
-                                            key={realm.id}
-                                            onClick={() => setSelectedRealmId(String(realm.id))}
-                                            className={cn(
-                                                'p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between group/realm',
-                                                selectedRealmId === String(realm.id)
-                                                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                                                    : 'border-border/50 hover:border-primary/50 bg-muted/30',
-                                            )}
-                                        >
-                                            <span className='font-semibold text-sm'>{realm.name}</span>
-                                            {selectedRealmId === String(realm.id) && (
-                                                <BadgeCheck className='h-4 w-4 text-primary animate-in zoom-in-50 duration-200' />
-                                            )}
+                                    {realmsPagination && realmsPagination.total_pages > 1 && (
+                                        <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                disabled={realmsPage === 1}
+                                                onClick={() => setRealmsPage((p) => p - 1)}
+                                                className='gap-1 h-8'
+                                            >
+                                                <ChevronLeft className='h-3 w-3' />
+                                                {t('common.previous')}
+                                            </Button>
+                                            <span className='text-xs font-medium'>
+                                                {realmsPage} / {realmsPagination.total_pages}
+                                            </span>
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                disabled={realmsPage === realmsPagination.total_pages}
+                                                onClick={() => setRealmsPage((p) => p + 1)}
+                                                className='gap-1 h-8'
+                                            >
+                                                {t('common.next')}
+                                                <ChevronRight className='h-3 w-3' />
+                                            </Button>
                                         </div>
-                                    ))
-                                )}
-                            </div>
+                                    )}
 
-                            {realmsPagination && realmsPagination.total_pages > 1 && (
-                                <div className='flex items-center justify-between px-1'>
-                                    <span className='text-xs text-muted-foreground font-medium'>
-                                        {t('common.pagination.page', {
-                                            current: String(realmsPage),
-                                            total: String(realmsPagination.total_pages),
-                                        })}
-                                    </span>
-                                    <div className='flex items-center gap-2'>
-                                        <Button
-                                            variant='outline'
-                                            size='icon'
-                                            className='h-8 w-8'
-                                            disabled={realmsPage === 1}
-                                            onClick={() => setRealmsPage((p) => p - 1)}
-                                        >
-                                            <ChevronLeft className='h-4 w-4' />
-                                        </Button>
-                                        <Button
-                                            variant='outline'
-                                            size='icon'
-                                            className='h-8 w-8'
-                                            disabled={realmsPage === realmsPagination.total_pages}
-                                            onClick={() => setRealmsPage((p) => p + 1)}
-                                        >
-                                            <ChevronRight className='h-4 w-4' />
-                                        </Button>
+                                    <div className='space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar'>
+                                        {realmsLoading ? (
+                                            <div className='flex items-center justify-center py-10'>
+                                                <RefreshCw className='h-6 w-6 animate-spin text-primary' />
+                                            </div>
+                                        ) : realms.length === 0 ? (
+                                            <div className='text-center py-10 text-muted-foreground text-sm space-y-3'>
+                                                <p>{t('common.no_results')}</p>
+                                                <Button
+                                                    type='button'
+                                                    variant='outline'
+                                                    size='sm'
+                                                    className='rounded-lg'
+                                                    onClick={() => {
+                                                        setRealmInstallMode('new');
+                                                        setSelectedRealmId('');
+                                                        setNewRealmName((selectedSpell?.name ?? '').slice(0, 255));
+                                                    }}
+                                                >
+                                                    {t('admin.marketplace.spells.dialog.realm_mode_new')}
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            realms.map((realm) => (
+                                                <div
+                                                    key={realm.id}
+                                                    onClick={() => setSelectedRealmId(String(realm.id))}
+                                                    className={cn(
+                                                        'p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between group/realm',
+                                                        selectedRealmId === String(realm.id)
+                                                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                                            : 'border-border/50 hover:border-primary/50 bg-muted/30',
+                                                    )}
+                                                >
+                                                    <span className='font-semibold text-sm'>{realm.name}</span>
+                                                    {selectedRealmId === String(realm.id) && (
+                                                        <BadgeCheck className='h-4 w-4 text-primary animate-in zoom-in-50 duration-200' />
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
-                                </div>
+
+                                    {realmsPagination && realmsPagination.total_pages > 1 && (
+                                        <div className='flex items-center justify-between px-1'>
+                                            <span className='text-xs text-muted-foreground font-medium'>
+                                                {t('common.pagination.page', {
+                                                    current: String(realmsPage),
+                                                    total: String(realmsPagination.total_pages),
+                                                })}
+                                            </span>
+                                            <div className='flex items-center gap-2'>
+                                                <Button
+                                                    variant='outline'
+                                                    size='icon'
+                                                    className='h-8 w-8'
+                                                    disabled={realmsPage === 1}
+                                                    onClick={() => setRealmsPage((p) => p - 1)}
+                                                >
+                                                    <ChevronLeft className='h-4 w-4' />
+                                                </Button>
+                                                <Button
+                                                    variant='outline'
+                                                    size='icon'
+                                                    className='h-8 w-8'
+                                                    disabled={realmsPage === realmsPagination.total_pages}
+                                                    onClick={() => setRealmsPage((p) => p + 1)}
+                                                >
+                                                    <ChevronRight className='h-4 w-4' />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
@@ -595,7 +700,11 @@ export default function SpellsPage() {
                         </Button>
                         <Button
                             className='flex-2 rounded-xl h-14 font-bold '
-                            disabled={!selectedRealmId || installingId !== null}
+                            disabled={
+                                installingId !== null ||
+                                (realmInstallMode === 'existing' && !selectedRealmId) ||
+                                (realmInstallMode === 'new' && newRealmName.trim().length < 2)
+                            }
                             onClick={handleInstall}
                         >
                             {installingId ? (

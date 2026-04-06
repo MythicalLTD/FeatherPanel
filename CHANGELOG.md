@@ -14,6 +14,7 @@
 - Introduced the Storage Sense feature: effortlessly analyze and manage old log data with automated cleanup and retention controls for optimal performance and storage efficiency. by @nayskutzu
 - Introduced a convenient new button for seamless management of your FeatherPanel local storage—giving you greater control and visibility right from the panel. by @nayskutzu
 - Introduced robust file integrity checks, empowering users to effortlessly identify and address anomalies or unexpected changes in their files. by @nayskutzu
+- You can now create realms directly from the Install Spell window, streamlining your workflow with no need to leave the install process. by @nayskutzu
 
 ### Fixed
 
