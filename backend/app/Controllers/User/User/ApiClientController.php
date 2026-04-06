@@ -23,6 +23,7 @@ use App\Permissions;
 use App\Chat\Activity;
 use App\Chat\ApiClient;
 use App\Helpers\ApiResponse;
+use App\Helpers\IpAddressMatcher;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\PermissionHelper;
@@ -43,6 +44,8 @@ use App\Plugins\Events\Events\UserApiClientEvent;
         new OA\Property(property: 'private_key', type: 'string', description: 'Private API key (only shown on creation)'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+        new OA\Property(property: 'allowed_ips', type: 'string', nullable: true, description: 'Allowed client IPs/CIDR (newline or comma separated); empty = no restriction'),
+        new OA\Property(property: 'notify_foreign_ip', type: 'string', enum: ['false', 'true'], description: 'Email owner when a non-allowed IP attempts to use this key'),
     ]
 )]
 #[OA\Schema(
@@ -55,6 +58,8 @@ use App\Plugins\Events\Events\UserApiClientEvent;
         new OA\Property(property: 'public_key', type: 'string', description: 'Public API key (truncated)'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+        new OA\Property(property: 'allowed_ips', type: 'string', nullable: true, description: 'Allowed client IPs/CIDR list'),
+        new OA\Property(property: 'notify_foreign_ip', type: 'string', enum: ['false', 'true']),
     ]
 )]
 #[OA\Schema(
@@ -85,6 +90,8 @@ use App\Plugins\Events\Events\UserApiClientEvent;
     required: ['name'],
     properties: [
         new OA\Property(property: 'name', type: 'string', minLength: 1, maxLength: 191, description: 'API client name'),
+        new OA\Property(property: 'allowed_ips', type: 'string', nullable: true, description: 'Allowed IPs/CIDR (newline or comma); omit or empty for no restriction'),
+        new OA\Property(property: 'notify_foreign_ip', type: 'boolean', nullable: true, description: 'Email when the key is used from a non-allowed IP (requires allowed_ips)'),
     ]
 )]
 #[OA\Schema(
@@ -92,6 +99,8 @@ use App\Plugins\Events\Events\UserApiClientEvent;
     type: 'object',
     properties: [
         new OA\Property(property: 'name', type: 'string', minLength: 1, maxLength: 191, description: 'API client name'),
+        new OA\Property(property: 'allowed_ips', type: 'string', nullable: true, description: 'Allowed IPs/CIDR; empty/null clears restriction'),
+        new OA\Property(property: 'notify_foreign_ip', type: 'boolean', nullable: true, description: 'Email when the key is used from a off-list IP'),
     ]
 )]
 #[OA\Schema(
@@ -348,17 +357,39 @@ class ApiClientController
             return ApiResponse::error('Name must be between 1 and 191 characters', 'INVALID_NAME_LENGTH', 400);
         }
 
+        $allowedRaw = '';
+        if (array_key_exists('allowed_ips', $data)) {
+            if ($data['allowed_ips'] !== null && !is_string($data['allowed_ips'])) {
+                return ApiResponse::error('allowed_ips must be a string', 'INVALID_ALLOWED_IPS', 400);
+            }
+            $allowedRaw = $data['allowed_ips'] === null ? '' : $data['allowed_ips'];
+        }
+        $allowedErr = IpAddressMatcher::validateAllowedIpsInput($allowedRaw);
+        if ($allowedErr !== null) {
+            return ApiResponse::error($allowedErr, 'INVALID_ALLOWED_IPS', 400);
+        }
+        $normalizedAllowed = IpAddressMatcher::normalizeAllowedIpsInput($allowedRaw);
+        $allowedDb = $normalizedAllowed === '' ? null : $normalizedAllowed;
+        $notifyStored = $this->normalizeNotifyForeignIpFlag($data['notify_foreign_ip'] ?? false, $allowedDb !== null);
+
         // Generate API keys
         $publicKey = $this->generateApiKey();
         $privateKey = $this->generateApiKey();
 
-        // Add user data and generated keys
-        $data['user_uuid'] = $user['uuid'];
-        $data['public_key'] = $publicKey;
-        $data['private_key'] = $privateKey;
+        $createPayload = [
+            'user_uuid' => $user['uuid'],
+            'name' => trim($data['name']),
+            'public_key' => $publicKey,
+            'private_key' => $privateKey,
+            'allowed_ips' => $allowedDb,
+            'notify_foreign_ip' => $notifyStored,
+        ];
+        if (isset($data['description']) && is_string($data['description'])) {
+            $createPayload['description'] = $data['description'];
+        }
 
         // Create the API client
-        $apiClientId = ApiClient::createApiClient($data);
+        $apiClientId = ApiClient::createApiClient($createPayload);
         if ($apiClientId === false) {
             return ApiResponse::error('Failed to create API client', 'API_CLIENT_CREATION_FAILED', 500);
         }
@@ -396,7 +427,7 @@ class ApiClientController
     #[OA\Put(
         path: '/api/user/api-clients/{id}',
         summary: 'Update API client',
-        description: 'Update an existing API client for the authenticated user. Only the name field can be updated.',
+        description: 'Update an existing API client for the authenticated user (name, allowed IPs/CIDR list, email alert for off-list IPs).',
         tags: ['User - API Clients'],
         parameters: [
             new OA\Parameter(
@@ -450,11 +481,10 @@ class ApiClientController
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
         }
 
-        // Validate allowed fields
-        $allowedFields = ['name'];
+        $allowedFields = ['name', 'allowed_ips', 'notify_foreign_ip'];
         $validData = [];
         foreach ($data as $key => $value) {
-            if (in_array($key, $allowedFields)) {
+            if (in_array($key, $allowedFields, true)) {
                 $validData[$key] = $value;
             }
         }
@@ -463,10 +493,38 @@ class ApiClientController
             return ApiResponse::error('No valid fields to update', 'NO_VALID_FIELDS', 400);
         }
 
-        // Validate data length
         if (isset($validData['name']) && (strlen($validData['name']) < 1 || strlen($validData['name']) > 191)) {
             return ApiResponse::error('Name must be between 1 and 191 characters', 'INVALID_NAME_LENGTH', 400);
         }
+
+        $nextAllowed = $existingApiClient['allowed_ips'] ?? null;
+        if (array_key_exists('allowed_ips', $validData)) {
+            $raw = $validData['allowed_ips'];
+            if ($raw !== null && !is_string($raw)) {
+                return ApiResponse::error('allowed_ips must be a string', 'INVALID_ALLOWED_IPS', 400);
+            }
+            $allowedRaw = $raw === null ? '' : $raw;
+            $allowedErr = IpAddressMatcher::validateAllowedIpsInput($allowedRaw);
+            if ($allowedErr !== null) {
+                return ApiResponse::error($allowedErr, 'INVALID_ALLOWED_IPS', 400);
+            }
+            $norm = IpAddressMatcher::normalizeAllowedIpsInput($allowedRaw);
+            $nextAllowed = $norm === '' ? null : $norm;
+            unset($validData['allowed_ips']);
+        }
+
+        $hasRestriction = $nextAllowed !== null && trim((string) $nextAllowed) !== '';
+        $nextNotify = $existingApiClient['notify_foreign_ip'] ?? 'false';
+        if (array_key_exists('notify_foreign_ip', $validData)) {
+            $nextNotify = $this->normalizeNotifyForeignIpFlag($validData['notify_foreign_ip'], $hasRestriction);
+            unset($validData['notify_foreign_ip']);
+        }
+        if (!$hasRestriction) {
+            $nextNotify = 'false';
+        }
+
+        $validData['allowed_ips'] = $nextAllowed;
+        $validData['notify_foreign_ip'] = $nextNotify;
 
         // Update the API client
         $success = ApiClient::updateApiClient($id, $validData);
@@ -838,5 +896,17 @@ class ApiClientController
     private function generateApiKey(): string
     {
         return 'fp_' . bin2hex(random_bytes(32));
+    }
+
+    private function normalizeNotifyForeignIpFlag(mixed $value, bool $hasAllowedIps): string
+    {
+        if (!$hasAllowedIps) {
+            return 'false';
+        }
+        if ($value === true || $value === 1 || $value === '1' || $value === 'true') {
+            return 'true';
+        }
+
+        return 'false';
     }
 }

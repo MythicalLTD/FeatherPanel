@@ -19,7 +19,9 @@ namespace App\Middleware;
 
 use App\Chat\User;
 use App\Chat\ApiClient;
+use App\Helpers\ApiClientForeignIpNotifier;
 use App\Helpers\ApiResponse;
+use App\Helpers\IpAddressMatcher;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -64,6 +66,20 @@ class AuthMiddleware implements MiddlewareInterface
                 }
                 if ($userInfo['banned'] == 'true') {
                     return ApiResponse::error('User is banned', 'USER_BANNED');
+                }
+
+                $clientIp = CloudFlareRealIP::getRealIP();
+                $allowedIps = $apiClient['allowed_ips'] ?? null;
+                if ($allowedIps !== null && trim((string) $allowedIps) !== ''
+                    && !IpAddressMatcher::clientMatchesAllowedList($clientIp, $allowedIps)) {
+                    ApiClientForeignIpNotifier::notifyIfEnabled($apiClient, $userInfo, $clientIp);
+
+                    return ApiResponse::error(
+                        'This API key cannot be used from your IP address',
+                        'API_KEY_IP_NOT_ALLOWED',
+                        403,
+                        []
+                    );
                 }
 
                 // Attach user info and API client info to the request attributes

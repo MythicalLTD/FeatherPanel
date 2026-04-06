@@ -4,7 +4,7 @@ use sqlx::{MySqlPool, Row};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn};
+use tracing::info;
 
 use crate::encryption::Encryptor;
 
@@ -54,13 +54,22 @@ pub async fn load_settings(pool: &MySqlPool, encryption_key: &str) -> Result<Set
         let name: String = row.try_get("name")?;
         let encrypted_value: String = row.try_get("value")?;
 
+        // PHP App::decryptValue returns the raw DB string when the value is not valid
+        // XChaCha20 ciphertext (e.g. SQL migrations that INSERT plain 'true'). Match that
+        // so async_runner does not warn and still loads the setting.
         match encryptor.decrypt(&encrypted_value) {
             Ok(decrypted) => {
                 settings.set(name, decrypted);
                 decrypted_count += 1;
             }
             Err(e) => {
-                warn!("⚠️  Failed to decrypt setting '{}': {}", name, e);
+                tracing::debug!(
+                    "Setting '{}' decrypt skipped ({}); using plaintext from DB",
+                    name,
+                    e
+                );
+                settings.set(name, encrypted_value);
+                decrypted_count += 1;
             }
         }
     }

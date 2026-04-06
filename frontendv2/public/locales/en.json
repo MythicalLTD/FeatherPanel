@@ -444,7 +444,18 @@
 				"title": "Important Information",
 				"persistent": "API keys are persistent and don't expire",
 				"accessScope": "Keys have full access to your account",
-				"security": "Keep your private keys secure and never share them"
+				"security": "Keep your private keys secure and never share them",
+				"ipRestriction": "You can lock each key to specific IP addresses or CIDR ranges; requests from other IPs are blocked, with optional email alerts when mail is enabled."
+			},
+			"allowedIpsLabel": "Allowed IP addresses",
+			"allowedIpsHelp": "One IPv4/IPv6 address or CIDR per line or comma-separated (e.g. 203.0.113.10 or 10.0.0.0/24). Leave empty to allow any IP.",
+			"allowedIpsPlaceholder": "203.0.113.10\n198.51.100.0/24",
+			"notifyForeignIp": "Email me if this key is used from another IP",
+			"notifyForeignIpHelp": "Sends one email per 30 minutes at most when a request is blocked because the client IP is not allowed. Only works if the panel administrator has enabled outgoing mail (SMTP).",
+			"notifyEnabledHint": "Email notifications are enabled for blocked (non-allowed) IP attempts.",
+			"ipRestrictedLabel": "This key is restricted to specific IP addresses.",
+			"badges": {
+				"ipLocked": "IP restricted"
 			},
 			"modalWarning": {},
 			"statuses": {

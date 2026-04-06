@@ -19,18 +19,13 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import {
-    Dialog,
-    DialogPanel,
-    DialogTitle,
-    Description as DialogDescription,
-    Field,
-    Label,
-    Input as HeadlessInput,
-} from '@headlessui/react';
+import { Dialog, DialogPanel, DialogTitle, Description as DialogDescription, Field, Label as HeadlessLabel } from '@headlessui/react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/featherui/Input';
-import { cn, copyToClipboard } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+import { copyToClipboard } from '@/lib/utils';
 import { Key, Plus, Trash2, Eye, Pencil, RefreshCw, Copy, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -43,6 +38,8 @@ interface ApiClient {
     name: string;
     public_key?: string;
     private_key?: string;
+    allowed_ips?: string | null;
+    notify_foreign_ip?: string;
     created_at: string;
     updated_at: string;
 }
@@ -65,6 +62,8 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
     const [regenerateModal, setRegenerateModal] = useState(false);
     const [selectedClient, setSelectedClient] = useState<ApiClient | null>(null);
     const [clientName, setClientName] = useState('');
+    const [allowedIpsText, setAllowedIpsText] = useState('');
+    const [notifyForeignIp, setNotifyForeignIp] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
     const canCreateApiKeys = settings?.user_allow_api_keys_create || hasPermission('admin.api.bypass_restrictions');
@@ -97,11 +96,17 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
 
     const handleCreateClient = async () => {
         try {
-            const { data } = await axios.post('/api/user/api-clients', { name: clientName });
+            const { data } = await axios.post('/api/user/api-clients', {
+                name: clientName,
+                ...(allowedIpsText.trim() !== '' ? { allowed_ips: allowedIpsText } : {}),
+                notify_foreign_ip: notifyForeignIp && allowedIpsText.trim() !== '',
+            });
             if (data.success) {
                 toast.success(t('account.apiKeys.keyCreated'));
                 setIsOpen(false);
                 setClientName('');
+                setAllowedIpsText('');
+                setNotifyForeignIp(false);
 
                 setSelectedClient(data.data);
                 setViewModal(true);
@@ -116,12 +121,18 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
     const handleEditClient = async () => {
         if (!selectedClient) return;
         try {
-            const { data } = await axios.put(`/api/user/api-clients/${selectedClient.id}`, { name: clientName });
+            const { data } = await axios.put(`/api/user/api-clients/${selectedClient.id}`, {
+                name: clientName,
+                allowed_ips: allowedIpsText.trim() === '' ? null : allowedIpsText,
+                notify_foreign_ip: notifyForeignIp && allowedIpsText.trim() !== '',
+            });
             if (data.success) {
                 toast.success(t('account.apiKeys.keyUpdated'));
                 setEditModal(false);
                 setSelectedClient(null);
                 setClientName('');
+                setAllowedIpsText('');
+                setNotifyForeignIp(false);
                 await fetchClients();
             }
         } catch (error) {
@@ -149,6 +160,8 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             if (data.success) {
                 setSelectedClient(data.data);
                 setClientName(data.data.name);
+                setAllowedIpsText(data.data.allowed_ips ?? '');
+                setNotifyForeignIp(data.data.notify_foreign_ip === 'true');
                 setEditModal(true);
             }
         } catch (error) {
@@ -223,7 +236,15 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                         {t('account.apiKeys.refresh')}
                     </Button>
                     {canCreateApiKeys && (
-                        <Button onClick={() => setIsOpen(true)} size='sm'>
+                        <Button
+                            onClick={() => {
+                                setClientName('');
+                                setAllowedIpsText('');
+                                setNotifyForeignIp(false);
+                                setIsOpen(true);
+                            }}
+                            size='sm'
+                        >
                             <Plus className='w-4 h-4 mr-2' />
                             {t('account.apiKeys.addKey')}
                         </Button>
@@ -244,6 +265,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                             <p>{t('account.apiKeys.importantInfo.persistent')}</p>
                             <p>{t('account.apiKeys.importantInfo.accessScope')}</p>
                             <p>{t('account.apiKeys.importantInfo.security')}</p>
+                            <p>{t('account.apiKeys.importantInfo.ipRestriction')}</p>
                         </div>
                     </div>
                 </div>
@@ -268,7 +290,15 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                     <h4 className='text-sm font-semibold text-foreground mb-2'>{t('account.apiKeys.noKeys')}</h4>
                     <p className='text-sm text-muted-foreground mb-4'>{t('account.apiKeys.createFirst')}</p>
                     {canCreateApiKeys && (
-                        <Button onClick={() => setIsOpen(true)} variant='outline'>
+                        <Button
+                            onClick={() => {
+                                setClientName('');
+                                setAllowedIpsText('');
+                                setNotifyForeignIp(false);
+                                setIsOpen(true);
+                            }}
+                            variant='outline'
+                        >
                             {t('account.apiKeys.addKey')}
                         </Button>
                     )}
@@ -290,9 +320,21 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                                         {t('account.apiKeys.createdAt')}:{' '}
                                         {new Date(client.created_at).toLocaleDateString()}
                                     </p>
+                                    {client.allowed_ips != null && String(client.allowed_ips).trim() !== '' && (
+                                        <p className='text-xs text-amber-700 dark:text-amber-300 mt-1'>
+                                            {t('account.apiKeys.ipRestrictedLabel')}
+                                        </p>
+                                    )}
                                 </div>
-                                <div className='px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'>
-                                    {t('account.apiKeys.statuses.active')}
+                                <div className='flex flex-col gap-1 items-end'>
+                                    {client.allowed_ips != null && String(client.allowed_ips).trim() !== '' && (
+                                        <div className='px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200'>
+                                            {t('account.apiKeys.badges.ipLocked')}
+                                        </div>
+                                    )}
+                                    <div className='px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'>
+                                        {t('account.apiKeys.statuses.active')}
+                                    </div>
                                 </div>
                             </div>
                             <div className='flex gap-2 flex-wrap'>
@@ -338,6 +380,8 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                     setIsOpen(false);
                     setEditModal(false);
                     setClientName('');
+                    setAllowedIpsText('');
+                    setNotifyForeignIp(false);
                 }}
                 className='relative z-50'
             >
@@ -351,20 +395,56 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                             {t('account.apiKeys.modalDescription')}
                         </DialogDescription>
 
-                        <Field>
-                            <Label className='text-sm font-medium text-foreground'>
+                        <div>
+                            <Label htmlFor='api-keys-modal-client-name' className='text-foreground'>
                                 {t('account.apiKeys.clientName')}
                             </Label>
-                            <HeadlessInput
+                            <Input
+                                id='api-keys-modal-client-name'
                                 value={clientName}
                                 onChange={(e) => setClientName(e.target.value)}
                                 placeholder={t('account.apiKeys.clientNamePlaceholder')}
-                                className={cn(
-                                    'mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2',
-                                    'text-sm text-foreground placeholder:text-muted-foreground',
-                                    'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                                )}
+                                className='mt-2'
                             />
+                        </div>
+
+                        <div className='mt-4'>
+                            <Label htmlFor='api-keys-modal-allowed-ips' className='text-foreground'>
+                                {t('account.apiKeys.allowedIpsLabel')}
+                            </Label>
+                            <p className='text-xs text-muted-foreground mt-1 mb-2'>
+                                {t('account.apiKeys.allowedIpsHelp')}
+                            </p>
+                            <Textarea
+                                id='api-keys-modal-allowed-ips'
+                                value={allowedIpsText}
+                                onChange={(e) => {
+                                    const v = e.target.value;
+                                    setAllowedIpsText(v);
+                                    if (v.trim() === '') {
+                                        setNotifyForeignIp(false);
+                                    }
+                                }}
+                                placeholder={t('account.apiKeys.allowedIpsPlaceholder')}
+                                rows={5}
+                                className='mt-2 min-h-[100px] font-mono text-sm font-normal'
+                            />
+                        </div>
+
+                        <Field className='mt-4 flex items-start gap-3'>
+                            <Checkbox
+                                checked={notifyForeignIp}
+                                disabled={allowedIpsText.trim() === ''}
+                                onCheckedChange={(checked) => setNotifyForeignIp(checked === true)}
+                            />
+                            <div className='min-w-0 flex-1'>
+                                <HeadlessLabel className='text-sm font-medium text-foreground cursor-pointer'>
+                                    {t('account.apiKeys.notifyForeignIp')}
+                                </HeadlessLabel>
+                                <p className='text-xs text-muted-foreground mt-1'>
+                                    {t('account.apiKeys.notifyForeignIpHelp')}
+                                </p>
+                            </div>
                         </Field>
 
                         <div className='mt-6 flex gap-3'>
@@ -376,6 +456,8 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                                     setIsOpen(false);
                                     setEditModal(false);
                                     setClientName('');
+                                    setAllowedIpsText('');
+                                    setNotifyForeignIp(false);
                                 }}
                                 variant='outline'
                                 className='flex-1'
@@ -396,6 +478,22 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                         </DialogTitle>
                         {selectedClient && (
                             <div className='space-y-4'>
+                                {selectedClient.allowed_ips != null &&
+                                    String(selectedClient.allowed_ips).trim() !== '' && (
+                                        <div>
+                                            <span className='text-sm font-medium text-muted-foreground'>
+                                                {t('account.apiKeys.allowedIpsLabel')}:
+                                            </span>
+                                            <pre className='mt-2 text-xs font-mono whitespace-pre-wrap break-all p-3 bg-muted rounded-md max-h-40 overflow-auto custom-scrollbar'>
+                                                {selectedClient.allowed_ips}
+                                            </pre>
+                                            {selectedClient.notify_foreign_ip === 'true' && (
+                                                <p className='text-xs text-muted-foreground mt-2'>
+                                                    {t('account.apiKeys.notifyEnabledHint')}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
                                 <div>
                                     <span className='text-sm font-medium text-muted-foreground'>
                                         {t('account.apiKeys.publicKey')}:

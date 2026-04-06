@@ -9,6 +9,7 @@
 - Introduced comprehensive mounts support to FeatherPanel, empowering flexible volume management and unlocking new deployment possibilities. by @nayskutzu
 - Implemented an advanced rotation scheme featuring FIFO (First-In, First-Out) logic, also known as Rolling Backup Retention, delivering reliable and automated backup management for your servers. by @nayskutzu
 - Unleashed API key sign-in: authenticate seamlessly with either API public or private keys—flexibility and security both ways. by @nayskutzu
+- Enhanced API key security with robust access controls and advanced IP restriction support, ensuring even greater protection for your integrations. by @nayskutzu
 
 ### Fixed
 
