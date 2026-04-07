@@ -160,8 +160,9 @@ class TimedTask
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare(
             // Try to update, or insert if not exists
-            'INSERT INTO ' . self::$table . ' (task_name, last_run_at, last_run_success, last_run_message) VALUES (:name, NOW(), :success, :msg)
-			ON DUPLICATE KEY UPDATE last_run_at = NOW(), last_run_success = :success, last_run_message = :msg'
+            // Use UTC_TIMESTAMP() to always store in UTC regardless of MySQL session timezone
+            'INSERT INTO ' . self::$table . ' (task_name, last_run_at, last_run_success, last_run_message) VALUES (:name, UTC_TIMESTAMP(), :success, :msg)
+			ON DUPLICATE KEY UPDATE last_run_at = UTC_TIMESTAMP(), last_run_success = :success, last_run_message = :msg'
         );
 
         return $stmt->execute([
