@@ -40,7 +40,7 @@
 - Redesigned the navigation bar with a refreshed look and significantly improved mobile experience for seamless usability on phones. by @nayskutzu
 - Enhanced visibility into daemon errors and related issues, providing clearer diagnostics to streamline debugging and troubleshooting. by @nayskutzu
 
-## v1.3.3 STABLE
+## v1.3.2 STABLE
 
 ### Fixed
 
