@@ -807,7 +807,7 @@ class Node
         $uuid = $node['uuid'] ?? '';
         $tokenId = $node['daemon_token_id'] ?? '';
         $token = $node['daemon_token'] ?? '';
-        $port = (int) ($node['daemonListen'] ?? 8080);
+        $port = (int) ($node['daemonListen'] ?? 8443);
         $scheme = ($node['scheme'] ?? 'https') === 'https';
         $fqdn = $node['fqdn'] ?? 'localhost';
         $uploadLimit = (int) ($node['upload_size'] ?? 100);

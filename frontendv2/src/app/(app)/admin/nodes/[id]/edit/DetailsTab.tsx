@@ -61,6 +61,11 @@ export function DetailsTab({
         return '';
     }, [selectedLocationName, form.location_id, locations]);
 
+    const openLocationModal = () => {
+        fetchLocations();
+        setLocationModalOpen(true);
+    };
+
     return (
         <PageCard title={t('admin.node.form.basic_details')} icon={Database}>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
@@ -92,7 +97,18 @@ export function DetailsTab({
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.node.form.location')}</Label>
                         <div className='flex gap-2'>
-                            <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                            <div
+                                role='button'
+                                tabIndex={0}
+                                className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                onClick={openLocationModal}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openLocationModal();
+                                    }
+                                }}
+                            >
                                 {form.location_id && displayLocationName ? (
                                     <div className='flex items-center gap-2'>
                                         <MapPin className='h-4 w-4 text-primary' />
@@ -104,14 +120,7 @@ export function DetailsTab({
                                     </span>
                                 )}
                             </div>
-                            <Button
-                                type='button'
-                                size='icon'
-                                onClick={() => {
-                                    fetchLocations();
-                                    setLocationModalOpen(true);
-                                }}
-                            >
+                            <Button type='button' size='icon' onClick={openLocationModal}>
                                 <Search className='h-4 w-4' />
                             </Button>
                         </div>

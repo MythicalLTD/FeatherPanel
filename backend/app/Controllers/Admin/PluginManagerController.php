@@ -1536,7 +1536,7 @@ class PluginManagerController
         $lowerKey = strtolower($configKey);
 
         if (strpos($lowerKey, 'port') !== false) {
-            return '8080';
+            return '8443';
         }
         if (strpos($lowerKey, 'retries') !== false || strpos($lowerKey, 'attempts') !== false) {
             return '3';

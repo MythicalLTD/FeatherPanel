@@ -1376,7 +1376,7 @@ class NodesController
                     new OA\Property(
                         property: 'values',
                         type: 'object',
-                        description: 'Configuration values to update using dot notation (e.g., {"api.port": 8080, "system.root_directory": "/var/lib/featherpanel"})',
+                        description: 'Configuration values to update using dot notation (e.g., {"api.port": 8443, "system.root_directory": "/var/lib/featherpanel"})',
                         additionalProperties: true
                     ),
                     new OA\Property(property: 'restart', type: 'boolean', description: 'Whether to restart Wings after update', default: false),

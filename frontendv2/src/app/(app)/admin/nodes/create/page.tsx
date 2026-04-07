@@ -72,7 +72,7 @@ export default function CreateNodePage() {
         disk: 0,
         disk_overallocate: 0,
         upload_size: 100,
-        daemonListen: 8080,
+        daemonListen: 8443,
         daemonSFTP: 2022,
         daemonBase: '/var/lib/featherpanel/volumes',
         public_ip_v4: '',

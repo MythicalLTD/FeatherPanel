@@ -88,13 +88,13 @@ class ConfigService
      * Wings API expects:
      * {
      *   "updates": {
-     *     "api.port": 8080,
+     *     "api.port": 8443,
      *     "system.timezone": "UTC"
      *   },
      *   "restart": true/false
      * }
      *
-     * @param array $updates Associative array of config paths to values (e.g., ['api.port' => 8080])
+     * @param array $updates Associative array of config paths to values (e.g., ['api.port' => 8443])
      * @param bool $restart Whether to restart Wings after update (default: false)
      *
      * @return array The response data

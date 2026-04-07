@@ -493,7 +493,7 @@ class PterodactylImporterController
                 'disk' => isset($node['disk']) ? (int) $node['disk'] : 0,
                 'disk_overallocate' => isset($node['disk_overallocate']) ? (int) $node['disk_overallocate'] : 0,
                 'upload_size' => isset($node['upload_size']) ? (int) $node['upload_size'] : 100,
-                'daemonListen' => isset($node['daemonListen']) ? (int) $node['daemonListen'] : 8080,
+                'daemonListen' => isset($node['daemonListen']) ? (int) $node['daemonListen'] : 8443,
                 'daemonSFTP' => isset($node['daemonSFTP']) ? (int) $node['daemonSFTP'] : 2022,
                 'daemonBase' => $node['daemonBase'] ?? '/var/lib/pterodactyl/volumes',
                 'public_ip_v4' => $node['public_ip_v4'] ?? null,

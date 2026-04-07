@@ -401,7 +401,7 @@ class ServerImportController
     {
         $scheme = $node['scheme'] ?? 'http';
         $host = $node['fqdn'] ?? 'localhost';
-        $port = $node['daemonListen'] ?? 8080;
+        $port = $node['daemonListen'] ?? 8443;
         $token = $node['daemon_token'] ?? '';
         $timeout = 30;
 

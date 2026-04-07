@@ -186,6 +186,7 @@ class Configuration
                 9150,
                 9001,
                 9030,
+                8043,
             ]),
             'suspicious_words' => $this->getJsonSetting('featherzerotrust.suspicious_words', [
                 'new job from',

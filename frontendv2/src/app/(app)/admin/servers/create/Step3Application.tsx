@@ -60,6 +60,17 @@ export function Step3Application({
 
     const dockerImages = getDockerImages();
 
+    const openRealmModal = () => {
+        fetchRealms();
+        setRealmModalOpen(true);
+    };
+
+    const openSpellModal = () => {
+        if (!formData.realmId) return;
+        fetchSpells();
+        setSpellModalOpen(true);
+    };
+
     return (
         <div className='space-y-8'>
             <PageCard
@@ -74,7 +85,18 @@ export function Step3Application({
                             <span className='text-red-500 font-bold'>*</span>
                         </Label>
                         <div className='flex gap-2'>
-                            <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                            <div
+                                role='button'
+                                tabIndex={0}
+                                className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                onClick={openRealmModal}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openRealmModal();
+                                    }
+                                }}
+                            >
                                 {selectedEntities.realm ? (
                                     <div className='flex items-center gap-2'>
                                         <Box className='h-4 w-4 text-primary' />
@@ -88,14 +110,7 @@ export function Step3Application({
                                     </span>
                                 )}
                             </div>
-                            <Button
-                                type='button'
-                                size='icon'
-                                onClick={() => {
-                                    fetchRealms();
-                                    setRealmModalOpen(true);
-                                }}
-                            >
+                            <Button type='button' size='icon' onClick={openRealmModal}>
                                 <Search className='h-4 w-4' />
                             </Button>
                         </div>
@@ -107,7 +122,22 @@ export function Step3Application({
                             <span className='text-red-500 font-bold'>*</span>
                         </Label>
                         <div className='flex gap-2'>
-                            <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                            <div
+                                role='button'
+                                tabIndex={formData.realmId ? 0 : -1}
+                                className={cn(
+                                    'flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                                    formData.realmId ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                                )}
+                                onClick={openSpellModal}
+                                onKeyDown={(e) => {
+                                    if (!formData.realmId) return;
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openSpellModal();
+                                    }
+                                }}
+                            >
                                 {selectedEntities.spell ? (
                                     <div className='flex items-center gap-2'>
                                         <Wand2 className='h-4 w-4 text-primary' />
@@ -121,15 +151,7 @@ export function Step3Application({
                                     </span>
                                 )}
                             </div>
-                            <Button
-                                type='button'
-                                size='icon'
-                                onClick={() => {
-                                    fetchSpells();
-                                    setSpellModalOpen(true);
-                                }}
-                                disabled={!formData.realmId}
-                            >
+                            <Button type='button' size='icon' onClick={openSpellModal} disabled={!formData.realmId}>
                                 <Search className='h-4 w-4' />
                             </Button>
                         </div>

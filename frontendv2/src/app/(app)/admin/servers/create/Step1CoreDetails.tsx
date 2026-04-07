@@ -42,6 +42,11 @@ export function Step1CoreDetails({
 }: Step1Props) {
     const { t } = useTranslation();
 
+    const openOwnerModal = () => {
+        fetchOwners();
+        setOwnerModalOpen(true);
+    };
+
     return (
         <div className='space-y-8'>
             <PageCard
@@ -81,7 +86,18 @@ export function Step1CoreDetails({
                             <span className='text-red-500 font-bold'>*</span>
                         </Label>
                         <div className='flex gap-2'>
-                            <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                            <div
+                                role='button'
+                                tabIndex={0}
+                                className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                onClick={openOwnerModal}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openOwnerModal();
+                                    }
+                                }}
+                            >
                                 {selectedEntities.owner ? (
                                     <div className='flex items-center gap-2'>
                                         <UserCircle className='h-4 w-4 text-primary' />
@@ -96,14 +112,7 @@ export function Step1CoreDetails({
                                     </span>
                                 )}
                             </div>
-                            <Button
-                                type='button'
-                                size='icon'
-                                onClick={() => {
-                                    fetchOwners();
-                                    setOwnerModalOpen(true);
-                                }}
-                            >
+                            <Button type='button' size='icon' onClick={openOwnerModal}>
                                 <Search className='h-4 w-4' />
                             </Button>
                         </div>

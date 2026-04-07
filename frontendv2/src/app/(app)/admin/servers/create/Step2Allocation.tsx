@@ -50,6 +50,23 @@ export function Step2Allocation({
 }: Step2Props) {
     const { t } = useTranslation();
 
+    const openLocationModal = () => {
+        fetchLocations();
+        setLocationModalOpen(true);
+    };
+
+    const openNodeModal = () => {
+        if (!formData.locationId) return;
+        fetchNodes();
+        setNodeModalOpen(true);
+    };
+
+    const openAllocationModal = () => {
+        if (!formData.nodeId) return;
+        fetchAllocations();
+        setAllocationModalOpen(true);
+    };
+
     return (
         <div className='space-y-8'>
             <PageCard
@@ -64,7 +81,18 @@ export function Step2Allocation({
                             <span className='text-red-500 font-bold'>*</span>
                         </Label>
                         <div className='flex gap-2'>
-                            <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                            <div
+                                role='button'
+                                tabIndex={0}
+                                className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                onClick={openLocationModal}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openLocationModal();
+                                    }
+                                }}
+                            >
                                 {selectedEntities.location ? (
                                     <div className='flex items-center gap-2'>
                                         <MapPin className='h-4 w-4 text-primary' />
@@ -78,14 +106,7 @@ export function Step2Allocation({
                                     </span>
                                 )}
                             </div>
-                            <Button
-                                type='button'
-                                size='icon'
-                                onClick={() => {
-                                    fetchLocations();
-                                    setLocationModalOpen(true);
-                                }}
-                            >
+                            <Button type='button' size='icon' onClick={openLocationModal}>
                                 <Search className='h-4 w-4' />
                             </Button>
                         </div>
@@ -98,7 +119,22 @@ export function Step2Allocation({
                             <span className='text-red-500 font-bold'>*</span>
                         </Label>
                         <div className='flex gap-2'>
-                            <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                            <div
+                                role='button'
+                                tabIndex={formData.locationId ? 0 : -1}
+                                className={cn(
+                                    'flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                                    formData.locationId ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                                )}
+                                onClick={openNodeModal}
+                                onKeyDown={(e) => {
+                                    if (!formData.locationId) return;
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openNodeModal();
+                                    }
+                                }}
+                            >
                                 {selectedEntities.node ? (
                                     <div className='flex items-center gap-2'>
                                         <Server className='h-4 w-4 text-primary' />
@@ -113,15 +149,7 @@ export function Step2Allocation({
                                     <span className='text-muted-foreground'>{t('admin.servers.form.select_node')}</span>
                                 )}
                             </div>
-                            <Button
-                                type='button'
-                                size='icon'
-                                onClick={() => {
-                                    fetchNodes();
-                                    setNodeModalOpen(true);
-                                }}
-                                disabled={!formData.locationId}
-                            >
+                            <Button type='button' size='icon' onClick={openNodeModal} disabled={!formData.locationId}>
                                 <Search className='h-4 w-4' />
                             </Button>
                         </div>
@@ -134,7 +162,22 @@ export function Step2Allocation({
                             <span className='text-red-500 font-bold'>*</span>
                         </Label>
                         <div className='flex gap-2'>
-                            <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                            <div
+                                role='button'
+                                tabIndex={formData.nodeId ? 0 : -1}
+                                className={cn(
+                                    'flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                                    formData.nodeId ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                                )}
+                                onClick={openAllocationModal}
+                                onKeyDown={(e) => {
+                                    if (!formData.nodeId) return;
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openAllocationModal();
+                                    }
+                                }}
+                            >
                                 {selectedEntities.allocation ? (
                                     <div className='flex items-center gap-2'>
                                         <Plug className='h-4 w-4 text-primary' />
@@ -148,15 +191,7 @@ export function Step2Allocation({
                                     </span>
                                 )}
                             </div>
-                            <Button
-                                type='button'
-                                size='icon'
-                                onClick={() => {
-                                    fetchAllocations();
-                                    setAllocationModalOpen(true);
-                                }}
-                                disabled={!formData.nodeId}
-                            >
+                            <Button type='button' size='icon' onClick={openAllocationModal} disabled={!formData.nodeId}>
                                 <Search className='h-4 w-4' />
                             </Button>
                         </div>

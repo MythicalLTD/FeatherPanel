@@ -47,14 +47,14 @@ class WingsConnection
      * Create a new Wings connection instance.
      *
      * @param string $host The Wings server hostname/IP
-     * @param int $port The Wings server port (default: 8080)
+     * @param int $port The Wings server port (default: 8443)
      * @param string $protocol The protocol to use (http/https)
      * @param string $authToken The authentication token for Wings
      * @param int $timeout Request timeout in seconds (default: 30)
      */
     public function __construct(
         string $host,
-        int $port = 8080,
+        int $port = 8443,
         string $protocol = 'http',
         string $authToken = '',
         int $timeout = 30,

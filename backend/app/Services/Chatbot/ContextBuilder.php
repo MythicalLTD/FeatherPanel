@@ -494,7 +494,7 @@ class ContextBuilder
 
             $scheme = $node['scheme'] ?? 'http';
             $host = $node['fqdn'] ?? '';
-            $port = $node['daemonListen'] ?? 8080;
+            $port = $node['daemonListen'] ?? 8443;
             $token = $node['daemon_token'] ?? '';
 
             if (empty($host) || empty($token)) {

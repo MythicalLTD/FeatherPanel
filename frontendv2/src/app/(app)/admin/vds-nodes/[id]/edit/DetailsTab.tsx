@@ -42,6 +42,11 @@ export function DetailsTab({
 }: DetailsTabProps) {
     const { t } = useTranslation();
 
+    const openLocationModal = () => {
+        fetchLocations();
+        setLocationModalOpen(true);
+    };
+
     return (
         <PageCard title={t('admin.vdsNodes.form.basic_details')} icon={Database}>
             <div className='space-y-8'>
@@ -90,7 +95,18 @@ export function DetailsTab({
                         </div>
 
                         <div className='flex gap-2 ml-10'>
-                            <div className='flex-1 h-11 px-3 bg-muted/30 rounded-lg border border-border/50 text-sm flex items-center'>
+                            <div
+                                role='button'
+                                tabIndex={0}
+                                className='flex-1 h-11 px-3 bg-muted/30 rounded-lg border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                onClick={openLocationModal}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openLocationModal();
+                                    }
+                                }}
+                            >
                                 {form.location_id && selectedLocationName ? (
                                     <span className='font-medium text-foreground'>{selectedLocationName}</span>
                                 ) : (
@@ -102,10 +118,7 @@ export function DetailsTab({
                             <Button
                                 type='button'
                                 size='icon'
-                                onClick={() => {
-                                    fetchLocations();
-                                    setLocationModalOpen(true);
-                                }}
+                                onClick={openLocationModal}
                                 className='h-11 w-11 rounded-lg'
                             >
                                 <Search className='h-4 w-4' />

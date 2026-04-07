@@ -23,7 +23,7 @@
 		"export:docs:api": "node scripts/export-api-docs.js"
 	},
 	"dependencies": {
-		"@headlessui/react": "^2.2.9",
+		"@headlessui/react": "^2.2.10",
 		"@monaco-editor/react": "4.8.0-rc.3",
 		"@radix-ui/react-progress": "^1.1.8",
 		"@radix-ui/react-slot": "^1.2.4",

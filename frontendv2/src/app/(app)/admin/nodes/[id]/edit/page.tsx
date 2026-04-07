@@ -133,7 +133,7 @@ export default function EditNodePage() {
         disk: 0,
         disk_overallocate: 0,
         upload_size: 100,
-        daemonListen: 8080,
+        daemonListen: 8443,
         daemonSFTP: 2022,
         daemonBase: '/var/lib/featherpanel/volumes',
         public_ip_v4: '',
@@ -353,7 +353,7 @@ token_id: ${nodeData.daemon_token_id}
 token: ${nodeData.daemon_token}
 api:
   host: 0.0.0.0
-  port: ${form.daemonListen || 8080}
+  port: ${form.daemonListen || 8443}
   ssl:
     enabled: ${form.scheme === 'https'}
     cert: /etc/letsencrypt/live/${form.fqdn}/fullchain.pem
