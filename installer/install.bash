@@ -211,16 +211,41 @@ support_hint() {
 upload_logs_on_fail() {
 	if command -v curl >/dev/null 2>&1; then
 		log_info "Uploading logs to mclo.gs for diagnostics..."
-		# To avoid size limits and prioritize the most recent activity,
-		# upload only the last 4000 lines of the log (or the whole file if smaller).
-		if command -v tail >/dev/null 2>&1; then
-			TAIL_FILE="${LOG_FILE}.tail.tmp"
-			tail -n 4000 "$LOG_FILE" >"$TAIL_FILE" 2>/dev/null || cp "$LOG_FILE" "$TAIL_FILE" 2>/dev/null || true
-			RESPONSE=$(curl -s -X POST --data-urlencode "content@${TAIL_FILE}" "https://api.featherpanel.com/1/log")
-			rm -f "$TAIL_FILE" 2>/dev/null || true
+		# Build a bounded excerpt from the *end* of the log file:
+		# - Line-based tails (e.g. last 4000 lines) drop the newest output when a few lines are huge
+		#   (docker/build spam), so the failure never appears in the upload.
+		# - Form-encoded POSTs can be truncated by limits; putting newest lines first (tac) keeps the
+		#   actual error at the top of the paste if the body is cut off.
+		TAIL_FILE="${LOG_FILE}.tail.tmp"
+		rm -f "$TAIL_FILE" 2>/dev/null || true
+		if [ -f "$LOG_FILE" ] && [ -r "$LOG_FILE" ]; then
+			{
+				echo "===== FeatherPanel installer log excerpt (most recent lines first below header) ====="
+				date '+%Y-%m-%d %H:%M:%S %Z' 2>/dev/null || true
+				echo "Source: $LOG_FILE"
+				echo "====="
+				if command -v tail >/dev/null 2>&1; then
+					if command -v tac >/dev/null 2>&1; then
+						tail -c 409600 "$LOG_FILE" 2>/dev/null | tac
+					else
+						tail -c 409600 "$LOG_FILE" 2>/dev/null
+					fi
+				else
+					cat "$LOG_FILE" 2>/dev/null
+				fi
+			} >"$TAIL_FILE" 2>/dev/null || true
 		else
-			RESPONSE=$(curl -s -X POST --data-urlencode "content@${LOG_FILE}" "https://api.featherpanel.com/1/log")
+			{
+				echo "===== FeatherPanel installer log upload ====="
+				echo "Log file missing or unreadable: $LOG_FILE"
+				date '+%Y-%m-%d %H:%M:%S %Z' 2>/dev/null || true
+			} >"$TAIL_FILE" 2>/dev/null || true
 		fi
+		if [ ! -s "$TAIL_FILE" ]; then
+			echo "(empty upload payload)" >"$TAIL_FILE" 2>/dev/null || true
+		fi
+		RESPONSE=$(curl -s --max-time 60 -X POST --data-urlencode "content@${TAIL_FILE}" "https://api.featherpanel.com/1/log")
+		rm -f "$TAIL_FILE" 2>/dev/null || true
 
 		# Parse JSON response
 		SUCCESS=$(echo "$RESPONSE" | grep -o '"success":[^,]*' | cut -d':' -f2 | tr -d '"' 2>/dev/null)
@@ -1761,8 +1786,72 @@ prompt_secret() {
 	printf -v "$__varname" '%s' "$__input"
 }
 
+remove_cloudflared_docker_container_if_present() {
+	if ! command -v docker >/dev/null 2>&1; then
+		return 0
+	fi
+	log_info "Removing legacy Cloudflare Tunnel Docker container(s) if present..."
+	docker rm -f cloudflared >>"$LOG_FILE" 2>&1 || true
+	CF_IDS=$(docker ps -aq --filter ancestor=cloudflare/cloudflared:latest 2>/dev/null || true)
+	if [ -n "$CF_IDS" ]; then
+		# shellcheck disable=SC2086
+		docker rm -f $CF_IDS >>"$LOG_FILE" 2>&1 || true
+	fi
+}
+
+# Install cloudflared from Cloudflare apt repo (Debian/Ubuntu; installer already targets these).
+install_cloudflared_from_apt() {
+	if command -v cloudflared >/dev/null 2>&1; then
+		log_info "cloudflared is already installed ($(cloudflared --version 2>/dev/null | head -n1 || echo ok))."
+		return 0
+	fi
+
+	log_step "Installing cloudflared package (Cloudflare apt repository)..."
+	export DEBIAN_FRONTEND=noninteractive
+	export APT_LISTCHANGES_FRONTEND=none
+
+	local cf_list="/etc/apt/sources.list.d/cloudflared.list"
+	if [ ! -f "$cf_list" ]; then
+		if ! mkdir -p /usr/share/keyrings || ! chmod 0755 /usr/share/keyrings; then
+			log_error "Could not create /usr/share/keyrings."
+			return 1
+		fi
+		if ! curl -fsSL https://pkg.cloudflare.com/cloudflare-public-v2.gpg | tee /usr/share/keyrings/cloudflare-public-v2.gpg >/dev/null; then
+			log_error "Failed to download Cloudflare apt signing key."
+			return 1
+		fi
+		if ! echo 'deb [signed-by=/usr/share/keyrings/cloudflare-public-v2.gpg] https://pkg.cloudflare.com/cloudflared any main' | tee "$cf_list" >/dev/null; then
+			log_error "Failed to add cloudflared apt repository."
+			return 1
+		fi
+	fi
+
+	if ! apt-get update -qq >>"$LOG_FILE" 2>&1; then
+		log_error "apt-get update failed (cloudflared repository). Check $LOG_FILE."
+		return 1
+	fi
+	if ! apt-get install -y -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" cloudflared >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to install cloudflared package. Check $LOG_FILE."
+		return 1
+	fi
+
+	log_success "cloudflared package installed."
+}
+
+stop_cloudflared_system_service() {
+	if ! command -v cloudflared >/dev/null 2>&1; then
+		return 0
+	fi
+	log_info "Stopping cloudflared system service (if configured)..."
+	if cloudflared service uninstall >>"$LOG_FILE" 2>&1; then
+		return 0
+	fi
+	systemctl disable --now cloudflared >>"$LOG_FILE" 2>&1 || true
+}
+
 uninstall_cloudflare_tunnel() {
 	echo "Uninstalling Cloudflare Tunnel..."
+	stop_cloudflared_system_service
 	if [ -f /var/www/featherpanel/.env ]; then
 		# shellcheck source=/dev/null
 		. /var/www/featherpanel/.env
@@ -2038,32 +2127,35 @@ setup_cloudflare_tunnel_full_auto() {
 }
 
 setup_cloudflare_tunnel_client() {
-	if [ -n "$CF_TUNNEL_TOKEN" ]; then
-		log_info "Setting up Cloudflare Tunnel..."
-		if command -v docker &>/dev/null; then
-			log_info "Docker is already installed."
-		else
-			log_step "Installing Docker engine (this may take a minute)..."
-			curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
-			systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
-			usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
-			log_success "Docker installed. You may need to re-login for group changes to take effect."
-		fi
-		if ! run_with_spinner "Starting Cloudflare Tunnel container" "Cloudflare Tunnel container running." \
-			docker run -d --network host --restart always cloudflare/cloudflared:latest tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN"; then
-			return 1
-		fi
-		log_info "Cloudflare Tunnel setup complete."
-		if [ "$CF_TUNNEL_MODE" == "2" ]; then
-			local panel_port
-			panel_port=$(get_panel_port)
-			echo -e "\033[0;33mYou have chosen Semi-Automatic Cloudflare Tunnel setup.\033[0m"
-			echo -e "\033[0;33mPlease manually create a DNS record for your hostname pointing to the tunnel in your Cloudflare dashboard.\033[0m"
-			echo -e "\033[0;33mThe ingress rule should point to http://localhost:${panel_port}.\033[0m"
-			echo -e "\033[0;33mMore information: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/create-remote-tunnel-api/\033[0m"
-		fi
-	else
+	if [ -z "$CF_TUNNEL_TOKEN" ]; then
 		log_info "Skipping Cloudflare Tunnel setup as no token was provided or generated."
+		return 0
+	fi
+
+	log_info "Setting up Cloudflare Tunnel (apt package + systemd, not Docker)..."
+	remove_cloudflared_docker_container_if_present
+
+	if ! install_cloudflared_from_apt; then
+		log_error "Could not install cloudflared. See $LOG_FILE"
+		return 1
+	fi
+
+	# Register token with systemd so the tunnel starts on boot (same as: cloudflared service install <token>).
+	if ! run_with_spinner "Configuring cloudflared systemd service" "Cloudflare Tunnel service is installed and running." \
+		cloudflared service install "$CF_TUNNEL_TOKEN"; then
+		log_error "cloudflared service install failed. Check $LOG_FILE"
+		log_info "You can run the tunnel manually with: cloudflared tunnel run --token '<your-token>'"
+		return 1
+	fi
+
+	log_info "Cloudflare Tunnel uses the system cloudflared service (systemctl status cloudflared)."
+	if [ "$CF_TUNNEL_MODE" == "2" ]; then
+		local panel_port
+		panel_port=$(get_panel_port)
+		echo -e "\033[0;33mYou have chosen Semi-Automatic Cloudflare Tunnel setup.\033[0m"
+		echo -e "\033[0;33mPlease manually create a DNS record for your hostname pointing to the tunnel in your Cloudflare dashboard.\033[0m"
+		echo -e "\033[0;33mThe ingress rule should point to http://localhost:${panel_port}.\033[0m"
+		echo -e "\033[0;33mMore information: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/create-remote-tunnel-api/\033[0m"
 	fi
 }
 
@@ -4400,16 +4492,10 @@ uninstall_docker() {
 	fi
 	echo "Uninstalling FeatherPanel (Docker)..."
 	uninstall_cloudflare_tunnel
-	# Stop and remove any cloudflared containers started by this installer
+	# Legacy: older installs used cloudflared in Docker; remove any leftover containers
 	if command -v docker >/dev/null 2>&1; then
-		log_step "Removing Cloudflare Tunnel docker container(s) if present..."
-		# Try by common name
-		(docker rm -f cloudflared >/dev/null 2>&1 && log_info "Removed container 'cloudflared'") || true
-		# Fallback: remove containers from the official image
-		CF_IDS=$(docker ps -aq --filter ancestor=cloudflare/cloudflared:latest || true)
-		if [ -n "$CF_IDS" ]; then
-			docker rm -f "$CF_IDS" >/dev/null 2>&1 && log_info "Removed cloudflared container(s) by image"
-		fi
+		log_step "Removing legacy Cloudflare Tunnel Docker container(s) if present..."
+		remove_cloudflared_docker_container_if_present
 	fi
 	if [ -f /var/www/featherpanel/docker-compose.yml ]; then
 		log_step "Stopping and removing Docker containers..."
