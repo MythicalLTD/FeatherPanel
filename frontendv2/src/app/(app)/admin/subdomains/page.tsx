@@ -283,7 +283,9 @@ export default function AdminSubdomainsPage() {
             await axios.patch('/api/admin/subdomains/settings', { allow_user_subdomains: enabled });
             setUserSubdomainsEnabled(enabled);
             toast.success(
-                enabled ? t('admin.subdomains.userSubdomainsEnabledToast') : t('admin.subdomains.userSubdomainsDisabledToast'),
+                enabled
+                    ? t('admin.subdomains.userSubdomainsEnabledToast')
+                    : t('admin.subdomains.userSubdomainsDisabledToast'),
             );
         } catch (error: unknown) {
             let msg = t('admin.subdomains.userSubdomainsToggleFailed');

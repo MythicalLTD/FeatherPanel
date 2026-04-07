@@ -294,7 +294,8 @@ export function useWingsWebSocket({
 
                         // Wings/FeatherWings: Docker/power failures and other inbound handler errors (SendErrorJson)
                         if (data.event === 'daemon error' && onConsoleOutputRef.current) {
-                            const raw = (data.args?.[0] as string) || 'An error occurred while handling a daemon request.';
+                            const raw =
+                                (data.args?.[0] as string) || 'An error occurred while handling a daemon request.';
                             onConsoleOutputRef.current(`\u001b[31m${raw}\u001b[0m`);
                             return;
                         }

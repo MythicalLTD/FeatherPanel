@@ -7,6 +7,8 @@
     <mapping directory="$PROJECT_DIR$/storage/addons/billinglinks" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/storage/addons/billingoxapay" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/storage/addons/billingpaypal" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billingplans" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/storage/addons/billingrazorpay" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/storage/addons/billingredeem" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/storage/addons/billingresources" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/storage/addons/billingresourcesnewservers" vcs="Git" />

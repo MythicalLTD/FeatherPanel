@@ -16,9 +16,9 @@
  */
 
 use App\App;
-use App\Controllers\Admin\IntegrityController;
 use App\Permissions;
 use Symfony\Component\HttpFoundation\Request;
+use App\Controllers\Admin\IntegrityController;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {

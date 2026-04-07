@@ -18,8 +18,8 @@
 namespace App\Controllers\Admin;
 
 use App\Helpers\ApiResponse;
-use App\Services\PanelIntegrityService;
 use OpenApi\Attributes as OA;
+use App\Services\PanelIntegrityService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 

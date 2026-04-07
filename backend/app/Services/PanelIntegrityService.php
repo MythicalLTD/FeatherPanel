@@ -29,11 +29,12 @@ class PanelIntegrityService
 
     public function __construct(
         private readonly string $appRoot,
-    ) {}
+    ) {
+    }
 
     public static function fromEnvironment(): self
     {
-        $root = defined('APP_DIR') ? rtrim(APP_DIR, "/\\") : dirname(__DIR__, 2);
+        $root = defined('APP_DIR') ? rtrim(APP_DIR, '/\\') : dirname(__DIR__, 2);
 
         return new self($root);
     }
@@ -191,7 +192,7 @@ class PanelIntegrityService
 
     private function toRelativePath(string $absolute): string
     {
-        $root = rtrim($this->appRoot, "/\\") . DIRECTORY_SEPARATOR;
+        $root = rtrim($this->appRoot, '/\\') . DIRECTORY_SEPARATOR;
         $rel = str_starts_with($absolute, $root) ? substr($absolute, strlen($root)) : $absolute;
 
         return str_replace('\\', '/', $rel);

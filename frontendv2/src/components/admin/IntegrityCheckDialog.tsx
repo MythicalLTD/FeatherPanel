@@ -129,8 +129,7 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
             ? null
             : data.comparison.modified.length + data.comparison.missing.length + data.comparison.extra.length;
 
-    const baselineOk =
-        data?.baseline_present && data.comparison !== null && driftTotal === 0;
+    const baselineOk = data?.baseline_present && data.comparison !== null && driftTotal === 0;
 
     const baselineUntracked = data && !data.baseline_present;
 
@@ -152,7 +151,9 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
                             )}
                         </div>
                         <div className='min-w-0 flex-1 space-y-1'>
-                            <DialogTitle className='text-base sm:text-lg'>{t('admin.version.integrity_modal_title')}</DialogTitle>
+                            <DialogTitle className='text-base sm:text-lg'>
+                                {t('admin.version.integrity_modal_title')}
+                            </DialogTitle>
                             <DialogDescription className='text-xs sm:text-sm'>
                                 {t('admin.version.integrity_modal_desc')}
                             </DialogDescription>
@@ -199,10 +200,14 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
 
                             {data.baseline_present ? (
                                 <div className='rounded-lg border border-border/40 bg-card/50 px-3 py-2 text-xs'>
-                                    <p className='font-semibold text-foreground'>{t('admin.version.integrity_baseline_title')}</p>
+                                    <p className='font-semibold text-foreground'>
+                                        {t('admin.version.integrity_baseline_title')}
+                                    </p>
                                     <p className='mt-1 text-muted-foreground'>
                                         {data.baseline_created_at
-                                            ? t('admin.version.integrity_baseline_saved_at', { date: data.baseline_created_at })
+                                            ? t('admin.version.integrity_baseline_saved_at', {
+                                                  date: data.baseline_created_at,
+                                              })
                                             : t('admin.version.integrity_baseline_unknown_date')}
                                         {data.baseline_panel_version
                                             ? ` · ${t('admin.version.integrity_baseline_version', { v: data.baseline_panel_version })}`
@@ -222,22 +227,33 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
                                     </p>
                                     <div className='grid grid-cols-3 gap-2 text-center text-xs'>
                                         <div className='rounded-md border border-border/50 py-2'>
-                                            <p className='font-bold text-destructive'>{data.comparison.modified.length}</p>
-                                            <p className='text-muted-foreground'>{t('admin.version.integrity_modified')}</p>
+                                            <p className='font-bold text-destructive'>
+                                                {data.comparison.modified.length}
+                                            </p>
+                                            <p className='text-muted-foreground'>
+                                                {t('admin.version.integrity_modified')}
+                                            </p>
                                         </div>
                                         <div className='rounded-md border border-border/50 py-2'>
                                             <p className='font-bold text-amber-600'>{data.comparison.missing.length}</p>
-                                            <p className='text-muted-foreground'>{t('admin.version.integrity_missing')}</p>
+                                            <p className='text-muted-foreground'>
+                                                {t('admin.version.integrity_missing')}
+                                            </p>
                                         </div>
                                         <div className='rounded-md border border-border/50 py-2'>
                                             <p className='font-bold text-blue-600'>{data.comparison.extra.length}</p>
-                                            <p className='text-muted-foreground'>{t('admin.version.integrity_extra')}</p>
+                                            <p className='text-muted-foreground'>
+                                                {t('admin.version.integrity_extra')}
+                                            </p>
                                         </div>
                                     </div>
                                     {data.comparison.modified.length > 0 && (
                                         <div className='max-h-32 overflow-y-auto rounded-md border border-border/40 bg-muted/10 p-2 font-mono text-[10px]'>
                                             {data.comparison.modified.map((m) => (
-                                                <div key={m.path} className='truncate border-b border-border/30 py-1 last:border-0'>
+                                                <div
+                                                    key={m.path}
+                                                    className='truncate border-b border-border/30 py-1 last:border-0'
+                                                >
                                                     {m.path}
                                                 </div>
                                             ))}
@@ -250,12 +266,16 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
                                 <div className='rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs'>
                                     {data.read_errors.length > 0 && (
                                         <p className='text-destructive'>
-                                            {t('admin.version.integrity_read_errors', { count: String(data.read_errors.length) })}
+                                            {t('admin.version.integrity_read_errors', {
+                                                count: String(data.read_errors.length),
+                                            })}
                                         </p>
                                     )}
                                     {data.skipped_large_files.length > 0 && (
                                         <p className='text-muted-foreground'>
-                                            {t('admin.version.integrity_skipped_large', { count: String(data.skipped_large_files.length) })}
+                                            {t('admin.version.integrity_skipped_large', {
+                                                count: String(data.skipped_large_files.length),
+                                            })}
                                         </p>
                                     )}
                                 </div>
@@ -267,7 +287,9 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
                                 </p>
                             )}
                             {!baselineUntracked && driftTotal !== null && driftTotal > 0 && (
-                                <p className='text-xs text-amber-600 dark:text-amber-400'>{t('admin.version.integrity_drift_warning')}</p>
+                                <p className='text-xs text-amber-600 dark:text-amber-400'>
+                                    {t('admin.version.integrity_drift_warning')}
+                                </p>
                             )}
                         </div>
                     ) : null}
@@ -302,7 +324,12 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
                             {t('admin.version.integrity_copy_report')}
                         </Button>
                     )}
-                    <Button type='button' variant='outline' className='w-full sm:w-auto' onClick={() => onOpenChange(false)}>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        className='w-full sm:w-auto'
+                        onClick={() => onOpenChange(false)}
+                    >
                         {t('common.close')}
                     </Button>
                 </DialogFooter>

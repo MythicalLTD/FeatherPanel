@@ -552,7 +552,9 @@ export default function SpellsPage() {
                                         <Input
                                             value={newRealmName}
                                             onChange={(e) => setNewRealmName(e.target.value)}
-                                            placeholder={t('admin.marketplace.spells.dialog.new_realm_name_placeholder')}
+                                            placeholder={t(
+                                                'admin.marketplace.spells.dialog.new_realm_name_placeholder',
+                                            )}
                                             className='h-11 rounded-xl'
                                             maxLength={255}
                                         />

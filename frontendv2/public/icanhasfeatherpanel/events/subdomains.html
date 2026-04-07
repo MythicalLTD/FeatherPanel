@@ -267,7 +267,7 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> array settings data.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> cloudflare_api_key_set, cloudflare_email, max_subdomains_per_server, settings, updated_by</p>
+  <p class="muted"><strong>Data keys:</strong> allow_user_subdomains, cloudflare_api_key_set, cloudflare_email, max_subdomains_per_server, settings, updated_by</p>
 
   <h3>Emitted From</h3>
   <ul>
@@ -280,9 +280,9 @@ use App\Plugins\Events\Events\SubdomainsEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(SubdomainsEvent::onSubdomainSettingsUpdated(), function ($cloudflareApiKeySet, $cloudflareEmail, $maxSubdomainsPerServer, $settings, $updatedBy) {
+    $evt->on(SubdomainsEvent::onSubdomainSettingsUpdated(), function ($allowUserSubdomains, $cloudflareApiKeySet, $cloudflareEmail, $maxSubdomainsPerServer, $settings, $updatedBy) {
         // Handle featherpanel:admin:subdomains:settings:updated
-        // Data keys: cloudflare_api_key_set, cloudflare_email, max_subdomains_per_server, settings, updated_by
+        // Data keys: allow_user_subdomains, cloudflare_api_key_set, cloudflare_email, max_subdomains_per_server, settings, updated_by
     });
 }</code></pre>
 </article>
