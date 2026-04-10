@@ -214,7 +214,17 @@ class SftpAuthController
 
         $required = ['type', 'username', 'password', 'ip'];
         foreach ($required as $field) {
-            if (!isset($data[$field]) || empty($data[$field])) {
+            if (!isset($data[$field])) {
+                return false;
+            }
+            // Do not use empty() for password: empty('0') is true in PHP
+            if ($field === 'password') {
+                if (!is_string($data[$field])) {
+                    return false;
+                }
+                continue;
+            }
+            if ($data[$field] === '' || $data[$field] === null) {
                 return false;
             }
         }
@@ -242,7 +252,8 @@ class SftpAuthController
         }
 
         return [
-            'username' => $matches[1],
+            // Lowercase matches panel SFTP username (see ServerUserController: strtolower(username).uuidShort)
+            'username' => strtolower($matches[1]),
             'serverId' => strtolower($matches[2]),
         ];
     }
@@ -270,7 +281,11 @@ class SftpAuthController
         }
 
         if ($type === 'password') {
-            // Verify password
+            // Match LoginController: trimmed password (avoids SFTP failing when panel login works after copy/paste whitespace)
+            $password = trim($password);
+            if ($password === '') {
+                return null;
+            }
             if (!password_verify($password, $user['password'])) {
                 return null;
             }

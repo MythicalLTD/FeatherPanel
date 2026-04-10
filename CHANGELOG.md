@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.4 STABLE
+
+### Fixed
+
+- Addressed issues causing incorrect "wrong password" errors in SFTP, ensuring authentication works as expected. by @nayskutzu
+
 ## v1.3.3 STABLE
 
 ### Added
