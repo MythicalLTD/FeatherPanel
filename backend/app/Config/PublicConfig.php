@@ -53,6 +53,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_TIMEZONE => 'UTC',
             ConfigInterface::APP_LOGO_WHITE => 'https://github.com/featherpanel-com.png',
             ConfigInterface::APP_LOGO_DARK => 'https://github.com/featherpanel-com.png',
+            ConfigInterface::APP_SSO_REDIRECT_PATH => '/',
             // Appearance defaults (safe, non-sensitive)
             // Optional global background image URL and a lock flag to force it for all users.
             ConfigInterface::APP_BACKGROUND_IMAGE_URL => '',

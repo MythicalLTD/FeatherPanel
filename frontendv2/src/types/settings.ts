@@ -41,6 +41,7 @@ export interface AppSettings {
     app_logo_white: string;
     app_logo_dark: string;
     app_support_url: string;
+    app_sso_redirect_path?: string;
     linkedin_url: string;
     telegram_url: string;
     tiktok_url: string;

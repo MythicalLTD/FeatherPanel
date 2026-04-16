@@ -52,6 +52,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { copyToClipboard } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface UserRole {
     name: string;
@@ -132,6 +133,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const { t } = useTranslation();
     const router = useRouter();
     const resolvedParams = use(params);
+    const { settings } = useSettings();
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -340,7 +342,17 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             const { data } = await axios.post(`/api/admin/users/${user.uuid}/sso-token`);
             if (data?.success && data.data?.token) {
                 const origin = window.location.origin;
-                setSsoLink(`${origin}/auth/login?sso_token=${encodeURIComponent(data.data.token)}&redirect=/`);
+                const configuredRedirectPath = String(settings?.app_sso_redirect_path || '/').trim();
+                const normalizedRedirectPath =
+                    configuredRedirectPath.length > 0
+                        ? configuredRedirectPath.startsWith('/')
+                            ? configuredRedirectPath
+                            : `/${configuredRedirectPath}`
+                        : '/';
+
+                setSsoLink(
+                    `${origin}/auth/login?sso_token=${encodeURIComponent(data.data.token)}&redirect=${encodeURIComponent(normalizedRedirectPath)}`,
+                );
                 toast.success(t('admin.users.messages.sso_generated'));
             } else {
                 toast.error(data?.message || t('admin.users.messages.sso_failed'));

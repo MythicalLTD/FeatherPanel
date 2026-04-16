@@ -31,42 +31,6 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class TranslationsController
 {
-    /**
-     * Normalize language codes to lowercase with dash separators (e.g. en-US -> en-us).
-     */
-    private function normalizeLanguageCode(string $lang): string
-    {
-        $lang = str_replace('_', '-', trim($lang));
-        $lang = preg_replace('/[^a-zA-Z0-9-]/', '', $lang) ?? '';
-
-        return strtolower($lang);
-    }
-
-    /**
-     * Resolve a translation file path with sensible fallbacks.
-     */
-    private function resolveTranslationPath(string $lang): string
-    {
-        $translationsDir = APP_PUBLIC . '/translations';
-        $normalized = $this->normalizeLanguageCode($lang);
-        $baseLanguage = explode('-', $normalized)[0] ?? 'en';
-        $candidates = array_values(array_unique([
-            $normalized,
-            $baseLanguage,
-            'en',
-        ]));
-
-        foreach ($candidates as $candidate) {
-            $path = $translationsDir . '/' . $candidate . '.json';
-            if (file_exists($path)) {
-                return $path;
-            }
-        }
-
-        // Return default fallback path even if it doesn't exist; caller handles final existence check.
-        return $translationsDir . '/en.json';
-    }
-
     #[OA\Get(
         path: '/api/system/translations/{lang}',
         summary: 'Get translations',
@@ -192,8 +156,8 @@ class TranslationsController
                     $langInfo = $languageMapping[$code]
                         ?? $languageMapping[str_replace('-', '_', $code)]
                         ?? [
-                        'name' => ucfirst($code),
-                        'nativeName' => ucfirst($code),
+                            'name' => ucfirst($code),
+                            'nativeName' => ucfirst($code),
                         ];
 
                     $languages[] = [
@@ -217,6 +181,42 @@ class TranslationsController
         }
 
         return ApiResponse::success($languages, 'Available languages retrieved successfully', 200);
+    }
+
+    /**
+     * Normalize language codes to lowercase with dash separators (e.g. en-US -> en-us).
+     */
+    private function normalizeLanguageCode(string $lang): string
+    {
+        $lang = str_replace('_', '-', trim($lang));
+        $lang = preg_replace('/[^a-zA-Z0-9-]/', '', $lang) ?? '';
+
+        return strtolower($lang);
+    }
+
+    /**
+     * Resolve a translation file path with sensible fallbacks.
+     */
+    private function resolveTranslationPath(string $lang): string
+    {
+        $translationsDir = APP_PUBLIC . '/translations';
+        $normalized = $this->normalizeLanguageCode($lang);
+        $baseLanguage = explode('-', $normalized)[0] ?? 'en';
+        $candidates = array_values(array_unique([
+            $normalized,
+            $baseLanguage,
+            'en',
+        ]));
+
+        foreach ($candidates as $candidate) {
+            $path = $translationsDir . '/' . $candidate . '.json';
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        // Return default fallback path even if it doesn't exist; caller handles final existence check.
+        return $translationsDir . '/en.json';
     }
 
     #[OA\Get(

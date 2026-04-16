@@ -11,6 +11,7 @@
 - Resolved an issue where certain language codes such as en-gb, en-ca, and en-us were not appearing in the translations list. While these locales aren't currently used, this update ensures they display correctly for future compatibility. by @nayskutzu
 
 
+
 ## v1.3.3 STABLE
 
 ### Added

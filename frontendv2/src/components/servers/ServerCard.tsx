@@ -133,7 +133,7 @@ export function ServerCard({
                             </div>
                         </div>
                         {server.description ? (
-                            <p className='text-xs sm:text-sm text-muted-foreground line-clamp-2 break-words'>
+                            <p className='text-xs sm:text-sm text-muted-foreground line-clamp-2 wrap-break-word'>
                                 {server.description}
                             </p>
                         ) : null}
@@ -271,14 +271,11 @@ export function ServerCard({
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-                        onToggleSelect && onToggleSelect();
                     }}
                 >
                     <Checkbox
                         checked={selected}
                         onCheckedChange={() => {
-                            // Ensure the checkbox itself can toggle selection
                             // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                             onToggleSelect && onToggleSelect();
                         }}
@@ -293,7 +290,7 @@ export function ServerCard({
                             className='absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105'
                             style={{ backgroundImage: `url(${server.spell.banner})` }}
                         />
-                        <div className='absolute inset-0 bg-gradient-to-t from-card via-card/60 to-transparent' />
+                        <div className='absolute inset-0 bg-linear-to-t from-card via-card/60 to-transparent' />
                     </div>
                 )}
                 {isConnected && status === 'running' && (
