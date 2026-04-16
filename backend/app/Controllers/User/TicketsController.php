@@ -131,6 +131,9 @@ class TicketsController
         // Enrich tickets with related data
         foreach ($tickets as &$ticket) {
             $ticket = $this->enrichTicketData($ticket);
+            $unreadMeta = TicketMessage::getUnreadSinceLastReply((int) $ticket['id'], $user['uuid']);
+            $ticket['unread_count'] = $unreadMeta['unread_count'];
+            $ticket['has_unread_messages_since_last_reply'] = $unreadMeta['has_unread'];
         }
 
         $totalPages = ceil($total / $limit);

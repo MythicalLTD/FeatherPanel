@@ -15,11 +15,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
-import { Ticket as TicketIcon, Plus, Search, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Ticket as TicketIcon, Plus, Search, ChevronLeft, ChevronRight, Trash2, MessageCircle } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,6 +64,8 @@ interface ApiTicket {
         id: number;
         name: string;
     };
+    unread_count?: number;
+    has_unread_messages_since_last_reply?: boolean;
 }
 
 interface PaginationState {
@@ -144,12 +146,7 @@ export default function TicketsPage() {
         fetchFilters();
     }, []);
 
-    useEffect(() => {
-        fetchTickets();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pagination.page, filterStatus, filterCategory]);
-
-    const fetchTickets = async () => {
+    const fetchTickets = useCallback(async () => {
         setLoading(true);
         try {
             const params: Record<string, string | number> = {
@@ -181,7 +178,27 @@ export default function TicketsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [pagination.page, pagination.pageSize, searchQuery, filterStatus, filterCategory]);
+
+    useEffect(() => {
+        void fetchTickets();
+    }, [fetchTickets]);
+
+    useEffect(() => {
+        const onTicketReplied = () => {
+            void fetchTickets();
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('featherpanel:ticket-replied', onTicketReplied);
+        }
+
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('featherpanel:ticket-replied', onTicketReplied);
+            }
+        };
+    }, [fetchTickets]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -213,6 +230,8 @@ export default function TicketsPage() {
         { id: 'all', name: t('tickets.allCategories') },
         ...categories.map((c) => ({ id: c.id, name: c.name })),
     ];
+    const unreadTicketsCount = tickets.filter((ticket) => ticket.has_unread_messages_since_last_reply).length;
+    const unreadMessagesCount = tickets.reduce((sum, ticket) => sum + (ticket.unread_count ?? 0), 0);
 
     return (
         <div className='space-y-6'>
@@ -221,6 +240,13 @@ export default function TicketsPage() {
                 <div>
                     <h1 className='text-3xl font-bold tracking-tight'>{t('tickets.title')}</h1>
                     <p className='text-muted-foreground'>{t('tickets.viewAndManage')}</p>
+                    {unreadTicketsCount > 0 && (
+                        <div className='mt-2 inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-300'>
+                            <span className='h-2 w-2 rounded-full bg-red-500 animate-pulse' />
+                            {unreadTicketsCount} ticket{unreadTicketsCount > 1 ? 's' : ''} with new replies (
+                            {unreadMessagesCount})
+                        </div>
+                    )}
                 </div>
                 <Link href='/dashboard/tickets/create'>
                     <Button>
@@ -323,15 +349,34 @@ export default function TicketsPage() {
                         {tickets.map((ticket) => (
                             <div
                                 key={ticket.uuid}
-                                className='p-5 hover:bg-white/2 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer border-l-2 border-l-transparent hover:border-l-primary'
+                                className={`p-5 hover:bg-white/2 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer border-l-2 ${
+                                    ticket.has_unread_messages_since_last_reply
+                                        ? 'border-l-red-500 bg-red-500/5'
+                                        : 'border-l-transparent hover:border-l-primary'
+                                }`}
                                 onClick={() => router.push(`/dashboard/tickets/${ticket.uuid}`)}
                             >
                                 <div className='flex-1'>
                                     <div className='flex items-center gap-3 mb-2'>
+                                        {ticket.has_unread_messages_since_last_reply && (
+                                            <span className='inline-flex h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shrink-0' />
+                                        )}
                                         <h3 className='font-semibold text-lg text-foreground group-hover:text-primary transition-colors'>
                                             {ticket.title}
                                         </h3>
                                         <div className='flex gap-2'>
+                                            {ticket.has_unread_messages_since_last_reply && (
+                                                <Badge
+                                                    variant='destructive'
+                                                    className='rounded-md px-2 py-0.5 font-medium border-0 inline-flex items-center gap-1'
+                                                    title={t('tickets.newMessages') || 'New messages since your last reply'}
+                                                >
+                                                    <MessageCircle className='h-3 w-3' />
+                                                    {ticket.unread_count && ticket.unread_count > 0
+                                                        ? ticket.unread_count
+                                                        : ''}
+                                                </Badge>
+                                            )}
                                             {ticket.status && (
                                                 <Badge
                                                     className='rounded-md px-2 py-0.5 font-medium border-0'
@@ -357,6 +402,14 @@ export default function TicketsPage() {
                                     </div>
                                     <div className='flex items-center gap-3 text-sm text-muted-foreground'>
                                         <span className='font-mono text-xs opacity-50'>#{ticket.id}</span>
+                                        {ticket.has_unread_messages_since_last_reply && (
+                                            <>
+                                                <span className='w-1 h-1 rounded-full bg-muted-foreground/30' />
+                                                <span className='text-red-600 dark:text-red-300 font-medium'>
+                                                    {ticket.unread_count ?? 0} new repl{(ticket.unread_count ?? 0) === 1 ? 'y' : 'ies'}
+                                                </span>
+                                            </>
+                                        )}
                                         {ticket.category && (
                                             <>
                                                 <span className='w-1 h-1 rounded-full bg-muted-foreground/30' />
@@ -369,7 +422,12 @@ export default function TicketsPage() {
                                         <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
                                     </div>
                                 </div>
-                                <div className='flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0'>
+                                <div className='flex items-center gap-2'>
+                                    {ticket.has_unread_messages_since_last_reply && (
+                                        <div className='mr-2 rounded-full bg-red-500/15 text-red-600 dark:text-red-300 px-2 py-1 text-xs font-semibold'>
+                                            NEW
+                                        </div>
+                                    )}
                                     <Button
                                         variant='ghost'
                                         size='icon'

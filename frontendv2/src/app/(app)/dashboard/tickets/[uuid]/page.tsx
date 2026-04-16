@@ -21,7 +21,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import axios, { AxiosError } from 'axios';
 import ReactMarkdown from 'react-markdown';
-import { ArrowLeft, Paperclip, Trash2, Send, AlertCircle, X, Server as ServerIcon, XCircle } from 'lucide-react';
+import {
+    ArrowLeft,
+    Paperclip,
+    Trash2,
+    Send,
+    AlertCircle,
+    X,
+    Server as ServerIcon,
+    XCircle,
+    FileText,
+} from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { Button } from '@/components/ui/button';
@@ -200,6 +210,13 @@ export default function TicketViewPage() {
             toast.success(t('tickets.replySent'));
             setReplyMessage('');
             setFiles([]);
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(
+                    new CustomEvent('featherpanel:ticket-replied', {
+                        detail: { ticketUuid: String(uuid) },
+                    }),
+                );
+            }
             fetchTicketDetails();
         } catch (err: unknown) {
             console.error('Failed to send reply', err);
@@ -263,18 +280,18 @@ export default function TicketViewPage() {
     }
 
     return (
-        <div className='max-w-[1600px] mx-auto h-[calc(100vh-6rem)] flex flex-col pt-2 pb-6'>
+        <div className='max-w-[1700px] mx-auto h-[calc(100vh-6rem)] flex flex-col pt-2 pb-6 px-1 sm:px-2'>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'top-of-page')} />
 
-            <div className='flex items-center justify-between mb-4 shrink-0 px-1'>
-                <div className='flex items-center gap-3'>
+            <div className='flex items-center justify-between mb-4 shrink-0 px-1 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl p-3 sm:p-4 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.7)]'>
+                <div className='flex items-center gap-3 min-w-0'>
                     <Link href='/dashboard/tickets'>
                         <Button variant='ghost' size='icon' className='rounded-full h-9 w-9'>
                             <ArrowLeft className='h-4 w-4' />
                         </Button>
                     </Link>
-                    <div>
-                        <h1 className='text-xl font-bold tracking-tight line-clamp-1'>{ticket.title}</h1>
+                    <div className='min-w-0'>
+                        <h1 className='text-lg sm:text-xl font-bold tracking-tight line-clamp-1'>{ticket.title}</h1>
                         <div className='flex items-center gap-2 text-xs text-muted-foreground'>
                             <span className='font-mono'>#{ticket.id}</span>
                             <span>•</span>
@@ -282,15 +299,31 @@ export default function TicketViewPage() {
                         </div>
                     </div>
                 </div>
-                <div className='flex items-center gap-2'></div>
+                <div className='hidden sm:flex items-center gap-2'>
+                    <Badge
+                        className='h-6 px-2.5 text-xs uppercase'
+                        style={{
+                            backgroundColor: ticket.status?.color ? `${ticket.status.color}20` : undefined,
+                            color: ticket.status?.color,
+                            borderColor: ticket.status?.color ? `${ticket.status.color}40` : undefined,
+                        }}
+                        variant='outline'
+                    >
+                        {ticket.status?.name}
+                    </Badge>
+                </div>
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'after-header')} />
 
             <div className='flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6'>
-                <div className='lg:col-span-8 flex flex-col bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden h-full'>
+                <div className='lg:col-span-8 flex flex-col bg-card/65 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden h-full shadow-[0_12px_36px_-24px_rgba(0,0,0,0.75)]'>
                     <div className='flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar space-y-8'>
                         <div className='flex gap-4 group'>
-                            <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50' />
+                            <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50 bg-primary/10 text-primary'>
+                                <div className='h-full w-full flex items-center justify-center'>
+                                    <FileText className='h-4 w-4' />
+                                </div>
+                            </Avatar>
                             <div className='flex-1 space-y-1 max-w-[85%]'>
                                 <div className='flex items-center gap-2'>
                                     <span className='font-semibold text-sm'>{t('tickets.originalRequest')}</span>
@@ -298,7 +331,7 @@ export default function TicketViewPage() {
                                         {new Date(ticket.created_at).toLocaleString()}
                                     </span>
                                 </div>
-                                <div className='p-4 rounded-2xl rounded-tl-sm bg-muted/30 border border-border/30 text-sm leading-relaxed whitespace-pre-wrap'>
+                                <div className='p-4 rounded-2xl rounded-tl-sm bg-card/70 border border-border/50 text-sm leading-relaxed whitespace-pre-wrap'>
                                     <ReactMarkdown>{ticket.description}</ReactMarkdown>
                                 </div>
                             </div>
@@ -357,12 +390,10 @@ export default function TicketViewPage() {
 
                                         <div
                                             className={clsx(
-                                                'relative px-4 py-3 text-sm w-fit min-w-[140px]',
+                                                'relative px-4 py-3 text-sm w-fit min-w-[150px] shadow-sm',
                                                 isInternal
                                                     ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-dashed rounded-xl'
-                                                    : isMe
-                                                      ? 'bg-primary/10 border border-primary/20 text-foreground rounded-2xl rounded-tr-sm'
-                                                      : 'bg-muted/80 text-foreground rounded-2xl rounded-tl-sm border border-border/50',
+                                                    : 'bg-card/75 text-foreground rounded-2xl border border-border/50',
                                             )}
                                         >
                                             {isInternal && (
@@ -473,7 +504,7 @@ export default function TicketViewPage() {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    <div className='p-4 bg-background/50 backdrop-blur-sm border-t border-border/50'>
+                    <div className='p-4 bg-card/70 backdrop-blur-md border-t border-border/50'>
                         {ticket.closed_at ? (
                             <div className='flex items-center justify-center p-4 rounded-xl bg-muted/50 border border-dashed text-muted-foreground gap-2'>
                                 <XCircle className='h-5 w-5' />
@@ -482,7 +513,7 @@ export default function TicketViewPage() {
                         ) : (
                             <form onSubmit={handleReply} className='relative flex flex-col gap-2'>
                                 {files.length > 0 && (
-                                    <div className='flex flex-wrap gap-2 mb-2 p-2 bg-muted/30 rounded-lg'>
+                                    <div className='flex flex-wrap gap-2 mb-2 p-2 bg-card/75 rounded-lg border border-border/40'>
                                         {files.map((file, idx) => (
                                             <Badge
                                                 key={idx}
@@ -502,13 +533,13 @@ export default function TicketViewPage() {
                                     </div>
                                 )}
 
-                                <div className='flex gap-2'>
+                                <div className='flex gap-2 items-end'>
                                     <Button
                                         type='button'
                                         variant='ghost'
                                         size='icon'
-                                        className={clsx(
-                                            'shrink-0 h-[44px] w-[44px] rounded-xl text-muted-foreground hover:bg-muted font-normal',
+                                            className={clsx(
+                                            'shrink-0 h-[44px] w-[44px] rounded-xl text-muted-foreground hover:bg-card/80 font-normal border border-border/40',
                                             isDragging && 'bg-primary/10 text-primary',
                                         )}
                                         onClick={() => fileInputRef.current?.click()}
@@ -535,13 +566,13 @@ export default function TicketViewPage() {
                                             value={replyMessage}
                                             onChange={(e) => setReplyMessage(e.target.value)}
                                             placeholder={t('tickets.typeReply')}
-                                            className='min-h-[44px] max-h-[200px] py-3 pr-12 resize-none rounded-xl border-border/50 bg-background hover:border-primary/50 focus:border-primary focus:ring-primary/20'
+                                            className='min-h-[46px] max-h-[220px] py-3 pr-12 resize-none rounded-xl border-border/60 bg-card/85 hover:border-primary/50 focus:border-primary focus:ring-primary/20'
                                             rows={1}
-                                            style={{ height: '44px' }}
+                                            style={{ height: '46px' }}
                                             onInput={(e) => {
                                                 const target = e.target as HTMLTextAreaElement;
-                                                target.style.height = '44px';
-                                                target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
+                                                target.style.height = '46px';
+                                                target.style.height = `${Math.min(target.scrollHeight, 220)}px`;
                                             }}
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -553,7 +584,7 @@ export default function TicketViewPage() {
                                         <Button
                                             type='submit'
                                             size='icon'
-                                            className='absolute right-1 top-1 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-lg'
+                                            className='absolute right-1.5 top-1.5 h-8.5 w-8.5 bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-lg shadow-sm'
                                             loading={replying}
                                             disabled={!replyMessage.trim() && files.length === 0}
                                         >
@@ -577,14 +608,14 @@ export default function TicketViewPage() {
                 <div className='lg:col-span-4 space-y-4 h-full overflow-y-auto custom-scrollbar pb-6'>
                     <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'sidebar-top')} />
 
-                    <Card className='border-border/50 bg-card/50 backdrop-blur-xl'>
+                    <Card className='border-border/50 bg-card/65 backdrop-blur-xl sticky top-2 shadow-[0_12px_36px_-24px_rgba(0,0,0,0.75)]'>
                         <CardHeader className='pb-2'>
                             <CardTitle className='text-sm font-medium text-muted-foreground uppercase tracking-wider'>
                                 {t('tickets.details')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className='space-y-4'>
-                            <div className='flex justify-between items-center p-3 rounded-lg bg-background border border-border/50'>
+                            <div className='flex justify-between items-center p-3 rounded-lg bg-card/75 border border-border/50'>
                                 <span className='text-sm font-medium'>{t('tickets.statusLabel')}</span>
                                 <Badge
                                     className='h-6 px-2.5 text-xs uppercase'
@@ -599,14 +630,14 @@ export default function TicketViewPage() {
                                 </Badge>
                             </div>
 
-                            <div className='flex justify-between items-center p-3 rounded-lg bg-background border border-border/50'>
+                            <div className='flex justify-between items-center p-3 rounded-lg bg-card/75 border border-border/50'>
                                 <span className='text-sm font-medium'>{t('tickets.priority')}</span>
                                 <Badge variant='secondary' className='h-6 px-2.5 text-xs font-semibold'>
                                     {ticket.priority?.name}
                                 </Badge>
                             </div>
 
-                            <div className='flex justify-between items-center p-3 rounded-lg bg-background border border-border/50'>
+                            <div className='flex justify-between items-center p-3 rounded-lg bg-card/75 border border-border/50'>
                                 <span className='text-sm font-medium'>{t('tickets.category')}</span>
                                 <div className='flex items-center gap-2'>
                                     {ticket.category?.icon && (
@@ -627,14 +658,14 @@ export default function TicketViewPage() {
                     </Card>
 
                     {ticket.server && (
-                        <Card className='border-border/50 bg-card/50 backdrop-blur-xl'>
+                        <Card className='border-border/50 bg-card/65 backdrop-blur-xl'>
                             <CardHeader className='pb-2'>
                                 <CardTitle className='text-sm font-medium text-muted-foreground uppercase tracking-wider'>
                                     {t('tickets.server')}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className='p-3 rounded-lg bg-background border border-border/50 flex items-center gap-3'>
+                                <div className='p-3 rounded-lg bg-card/75 border border-border/50 flex items-center gap-3'>
                                     <div className='p-2 rounded bg-muted'>
                                         <ServerIcon className='h-4 w-4 text-muted-foreground' />
                                     </div>

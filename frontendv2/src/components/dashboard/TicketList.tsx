@@ -13,7 +13,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Ticket, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import axios from 'axios';
@@ -39,6 +39,8 @@ interface ApiTicket {
         name: string;
         color?: string;
     };
+    unread_count?: number;
+    has_unread_messages_since_last_reply?: boolean;
 }
 
 export function TicketList({ t }: TicketListProps) {
@@ -46,26 +48,40 @@ export function TicketList({ t }: TicketListProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
 
+    const fetchTickets = useCallback(async () => {
+        try {
+            const { data } = await axios.get('/api/user/tickets', {
+                params: {
+                    limit: 5,
+                    page: 1,
+                },
+            });
+            setTickets(data.data?.tickets || []);
+        } catch (err) {
+            console.error('Failed to fetch tickets:', err);
+            setError(true);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
-        const fetchTickets = async () => {
-            try {
-                const { data } = await axios.get('/api/user/tickets', {
-                    params: {
-                        limit: 5,
-                        page: 1,
-                    },
-                });
-                setTickets(data.data?.tickets || []);
-            } catch (err) {
-                console.error('Failed to fetch tickets:', err);
-                setError(true);
-            } finally {
-                setLoading(false);
-            }
+        void fetchTickets();
+
+        const onTicketReplied = () => {
+            void fetchTickets();
         };
 
-        fetchTickets();
-    }, []);
+        if (typeof window !== 'undefined') {
+            window.addEventListener('featherpanel:ticket-replied', onTicketReplied);
+        }
+
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('featherpanel:ticket-replied', onTicketReplied);
+            }
+        };
+    }, [fetchTickets]);
 
     if (loading) {
         return (
@@ -108,11 +124,21 @@ export function TicketList({ t }: TicketListProps) {
                         <Link
                             key={ticket.uuid}
                             href={`/dashboard/tickets/${ticket.uuid}`}
-                            className='block p-4 hover:bg-muted/50 transition-colors group'
+                            className={`block p-4 hover:bg-muted/50 transition-colors group border-l-2 ${
+                                ticket.has_unread_messages_since_last_reply
+                                    ? 'border-l-red-500 bg-red-500/5'
+                                    : 'border-l-transparent'
+                            }`}
                         >
                             <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 min-w-0'>
                                 <div className='flex items-start gap-3 sm:gap-4 min-w-0'>
-                                    <div className='p-2 rounded-full bg-primary/5 text-primary shrink-0 mt-1 sm:mt-0'>
+                                    <div
+                                        className={`p-2 rounded-full shrink-0 mt-1 sm:mt-0 ${
+                                            ticket.has_unread_messages_since_last_reply
+                                                ? 'bg-red-500/15 text-red-500'
+                                                : 'bg-primary/5 text-primary'
+                                        }`}
+                                    >
                                         <MessageSquare className='h-5 w-5' />
                                     </div>
                                     <div className='min-w-0'>
@@ -124,6 +150,14 @@ export function TicketList({ t }: TicketListProps) {
                                         </h4>
                                         <div className='flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground'>
                                             <span className='font-mono'>#{ticket.id}</span>
+                                            {ticket.has_unread_messages_since_last_reply && (
+                                                <>
+                                                    <span className='hidden sm:inline'>•</span>
+                                                    <span className='font-semibold text-red-600 dark:text-red-300'>
+                                                        {ticket.unread_count ?? 0} new
+                                                    </span>
+                                                </>
+                                            )}
                                             {ticket.category && (
                                                 <>
                                                     <span className='hidden sm:inline'>•</span>
@@ -137,6 +171,14 @@ export function TicketList({ t }: TicketListProps) {
                                 </div>
 
                                 <div className='flex flex-wrap items-center gap-1.5 sm:gap-2 pl-10 sm:pl-0 min-w-0'>
+                                    {ticket.has_unread_messages_since_last_reply && (
+                                        <Badge
+                                            variant='destructive'
+                                            className='text-[10px] px-1.5 py-0.5 max-w-[9rem] truncate'
+                                        >
+                                            NEW REPLY
+                                        </Badge>
+                                    )}
                                     {ticket.priority && (
                                         <Badge
                                             variant='secondary'

@@ -121,14 +121,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             } catch (error) {
                 const axiosError = error as AxiosError<{ error_code?: string; error_message?: string }>;
                 const errorCode = axiosError?.response?.data?.error_code;
-                if (errorCode === 'INVALID_ACCOUNT_TOKEN' || axiosError?.response?.status === 401) {
+                if (
+                    errorCode === 'INVALID_ACCOUNT_TOKEN' ||
+                    errorCode === 'USER_BANNED' ||
+                    axiosError?.response?.status === 401
+                ) {
                     clearSession();
                     if (
                         typeof window !== 'undefined' &&
                         !window.location.pathname.startsWith('/auth') &&
                         !isPublicNoAuthRoute(window.location.pathname)
                     ) {
-                        router.push('/auth/login');
+                        router.push('/auth/logout');
                     }
                 }
                 setIsSessionChecked(true);

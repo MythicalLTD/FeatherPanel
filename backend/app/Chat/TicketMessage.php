@@ -92,6 +92,60 @@ class TicketMessage
     }
 
     /**
+     * Get unread message metadata for a user since their last reply in a ticket.
+     *
+     * "Unread" here means non-internal messages created by other users after the
+     * authenticated user's latest message in the same ticket.
+     *
+     * @param int $ticketId Ticket ID
+     * @param string $userUuid User UUID
+     *
+     * @return array{unread_count:int,has_unread:bool}
+     */
+    public static function getUnreadSinceLastReply(int $ticketId, string $userUuid): array
+    {
+        if ($ticketId <= 0) {
+            return ['unread_count' => 0, 'has_unread' => false];
+        }
+        if (!preg_match('/^[a-f0-9\-]{36}$/i', $userUuid)) {
+            return ['unread_count' => 0, 'has_unread' => false];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $sql = '
+            SELECT COUNT(*) AS unread_count
+            FROM ' . self::$table . ' tm
+            WHERE tm.ticket_id = :ticket_id
+              AND tm.is_internal = 0
+              AND tm.user_uuid IS NOT NULL
+              AND tm.user_uuid <> :user_uuid
+              AND tm.created_at > COALESCE(
+                  (
+                      SELECT MAX(own.created_at)
+                      FROM ' . self::$table . ' own
+                      WHERE own.ticket_id = :ticket_id_own
+                        AND own.user_uuid = :user_uuid_own
+                  ),
+                  "1970-01-01 00:00:00"
+              )
+        ';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            'ticket_id' => $ticketId,
+            'user_uuid' => $userUuid,
+            'ticket_id_own' => $ticketId,
+            'user_uuid_own' => $userUuid,
+        ]);
+
+        $unreadCount = (int) $stmt->fetchColumn();
+
+        return [
+            'unread_count' => $unreadCount,
+            'has_unread' => $unreadCount > 0,
+        ];
+    }
+
+    /**
      * Create a new message.
      *
      * @param array $data Message data

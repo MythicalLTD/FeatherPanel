@@ -251,7 +251,27 @@ export default function VmInstancesCreatePage() {
     }, [ownerModalOpen, ownerSearch, ownerPagination.current_page, fetchOwners]);
 
     const handlePrevious = () => setCurrentStep((s) => Math.max(1, s - 1));
-    const handleNext = () => setCurrentStep((s) => Math.min(totalSteps, s + 1));
+    const handleNext = () => {
+        if (currentStep === 1) {
+            if (nodeId <= 0) {
+                toast.error(t('admin.vmInstances.select_node') ?? 'Select a node first.');
+                return;
+            }
+            if (templateId <= 0) {
+                toast.error(t('admin.vmInstances.select_template') ?? 'Select a template.');
+                return;
+            }
+            if (freeIps.length === 0) {
+                toast.error(
+                    t('admin.vmInstances.no_free_ips') ??
+                        'No free IPs found for this node. Configure an IP pool on the node first.',
+                );
+                return;
+            }
+        }
+
+        setCurrentStep((s) => Math.min(totalSteps, s + 1));
+    };
 
     const getRowIpOptions = useCallback(
         (row: NetworkRow) => {
@@ -280,6 +300,7 @@ export default function VmInstancesCreatePage() {
     };
 
     const canProceedStep1 = nodeId > 0 && templateId > 0 && freeIps.length > 0;
+    const noFreeIpsAvailable = nodeId > 0 && !loadingMeta && freeIps.length === 0;
     const hostnameValid = hostname.trim().length > 0;
     const ownerSelected = selectedOwner != null;
     const ciFieldsValid = isLxcTemplate || (ciUser.trim().length > 0 && ciPassword.trim().length > 0);
@@ -517,6 +538,18 @@ export default function VmInstancesCreatePage() {
                                                 </p>
                                             )}
                                         </div>
+                                        {noFreeIpsAvailable && (
+                                            <div className='rounded-xl border border-amber-500/30 bg-amber-500/10 p-4'>
+                                                <p className='text-sm font-medium text-amber-700 dark:text-amber-300'>
+                                                    {t('admin.vmInstances.no_free_ips') ??
+                                                        'No free IPs found for this node.'}
+                                                </p>
+                                                <p className='mt-1 text-xs text-amber-700/90 dark:text-amber-300/90'>
+                                                    {t('admin.vmInstances.ip_pool_required') ??
+                                                        'Configure at least one IP in the node IP pool, then try again.'}
+                                                </p>
+                                            </div>
+                                        )}
                                     </>
                                 )}
                             </div>
@@ -929,7 +962,6 @@ export default function VmInstancesCreatePage() {
                         <Button
                             type='button'
                             onClick={handleNext}
-                            disabled={currentStep === 1 ? !canProceedStep1 : false}
                             className='gap-2'
                         >
                             {t('admin.servers.form.wizard.next') ?? t('common.next')}

@@ -24,6 +24,7 @@ import { X, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { DynamicIcon } from 'lucide-react/dynamic';
 import NextImage from 'next/image';
 import Link from 'next/link';
+import axios from 'axios';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
@@ -82,6 +83,7 @@ function SidebarContent({
     const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
 
     const [collapsedSubmenus, setCollapsedSubmenus] = useState<string[]>([]);
+    const [unreadTicketCount, setUnreadTicketCount] = useState(0);
 
     useEffect(() => {
         const saved = localStorage.getItem('featherpanel_collapsed_groups');
@@ -102,6 +104,43 @@ function SidebarContent({
             }
         }
     }, []);
+
+    useEffect(() => {
+        const fetchUnreadTicketCount = async () => {
+            try {
+                const { data } = await axios.get('/api/user/tickets', {
+                    params: { page: 1, limit: 100 },
+                });
+                const tickets: Array<{
+                    unread_count?: number;
+                    has_unread_messages_since_last_reply?: boolean;
+                }> = data?.data?.tickets ?? [];
+                const totalUnread = tickets.reduce((sum, ticket) => {
+                    if (!ticket?.has_unread_messages_since_last_reply) return sum;
+                    return sum + (ticket.unread_count ?? 0);
+                }, 0);
+                setUnreadTicketCount(totalUnread);
+            } catch {
+                setUnreadTicketCount(0);
+            }
+        };
+
+        void fetchUnreadTicketCount();
+
+        const onTicketReplied = () => {
+            void fetchUnreadTicketCount();
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('featherpanel:ticket-replied', onTicketReplied);
+        }
+
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('featherpanel:ticket-replied', onTicketReplied);
+            }
+        };
+    }, [pathname]);
 
     const toggleGroup = (group: string) => {
         const newCollapsed = collapsedGroups.includes(group)
@@ -255,6 +294,7 @@ function SidebarContent({
                                     const isPluginAction = !!item.pluginJs;
                                     const hasChildren = item.children && item.children.length > 0;
                                     const isSubmenuCollapsed = collapsedSubmenus.includes(item.id);
+                                    const isTicketsItem = item.url === '/dashboard/tickets';
 
                                     if (hasChildren) {
                                         return (
@@ -353,6 +393,11 @@ function SidebarContent({
                                                         {item.badge}
                                                     </span>
                                                 )}
+                                                    {isTicketsItem && unreadTicketCount > 0 && (!collapsed || mobile) && (
+                                                        <span className='ml-2 inline-flex items-center rounded-full bg-red-500/15 border border-red-500/30 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
+                                                            {unreadTicketCount}
+                                                        </span>
+                                                    )}
                                             </button>
                                         );
                                     }
@@ -383,6 +428,11 @@ function SidebarContent({
                                             {item.badge && (!collapsed || mobile) && (
                                                 <span className='ml-auto inline-flex items-center rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium'>
                                                     {item.badge}
+                                                </span>
+                                            )}
+                                            {isTicketsItem && unreadTicketCount > 0 && (!collapsed || mobile) && (
+                                                <span className='ml-2 inline-flex items-center rounded-full bg-red-500/15 border border-red-500/30 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
+                                                    {unreadTicketCount}
                                                 </span>
                                             )}
                                         </Link>

@@ -13,7 +13,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import { isCloudflareChallengeResponseData, triggerCloudflareRecovery } from '@/lib/cloudflare-challenge';
 
 // API base configuration
@@ -25,59 +25,64 @@ const api = axios.create({
     withCredentials: true,
 });
 
-// Response interceptor
-api.interceptors.response.use(
-    (response) => {
-        const contentType = String(response.headers?.['content-type'] || '').toLowerCase();
-        if (contentType.includes('text/html') && isCloudflareChallengeResponseData(response.data)) {
-            triggerCloudflareRecovery();
-        }
-        return response;
-    },
-    (error: AxiosError<{ error_code?: string; error_message?: string }>) => {
-        const responseData = error.response?.data;
-        const responseHeaders = error.response?.headers;
-        const contentType = String(responseHeaders?.['content-type'] || '').toLowerCase();
+const handleAuthStateFailure = () => {
+    if (typeof window === 'undefined') return;
 
-        if (
-            isCloudflareChallengeResponseData(responseData) ||
-            (contentType.includes('text/html') && typeof responseData === 'string')
-        ) {
-            triggerCloudflareRecovery();
-        }
+    // Clear all storage
+    localStorage.clear();
+    sessionStorage.clear();
 
-        // Handle common errors
-        const errorCode = error.response?.data?.error_code;
-        const status = error.response?.status;
+    // Clear cookies
+    document.cookie.split(';').forEach((cookie) => {
+        const eqPos = cookie.indexOf('=');
+        const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    });
 
-        // Check for invalid account token error (can be 400 or 401)
-        if (
-            errorCode === 'INVALID_ACCOUNT_TOKEN' ||
-            status === 401 ||
-            (status === 400 && errorCode === 'INVALID_ACCOUNT_TOKEN')
-        ) {
-            // Invalid token or unauthorized - clear all storage and redirect to login
-            if (typeof window !== 'undefined') {
-                // Clear all storage
-                localStorage.clear();
-                sessionStorage.clear();
+    // Redirect to logout page (which will clean up and redirect to login)
+    if (!window.location.pathname.startsWith('/auth')) {
+        window.location.href = '/auth/logout';
+    }
+};
 
-                // Clear cookies
-                document.cookie.split(';').forEach((cookie) => {
-                    const eqPos = cookie.indexOf('=');
-                    const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
-                    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-                });
-
-                // Redirect to logout page (which will clean up and redirect to login)
-                if (!window.location.pathname.startsWith('/auth')) {
-                    window.location.href = '/auth/logout';
-                }
+const attachCommonResponseInterceptor = (client: AxiosInstance) => {
+    client.interceptors.response.use(
+        (response) => {
+            const contentType = String(response.headers?.['content-type'] || '').toLowerCase();
+            if (contentType.includes('text/html') && isCloudflareChallengeResponseData(response.data)) {
+                triggerCloudflareRecovery();
             }
-        }
-        return Promise.reject(error);
-    },
-);
+            return response;
+        },
+        (error: AxiosError<{ error_code?: string; error_message?: string }>) => {
+            const responseData = error.response?.data;
+            const responseHeaders = error.response?.headers;
+            const contentType = String(responseHeaders?.['content-type'] || '').toLowerCase();
+
+            if (
+                isCloudflareChallengeResponseData(responseData) ||
+                (contentType.includes('text/html') && typeof responseData === 'string')
+            ) {
+                triggerCloudflareRecovery();
+            }
+
+            // Handle common auth state errors
+            const errorCode = error.response?.data?.error_code;
+            const status = error.response?.status;
+            const shouldForceLogout =
+                status === 401 || errorCode === 'INVALID_ACCOUNT_TOKEN' || errorCode === 'USER_BANNED';
+
+            if (shouldForceLogout) {
+                handleAuthStateFailure();
+            }
+            return Promise.reject(error);
+        },
+    );
+};
+
+// Attach to both the custom API client and the global axios instance used across the app.
+attachCommonResponseInterceptor(api);
+attachCommonResponseInterceptor(axios);
 
 export type FeatherpanelApiErrorBody = {
     success?: boolean;
