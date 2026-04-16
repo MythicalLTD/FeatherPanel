@@ -8,6 +8,8 @@
 - Resolved an issue that prevented adding more than 10 permissions to a role, allowing greater flexibility in role management. by @nayskutzu
 - Fixed an issue where content statistics failed to display if redirect links were missing. by @nayskutzu
 - Fixed an issue causing average installer statistics to fail, ensuring installer analytics are now accurate and reliable. by @nayskutzu
+- Resolved an issue where certain language codes such as en-gb, en-ca, and en-us were not appearing in the translations list. While these locales aren't currently used, this update ensures they display correctly for future compatibility. by @nayskutzu
+
 
 ## v1.3.3 STABLE
 

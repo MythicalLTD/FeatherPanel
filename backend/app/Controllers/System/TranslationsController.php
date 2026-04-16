@@ -31,6 +31,42 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class TranslationsController
 {
+    /**
+     * Normalize language codes to lowercase with dash separators (e.g. en-US -> en-us).
+     */
+    private function normalizeLanguageCode(string $lang): string
+    {
+        $lang = str_replace('_', '-', trim($lang));
+        $lang = preg_replace('/[^a-zA-Z0-9-]/', '', $lang) ?? '';
+
+        return strtolower($lang);
+    }
+
+    /**
+     * Resolve a translation file path with sensible fallbacks.
+     */
+    private function resolveTranslationPath(string $lang): string
+    {
+        $translationsDir = APP_PUBLIC . '/translations';
+        $normalized = $this->normalizeLanguageCode($lang);
+        $baseLanguage = explode('-', $normalized)[0] ?? 'en';
+        $candidates = array_values(array_unique([
+            $normalized,
+            $baseLanguage,
+            'en',
+        ]));
+
+        foreach ($candidates as $candidate) {
+            $path = $translationsDir . '/' . $candidate . '.json';
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        // Return default fallback path even if it doesn't exist; caller handles final existence check.
+        return $translationsDir . '/en.json';
+    }
+
     #[OA\Get(
         path: '/api/system/translations/{lang}',
         summary: 'Get translations',
@@ -56,14 +92,12 @@ class TranslationsController
     )]
     public function getTranslations(Request $request, string $lang): Response
     {
-        // Sanitize language code to prevent directory traversal
-        $lang = preg_replace('/[^a-zA-Z0-9_-]/', '', $lang);
-        if (empty($lang)) {
+        $lang = $this->normalizeLanguageCode($lang);
+        if ($lang === '') {
             $lang = 'en';
         }
 
-        // Use APP_PUBLIC constant for correct path
-        $translationsPath = APP_PUBLIC . '/translations/' . $lang . '.json';
+        $translationsPath = $this->resolveTranslationPath($lang);
 
         // Check cache first (only if APP_DEBUG is false)
         $cacheKey = 'translations:' . $lang;
@@ -81,13 +115,8 @@ class TranslationsController
             }
         }
 
-        // Check if translation file exists
+        // Check if translation file exists (resolveTranslationPath should already have applied fallbacks).
         if (!file_exists($translationsPath)) {
-            // Fallback to English if requested language doesn't exist
-            if ($lang !== 'en') {
-                $translationsPath = APP_PUBLIC . '/translations/en.json';
-            }
-
             // If English also doesn't exist, return empty object (direct JSON, not wrapped)
             if (!file_exists($translationsPath)) {
                 $response = ApiResponse::sendManualResponse([], 200);
@@ -151,19 +180,21 @@ class TranslationsController
                     continue;
                 }
 
-                if (preg_match('/^([a-z]{2}(?:-[A-Z]{2})?)\.json$/', $file, $matches)) {
-                    $code = $matches[1];
+                if (preg_match('/^([a-z]{2}(?:-[a-z]{2})?)\.json$/i', $file, $matches)) {
+                    $code = $this->normalizeLanguageCode($matches[1]);
 
                     // Filter by enabled languages if setting exists
-                    if ($enabledLanguages !== null && !in_array($code, $enabledLanguages)) {
+                    if ($enabledLanguages !== null && !in_array($code, $enabledLanguages, true)) {
                         continue;
                     }
 
                     // Get language info from mapping, or use fallback
-                    $langInfo = $languageMapping[$code] ?? [
+                    $langInfo = $languageMapping[$code]
+                        ?? $languageMapping[str_replace('-', '_', $code)]
+                        ?? [
                         'name' => ucfirst($code),
                         'nativeName' => ucfirst($code),
-                    ];
+                        ];
 
                     $languages[] = [
                         'code' => $code,
@@ -233,7 +264,10 @@ class TranslationsController
                 return null; // Invalid JSON means all languages enabled
             }
 
-            return $enabledLangs;
+            return array_values(array_unique(array_map(
+                fn ($code) => $this->normalizeLanguageCode((string) $code),
+                $enabledLangs
+            )));
         } catch (\Exception $e) {
             // If error, return null to allow all languages
             return null;
