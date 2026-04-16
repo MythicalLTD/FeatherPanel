@@ -112,6 +112,7 @@ class PublicConfig extends ConfigFactory
             // Email settings
             ConfigInterface::SMTP_ENABLED => 'false',
             ConfigInterface::REGISTRATION_ENABLED => 'true',
+            ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION => 'false',
             ConfigInterface::REQUIRE_TWO_FA_ADMINS => 'false',
 
             // Telemetry settings

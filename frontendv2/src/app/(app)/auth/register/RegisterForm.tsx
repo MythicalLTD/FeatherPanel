@@ -120,11 +120,25 @@ export default function RegisterForm() {
             });
 
             if (response.success) {
-                setSuccess(t('common.success'));
+                if (response.data?.requires_email_verification) {
+                    setSuccess(
+                        response.message || 'Registration successful. Please verify your email before logging in.',
+                    );
+                    setForm({
+                        first_name: '',
+                        last_name: '',
+                        email: '',
+                        username: '',
+                        password: '',
+                        turnstile_token: '',
+                    });
+                } else {
+                    setSuccess(t('common.success'));
 
-                setTimeout(() => {
-                    location.href = '/dashboard';
-                }, 1000);
+                    setTimeout(() => {
+                        location.href = '/dashboard';
+                    }, 1000);
+                }
             } else {
                 setError(response.message || t('common.error'));
 

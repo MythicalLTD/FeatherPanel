@@ -26,6 +26,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
+use App\Mail\templates\VerifyEmail;
 use App\CloudFlare\CloudFlareRealIP;
 use App\CloudFlare\CloudFlareTurnstile;
 use App\Plugins\Events\Events\AuthEvent;
@@ -99,6 +100,11 @@ class RegisterController
 
         if ($config->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'true') == 'false') {
             return ApiResponse::error('Registration is not enabled', 'REGISTRATION_NOT_ENABLED');
+        }
+
+        $requiresEmailVerification = $config->getSetting(ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION, 'false') === 'true';
+        if ($requiresEmailVerification && $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false') !== 'true') {
+            return ApiResponse::error('Email verification is enabled, but SMTP is not configured.', 'EMAIL_VERIFICATION_SMTP_REQUIRED', 400);
         }
 
         // Validate required fields
@@ -186,6 +192,7 @@ class RegisterController
         }
 
         $tempPassword = $data['password'];
+        $emailVerificationToken = $requiresEmailVerification ? bin2hex(random_bytes(32)) : null;
         // Create user
         $userInfo = [
             'username' => $data['username'],
@@ -197,6 +204,7 @@ class RegisterController
             'remember_token' => User::generateAccountToken(),
             'first_ip' => CloudFlareRealIP::getRealIP(),
             'last_ip' => CloudFlareRealIP::getRealIP(),
+            'mail_verify' => $emailVerificationToken,
         ];
         $user = User::createUser($userInfo);
         // If user creation fails, return an error
@@ -244,6 +252,23 @@ class RegisterController
             'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
         ]);
 
+        if ($requiresEmailVerification) {
+            $verifyUrl = rtrim($config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'), '/') . '/auth/verify-email?token=' . urlencode((string) $emailVerificationToken);
+            VerifyEmail::send([
+                'subject' => 'Verify your email for ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'username' => $data['username'],
+                'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                'verify_url' => $verifyUrl,
+                'uuid' => $userInfo['uuid'],
+                'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+            ]);
+        }
+
         Activity::createActivity([
             'user_uuid' => $createdUser['uuid'],
             'name' => 'register',
@@ -251,20 +276,22 @@ class RegisterController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
-        // Automatically log in the user after registration
-        // Set session/cookie
-        if (isset($createdUser['remember_token'])) {
-            $token = $createdUser['remember_token'];
-            setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
-            User::updateUser($createdUser['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
+        if (!$requiresEmailVerification) {
+            // Automatically log in the user after registration
+            // Set session/cookie
+            if (isset($createdUser['remember_token'])) {
+                $token = $createdUser['remember_token'];
+                setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
+                User::updateUser($createdUser['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 
-            // Create login activity (user is automatically logged in)
-            Activity::createActivity([
-                'user_uuid' => $createdUser['uuid'],
-                'name' => 'login',
-                'context' => 'User logged in automatically after registration',
-                'ip_address' => CloudFlareRealIP::getRealIP(),
-            ]);
+                // Create login activity (user is automatically logged in)
+                Activity::createActivity([
+                    'user_uuid' => $createdUser['uuid'],
+                    'name' => 'login',
+                    'context' => 'User logged in automatically after registration',
+                    'ip_address' => CloudFlareRealIP::getRealIP(),
+                ]);
+            }
         }
 
         // Emit events
@@ -276,22 +303,31 @@ class RegisterController
                     'user' => $createdUser,
                 ]
             );
-            // Also emit login success event since user is automatically logged in
-            $eventManager->emit(
-                AuthEvent::onAuthLoginSuccess(),
-                [
-                    'user' => $createdUser,
-                ]
-            );
+            if (!$requiresEmailVerification) {
+                // Also emit login success event since user is automatically logged in
+                $eventManager->emit(
+                    AuthEvent::onAuthLoginSuccess(),
+                    [
+                        'user' => $createdUser,
+                    ]
+                );
+            }
         }
 
         // Load user preferences
         $preferences = UserPreference::getPreferences($createdUser['uuid']);
 
+        if ($requiresEmailVerification) {
+            return ApiResponse::success([
+                'requires_email_verification' => true,
+            ], 'Registration successful. Please check your email and verify your account before logging in.', 200);
+        }
+
         // Return user info and preferences (same format as login)
         return ApiResponse::success([
             'user' => $createdUser,
             'preferences' => $preferences,
+            'requires_email_verification' => false,
         ], 'User registered successfully and logged in', 200);
     }
 }

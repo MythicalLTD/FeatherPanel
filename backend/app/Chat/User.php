@@ -84,7 +84,7 @@ class User
         $insert['remember_token'] = $data['remember_token'] ?? self::generateAccountToken();
 
         // Add optional fields if provided
-        $optionalFields = ['role_id', 'avatar', 'first_ip', 'last_ip', 'banned', 'two_fa_enabled', 'two_fa_key', 'external_id', 'ticket_signature', 'oidc_provider', 'oidc_subject', 'oidc_email'];
+        $optionalFields = ['role_id', 'avatar', 'first_ip', 'last_ip', 'banned', 'two_fa_enabled', 'two_fa_key', 'external_id', 'ticket_signature', 'oidc_provider', 'oidc_subject', 'oidc_email', 'mail_verify'];
         foreach ($optionalFields as $field) {
             if (isset($data[$field])) {
                 $insert[$field] = $data[$field];

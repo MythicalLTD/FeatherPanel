@@ -250,6 +250,12 @@ class LoginController
             return ApiResponse::error('Invalid password', 'INVALID_PASSWORD');
         }
 
+        $requiresEmailVerification = $config->getSetting(ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION, 'false') === 'true';
+        $isEmailVerified = !isset($userInfo['mail_verify']) || $userInfo['mail_verify'] === null || trim((string) $userInfo['mail_verify']) === '';
+        if ($requiresEmailVerification && !$isEmailVerified) {
+            return ApiResponse::error('Email verification is required before login. Please verify your email first.', 'EMAIL_NOT_VERIFIED', 403);
+        }
+
         // 2FA logic
         if (isset($userInfo['two_fa_enabled']) && $userInfo['two_fa_enabled'] == 'true') {
             // Do NOT set session/cookie yet

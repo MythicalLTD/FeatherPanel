@@ -133,6 +133,21 @@ use App\Plugins\Events\Events\KnowledgebaseEvent;
 )]
 class KnowledgebaseController
 {
+    /**
+     * Resolve attachments directory specifically for knowledgebase uploads.
+     * This keeps KB upload working even when DOCUMENT_ROOT differs from panel public path.
+     */
+    private function getKnowledgebaseAttachmentsDir(): string
+    {
+        $fromAppPublic = rtrim((string) APP_PUBLIC, '/') . '/attachments/';
+        if (is_dir(rtrim((string) APP_PUBLIC, '/')) && basename(rtrim((string) APP_PUBLIC, '/')) === 'public') {
+            return $fromAppPublic;
+        }
+
+        // Fallback to backend/public relative to this controller file.
+        return dirname(__DIR__, 3) . '/public/attachments/';
+    }
+
     // ==================== CATEGORIES ====================
 
     #[OA\Get(
@@ -1150,7 +1165,7 @@ class KnowledgebaseController
         }
 
         // Create attachments directory if it doesn't exist
-        $attachmentsDir = APP_PUBLIC . '/attachments/';
+        $attachmentsDir = $this->getKnowledgebaseAttachmentsDir();
         if (!is_dir($attachmentsDir)) {
             mkdir($attachmentsDir, 0755, true);
         }
@@ -1363,7 +1378,7 @@ class KnowledgebaseController
         }
 
         // Create attachments directory if it doesn't exist
-        $attachmentsDir = APP_PUBLIC . '/attachments/';
+        $attachmentsDir = $this->getKnowledgebaseAttachmentsDir();
         if (!is_dir($attachmentsDir)) {
             mkdir($attachmentsDir, 0755, true);
         }
@@ -1556,7 +1571,7 @@ class KnowledgebaseController
             if ($filePath) {
                 // Remove leading slash and get relative path
                 $filePath = ltrim($filePath, '/');
-                $fullPath = APP_PUBLIC . '/' . $filePath;
+                $fullPath = rtrim($this->getKnowledgebaseAttachmentsDir(), '/') . '/' . basename($filePath);
                 if (file_exists($fullPath)) {
                     @unlink($fullPath);
                 }

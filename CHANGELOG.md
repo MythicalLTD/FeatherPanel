@@ -10,10 +10,14 @@
 - Fixed an issue causing average installer statistics to fail, ensuring installer analytics are now accurate and reliable. by @nayskutzu
 - Resolved an issue where certain language codes such as en-gb, en-ca, and en-us were not appearing in the translations list. While these locales aren't currently used, this update ensures they display correctly for future compatibility. by @nayskutzu
 - Improved user experience when creating a VDS: if no IPs are available, a clear warning is now displayed instead of leaving the user with no feedback. by @nayskutzu
+- Fixed ticket detail sidebars occasionally showing an invalid "Last Updated" date (1/1/1970) by adding safe date handling and fallbacks. by @nayskutzu
+- Fixed knowledgebase category icons not loading on some installations by correcting the upload/storage path resolution for KB-specific attachments. by @nayskutzu
 
 ### Added
 
 - Added a dynamic notification bubble icon to tickets, instantly highlighting those with new messages since your last reply. by @nayskutzu
+- Added an optional security setting to require users to verify their email address before they can log in after registration, including a full verify-email flow and frontend page. by @nayskutzu
+- Added a dedicated `verify_email` mail template (editable in Mail Templates) used for email verification, consistent with other system templates. by @nayskutzu
 
 
 

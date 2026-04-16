@@ -54,6 +54,12 @@ export function TicketSidebar({
     WidgetRenderer,
 }: TicketSidebarProps) {
     const { t } = useTranslation();
+    const formatDateSafe = (value?: string | null, fallback = 'N/A') => {
+        if (!value || value === '0000-00-00 00:00:00') return fallback;
+        const timestamp = new Date(value).getTime();
+        if (!Number.isFinite(timestamp) || timestamp <= 0) return fallback;
+        return new Date(timestamp).toLocaleDateString();
+    };
 
     if (loadingSidebar) {
         return (
@@ -181,13 +187,13 @@ export function TicketSidebar({
                                         <div className='flex justify-between items-center text-[10px] text-muted-foreground'>
                                             <span>{t('admin.tickets.sidebar.meta.created')}</span>
                                             <span className='font-mono font-bold text-foreground'>
-                                                {new Date(ticket.created_at).toLocaleDateString()}
+                                                {formatDateSafe(ticket.created_at)}
                                             </span>
                                         </div>
                                         <div className='flex justify-between items-center text-[10px] text-muted-foreground'>
                                             <span>{t('admin.tickets.sidebar.meta.updated')}</span>
                                             <span className='font-mono font-bold text-foreground'>
-                                                {new Date(ticket.updated_at).toLocaleDateString()}
+                                                {formatDateSafe(ticket.updated_at, formatDateSafe(ticket.created_at))}
                                             </span>
                                         </div>
                                     </div>

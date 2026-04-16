@@ -25,6 +25,7 @@ use App\Controllers\User\Auth\DiscordController;
 use App\Controllers\User\Auth\RegisterController;
 use App\Controllers\User\Auth\TwoFactorController;
 use App\Controllers\User\Auth\AuthLogoutController;
+use App\Controllers\User\Auth\VerifyEmailController;
 use App\Controllers\User\Auth\ResetPasswordController;
 use App\Controllers\User\Auth\ForgotPasswordController;
 
@@ -78,6 +79,19 @@ return function (RouteCollection $routes): void {
         },
         ['GET'],
         Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-auth'
+    );
+
+    // GET (verify email)
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'verify-email-get',
+        '/api/user/auth/verify-email',
+        function (Request $request) {
+            return (new VerifyEmailController())->get($request);
+        },
+        ['GET'],
+        Rate::perMinute(10),
         'user-auth'
     );
 

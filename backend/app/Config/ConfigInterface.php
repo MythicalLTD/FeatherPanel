@@ -89,6 +89,7 @@ interface ConfigInterface
      * Registration.
      */
     public const REGISTRATION_ENABLED = 'registration_enabled';
+    public const REGISTRATION_REQUIRE_EMAIL_VERIFICATION = 'registration_require_email_verification';
     public const REQUIRE_TWO_FA_ADMINS = 'require_two_fa_admins';
     /**
      * Telemetry.
