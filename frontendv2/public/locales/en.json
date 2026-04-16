@@ -819,6 +819,7 @@
 		"failedToSendReply": "Failed to send reply",
 		"messageDeleted": "Message deleted",
 		"failedToDeleteMessage": "Failed to delete message",
+		"newMessages": "{count} new",
 		"deleteMessage": "Delete Message",
 		"deleteMessageConfirm": "Are you sure you want to delete this message?",
 		"details": "Ticket Details",
@@ -3778,6 +3779,7 @@
 			"no_templates_qemu": "No QEMU/KVM templates for this node. Add a template in VM Nodes → this node → Templates tab.",
 			"no_templates_lxc": "No LXC templates for this node. Add an LXC template in VM Nodes → this node → Templates tab.",
 			"no_free_ips": "No free IPs for this node. Add IPs in VM Node.",
+			"ip_pool_required": "Configure at least one IP in the node IP pool, then try again.",
 			"details": {
 				"title": "VDS Instance Details",
 				"subtitle": "Viewing details for {name}",
