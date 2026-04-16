@@ -239,7 +239,8 @@ export default function RolesPage() {
         setLoadingPermissions(true);
         try {
             const { data } = await axios.get('/api/admin/permissions', {
-                params: { role_id: roleId },
+                // Fetch the full role permission set for the sidebar list.
+                params: { role_id: roleId, limit: 100 },
             });
             setRolePermissions(data.data.permissions || []);
         } catch (error) {
