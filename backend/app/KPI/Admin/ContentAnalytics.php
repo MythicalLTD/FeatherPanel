@@ -25,22 +25,6 @@ use App\Chat\Database;
 class ContentAnalytics
 {
     /**
-     * Check if a table exists in the current database.
-     *
-     * @param \PDO $pdo Database connection
-     * @param string $tableName Table to check
-     *
-     * @return bool True when table exists
-     */
-    private static function tableExists(\PDO $pdo, string $tableName): bool
-    {
-        $stmt = $pdo->prepare('SHOW TABLES LIKE :table_name');
-        $stmt->execute(['table_name' => $tableName]);
-
-        return (bool) $stmt->fetchColumn();
-    }
-
-    /**
      * Get realms overview statistics.
      *
      * @return array Realm statistics
@@ -282,5 +266,21 @@ class ContentAnalytics
             'redirect_links' => self::getRedirectLinksOverview(),
             'mail_templates' => self::getMailTemplatesOverview(),
         ];
+    }
+
+    /**
+     * Check if a table exists in the current database.
+     *
+     * @param \PDO $pdo Database connection
+     * @param string $tableName Table to check
+     *
+     * @return bool True when table exists
+     */
+    private static function tableExists(\PDO $pdo, string $tableName): bool
+    {
+        $stmt = $pdo->prepare('SHOW TABLES LIKE :table_name');
+        $stmt->execute(['table_name' => $tableName]);
+
+        return (bool) $stmt->fetchColumn();
     }
 }

@@ -129,11 +129,7 @@ export default function InfrastructureAnalyticsPage() {
 
             setNodeResources(
                 (nodeResourcesRes.data.data.nodes || []).map(
-                    (node: {
-                        name: string;
-                        memory_usage_percentage: number;
-                        disk_usage_percentage: number;
-                    }) => ({
+                    (node: { name: string; memory_usage_percentage: number; disk_usage_percentage: number }) => ({
                         name: node.name,
                         memory_usage: node.memory_usage_percentage,
                         disk_usage: node.disk_usage_percentage,

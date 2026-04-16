@@ -912,18 +912,28 @@ class ServerAnalytics
         $stmt = $pdo->query('SELECT COUNT(*) FROM featherpanel_servers WHERE last_error IS NOT NULL');
         $withErrors = (int) $stmt->fetchColumn();
 
-        // Average installation time (from created_at to installed_at)
-        $stmt = $pdo->query('
-            SELECT AVG(TIMESTAMPDIFF(SECOND, created_at, installed_at)) as avg_seconds
+        // Average installation time (from created_at to installed_at), excluding invalid and anomalous records.
+        // We only include successful/non-failure statuses, non-negative durations, and durations <= 6 hours.
+        $stmt = $pdo->query("
+            SELECT
+                COUNT(*) as sample_size,
+                AVG(TIMESTAMPDIFF(SECOND, created_at, installed_at)) as avg_seconds
             FROM featherpanel_servers
             WHERE installed_at IS NOT NULL
-        ');
-        $avgSeconds = (int) $stmt->fetchColumn();
+              AND created_at IS NOT NULL
+              AND installed_at >= created_at
+              AND status NOT IN ('installation_failed', 'install_failed', 'reinstall_failed', 'update_failed', 'backup_failed')
+              AND TIMESTAMPDIFF(SECOND, created_at, installed_at) BETWEEN 0 AND 21600
+        ");
+        $avgInstallData = $stmt->fetch(\PDO::FETCH_ASSOC) ?: [];
+        $avgSeconds = isset($avgInstallData['avg_seconds']) ? (int) round((float) $avgInstallData['avg_seconds']) : 0;
+        $sampleSize = (int) ($avgInstallData['sample_size'] ?? 0);
 
         return [
             'installed' => $installed,
             'not_installed' => $notInstalled,
             'with_errors' => $withErrors,
+            'avg_installation_time_sample_size' => $sampleSize,
             'avg_installation_time_seconds' => $avgSeconds,
             'avg_installation_time_minutes' => round($avgSeconds / 60, 2),
         ];
