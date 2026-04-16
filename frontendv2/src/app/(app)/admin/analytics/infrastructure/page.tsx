@@ -73,7 +73,31 @@ export default function InfrastructureAnalyticsPage() {
                 api.get('/admin/analytics/nodes/resources'),
             ]);
 
-            setOverview(overviewRes.data.data);
+            const dashboard = overviewRes.data.data;
+            const locations = dashboard.locations ?? {};
+            const nodes = dashboard.nodes ?? {};
+            const allocations = dashboard.allocations ?? {};
+            const databases = dashboard.databases ?? {};
+            setOverview({
+                locations: {
+                    total: locations.total ?? locations.total_locations ?? 0,
+                    with_nodes: locations.with_nodes ?? 0,
+                },
+                nodes: {
+                    total: nodes.total ?? nodes.total_nodes ?? 0,
+                    public: nodes.public ?? nodes.public_nodes ?? 0,
+                    percentage_public: nodes.percentage_public ?? 0,
+                },
+                allocations: {
+                    total: allocations.total ?? allocations.total_allocations ?? 0,
+                    in_use: allocations.in_use ?? allocations.assigned ?? 0,
+                    percentage_in_use: allocations.percentage_in_use ?? allocations.percentage_used ?? 0,
+                },
+                databases: {
+                    total: databases.total ?? databases.total_databases ?? 0,
+                    hosts: databases.hosts ?? databases.total_databases ?? 0,
+                },
+            });
             setNodesByLocation(
                 (nodesByLocationRes.data.data.locations || []).map(
                     (l: { location_name: string; node_count: number }) => ({
@@ -103,7 +127,19 @@ export default function InfrastructureAnalyticsPage() {
                 })),
             );
 
-            setNodeResources(nodeResourcesRes.data.data.nodes || []);
+            setNodeResources(
+                (nodeResourcesRes.data.data.nodes || []).map(
+                    (node: {
+                        name: string;
+                        memory_usage_percentage: number;
+                        disk_usage_percentage: number;
+                    }) => ({
+                        name: node.name,
+                        memory_usage: node.memory_usage_percentage,
+                        disk_usage: node.disk_usage_percentage,
+                    }),
+                ),
+            );
         } catch (err) {
             console.error('Failed to fetch infrastructure analytics:', err);
             setError(t('admin.analytics.infrastructure.error'));

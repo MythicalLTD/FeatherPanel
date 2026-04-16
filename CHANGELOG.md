@@ -6,6 +6,7 @@
 
 - Addressed issues causing incorrect "wrong password" errors in SFTP, ensuring authentication works as expected. by @nayskutzu
 - Resolved an issue that prevented adding more than 10 permissions to a role, allowing greater flexibility in role management. by @nayskutzu
+- Fixed an issue where content statistics failed to display if redirect links were missing. by @nayskutzu
 
 
 ## v1.3.3 STABLE

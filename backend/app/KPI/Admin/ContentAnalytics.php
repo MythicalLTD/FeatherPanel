@@ -25,6 +25,22 @@ use App\Chat\Database;
 class ContentAnalytics
 {
     /**
+     * Check if a table exists in the current database.
+     *
+     * @param \PDO $pdo Database connection
+     * @param string $tableName Table to check
+     *
+     * @return bool True when table exists
+     */
+    private static function tableExists(\PDO $pdo, string $tableName): bool
+    {
+        $stmt = $pdo->prepare('SHOW TABLES LIKE :table_name');
+        $stmt->execute(['table_name' => $tableName]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /**
      * Get realms overview statistics.
      *
      * @return array Realm statistics
@@ -205,6 +221,13 @@ class ContentAnalytics
     public static function getRedirectLinksOverview(): array
     {
         $pdo = Database::getPdoConnection();
+
+        if (!self::tableExists($pdo, 'featherpanel_redirect_links')) {
+            return [
+                'total_links' => 0,
+                'recent_links' => [],
+            ];
+        }
 
         // Total redirect links
         $stmt = $pdo->query('SELECT COUNT(*) FROM featherpanel_redirect_links');
