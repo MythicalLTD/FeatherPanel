@@ -74,7 +74,22 @@
 			"copied": "Copied to clipboard!",
 			"setting_up": "Setting up two-factor authentication..."
 		},
-		"logout": {},
+		"logout": {
+			"title": "Logging out...",
+			"subtitle": "Please wait while we securely log you out and clean up your session.",
+			"cleaning_up": "Cleaning up...",
+			"taking_too_long": "Taking longer than expected?",
+			"continue_to_login": "Continue to Login"
+		},
+		"verify_email": {
+			"verifying": "Verifying your email...",
+			"missing_token": "Missing verification token.",
+			"success": "Email verified successfully.",
+			"failed": "Failed to verify email.",
+			"success_title": "Email verified",
+			"failed_title": "Verification failed",
+			"continue_to_login": "Continue to login"
+		},
 		"loginSuccess": "Login successful",
 		"ssoLoggingIn": "Logging in via SSO...",
 		"ssoPleaseWait": "Please wait while we log you in...",
@@ -222,6 +237,12 @@
 	"branding": {
 		"running_on": "Running on {name} {version}",
 		"copyright": "{company}"
+	},
+	"maintenance": {
+		"title": "System Maintenance",
+		"message": "We are currently upgrading our systems to provide you with a better experience. We'll be back shortly.",
+		"status": "In Progress",
+		"check_again": "Check Again"
 	},
 	"validation": {
 		"required": "This field is required",

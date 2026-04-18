@@ -17,16 +17,14 @@
 
 namespace App\Services\Vm;
 
-/**
- * Dear developer,.
- *
- * Once you are done trying to ‘optimize’ this routine,
- * and you have realized what a terrible mistake that was,
- * please increment the following counter as a warning
- * to the next guy.
- *
- * total_hours_wasted_here = 15
- */
+// Dear developer,
+//
+// Once you are done trying to ‘optimize’ this routine,
+// and you have realized what a terrible mistake that was,
+// please increment the following counter as a warning
+// to the next guy.
+//
+// total_hours_wasted_here = 15
 
 use App\App;
 use App\Chat\VmIp;

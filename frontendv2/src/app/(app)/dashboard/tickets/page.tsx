@@ -369,7 +369,9 @@ export default function TicketsPage() {
                                                 <Badge
                                                     variant='destructive'
                                                     className='rounded-md px-2 py-0.5 font-medium border-0 inline-flex items-center gap-1'
-                                                    title={t('tickets.newMessages') || 'New messages since your last reply'}
+                                                    title={
+                                                        t('tickets.newMessages') || 'New messages since your last reply'
+                                                    }
                                                 >
                                                     <MessageCircle className='h-3 w-3' />
                                                     {ticket.unread_count && ticket.unread_count > 0
@@ -406,7 +408,8 @@ export default function TicketsPage() {
                                             <>
                                                 <span className='w-1 h-1 rounded-full bg-muted-foreground/30' />
                                                 <span className='text-red-600 dark:text-red-300 font-medium'>
-                                                    {ticket.unread_count ?? 0} new repl{(ticket.unread_count ?? 0) === 1 ? 'y' : 'ies'}
+                                                    {ticket.unread_count ?? 0} new repl
+                                                    {(ticket.unread_count ?? 0) === 1 ? 'y' : 'ies'}
                                                 </span>
                                             </>
                                         )}

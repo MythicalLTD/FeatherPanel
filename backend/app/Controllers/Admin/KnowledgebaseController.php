@@ -133,21 +133,6 @@ use App\Plugins\Events\Events\KnowledgebaseEvent;
 )]
 class KnowledgebaseController
 {
-    /**
-     * Resolve attachments directory specifically for knowledgebase uploads.
-     * This keeps KB upload working even when DOCUMENT_ROOT differs from panel public path.
-     */
-    private function getKnowledgebaseAttachmentsDir(): string
-    {
-        $fromAppPublic = rtrim((string) APP_PUBLIC, '/') . '/attachments/';
-        if (is_dir(rtrim((string) APP_PUBLIC, '/')) && basename(rtrim((string) APP_PUBLIC, '/')) === 'public') {
-            return $fromAppPublic;
-        }
-
-        // Fallback to backend/public relative to this controller file.
-        return dirname(__DIR__, 3) . '/public/attachments/';
-    }
-
     // ==================== CATEGORIES ====================
 
     #[OA\Get(
@@ -1852,5 +1837,20 @@ class KnowledgebaseController
         }
 
         return ApiResponse::success([], 'Tag deleted successfully', 200);
+    }
+
+    /**
+     * Resolve attachments directory specifically for knowledgebase uploads.
+     * This keeps KB upload working even when DOCUMENT_ROOT differs from panel public path.
+     */
+    private function getKnowledgebaseAttachmentsDir(): string
+    {
+        $fromAppPublic = rtrim((string) APP_PUBLIC, '/') . '/attachments/';
+        if (is_dir(rtrim((string) APP_PUBLIC, '/')) && basename(rtrim((string) APP_PUBLIC, '/')) === 'public') {
+            return $fromAppPublic;
+        }
+
+        // Fallback to backend/public relative to this controller file.
+        return dirname(__DIR__, 3) . '/public/attachments/';
     }
 }

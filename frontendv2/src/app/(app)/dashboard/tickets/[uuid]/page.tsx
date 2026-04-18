@@ -538,7 +538,7 @@ export default function TicketViewPage() {
                                         type='button'
                                         variant='ghost'
                                         size='icon'
-                                            className={clsx(
+                                        className={clsx(
                                             'shrink-0 h-[44px] w-[44px] rounded-xl text-muted-foreground hover:bg-card/80 font-normal border border-border/40',
                                             isDragging && 'bg-primary/10 text-primary',
                                         )}

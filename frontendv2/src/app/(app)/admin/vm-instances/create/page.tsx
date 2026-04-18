@@ -959,11 +959,7 @@ export default function VmInstancesCreatePage() {
                     </span>
 
                     {currentStep < totalSteps ? (
-                        <Button
-                            type='button'
-                            onClick={handleNext}
-                            className='gap-2'
-                        >
+                        <Button type='button' onClick={handleNext} className='gap-2'>
                             {t('admin.servers.form.wizard.next') ?? t('common.next')}
                             <ChevronRight className='h-4 w-4' />
                         </Button>

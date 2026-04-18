@@ -393,11 +393,11 @@ function SidebarContent({
                                                         {item.badge}
                                                     </span>
                                                 )}
-                                                    {isTicketsItem && unreadTicketCount > 0 && (!collapsed || mobile) && (
-                                                        <span className='ml-2 inline-flex items-center rounded-full bg-red-500/15 border border-red-500/30 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
-                                                            {unreadTicketCount}
-                                                        </span>
-                                                    )}
+                                                {isTicketsItem && unreadTicketCount > 0 && (!collapsed || mobile) && (
+                                                    <span className='ml-2 inline-flex items-center rounded-full bg-red-500/15 border border-red-500/30 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
+                                                        {unreadTicketCount}
+                                                    </span>
+                                                )}
                                             </button>
                                         );
                                     }

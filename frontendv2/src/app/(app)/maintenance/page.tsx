@@ -17,8 +17,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function MaintenancePage() {
+    const { t } = useTranslation();
     return (
         <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4 text-center selection:bg-primary/20'>
             <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,var(--tw-gradient-stops))] from-primary/10 via-background to-background' />
@@ -44,11 +46,10 @@ export default function MaintenancePage() {
 
                 <div className='space-y-4'>
                     <h1 className='bg-linear-to-br from-foreground to-foreground/60 bg-clip-text text-4xl font-bold tracking-tighter text-transparent sm:text-5xl md:text-6xl'>
-                        System Maintenance
+                        {t('maintenance.title')}
                     </h1>
                     <p className='mx-auto max-w-[400px] text-lg text-muted-foreground/80 leading-relaxed font-medium'>
-                        We are currently upgrading our systems to provide you with a better experience. We&apos;ll be
-                        back shortly.
+                        {t('maintenance.message')}
                     </p>
                 </div>
 
@@ -57,7 +58,7 @@ export default function MaintenancePage() {
                         <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75'></span>
                         <span className='relative inline-flex h-2.5 w-2.5 rounded-full bg-primary'></span>
                     </span>
-                    <span className='text-sm font-semibold text-primary'>In Progress</span>
+                    <span className='text-sm font-semibold text-primary'>{t('maintenance.status')}</span>
                 </div>
 
                 <div className='pt-4'>
@@ -86,7 +87,7 @@ export default function MaintenancePage() {
                                 <path d='M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16' />
                                 <path d='M16 16l5 5v-5' />
                             </svg>
-                            Check Again
+                            {t('maintenance.check_again')}
                         </span>
                     </Button>
                 </div>

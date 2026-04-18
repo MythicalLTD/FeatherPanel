@@ -19,9 +19,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function LogoutPage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [logoutProgress, setLogoutProgress] = useState(0);
     const [showManualRedirect, setShowManualRedirect] = useState(false);
 
@@ -84,10 +86,8 @@ export default function LogoutPage() {
                 </div>
 
                 <div className='space-y-2'>
-                    <h1 className='text-2xl font-bold text-foreground'>Logging out...</h1>
-                    <p className='text-muted-foreground max-w-sm'>
-                        Please wait while we securely log you out and clean up your session.
-                    </p>
+                    <h1 className='text-2xl font-bold text-foreground'>{t('auth.logout.title')}</h1>
+                    <p className='text-muted-foreground max-w-sm'>{t('auth.logout.subtitle')}</p>
                 </div>
 
                 <div className='flex items-center gap-2 mt-4'>
@@ -100,7 +100,7 @@ export default function LogoutPage() {
                             />
                         ))}
                     </div>
-                    <span className='text-sm text-muted-foreground ml-2'>Cleaning up...</span>
+                    <span className='text-sm text-muted-foreground ml-2'>{t('auth.logout.cleaning_up')}</span>
                 </div>
             </div>
 
@@ -115,9 +115,9 @@ export default function LogoutPage() {
 
             {showManualRedirect && (
                 <div className='text-center animate-fade-in'>
-                    <p className='text-sm text-muted-foreground mb-3'>Taking longer than expected?</p>
+                    <p className='text-sm text-muted-foreground mb-3'>{t('auth.logout.taking_too_long')}</p>
                     <Button variant='outline' size='sm' onClick={manualRedirect}>
-                        Continue to Login
+                        {t('auth.logout.continue_to_login')}
                     </Button>
                 </div>
             )}

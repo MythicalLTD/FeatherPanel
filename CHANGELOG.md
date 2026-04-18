@@ -13,6 +13,10 @@
 - Fixed ticket detail sidebars occasionally showing an invalid "Last Updated" date (1/1/1970) by adding safe date handling and fallbacks. by @nayskutzu
 - Fixed knowledgebase category icons not loading on some installations by correcting the upload/storage path resolution for KB-specific attachments. by @nayskutzu
 
+### Improved
+
+- Enhanced translation quality and consistency across all pages for a smoother, more intuitive multilingual experience. by @nayskutzu
+
 ### Added
 
 - Added a dynamic notification bubble icon to tickets, instantly highlighting those with new messages since your last reply. by @nayskutzu
