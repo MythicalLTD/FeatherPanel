@@ -36,6 +36,7 @@ import { BannedIpsEditor } from '@/components/server/files/editors/BannedIpsEdit
 import { WhitelistEditor } from '@/components/server/files/editors/WhitelistEditor';
 import { BukkitConfigurationEditor } from '@/components/server/files/editors/BukkitConfigurationEditor';
 import { CommandsEditor } from '@/components/server/files/editors/CommandsEditor';
+import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 
 export default function FileEditorPage({
     params,
@@ -105,6 +106,8 @@ export default function FileEditorPage({
     const isWhitelistFile = useMemo(() => fileName.trim().toLowerCase() === 'whitelist.json', [fileName]);
     const isBukkitFile = useMemo(() => fileName.trim().toLowerCase() === 'bukkit.yml', [fileName]);
     const isCommandsFile = useMemo(() => fileName.trim().toLowerCase() === 'commands.yml', [fileName]);
+
+    const ideOpenBlocked = useMemo(() => isBinaryLikeFileName(fileName), [fileName]);
 
     const looksLikeOpsFile = useMemo(() => {
         if (!isOpsFile || !content) return false;
@@ -496,19 +499,21 @@ export default function FileEditorPage({
                                     {t('files.editor.read_only')}
                                 </div>
                             )}
-                            <Button
-                                variant='ghost'
-                                size='sm'
-                                onClick={() => {
-                                    const idePath = `/server/${uuidShort}/files/ide?file=${encodeURIComponent(
-                                        fileName,
-                                    )}&directory=${encodeURIComponent(directory || '/')}`;
-                                    window.open(idePath, '_blank', 'noopener');
-                                }}
-                            >
-                                <Boxes className='h-4 w-4 rounded-full size-6 mr-2' />
-                                {t('files.editor.open_in_ide')}
-                            </Button>
+                            {!ideOpenBlocked && (
+                                <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    onClick={() => {
+                                        const idePath = `/server/${uuidShort}/files/ide?file=${encodeURIComponent(
+                                            fileName,
+                                        )}&directory=${encodeURIComponent(directory || '/')}`;
+                                        window.open(idePath, '_blank', 'noopener');
+                                    }}
+                                >
+                                    <Boxes className='h-4 w-4 rounded-full size-6 mr-2' />
+                                    {t('files.editor.open_in_ide')}
+                                </Button>
+                            )}
                             <Button
                                 variant='ghost'
                                 size='sm'

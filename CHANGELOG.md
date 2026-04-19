@@ -12,10 +12,12 @@
 - Improved user experience when creating a VDS: if no IPs are available, a clear warning is now displayed instead of leaving the user with no feedback. by @nayskutzu
 - Fixed ticket detail sidebars occasionally showing an invalid "Last Updated" date (1/1/1970) by adding safe date handling and fallbacks. by @nayskutzu
 - Fixed knowledgebase category icons not loading on some installations by correcting the upload/storage path resolution for KB-specific attachments. by @nayskutzu
+- Resolved an issue where FeatherIDE incorrectly allowed editing of `.jar` files, ensuring binary archives are no longer opened in the text editor. by @nayskutzu
 
 ### Improved
 
 - Enhanced translation quality and consistency across all pages for a smoother, more intuitive multilingual experience. by @nayskutzu
+- Significantly enhanced the file manager with a smoother, more intuitive experience and quality-of-life improvements throughout. by @nayskutzu
 
 ### Added
 

@@ -25,13 +25,19 @@ interface FileListProps {
     selectedFiles: string[];
     onSelect: (name: string) => void;
     onSelectAll: () => void;
+    onModifierClick?: (file: FileObject, event: React.MouseEvent) => void;
     onNavigate: (name: string) => void;
     onAction: (action: string, file: FileObject) => void;
+    onRowDragStart?: (file: FileObject, event: React.DragEvent) => void;
+    onRowDragEnd?: (file: FileObject, event: React.DragEvent) => void;
+    onDropFiles?: (destinationFolder: FileObject, event: React.DragEvent) => void;
+    draggingFileNames?: string[];
     canEdit: boolean;
     canDelete: boolean;
     canDownload: boolean;
     serverUuid: string;
     currentDirectory: string;
+    anchorName?: string | null;
 }
 
 export function FileList({
@@ -40,15 +46,35 @@ export function FileList({
     selectedFiles,
     onSelect,
     onSelectAll,
+    onModifierClick,
     onNavigate,
     onAction,
+    onRowDragStart,
+    onRowDragEnd,
+    onDropFiles,
+    draggingFileNames,
     canEdit,
     canDelete,
     canDownload,
     serverUuid,
     currentDirectory,
+    anchorName = null,
 }: FileListProps) {
     const { t } = useTranslation();
+
+    const handleRowClick = (file: FileObject, event: React.MouseEvent): boolean => {
+        const isCtrlLike = event.ctrlKey || event.metaKey;
+        const isShift = event.shiftKey;
+
+        if (!isCtrlLike && !isShift) {
+            return false;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        onModifierClick?.(file, event);
+        return true;
+    };
 
     if (loading && files.length === 0) {
         return (
@@ -112,9 +138,15 @@ export function FileList({
                         key={file.name}
                         file={file}
                         selected={selectedFiles.includes(file.name)}
+                        isAnchor={anchorName === file.name}
+                        isDragging={draggingFileNames?.includes(file.name)}
                         onSelect={onSelect}
+                        onRowClick={handleRowClick}
                         onNavigate={onNavigate}
                         onAction={onAction}
+                        onDragStart={onRowDragStart}
+                        onDragEnd={onRowDragEnd}
+                        onDropFiles={onDropFiles}
                         canEdit={canEdit}
                         canDelete={canDelete}
                         canDownload={canDownload}

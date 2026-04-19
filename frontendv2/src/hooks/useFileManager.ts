@@ -120,6 +120,7 @@ export function useFileManager(serverUuid: string) {
         } else {
             params.set('path', path);
         }
+        setSearchQuery('');
         router.push(`?${params.toString()}`);
     };
 

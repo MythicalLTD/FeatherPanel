@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFileManager } from '@/hooks/useFileManager';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
@@ -41,12 +41,25 @@ import {
 import { useTranslation } from '@/contexts/TranslationContext';
 import { toast } from 'sonner';
 import { filesApi } from '@/lib/files-api';
+import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 import { FileObject } from '@/types/server';
 import { Download, X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import React, { use } from 'react';
 import { Button } from '@/components/featherui/Button';
 
 type FileWithPath = { file: File; relativePath: string };
+
+const DRAG_MIME = 'application/x-featherpanel-files';
+
+function normalizePath(p: string): string {
+    const withLeading = p.startsWith('/') ? p : `/${p}`;
+    const collapsed = withLeading.replace(/\/+/g, '/');
+    return collapsed.length > 1 ? collapsed.replace(/\/+$/, '') : collapsed;
+}
+
+function joinPath(dir: string, name: string): string {
+    return normalizePath(`${dir}/${name}`);
+}
 
 async function collectFilesFromDataTransfer(dt: DataTransfer): Promise<FileWithPath[]> {
     const result: FileWithPath[] = [];
@@ -135,7 +148,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         refreshIgnored,
         navigate,
         toggleSelect,
-        selectAll,
         cancelPull,
     } = useFileManager(uuidShort);
 
@@ -175,6 +187,170 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [actionFile, setActionFile] = useState<FileObject | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [anchorName, setAnchorName] = useState<string | null>(null);
+    const shiftPivotRef = useRef<string | null>(null);
+    const [draggingFileNames, setDraggingFileNames] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (anchorName && !files.some((f) => f.name === anchorName)) {
+            setAnchorName(null);
+            shiftPivotRef.current = null;
+        }
+    }, [files, anchorName]);
+
+    const handleSelectToggle = useCallback(
+        (name: string) => {
+            toggleSelect(name);
+            setAnchorName(name);
+            shiftPivotRef.current = null;
+        },
+        [toggleSelect],
+    );
+
+    const handleSelectAllToggle = useCallback(() => {
+        if (files.length === 0) return;
+        if (selectedFiles.length === files.length) {
+            setSelectedFiles([]);
+        } else {
+            setSelectedFiles(files.map((f) => f.name));
+        }
+        shiftPivotRef.current = null;
+    }, [files, selectedFiles, setSelectedFiles]);
+
+    const handleModifierClick = useCallback(
+        (file: FileObject, event: React.MouseEvent) => {
+            const isCtrlLike = event.ctrlKey || event.metaKey;
+            const isShift = event.shiftKey;
+            const clickedIdx = files.findIndex((f) => f.name === file.name);
+            if (clickedIdx === -1) return;
+
+            if (isShift) {
+                if (!shiftPivotRef.current) {
+                    shiftPivotRef.current = anchorName ?? file.name;
+                }
+                const pivotName = shiftPivotRef.current ?? file.name;
+                const pivotIdx = files.findIndex((f) => f.name === pivotName);
+                const effectivePivotIdx = pivotIdx !== -1 ? pivotIdx : clickedIdx;
+                const [s, e] =
+                    effectivePivotIdx <= clickedIdx ? [effectivePivotIdx, clickedIdx] : [clickedIdx, effectivePivotIdx];
+                const range = files.slice(s, e + 1).map((f) => f.name);
+                if (isCtrlLike) {
+                    setSelectedFiles(Array.from(new Set([...selectedFiles, ...range])));
+                } else {
+                    setSelectedFiles(range);
+                }
+                setAnchorName(file.name);
+            } else if (isCtrlLike) {
+                toggleSelect(file.name);
+                setAnchorName(file.name);
+                shiftPivotRef.current = null;
+            }
+        },
+        [files, anchorName, selectedFiles, setSelectedFiles, toggleSelect],
+    );
+
+    const handleRowDragStart = useCallback(
+        (file: FileObject, event: React.DragEvent) => {
+            if (!canUpdate) {
+                event.preventDefault();
+                return;
+            }
+            const sourceRoot = currentDirectory || '/';
+            const willDragMany = selectedFiles.includes(file.name) && selectedFiles.length > 1;
+            const namesToDrag = willDragMany ? [...selectedFiles] : [file.name];
+            const payload = JSON.stringify({ sourceRoot, files: namesToDrag });
+            try {
+                event.dataTransfer.setData(DRAG_MIME, payload);
+                event.dataTransfer.setData('text/plain', namesToDrag.join('\n'));
+            } catch {
+                event.preventDefault();
+                return;
+            }
+            event.dataTransfer.effectAllowed = 'move';
+            setDraggingFileNames(namesToDrag);
+        },
+        [canUpdate, currentDirectory, selectedFiles],
+    );
+
+    const handleRowDragEnd = useCallback(() => {
+        setDraggingFileNames([]);
+    }, []);
+
+    const performMoveFiles = useCallback(
+        async (sourceRoot: string, destinationDir: string, fileNames: string[]) => {
+            if (fileNames.length === 0) return;
+            const src = normalizePath(sourceRoot || '/');
+            const dest = normalizePath(destinationDir || '/');
+            if (src === dest) {
+                return;
+            }
+            for (const name of fileNames) {
+                const movingPath = joinPath(src, name);
+                if (dest === movingPath || dest.startsWith(`${movingPath}/`)) {
+                    toast.error(t('files.messages.move_into_self_error'));
+                    return;
+                }
+            }
+
+            const updates = fileNames.map((name) => ({
+                from: name,
+                to: joinPath(dest, name),
+            }));
+            const toastId = toast.loading(t('files.messages.moving', { count: String(fileNames.length) }));
+            try {
+                await filesApi.moveFile(uuidShort, src, updates);
+                toast.success(t('files.messages.moved', { count: String(fileNames.length) }), { id: toastId });
+                setSelectedFiles([]);
+                refresh();
+            } catch (error) {
+                const err = error as { response?: { data?: { error?: string } } };
+                const msg = err.response?.data?.error || t('files.messages.move_error');
+                toast.error(msg, { id: toastId });
+            }
+        },
+        [refresh, setSelectedFiles, t, uuidShort],
+    );
+
+    const handleDropOnFolder = useCallback(
+        (destinationFolder: FileObject, event: React.DragEvent) => {
+            try {
+                const raw = event.dataTransfer.getData(DRAG_MIME);
+                if (!raw) return;
+                const payload = JSON.parse(raw) as { sourceRoot?: string; files?: string[] };
+                if (!payload.files?.length) return;
+                const src = payload.sourceRoot ?? currentDirectory ?? '/';
+                const dest = joinPath(src, destinationFolder.name);
+                if (payload.files.includes(destinationFolder.name) && src === (currentDirectory || '/')) {
+                    toast.error(t('files.messages.move_into_self_error'));
+                    return;
+                }
+                performMoveFiles(src, dest, payload.files);
+            } catch {
+                // ignore malformed payloads
+            } finally {
+                setDraggingFileNames([]);
+            }
+        },
+        [currentDirectory, performMoveFiles, t],
+    );
+
+    const handleDropOnPath = useCallback(
+        (destinationPath: string, event: React.DragEvent) => {
+            try {
+                const raw = event.dataTransfer.getData(DRAG_MIME);
+                if (!raw) return;
+                const payload = JSON.parse(raw) as { sourceRoot?: string; files?: string[] };
+                if (!payload.files?.length) return;
+                const src = payload.sourceRoot ?? currentDirectory ?? '/';
+                performMoveFiles(src, destinationPath, payload.files);
+            } catch {
+                // ignore malformed payloads
+            } finally {
+                setDraggingFileNames([]);
+            }
+        },
+        [currentDirectory, performMoveFiles],
+    );
 
     const handleAction = (action: string, file: FileObject) => {
         setActionFile(file);
@@ -253,19 +429,207 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     };
 
     useEffect(() => {
+        const isEditableTarget = (target: EventTarget | null): boolean => {
+            if (!(target instanceof HTMLElement)) return false;
+            const tag = target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+            if (target.isContentEditable) return true;
+            return false;
+        };
+
+        const isImage = (name: string) => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(name);
+        const isEditableFile = (size: number, name: string) =>
+            size < 1024 * 1024 * 5 && !isBinaryLikeFileName(name) && !isImage(name);
+
+        const openFile = (file: FileObject) => {
+            if (!file.isFile) {
+                const base = currentDirectory || '/';
+                const nextDir = base === '/' ? `/${file.name}` : `${base}/${file.name}`;
+                navigate(nextDir);
+            } else if (isEditableFile(file.size, file.name) && canUpdate) {
+                const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(
+                    file.name,
+                )}&directory=${encodeURIComponent(currentDirectory || '/')}`;
+                router.prefetch(editPath);
+                router.push(editPath);
+            } else if (isImage(file.name)) {
+                setActionFile(file);
+                setPreviewOpen(true);
+            }
+        };
+
+        const moveAnchor = (direction: -1 | 1 | 'start' | 'end', extend: boolean) => {
+            if (files.length === 0) return;
+            const currentIdx = anchorName ? files.findIndex((f) => f.name === anchorName) : -1;
+            let nextIdx: number;
+            if (direction === 'start') {
+                nextIdx = 0;
+            } else if (direction === 'end') {
+                nextIdx = files.length - 1;
+            } else if (currentIdx === -1) {
+                nextIdx = direction === 1 ? 0 : files.length - 1;
+            } else {
+                nextIdx = Math.max(0, Math.min(files.length - 1, currentIdx + direction));
+            }
+            const nextName = files[nextIdx].name;
+
+            if (extend) {
+                if (!shiftPivotRef.current) {
+                    shiftPivotRef.current = anchorName ?? nextName;
+                }
+                const pivotName = shiftPivotRef.current ?? nextName;
+                const pivotIdx = files.findIndex((f) => f.name === pivotName);
+                const effectivePivotIdx = pivotIdx !== -1 ? pivotIdx : nextIdx;
+                const [start, end] =
+                    effectivePivotIdx <= nextIdx ? [effectivePivotIdx, nextIdx] : [nextIdx, effectivePivotIdx];
+                setSelectedFiles(files.slice(start, end + 1).map((f) => f.name));
+                setAnchorName(nextName);
+            } else {
+                shiftPivotRef.current = null;
+                setSelectedFiles([nextName]);
+                setAnchorName(nextName);
+            }
+        };
+
+        const isAnyOverlayOpen = () => !!document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]');
+
         const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            const modifier = e.ctrlKey || e.metaKey;
+
+            if (isAnyOverlayOpen()) return;
+
+            if (modifier && e.key.toLowerCase() === 'f') {
                 e.preventDefault();
                 const searchInput = document.getElementById('file-search-input') as HTMLInputElement;
                 if (searchInput) {
                     searchInput.focus();
                 }
+                return;
+            }
+
+            if (isEditableTarget(e.target)) return;
+
+            if (modifier && e.key.toLowerCase() === 'a') {
+                if (files.length === 0) return;
+                e.preventDefault();
+                if (selectedFiles.length === files.length) {
+                    setSelectedFiles([]);
+                } else {
+                    setSelectedFiles(files.map((f) => f.name));
+                }
+                shiftPivotRef.current = null;
+                return;
+            }
+
+            if (modifier && e.key.toLowerCase() === 'd') {
+                if (!canDelete || selectedFiles.length === 0) return;
+                e.preventDefault();
+                setActionFile(null);
+                setDeleteOpen(true);
+                return;
+            }
+
+            if (e.key === 'Delete' && !modifier && !e.altKey) {
+                if (!canDelete || selectedFiles.length === 0) return;
+                e.preventDefault();
+                setActionFile(null);
+                setDeleteOpen(true);
+                return;
+            }
+
+            if (e.key === 'F2' && !modifier && !e.shiftKey && !e.altKey) {
+                if (!canUpdate || selectedFiles.length !== 1) return;
+                e.preventDefault();
+                const file = files.find((f) => f.name === selectedFiles[0]);
+                if (file) {
+                    setActionFile(file);
+                    setRenameOpen(true);
+                }
+                return;
+            }
+
+            if (e.key === 'F5' && !modifier && !e.shiftKey && !e.altKey) {
+                e.preventDefault();
+                refresh();
+                return;
+            }
+
+            if (e.key === 'Enter' && !modifier && !e.shiftKey && !e.altKey) {
+                if (selectedFiles.length === 0) return;
+                e.preventDefault();
+                const targetName = anchorName && selectedFiles.includes(anchorName) ? anchorName : selectedFiles[0];
+                const file = files.find((f) => f.name === targetName);
+                if (file) openFile(file);
+                return;
+            }
+
+            if (e.key === 'Backspace' && !modifier && !e.shiftKey && !e.altKey) {
+                const current = currentDirectory || '/';
+                if (current === '/' || current === '') return;
+                e.preventDefault();
+                const parent = current.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
+                navigate(parent);
+                return;
+            }
+
+            if (e.key === 'ArrowDown' && !modifier && !e.altKey) {
+                if (files.length === 0) return;
+                e.preventDefault();
+                moveAnchor(1, e.shiftKey);
+                return;
+            }
+
+            if (e.key === 'ArrowUp' && !modifier && !e.altKey) {
+                if (files.length === 0) return;
+                e.preventDefault();
+                moveAnchor(-1, e.shiftKey);
+                return;
+            }
+
+            if (e.key === 'Home' && !modifier && !e.altKey) {
+                if (files.length === 0) return;
+                e.preventDefault();
+                moveAnchor('start', e.shiftKey);
+                return;
+            }
+
+            if (e.key === 'End' && !modifier && !e.altKey) {
+                if (files.length === 0) return;
+                e.preventDefault();
+                moveAnchor('end', e.shiftKey);
+                return;
+            }
+
+            if (e.key === ' ' && !modifier && !e.shiftKey && !e.altKey) {
+                if (!anchorName) return;
+                e.preventDefault();
+                toggleSelect(anchorName);
+                shiftPivotRef.current = null;
+                return;
+            }
+
+            if (e.key === 'Escape' && selectedFiles.length > 0) {
+                e.preventDefault();
+                setSelectedFiles([]);
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [
+        files,
+        selectedFiles,
+        canDelete,
+        canUpdate,
+        setSelectedFiles,
+        anchorName,
+        currentDirectory,
+        navigate,
+        refresh,
+        toggleSelect,
+        uuidShort,
+        router,
+    ]);
 
     const folderInputRef = useRef<HTMLInputElement>(null);
 
@@ -508,18 +872,24 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     };
 
     useEffect(() => {
+        const isInternal = (e: DragEvent) =>
+            e.dataTransfer?.types?.includes('application/x-featherpanel-files') ?? false;
+
         const handleDragOver = (e: DragEvent) => {
+            if (isInternal(e)) return;
             e.preventDefault();
             if (!e.dataTransfer?.types?.includes('Files')) return;
             setIsDragging(true);
         };
         const handleDragLeave = (e: DragEvent) => {
+            if (isInternal(e)) return;
             e.preventDefault();
             if (e.clientX === 0 && e.clientY === 0) {
                 setIsDragging(false);
             }
         };
         const handleDrop = async (e: DragEvent) => {
+            if (isInternal(e)) return;
             e.preventDefault();
             setIsDragging(false);
             const dt = e.dataTransfer;
@@ -557,6 +927,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         onNavigate={navigate}
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
+                        onDropFilesToPath={canUpdate ? handleDropOnPath : undefined}
                     />
                 </div>
 
@@ -694,7 +1065,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                     </div>
                                                     <div className='h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5'>
                                                         <div
-                                                            className='h-full bg-gradient-to-r from-primary to-primary-foreground transition-all duration-300'
+                                                            className='h-full bg-linear-to-r from-primary to-primary-foreground transition-all duration-300'
                                                             style={{ width: `${batchProgress}%` }}
                                                         />
                                                     </div>
@@ -759,7 +1130,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                 </div>
                                                 <div className='h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5'>
                                                     <div
-                                                        className='h-full bg-gradient-to-r from-primary to-primary-foreground transition-all duration-300'
+                                                        className='h-full bg-linear-to-r from-primary to-primary-foreground transition-all duration-300'
                                                         style={{ width: `${item.progress}%` }}
                                                     />
                                                 </div>
@@ -838,12 +1209,18 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     files={files}
                     loading={loading}
                     selectedFiles={selectedFiles}
-                    onSelect={toggleSelect}
-                    onSelectAll={selectAll}
+                    onSelect={handleSelectToggle}
+                    onSelectAll={handleSelectAllToggle}
+                    onModifierClick={handleModifierClick}
+                    anchorName={anchorName}
                     onNavigate={(name) =>
                         navigate((currentDirectory || '/') === '/' ? `/${name}` : `${currentDirectory || '/'}/${name}`)
                     }
                     onAction={handleAction}
+                    onRowDragStart={canUpdate ? handleRowDragStart : undefined}
+                    onRowDragEnd={canUpdate ? handleRowDragEnd : undefined}
+                    onDropFiles={canUpdate ? handleDropOnFolder : undefined}
+                    draggingFileNames={draggingFileNames}
                     canEdit={canUpdate}
                     canDelete={canDelete}
                     canDownload={canRead}

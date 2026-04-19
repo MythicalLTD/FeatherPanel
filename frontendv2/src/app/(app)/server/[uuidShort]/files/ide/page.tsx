@@ -30,6 +30,7 @@ import {
     X,
 } from 'lucide-react';
 import { filesApi } from '@/lib/files-api';
+import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 import type { FileObject } from '@/types/server';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -103,7 +104,10 @@ export default function ServerFilesIDEPage({
 
     const [currentDirectory, setCurrentDirectory] = useState<string>(initialDirectory || '/');
     const [currentFileDirectory, setCurrentFileDirectory] = useState<string>(initialDirectory || '/');
-    const [currentFileName, setCurrentFileName] = useState<string | null>(initialFile || null);
+    const [currentFileName, setCurrentFileName] = useState<string | null>(() => {
+        const f = initialFile ?? null;
+        return f && isBinaryLikeFileName(f) ? null : f;
+    });
 
     const [files, setFiles] = useState<FileObject[]>([]);
     const [directoryCache, setDirectoryCache] = useState<Record<string, FileObject[]>>({});
@@ -118,6 +122,7 @@ export default function ServerFilesIDEPage({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
+    const blockedInitialToastKeyRef = useRef<string | null>(null);
 
     const { hasPermission } = useServerPermissions(uuidShort);
     const canEdit = hasPermission('file.update');
@@ -204,6 +209,19 @@ export default function ServerFilesIDEPage({
     }, [uuidShort, canRead, currentDirectory, fetchDirectory]);
 
     useEffect(() => {
+        if (!initialFile || !isBinaryLikeFileName(initialFile)) return;
+        const key = `${initialFile}\0${initialDirectory ?? ''}`;
+        if (blockedInitialToastKeyRef.current === key) return;
+        blockedInitialToastKeyRef.current = key;
+        toast.error(t('files.editor.binary_not_supported'));
+        const params = new URLSearchParams();
+        const dir = normalizeDirectory(initialDirectory || '/');
+        if (dir && dir !== '/') params.set('directory', dir);
+        const q = params.toString();
+        router.replace(`/server/${uuidShort}/files/ide${q ? `?${q}` : ''}`);
+    }, [initialFile, initialDirectory, uuidShort, router, t]);
+
+    useEffect(() => {
         if (!uuidShort || !currentFileName) return;
         fetchContent();
     }, [uuidShort, currentFileName, fetchContent]);
@@ -263,6 +281,10 @@ export default function ServerFilesIDEPage({
     const handleOpenFile = async (file: FileObject, directoryOverride?: string) => {
         // Only handles files; folders are controlled by the tree expand/collapse logic
         if (!file.isFile) return;
+        if (isBinaryLikeFileName(file.name)) {
+            toast.error(t('files.editor.binary_not_supported'));
+            return;
+        }
         setContextMenu(null);
         if (!confirmNavigationIfDirty()) return;
         const parentDir = normalizeDirectory(directoryOverride || currentDirectory || '/');

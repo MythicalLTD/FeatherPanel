@@ -2147,7 +2147,11 @@
 			"upload_folder_error": "Folder upload failed",
 			"uploading_files_progress": "Uploading {current} of {total} files",
 			"drop_to_upload": "Drop to Upload",
-			"drop_description": "Release your files to start uploading to"
+			"drop_description": "Release your files to start uploading to",
+			"moving": "Moving {count} item(s)...",
+			"moved": "Moved {count} item(s)",
+			"move_error": "Failed to move files",
+			"move_into_self_error": "Cannot move a folder into itself"
 		},
 		"editor": {
 			"title": "Editing: {file}",
@@ -2165,7 +2169,8 @@
 			"loading_title": "Loading File...",
 			"load_timeout": "File loading timed out. The file may be too large or the server is taking too long to respond.",
 			"unsaved_prompt": "You have unsaved changes in this file. Are you sure you want to leave without saving?",
-			"window_title": "File Editor"
+			"window_title": "File Editor",
+			"binary_not_supported": "This file type cannot be opened in the text editor. Download it from the file manager instead."
 		},
 		"search": {
 			"files_placeholder": "Filter files in this folder...",
