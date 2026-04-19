@@ -5963,6 +5963,11 @@
 			"title": "Settings",
 			"subtitle": "Manage your panel settings.",
 			"no_settings": "No settings available.",
+			"search_placeholder": "Search settings by name, key, or description…",
+			"search_clear": "Clear",
+			"search_no_results": "No settings match your search.",
+			"search_try_other": "Try another term or clear the search to see all categories.",
+			"search_showing": "Showing {shown} of {total} in this category.",
 			"actions": {
 				"save": "Save Changes",
 				"upload_logs": "Upload Logs"
@@ -5975,7 +5980,11 @@
 			},
 			"logs": {
 				"uploading": "Uploading logs...",
-				"upload_failed": "Failed to upload logs."
+				"upload_failed": "Failed to upload logs.",
+				"dialog_description": "Logs were uploaded. You can share these URLs with support.",
+				"panel_logs": "Panel logs (web)",
+				"system_logs": "System logs (app)",
+				"upload_failed_generic": "Failed to upload logs."
 			}
 		},
 		"rate_limits": {

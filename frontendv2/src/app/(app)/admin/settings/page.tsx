@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { adminSettingsApi, OrganizedSettings, Setting } from '@/lib/admin-settings-api';
@@ -32,8 +32,21 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
-import { Settings, Mail, Shield, Database, Server, Globe, Save, UploadCloud, Loader2, Copy } from 'lucide-react';
-import { copyToClipboard } from '@/lib/utils';
+import {
+    Settings,
+    Mail,
+    Shield,
+    Database,
+    Server,
+    Globe,
+    Save,
+    UploadCloud,
+    Loader2,
+    Copy,
+    Search,
+    X,
+} from 'lucide-react';
+import { copyToClipboard, cn } from '@/lib/utils';
 
 interface LogData {
     success: boolean;
@@ -43,6 +56,143 @@ interface LogData {
     error?: string;
 }
 
+function formatSettingName(name: string, key: string) {
+    const textToFormat = name || key;
+    return textToFormat
+        .split('_')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
+function settingValueAsSearchText(setting: Setting): string {
+    if (setting.type === 'password') return '';
+    const v = setting.value;
+    if (v === null || v === undefined) return '';
+    return String(v);
+}
+
+function matchesSettingsQuery(
+    query: string,
+    settingKey: string,
+    currentSetting: Setting,
+    categoryKey: string,
+    categoryName: string,
+): boolean {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return true;
+    const haystack = [
+        settingKey,
+        formatSettingName(currentSetting.name, settingKey),
+        currentSetting.description,
+        currentSetting.placeholder,
+        settingValueAsSearchText(currentSetting),
+        categoryKey,
+        categoryName,
+    ]
+        .join('\n')
+        .toLowerCase();
+    const terms = trimmed.split(/\s+/).filter(Boolean);
+    return terms.every((term) => haystack.includes(term));
+}
+
+function SettingFieldRow({
+    settingKey,
+    currentSetting,
+    formattedName,
+    onSettingChange,
+}: {
+    settingKey: string;
+    currentSetting: Setting;
+    formattedName: string;
+    onSettingChange: (key: string, value: string | number | boolean) => void;
+}) {
+    if (currentSetting.type === 'toggle' || (currentSetting.type as string) === 'boolean') {
+        return (
+            <div className='flex flex-row items-center justify-between gap-4 rounded-2xl border border-border/50 bg-card/30 p-4 transition-colors hover:bg-card/50'>
+                <div className='min-w-0 space-y-0.5 pr-2'>
+                    <Label htmlFor={settingKey} className='text-base font-medium'>
+                        {formattedName}
+                    </Label>
+                    <p className='text-sm text-muted-foreground max-w-[min(100%,42rem)]'>{currentSetting.description}</p>
+                </div>
+                <Switch
+                    id={settingKey}
+                    checked={
+                        currentSetting.value === true ||
+                        currentSetting.value === 'true' ||
+                        currentSetting.value === 1
+                    }
+                    onCheckedChange={(checked: boolean) => onSettingChange(settingKey, checked)}
+                    className='shrink-0'
+                />
+            </div>
+        );
+    }
+
+    if (currentSetting.type === 'textarea') {
+        return (
+            <div className='space-y-3'>
+                <Label htmlFor={settingKey} className='text-base font-medium'>
+                    {formattedName}
+                </Label>
+                <Textarea
+                    id={settingKey}
+                    value={currentSetting.value as string}
+                    onChange={(e) => onSettingChange(settingKey, e.target.value)}
+                    placeholder={currentSetting.placeholder}
+                    className='min-h-[120px]'
+                />
+                <p className='text-sm text-muted-foreground'>{currentSetting.description}</p>
+            </div>
+        );
+    }
+
+    if (currentSetting.type === 'select') {
+        return (
+            <div className='space-y-3'>
+                <Label htmlFor={settingKey} className='text-base font-medium'>
+                    {formattedName}
+                </Label>
+                <Select
+                    id={settingKey}
+                    value={currentSetting.value as string}
+                    onChange={(e) => onSettingChange(settingKey, e.target.value)}
+                >
+                    {currentSetting.options.map((opt) => {
+                        let label = opt;
+                        if (opt === 'true') label = 'Enabled';
+                        if (opt === 'false') label = 'Disabled';
+                        if (opt === 'hard_limit') label = 'Hard limit (block at max)';
+                        if (opt === 'fifo_rolling') label = 'FIFO rolling (drop oldest)';
+                        return (
+                            <option key={opt} value={opt} className='bg-card text-foreground'>
+                                {label}
+                            </option>
+                        );
+                    })}
+                </Select>
+                <p className='text-sm text-muted-foreground'>{currentSetting.description}</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className='space-y-3'>
+            <Label htmlFor={settingKey} className='text-base font-medium'>
+                {formattedName}
+            </Label>
+            <Input
+                id={settingKey}
+                type={currentSetting.type === 'password' ? 'password' : 'text'}
+                value={currentSetting.value as string}
+                onChange={(e) => onSettingChange(settingKey, e.target.value)}
+                placeholder={currentSetting.placeholder}
+            />
+            <p className='text-sm text-muted-foreground'>{currentSetting.description}</p>
+        </div>
+    );
+}
+
 export default function SettingsPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
@@ -50,35 +200,69 @@ export default function SettingsPage() {
     const [organizedSettings, setOrganizedSettings] = useState<OrganizedSettings | null>(null);
     const [settings, setSettings] = useState<Record<string, Setting>>({});
     const [initialSettings, setInitialSettings] = useState<Record<string, Setting>>({});
+    const [settingsSearch, setSettingsSearch] = useState('');
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const urlCategory = searchParams.get('category');
-    const [activeTab, setActiveTab] = useState<string>(urlCategory || 'general');
 
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [uploadedLogs, setUploadedLogs] = useState<{ web: LogData; app: LogData } | null>(null);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-settings');
 
+    const searchTrimmed = settingsSearch.trim();
+
+    const categoryMatchCounts = useMemo(() => {
+        if (!organizedSettings) return {} as Record<string, number>;
+        const counts: Record<string, number> = {};
+        for (const [catKey, data] of Object.entries(organizedSettings)) {
+            let n = 0;
+            for (const [settingKey, setting] of Object.entries(data.settings)) {
+                const currentSetting = settings[settingKey] || setting;
+                if (
+                    matchesSettingsQuery(
+                        searchTrimmed,
+                        settingKey,
+                        currentSetting,
+                        catKey,
+                        data.category.name,
+                    )
+                ) {
+                    n += 1;
+                }
+            }
+            counts[catKey] = n;
+        }
+        return counts;
+    }, [organizedSettings, settings, searchTrimmed]);
+
+    const anySearchMatch = useMemo(
+        () => !searchTrimmed || Object.values(categoryMatchCounts).some((c) => c > 0),
+        [searchTrimmed, categoryMatchCounts],
+    );
+
+    const categoryKeys = useMemo(
+        () => (organizedSettings ? Object.keys(organizedSettings) : []),
+        [organizedSettings],
+    );
+
+    /** Single source of truth with URL: avoids setState+URL races that caused infinite update loops. */
+    const activeTab = useMemo(() => {
+        if (categoryKeys.length === 0) return '';
+        if (urlCategory && categoryKeys.includes(urlCategory)) return urlCategory;
+        return categoryKeys[0];
+    }, [categoryKeys, urlCategory]);
+
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    useEffect(() => {
-        if (urlCategory && urlCategory !== activeTab) {
-            setActiveTab(urlCategory);
-        }
-    }, [urlCategory, activeTab]);
-
     const handleCategoryChange = useCallback(
         (newTab: string) => {
-            setActiveTab(newTab);
-            const params = new URLSearchParams(searchParams.toString());
-            params.set('category', newTab);
-            router.push(`${pathname}?${params.toString()}`);
+            router.push(`${pathname}?category=${encodeURIComponent(newTab)}`);
         },
-        [pathname, router, searchParams],
+        [pathname, router],
     );
 
     useEffect(() => {
@@ -105,15 +289,49 @@ export default function SettingsPage() {
     }, [t]);
 
     useEffect(() => {
-        if (organizedSettings) {
-            const categories = Object.keys(organizedSettings);
-            if (categories.length > 0) {
-                if (!urlCategory || !categories.includes(urlCategory)) {
-                    handleCategoryChange(categories[0]);
+        if (!organizedSettings) return;
+        if (categoryKeys.length === 0) return;
+        if (urlCategory && categoryKeys.includes(urlCategory)) return;
+        router.replace(`${pathname}?category=${encodeURIComponent(categoryKeys[0])}`);
+    }, [organizedSettings, categoryKeys, urlCategory, pathname, router]);
+
+    useEffect(() => {
+        if (!organizedSettings || !searchTrimmed) return;
+        if (categoryKeys.length === 0) return;
+
+        const counts: Record<string, number> = {};
+        for (const catKey of categoryKeys) {
+            const data = organizedSettings[catKey];
+            let n = 0;
+            for (const [settingKey, setting] of Object.entries(data.settings)) {
+                const currentSetting = settings[settingKey] || setting;
+                if (
+                    matchesSettingsQuery(
+                        searchTrimmed,
+                        settingKey,
+                        currentSetting,
+                        catKey,
+                        data.category.name,
+                    )
+                ) {
+                    n += 1;
                 }
             }
+            counts[catKey] = n;
         }
-    }, [organizedSettings, urlCategory, handleCategoryChange]);
+
+        const resolvedTab =
+            urlCategory && categoryKeys.includes(urlCategory) ? urlCategory : categoryKeys[0];
+        const firstWithMatches = categoryKeys.find((k) => (counts[k] ?? 0) > 0);
+        if (!firstWithMatches) return;
+
+        // Stay on current category if it still has hits; otherwise jump to the first category (sidebar order) that does.
+        if ((counts[resolvedTab] ?? 0) > 0) return;
+
+        if (firstWithMatches !== resolvedTab) {
+            router.replace(`${pathname}?category=${encodeURIComponent(firstWithMatches)}`);
+        }
+    }, [organizedSettings, categoryKeys, settings, searchTrimmed, urlCategory, pathname, router]);
 
     const handleSettingChange = (key: string, value: string | number | boolean) => {
         setSettings((prev) => ({
@@ -197,18 +415,11 @@ export default function SettingsPage() {
         }
     };
 
-    const formatSettingName = (name: string, key: string) => {
-        const textToFormat = name || key;
-        return textToFormat
-            .split('_')
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-    };
-
     if (loading) {
         return (
-            <div className='flex items-center justify-center p-12'>
-                <Loader2 className='w-8 h-8 animate-spin text-primary' />
+            <div className='flex flex-col items-center justify-center gap-4 p-16'>
+                <Loader2 className='w-10 h-10 animate-spin text-primary' />
+                <p className='text-sm text-muted-foreground'>{t('admin.settings.title')}…</p>
             </div>
         );
     }
@@ -226,12 +437,12 @@ export default function SettingsPage() {
                 description={t('admin.settings.subtitle')}
                 icon={Settings}
                 actions={
-                    <div className='flex gap-2'>
-                        <Button variant='outline' onClick={handleUploadLogs}>
+                    <div className='flex flex-wrap items-center justify-end gap-2'>
+                        <Button variant='outline' onClick={handleUploadLogs} className='shrink-0'>
                             <UploadCloud className='w-4 h-4 mr-2' />
                             {t('admin.settings.actions.upload_logs')}
                         </Button>
-                        <Button onClick={handleSave} disabled={saving}>
+                        <Button onClick={handleSave} disabled={saving} className='shrink-0'>
                             {saving ? (
                                 <Loader2 className='w-4 h-4 mr-2 animate-spin' />
                             ) : (
@@ -245,25 +456,66 @@ export default function SettingsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-settings', 'after-header')} />
 
+            <div className='relative rounded-2xl border border-border/50 bg-card/40 p-1.5 shadow-sm'>
+                <Search
+                    className='pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground'
+                    aria-hidden
+                />
+                <Input
+                    type='search'
+                    value={settingsSearch}
+                    onChange={(e) => setSettingsSearch(e.target.value)}
+                    placeholder={t('admin.settings.search_placeholder')}
+                    className='h-11 w-full border-0 bg-transparent pl-11 pr-11 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0'
+                    aria-label={t('admin.settings.search_placeholder')}
+                />
+                {settingsSearch ? (
+                    <button
+                        type='button'
+                        onClick={() => setSettingsSearch('')}
+                        className='absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors'
+                        title={t('admin.settings.search_clear')}
+                    >
+                        <X className='h-4 w-4' />
+                    </button>
+                ) : null}
+            </div>
+
             <div className='block'>
                 <Tabs
-                    value={activeTab}
+                    value={activeTab || categoryKeys[0]}
                     onValueChange={handleCategoryChange}
                     orientation='vertical'
-                    className='w-full flex flex-col md:flex-row gap-6'
+                    className='w-full flex flex-col lg:flex-row gap-6 lg:gap-8'
                 >
-                    <aside className='w-full md:w-64 shrink-0 overflow-x-auto md:overflow-visible pb-2 md:pb-0'>
-                        <TabsList className='flex flex-row md:flex-col h-auto w-max md:w-full bg-card/30 border border-border/50 p-2 rounded-2xl gap-2 md:gap-1'>
+                    <aside className='w-full lg:w-72 shrink-0 flex flex-col gap-3 min-h-0'>
+                        <TabsList className='flex flex-row lg:flex-col h-auto w-full max-w-full overflow-x-auto lg:overflow-y-auto lg:overflow-x-visible lg:max-h-[calc(100vh-12rem)] bg-card/30 border border-border/50 p-2 rounded-2xl gap-1 custom-scrollbar'>
                             {Object.entries(organizedSettings).map(([key, data]) => {
                                 const Icon = getIconForCategory(key);
+                                const matchCount = categoryMatchCounts[key] ?? 0;
+                                const total = Object.keys(data.settings).length;
+                                const showCount = Boolean(searchTrimmed);
+
                                 return (
                                     <TabsTrigger
                                         key={key}
                                         value={key}
-                                        className='w-auto md:w-full justify-start px-4 py-3 h-auto text-sm md:text-base font-normal data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-medium transition-all rounded-xl border border-transparent data-[state=active]:border-primary/10 whitespace-nowrap'
+                                        className='w-auto lg:w-full justify-start px-3 py-2.5 h-auto text-sm font-normal data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-medium transition-all rounded-xl border border-transparent data-[state=active]:border-primary/10 whitespace-nowrap shrink-0 lg:shrink'
                                     >
-                                        <Icon className='w-4 h-4 mr-3' />
-                                        {data.category.name}
+                                        <Icon className='w-4 h-4 mr-2 shrink-0 opacity-80' />
+                                        <span className='truncate text-left flex-1 min-w-0'>{data.category.name}</span>
+                                        {showCount ? (
+                                            <span
+                                                className={cn(
+                                                    'ml-2 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide tabular-nums',
+                                                    matchCount > 0
+                                                        ? 'bg-primary/15 text-primary'
+                                                        : 'bg-muted text-muted-foreground',
+                                                )}
+                                            >
+                                                {matchCount}/{total}
+                                            </span>
+                                        ) : null}
                                     </TabsTrigger>
                                 );
                             })}
@@ -271,153 +523,101 @@ export default function SettingsPage() {
                     </aside>
 
                     <div className='flex-1 space-y-6 min-w-0'>
-                        {Object.entries(organizedSettings).map(([key, data]) => (
-                            <TabsContent
-                                key={key}
-                                value={key}
-                                className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
-                            >
-                                <PageCard
-                                    title={data.category.name}
-                                    description={data.category.description}
-                                    footer={
-                                        <div className='flex justify-end'>
-                                            <Button onClick={handleSave} disabled={saving}>
-                                                {saving ? (
-                                                    <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                                                ) : (
-                                                    <Save className='w-4 h-4 mr-2' />
-                                                )}
-                                                {t('admin.settings.actions.save')}
-                                            </Button>
-                                        </div>
-                                    }
+                        {Object.entries(organizedSettings).map(([key, data]) => {
+                            const filteredEntries = Object.entries(data.settings).filter(([settingKey, setting]) => {
+                                const currentSetting = settings[settingKey] || setting;
+                                return matchesSettingsQuery(
+                                    searchTrimmed,
+                                    settingKey,
+                                    currentSetting,
+                                    key,
+                                    data.category.name,
+                                );
+                            });
+                            const totalInCategory = Object.keys(data.settings).length;
+                            const shown = filteredEntries.length;
+
+                            return (
+                                <TabsContent
+                                    key={key}
+                                    value={key}
+                                    className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
                                 >
-                                    <div className='space-y-6'>
-                                        {Object.entries(data.settings).map(([settingKey, setting]) => {
-                                            const currentSetting = settings[settingKey] || setting;
-                                            const formattedName = formatSettingName(currentSetting.name, settingKey);
-
-                                            if (
-                                                currentSetting.type === 'toggle' ||
-                                                (currentSetting.type as string) === 'boolean'
-                                            ) {
-                                                return (
-                                                    <div
-                                                        key={settingKey}
-                                                        className='flex flex-row items-center justify-between rounded-2xl border border-border/50 bg-card/30 p-4 transition-colors hover:bg-card/50'
-                                                    >
-                                                        <div className='space-y-0.5'>
-                                                            <Label
-                                                                htmlFor={settingKey}
-                                                                className='text-base font-medium'
-                                                            >
-                                                                {formattedName}
-                                                            </Label>
-                                                            <p className='text-sm text-muted-foreground max-w-[80%]'>
-                                                                {currentSetting.description}
-                                                            </p>
-                                                        </div>
-                                                        <Switch
-                                                            id={settingKey}
-                                                            checked={
-                                                                currentSetting.value === true ||
-                                                                currentSetting.value === 'true' ||
-                                                                currentSetting.value === 1
-                                                            }
-                                                            onCheckedChange={(checked: boolean) =>
-                                                                handleSettingChange(settingKey, checked)
-                                                            }
-                                                        />
-                                                    </div>
-                                                );
-                                            }
-
-                                            if (currentSetting.type === 'textarea') {
-                                                return (
-                                                    <div key={settingKey} className='space-y-3'>
-                                                        <Label htmlFor={settingKey} className='text-base font-medium'>
-                                                            {formattedName}
-                                                        </Label>
-                                                        <Textarea
-                                                            id={settingKey}
-                                                            value={currentSetting.value as string}
-                                                            onChange={(e) =>
-                                                                handleSettingChange(settingKey, e.target.value)
-                                                            }
-                                                            placeholder={currentSetting.placeholder}
-                                                            className='min-h-[100px]'
-                                                        />
-                                                        <p className='text-sm text-muted-foreground'>
-                                                            {currentSetting.description}
-                                                        </p>
-                                                    </div>
-                                                );
-                                            }
-
-                                            if (currentSetting.type === 'select') {
-                                                return (
-                                                    <div key={settingKey} className='space-y-3'>
-                                                        <Label htmlFor={settingKey} className='text-base font-medium'>
-                                                            {formattedName}
-                                                        </Label>
-                                                        <Select
-                                                            id={settingKey}
-                                                            value={currentSetting.value as string}
-                                                            onChange={(e) =>
-                                                                handleSettingChange(settingKey, e.target.value)
-                                                            }
-                                                        >
-                                                            {currentSetting.options.map((opt) => {
-                                                                let label = opt;
-                                                                if (opt === 'true') label = 'Enabled';
-                                                                if (opt === 'false') label = 'Disabled';
-                                                                if (opt === 'hard_limit')
-                                                                    label = 'Hard limit (block at max)';
-                                                                if (opt === 'fifo_rolling')
-                                                                    label = 'FIFO rolling (drop oldest)';
-                                                                return (
-                                                                    <option
-                                                                        key={opt}
-                                                                        value={opt}
-                                                                        className='bg-card text-foreground'
-                                                                    >
-                                                                        {label}
-                                                                    </option>
-                                                                );
-                                                            })}
-                                                        </Select>
-                                                        <p className='text-sm text-muted-foreground'>
-                                                            {currentSetting.description}
-                                                        </p>
-                                                    </div>
-                                                );
-                                            }
-
-                                            return (
-                                                <div key={settingKey} className='space-y-3'>
-                                                    <Label htmlFor={settingKey} className='text-base font-medium'>
-                                                        {formattedName}
-                                                    </Label>
-                                                    <Input
-                                                        id={settingKey}
-                                                        type={currentSetting.type === 'password' ? 'password' : 'text'}
-                                                        value={currentSetting.value as string}
-                                                        onChange={(e) =>
-                                                            handleSettingChange(settingKey, e.target.value)
-                                                        }
-                                                        placeholder={currentSetting.placeholder}
-                                                    />
+                                    <PageCard
+                                        title={data.category.name}
+                                        description={
+                                            searchTrimmed
+                                                ? `${data.category.description} · ${t('admin.settings.search_showing', {
+                                                      shown: String(shown),
+                                                      total: String(totalInCategory),
+                                                  })}`
+                                                : data.category.description
+                                        }
+                                        footer={
+                                            <div className='flex flex-wrap items-center justify-between gap-3'>
+                                                {searchTrimmed && !anySearchMatch ? (
                                                     <p className='text-sm text-muted-foreground'>
-                                                        {currentSetting.description}
+                                                        {t('admin.settings.search_try_other')}
                                                     </p>
+                                                ) : (
+                                                    <span />
+                                                )}
+                                                <Button onClick={handleSave} disabled={saving} className='shrink-0'>
+                                                    {saving ? (
+                                                        <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                                                    ) : (
+                                                        <Save className='w-4 h-4 mr-2' />
+                                                    )}
+                                                    {t('admin.settings.actions.save')}
+                                                </Button>
+                                            </div>
+                                        }
+                                    >
+                                        {!anySearchMatch ? (
+                                            <div className='flex flex-col items-center justify-center gap-2 py-16 text-center px-4'>
+                                                <div className='rounded-full bg-muted/50 p-4'>
+                                                    <Search className='h-8 w-8 text-muted-foreground' />
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                </PageCard>
-                            </TabsContent>
-                        ))}
+                                                <p className='text-base font-medium text-foreground'>
+                                                    {t('admin.settings.search_no_results')}
+                                                </p>
+                                                <Button variant='outline' size='sm' onClick={() => setSettingsSearch('')}>
+                                                    {t('admin.settings.search_clear')}
+                                                </Button>
+                                            </div>
+                                        ) : shown === 0 ? (
+                                            <div className='flex flex-col items-center justify-center gap-2 py-14 text-center px-4'>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    {t('admin.settings.search_no_results')}
+                                                </p>
+                                                <Button variant='outline' size='sm' onClick={() => setSettingsSearch('')}>
+                                                    {t('admin.settings.search_clear')}
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className='space-y-6'>
+                                                {filteredEntries.map(([settingKey, setting]) => {
+                                                    const currentSetting = settings[settingKey] || setting;
+                                                    const formattedName = formatSettingName(
+                                                        currentSetting.name,
+                                                        settingKey,
+                                                    );
+                                                    return (
+                                                        <SettingFieldRow
+                                                            key={settingKey}
+                                                            settingKey={settingKey}
+                                                            currentSetting={currentSetting}
+                                                            formattedName={formattedName}
+                                                            onSettingChange={handleSettingChange}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </PageCard>
+                                </TabsContent>
+                            );
+                        })}
                     </div>
                 </Tabs>
             </div>
@@ -426,14 +626,12 @@ export default function SettingsPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('admin.settings.actions.upload_logs')}</DialogTitle>
-                        <DialogDescription>
-                            Logs have been successfully uploaded. You can share these URLs with support.
-                        </DialogDescription>
+                        <DialogDescription>{t('admin.settings.logs.dialog_description')}</DialogDescription>
                     </DialogHeader>
                     {uploadedLogs && (
                         <div className='space-y-4 pt-4'>
                             <div className='space-y-2'>
-                                <Label>Panel Logs (Web)</Label>
+                                <Label>{t('admin.settings.logs.panel_logs')}</Label>
                                 {uploadedLogs.web.success && uploadedLogs.web.url ? (
                                     <div className='flex gap-2'>
                                         <Input value={uploadedLogs.web.url} readOnly />
@@ -451,12 +649,12 @@ export default function SettingsPage() {
                                     </div>
                                 ) : (
                                     <p className='text-sm text-destructive'>
-                                        {uploadedLogs.web.error || 'Failed to upload web logs'}
+                                        {uploadedLogs.web.error || t('admin.settings.logs.upload_failed_generic')}
                                     </p>
                                 )}
                             </div>
                             <div className='space-y-2'>
-                                <Label>System Logs (App)</Label>
+                                <Label>{t('admin.settings.logs.system_logs')}</Label>
                                 {uploadedLogs.app.success && uploadedLogs.app.url ? (
                                     <div className='flex gap-2'>
                                         <Input value={uploadedLogs.app.url} readOnly />
@@ -474,7 +672,7 @@ export default function SettingsPage() {
                                     </div>
                                 ) : (
                                     <p className='text-sm text-destructive'>
-                                        {uploadedLogs.app.error || 'Failed to upload app logs'}
+                                        {uploadedLogs.app.error || t('admin.settings.logs.upload_failed_generic')}
                                     </p>
                                 )}
                             </div>

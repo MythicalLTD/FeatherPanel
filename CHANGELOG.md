@@ -24,7 +24,7 @@
 - Added a dynamic notification bubble icon to tickets, instantly highlighting those with new messages since your last reply. by @nayskutzu
 - Added an optional security setting to require users to verify their email address before they can log in after registration, including a full verify-email flow and frontend page. by @nayskutzu
 - Added a dedicated `verify_email` mail template (editable in Mail Templates) used for email verification, consistent with other system templates. by @nayskutzu
-
+- Introduced a powerful search feature within admin settings, making it effortless to find and manage configuration options. by @nayskutzu
 
 
 ## v1.3.3 STABLE
