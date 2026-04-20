@@ -261,6 +261,19 @@ function SidebarContent({
         return a.localeCompare(b);
     });
 
+    const renderCollapsedLabel = (label: string) => {
+        if (!collapsed || mobile) return null;
+        return (
+            <span className='pointer-events-none absolute left-full top-1/2 z-50 ml-3 flex -translate-x-1 -translate-y-1/2 items-center whitespace-nowrap rounded-xl border border-border/50 bg-card/95 px-2.5 py-1.5 text-xs font-medium tracking-tight text-foreground opacity-0 shadow-xl shadow-black/20 ring-1 ring-border/30 backdrop-blur-md transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 motion-reduce:transition-none'>
+                <span
+                    className='absolute -left-1.5 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border-l border-t border-border/50 bg-card/95'
+                    aria-hidden='true'
+                />
+                {label}
+            </span>
+        );
+    };
+
     const modernBrandInner = (
         <div
             className={cn(
@@ -425,8 +438,14 @@ function SidebarContent({
                                                 <button
                                                     type='button'
                                                     onClick={() => toggleSubmenu(item.id)}
-                                                    className={cn(navItemBase, navItemIdle, topLevelItemPad)}
-                                                    title={collapsed && !mobile ? item.name : undefined}
+                                                    className={cn(
+                                                        navItemBase,
+                                                        navItemIdle,
+                                                        topLevelItemPad,
+                                                        'group relative overflow-visible',
+                                                    )}
+                                                    title={collapsed && !mobile ? undefined : item.name}
+                                                    aria-label={item.name}
                                                 >
                                                     {renderIcon(item, '', topIconSize)}
 
@@ -442,6 +461,7 @@ function SidebarContent({
                                                             )}
                                                         />
                                                     )}
+                                                    {renderCollapsedLabel(item.name)}
                                                 </button>
 
                                                 <div
@@ -499,8 +519,10 @@ function SidebarContent({
                                                     navItemBase,
                                                     active ? navItemActive : navItemIdle,
                                                     topLevelItemPad,
+                                                    'group relative overflow-visible',
                                                 )}
-                                                title={collapsed && !mobile ? item.name : undefined}
+                                                title={collapsed && !mobile ? undefined : item.name}
+                                                aria-label={item.name}
                                             >
                                                 {renderIcon(item, '', topIconSize)}
 
@@ -516,6 +538,7 @@ function SidebarContent({
                                                         {unreadTicketCount}
                                                     </span>
                                                 )}
+                                                {renderCollapsedLabel(item.name)}
                                             </button>
                                         );
                                     }
@@ -534,8 +557,10 @@ function SidebarContent({
                                                 navItemBase,
                                                 active ? navItemActive : navItemIdle,
                                                 topLevelItemPad,
+                                                'group relative overflow-visible',
                                             )}
-                                            title={collapsed && !mobile ? item.name : undefined}
+                                            title={collapsed && !mobile ? undefined : item.name}
+                                            aria-label={item.name}
                                         >
                                             {renderIcon(item, '', topIconSize)}
 
@@ -549,6 +574,7 @@ function SidebarContent({
                                                     {unreadTicketCount}
                                                 </span>
                                             )}
+                                            {renderCollapsedLabel(item.name)}
                                         </Link>
                                     );
                                 })}
@@ -573,7 +599,9 @@ function SidebarContent({
                         title={collapsed ? t('navbar.expandSidebar') : t('navbar.collapseSidebar')}
                         onClick={() => {
                             if (typeof window !== 'undefined') {
-                                const event = new CustomEvent('toggle-sidebar');
+                                const event = new CustomEvent<boolean>('toggle-sidebar', {
+                                    detail: !collapsed,
+                                });
                                 window.dispatchEvent(event);
                             }
                         }}

@@ -27,6 +27,8 @@ import BackgroundWrapper from '@/components/theme/BackgroundWrapper';
 
 import { usePluginRoutes, getPluginPaths } from '@/hooks/usePluginRoutes';
 
+const SIDEBAR_COLLAPSED_KEY = 'featherpanel_sidebar_collapsed';
+
 function getCookie(name: string): string | null {
     if (typeof document === 'undefined') return null;
     const value = `; ${document.cookie}`;
@@ -40,7 +42,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+        } catch {
+            return false;
+        }
+    });
 
     const pluginData = usePluginRoutes();
     const pluginPaths = getPluginPaths(pluginData);
@@ -80,9 +89,36 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     }, [router]);
 
     useEffect(() => {
-        const handleToggle = () => setSidebarCollapsed((prev) => !prev);
-        window.addEventListener('toggle-sidebar', handleToggle);
-        return () => window.removeEventListener('toggle-sidebar', handleToggle);
+        const syncFromStorage = () => {
+            try {
+                setSidebarCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true');
+            } catch {
+                setSidebarCollapsed(false);
+            }
+        };
+
+        const handleToggle = (event: Event) => {
+            const detail = (event as CustomEvent<boolean>).detail;
+            if (typeof detail === 'boolean') {
+                setSidebarCollapsed(detail);
+                return;
+            }
+            syncFromStorage();
+        };
+
+        const handleStorage = (e: StorageEvent) => {
+            if (e.key === SIDEBAR_COLLAPSED_KEY) {
+                syncFromStorage();
+            }
+        };
+
+        syncFromStorage();
+        window.addEventListener('toggle-sidebar', handleToggle as EventListener);
+        window.addEventListener('storage', handleStorage);
+        return () => {
+            window.removeEventListener('toggle-sidebar', handleToggle as EventListener);
+            window.removeEventListener('storage', handleStorage);
+        };
     }, []);
 
     if (!mounted) {
