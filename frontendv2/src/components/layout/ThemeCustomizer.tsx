@@ -21,6 +21,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Check, Globe, Image as ImageIcon, LayoutTemplate, Moon, Palette, PanelTop, Sun, XIcon } from 'lucide-react';
 import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
+import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
 import BackgroundCustomizer from '@/components/theme/BackgroundCustomizer';
 import { cn } from '@/lib/utils';
@@ -44,6 +45,7 @@ function segmentButtonClass(active: boolean) {
 export default function ThemeCustomizer() {
     const { theme, accentColor, setAccentColor, fontFamily, setFontFamily, toggleTheme, mounted } = useTheme();
     const { navbarHoverReveal, setNavbarHoverReveal } = useNavbarHoverReveal();
+    const { navbarSticky, setNavbarSticky } = useNavbarSticky();
     const { chromeLayout, setChromeLayout } = useChromeLayout();
     const { t, availableLanguages, setLocale, locale } = useTranslation();
     const [customizerOpen, setCustomizerOpen] = useState(false);
@@ -256,6 +258,25 @@ export default function ThemeCustomizer() {
                                                         <span className='truncate'>
                                                             {t('appearance.chromeLayout.compactClassic')}
                                                         </span>
+                                                    </button>
+                                                </div>
+                                                <p className={sectionLabelClass}>{t('appearance.navbarSticky.title')}</p>
+                                                <div className='mb-2 grid grid-cols-2 gap-2.5 sm:gap-2'>
+                                                    <button
+                                                        type='button'
+                                                        title={t('appearance.navbarSticky.onHint')}
+                                                        onClick={() => setNavbarSticky(true)}
+                                                        className={segmentButtonClass(navbarSticky)}
+                                                    >
+                                                        {t('appearance.navbarSticky.on')}
+                                                    </button>
+                                                    <button
+                                                        type='button'
+                                                        title={t('appearance.navbarSticky.offHint')}
+                                                        onClick={() => setNavbarSticky(false)}
+                                                        className={segmentButtonClass(!navbarSticky)}
+                                                    >
+                                                        {t('appearance.navbarSticky.off')}
                                                     </button>
                                                 </div>
                                                 {chromeLayout === 'modern' && (

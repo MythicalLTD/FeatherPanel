@@ -904,6 +904,13 @@
 			"compactOn": "Hover",
 			"onHint": "Large screens: bar stays tucked up until you move the pointer to the top edge, then it drops down."
 		},
+		"navbarSticky": {
+			"title": "Top bar position",
+			"on": "Sticky",
+			"off": "Scroll with page",
+			"onHint": "Keeps the top bar pinned at the top while you scroll.",
+			"offHint": "Top bar scrolls away with the page content."
+		},
 		"chromeLayout": {
 			"title": "Shell layout",
 			"modern": "Floating (modern)",

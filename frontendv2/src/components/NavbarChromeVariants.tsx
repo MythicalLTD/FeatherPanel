@@ -53,6 +53,8 @@ export type NavbarChromeProps = {
     handleLogout: () => Promise<void>;
     /** Large screens: parent uses hover-reveal dock; header must not be sticky so transforms work. */
     desktopHoverDock?: boolean;
+    /** If false, navbar scrolls with content instead of sticking to top. */
+    navbarSticky?: boolean;
 };
 
 export function NavbarClassicChrome(props: NavbarChromeProps) {
@@ -72,11 +74,13 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
         getLegalName,
         handleLogout,
         desktopHoverDock = false,
+        navbarSticky = true,
     } = props;
     return (
         <div
             className={cn(
-                'sticky top-0 z-30 flex h-14 sm:h-16 shrink-0 items-center gap-x-2 sm:gap-x-4 border-b border-border/30 bg-card/75 backdrop-blur-xl px-2 sm:px-6 lg:px-8',
+                'z-30 flex h-14 sm:h-16 shrink-0 items-center gap-x-2 sm:gap-x-4 border-b border-border/20 bg-card/85 backdrop-blur-xl px-2 sm:px-6 lg:px-8 dark:bg-card/75',
+                navbarSticky ? 'sticky top-0' : 'relative',
                 desktopHoverDock && 'lg:static lg:top-auto',
             )}
         >
@@ -178,8 +182,8 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
                             leaveFrom='transform opacity-100 scale-100 translate-y-0'
                             leaveTo='transform opacity-0 scale-[0.98] translate-y-1'
                         >
-                            <Menu.Items className='absolute right-0 z-50 mt-2 max-h-[min(32rem,calc(100dvh-5rem))] w-[min(20rem,calc(100vw-1rem))] origin-top-right overflow-y-auto overflow-x-hidden rounded-xl border border-border/40 bg-card shadow-md ring-1 ring-border/40 focus:outline-none sm:w-80 sm:max-w-none'>
-                                <div className='border-b border-border/50 bg-muted/20 px-3 py-3 sm:px-4 sm:py-3.5'>
+                            <Menu.Items className='absolute right-0 z-50 mt-2 max-h-[min(32rem,calc(100dvh-5rem))] w-[min(20rem,calc(100vw-1rem))] origin-top-right overflow-y-auto overflow-x-hidden rounded-xl border border-border/30 bg-card/95 shadow-md ring-1 ring-border/25 backdrop-blur-xl focus:outline-none sm:w-80 sm:max-w-none dark:bg-card/85'>
+                                <div className='border-b border-border/30 bg-muted/15 px-3 py-3 sm:px-4 sm:py-3.5'>
                                     <p className='text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5'>
                                         {t('navbar.menuAccount')}
                                     </p>
@@ -378,15 +382,17 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
         getLegalName,
         handleLogout,
         desktopHoverDock = false,
+        navbarSticky = true,
     } = props;
     return (
         <header
             className={cn(
-                'sticky top-0 z-30 shrink-0 px-3 pb-2 pt-3 sm:px-4 lg:px-6',
+                'z-30 shrink-0 px-3 pb-2 pt-3 sm:px-4 lg:px-6',
+                navbarSticky ? 'sticky top-0' : 'relative',
                 desktopHoverDock && 'lg:static lg:top-auto',
             )}
         >
-            <div className='mx-auto flex h-12 max-w-[1800px] items-center gap-x-2 rounded-2xl border border-border/30 bg-card/65 px-2.5 shadow-sm backdrop-blur-xl sm:h-13 sm:gap-x-3 sm:px-3.5 dark:bg-card/55'>
+            <div className='mx-auto flex h-12 max-w-[1800px] items-center gap-x-2 rounded-2xl border border-border/20 bg-card/80 px-2.5 shadow-sm backdrop-blur-xl sm:h-13 sm:gap-x-3 sm:px-3.5 dark:bg-card/70'>
                 <button
                     type='button'
                     className='-m-1 flex shrink-0 items-center justify-center rounded-xl border border-transparent p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hidden'
@@ -412,7 +418,7 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                     </div>
 
                     <div className='flex shrink-0 items-center gap-1 sm:gap-2'>
-                        <div className='flex items-center gap-0.5 rounded-xl border border-border/40 bg-muted/15 p-0.5 sm:p-1'>
+                        <div className='flex items-center gap-0.5 rounded-xl border border-border/30 bg-muted/10 p-0.5 sm:p-1'>
                             {canAccessAdmin && (
                                 <button
                                     type='button'
@@ -492,8 +498,8 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                                 leaveFrom='transform opacity-100 scale-100 translate-y-0'
                                 leaveTo='transform opacity-0 scale-[0.98] translate-y-1'
                             >
-                                <Menu.Items className='absolute right-0 z-50 mt-2 max-h-[min(32rem,calc(100dvh-5rem))] w-[min(20rem,calc(100vw-1rem))] origin-top-right overflow-y-auto overflow-x-hidden rounded-2xl border border-border/40 bg-card p-1.5 shadow-md ring-1 ring-border/40 focus:outline-none sm:w-80 sm:max-w-none dark:bg-card/55'>
-                                    <div className='rounded-xl border border-border/40 bg-muted/10 px-3 py-3 backdrop-blur-sm sm:px-3.5 sm:py-3'>
+                                <Menu.Items className='absolute right-0 z-50 mt-2 max-h-[min(32rem,calc(100dvh-5rem))] w-[min(20rem,calc(100vw-1rem))] origin-top-right overflow-y-auto overflow-x-hidden rounded-2xl border border-border/30 bg-card/95 p-1.5 shadow-md ring-1 ring-border/25 backdrop-blur-xl focus:outline-none sm:w-80 sm:max-w-none dark:bg-card/85'>
+                                    <div className='rounded-xl border border-border/30 bg-muted/10 px-3 py-3 backdrop-blur-sm sm:px-3.5 sm:py-3'>
                                         <p className='mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                             {t('navbar.menuAccount')}
                                         </p>

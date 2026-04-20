@@ -24,6 +24,7 @@ import { ServerContext } from '@/contexts/ServerContext';
 import Permissions from '@/lib/permissions';
 import { LocalStorageManagerDialog } from '@/components/layout/LocalStorageManagerDialog';
 import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
+import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
 import { NavbarClassicChrome, NavbarModernChrome } from '@/components/NavbarChromeVariants';
 
@@ -69,6 +70,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const [emailRevealed, setEmailRevealed] = useState(false);
     const [localStorageOpen, setLocalStorageOpen] = useState(false);
     const { navbarHoverReveal } = useNavbarHoverReveal();
+    const { navbarSticky } = useNavbarSticky();
     const { chromeLayout } = useChromeLayout();
 
     const canAccessAdmin = hasPermission(Permissions.ADMIN_DASHBOARD_VIEW);
@@ -89,6 +91,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         getLegalName,
         handleLogout,
         desktopHoverDock: navbarHoverReveal,
+        navbarSticky,
     };
 
     const Chrome = chromeLayout === 'classic' ? NavbarClassicChrome : NavbarModernChrome;
