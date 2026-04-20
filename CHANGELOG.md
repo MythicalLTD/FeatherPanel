@@ -13,11 +13,13 @@
 - Fixed ticket detail sidebars occasionally showing an invalid "Last Updated" date (1/1/1970) by adding safe date handling and fallbacks. by @nayskutzu
 - Fixed knowledgebase category icons not loading on some installations by correcting the upload/storage path resolution for KB-specific attachments. by @nayskutzu
 - Resolved an issue where FeatherIDE incorrectly allowed editing of `.jar` files, ensuring binary archives are no longer opened in the text editor. by @nayskutzu
+- Fixed an issue where the "Send Test Email" function in Mail Templates ignored the entered recipient address and always sent emails to the main admin instead. Test emails are now correctly delivered to the specified address.
 
 ### Improved
 
 - Enhanced translation quality and consistency across all pages for a smoother, more intuitive multilingual experience. by @nayskutzu
 - Significantly enhanced the file manager with a smoother, more intuitive experience and quality-of-life improvements throughout. by @nayskutzu
+- Enhanced the sidebar and navbar with refined design and smoother interactions for a more seamless navigation experience. by @nayskutzu
 
 ### Added
 

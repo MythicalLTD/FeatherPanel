@@ -892,7 +892,27 @@
 		}
 	},
 	"appearance": {
+		"settingsMenuTitle": "Appearance",
+		"settingsMenuSubtitle": "Theme, background, accent, and layout",
+		"fontFamilyTitle": "Font",
 		"language": "Language",
+		"navbarHoverReveal": {
+			"title": "Top bar (desktop)",
+			"off": "Always visible",
+			"on": "Reveal on hover",
+			"compactOff": "Visible",
+			"compactOn": "Hover",
+			"onHint": "Large screens: bar stays tucked up until you move the pointer to the top edge, then it drops down."
+		},
+		"chromeLayout": {
+			"title": "Shell layout",
+			"modern": "Floating (modern)",
+			"classic": "Classic",
+			"compactModern": "Floating",
+			"compactClassic": "Classic",
+			"modernHint": "Floating top bar and glass sidebar rail.",
+			"classicHint": "Full-width top bar and traditional sidebar."
+		},
 		"accentColor": "Accent Color",
 		"theme": {
 			"light": "Light Mode",
@@ -1044,6 +1064,9 @@
 		"adminArea": "Admin Area",
 		"adminPanelTooltip": "Admin Panel",
 		"openSidebar": "Open sidebar",
+		"toggleSidebar": "Toggle sidebar width",
+		"collapseSidebar": "Collapse",
+		"expandSidebar": "Expand",
 		"openUserMenu": "Open user menu",
 		"signOut": "Sign out",
 		"user": "User",

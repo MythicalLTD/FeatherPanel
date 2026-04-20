@@ -27,7 +27,7 @@ import {
     TabPanel,
     TabPanels,
 } from '@headlessui/react';
-import { Fragment, useState, useRef } from 'react';
+import { Fragment, useCallback, useRef, useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { BackgroundAnimatedVariant, BackgroundImageFit } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -36,6 +36,9 @@ import { Image as ImageIcon, ArrowUp, XIcon } from 'lucide-react';
 
 interface BackgroundCustomizerProps {
     children?: React.ReactNode;
+    /** When both are set, the dialog is controlled externally (no inline trigger is rendered). */
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
 const BLUR_STEPS = [0, 4, 8, 12, 16, 24];
@@ -44,7 +47,7 @@ const IMAGE_FIT_OPTIONS: { value: BackgroundImageFit; labelKey: string }[] = [
     { value: 'contain', labelKey: 'appearance.background.imageFit.contain' },
     { value: 'fill', labelKey: 'appearance.background.imageFit.fill' },
 ];
-export default function BackgroundCustomizer({ children }: BackgroundCustomizerProps) {
+export default function BackgroundCustomizer({ children, open, onOpenChange }: BackgroundCustomizerProps) {
     const {
         backgroundType,
         backgroundImage,
@@ -62,7 +65,19 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
         setFontFamily,
     } = useTheme();
     const { t } = useTranslation();
-    const [isOpen, setIsOpen] = useState(false);
+    const isControlled = open !== undefined && onOpenChange !== undefined;
+    const [internalOpen, setInternalOpen] = useState(false);
+    const dialogOpen = isControlled ? open : internalOpen;
+    const setDialogOpen = useCallback(
+        (next: boolean) => {
+            if (isControlled) {
+                onOpenChange(next);
+            } else {
+                setInternalOpen(next);
+            }
+        },
+        [isControlled, onOpenChange],
+    );
     const [imageUrl, setImageUrl] = useState(backgroundImage);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -83,27 +98,29 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
     const handleSaveUrl = () => {
         setBackgroundImage(imageUrl);
         setBackgroundType('image');
-        setIsOpen(false);
+        setDialogOpen(false);
     };
 
     return (
         <>
-            {children ? (
-                <div onClick={() => setIsOpen(true)} className='contents cursor-pointer'>
-                    {children}
-                </div>
-            ) : (
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-110 transition-all duration-200 flex items-center justify-center'
-                    title={t('appearance.background.customize')}
-                >
-                    <ImageIcon className='h-4 w-4' aria-hidden='true' />
-                </button>
-            )}
+            {!isControlled &&
+                (children ? (
+                    <div onClick={() => setDialogOpen(true)} className='contents cursor-pointer'>
+                        {children}
+                    </div>
+                ) : (
+                    <button
+                        type='button'
+                        onClick={() => setDialogOpen(true)}
+                        className='flex h-10 w-10 items-center justify-center rounded-full border border-border/50 bg-background/90 backdrop-blur-md transition-all duration-200 hover:scale-110 hover:bg-background'
+                        title={t('appearance.background.customize')}
+                    >
+                        <ImageIcon className='h-4 w-4' aria-hidden='true' />
+                    </button>
+                ))}
 
-            <Transition appear show={isOpen} as={Fragment}>
-                <Dialog as='div' className='relative z-50' onClose={() => setIsOpen(false)}>
+            <Transition appear show={dialogOpen} as={Fragment}>
+                <Dialog as='div' className='relative z-[60]' onClose={() => setDialogOpen(false)}>
                     <TransitionChild
                         as={Fragment}
                         enter='ease-out duration-300'
@@ -133,7 +150,8 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                             {t('appearance.background.title')}
                                         </DialogTitle>
                                         <button
-                                            onClick={() => setIsOpen(false)}
+                                            type='button'
+                                            onClick={() => setDialogOpen(false)}
                                             className='rounded-lg p-1 hover:bg-accent transition-colors'
                                         >
                                             <XIcon className='h-5 w-5' />
@@ -208,7 +226,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                                 onClick={() => {
                                                                     setBackgroundType('aurora');
                                                                     setBackgroundAnimatedVariant(variant);
-                                                                    setIsOpen(false);
+                                                                    setDialogOpen(false);
                                                                 }}
                                                                 className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
                                                                     isSelected
@@ -232,9 +250,10 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                             </TabPanel>
                                             <TabPanel>
                                                 <button
+                                                    type='button'
                                                     onClick={() => {
                                                         setBackgroundType('gradient');
-                                                        setIsOpen(false);
+                                                        setDialogOpen(false);
                                                     }}
                                                     className={`relative w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
                                                         backgroundType === 'gradient'
@@ -279,7 +298,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                                                         <button
                                                             onClick={() => {
                                                                 setBackgroundType('pattern');
-                                                                setIsOpen(false);
+                                                                setDialogOpen(false);
                                                             }}
                                                             className={`relative p-4 rounded-xl border-2 transition-all ${
                                                                 backgroundType === 'pattern'

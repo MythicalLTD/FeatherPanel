@@ -283,7 +283,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                             }
                                             onLoad={(event) => handleIframeLoad(widget.id, event.currentTarget)}
                                             onError={() => handleIframeError(widget.id)}
-                                            allowTransparency={true}
+                                            {...{ allowtransparency: 'true' }}
                                         />
                                     )}
                                 </div>

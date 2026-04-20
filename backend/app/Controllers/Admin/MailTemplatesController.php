@@ -854,12 +854,21 @@ class MailTemplatesController
             }
         }
 
-        // Create a temporary user UUID for test email (using admin's UUID)
-        $adminUuid = $request->get('user')['uuid'] ?? 'test-email';
+        $recipientEmail = trim($data['email']);
+        $recipientUser = User::getUserByEmail($recipientEmail);
+        if (!$recipientUser || !isset($recipientUser['uuid'])) {
+            return ApiResponse::error(
+                'Recipient email address does not belong to an existing user',
+                'RECIPIENT_NOT_FOUND',
+                404
+            );
+        }
+
+        $actorUuid = $request->get('user')['uuid'] ?? null;
 
         // Create mail queue entry
         $queueData = [
-            'user_uuid' => $adminUuid,
+            'user_uuid' => $recipientUser['uuid'],
             'subject' => '[TEST] ' . $data['subject'],
             'body' => $data['body'],
             'status' => 'pending',
@@ -877,7 +886,7 @@ class MailTemplatesController
         // Create mail list entry with the test email address
         $listData = [
             'queue_id' => $queueId,
-            'user_uuid' => $adminUuid,
+            'user_uuid' => $recipientUser['uuid'],
             'created_at' => date('Y-m-d H:i:s'),
             'deleted' => 'false',
         ];
@@ -888,9 +897,9 @@ class MailTemplatesController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $adminUuid,
+            'user_uuid' => $actorUuid,
             'name' => 'send_test_email',
-            'context' => 'Sent test email to: ' . $data['email'],
+            'context' => 'Sent test email to: ' . $recipientEmail,
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 

@@ -20,6 +20,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
 import { cn } from '@/lib/utils';
+import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
+import { useChromeLayout } from '@/hooks/useChromeLayout';
+import { NavbarHoverDock } from '@/components/layout/NavbarHoverDock';
 import BackgroundWrapper from '@/components/theme/BackgroundWrapper';
 
 import { usePluginRoutes, getPluginPaths } from '@/hooks/usePluginRoutes';
@@ -62,6 +65,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     });
 
     const isFullWidthMode = isActualPluginPage;
+    const { navbarHoverReveal } = useNavbarHoverReveal();
+    const { chromeLayout } = useChromeLayout();
+    const navbarHoverDockActive = navbarHoverReveal && chromeLayout === 'modern';
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -99,11 +105,23 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
                 <div
                     className={cn(
-                        'flex-1 flex flex-col min-w-0 transition-all duration-300',
-                        sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64',
+                        'flex-1 flex flex-col min-w-0 transition-[padding] duration-300 ease-out',
+                        chromeLayout === 'classic'
+                            ? sidebarCollapsed
+                                ? 'lg:pl-16'
+                                : 'lg:pl-64'
+                            : sidebarCollapsed
+                              ? 'lg:pl-14'
+                              : 'lg:pl-56',
                     )}
                 >
-                    <Navbar onMenuClick={() => setMobileOpen(true)} />
+                    {navbarHoverDockActive ? (
+                        <NavbarHoverDock>
+                            <Navbar onMenuClick={() => setMobileOpen(true)} />
+                        </NavbarHoverDock>
+                    ) : (
+                        <Navbar onMenuClick={() => setMobileOpen(true)} />
+                    )}
 
                     <main
                         className={cn(

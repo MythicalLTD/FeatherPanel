@@ -113,14 +113,14 @@ function SettingFieldRow({
                     <Label htmlFor={settingKey} className='text-base font-medium'>
                         {formattedName}
                     </Label>
-                    <p className='text-sm text-muted-foreground max-w-[min(100%,42rem)]'>{currentSetting.description}</p>
+                    <p className='text-sm text-muted-foreground max-w-[min(100%,42rem)]'>
+                        {currentSetting.description}
+                    </p>
                 </div>
                 <Switch
                     id={settingKey}
                     checked={
-                        currentSetting.value === true ||
-                        currentSetting.value === 'true' ||
-                        currentSetting.value === 1
+                        currentSetting.value === true || currentSetting.value === 'true' || currentSetting.value === 1
                     }
                     onCheckedChange={(checked: boolean) => onSettingChange(settingKey, checked)}
                     className='shrink-0'
@@ -220,15 +220,7 @@ export default function SettingsPage() {
             let n = 0;
             for (const [settingKey, setting] of Object.entries(data.settings)) {
                 const currentSetting = settings[settingKey] || setting;
-                if (
-                    matchesSettingsQuery(
-                        searchTrimmed,
-                        settingKey,
-                        currentSetting,
-                        catKey,
-                        data.category.name,
-                    )
-                ) {
+                if (matchesSettingsQuery(searchTrimmed, settingKey, currentSetting, catKey, data.category.name)) {
                     n += 1;
                 }
             }
@@ -242,10 +234,7 @@ export default function SettingsPage() {
         [searchTrimmed, categoryMatchCounts],
     );
 
-    const categoryKeys = useMemo(
-        () => (organizedSettings ? Object.keys(organizedSettings) : []),
-        [organizedSettings],
-    );
+    const categoryKeys = useMemo(() => (organizedSettings ? Object.keys(organizedSettings) : []), [organizedSettings]);
 
     /** Single source of truth with URL: avoids setState+URL races that caused infinite update loops. */
     const activeTab = useMemo(() => {
@@ -305,23 +294,14 @@ export default function SettingsPage() {
             let n = 0;
             for (const [settingKey, setting] of Object.entries(data.settings)) {
                 const currentSetting = settings[settingKey] || setting;
-                if (
-                    matchesSettingsQuery(
-                        searchTrimmed,
-                        settingKey,
-                        currentSetting,
-                        catKey,
-                        data.category.name,
-                    )
-                ) {
+                if (matchesSettingsQuery(searchTrimmed, settingKey, currentSetting, catKey, data.category.name)) {
                     n += 1;
                 }
             }
             counts[catKey] = n;
         }
 
-        const resolvedTab =
-            urlCategory && categoryKeys.includes(urlCategory) ? urlCategory : categoryKeys[0];
+        const resolvedTab = urlCategory && categoryKeys.includes(urlCategory) ? urlCategory : categoryKeys[0];
         const firstWithMatches = categoryKeys.find((k) => (counts[k] ?? 0) > 0);
         if (!firstWithMatches) return;
 
@@ -581,7 +561,11 @@ export default function SettingsPage() {
                                                 <p className='text-base font-medium text-foreground'>
                                                     {t('admin.settings.search_no_results')}
                                                 </p>
-                                                <Button variant='outline' size='sm' onClick={() => setSettingsSearch('')}>
+                                                <Button
+                                                    variant='outline'
+                                                    size='sm'
+                                                    onClick={() => setSettingsSearch('')}
+                                                >
                                                     {t('admin.settings.search_clear')}
                                                 </Button>
                                             </div>
@@ -590,7 +574,11 @@ export default function SettingsPage() {
                                                 <p className='text-sm text-muted-foreground'>
                                                     {t('admin.settings.search_no_results')}
                                                 </p>
-                                                <Button variant='outline' size='sm' onClick={() => setSettingsSearch('')}>
+                                                <Button
+                                                    variant='outline'
+                                                    size='sm'
+                                                    onClick={() => setSettingsSearch('')}
+                                                >
                                                     {t('admin.settings.search_clear')}
                                                 </Button>
                                             </div>

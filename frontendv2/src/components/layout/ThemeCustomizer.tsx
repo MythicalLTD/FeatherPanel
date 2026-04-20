@@ -15,17 +15,39 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
+import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
+import { Fragment, useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Check, Palette, Image as ImageIcon, Moon, Sun } from 'lucide-react';
+import { Check, Globe, Image as ImageIcon, LayoutTemplate, Moon, Palette, PanelTop, Sun, XIcon } from 'lucide-react';
+import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
+import { useChromeLayout } from '@/hooks/useChromeLayout';
 import BackgroundCustomizer from '@/components/theme/BackgroundCustomizer';
-import LanguageSelector from '@/components/layout/LanguageSelector';
+import { cn } from '@/lib/utils';
+
+const dialogPanelClass =
+    'w-full overflow-hidden rounded-2xl border border-border bg-background text-card-foreground shadow-2xl shadow-black/25 focus:outline-none sm:max-w-2xl';
+
+const sectionLabelClass = 'mb-1.5 px-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground';
+
+const panelSectionClass = 'px-2.5 py-2';
+
+function segmentButtonClass(active: boolean) {
+    return cn(
+        'flex min-h-11 w-full items-center justify-center gap-1 rounded-xl border px-3 py-2 text-sm font-medium leading-none transition-colors sm:min-h-9 sm:text-xs',
+        active
+            ? 'border-primary/50 bg-primary/20 text-primary'
+            : 'border-transparent bg-transparent text-muted-foreground hover:text-foreground',
+    );
+}
 
 export default function ThemeCustomizer() {
     const { theme, accentColor, setAccentColor, fontFamily, setFontFamily, toggleTheme, mounted } = useTheme();
+    const { navbarHoverReveal, setNavbarHoverReveal } = useNavbarHoverReveal();
+    const { chromeLayout, setChromeLayout } = useChromeLayout();
     const { t, availableLanguages, setLocale, locale } = useTranslation();
+    const [customizerOpen, setCustomizerOpen] = useState(false);
+    const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
 
     const accentColorOptions = [
         { name: t('appearance.colors.purple'), value: 'purple', color: 'hsl(262 83% 58%)' },
@@ -63,214 +85,282 @@ export default function ThemeCustomizer() {
         },
     ];
 
+    const currentAccent = accentColorOptions.find((c) => c.value === accentColor)?.color ?? 'hsl(var(--primary))';
+
     if (!mounted) {
         return (
-            <div className='flex items-center gap-2'>
-                <div className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md' />
-                <div className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md' />
-                <div className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md' />
-                <div className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md' />
+            <div className='flex items-center'>
+                <div className='h-9 w-9 rounded-xl border border-border/50 bg-muted/20 sm:h-10 sm:w-10' />
             </div>
         );
     }
 
     return (
-        <div className='flex items-center gap-2'>
-            <div className='hidden sm:flex items-center gap-2'>
-                <LanguageSelector />
+        <>
+            <button
+                type='button'
+                title={t('appearance.settingsMenuTitle')}
+                onClick={() => setCustomizerOpen(true)}
+                className='relative flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground'
+            >
+                <Palette className='h-5.5 w-5.5' aria-hidden />
+                <span
+                    className='pointer-events-none absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full ring-2 ring-card'
+                    style={{ backgroundColor: currentAccent }}
+                    aria-hidden
+                />
+            </button>
 
-                <BackgroundCustomizer />
-
-                <button
-                    onClick={toggleTheme}
-                    className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-105 transition-all duration-200 flex items-center justify-center'
-                    title={theme === 'dark' ? t('appearance.theme.switchToLight') : t('appearance.theme.switchToDark')}
-                >
-                    {theme === 'dark' ? <Sun className='h-4 w-4' /> : <Moon className='h-4 w-4' />}
-                </button>
-
-                <Menu as='div' className='relative'>
-                    <MenuButton className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-105 transition-all duration-200 flex items-center justify-center'>
-                        <div
-                            className='h-5 w-5 rounded-full border-2 border-white'
-                            style={{ backgroundColor: accentColorOptions.find((c) => c.value === accentColor)?.color }}
-                        />
-                    </MenuButton>
-
-                    <Transition
+            <Transition appear show={customizerOpen} as={Fragment}>
+                <Dialog as='div' className='relative z-[90]' onClose={setCustomizerOpen}>
+                    <TransitionChild
                         as={Fragment}
-                        enter='transition ease-out duration-100'
-                        enterFrom='transform opacity-0 scale-95'
-                        enterTo='transform opacity-100 scale-100'
-                        leave='transition ease-in duration-75'
-                        leaveFrom='transform opacity-100 scale-100'
-                        leaveTo='transform opacity-0 scale-95'
+                        enter='ease-out duration-200'
+                        enterFrom='opacity-0'
+                        enterTo='opacity-100'
+                        leave='ease-in duration-150'
+                        leaveFrom='opacity-100'
+                        leaveTo='opacity-0'
                     >
-                        <MenuItems className='absolute right-0 mt-2 w-52 origin-top-right rounded-xl bg-card border border-border/50 ring-1 ring-black ring-opacity-5 focus:outline-none backdrop-blur-xl p-2 z-50'>
-                            <div className='px-3 py-2 text-sm font-semibold text-foreground border-b border-border/50 mb-2'>
-                                {t('appearance.accentColor')}
-                            </div>
-                            {accentColorOptions.map((option) => (
-                                <MenuItem key={option.value}>
-                                    {({ focus }) => (
-                                        <button
-                                            onClick={() => setAccentColor(option.value)}
-                                            className={`${
-                                                focus ? 'bg-accent' : ''
-                                            } group flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors`}
-                                        >
-                                            <div
-                                                className='h-5 w-5 rounded-full border-2 border-white mr-3'
-                                                style={{ backgroundColor: option.color }}
-                                            />
-                                            <span className='flex-1 text-left'>{option.name}</span>
-                                            {accentColor === option.value && <Check className='h-4 w-4 text-primary' />}
-                                        </button>
-                                    )}
-                                </MenuItem>
-                            ))}
-                            <div className='my-2 border-t border-border/50' />
-                            <div className='px-3 py-1 text-xs font-semibold text-muted-foreground'>Fonts</div>
-                            {fontOptions.map((option) => (
-                                <MenuItem key={option.value}>
-                                    {({ focus }) => (
-                                        <button
-                                            onClick={() => setFontFamily(option.value)}
-                                            className={`${
-                                                focus ? 'bg-accent' : ''
-                                            } group flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors`}
-                                        >
-                                            <span className='flex-1 text-left' style={{ fontFamily: option.preview }}>
-                                                {option.name}
-                                            </span>
-                                            {fontFamily === option.value && <Check className='h-4 w-4 text-primary' />}
-                                        </button>
-                                    )}
-                                </MenuItem>
-                            ))}
-                            {/* Motion level selector removed – motion is now always off ('none'). */}
-                        </MenuItems>
-                    </Transition>
-                </Menu>
-            </div>
+                        <div className='fixed inset-0 bg-black/50 backdrop-blur-sm' />
+                    </TransitionChild>
 
-            <div className='sm:hidden'>
-                <Menu as='div' className='relative'>
-                    <MenuButton className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md flex items-center justify-center'>
-                        <Palette className='h-5 w-5' />
-                    </MenuButton>
-
-                    <Transition
-                        as={Fragment}
-                        enter='transition ease-out duration-100'
-                        enterFrom='transform opacity-0 scale-95'
-                        enterTo='transform opacity-100 scale-100'
-                        leave='transition ease-in duration-75'
-                        leaveFrom='transform opacity-100 scale-100'
-                        leaveTo='transform opacity-0 scale-95'
-                    >
-                        <MenuItems className='absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-card border border-border/50 ring-1 ring-black ring-opacity-5 focus:outline-none backdrop-blur-xl p-2 z-50 max-h-[80vh] overflow-y-auto'>
-                            <MenuItem>
-                                {({ focus }) => (
-                                    <button
-                                        onClick={toggleTheme}
-                                        className={`${focus ? 'bg-accent' : ''} flex w-full items-center rounded-lg px-3 py-2.5 text-sm transition-colors`}
-                                    >
-                                        {theme === 'dark' ? (
-                                            <Sun className='h-4 w-4 mr-3' />
-                                        ) : (
-                                            <Moon className='h-4 w-4 mr-3' />
-                                        )}
-                                        {theme === 'dark' ? t('appearance.theme.light') : t('appearance.theme.dark')}
-                                    </button>
-                                )}
-                            </MenuItem>
-
-                            <MenuItem>
-                                {({ focus }) => (
-                                    <BackgroundCustomizer>
-                                        <div
-                                            className={`${focus ? 'bg-accent' : ''} flex w-full items-center rounded-lg px-3 py-2.5 text-sm transition-colors cursor-pointer`}
-                                        >
-                                            <ImageIcon className='h-4 w-4 mr-3' />
-                                            {t('appearance.background.change')}
+                    <div className='fixed inset-0 overflow-y-auto'>
+                        <div className='flex min-h-full items-start justify-center p-2 pt-16 sm:items-center sm:p-4'>
+                            <TransitionChild
+                                as={Fragment}
+                                enter='ease-out duration-200'
+                                enterFrom='opacity-0 translate-y-2 sm:translate-y-0 sm:scale-95'
+                                enterTo='opacity-100 translate-y-0 sm:scale-100'
+                                leave='ease-in duration-150'
+                                leaveFrom='opacity-100 translate-y-0 sm:scale-100'
+                                leaveTo='opacity-0 translate-y-2 sm:translate-y-0 sm:scale-95'
+                            >
+                                <DialogPanel className={dialogPanelClass}>
+                                    <div className='border-b border-border bg-background px-4 py-3.5'>
+                                        <div className='flex items-start justify-between gap-3'>
+                                            <div>
+                                                <DialogTitle className='text-base font-semibold leading-tight text-foreground'>
+                                                    {t('appearance.settingsMenuTitle')}
+                                                </DialogTitle>
+                                                <p className='text-sm text-muted-foreground/95'>
+                                                    {t('appearance.settingsMenuSubtitle')}
+                                                </p>
+                                            </div>
+                                            <button
+                                                type='button'
+                                                onClick={() => setCustomizerOpen(false)}
+                                                className='rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
+                                            >
+                                                <XIcon className='h-5 w-5' />
+                                            </button>
                                         </div>
-                                    </BackgroundCustomizer>
-                                )}
-                            </MenuItem>
+                                    </div>
 
-                            {/* Motion level selector removed – motion is now always off ('none'). */}
+                                    <div className='max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain p-3 sm:max-h-[min(32rem,78dvh)]'>
+                                        <div className='mb-3 grid grid-cols-2 gap-2'>
+                                            <button
+                                                type='button'
+                                                onClick={toggleTheme}
+                                                title={
+                                                    theme === 'dark'
+                                                        ? t('appearance.theme.switchToLight')
+                                                        : t('appearance.theme.switchToDark')
+                                                }
+                                                className='flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border/60 bg-muted/25 px-3 text-sm font-medium transition-colors hover:bg-accent/50 sm:h-10 sm:text-xs'
+                                            >
+                                                {theme === 'dark' ? (
+                                                    <Sun className='h-4 w-4 text-amber-400' aria-hidden />
+                                                ) : (
+                                                    <Moon className='h-4 w-4 text-slate-500' aria-hidden />
+                                                )}
+                                                <span>
+                                                    {theme === 'dark'
+                                                        ? t('appearance.theme.light')
+                                                        : t('appearance.theme.dark')}
+                                                </span>
+                                            </button>
 
-                            <div className='my-2 border-t border-border/50' />
+                                            <button
+                                                type='button'
+                                                title={t('appearance.background.customize')}
+                                                onClick={() => {
+                                                    setCustomizerOpen(false);
+                                                    setBackgroundDialogOpen(true);
+                                                }}
+                                                className='flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border/60 bg-muted/25 px-3 text-sm font-medium transition-colors hover:bg-accent/50 sm:h-10 sm:text-xs'
+                                            >
+                                                <ImageIcon className='h-4 w-4 text-muted-foreground' aria-hidden />
+                                                <span>{t('appearance.background.change')}</span>
+                                            </button>
+                                        </div>
 
-                            <div className='px-3 py-2'>
-                                <div className='text-xs font-semibold text-muted-foreground mb-2'>
-                                    {t('appearance.accentColor')}
-                                </div>
-                                <div className='grid grid-cols-4 gap-2'>
-                                    {accentColorOptions.map((option) => (
-                                        <button
-                                            key={option.value}
-                                            onClick={() => setAccentColor(option.value)}
-                                            className='relative h-8 w-8 rounded-full border-2 border-white flex items-center justify-center transition-transform hover:scale-110'
-                                            style={{ backgroundColor: option.color }}
-                                        >
-                                            {accentColor === option.value && <Check className='h-4 w-4 text-white' />}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                                        <div className='rounded-2xl border border-border divide-y divide-border bg-card'>
+                                            <div className={panelSectionClass}>
+                                                <p className={sectionLabelClass}>{t('appearance.accentColor')}</p>
+                                                <div className='grid grid-cols-5 gap-2.5 sm:gap-2'>
+                                                    {accentColorOptions.map((option) => (
+                                                        <button
+                                                            key={option.value}
+                                                            type='button'
+                                                            title={option.name}
+                                                            onClick={() => setAccentColor(option.value)}
+                                                            className={cn(
+                                                                'relative mx-auto flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-border/60 transition-transform hover:scale-105 sm:h-8 sm:w-8',
+                                                                accentColor === option.value &&
+                                                                    'ring-2 ring-primary ring-offset-1 ring-offset-card',
+                                                            )}
+                                                            style={{ backgroundColor: option.color }}
+                                                        >
+                                                            {accentColor === option.value && (
+                                                                <Check
+                                                                    className={cn(
+                                                                        'h-3 w-3 drop-shadow-sm sm:h-2.5 sm:w-2.5',
+                                                                        option.value === 'white' ||
+                                                                            option.value === 'yellow'
+                                                                            ? 'text-foreground'
+                                                                            : 'text-white',
+                                                                    )}
+                                                                    strokeWidth={3}
+                                                                    aria-hidden
+                                                                />
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
 
-                            <div className='my-2 border-t border-border/50' />
+                                            <div className={panelSectionClass}>
+                                                <p className={sectionLabelClass}>
+                                                    {t('appearance.chromeLayout.title')}
+                                                </p>
+                                                <div className='mb-2 grid grid-cols-2 gap-2.5 sm:gap-2'>
+                                                    <button
+                                                        type='button'
+                                                        title={t('appearance.chromeLayout.modernHint')}
+                                                        onClick={() => setChromeLayout('modern')}
+                                                        className={segmentButtonClass(chromeLayout === 'modern')}
+                                                    >
+                                                        <LayoutTemplate className='h-3 w-3 shrink-0' aria-hidden />
+                                                        <span className='truncate'>
+                                                            {t('appearance.chromeLayout.compactModern')}
+                                                        </span>
+                                                    </button>
+                                                    <button
+                                                        type='button'
+                                                        title={t('appearance.chromeLayout.classicHint')}
+                                                        onClick={() => setChromeLayout('classic')}
+                                                        className={segmentButtonClass(chromeLayout === 'classic')}
+                                                    >
+                                                        <PanelTop className='h-3 w-3 shrink-0' aria-hidden />
+                                                        <span className='truncate'>
+                                                            {t('appearance.chromeLayout.compactClassic')}
+                                                        </span>
+                                                    </button>
+                                                </div>
+                                                {chromeLayout === 'modern' && (
+                                                    <>
+                                                        <p className={sectionLabelClass}>
+                                                            {t('appearance.navbarHoverReveal.title')}
+                                                        </p>
+                                                        <div className='grid grid-cols-2 gap-2.5 sm:gap-2'>
+                                                            <button
+                                                                type='button'
+                                                                title={t('appearance.navbarHoverReveal.off')}
+                                                                onClick={() => setNavbarHoverReveal(false)}
+                                                                className={segmentButtonClass(!navbarHoverReveal)}
+                                                            >
+                                                                {t('appearance.navbarHoverReveal.compactOff')}
+                                                            </button>
+                                                            <button
+                                                                type='button'
+                                                                title={t('appearance.navbarHoverReveal.onHint')}
+                                                                onClick={() => setNavbarHoverReveal(true)}
+                                                                className={segmentButtonClass(navbarHoverReveal)}
+                                                            >
+                                                                {t('appearance.navbarHoverReveal.compactOn')}
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
 
-                            <div className='px-3 py-1'>
-                                <div className='text-xs font-semibold text-muted-foreground mb-2'>Fonts</div>
-                                <div className='space-y-1'>
-                                    {fontOptions.map((option) => (
-                                        <MenuItem key={option.value}>
-                                            {({ focus }) => (
-                                                <button
-                                                    onClick={() => setFontFamily(option.value)}
-                                                    className={`${focus ? 'bg-accent' : ''} flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${
-                                                        fontFamily === option.value ? 'text-primary' : ''
-                                                    }`}
-                                                    style={{ fontFamily: option.preview }}
-                                                >
-                                                    <span>{option.name}</span>
-                                                    {fontFamily === option.value && <Check className='h-3 w-3' />}
-                                                </button>
-                                            )}
-                                        </MenuItem>
-                                    ))}
-                                </div>
-                            </div>
+                                            <div className={panelSectionClass}>
+                                                <p className={sectionLabelClass}>{t('appearance.fontFamilyTitle')}</p>
+                                                <div className='flex flex-col gap-1.5 sm:gap-1'>
+                                                    {fontOptions.map((option) => (
+                                                        <button
+                                                            key={option.value}
+                                                            type='button'
+                                                            onClick={() => setFontFamily(option.value)}
+                                                            className={cn(
+                                                                'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors sm:py-2 sm:text-xs',
+                                                                fontFamily === option.value
+                                                                    ? 'bg-primary/15 font-medium text-primary'
+                                                                    : 'text-foreground hover:bg-accent/40',
+                                                            )}
+                                                            style={{ fontFamily: option.preview }}
+                                                        >
+                                                            <span className='truncate'>{option.name}</span>
+                                                            {fontFamily === option.value && (
+                                                                <Check
+                                                                    className='h-3 w-3 shrink-0 text-primary'
+                                                                    aria-hidden
+                                                                />
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
 
-                            <div className='my-2 border-t border-border/50' />
+                                            <div className={cn(panelSectionClass, 'pb-1')}>
+                                                <p className={cn(sectionLabelClass, 'flex items-center gap-1')}>
+                                                    <Globe className='h-3 w-3' aria-hidden />
+                                                    {t('appearance.language')}
+                                                </p>
+                                                <div className='max-h-44 space-y-1.5 overflow-y-auto pr-0.5 sm:max-h-40 sm:space-y-1'>
+                                                    {availableLanguages.map((language) => (
+                                                        <button
+                                                            key={language.code}
+                                                            type='button'
+                                                            onClick={() => setLocale(language.code)}
+                                                            className={cn(
+                                                                'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors sm:py-2 sm:text-xs',
+                                                                locale === language.code
+                                                                    ? 'bg-primary/15 font-medium text-primary'
+                                                                    : 'hover:bg-accent/40',
+                                                            )}
+                                                        >
+                                                            <span className='min-w-0 flex-1 truncate'>
+                                                                <span className='font-medium'>
+                                                                    {language.nativeName}
+                                                                </span>
+                                                                {language.name !== language.nativeName && (
+                                                                    <span className='ml-1 text-muted-foreground'>
+                                                                        ({language.name})
+                                                                    </span>
+                                                                )}
+                                                            </span>
+                                                            {locale === language.code && (
+                                                                <Check
+                                                                    className='h-3 w-3 shrink-0 text-primary'
+                                                                    aria-hidden
+                                                                />
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </DialogPanel>
+                            </TransitionChild>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
 
-                            <div className='px-3 py-1'>
-                                <div className='text-xs font-semibold text-muted-foreground mb-2'>
-                                    {t('appearance.language')}
-                                </div>
-                                <div className='space-y-1'>
-                                    {availableLanguages.map((language) => (
-                                        <MenuItem key={language.code}>
-                                            {({ focus }) => (
-                                                <button
-                                                    onClick={() => setLocale(language.code)}
-                                                    className={`${focus ? 'bg-accent' : ''} flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${locale === language.code ? 'text-primary' : ''}`}
-                                                >
-                                                    <span>{language.nativeName}</span>
-                                                    {locale === language.code && <Check className='h-3 w-3' />}
-                                                </button>
-                                            )}
-                                        </MenuItem>
-                                    ))}
-                                </div>
-                            </div>
-                        </MenuItems>
-                    </Transition>
-                </Menu>
-            </div>
-        </div>
+            <BackgroundCustomizer open={backgroundDialogOpen} onOpenChange={setBackgroundDialogOpen} />
+        </>
     );
 }
