@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { isCloudflareChallengeText, triggerCloudflareRecovery } from '@/lib/cloudflare-challenge';
 
 interface Language {
     code: string;
@@ -53,6 +54,30 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
 
+    const fetchJsonObject = useCallback(async (url: string): Promise<Record<string, unknown> | null> => {
+        const response = await fetch(url, { credentials: 'same-origin' });
+        if (!response.ok) return null;
+
+        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+        const raw = await response.text();
+
+        // Cloudflare challenge pages can intermittently replace JSON responses.
+        if (contentType.includes('text/html') && isCloudflareChallengeText(raw)) {
+            triggerCloudflareRecovery();
+            return null;
+        }
+
+        try {
+            const parsed: unknown = JSON.parse(raw);
+            return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
+        } catch {
+            if (isCloudflareChallengeText(raw) || raw.toLowerCase().includes('unexpected token <')) {
+                triggerCloudflareRecovery();
+            }
+            return null;
+        }
+    }, []);
+
     const deepMerge = (target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> => {
         const output = { ...target };
         for (const key in source) {
@@ -72,14 +97,27 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
         let frontendTranslations: Record<string, unknown> = {};
         let backendPrimaryTranslations: Record<string, unknown> = {};
         let backendLangTranslations: Record<string, unknown> = {};
+        const cacheKey = `translations_${lang}_${CACHE_VERSION}`;
 
         try {
-            let frontendResponse = await fetch(`/locales/${lang}.json`);
-            if (!frontendResponse.ok && lang !== PRIMARY_LOCALE) {
-                frontendResponse = await fetch(`/locales/${PRIMARY_LOCALE}.json`);
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                const parsed: unknown = JSON.parse(cached);
+                if (parsed && typeof parsed === 'object') {
+                    setTranslations(parsed as Record<string, unknown>);
+                }
             }
-            if (frontendResponse.ok) {
-                frontendTranslations = await frontendResponse.json();
+        } catch {
+            // Ignore cache parsing errors and continue with network fetch.
+        }
+
+        try {
+            let frontendData = await fetchJsonObject(`/locales/${lang}.json`);
+            if (!frontendData && lang !== PRIMARY_LOCALE) {
+                frontendData = await fetchJsonObject(`/locales/${PRIMARY_LOCALE}.json`);
+            }
+            if (frontendData) {
+                frontendTranslations = frontendData;
             }
         } catch (error) {
             console.warn('Failed to load frontend translations:', error);
@@ -87,19 +125,12 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
 
         if (lang !== PRIMARY_LOCALE) {
             try {
-                const backendPrimaryResponse = await fetch(`/api/system/translations/${PRIMARY_LOCALE}`);
-                if (backendPrimaryResponse.ok) {
-                    const backendPrimaryData = await backendPrimaryResponse.json();
-                    if (backendPrimaryData && typeof backendPrimaryData === 'object') {
-                        if (
-                            'success' in backendPrimaryData &&
-                            'data' in backendPrimaryData &&
-                            backendPrimaryData.success
-                        ) {
-                            backendPrimaryTranslations = (backendPrimaryData.data || {}) as Record<string, unknown>;
-                        } else {
-                            backendPrimaryTranslations = backendPrimaryData as Record<string, unknown>;
-                        }
+                const backendPrimaryData = await fetchJsonObject(`/api/system/translations/${PRIMARY_LOCALE}`);
+                if (backendPrimaryData) {
+                    if ('success' in backendPrimaryData && 'data' in backendPrimaryData && backendPrimaryData.success) {
+                        backendPrimaryTranslations = (backendPrimaryData.data || {}) as Record<string, unknown>;
+                    } else {
+                        backendPrimaryTranslations = backendPrimaryData as Record<string, unknown>;
                     }
                 }
             } catch (error) {
@@ -108,15 +139,12 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-            const backendResponse = await fetch(`/api/system/translations/${lang}`);
-            if (backendResponse.ok) {
-                const backendData = await backendResponse.json();
-                if (backendData && typeof backendData === 'object') {
-                    if ('success' in backendData && 'data' in backendData && backendData.success) {
-                        backendLangTranslations = (backendData.data || {}) as Record<string, unknown>;
-                    } else {
-                        backendLangTranslations = backendData as Record<string, unknown>;
-                    }
+            const backendData = await fetchJsonObject(`/api/system/translations/${lang}`);
+            if (backendData) {
+                if ('success' in backendData && 'data' in backendData && backendData.success) {
+                    backendLangTranslations = (backendData.data || {}) as Record<string, unknown>;
+                } else {
+                    backendLangTranslations = backendData as Record<string, unknown>;
                 }
             }
         } catch (error) {
@@ -132,7 +160,6 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
         }
 
         setTranslations(mergedTranslations);
-        const cacheKey = `translations_${lang}_${CACHE_VERSION}`;
         localStorage.setItem(cacheKey, JSON.stringify(mergedTranslations));
 
         setInitialLoading(false);

@@ -217,6 +217,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                                 }
 
                                 try {
+                                    window.setTimeout(function () {
+                                        try {
+                                            if (document.documentElement.dataset.fpHydrated === '1') return;
+
+                                            var bodyText = String(document.body && document.body.textContent || '');
+                                            if (hasChallengeText(bodyText) || bodyText.toLowerCase().indexOf('loading ') !== -1) {
+                                                recover();
+                                            }
+                                        } catch (e) {}
+                                    }, 4500);
+
                                     var nativeFetch = window.fetch && window.fetch.bind(window);
                                     if (nativeFetch) {
                                         window.fetch = function () {

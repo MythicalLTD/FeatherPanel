@@ -4641,7 +4641,7 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$OS" = "ubuntu" ] || [ "$OS" = "ubuntu-server" ]; then
 		# Support Ubuntu 22.04 LTS (Jammy), 24.04 LTS (Noble), and 25.04
-		if [ "$OS_VERSION" = "22.04" ] || [ "$OS_VERSION" = "24.04" ] || [ "$OS_VERSION" = "25.04" ]; then
+		if [ "$OS_VERSION" = "22.04" ] || [ "$OS_VERSION" = "24.04" ] || [ "$OS_VERSION" = "25.04" ] || [ "$OS_VERSION" = "25.10" ] || [ "$OS_VERSION" = "20.04" ]  ; then
 			SUPPORTED=true
 		fi
 	fi

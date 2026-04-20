@@ -71,4 +71,3 @@ export function useNavbarSticky() {
 
     return { navbarSticky, setNavbarSticky };
 }
-

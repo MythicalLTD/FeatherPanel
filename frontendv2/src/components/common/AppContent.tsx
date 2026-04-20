@@ -27,6 +27,10 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
     const [forceUnblock, setForceUnblock] = useState(false);
 
     useEffect(() => {
+        document.documentElement.dataset.fpHydrated = '1';
+    }, []);
+
+    useEffect(() => {
         if (!initialLoading) return;
 
         // Guard against indefinite preloader state caused by challenge loops or hanging requests.

@@ -260,7 +260,9 @@ export default function ThemeCustomizer() {
                                                         </span>
                                                     </button>
                                                 </div>
-                                                <p className={sectionLabelClass}>{t('appearance.navbarSticky.title')}</p>
+                                                <p className={sectionLabelClass}>
+                                                    {t('appearance.navbarSticky.title')}
+                                                </p>
                                                 <div className='mb-2 grid grid-cols-2 gap-2.5 sm:gap-2'>
                                                     <button
                                                         type='button'
