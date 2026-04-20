@@ -36,6 +36,7 @@ import { copyToClipboard } from '@/lib/utils';
 import { Key, Plus, Trash2, Eye, Pencil, RefreshCw, Copy, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -56,6 +57,7 @@ interface ApiKeysTabProps {
 }
 
 export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProps) {
+    const router = useRouter();
     const { t } = useTranslation();
     const { fetchWidgets, getWidgets } = usePluginWidgets(slug);
     const { hasPermission } = useSession();
@@ -242,6 +244,15 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                         <RefreshCw className='w-4 h-4 mr-2' />
                         {t('account.apiKeys.refresh')}
                     </Button>
+                    {canCreateApiKeys && (
+                        <Button
+                            onClick={() => router.push('/dashboard/account/oauth2/api/new')}
+                            variant='outline'
+                            size='sm'
+                        >
+                            {t('account.apiKeys.oauth2.consentButton')}
+                        </Button>
+                    )}
                     {canCreateApiKeys && (
                         <Button
                             onClick={() => {

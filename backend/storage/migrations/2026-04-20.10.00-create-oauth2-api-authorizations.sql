@@ -1,0 +1,30 @@
+CREATE TABLE IF NOT EXISTS `featherpanel_oauth2_api_authorizations` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_uuid` CHAR(36) NOT NULL,
+    `request_token` VARCHAR(128) NOT NULL,
+    `auth_code` VARCHAR(128) DEFAULT NULL,
+    `status` ENUM('pending', 'approved', 'denied', 'expired') NOT NULL DEFAULT 'pending',
+    `api_client_id` INT DEFAULT NULL,
+    `request_name` VARCHAR(191) NOT NULL,
+    `request_description` TEXT DEFAULT NULL,
+    `app_name` VARCHAR(191) DEFAULT NULL,
+    `app_logo` TEXT DEFAULT NULL,
+    `callback_url` TEXT NOT NULL,
+    `allowed_ips` TEXT DEFAULT NULL,
+    `notify_foreign_ip` ENUM('false', 'true') NOT NULL DEFAULT 'false',
+    `request_state` VARCHAR(255) DEFAULT NULL,
+    `request_nonce` VARCHAR(255) DEFAULT NULL,
+    `expires_at` TIMESTAMP NOT NULL,
+    `approved_at` TIMESTAMP NULL DEFAULT NULL,
+    `used_at` TIMESTAMP NULL DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `oauth2_api_authorizations_request_token_unique` (`request_token`),
+    UNIQUE KEY `oauth2_api_authorizations_auth_code_unique` (`auth_code`),
+    KEY `oauth2_api_authorizations_user_uuid_index` (`user_uuid`),
+    KEY `oauth2_api_authorizations_status_index` (`status`),
+    CONSTRAINT `oauth2_api_authorizations_user_uuid_fk`
+        FOREIGN KEY (`user_uuid`) REFERENCES `featherpanel_users` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `oauth2_api_authorizations_api_client_id_fk`
+        FOREIGN KEY (`api_client_id`) REFERENCES `featherpanel_apikeys_client` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

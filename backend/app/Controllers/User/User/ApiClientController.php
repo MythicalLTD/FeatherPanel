@@ -21,6 +21,7 @@ use App\App;
 use App\Chat\User;
 use App\Permissions;
 use App\Chat\Activity;
+use GuzzleHttp\Client;
 use App\Chat\ApiClient;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -28,7 +29,9 @@ use App\Config\ConfigInterface;
 use App\Helpers\IpAddressMatcher;
 use App\Helpers\PermissionHelper;
 use App\Middleware\AuthMiddleware;
+use App\Chat\OAuth2ApiAuthorization;
 use App\CloudFlare\CloudFlareRealIP;
+use GuzzleHttp\Exception\GuzzleException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\UserApiClientEvent;
@@ -144,6 +147,9 @@ use App\Plugins\Events\Events\UserApiClientEvent;
 )]
 class ApiClientController
 {
+    private const OAUTH2_MAX_NAME_LENGTH = 191;
+    private const OAUTH2_MAX_APP_NAME_LENGTH = 191;
+
     #[OA\Get(
         path: '/api/user/api-clients',
         summary: 'Get API clients',
@@ -888,6 +894,587 @@ class ApiClientController
                 'uuid' => $user['uuid'],
             ],
         ], 'API client validated successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/user/api-clients/oauth2/metadata',
+        summary: 'Validate OAuth2 API consent request metadata',
+        description: 'Validates OAuth2 request query parameters and returns normalized request metadata without creating a pending grant.',
+        tags: ['User - API Clients'],
+        responses: [
+            new OA\Response(response: 200, description: 'Metadata validated successfully'),
+            new OA\Response(response: 400, description: 'Invalid request data'),
+            new OA\Response(response: 403, description: 'Feature disabled for account'),
+        ]
+    )]
+    public function oauth2Metadata(Request $request): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $allowCheck = $this->ensureApiKeyCreationAllowed($user);
+        if ($allowCheck !== null) {
+            return $allowCheck;
+        }
+
+        $normalized = $this->normalizeOAuth2RequestQuery($request);
+        if ($normalized instanceof Response) {
+            return $normalized;
+        }
+
+        return ApiResponse::success([
+            'request' => [
+                'name' => $normalized['name'],
+                'description' => $normalized['description'],
+                'callbackurl' => $normalized['callback_url'],
+                'callback_origin' => (string) parse_url($normalized['callback_url'], PHP_URL_HOST),
+                'allowedips' => $normalized['allowed_ips'],
+                'alertCors' => $normalized['notify_foreign_ip'] === 'true',
+                'appName' => $normalized['app_name'],
+                'appLogo' => $normalized['app_logo'],
+                'mode' => $normalized['mode'],
+            ],
+        ], 'OAuth2 API metadata prepared', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/user/api-clients/oauth2/authorize',
+        summary: 'Prepare OAuth2 API consent payload',
+        description: 'Validates an OAuth2-style API key authorization request and returns a normalized payload for consent UI.',
+        tags: ['User - API Clients'],
+        responses: [
+            new OA\Response(response: 200, description: 'Authorization payload prepared successfully'),
+            new OA\Response(response: 400, description: 'Invalid request data'),
+            new OA\Response(response: 403, description: 'Feature disabled for account'),
+        ]
+    )]
+    public function oauth2Authorize(Request $request): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $allowCheck = $this->ensureApiKeyCreationAllowed($user);
+        if ($allowCheck !== null) {
+            return $allowCheck;
+        }
+
+        $normalized = $this->normalizeOAuth2RequestQuery($request);
+        if ($normalized instanceof Response) {
+            return $normalized;
+        }
+
+        $requestToken = $this->generateOpaqueToken('fpoauthreq_');
+        $authorizationId = OAuth2ApiAuthorization::createAuthorization([
+            'user_uuid' => $user['uuid'],
+            'request_token' => $requestToken,
+            'status' => 'pending',
+            'request_name' => $normalized['name'],
+            'request_description' => $normalized['description'],
+            'app_name' => $normalized['app_name'],
+            'app_logo' => $normalized['app_logo'],
+            'callback_url' => $normalized['callback_url'],
+            'allowed_ips' => $normalized['allowed_ips'],
+            'notify_foreign_ip' => $normalized['notify_foreign_ip'],
+            'request_state' => null,
+            'request_nonce' => $normalized['mode'],
+            // Kept for schema compatibility; no expiry logic is enforced.
+            'expires_at' => date('Y-m-d H:i:s', strtotime('+10 years')),
+        ]);
+
+        if ($authorizationId === false) {
+            return ApiResponse::error(
+                'Failed to initialize OAuth2 API authorization request',
+                'OAUTH2_AUTHORIZATION_INIT_FAILED',
+                500
+            );
+        }
+
+        return ApiResponse::success([
+            'request_token' => $requestToken,
+            'request' => [
+                'name' => $normalized['name'],
+                'description' => $normalized['description'],
+                'callbackurl' => $normalized['callback_url'],
+                'callback_origin' => (string) parse_url($normalized['callback_url'], PHP_URL_HOST),
+                'allowedips' => $normalized['allowed_ips'],
+                'alertCors' => $normalized['notify_foreign_ip'] === 'true',
+                'appName' => $normalized['app_name'],
+                'appLogo' => $normalized['app_logo'],
+                'mode' => $normalized['mode'],
+            ],
+        ], 'OAuth2 API authorization request prepared', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/api-clients/oauth2/authorize/approve',
+        summary: 'Approve OAuth2 API authorization request',
+        description: 'Approves a pending OAuth2 API authorization request, creates API credentials, and returns callback redirect URL.',
+        tags: ['User - API Clients'],
+        responses: [
+            new OA\Response(response: 200, description: 'Authorization approved'),
+            new OA\Response(response: 400, description: 'Invalid request token'),
+            new OA\Response(response: 403, description: 'Unauthorized request'),
+        ]
+    )]
+    public function oauth2Approve(Request $request): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+        $allowCheck = $this->ensureApiKeyCreationAllowed($user);
+        if ($allowCheck !== null) {
+            return $allowCheck;
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data) || !isset($data['request_token']) || !is_string($data['request_token'])) {
+            return ApiResponse::error('request_token is required', 'REQUEST_TOKEN_REQUIRED', 400);
+        }
+
+        $authorization = OAuth2ApiAuthorization::getByRequestToken(trim($data['request_token']));
+        if ($authorization === null) {
+            return ApiResponse::error('Authorization request not found', 'AUTHORIZATION_REQUEST_NOT_FOUND', 404);
+        }
+        if ($authorization['user_uuid'] !== $user['uuid']) {
+            return ApiResponse::error('You are not allowed to approve this request', 'UNAUTHORIZED_ACCESS', 403);
+        }
+        if ($authorization['status'] !== 'pending') {
+            if ($authorization['status'] === 'approved') {
+                $approvedApiClient = ApiClient::getApiClientById((int) $authorization['api_client_id']);
+                if ($approvedApiClient !== null) {
+                    $mode = $authorization['request_nonce'] === 'server' ? 'server' : 'user';
+
+                    return $this->buildApprovedResponse($mode, $authorization, $approvedApiClient);
+                }
+            }
+            if ($authorization['status'] === 'denied') {
+                $mode = $authorization['request_nonce'] === 'server' ? 'server' : 'user';
+
+                return $this->buildDeniedResponse($mode, $authorization);
+            }
+
+            return ApiResponse::error('Authorization request is no longer pending', 'AUTHORIZATION_NOT_PENDING', 400);
+        }
+
+        $publicKey = $this->generateApiKey();
+        $privateKey = $this->generateApiKey();
+        $clientId = ApiClient::createApiClient([
+            'user_uuid' => $user['uuid'],
+            'name' => (string) $authorization['request_name'],
+            'public_key' => $publicKey,
+            'private_key' => $privateKey,
+            'description' => $authorization['request_description'] ?: null,
+            'allowed_ips' => $authorization['allowed_ips'] ?: null,
+            'notify_foreign_ip' => $authorization['notify_foreign_ip'] ?: 'false',
+        ]);
+        if ($clientId === false) {
+            return ApiResponse::error('Failed to create API credentials', 'API_CLIENT_CREATION_FAILED', 500);
+        }
+
+        $authCode = $this->generateOpaqueToken('fpoauthcode_');
+        OAuth2ApiAuthorization::updateAuthorization((int) $authorization['id'], [
+            'status' => 'approved',
+            'auth_code' => $authCode,
+            'api_client_id' => $clientId,
+            'approved_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'],
+            'name' => 'api_client_oauth2_approved',
+            'context' => 'Approved OAuth2 API authorization for app: ' . ($authorization['app_name'] ?: 'Unknown App'),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        $mode = $authorization['request_nonce'] === 'server' ? 'server' : 'user';
+
+        return $this->buildApprovedResponse($mode, $authorization, [
+            'public_key' => $publicKey,
+            'private_key' => $privateKey,
+            'name' => (string) $authorization['request_name'],
+            'app_name' => $authorization['app_name'],
+            'api_client_id' => $clientId,
+        ], $authCode);
+    }
+
+    #[OA\Post(
+        path: '/api/user/api-clients/oauth2/authorize/deny',
+        summary: 'Deny OAuth2 API authorization request',
+        description: 'Denies a pending OAuth2 API authorization request and returns callback redirect URL with access_denied error.',
+        tags: ['User - API Clients'],
+        responses: [
+            new OA\Response(response: 200, description: 'Authorization denied'),
+            new OA\Response(response: 400, description: 'Invalid request token'),
+            new OA\Response(response: 403, description: 'Unauthorized request'),
+        ]
+    )]
+    public function oauth2Deny(Request $request): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data) || !isset($data['request_token']) || !is_string($data['request_token'])) {
+            return ApiResponse::error('request_token is required', 'REQUEST_TOKEN_REQUIRED', 400);
+        }
+
+        $authorization = OAuth2ApiAuthorization::getByRequestToken(trim($data['request_token']));
+        if ($authorization === null) {
+            return ApiResponse::error('Authorization request not found', 'AUTHORIZATION_REQUEST_NOT_FOUND', 404);
+        }
+        if ($authorization['user_uuid'] !== $user['uuid']) {
+            return ApiResponse::error('You are not allowed to deny this request', 'UNAUTHORIZED_ACCESS', 403);
+        }
+        if ($authorization['status'] !== 'pending') {
+            $mode = $authorization['request_nonce'] === 'server' ? 'server' : 'user';
+            if ($authorization['status'] === 'denied') {
+                return $this->buildDeniedResponse($mode, $authorization);
+            }
+            if ($authorization['status'] === 'approved') {
+                $approvedApiClient = ApiClient::getApiClientById((int) $authorization['api_client_id']);
+                if ($approvedApiClient !== null) {
+                    $redirectUrl = $this->buildCallbackFragmentRedirect((string) $authorization['callback_url'], [
+                        'public_key' => $approvedApiClient['public_key'],
+                        'private_key' => $approvedApiClient['private_key'],
+                        'token_type' => 'featherpanel_api_key',
+                        'issued_at' => $authorization['approved_at'] ? gmdate('c', strtotime((string) $authorization['approved_at'])) : gmdate('c'),
+                        'authorization_code' => $authorization['auth_code'] ?: null,
+                    ]);
+
+                    return ApiResponse::success([
+                        'redirect_url' => $redirectUrl,
+                    ], 'OAuth2 API authorization already approved', 200);
+                }
+            }
+
+            return ApiResponse::error('Authorization request is no longer pending', 'AUTHORIZATION_NOT_PENDING', 400);
+        }
+
+        OAuth2ApiAuthorization::updateAuthorization((int) $authorization['id'], [
+            'status' => 'denied',
+            'used_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'],
+            'name' => 'api_client_oauth2_denied',
+            'context' => 'Denied OAuth2 API authorization for app: ' . ($authorization['app_name'] ?: 'Unknown App'),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        $mode = $authorization['request_nonce'] === 'server' ? 'server' : 'user';
+
+        return $this->buildDeniedResponse($mode, $authorization);
+    }
+
+    #[OA\Post(
+        path: '/api/user/api-clients/oauth2/token',
+        summary: 'Exchange OAuth2 authorization code',
+        description: 'Returns stored OAuth2 authorization metadata for approved requests. Use only for server-to-server integrations.',
+        tags: ['User - API Clients'],
+        responses: [
+            new OA\Response(response: 200, description: 'Token exchanged'),
+            new OA\Response(response: 400, description: 'Invalid code'),
+        ]
+    )]
+    public function oauth2Token(Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data) || !isset($data['code']) || !is_string($data['code'])) {
+            return ApiResponse::error('code is required', 'AUTHORIZATION_CODE_REQUIRED', 400);
+        }
+        $authorization = OAuth2ApiAuthorization::getByAuthCode(trim($data['code']));
+        if ($authorization === null || $authorization['status'] !== 'approved') {
+            return ApiResponse::error('Invalid or expired authorization code', 'INVALID_AUTHORIZATION_CODE', 400);
+        }
+        if (!empty($authorization['used_at'])) {
+            return ApiResponse::error('Authorization code already used', 'AUTHORIZATION_CODE_USED', 400);
+        }
+
+        $apiClient = ApiClient::getApiClientById((int) $authorization['api_client_id']);
+        if ($apiClient === null) {
+            return ApiResponse::error('Associated API client not found', 'API_CLIENT_NOT_FOUND', 404);
+        }
+
+        OAuth2ApiAuthorization::updateAuthorization((int) $authorization['id'], [
+            'used_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+
+        return ApiResponse::success([
+            'token_type' => 'featherpanel_api_key',
+            'public_key' => $apiClient['public_key'],
+            'private_key' => $apiClient['private_key'],
+        ], 'Authorization code exchanged', 200);
+    }
+
+    private function ensureApiKeyCreationAllowed(array $user): ?Response
+    {
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+        $allowApiKeysCreate = $config->getSetting(ConfigInterface::USER_ALLOW_API_KEYS_CREATE, 'true') === 'true';
+        $hasBypassPermission = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_API_BYPASS_RESTRICTIONS);
+        if (!$allowApiKeysCreate && !$hasBypassPermission) {
+            return ApiResponse::error('You are not allowed to create API keys!', 'API_KEY_CREATION_NOT_ALLOWED', 403, []);
+        }
+
+        return null;
+    }
+
+    private function normalizeOAuth2RequestQuery(Request $request): array | Response
+    {
+        $name = trim((string) $request->query->get('name', ''));
+        $callbackUrl = trim((string) $request->query->get('callbackurl', ''));
+        $allowedIpsInput = (string) $request->query->get('allowedips', '');
+        $alertCorsInput = (string) $request->query->get('alertCors', 'false');
+        $appName = trim((string) $request->query->get('appName', ''));
+        $appLogo = trim((string) $request->query->get('appLogo', ''));
+        $description = trim((string) $request->query->get('description', ''));
+        $mode = trim((string) $request->query->get('mode', 'user'));
+
+        if ($name === '' || $callbackUrl === '') {
+            return ApiResponse::error('Missing required query parameters: name and callbackurl', 'MISSING_REQUIRED_FIELDS', 400);
+        }
+        if (strlen($name) > self::OAUTH2_MAX_NAME_LENGTH) {
+            return ApiResponse::error('name is too long', 'INVALID_NAME_LENGTH', 400);
+        }
+        if ($appName !== '' && strlen($appName) > self::OAUTH2_MAX_APP_NAME_LENGTH) {
+            return ApiResponse::error('appName is too long', 'INVALID_APP_NAME_LENGTH', 400);
+        }
+        if (!in_array($mode, ['user', 'server'], true)) {
+            return ApiResponse::error('mode must be user or server', 'INVALID_MODE', 400);
+        }
+
+        $validatedCallbackUrl = $this->validateCallbackUrl($callbackUrl, $mode);
+        if ($validatedCallbackUrl === null) {
+            return ApiResponse::error('Invalid callbackurl', 'INVALID_CALLBACK_URL', 400);
+        }
+        if ($appLogo !== '' && filter_var($appLogo, FILTER_VALIDATE_URL) === false) {
+            return ApiResponse::error('appLogo must be a valid URL', 'INVALID_APP_LOGO_URL', 400);
+        }
+
+        $allowedErr = IpAddressMatcher::validateAllowedIpsInput($allowedIpsInput);
+        if ($allowedErr !== null) {
+            return ApiResponse::error($allowedErr, 'INVALID_ALLOWED_IPS', 400);
+        }
+        $normalizedAllowedIps = IpAddressMatcher::normalizeAllowedIpsInput($allowedIpsInput);
+        $allowedIps = $normalizedAllowedIps === '' ? null : $normalizedAllowedIps;
+        $notifyForeignIp = $this->normalizeNotifyForeignIpFlag($alertCorsInput === 'true', $allowedIps !== null);
+
+        return [
+            'name' => $name,
+            'callback_url' => $validatedCallbackUrl,
+            'allowed_ips' => $allowedIps,
+            'notify_foreign_ip' => $notifyForeignIp,
+            'app_name' => $appName !== '' ? $appName : null,
+            'app_logo' => $appLogo !== '' ? $appLogo : null,
+            'description' => $description !== '' ? $description : null,
+            'mode' => $mode,
+        ];
+    }
+
+    private function validateCallbackUrl(string $url, string $mode = 'user'): ?string
+    {
+        if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return null;
+        }
+        $parts = parse_url($url);
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        if ($scheme === '') {
+            return null;
+        }
+
+        // Explicitly reject dangerous URI schemes.
+        if (in_array($scheme, ['javascript', 'data', 'file', 'vbscript'], true)) {
+            return null;
+        }
+
+        // Ensure scheme looks like a valid URI scheme token.
+        if (!preg_match('/^[a-z][a-z0-9+.-]*$/', $scheme)) {
+            return null;
+        }
+
+        // For web callbacks, keep strict safety checks.
+        if (in_array($scheme, ['https', 'http'], true)) {
+            if ($host === '') {
+                return null;
+            }
+            // User/browser mode keeps strict web redirect protections.
+            if ($scheme === 'http' && $mode !== 'server' && !in_array($host, ['localhost', '127.0.0.1'], true)) {
+                return null;
+            }
+        } else {
+            // Custom app schemes (e.g. client://, myapp://) are allowed for desktop/mobile apps.
+            if (trim((string) ($parts['path'] ?? '')) === '' && $host === '') {
+                return null;
+            }
+        }
+
+        if (($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return null;
+        }
+
+        return $url;
+    }
+
+    private function buildCallbackFragmentRedirect(string $callbackUrl, array $params): string
+    {
+        $fragmentData = [];
+        foreach ($params as $key => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+            $fragmentData[$key] = (string) $value;
+        }
+        $fragment = http_build_query($fragmentData);
+        $base = explode('#', $callbackUrl, 2)[0];
+
+        return $base . '#' . $fragment;
+    }
+
+    private function generateOpaqueToken(string $prefix): string
+    {
+        return $prefix . bin2hex(random_bytes(32));
+    }
+
+    private function buildApprovedResponse(
+        string $mode,
+        array $authorization,
+        array $apiClientData,
+        ?string $authCode = null,
+    ): Response {
+        $publicKey = (string) ($apiClientData['public_key'] ?? '');
+        $privateKey = (string) ($apiClientData['private_key'] ?? '');
+        $issuedAt = $authorization['approved_at'] ? gmdate('c', strtotime((string) $authorization['approved_at'])) : gmdate('c');
+        $code = $authCode ?? ($authorization['auth_code'] ?: null);
+
+        if ($mode === 'server') {
+            $callbackDelivery = $this->deliverServerModeCallback((string) $authorization['callback_url'], [
+                'success' => true,
+                'token_type' => 'featherpanel_api_key',
+                'public_key' => $publicKey,
+                'private_key' => $privateKey,
+                'authorization_code' => $code,
+                'issued_at' => $issuedAt,
+                'app_name' => $authorization['app_name'] ?: null,
+                'request_name' => $authorization['request_name'] ?: null,
+            ]);
+
+            if (!$callbackDelivery['ok']) {
+                return ApiResponse::error(
+                    'Authorized but failed to deliver credentials to callback endpoint',
+                    'SERVER_CALLBACK_DELIVERY_FAILED',
+                    502,
+                    [
+                        'mode' => 'server',
+                        'delivery' => $callbackDelivery,
+                    ],
+                );
+            }
+
+            return ApiResponse::success([
+                'mode' => 'server',
+                'authorized' => true,
+                'delivery' => $callbackDelivery,
+            ], 'App authorized and credentials delivered to callback endpoint', 200);
+        }
+
+        $redirectUrl = $this->buildCallbackFragmentRedirect((string) $authorization['callback_url'], [
+            'public_key' => $publicKey,
+            'private_key' => $privateKey,
+            'token_type' => 'featherpanel_api_key',
+            'issued_at' => $issuedAt,
+            'authorization_code' => $code,
+        ]);
+
+        return ApiResponse::success([
+            'mode' => 'user',
+            'redirect_url' => $redirectUrl,
+        ], 'OAuth2 API authorization approved', 200);
+    }
+
+    private function buildDeniedResponse(string $mode, array $authorization): Response
+    {
+        if ($mode === 'server') {
+            $callbackDelivery = $this->deliverServerModeCallback((string) $authorization['callback_url'], [
+                'success' => false,
+                'error' => 'access_denied',
+                'error_description' => 'The resource owner denied the request',
+                'app_name' => $authorization['app_name'] ?: null,
+                'request_name' => $authorization['request_name'] ?: null,
+            ]);
+            if (!$callbackDelivery['ok']) {
+                return ApiResponse::error(
+                    'Denied request but failed to notify callback endpoint',
+                    'SERVER_CALLBACK_DELIVERY_FAILED',
+                    502,
+                    [
+                        'mode' => 'server',
+                        'delivery' => $callbackDelivery,
+                    ],
+                );
+            }
+
+            return ApiResponse::success([
+                'mode' => 'server',
+                'authorized' => false,
+                'delivery' => $callbackDelivery,
+            ], 'Request denied and callback notified', 200);
+        }
+
+        $redirectUrl = $this->buildCallbackFragmentRedirect((string) $authorization['callback_url'], [
+            'error' => 'access_denied',
+            'error_description' => 'The resource owner denied the request',
+        ]);
+
+        return ApiResponse::success([
+            'mode' => 'user',
+            'redirect_url' => $redirectUrl,
+        ], 'OAuth2 API authorization denied', 200);
+    }
+
+    /**
+     * @return array{ok: bool, status_code: int|null, body: string|null, error: string|null}
+     */
+    private function deliverServerModeCallback(string $callbackUrl, array $payload): array
+    {
+        try {
+            $client = new Client([
+                'timeout' => 15,
+                'http_errors' => false,
+            ]);
+            $response = $client->request('POST', $callbackUrl, [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json, text/plain, */*',
+                ],
+                'json' => $payload,
+            ]);
+            $statusCode = $response->getStatusCode();
+            $body = (string) $response->getBody();
+            $ok = $statusCode >= 200 && $statusCode < 300;
+
+            return [
+                'ok' => $ok,
+                'status_code' => $statusCode,
+                'body' => $body,
+                'error' => $ok ? null : 'Callback endpoint responded with non-2xx status',
+            ];
+        } catch (GuzzleException $e) {
+            return [
+                'ok' => false,
+                'status_code' => null,
+                'body' => null,
+                'error' => $e->getMessage(),
+            ];
+        }
     }
 
     /**

@@ -28,6 +28,7 @@
 - Added a dedicated `verify_email` mail template (editable in Mail Templates) used for email verification, consistent with other system templates. by @nayskutzu
 - Introduced a powerful search feature within admin settings, making it effortless to find and manage configuration options. by @nayskutzu
 - Added the ability to choose the specific Proxmox node when creating a VDS instance, giving you greater control and flexibility over your deployments. by @nayskutzu
+- Added an OAuth2-style API consent flow at `/dashboard/account/oauth2/api/new` with approve/deny screens, callback fragment credential delivery, authorization code exchange endpoint, and dedicated documentation for all supported query parameters. by @nayskutzu
 
 
 ## v1.3.3 STABLE

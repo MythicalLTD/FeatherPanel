@@ -135,4 +135,64 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(30), // Default: Admin can override in ratelimit.json
         'user-api-clients'
     );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-api-client-oauth2-metadata',
+        '/api/user/api-clients/oauth2/metadata',
+        function (Request $request) {
+            return (new ApiClientController())->oauth2Metadata($request);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-api-clients-oauth2'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-api-client-oauth2-authorize',
+        '/api/user/api-clients/oauth2/authorize',
+        function (Request $request) {
+            return (new ApiClientController())->oauth2Authorize($request);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-api-clients-oauth2'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-api-client-oauth2-approve',
+        '/api/user/api-clients/oauth2/authorize/approve',
+        function (Request $request) {
+            return (new ApiClientController())->oauth2Approve($request);
+        },
+        ['POST'],
+        Rate::perMinute(30),
+        'user-api-clients-oauth2'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-api-client-oauth2-deny',
+        '/api/user/api-clients/oauth2/authorize/deny',
+        function (Request $request) {
+            return (new ApiClientController())->oauth2Deny($request);
+        },
+        ['POST'],
+        Rate::perMinute(30),
+        'user-api-clients-oauth2'
+    );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'user-api-client-oauth2-token',
+        '/api/user/api-clients/oauth2/token',
+        function (Request $request) {
+            return (new ApiClientController())->oauth2Token($request);
+        },
+        ['POST'],
+        Rate::perMinute(30),
+        'user-api-clients-oauth2'
+    );
 };
