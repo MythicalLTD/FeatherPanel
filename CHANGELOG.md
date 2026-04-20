@@ -27,6 +27,7 @@
 - Added an optional security setting to require users to verify their email address before they can log in after registration, including a full verify-email flow and frontend page. by @nayskutzu
 - Added a dedicated `verify_email` mail template (editable in Mail Templates) used for email verification, consistent with other system templates. by @nayskutzu
 - Introduced a powerful search feature within admin settings, making it effortless to find and manage configuration options. by @nayskutzu
+- Added the ability to choose the specific Proxmox node when creating a VDS instance, giving you greater control and flexibility over your deployments. by @nayskutzu
 
 
 ## v1.3.3 STABLE

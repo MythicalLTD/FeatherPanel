@@ -83,6 +83,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'vm_node_id', type: 'integer', description: 'VM Node ID'),
         new OA\Property(property: 'template_id', type: 'integer', description: 'Template ID'),
+        new OA\Property(property: 'pve_node', type: 'string', nullable: true, description: 'Explicit Proxmox cluster node to place the VM on'),
         new OA\Property(property: 'memory', type: 'integer', description: 'Memory in MB', default: 512),
         new OA\Property(property: 'cpus', type: 'integer', description: 'Number of CPU sockets', default: 1),
         new OA\Property(property: 'cores', type: 'integer', description: 'Number of CPU cores per socket', default: 1),
@@ -405,7 +406,25 @@ class VmInstancesController
                 500
             );
         }
-        $targetNode = (string) $nodesResult['nodes'][0]['node'];
+        $availableNodeNames = array_values(array_filter(array_map(
+            static fn ($node): string => is_array($node) && isset($node['node']) && is_string($node['node']) ? trim($node['node']) : '',
+            $nodesResult['nodes']
+        )));
+        if (empty($availableNodeNames)) {
+            return ApiResponse::error('No Proxmox nodes are available on this VM node connection', 'PROXMOX_ERROR', 500);
+        }
+
+        $requestedPveNode = isset($data['pve_node']) && is_string($data['pve_node']) ? trim($data['pve_node']) : '';
+        if ($requestedPveNode !== '') {
+            if (!in_array($requestedPveNode, $availableNodeNames, true)) {
+                return ApiResponse::error('Selected Proxmox node is not available for this VM node', 'INVALID_PROXMOX_NODE', 400, [
+                    'available_nodes' => $availableNodeNames,
+                ]);
+            }
+            $targetNode = $requestedPveNode;
+        } else {
+            $targetNode = (string) $nodesResult['nodes'][0]['node'];
+        }
 
         $nextResult = $client->getNextVmid(5000);
         if (!$nextResult['ok'] || $nextResult['vmid'] === null) {
@@ -442,6 +461,7 @@ class VmInstancesController
             'disk' => $disk,
             'storage' => $storage,
             'bridge' => $bridge,
+            'pve_node' => $targetNode,
             'on_boot' => $onBoot,
             'backup_limit' => $backupLimit,
             'backup_retention_mode' => $backupRetentionForMeta,

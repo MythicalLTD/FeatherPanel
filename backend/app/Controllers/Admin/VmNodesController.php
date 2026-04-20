@@ -910,7 +910,17 @@ class VmNodesController
                     503,
                 );
             }
-            $pveNode = (string) $nodesResult['nodes'][0]['node'];
+            $availableNodes = array_values(array_filter(array_map(
+                static fn ($node): string => is_array($node) && isset($node['node']) && is_string($node['node']) ? trim($node['node']) : '',
+                $nodesResult['nodes']
+            )));
+            $requestedNode = trim((string) $request->query->get('pve_node', ''));
+            if ($requestedNode !== '' && !in_array($requestedNode, $availableNodes, true)) {
+                return ApiResponse::error('Selected Proxmox node is not available', 'INVALID_PROXMOX_NODE', 400, [
+                    'available_nodes' => $availableNodes,
+                ]);
+            }
+            $pveNode = $requestedNode !== '' ? $requestedNode : (string) $nodesResult['nodes'][0]['node'];
             $result = $client->getBridges($pveNode);
             if (!$result['ok']) {
                 return ApiResponse::error($result['error'] ?? 'Failed to fetch bridges', 'PROXMOX_ERROR', 503);
@@ -921,6 +931,79 @@ class VmNodesController
             App::getInstance(true)->getLogger()->error('Proxmox getBridges failed for node ' . $id . ': ' . $e->getMessage());
 
             return ApiResponse::error('Failed to fetch bridges: ' . $e->getMessage(), 'PROXMOX_ERROR', 500);
+        }
+    }
+
+    /**
+     * GET /api/admin/vm-nodes/{id}/cluster-nodes — List available Proxmox cluster nodes.
+     */
+    public function clusterNodes(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        try {
+            $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
+
+            $extraHeaders = [];
+            $extraParams = [];
+
+            if (!empty($vmNode['addional_headers']) && is_string($vmNode['addional_headers'])) {
+                $decoded = json_decode($vmNode['addional_headers'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraHeaders[$key] = (string) $value;
+                        }
+                    }
+                }
+            }
+
+            if (!empty($vmNode['additional_params']) && is_string($vmNode['additional_params'])) {
+                $decoded = json_decode($vmNode['additional_params'], true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $key => $value) {
+                        if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                            $extraParams[$key] = $value;
+                        }
+                    }
+                }
+            }
+
+            $client = new Proxmox(
+                $vmNode['fqdn'],
+                (int) $vmNode['port'],
+                $vmNode['scheme'],
+                $vmNode['user'],
+                $vmNode['token_id'],
+                $vmNode['secret'],
+                $tlsNoVerify,
+                (int) ($vmNode['timeout'] ?? 10),
+                $extraHeaders,
+                $extraParams,
+            );
+            $nodesResult = $client->getNodes();
+            if (!$nodesResult['ok'] || empty($nodesResult['nodes'])) {
+                return ApiResponse::error(
+                    'Could not get Proxmox nodes: ' . ($nodesResult['error'] ?? 'unknown'),
+                    'PROXMOX_ERROR',
+                    503,
+                );
+            }
+
+            $clusterNodes = array_values(array_map(static function ($node): array {
+                return [
+                    'node' => is_array($node) && isset($node['node']) ? (string) $node['node'] : '',
+                    'status' => is_array($node) && isset($node['status']) ? (string) $node['status'] : '',
+                ];
+            }, $nodesResult['nodes']));
+
+            return ApiResponse::success(['nodes' => $clusterNodes], 'Cluster nodes fetched', 200);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Proxmox cluster nodes fetch failed for node ' . $id . ': ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to fetch cluster nodes: ' . $e->getMessage(), 'PROXMOX_ERROR', 500);
         }
     }
 
@@ -989,7 +1072,17 @@ class VmNodesController
                     503,
                 );
             }
-            $pveNode = (string) $nodesResult['nodes'][0]['node'];
+            $availableNodes = array_values(array_filter(array_map(
+                static fn ($node): string => is_array($node) && isset($node['node']) && is_string($node['node']) ? trim($node['node']) : '',
+                $nodesResult['nodes']
+            )));
+            $requestedNode = trim((string) $request->query->get('pve_node', ''));
+            if ($requestedNode !== '' && !in_array($requestedNode, $availableNodes, true)) {
+                return ApiResponse::error('Selected Proxmox node is not available', 'INVALID_PROXMOX_NODE', 400, [
+                    'available_nodes' => $availableNodes,
+                ]);
+            }
+            $pveNode = $requestedNode !== '' ? $requestedNode : (string) $nodesResult['nodes'][0]['node'];
             $result = $client->getStorage($pveNode);
             if (!$result['ok']) {
                 return ApiResponse::error($result['error'] ?? 'Failed to fetch storage', 'PROXMOX_ERROR', 503);
@@ -1071,7 +1164,17 @@ class VmNodesController
                 );
             }
 
-            $pveNode = (string) $nodesResult['nodes'][0]['node'];
+            $availableNodes = array_values(array_filter(array_map(
+                static fn ($node): string => is_array($node) && isset($node['node']) && is_string($node['node']) ? trim($node['node']) : '',
+                $nodesResult['nodes']
+            )));
+            $requestedNode = trim((string) $request->query->get('pve_node', ''));
+            if ($requestedNode !== '' && !in_array($requestedNode, $availableNodes, true)) {
+                return ApiResponse::error('Selected Proxmox node is not available', 'INVALID_PROXMOX_NODE', 400, [
+                    'available_nodes' => $availableNodes,
+                ]);
+            }
+            $pveNode = $requestedNode !== '' ? $requestedNode : (string) $nodesResult['nodes'][0]['node'];
             $result = $client->getBackupStorages($pveNode);
             if (!$result['ok']) {
                 return ApiResponse::error($result['error'] ?? 'Failed to fetch backup storage', 'PROXMOX_ERROR', 503);

@@ -52,6 +52,11 @@ interface VmNode {
     location_id?: number | null;
 }
 
+interface VmClusterNode {
+    node: string;
+    status?: string;
+}
+
 interface FreeIp {
     id: number;
     ip: string;
@@ -126,6 +131,8 @@ export default function VmInstancesCreatePage() {
 
     const [nodes, setNodes] = useState<VmNode[]>([]);
     const [nodeId, setNodeId] = useState<number>(0);
+    const [pveNodes, setPveNodes] = useState<VmClusterNode[]>([]);
+    const [pveNode, setPveNode] = useState('');
     const [memory, setMemory] = useState(1024);
     const [cpus, setCpus] = useState(1);
     const [cores, setCores] = useState(1);
@@ -170,6 +177,8 @@ export default function VmInstancesCreatePage() {
             setTemplates([]);
             setBridges([]);
             setStorageList([]);
+            setPveNodes([]);
+            setPveNode('');
             return;
         }
         setLoadingMeta(true);
@@ -177,19 +186,23 @@ export default function VmInstancesCreatePage() {
         Promise.all([
             axios.get(`/api/admin/vm-nodes/${nodeId}/free-ips`),
             axios.get(`/api/admin/vm-nodes/${nodeId}/templates`),
+            axios.get(`/api/admin/vm-nodes/${nodeId}/cluster-nodes`),
         ])
-            .then(([ipsRes, tplRes]) => {
+            .then(([ipsRes, tplRes, clusterRes]) => {
                 const ips = ipsRes.data.data?.free_ips ?? [];
                 setFreeIps(ips);
                 setTemplates(tplRes.data.data?.templates ?? []);
                 setNetworks([{ key: 'net0', vm_ip_id: ips[0]?.id ?? null }]);
+                const clusterNodes = clusterRes.data.data?.nodes ?? [];
+                setPveNodes(clusterNodes);
+                setPveNode(clusterNodes[0]?.node ?? '');
             })
             .catch(() => toast.error(t('admin.vmInstances.errors.fetch_failed')))
             .finally(() => setLoadingMeta(false));
     }, [nodeId, t]);
 
     useEffect(() => {
-        if (nodeId <= 0) {
+        if (nodeId <= 0 || pveNode === '') {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setBridges([]);
             setStorageList([]);
@@ -198,7 +211,7 @@ export default function VmInstancesCreatePage() {
         setLoadingBridges(true);
         setLoadingStorage(true);
         axios
-            .get(`/api/admin/vm-nodes/${nodeId}/bridges`)
+            .get(`/api/admin/vm-nodes/${nodeId}/bridges`, { params: { pve_node: pveNode } })
             .then((res) => {
                 const list = res.data.data?.bridges ?? [];
                 setBridges(list);
@@ -211,7 +224,7 @@ export default function VmInstancesCreatePage() {
             })
             .finally(() => setLoadingBridges(false));
         axios
-            .get(`/api/admin/vm-nodes/${nodeId}/storage`)
+            .get(`/api/admin/vm-nodes/${nodeId}/storage`, { params: { pve_node: pveNode } })
             .then((res) => {
                 const list = res.data.data?.storage ?? [];
                 setStorageList(list);
@@ -223,7 +236,7 @@ export default function VmInstancesCreatePage() {
                 setStorageList([]);
             })
             .finally(() => setLoadingStorage(false));
-    }, [nodeId]);
+    }, [nodeId, pveNode]);
 
     const fetchOwners = useCallback(async () => {
         try {
@@ -299,7 +312,7 @@ export default function VmInstancesCreatePage() {
         setNetworks((prev) => prev.filter((row) => row.key !== key));
     };
 
-    const canProceedStep1 = nodeId > 0 && templateId > 0 && freeIps.length > 0;
+    const canProceedStep1 = nodeId > 0 && pveNode !== '' && templateId > 0 && freeIps.length > 0;
     const noFreeIpsAvailable = nodeId > 0 && !loadingMeta && freeIps.length === 0;
     const hostnameValid = hostname.trim().length > 0;
     const ownerSelected = selectedOwner != null;
@@ -373,6 +386,7 @@ export default function VmInstancesCreatePage() {
                 backup_limit: backupLimit,
                 backup_retention_mode: backupRetentionMode === 'inherit' ? null : backupRetentionMode,
                 vm_ip_id: primaryNetwork.vm_ip_id,
+                pve_node: pveNode || undefined,
                 networks: networks
                     .filter((row) => row.vm_ip_id != null)
                     .map((row) => ({ key: row.key, vm_ip_id: row.vm_ip_id })),
@@ -511,6 +525,28 @@ export default function VmInstancesCreatePage() {
 
                                 {nodeId > 0 && !loadingMeta && (
                                     <>
+                                        <div className='space-y-3'>
+                                            <Label className='flex items-center gap-1.5'>
+                                                {t('admin.vmInstances.proxmox_node') ?? 'Proxmox Node'}
+                                                <span className='text-red-500 font-bold'>*</span>
+                                            </Label>
+                                            <Select
+                                                value={pveNode || ''}
+                                                onChange={(e) => setPveNode(e.target.value)}
+                                                className='bg-muted/30 h-11 rounded-xl'
+                                            >
+                                                {pveNodes.map((node) => (
+                                                    <option key={node.node} value={node.node}>
+                                                        {node.node}
+                                                        {node.status ? ` (${node.status})` : ''}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                            <p className='text-xs text-muted-foreground'>
+                                                {t('admin.vmInstances.proxmox_node_help') ??
+                                                    'Exact Proxmox cluster node where this VM will be created.'}
+                                            </p>
+                                        </div>
                                         <div className='space-y-3'>
                                             <Label className='flex items-center gap-1.5'>
                                                 {t('admin.vmInstances.template') ?? 'Template'}

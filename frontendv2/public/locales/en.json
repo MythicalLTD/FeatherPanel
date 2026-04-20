@@ -3868,6 +3868,8 @@
 			"node": "VDS Node",
 			"select_node": "Select node",
 			"node_help": "Proxmox node where the VM will be created.",
+			"proxmox_node": "Proxmox Node",
+			"proxmox_node_help": "Exact Proxmox cluster node where this VM will be created.",
 			"select_node_template": "Select a node, template, and ensure IPs are available.",
 			"memory": "Memory (MB)",
 			"cpus": "CPUs",

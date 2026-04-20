@@ -252,6 +252,22 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-vm-nodes-cluster-nodes',
+        '/api/admin/vm-nodes/{id}/cluster-nodes',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->clusterNodes($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-vm-nodes-bridges',
         '/api/admin/vm-nodes/{id}/bridges',
         function (Request $request, array $args) {
