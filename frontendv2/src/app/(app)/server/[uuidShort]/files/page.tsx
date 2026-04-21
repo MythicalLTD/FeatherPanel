@@ -328,7 +328,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 setDraggingFileNames([]);
             }
         },
-        [currentDirectory, performMoveFiles, t],
+        [currentDirectory, performMoveFiles],
     );
 
     const handleDropOnPath = useCallback(

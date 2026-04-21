@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -46,18 +46,28 @@ export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, 
     const [destination, setDestination] = useState(root);
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        if (open) {
+            setDestination(root || '/');
+        }
+    }, [open, root]);
+
     const handleAction = async () => {
         setLoading(true);
+        const normalizedDestination = destination.trim() ? destination.trim() : '/';
         const toastId = toast.loading(
             action === 'move' ? t('files.dialogs.move_copy.moving') : t('files.dialogs.move_copy.copying'),
         );
         try {
             if (action === 'copy') {
                 for (const file of files) {
-                    await filesApi.copyFile(uuid, root, file, destination);
+                    await filesApi.copyFile(uuid, root, file, normalizedDestination);
                 }
             } else {
-                const updates = files.map((f) => ({ from: f, to: `${destination}/${f}`.replace(/\/\//g, '/') }));
+                const updates = files.map((f) => ({
+                    from: f,
+                    to: `${normalizedDestination}/${f}`.replace(/\/\//g, '/'),
+                }));
                 await filesApi.moveFile(uuid, root, updates);
             }
             toast.success(

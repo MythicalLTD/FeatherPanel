@@ -23,6 +23,12 @@ interface ApiResponse<T> {
     error?: boolean;
 }
 
+const normalizePath = (path: string): string => {
+    const withLeading = path.startsWith('/') ? path : `/${path}`;
+    const collapsed = withLeading.replace(/\/+/g, '/');
+    return collapsed.length > 1 ? collapsed.replace(/\/+$/, '') : collapsed;
+};
+
 export const filesApi = {
     getFiles: async (uuid: string, directory: string = '/'): Promise<FileObject[]> => {
         const response = await api.get<ApiResponse<FilesResponse>>(`/user/servers/${uuid}/files`, {
@@ -75,9 +81,10 @@ export const filesApi = {
     },
 
     copyFile: async (uuid: string, root: string, file: string, destination: string): Promise<void> => {
-        await api.post(`/user/servers/${uuid}/files/copy`, {
-            location: file,
-            destination: destination,
+        const sourcePath = normalizePath(`${root || '/'}/${file}`);
+        await api.post(`/user/servers/${uuid}/copy-files`, {
+            location: normalizePath(destination || '/'),
+            files: [sourcePath],
         });
     },
 
