@@ -8,9 +8,9 @@ if [ "$EUID" -ne 0 ]; then
 	exit 1
 fi
 
-apt update -y 
-apt upgrade -y 
-apt purge -y 
+apt update -y
+apt upgrade -y
+apt purge -y
 apt autoremove -y
 
 # Parse command-line arguments
@@ -324,14 +324,14 @@ load_config() {
 			# Skip comments and empty lines
 			[[ "$key" =~ ^#.*$ ]] && continue
 			[[ -z "$key" ]] && continue
-			
+
 			# Only set if it's a valid variable name
 			if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
 				# Remove leading/trailing quotes and spaces from value
 				value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed 's/^"//;s/"$//' | sed "s/^'//;s/'$//")
 				export "$key=$value"
 			fi
-		done < "$CONFIG_FILE"
+		done <"$CONFIG_FILE"
 
 		# Backward compatibility for older config files.
 		if [ -n "${DOCKER_REGISTRY:-}" ] && [ -z "${IMAGE_REGISTRY:-}" ]; then
@@ -571,10 +571,10 @@ configure_auto_update() {
 	echo -e "  ${GREEN}[1]${NC} Yes - Check for updates daily"
 	echo -e "  ${GREEN}[2]${NC} No - Manual updates only"
 	draw_hr
-	
+
 	choice=""
 	prompt "${BOLD}Select option${NC} ${BLUE}(1/2)${NC}: " choice
-	
+
 	case $choice in
 	1)
 		AUTO_UPDATE="yes"
@@ -589,7 +589,7 @@ configure_auto_update() {
 		return 1
 		;;
 	esac
-	
+
 	save_config
 	sleep 2
 }
@@ -608,10 +608,10 @@ configure_dev_branch() {
 	echo -e "  ${GREEN}[2]${NC} Always use development builds"
 	echo -e "  ${GREEN}[3]${NC} Custom branch selection"
 	draw_hr
-	
+
 	choice=""
 	prompt "${BOLD}Select option${NC} ${BLUE}(1/2/3)${NC}: " choice
-	
+
 	case $choice in
 	1)
 		PREFER_DEV="no"
@@ -639,7 +639,7 @@ configure_dev_branch() {
 		return 1
 		;;
 	esac
-	
+
 	save_config
 	sleep 2
 }
@@ -658,10 +658,10 @@ configure_ports() {
 	echo -e "  ${GREEN}[1]${NC} Set Panel Host Port"
 	echo -e "  ${GREEN}[2]${NC} Reset to default (${BOLD}4831${NC})"
 	draw_hr
-	
+
 	choice=""
 	prompt "${BOLD}Select option${NC} ${BLUE}(1/2)${NC}: " choice
-	
+
 	case $choice in
 	1)
 		echo ""
@@ -690,7 +690,7 @@ configure_ports() {
 	if [ -f /var/www/featherpanel/docker-compose.yml ]; then
 		apply_panel_port_to_compose "/var/www/featherpanel/docker-compose.yml"
 	fi
-	
+
 	save_config
 	sleep 2
 }
@@ -712,10 +712,10 @@ configure_safety() {
 	echo -e "  ${GREEN}[2]${NC} Toggle skip OS check (${SKIP_OS_CHECK})"
 	echo -e "  ${GREEN}[3]${NC} Toggle force ARM (${FORCE_ARM})"
 	draw_hr
-	
+
 	choice=""
 	prompt "${BOLD}Select option${NC} ${BLUE}(1/2/3)${NC}: " choice
-	
+
 	case $choice in
 	1)
 		[ "$BACKUP_BEFORE_UPDATE" = "yes" ] && BACKUP_BEFORE_UPDATE="no" || BACKUP_BEFORE_UPDATE="yes"
@@ -734,7 +734,7 @@ configure_safety() {
 		return 1
 		;;
 	esac
-	
+
 	save_config
 	sleep 2
 }
@@ -754,10 +754,10 @@ configure_notifications() {
 	echo -e "  ${GREEN}[1]${NC} Toggle update notifications"
 	echo -e "  ${GREEN}[2]${NC} Set notification email"
 	draw_hr
-	
+
 	choice=""
 	prompt "${BOLD}Select option${NC} ${BLUE}(1/2)${NC}: " choice
-	
+
 	case $choice in
 	1)
 		[ "$NOTIFY_ON_UPDATE" = "yes" ] && NOTIFY_ON_UPDATE="no" || NOTIFY_ON_UPDATE="yes"
@@ -786,7 +786,7 @@ configure_notifications() {
 		return 1
 		;;
 	esac
-	
+
 	save_config
 	sleep 2
 }
@@ -809,10 +809,10 @@ configure_image_registry() {
 	echo -e "  ${GREEN}[3]${NC} Quay.io (quay.io) - RedHat Quay registry"
 	echo -e "  ${GREEN}[4]${NC} Custom Registry URL"
 	draw_hr
-	
+
 	choice=""
 	prompt "${BOLD}Select option${NC} ${BLUE}(1/2/3/4)${NC}: " choice
-	
+
 	case $choice in
 	1)
 		IMAGE_REGISTRY="docker"
@@ -846,7 +846,7 @@ configure_image_registry() {
 		return 1
 		;;
 	esac
-	
+
 	save_config
 	sleep 2
 }
@@ -855,10 +855,10 @@ configure_image_registry() {
 manage_configuration() {
 	while true; do
 		show_config_menu
-		
+
 		config_choice=""
 		prompt "${BOLD}${CYAN}Select option${NC} ${BLUE}(0-8)${NC}: " config_choice
-		
+
 		case $config_choice in
 		1)
 			show_config
@@ -941,11 +941,11 @@ draw_hr() {
 detect_public_ips() {
 	PUBLIC_IPV4=$(
 		{ curl -4 -s --max-time 10 ifconfig.me 2>/dev/null || curl -4 -s --max-time 10 ipinfo.io/ip 2>/dev/null; } |
-		tr -d '[:space:]' || true
+			tr -d '[:space:]' || true
 	)
 	PUBLIC_IPV6=$(
 		curl -6 -s --max-time 10 ifconfig.co 2>/dev/null |
-		tr -d '[:space:]' || true
+			tr -d '[:space:]' || true
 	)
 	# Validate: A record must be IPv4 (no colons), AAAA must be IPv6 (has colons)
 	# Use if-statements to avoid triggering set -e when the condition is false
@@ -1180,11 +1180,11 @@ show_panel_info() {
 			unit=$(echo "$raw" | sed -E 's/^[0-9]+(\.[0-9]+)?//')
 			unit_lc=$(echo "$unit" | tr '[:upper:]' '[:lower:]')
 			case "$unit_lc" in
-			""|"b") mult=1 ;;
-			"k"|"kb"|"kib") mult=1024 ;;
-			"m"|"mb"|"mib") mult=1048576 ;;
-			"g"|"gb"|"gib") mult=1073741824 ;;
-			"t"|"tb"|"tib") mult=1099511627776 ;;
+			"" | "b") mult=1 ;;
+			"k" | "kb" | "kib") mult=1024 ;;
+			"m" | "mb" | "mib") mult=1048576 ;;
+			"g" | "gb" | "gib") mult=1073741824 ;;
+			"t" | "tb" | "tib") mult=1099511627776 ;;
 			*) mult=1 ;;
 			esac
 			awk -v n="$number" -v m="$mult" 'BEGIN { printf "%.0f", n*m }'
@@ -1209,7 +1209,7 @@ show_panel_info() {
 					blk_r=$(echo "$block_io" | awk -F'/' '{print $1}')
 					blk_w=$(echo "$block_io" | awk -F'/' '{print $2}')
 					block_bytes=$((block_bytes + $(to_bytes "$blk_r") + $(to_bytes "$blk_w")))
-				done <<< "$stats_raw"
+				done <<<"$stats_raw"
 			fi
 		fi
 
@@ -1384,8 +1384,8 @@ manage_panel_firewall() {
 		fi
 
 		if [ "$iptables_available" = true ]; then
-			iptables -C INPUT -p tcp --dport "$port" -j ACCEPT >/dev/null 2>&1 || \
-				iptables -I INPUT -p tcp --dport "$port" -j ACCEPT >/dev/null 2>&1 || \
+			iptables -C INPUT -p tcp --dport "$port" -j ACCEPT >/dev/null 2>&1 ||
+				iptables -I INPUT -p tcp --dport "$port" -j ACCEPT >/dev/null 2>&1 ||
 				log_warn "iptables failed to allow ${port}/tcp"
 		fi
 	done
@@ -1401,8 +1401,8 @@ manage_panel_firewall() {
 			while iptables -C INPUT -p tcp --dport "$panel_port" -j ACCEPT >/dev/null 2>&1; do
 				iptables -D INPUT -p tcp --dport "$panel_port" -j ACCEPT >/dev/null 2>&1 || break
 			done
-			iptables -C INPUT -p tcp --dport "$panel_port" -j DROP >/dev/null 2>&1 || \
-				iptables -I INPUT -p tcp --dport "$panel_port" -j DROP >/dev/null 2>&1 || \
+			iptables -C INPUT -p tcp --dport "$panel_port" -j DROP >/dev/null 2>&1 ||
+				iptables -I INPUT -p tcp --dport "$panel_port" -j DROP >/dev/null 2>&1 ||
 				log_warn "iptables failed to block ${panel_port}/tcp"
 		fi
 		log_success "Direct panel port ${panel_port}/tcp blocked because reverse proxy forwarding is configured."
@@ -3290,7 +3290,7 @@ setup_remote_mysql_host() {
 			ufw allow 3306/tcp >>"$LOG_FILE" 2>&1 || log_warn "Failed to update ufw rules for 3306"
 		elif command -v firewall-cmd >/dev/null 2>&1; then
 			log_info "Allowing 3306/tcp via firewalld..."
-			firewall-cmd --add-service=mysql --permanent >>"$LOG_FILE" 2>&1 || \
+			firewall-cmd --add-service=mysql --permanent >>"$LOG_FILE" 2>&1 ||
 				firewall-cmd --add-port=3306/tcp --permanent >>"$LOG_FILE" 2>&1 || true
 			firewall-cmd --reload >>"$LOG_FILE" 2>&1 || true
 		else
@@ -3318,12 +3318,11 @@ setup_remote_mysql_host() {
 	FEATHERWORKER_PASS=$(tr -dc 'A-Za-z0-9' </dev/urandom 2>/dev/null | head -c 32)
 
 	# Create user and grant full privileges
-	if ! $MYSQL_CMD <<EOF 2>>"$LOG_FILE"
+	if ! $MYSQL_CMD <<EOF 2>>"$LOG_FILE"; then
 CREATE USER IF NOT EXISTS 'featherworker'@'%' IDENTIFIED BY '${FEATHERWORKER_PASS}';
 GRANT ALL PRIVILEGES ON *.* TO 'featherworker'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 EOF
-	then
 		log_error "Failed to create or grant privileges to 'featherworker' user."
 		log_info "Check MySQL/MariaDB logs and credentials, then try again."
 		return 1
@@ -3497,11 +3496,11 @@ EOF
 ask_backup_before_update() {
 	# Check if FeatherPanel is installed and containers are running
 	if ! is_featherpanel_installed; then
-		return 0  # Not installed, no backup needed
+		return 0 # Not installed, no backup needed
 	fi
 
 	if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel_backend\|featherpanel_mysql"; then
-		return 0  # Containers not running, no backup needed
+		return 0 # Containers not running, no backup needed
 	fi
 
 	# Ask user if they want to backup
@@ -4621,11 +4620,11 @@ check_eol_status() {
 	EOL_EXTENDED_DATE="$eol_extended_date"
 }
 
-	# Initialize and load configuration
-	# This should be done after all functions are defined but before main execution
-	init_config
-	load_config
-	sync_panel_port_env
+# Initialize and load configuration
+# This should be done after all functions are defined but before main execution
+init_config
+load_config
+sync_panel_port_env
 
 if [ -f /etc/os-release ]; then
 	# shellcheck source=/dev/null
@@ -4641,7 +4640,7 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$OS" = "ubuntu" ] || [ "$OS" = "ubuntu-server" ]; then
 		# Support Ubuntu 22.04 LTS (Jammy), 24.04 LTS (Noble), and 25.04
-		if [ "$OS_VERSION" = "22.04" ] || [ "$OS_VERSION" = "24.04" ] || [ "$OS_VERSION" = "25.04" ] || [ "$OS_VERSION" = "25.10" ] || [ "$OS_VERSION" = "20.04" ]  ; then
+		if [ "$OS_VERSION" = "22.04" ] || [ "$OS_VERSION" = "24.04" ] || [ "$OS_VERSION" = "25.04" ] || [ "$OS_VERSION" = "25.10" ] || [ "$OS_VERSION" = "20.04" ]; then
 			SUPPORTED=true
 		fi
 	fi
@@ -5189,7 +5188,10 @@ if [ -f /etc/os-release ]; then
 	install) INST_TYPE="1" ;;
 	uninstall) INST_TYPE="2" ;;
 	update) INST_TYPE="3" ;;
-	db_remote) COMPONENT_TYPE="5"; INST_TYPE="1" ;;
+	db_remote)
+		COMPONENT_TYPE="5"
+		INST_TYPE="1"
+		;;
 	*) ;;
 	esac
 
@@ -5638,7 +5640,7 @@ if [ -f /etc/os-release ]; then
 			echo -e "${RED}${BOLD}Container Start Failure${NC}"
 			draw_hr
 
-            # Check Docker logs for common errors
+			# Check Docker logs for common errors
 			log_info "Checking Docker container logs..."
 			if command -v docker >/dev/null 2>&1; then
 				CONTAINER_LOGS=$(compose_logs 50 2>&1 || echo "")
@@ -5948,7 +5950,7 @@ if [ -f /etc/os-release ]; then
 		install_featherpanel_command
 
 		# Optional: guide user through Remote Database (MySQL/MariaDB) host setup
-		if command -v mysql >/dev/null 2>&1 || command -v mariadb >/dev/null 2>&1 || \
+		if command -v mysql >/dev/null 2>&1 || command -v mariadb >/dev/null 2>&1 ||
 			systemctl list-unit-files 2>/dev/null | grep -qE '^(mysql|mariadb)\.service'; then
 			echo ""
 			draw_hr
@@ -6059,10 +6061,10 @@ if [ -f /etc/os-release ]; then
 		log_info "Installation log saved at: $LOG_FILE"
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "2" ]; then
 		# Panel Uninstall
-	if ! is_featherpanel_installed; then
-		echo "FeatherPanel does not appear to be installed. Nothing to uninstall."
-		exit 0
-	fi
+		if ! is_featherpanel_installed; then
+			echo "FeatherPanel does not appear to be installed. Nothing to uninstall."
+			exit 0
+		fi
 		prompt "Are you sure you want to uninstall the Docker-based installation? (y/n): " confirm
 		if [ "$confirm" = "y" ]; then
 			uninstall_docker
@@ -6072,10 +6074,10 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "3" ]; then
 		# Panel Update
-	if ! is_featherpanel_installed; then
-		echo "FeatherPanel does not appear to be installed. Nothing to update."
-		exit 0
-	fi
+		if ! is_featherpanel_installed; then
+			echo "FeatherPanel does not appear to be installed. Nothing to update."
+			exit 0
+		fi
 
 		# Check current installation type BEFORE doing anything
 		CURRENT_IS_DEV=false
@@ -6141,19 +6143,19 @@ if [ -f /etc/os-release ]; then
 				echo ""
 				echo -e "${BLUE}Your current installation is using ${BOLD}stable release${NC}.${NC}"
 				echo ""
-				
+
 				# Show configuration preference if set
 				if [ "$PREFER_DEV" = "yes" ]; then
 					echo -e "${YELLOW}(Preference configured: Development builds)${NC}"
 					echo ""
 				fi
-				
+
 				echo -e "${BOLD}What would you like to do?${NC}"
 				echo -e "  ${GREEN}[1]${NC} ${BOLD}Update to Latest Stable Release${NC} ${BLUE}(Recommended)${NC}"
 				echo -e "  ${YELLOW}[2]${NC} ${BOLD}Switch to Development Build${NC} ${BLUE}(Latest from main branch)${NC}"
 				echo -e "  ${CYAN}[3]${NC} ${BOLD}Switch to Custom Development Build${NC} ${BLUE}(Specific branch/commit)${NC}"
 				draw_hr
-				
+
 				# Auto-select based on configuration preference if available
 				update_choice=""
 				if [ "$PREFER_DEV" = "yes" ] && [ -z "$DEV_BRANCH" ]; then
@@ -6333,11 +6335,14 @@ if [ -f /etc/os-release ]; then
 		# Always ensure global featherpanel command is installed/updated
 		install_featherpanel_command
 
+		# Ensure install marker exists after successful updates.
+		# This prevents feature gates from failing when the marker was accidentally removed.
+		touch /var/www/featherpanel/.installed
 		log_success "FeatherPanel updated successfully."
 		exit 0
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "4" ]; then
 		# Panel Backup Manager
-		if [ ! -f /var/www/featherpanel/.installed ]; then
+		if ! is_featherpanel_installed; then
 			log_error "FeatherPanel is not installed. Nothing to backup."
 			exit 1
 		fi
