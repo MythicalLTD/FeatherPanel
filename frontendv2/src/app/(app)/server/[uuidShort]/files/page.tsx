@@ -319,11 +319,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 const payload = JSON.parse(raw) as { sourceRoot?: string; files?: string[] };
                 if (!payload.files?.length) return;
                 const src = payload.sourceRoot ?? currentDirectory ?? '/';
-                const dest = joinPath(src, destinationFolder.name);
-                if (payload.files.includes(destinationFolder.name) && src === (currentDirectory || '/')) {
-                    toast.error(t('files.messages.move_into_self_error'));
-                    return;
-                }
+                const dropBase = currentDirectory ?? '/';
+                const dest = joinPath(dropBase, destinationFolder.name);
                 performMoveFiles(src, dest, payload.files);
             } catch {
                 // ignore malformed payloads
