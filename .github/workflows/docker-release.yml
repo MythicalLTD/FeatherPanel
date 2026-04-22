@@ -316,10 +316,10 @@ jobs:
           push: true
           cache-from: |
             type=registry,ref=ghcr.io/mythicalltd/featherpanel-async-runner:buildcache-${{ matrix.cache-key }}
-            type=gha
+            type=gha,scope=async-runner-${{ matrix.cache-key }}
           cache-to: |
             type=registry,ref=ghcr.io/mythicalltd/featherpanel-async-runner:buildcache-${{ matrix.cache-key }},mode=max
-            type=gha,mode=max
+            type=gha,mode=max,scope=async-runner-${{ matrix.cache-key }}
           tags: |
             ghcr.io/mythicalltd/featherpanel-async-runner:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
 

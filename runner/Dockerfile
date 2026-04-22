@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 # Build stage
 FROM rust:1.93-slim as builder
 
@@ -12,11 +14,25 @@ RUN apt-get update && apt-get install -y \
 # Copy manifests
 COPY Cargo.toml Cargo.lock ./
 
+# Pre-build dependencies in a stable layer.
+# This keeps dependency compilation cached when only app source changes.
+RUN mkdir -p src && \
+    printf "fn main() {}\n" > src/main.rs
+
+# Cache Cargo registry/git and target directory across builds.
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/build/target \
+    cargo build --release
+
 # Copy source
 COPY src ./src
 
 # Build release binary
-RUN cargo build --release
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/build/target \
+    cargo build --release
 
 # Runtime stage
 FROM debian:bookworm-slim
