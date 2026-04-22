@@ -29,7 +29,7 @@ use App\Config\ConfigInterface;
  */
 class Cache
 {
-    protected static $cacheDir = APP_CACHE_DIR . '/other';
+    protected static $cacheDir = \APP_CACHE_DIR . '/other';
     protected static $cacheExt = '.fpc';
     protected static $driver;
     protected static $redisInstance;
