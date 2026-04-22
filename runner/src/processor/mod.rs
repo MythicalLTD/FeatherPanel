@@ -88,12 +88,14 @@ pub async fn process_mail(pool: &MySqlPool, queue_id: &str) -> Result<()> {
             }
             Ok(Err(e)) => {
                 let err_str = e.to_string();
+                let err_chain = format!("{:#}", e);
                 error!(
                     "❌ Attempt {} failed for queue_id {}: {}",
-                    attempt, queue_id, err_str
+                    attempt, queue_id, err_chain
                 );
-                
-                if err_str.contains("permanent error") || err_str.contains("550") {
+
+                let err_lower = err_str.to_lowercase();
+                if err_lower.contains("permanent error") || err_lower.contains("550") {
                     warn!("⚠️ Fatal SMTP error encountered. Aborting retries for this mail.");
                     break;
                 }

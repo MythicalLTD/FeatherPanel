@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
@@ -67,10 +67,15 @@ pub async fn send_email(config: &SmtpConfig, to: &str, subject: &str, body: &str
         to, config.host, config.port, config.encryption
     );
 
-    mailer.send(&email).with_context(|| {
-        format!(
-            "SMTP send failed via {}:{} (encryption={}, ipv4={}, ipv6={})",
-            config.host, config.port, config.encryption, ipv4_count, ipv6_count
+    mailer.send(&email).map_err(|e| {
+        anyhow!(
+            "SMTP send failed via {}:{} (encryption={}, ipv4={}, ipv6={}): {}",
+            config.host,
+            config.port,
+            config.encryption,
+            ipv4_count,
+            ipv6_count,
+            e
         )
     })?;
 
