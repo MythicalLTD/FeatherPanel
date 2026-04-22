@@ -32,7 +32,8 @@ COPY src ./src
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/build/target \
-    cargo build --release
+    cargo build --release && \
+    cp /build/target/release/async-runner /build/async-runner
 
 # Runtime stage
 FROM debian:bookworm-slim
@@ -46,7 +47,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy binary from builder
-COPY --from=builder /build/target/release/async-runner /app/runner
+COPY --from=builder /build/async-runner /app/runner
 
 # Create non-root user
 RUN useradd -m -u 1000 runner && chown -R runner:runner /app
