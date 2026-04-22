@@ -3,12 +3,16 @@ use lettre::message::header::ContentType;
 use lettre::transport::smtp::client::{Tls, TlsParameters};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
+use once_cell::sync::Lazy;
 use std::collections::BTreeSet;
 use std::net::{IpAddr, ToSocketAddrs};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tracing::{debug, info, warn};
 
 use crate::types::SmtpConfig;
+
+static PREFER_IPV4_SMTP: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(false));
 
 pub async fn send_email(config: &SmtpConfig, to: &str, subject: &str, body: &str) -> Result<()> {
     let email = Message::builder()
@@ -61,15 +65,31 @@ pub async fn send_email(config: &SmtpConfig, to: &str, subject: &str, body: &str
         to, config.host, config.port, config.encryption
     );
 
-    let primary_send = send_via_host(config, &creds, &email, &config.host, &config.host);
+    let prefer_ipv4 = PREFER_IPV4_SMTP.load(Ordering::Relaxed);
+    let primary_connect_host = if prefer_ipv4 && !ipv4_addrs.is_empty() {
+        ipv4_addrs[0].as_str()
+    } else {
+        config.host.as_str()
+    };
+
+    if prefer_ipv4 && primary_connect_host != config.host {
+        info!(
+            "Using cached IPv4 preference for SMTP route: {} (TLS host {})",
+            primary_connect_host, config.host
+        );
+    }
+
+    let primary_send = send_via_host(config, &creds, &email, primary_connect_host, &config.host);
     if let Err(primary_error) = primary_send {
         let primary_error_str = primary_error.to_string();
         let should_try_ipv4_fallback =
-            primary_error_str.contains("Network is unreachable")
+            primary_connect_host == config.host
+                && primary_error_str.contains("Network is unreachable")
                 && ipv4_count > 0
                 && ipv6_count > 0;
 
         if should_try_ipv4_fallback {
+            PREFER_IPV4_SMTP.store(true, Ordering::Relaxed);
             let fallback_host = ipv4_addrs[0].clone();
             warn!(
                 "Primary SMTP send failed with ENETUNREACH; retrying via IPv4 {} with TLS host {}",
