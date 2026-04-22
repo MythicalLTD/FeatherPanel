@@ -88,7 +88,10 @@ pub async fn process_mail(pool: &MySqlPool, queue_id: &str) -> Result<()> {
             }
             Ok(Err(e)) => {
                 let err_str = e.to_string();
-                error!("❌ Attempt {} failed: {}", attempt, err_str);
+                error!(
+                    "❌ Attempt {} failed for queue_id {}: {}",
+                    attempt, queue_id, err_str
+                );
                 
                 if err_str.contains("permanent error") || err_str.contains("550") {
                     warn!("⚠️ Fatal SMTP error encountered. Aborting retries for this mail.");

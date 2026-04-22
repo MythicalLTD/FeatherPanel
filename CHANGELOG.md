@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.5 STABLE
+
+### Fixed
+
+- Resolved an issue where the Rust async-runner occasionally used IPv6, leading to instability—now reliably defaults to the intended address family for stable operation. by @nayskutzu
+- Fixed a bug where the copy button failed to work as expected in v1.3.4; updating to the latest development version restores proper copy functionality.
+- Addressed intermittent issues with drag-and-drop file movement in v1.3.4—upgrading to the latest development version ensures smoother, more reliable drag-and-drop actions.
+
 ## v1.3.4 STABLE
 
 ### Fixed
