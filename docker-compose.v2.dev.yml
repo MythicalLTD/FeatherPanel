@@ -56,6 +56,7 @@ services:
       - DATABASE_ENCRYPTION=xchacha20
       - REDIS_HOST=redis
       - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
+      - TRUST_PROXY_HEADERS=true
     depends_on:
       mysql:
         condition: service_healthy

@@ -80,8 +80,7 @@ class CloudFlareRealIP
         // and remote_addr is 127.0.0.1, try to trust X-Forwarded-For anyway
         if ($remoteAddr === '127.0.0.1' || $remoteAddr === '::1' || self::isFromCloudflare($remoteAddr)) {
             if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-                $forwardedIPs = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-                $realIP = trim($forwardedIPs[0]);
+                $realIP = self::extractFirstPublicIpFromForwardedFor($_SERVER['HTTP_X_FORWARDED_FOR']);
                 if (self::isValidIP($realIP)) {
                     return $realIP;
                 }
@@ -92,8 +91,7 @@ class CloudFlareRealIP
         if (self::shouldTrustProxyHeaders()) {
             // X-Forwarded-For (most common proxy header)
             if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-                $forwardedIPs = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-                $realIP = trim($forwardedIPs[0]); // First IP is usually the real client
+                $realIP = self::extractFirstPublicIpFromForwardedFor($_SERVER['HTTP_X_FORWARDED_FOR']);
                 if (self::isValidIP($realIP)) {
                     return $realIP;
                 }
@@ -258,5 +256,27 @@ class CloudFlareRealIP
         }
 
         return false;
+    }
+
+    /**
+     * Extract the first valid public IP from an X-Forwarded-For header value.
+     * Falls back to the first non-empty entry if no public IP exists.
+     */
+    private static function extractFirstPublicIpFromForwardedFor($xff)
+    {
+        if (!is_string($xff) || trim($xff) === '') {
+            return '';
+        }
+
+        $forwardedIPs = array_map('trim', explode(',', $xff));
+        $forwardedIPs = array_values(array_filter($forwardedIPs, static fn($ip) => $ip !== ''));
+
+        foreach ($forwardedIPs as $ip) {
+            if (self::isValidIP($ip)) {
+                return $ip;
+            }
+        }
+
+        return $forwardedIPs[0] ?? '';
     }
 }

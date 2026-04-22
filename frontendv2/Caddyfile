@@ -1,6 +1,15 @@
 # Caddy - FeatherPanel frontend (replaces nginx)
 # Proxies /api, /pma, /attachments, /addons, /components to backend; everything else to Next.js
 
+{
+	servers {
+		# Trust upstream/private-network reverse proxies so Caddy keeps
+		# the incoming X-Forwarded-For chain instead of collapsing it to
+		# Docker bridge hop addresses.
+		trusted_proxies static private_ranges
+	}
+}
+
 :80 {
 	encode zstd gzip
 
