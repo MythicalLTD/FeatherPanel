@@ -44,7 +44,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && printf '\n# Prefer IPv4 when both A and AAAA exist (container often has no IPv6 route)\nprecedence ::ffff:0:0/96 100\n' >> /etc/gai.conf
 
 # Copy binary from builder
 COPY --from=builder /build/async-runner /app/runner
