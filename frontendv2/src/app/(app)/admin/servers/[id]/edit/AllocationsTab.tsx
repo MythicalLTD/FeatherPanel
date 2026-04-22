@@ -22,7 +22,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plug, Search, Trash2, RefreshCw } from 'lucide-react';
+import { Plug, Search, Trash2, RefreshCw, Star } from 'lucide-react';
 import { ServerAllocations, SelectedEntities } from './types';
 
 interface AllocationsTabProps {
@@ -47,6 +47,7 @@ export function AllocationsTab({
         server: null,
     });
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [settingPrimaryId, setSettingPrimaryId] = useState<number | null>(null);
 
     const fetchServerAllocations = useCallback(async () => {
         setLoading(true);
@@ -80,6 +81,20 @@ export function AllocationsTab({
             toast.error(t('admin.servers.edit.allocations.delete_failed'));
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const setPrimaryAllocation = async (allocationId: number) => {
+        setSettingPrimaryId(allocationId);
+        try {
+            await axios.post(`/api/admin/servers/${serverId}/allocations/${allocationId}/primary`);
+            toast.success(t('admin.servers.edit.allocations.primary_success'));
+            fetchServerAllocations();
+        } catch (error) {
+            console.error('Error setting primary allocation:', error);
+            toast.error(t('admin.servers.edit.allocations.primary_failed'));
+        } finally {
+            setSettingPrimaryId(null);
         }
     };
 
@@ -177,15 +192,29 @@ export function AllocationsTab({
                                     {allocation.is_primary && <Badge variant='default'>{t('common.primary')}</Badge>}
                                 </div>
                                 {!allocation.is_primary && (
-                                    <Button
-                                        type='button'
-                                        variant='destructive'
-                                        size='sm'
-                                        onClick={() => deleteAllocation(allocation.id)}
-                                        loading={deletingId === allocation.id}
-                                    >
-                                        <Trash2 className='h-4 w-4' />
-                                    </Button>
+                                    <div className='flex items-center gap-2'>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={() => setPrimaryAllocation(allocation.id)}
+                                            loading={settingPrimaryId === allocation.id}
+                                            disabled={deletingId === allocation.id}
+                                        >
+                                            <Star className='h-4 w-4 mr-2' />
+                                            {t('admin.servers.edit.allocations.set_primary')}
+                                        </Button>
+                                        <Button
+                                            type='button'
+                                            variant='destructive'
+                                            size='sm'
+                                            onClick={() => deleteAllocation(allocation.id)}
+                                            loading={deletingId === allocation.id}
+                                            disabled={settingPrimaryId === allocation.id}
+                                        >
+                                            <Trash2 className='h-4 w-4' />
+                                        </Button>
+                                    </div>
                                 )}
                             </div>
                         ))}

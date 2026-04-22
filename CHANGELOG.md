@@ -7,6 +7,11 @@
 - Resolved an issue where the Rust async-runner occasionally used IPv6, leading to instability—now reliably defaults to the intended address family for stable operation. by @nayskutzu
 - Fixed a bug where the copy button failed to work as expected in v1.3.4; updating to the latest development version restores proper copy functionality.
 - Addressed intermittent issues with drag-and-drop file movement in v1.3.4—upgrading to the latest development version ensures smoother, more reliable drag-and-drop actions.
+- Resolved an issue where IP addresses beginning with 172. were incorrectly prioritized as the primary address, ensuring correct IP selection and improved reliability. by @nayskutzu
+
+### Improved
+
+- Supercharged allocation management in server settings for that blana bomba smoothness. by @nayskutzu
 
 ## v1.3.4 STABLE
 
