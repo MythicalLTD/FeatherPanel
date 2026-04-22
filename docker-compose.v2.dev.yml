@@ -117,6 +117,10 @@ services:
       - REDIS_URL=redis://:${REDIS_PASSWORD:-featherpanel_redis}@redis:6379
     volumes:
       - featherpanel_config:/app/config:ro
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+      - net.ipv6.conf.default.disable_ipv6=1
+      - net.ipv6.conf.lo.disable_ipv6=1
     depends_on:
       mysql:
         condition: service_healthy
