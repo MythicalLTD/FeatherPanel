@@ -98,13 +98,13 @@ export default function VdsPerformance({
     ];
 
     return (
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0'>
             {charts.map((chart) => {
                 const Icon = chart.icon;
                 return (
                     <div
                         key={chart.id}
-                        className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 transition-all'
+                        className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 transition-all min-w-0'
                     >
                         <div className='flex items-center justify-between mb-3'>
                             <h3 className='text-sm font-medium text-gray-900 dark:text-white'>{chart.title}</h3>
@@ -127,9 +127,9 @@ export default function VdsPerformance({
                                 </span>
                             </div>
 
-                            <div className='h-[200px] w-full mt-4 min-h-[200px]'>
+                            <div className='h-[200px] w-full mt-4 min-h-[200px] min-w-0'>
                                 {chart.data.length > 0 ? (
-                                    <ResponsiveContainer width='100%' height='100%'>
+                                    <ResponsiveContainer width='100%' height='100%' minWidth={0} minHeight={200}>
                                         <LineChart data={chart.data}>
                                             <YAxis domain={[0, chart.max || 'auto']} hide />
                                             <Tooltip

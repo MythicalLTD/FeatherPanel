@@ -14,6 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import axios from 'axios';
 import { serversApi } from '@/lib/servers-api';
 
 // WebSocket message types
@@ -76,6 +77,7 @@ const STATS_REQUEST_INTERVAL = 5000; // Request stats every 5 seconds
 export function useServersWebSocket() {
     const [serverLiveData, setServerLiveData] = useState<Record<string, ServerLiveData>>({});
     const connectionsRef = useRef<Map<string, ServerConnectionState>>(new Map());
+    const blockedServersRef = useRef<Set<string>>(new Set());
 
     // Get live data for a specific server
     const getServerLiveData = useCallback(
@@ -381,6 +383,10 @@ export function useServersWebSocket() {
     // Connect to a server
     const connectServer = useCallback(
         async (serverUuid: string) => {
+            if (blockedServersRef.current.has(serverUuid)) {
+                return;
+            }
+
             let state = connectionsRef.current.get(serverUuid);
 
             if (!state) {
@@ -421,6 +427,19 @@ export function useServersWebSocket() {
             } catch (error) {
                 state.connectionStatus = 'disconnected';
                 state.wingsStatus = 'error';
+
+                // 403 when requesting a Wings JWT is typically a suspended or forbidden server.
+                // Those are not transient errors, so skip reconnect loops and future attempts.
+                if (axios.isAxiosError(error) && error.response?.status === 403) {
+                    blockedServersRef.current.add(serverUuid);
+                    if (state.reconnectTimeout) {
+                        clearTimeout(state.reconnectTimeout);
+                        state.reconnectTimeout = null;
+                    }
+                    state.reconnectAttempts = MAX_RECONNECT_ATTEMPTS;
+                    return;
+                }
+
                 console.error(`Connection error for server ${serverUuid}:`, error);
 
                 if (state.reconnectAttempts < MAX_RECONNECT_ATTEMPTS && scheduleReconnectRef.current) {

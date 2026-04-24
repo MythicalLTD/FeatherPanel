@@ -147,6 +147,8 @@ export default function ServerConsolePage() {
     } = useFeatureDetector();
 
     const canConnect = hasPermission('websocket.connect');
+    const isServerSuspended = server?.suspended === 1 || server?.status === 'suspended';
+    const shouldConnectToWings = canConnect && !isServerSuspended;
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-console');
 
@@ -316,7 +318,7 @@ export default function ServerConsolePage() {
 
     const { connectionStatus, ping, sendCommand, sendPowerAction, requestStats, requestLogs } = useWingsWebSocket({
         serverUuid,
-        connect: canConnect,
+        connect: shouldConnectToWings,
         onConsoleOutput: handleConsoleOutput,
         onStatus: handleStatusUpdate,
         onStats: handleStatsUpdate,
@@ -472,7 +474,7 @@ export default function ServerConsolePage() {
         return (
             <div className='min-h-screen bg-background p-4'>
                 <div className='max-w-6xl mx-auto h-full flex flex-col'>
-                    {canConnect ? (
+                    {shouldConnectToWings ? (
                         <ServerTerminal
                             ref={terminalRef}
                             onSendCommand={sendCommand}
@@ -531,7 +533,7 @@ export default function ServerConsolePage() {
 
             <div className='grid grid-cols-1 xl:grid-cols-12 gap-6 items-start'>
                 <div className='xl:col-span-9 flex flex-col gap-6'>
-                    {canConnect && connectionStatus !== 'connected' && (
+                    {shouldConnectToWings && connectionStatus !== 'connected' && (
                         <Card className={`border-2 ${connectionInfo.bgColor}`}>
                             <CardContent className='p-4'>
                                 <div className='flex items-center gap-4'>
@@ -576,7 +578,27 @@ export default function ServerConsolePage() {
 
                     <WidgetRenderer widgets={getWidgets('server-console', 'before-terminal')} />
 
-                    {canConnect && (
+                    {canConnect && isServerSuspended && (
+                        <Card className='border-2 border-yellow-500/20 bg-yellow-500/10'>
+                            <CardContent className='p-4'>
+                                <div className='flex items-center gap-4'>
+                                    <div className='h-12 w-12 rounded-lg flex items-center justify-center bg-yellow-500/10 border-yellow-500/20'>
+                                        <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                                    </div>
+                                    <div className='flex-1'>
+                                        <p className='font-semibold text-yellow-500'>
+                                            {t('servers.status.suspended')}
+                                        </p>
+                                        <p className='text-sm text-muted-foreground'>
+                                            {t('servers.console.connection.disconnected')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {shouldConnectToWings && (
                         <ServerTerminal
                             ref={terminalRef}
                             onSendCommand={sendCommand}
@@ -592,7 +614,7 @@ export default function ServerConsolePage() {
                 </div>
 
                 <div className='xl:col-span-3 space-y-6'>
-                    {canConnect && (
+                    {shouldConnectToWings && (
                         <ServerInfoCards
                             serverIp={
                                 server.subdomain && server.subdomain.domain && server.subdomain.subdomain
@@ -620,7 +642,7 @@ export default function ServerConsolePage() {
 
             <WidgetRenderer widgets={getWidgets('server-console', 'before-performance')} />
 
-            {server && canConnect && (
+            {server && shouldConnectToWings && (
                 <ServerPerformance
                     cpuData={cpuData}
                     memoryData={memoryData}

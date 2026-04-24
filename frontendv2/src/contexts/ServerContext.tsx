@@ -92,9 +92,7 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
     const fetchServer = useCallback(async () => {
         if (!uuidShort) return;
 
-        if (!server) {
-            setLoading(true);
-        }
+        setLoading(true);
 
         try {
             const { data } = await axios.get<{ success: boolean; data: Server }>(`/api/user/servers/${uuidShort}`);
@@ -148,7 +146,7 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
         } finally {
             setLoading(false);
         }
-    }, [uuidShort, server]);
+    }, [uuidShort]);
 
     useEffect(() => {
         if (!initialServer) {

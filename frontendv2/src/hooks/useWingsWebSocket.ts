@@ -401,9 +401,16 @@ export function useWingsWebSocket({
                     }
                 };
 
-                ws.onerror = (error) => {
-                    console.error('[Wings WS] Error:', error);
-                    setConnectionStatus('error');
+                ws.onerror = () => {
+                    // Browser WebSocket "error" events are opaque and commonly followed by onclose.
+                    // Avoid noisy [object Event] logs and let onclose handle lifecycle/reconnect state.
+                    if (isCleanedUp || ws !== wsRef.current) {
+                        return;
+                    }
+                    if (ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
+                        return;
+                    }
+                    console.warn('[Wings WS] Socket error event while connection is active');
                 };
 
                 ws.onclose = () => {
