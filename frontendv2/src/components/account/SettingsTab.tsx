@@ -143,7 +143,7 @@ export default function SettingsTab() {
 
     return (
         <div className='space-y-6'>
-            <div>
+            <div className='rounded-xl border border-border/50 bg-muted/20 p-4'>
                 <h3 className='text-lg font-semibold text-foreground'>{t('account.securitySettings')}</h3>
                 <p className='text-sm text-muted-foreground mt-1'>{t('account.securitySettingsDescription')}</p>
             </div>

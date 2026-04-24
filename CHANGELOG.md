@@ -14,6 +14,7 @@
 - Supercharged allocation management in server settings for that blana bomba smoothness. by @nayskutzu
 - The edit server option now remembers your preferences for a smoother, more personalized experience. by @nayskutzu
 - The edit vds option now remembers your preferences for a smoother, more personalized experience. by @nayskutzu
+- Significantly enhanced the design and user experience of the User Edit page for a more intuitive and visually polished interface. by @nayskutzu
 
 ### Added
 

@@ -86,8 +86,8 @@ export default function AccountPage() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'top-of-page')} />
 
-            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
-                <div className='flex flex-col items-center text-center gap-4'>
+            <div className='rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl p-6 sm:p-8'>
+                <div className='flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6'>
                     {user?.avatar ? (
                         <NextImage
                             src={user.avatar}
@@ -101,7 +101,7 @@ export default function AccountPage() {
                             <span className='text-2xl font-semibold text-primary'>{getUserInitials()}</span>
                         </div>
                     )}
-                    <div className='space-y-2'>
+                    <div className='space-y-2 text-center sm:text-left'>
                         <h2 className='text-xl sm:text-2xl font-bold text-foreground'>{user?.username}</h2>
                         <p className='text-muted-foreground text-sm sm:text-base'>{user?.email}</p>
                         <p className='text-xs sm:text-sm text-muted-foreground'>
@@ -112,7 +112,7 @@ export default function AccountPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'after-profile-card')} />
 
-            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl'>
+            <div className='rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl overflow-hidden'>
                 <Tab.Group selectedIndex={selectedIndex} onChange={handleTabChange}>
                     <div className='block sm:hidden p-4 border-b border-border'>
                         <select
@@ -128,28 +128,27 @@ export default function AccountPage() {
                         </select>
                     </div>
 
-                    <div className='hidden sm:block border-b border-border'>
-                        <Tab.List className='flex overflow-x-auto custom-scrollbar'>
+                    <div className='hidden sm:block border-b border-border/60 p-3'>
+                        <Tab.List className='flex gap-2 overflow-x-auto custom-scrollbar'>
                             {tabs.map((tab) => (
                                 <Tab
                                     key={tab.id}
                                     className={({ selected }) =>
                                         cn(
-                                            'flex-1 min-w-0 px-4 py-3 text-sm font-medium transition-all focus:outline-none',
-                                            'border-b-2 -mb-px',
+                                            'px-4 py-2.5 text-sm font-medium transition-all focus:outline-none rounded-xl whitespace-nowrap',
                                             selected
-                                                ? 'border-primary text-primary'
-                                                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
+                                                ? 'bg-primary/10 text-primary border border-primary/20'
+                                                : 'text-muted-foreground hover:text-foreground border border-transparent hover:bg-muted/60',
                                         )
                                     }
                                 >
-                                    <span className='truncate'>{tab.name}</span>
+                                    {tab.name}
                                 </Tab>
                             ))}
                         </Tab.List>
                     </div>
 
-                    <Tab.Panels className='p-6'>
+                    <Tab.Panels className='p-5 sm:p-6'>
                         {tabs.map((tab) => (
                             <Tab.Panel key={tab.id} className='focus:outline-none'>
                                 <tab.component />

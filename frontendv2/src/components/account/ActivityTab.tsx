@@ -139,8 +139,8 @@ export default function ActivityTab() {
     }
 
     return (
-        <div className='space-y-6'>
-            <div>
+        <div className='space-y-5'>
+            <div className='rounded-xl border border-border/50 bg-muted/20 p-4'>
                 <h3 className='text-lg font-semibold text-foreground'>{t('account.activity.title')}</h3>
                 <p className='text-sm text-muted-foreground mt-1'>{t('account.activity.description')}</p>
             </div>
@@ -213,40 +213,17 @@ export default function ActivityTab() {
             )}
 
             {pagination && pagination.total_pages > 1 && (
-                <div className='flex items-center justify-between gap-4 pt-4'>
-                    <div className='text-sm text-muted-foreground'>
-                        Page {pagination.current_page} of {pagination.total_pages}
-                    </div>
-                    <div className='flex items-center gap-2'>
+                <div className='flex items-center justify-center gap-1'>
+                    {visiblePages().map((page) => (
                         <Button
-                            variant='outline'
+                            key={page}
+                            variant={page === pagination.current_page ? 'default' : 'outline'}
                             size='sm'
-                            disabled={!pagination.has_prev}
-                            onClick={() => fetchActivities(pagination.current_page - 1)}
+                            onClick={() => fetchActivities(page)}
                         >
-                            <ChevronLeft className='h-4 w-4' />
+                            {page}
                         </Button>
-                        <div className='flex items-center gap-1'>
-                            {visiblePages().map((page) => (
-                                <Button
-                                    key={page}
-                                    variant={page === pagination.current_page ? 'default' : 'outline'}
-                                    size='sm'
-                                    onClick={() => fetchActivities(page)}
-                                >
-                                    {page}
-                                </Button>
-                            ))}
-                        </div>
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            disabled={!pagination.has_next}
-                            onClick={() => fetchActivities(pagination.current_page + 1)}
-                        >
-                            <ChevronRight className='h-4 w-4' />
-                        </Button>
-                    </div>
+                    ))}
                 </div>
             )}
         </div>

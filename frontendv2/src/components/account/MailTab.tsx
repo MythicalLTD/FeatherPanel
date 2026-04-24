@@ -203,13 +203,13 @@ export default function MailTab() {
     }
 
     return (
-        <div className='space-y-6'>
+        <div className='space-y-5'>
             <div className='flex items-center justify-between'>
-                <div>
+                <div className='rounded-xl border border-border/50 bg-muted/20 p-4 flex-1'>
                     <h3 className='text-lg font-semibold text-foreground'>{t('account.mail.title')}</h3>
                     <p className='text-sm text-muted-foreground mt-1'>{t('account.mail.description')}</p>
                 </div>
-                <Button onClick={() => fetchMails(currentPage)} variant='outline' size='sm'>
+                <Button onClick={() => fetchMails(currentPage)} variant='outline' size='sm' className='ml-3'>
                     <RefreshCw className='w-4 h-4 mr-2' />
                     {t('account.mail.refresh')}
                 </Button>
@@ -310,41 +310,17 @@ export default function MailTab() {
             )}
 
             {pagination && pagination.total_pages > 1 && (
-                <div className='flex items-center justify-between gap-4 pt-4'>
-                    <div className='text-sm text-muted-foreground'>
-                        {t('dashboard.knowledgebase.page')} {pagination.current_page} {t('dashboard.knowledgebase.of')}{' '}
-                        {pagination.total_pages}
-                    </div>
-                    <div className='flex items-center gap-2'>
+                <div className='flex items-center justify-center gap-1'>
+                    {visiblePages().map((page) => (
                         <Button
-                            variant='outline'
+                            key={page}
+                            variant={page === pagination.current_page ? 'default' : 'outline'}
                             size='sm'
-                            disabled={!pagination.has_prev}
-                            onClick={() => fetchMails(pagination.current_page - 1)}
+                            onClick={() => fetchMails(page)}
                         >
-                            <ChevronLeft className='h-4 w-4' />
+                            {page}
                         </Button>
-                        <div className='flex items-center gap-1'>
-                            {visiblePages().map((page) => (
-                                <Button
-                                    key={page}
-                                    variant={page === pagination.current_page ? 'default' : 'outline'}
-                                    size='sm'
-                                    onClick={() => fetchMails(page)}
-                                >
-                                    {page}
-                                </Button>
-                            ))}
-                        </div>
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            disabled={!pagination.has_next}
-                            onClick={() => fetchMails(pagination.current_page + 1)}
-                        >
-                            <ChevronRight className='h-4 w-4' />
-                        </Button>
-                    </div>
+                    ))}
                 </div>
             )}
 

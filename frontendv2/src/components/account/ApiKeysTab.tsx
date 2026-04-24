@@ -225,14 +225,14 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
     }
 
     return (
-        <div className='space-y-6'>
+        <div className='space-y-5'>
             <WidgetRenderer widgets={getWidgets(slug, 'top-of-page')} />
             <div className='flex items-center justify-between'>
-                <div>
+                <div className='rounded-xl border border-border/50 bg-muted/20 p-4 flex-1'>
                     <h3 className='text-lg font-semibold text-foreground'>{t('account.apiKeys.title')}</h3>
                     <p className='text-sm text-muted-foreground mt-1'>{t('account.apiKeys.description')}</p>
                 </div>
-                <div className='flex gap-2'>
+                <div className='flex gap-2 ml-3'>
                     <Button
                         onClick={() => window.open('/icanhasfeatherpanel/api/index.html', '_blank')}
                         variant='outline'
@@ -272,7 +272,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
 
             <WidgetRenderer widgets={getWidgets(slug, 'after-header')} />
 
-            <div className='bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4'>
+            <div className='bg-blue-50/80 dark:bg-blue-950/50 border border-blue-200/70 dark:border-blue-800/70 rounded-xl p-4'>
                 <div className='flex items-start gap-3'>
                     <Info className='h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0' />
                     <div className='space-y-2'>
