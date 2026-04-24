@@ -269,7 +269,7 @@ class CloudFlareRealIP
         }
 
         $forwardedIPs = array_map('trim', explode(',', $xff));
-        $forwardedIPs = array_values(array_filter($forwardedIPs, static fn($ip) => $ip !== ''));
+        $forwardedIPs = array_values(array_filter($forwardedIPs, static fn ($ip) => $ip !== ''));
 
         foreach ($forwardedIPs as $ip) {
             if (self::isValidIP($ip)) {

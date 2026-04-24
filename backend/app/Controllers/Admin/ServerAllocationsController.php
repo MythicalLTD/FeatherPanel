@@ -378,15 +378,49 @@ class ServerAllocationsController
                 return ApiResponse::error('Allocation not found', 'ALLOCATION_NOT_FOUND', 404);
             }
 
-            // Verify the allocation belongs to this server
-            if ((int) $allocation['server_id'] !== $serverId) {
-                return ApiResponse::error('Allocation does not belong to this server', 'ALLOCATION_MISMATCH', 400);
+            $previousPrimaryAllocationId = (int) ($server['allocation_id'] ?? 0);
+
+            // Allocation can be used as primary if it is already on this server OR currently unassigned.
+            // If unassigned, attach it first (respecting allocation limit). Never steal from another server.
+            $allocationServerId = (int) ($allocation['server_id'] ?? 0);
+            if ($allocationServerId !== 0 && $allocationServerId !== $serverId) {
+                return ApiResponse::error('Allocation is already assigned to another server', 'ALLOCATION_IN_USE', 400);
+            }
+
+            if ($allocationServerId === 0) {
+                $currentAllocations = count(Allocation::getByServerId($serverId));
+                $allocationLimit = (int) ($server['allocation_limit'] ?? 100);
+
+                if ($currentAllocations >= $allocationLimit) {
+                    return ApiResponse::error('Allocation limit reached', 'ALLOCATION_LIMIT_REACHED', 400);
+                }
+
+                $assigned = Allocation::assignToServer($allocationId, $serverId);
+                if (!$assigned) {
+                    return ApiResponse::error('Failed to assign allocation before setting primary', 'ASSIGNMENT_FAILED', 500);
+                }
             }
 
             // Update the server's primary allocation
             $success = Server::updateServerById($serverId, ['allocation_id' => $allocationId]);
             if (!$success) {
                 return ApiResponse::error('Failed to set primary allocation', 'PRIMARY_ALLOCATION_UPDATE_FAILED', 500);
+            }
+
+            // "Replace" semantics for default allocation:
+            // once new primary is selected, detach previous primary if it was different.
+            if ($previousPrimaryAllocationId > 0 && $previousPrimaryAllocationId !== $allocationId) {
+                $previousPrimary = Allocation::getById($previousPrimaryAllocationId);
+                if ($previousPrimary && (int) ($previousPrimary['server_id'] ?? 0) === $serverId) {
+                    $unassigned = Allocation::unassignFromServer($previousPrimaryAllocationId);
+                    if (!$unassigned) {
+                        return ApiResponse::error(
+                            'Failed to unassign previous primary allocation',
+                            'PRIMARY_ALLOCATION_CLEANUP_FAILED',
+                            500
+                        );
+                    }
+                }
             }
 
             // Sync with Wings daemon

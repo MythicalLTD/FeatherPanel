@@ -28,16 +28,14 @@ import { ServerAllocations, SelectedEntities } from './types';
 interface AllocationsTabProps {
     serverId: string;
     selectedEntities: SelectedEntities;
-    setAllocationModalOpen: (open: boolean) => void;
-    fetchAllocations: () => void;
+    openAllocationModal: (mode: 'primary' | 'assign') => void;
     refreshTrigger?: number;
 }
 
 export function AllocationsTab({
     serverId,
     selectedEntities,
-    setAllocationModalOpen,
-    fetchAllocations,
+    openAllocationModal,
     refreshTrigger = 0,
 }: AllocationsTabProps) {
     const { t } = useTranslation();
@@ -98,11 +96,6 @@ export function AllocationsTab({
         }
     };
 
-    const openAllocationModal = () => {
-        fetchAllocations();
-        setAllocationModalOpen(true);
-    };
-
     return (
         <PageCard
             title={t('admin.servers.edit.allocations.title')}
@@ -128,11 +121,11 @@ export function AllocationsTab({
                             role='button'
                             tabIndex={0}
                             className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
-                            onClick={openAllocationModal}
+                            onClick={() => openAllocationModal('primary')}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
                                     e.preventDefault();
-                                    openAllocationModal();
+                                    openAllocationModal('primary');
                                 }
                             }}
                         >
@@ -149,7 +142,7 @@ export function AllocationsTab({
                                 </span>
                             )}
                         </div>
-                        <Button type='button' size='icon' onClick={openAllocationModal}>
+                        <Button type='button' size='icon' onClick={() => openAllocationModal('primary')}>
                             <Search className='h-4 w-4' />
                         </Button>
                     </div>
@@ -222,7 +215,7 @@ export function AllocationsTab({
                 )}
 
                 {serverAllocations.server?.can_add_more && (
-                    <Button type='button' variant='outline' className='w-full' onClick={openAllocationModal}>
+                    <Button type='button' variant='outline' className='w-full' onClick={() => openAllocationModal('assign')}>
                         {t('admin.servers.edit.allocations.add')}
                     </Button>
                 )}

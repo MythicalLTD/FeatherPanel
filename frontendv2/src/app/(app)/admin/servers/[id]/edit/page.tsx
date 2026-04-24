@@ -143,6 +143,7 @@ export default function EditServerPage() {
     const [realmModalOpen, setRealmModalOpen] = useState(false);
     const [spellModalOpen, setSpellModalOpen] = useState(false);
     const [allocationModalOpen, setAllocationModalOpen] = useState(false);
+    const [allocationModalMode, setAllocationModalMode] = useState<'form' | 'primary' | 'assign'>('form');
 
     const [owners, setOwners] = useState<User[]>([]);
     const [realms, setRealms] = useState<Realm[]>([]);
@@ -586,9 +587,29 @@ export default function EditServerPage() {
         }
     }, [spellModalOpen, form.realms_id, spellPagination.current_page, debouncedSpellSearch, fetchSpells]);
 
-    const fetchAllocations = async () => {
+    const fetchAllocations = async (mode: 'form' | 'primary' | 'assign' = 'form') => {
         if (!node?.id) return;
         try {
+            if (mode === 'primary') {
+                const [availableRes, assignedRes] = await Promise.all([
+                    axios.get('/api/admin/allocations', { params: { not_used: true } }),
+                    axios.get(`/api/admin/servers/${serverId}/allocations`),
+                ]);
+
+                const available = (availableRes.data?.data?.allocations || []).filter(
+                    (a: Allocation) => a.node_id === node.id,
+                );
+                const assigned = assignedRes.data?.data?.allocations || [];
+
+                const merged = new Map<number, Allocation>();
+                [...available, ...assigned].forEach((a: Allocation) => {
+                    merged.set(a.id, a);
+                });
+
+                setAllocations(Array.from(merged.values()));
+                return;
+            }
+
             const { data } = await axios.get('/api/admin/allocations', { params: { not_used: true } });
             const allAllocations = data.data.allocations || [];
 
@@ -604,6 +625,12 @@ export default function EditServerPage() {
         } catch (error) {
             console.error('Error fetching allocations:', error);
         }
+    };
+
+    const openAllocationModal = async (mode: 'form' | 'primary' | 'assign') => {
+        setAllocationModalMode(mode);
+        await fetchAllocations(mode);
+        setAllocationModalOpen(true);
     };
 
     const [allocationsRefreshTrigger, setAllocationsRefreshTrigger] = useState(0);
@@ -629,19 +656,39 @@ export default function EditServerPage() {
     const handleSelectAllocation = async (allocation: Allocation) => {
         if (activeTab === 'allocations') {
             try {
-                const { data } = await axios.post(`/api/admin/servers/${serverId}/allocations`, {
-                    allocation_id: allocation.id,
-                });
+                const isPrimarySelection = allocationModalMode === 'primary';
+                const { data } = isPrimarySelection
+                    ? await axios.post(`/api/admin/servers/${serverId}/allocations/${allocation.id}/primary`)
+                    : await axios.post(`/api/admin/servers/${serverId}/allocations`, {
+                          allocation_id: allocation.id,
+                      });
 
                 if (data.success) {
-                    toast.success(t('admin.servers.edit.allocations.assign_success'));
+                    toast.success(
+                        isPrimarySelection
+                            ? t('admin.servers.edit.allocations.primary_success')
+                            : t('admin.servers.edit.allocations.assign_success'),
+                    );
                     setAllocationsRefreshTrigger((prev) => prev + 1);
+                    if (isPrimarySelection) {
+                        setSelectedEntities((prev) => ({ ...prev, allocation }));
+                        setForm((prev) => ({ ...prev, allocation_id: allocation.id }));
+                    }
                 } else {
-                    toast.error(data.message || t('admin.servers.edit.allocations.assign_failed'));
+                    toast.error(
+                        data.message ||
+                            (isPrimarySelection
+                                ? t('admin.servers.edit.allocations.primary_failed')
+                                : t('admin.servers.edit.allocations.assign_failed')),
+                    );
                 }
             } catch (error) {
-                console.error('Error assigning allocation:', error);
-                toast.error(t('admin.servers.edit.allocations.assign_failed'));
+                console.error('Error updating allocation:', error);
+                toast.error(
+                    allocationModalMode === 'primary'
+                        ? t('admin.servers.edit.allocations.primary_failed')
+                        : t('admin.servers.edit.allocations.assign_failed'),
+                );
             }
         } else {
             setSelectedEntities((prev) => ({ ...prev, allocation }));
@@ -888,8 +935,7 @@ export default function EditServerPage() {
                         <AllocationsTab
                             serverId={serverId}
                             selectedEntities={selectedEntities}
-                            setAllocationModalOpen={setAllocationModalOpen}
-                            fetchAllocations={fetchAllocations}
+                            openAllocationModal={(mode) => void openAllocationModal(mode)}
                             refreshTrigger={allocationsRefreshTrigger}
                         />
                     </TabsContent>
