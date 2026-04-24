@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/ui/input';
@@ -120,6 +120,8 @@ interface ServerVariableResponse {
 export default function EditServerPage() {
     const { t } = useTranslation();
     const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const params = useParams();
     const serverId = params.id as string;
 
@@ -184,6 +186,53 @@ export default function EditServerPage() {
     const [debouncedSpellSearch, setDebouncedSpellSearch] = useState('');
 
     const [allocationSearch, setAllocationSearch] = useState('');
+
+    const tabStorageKey = `featherpanel_admin_server_edit_tab_${serverId}`;
+    const isAllowedTab = useCallback(
+        (tab: string) =>
+            ['details', 'resources', 'application', 'limits', 'startup', 'mounts', 'allocations', 'actions'].includes(
+                tab,
+            ),
+        [],
+    );
+
+    useEffect(() => {
+        const tabFromUrl = searchParams.get('tab');
+        if (tabFromUrl && isAllowedTab(tabFromUrl)) {
+            setActiveTab(tabFromUrl);
+            return;
+        }
+
+        if (typeof window === 'undefined') return;
+        try {
+            const saved = window.localStorage.getItem(tabStorageKey);
+            if (saved && isAllowedTab(saved)) {
+                setActiveTab(saved);
+            }
+        } catch {
+            // ignore storage read failures
+        }
+    }, [searchParams, tabStorageKey, isAllowedTab]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            window.localStorage.setItem(tabStorageKey, activeTab);
+        } catch {
+            // ignore storage write failures
+        }
+    }, [tabStorageKey, activeTab]);
+
+    const handleTabChange = useCallback(
+        (tab: string) => {
+            setActiveTab(tab);
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('tab', tab);
+            const query = params.toString();
+            router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+        },
+        [pathname, router, searchParams],
+    );
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-servers-edit');
 
@@ -858,7 +907,7 @@ export default function EditServerPage() {
 
             <Tabs
                 value={activeTab}
-                onValueChange={setActiveTab}
+                onValueChange={handleTabChange}
                 orientation='vertical'
                 className='w-full flex flex-col md:flex-row gap-6'
             >

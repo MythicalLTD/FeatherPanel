@@ -12,6 +12,7 @@
 ### Improved
 
 - Supercharged allocation management in server settings for that blana bomba smoothness. by @nayskutzu
+- Saved the state of the edit server option by @nayskutzu
 
 ### Added
 
