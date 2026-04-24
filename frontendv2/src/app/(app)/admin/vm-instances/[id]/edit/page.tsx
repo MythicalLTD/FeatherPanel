@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, usePathname, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -50,6 +50,8 @@ import type { OwnerUser, FreeIp, NetworkRow } from './types';
 export default function VmInstanceEditPage() {
     const { t } = useTranslation();
     const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const params = useParams();
     const id = Number(params?.id);
 
@@ -556,14 +558,6 @@ export default function VmInstanceEditPage() {
           )
         : [];
 
-    if (loading || !instance) {
-        return (
-            <div className='flex items-center justify-center min-h-[200px]'>
-                <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
-            </div>
-        );
-    }
-
     const editTabs = [
         { id: 'details', label: t('admin.vmInstances.edit_tabs.details') ?? 'Details', icon: Server },
         { id: 'network', label: t('admin.vmInstances.edit_tabs.network') ?? 'Network', icon: Wifi },
@@ -573,6 +567,37 @@ export default function VmInstanceEditPage() {
             : []),
         { id: 'history', label: t('admin.vmInstances.edit_tabs.history') ?? 'Task history', icon: History },
     ] as const;
+
+    const allowedTabs = editTabs.map((tab) => tab.id);
+
+    useEffect(() => {
+        const tabFromUrl = searchParams.get('tab');
+        if (!tabFromUrl) return;
+        if (allowedTabs.includes(tabFromUrl as (typeof allowedTabs)[number])) {
+            setActiveTab(tabFromUrl);
+        } else if (activeTab !== 'details') {
+            setActiveTab('details');
+        }
+    }, [searchParams, allowedTabs, activeTab]);
+
+    const handleTabChange = useCallback(
+        (tab: string) => {
+            setActiveTab(tab);
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('tab', tab);
+            const query = params.toString();
+            router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+        },
+        [pathname, router, searchParams],
+    );
+
+    if (loading || !instance) {
+        return (
+            <div className='flex items-center justify-center min-h-[200px]'>
+                <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+            </div>
+        );
+    }
 
     return (
         <div className='space-y-6'>
@@ -627,7 +652,7 @@ export default function VmInstanceEditPage() {
 
             <Tabs
                 value={activeTab}
-                onValueChange={(v) => setActiveTab(v)}
+                onValueChange={handleTabChange}
                 orientation='vertical'
                 className='w-full flex flex-col md:flex-row gap-6'
             >
