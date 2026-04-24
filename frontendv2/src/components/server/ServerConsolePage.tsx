@@ -586,9 +586,7 @@ export default function ServerConsolePage() {
                                         <AlertTriangle className='h-6 w-6 text-yellow-500' />
                                     </div>
                                     <div className='flex-1'>
-                                        <p className='font-semibold text-yellow-500'>
-                                            {t('servers.status.suspended')}
-                                        </p>
+                                        <p className='font-semibold text-yellow-500'>{t('servers.status.suspended')}</p>
                                         <p className='text-sm text-muted-foreground'>
                                             {t('servers.console.connection.disconnected')}
                                         </p>

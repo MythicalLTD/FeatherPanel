@@ -215,7 +215,12 @@ export function AllocationsTab({
                 )}
 
                 {serverAllocations.server?.can_add_more && (
-                    <Button type='button' variant='outline' className='w-full' onClick={() => openAllocationModal('assign')}>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        className='w-full'
+                        onClick={() => openAllocationModal('assign')}
+                    >
                         {t('admin.servers.edit.allocations.add')}
                     </Button>
                 )}

@@ -5,8 +5,8 @@
 ### Fixed
 
 - Resolved an issue where the Rust async-runner occasionally used IPv6, leading to instability—now reliably defaults to the intended address family for stable operation. by @nayskutzu
-- Fixed a bug where the copy button failed to work as expected in v1.3.4; updating to the latest development version restores proper copy functionality.
-- Addressed intermittent issues with drag-and-drop file movement in v1.3.4—upgrading to the latest development version ensures smoother, more reliable drag-and-drop actions.
+- Fixed a bug where the copy button failed to work as expected by @nayskutzu.
+- Addressed intermittent issues with drag-and-drop file movement by @nayskutzu.
 - Resolved an issue where IP addresses beginning with 172. were incorrectly prioritized as the primary address, ensuring correct IP selection and improved reliability. by @nayskutzu
 
 ### Improved
@@ -42,7 +42,6 @@
 - Introduced a powerful search feature within admin settings, making it effortless to find and manage configuration options. by @nayskutzu
 - Added the ability to choose the specific Proxmox node when creating a VDS instance, giving you greater control and flexibility over your deployments. by @nayskutzu
 - Added an OAuth2-style API consent flow at `/dashboard/account/oauth2/api/new` with approve/deny screens, callback fragment credential delivery, authorization code exchange endpoint, and dedicated documentation for all supported query parameters. by @nayskutzu
-
 
 ## v1.3.3 STABLE
 
