@@ -51,6 +51,7 @@ import {
     HelpCircle,
     AlertTriangle,
     Network,
+    Terminal,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/servers/StatusBadge';
 import { displayStatus } from '@/lib/server-utils';
@@ -795,6 +796,14 @@ export default function ServersPage() {
                                                 onCheckedChange={() => toggleServerSelection(server.id)}
                                                 className='h-4 w-4'
                                             />
+                                            <Button
+                                                size='sm'
+                                                variant='ghost'
+                                                onClick={() => router.push(`/server/${server.uuidShort}`)}
+                                                title={t('admin.servers.details.view_console')}
+                                            >
+                                                <Terminal className='h-4 w-4' />
+                                            </Button>
                                             <Button
                                                 size='sm'
                                                 variant='ghost'
