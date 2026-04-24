@@ -13,6 +13,10 @@
 
 - Supercharged allocation management in server settings for that blana bomba smoothness. by @nayskutzu
 
+### Added
+
+- Added support for both soft deleting and permanently deleting servers directly from the server actions page, giving you more control and flexibility. by @nayskutzu
+
 ## v1.3.4 STABLE
 
 ### Fixed

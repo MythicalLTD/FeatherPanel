@@ -4795,6 +4795,14 @@
 					"delete": "Delete Server",
 					"delete_confirm_title": "Delete Server?",
 					"delete_confirm_description": "This will permanently delete {name} and all associated files, databases, and backups. This action cannot be undone.",
+					"soft_delete": "Soft Delete",
+					"hard_delete": "Hard Delete",
+					"soft_delete_confirm_title": "Soft Delete Server?",
+					"soft_delete_confirm_description": "Are you sure you want to soft delete {name}? This will remove the server using the normal delete flow.",
+					"hard_delete_confirm_title": "Hard Delete Server?",
+					"hard_delete_confirm_description": "Are you sure you want to hard delete {name}? This bypasses the normal delete flow.",
+					"hard_delete_target_node_warning": "FILES WILL NOT BE DELETED ON THE TARGET NODE!!!!!!!",
+					"hard_delete_restore_warning": "DO NOT RUN THIS IF YOU STILL MAYBE HAVE A WAY TO RESTORE FILES.",
 					"delete_success": "Server deleted successfully",
 					"delete_failed": "Failed to delete server"
 				}

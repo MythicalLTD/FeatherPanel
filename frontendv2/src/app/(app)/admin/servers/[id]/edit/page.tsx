@@ -945,6 +945,7 @@ export default function EditServerPage() {
                             serverId={serverId}
                             serverName={form.name}
                             isSuspended={isSuspended}
+                            currentNodeId={node?.id}
                             onRefresh={fetchServerData}
                         />
                     </TabsContent>
