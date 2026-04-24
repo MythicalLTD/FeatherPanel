@@ -230,10 +230,7 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                 </div>
             </PageCard>
 
-            <PageCard
-                title={t('admin.servers.transfer.title')}
-                description={t('admin.servers.transfer.description')}
-            >
+            <PageCard title={t('admin.servers.transfer.title')} description={t('admin.servers.transfer.description')}>
                 <Button
                     variant='outline'
                     onClick={() => {
@@ -258,7 +255,11 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                             <AlertDialogDescription>
                                 {isHardDelete ? (
                                     <>
-                                        <span>{t('admin.servers.edit.actions.hard_delete_confirm_description', { name: serverName })}</span>
+                                        <span>
+                                            {t('admin.servers.edit.actions.hard_delete_confirm_description', {
+                                                name: serverName,
+                                            })}
+                                        </span>
                                         <br />
                                         <br />
                                         <span className='font-semibold text-destructive'>
@@ -270,7 +271,9 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                                         </span>
                                     </>
                                 ) : (
-                                    t('admin.servers.edit.actions.soft_delete_confirm_description', { name: serverName })
+                                    t('admin.servers.edit.actions.soft_delete_confirm_description', {
+                                        name: serverName,
+                                    })
                                 )}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
@@ -332,7 +335,10 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                     </div>
                     <AlertDialogFooter>
                         <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleTransfer} disabled={!selectedNode || !selectedAllocation || transferring}>
+                        <AlertDialogAction
+                            onClick={handleTransfer}
+                            disabled={!selectedNode || !selectedAllocation || transferring}
+                        >
                             {transferring ? <Loader2 className='h-4 w-4 animate-spin mr-2' /> : null}
                             {t('admin.servers.transfer.submit')}
                         </AlertDialogAction>
@@ -340,7 +346,11 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                 </AlertDialogContent>
             </AlertDialog>
 
-            <HeadlessModal isOpen={nodeModalOpen} onClose={() => setNodeModalOpen(false)} title={t('admin.servers.transfer.destination_node')}>
+            <HeadlessModal
+                isOpen={nodeModalOpen}
+                onClose={() => setNodeModalOpen(false)}
+                title={t('admin.servers.transfer.destination_node')}
+            >
                 <div className='space-y-3'>
                     <div className='relative'>
                         <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
@@ -379,7 +389,11 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                 </div>
             </HeadlessModal>
 
-            <HeadlessModal isOpen={allocationModalOpen} onClose={() => setAllocationModalOpen(false)} title={t('admin.servers.transfer.destination_allocation')}>
+            <HeadlessModal
+                isOpen={allocationModalOpen}
+                onClose={() => setAllocationModalOpen(false)}
+                title={t('admin.servers.transfer.destination_allocation')}
+            >
                 <div className='space-y-3'>
                     <div className='relative'>
                         <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />

@@ -44,6 +44,24 @@ class SystemController
     }
 
     #[OA\Get(
+        path: '/api/admin/analytics/system/feature-adoption',
+        summary: 'Get feature adoption statistics',
+        description: 'Retrieve adoption metrics for chatbot, API clients, OAuth2, and OIDC features.',
+        tags: ['Admin - Analytics'],
+        responses: [
+            new OA\Response(response: 200, description: 'Feature adoption stats retrieved successfully'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+        ]
+    )]
+    public function getFeatureAdoptionStats(Request $request): Response
+    {
+        $stats = SystemAnalytics::getFeatureAdoptionStats();
+
+        return ApiResponse::success($stats, 'Feature adoption stats fetched successfully', 200);
+    }
+
+    #[OA\Get(
         path: '/api/admin/analytics/system/dashboard',
         summary: 'Get comprehensive system analytics dashboard',
         description: 'Retrieve all system analytics data.',

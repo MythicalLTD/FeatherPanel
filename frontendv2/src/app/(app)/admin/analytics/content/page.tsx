@@ -21,13 +21,18 @@ import api from '@/lib/api';
 import { SimplePieChart, SimpleBarChart } from '@/components/admin/analytics/ContentCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { Box, Layers, Image as ImageIcon, ExternalLink } from 'lucide-react';
+import { Box, Layers, Image as ImageIcon, ExternalLink, ShieldAlert, Mail } from 'lucide-react';
 
 interface ContentOverview {
     realms: { total: number; with_spells: number };
     spells: { total: number; in_use: number; percentage_in_use: number };
     images: { total: number; in_use: number };
     redirects: { total: number; active: number };
+}
+
+interface SpellOverview {
+    with_variables: number;
+    privileged_scripts: number;
 }
 
 interface RealmStats {
@@ -54,16 +59,27 @@ export default function ContentAnalyticsPage() {
     const [spellsByRealm, setSpellsByRealm] = useState<RealmStats[]>([]);
     const [variableTypes, setVariableTypes] = useState<VariableTypeStats[]>([]);
     const [realmDetails, setRealmDetails] = useState<RealmDetail[]>([]);
+    const [spellOverview, setSpellOverview] = useState<SpellOverview | null>(null);
+    const [mailTemplatesTotal, setMailTemplatesTotal] = useState(0);
 
     const fetchData = React.useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const [overviewRes, spellsByRealmRes, variableTypesRes, realmDetailsRes] = await Promise.all([
+            const [
+                overviewRes,
+                spellsByRealmRes,
+                variableTypesRes,
+                realmDetailsRes,
+                spellsOverviewRes,
+                mailTemplatesRes,
+            ] = await Promise.all([
                 api.get('/admin/analytics/content/dashboard'),
                 api.get('/admin/analytics/spells/by-realm'),
                 api.get('/admin/analytics/spells/variables'),
                 api.get('/admin/analytics/realms/overview'),
+                api.get('/admin/analytics/spells/overview'),
+                api.get('/admin/analytics/mail-templates/overview'),
             ]);
 
             const d = overviewRes.data.data;
@@ -99,6 +115,12 @@ export default function ContentAnalyticsPage() {
                 { name: t('admin.analytics.content.with_servers'), value: rStats.with_servers },
                 { name: t('admin.analytics.content.empty_realms'), value: rStats.empty_realms },
             ]);
+
+            setSpellOverview({
+                with_variables: spellsOverviewRes.data.data.with_variables ?? 0,
+                privileged_scripts: spellsOverviewRes.data.data.privileged_scripts ?? 0,
+            });
+            setMailTemplatesTotal(mailTemplatesRes.data.data.total_templates ?? 0);
         } catch (err) {
             console.error('Failed to fetch content analytics:', err);
             setError(t('admin.analytics.content.error'));
@@ -173,6 +195,20 @@ export default function ContentAnalyticsPage() {
                         subtitle={t('admin.analytics.content.redirects')}
                         description={t('admin.analytics.content.active_links')}
                         icon={ExternalLink}
+                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                    />
+                    <ResourceCard
+                        title={(spellOverview?.with_variables ?? 0).toString()}
+                        subtitle='Spells with variables'
+                        description={`Privileged scripts: ${spellOverview?.privileged_scripts ?? 0}`}
+                        icon={ShieldAlert}
+                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                    />
+                    <ResourceCard
+                        title={mailTemplatesTotal.toString()}
+                        subtitle='Mail templates'
+                        description='Templates available for notifications'
+                        icon={Mail}
                         className='shadow-none! bg-card/50 backdrop-blur-sm'
                     />
                 </div>

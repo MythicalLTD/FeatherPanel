@@ -4563,6 +4563,8 @@
 				"beta_item5": "Backups will be deleted.",
 				"beta_item7": "Always create and verify backups EXTERNALLY before transferring.",
 				"beta_item8": "Network issues can cause partial transfers or data corruption.",
+				"fetch_nodes_failed": "Failed to fetch destination nodes",
+				"fetch_allocations_failed": "Failed to fetch destination allocations",
 				"submit": "I Understand - Start Transfer",
 				"submitting": "Starting Transfer..."
 			},

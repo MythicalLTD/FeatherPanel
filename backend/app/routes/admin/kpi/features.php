@@ -19,38 +19,35 @@ use App\App;
 use App\Permissions;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
-use App\Controllers\Admin\KPI\SystemController;
+use App\Controllers\Admin\KPI\FeatureController;
 
 return function (RouteCollection $routes): void {
-    // Mail Queue Stats
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-analytics-mail-queue-stats',
-        '/api/admin/analytics/mail-queue/stats',
+        'admin-analytics-tickets-dashboard',
+        '/api/admin/analytics/tickets/dashboard',
         function (Request $request) {
-            return (new SystemController())->getMailQueueStats($request);
+            return (new FeatureController())->getTicketsDashboard($request);
         },
         Permissions::ADMIN_DASHBOARD_VIEW,
     );
 
-    // Feature Adoption Stats
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-analytics-system-feature-adoption',
-        '/api/admin/analytics/system/feature-adoption',
+        'admin-analytics-plugins-dashboard',
+        '/api/admin/analytics/plugins/dashboard',
         function (Request $request) {
-            return (new SystemController())->getFeatureAdoptionStats($request);
+            return (new FeatureController())->getPluginsDashboard($request);
         },
         Permissions::ADMIN_DASHBOARD_VIEW,
     );
 
-    // Complete System Dashboard
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-analytics-system-dashboard',
-        '/api/admin/analytics/system/dashboard',
+        'admin-analytics-knowledgebase-dashboard',
+        '/api/admin/analytics/knowledgebase/dashboard',
         function (Request $request) {
-            return (new SystemController())->getDashboard($request);
+            return (new FeatureController())->getKnowledgebaseDashboard($request);
         },
         Permissions::ADMIN_DASHBOARD_VIEW,
     );

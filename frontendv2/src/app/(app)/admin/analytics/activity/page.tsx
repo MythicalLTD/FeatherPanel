@@ -21,7 +21,7 @@ import api from '@/lib/api';
 import { ActivityTrendChart, ActivityBreakdownChart } from '@/components/admin/analytics/ActivityCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { Activity, Clock, Calendar } from 'lucide-react';
+import { Activity, Clock, Calendar, TrendingUp, List } from 'lucide-react';
 
 interface ActivityStats {
     total: number;
@@ -42,6 +42,11 @@ interface ActivityBreakdown {
     count: number;
 }
 
+interface TopActivity {
+    name: string;
+    count: number;
+}
+
 export default function ActivityAnalyticsPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
@@ -50,15 +55,17 @@ export default function ActivityAnalyticsPage() {
     const [stats, setStats] = useState<ActivityStats | null>(null);
     const [trend, setTrend] = useState<ActivityTrend[]>([]);
     const [breakdown, setBreakdown] = useState<ActivityBreakdown[]>([]);
+    const [topActivities, setTopActivities] = useState<TopActivity[]>([]);
 
     const fetchData = React.useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const [statsRes, trendRes, breakdownRes] = await Promise.all([
+            const [statsRes, trendRes, breakdownRes, topRes] = await Promise.all([
                 api.get('/admin/analytics/activity/stats'),
                 api.get('/admin/analytics/activity/trend'),
                 api.get('/admin/analytics/activity/breakdown'),
+                api.get('/admin/analytics/activity/top?limit=5'),
             ]);
 
             setStats(statsRes.data.data);
@@ -70,6 +77,7 @@ export default function ActivityAnalyticsPage() {
                     count: a.count,
                 })),
             );
+            setTopActivities(topRes.data.data.activities || []);
         } catch (err) {
             console.error('Failed to fetch activity analytics:', err);
             setError(t('admin.analytics.activity.error'));
@@ -142,6 +150,20 @@ export default function ActivityAnalyticsPage() {
                         subtitle={t('admin.analytics.activity.peak_hour')}
                         description={t('admin.analytics.activity.most_active_time')}
                         icon={Clock}
+                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                    />
+                    <ResourceCard
+                        title={stats.total.toString()}
+                        subtitle='Total activities'
+                        description='All-time platform activity events'
+                        icon={TrendingUp}
+                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                    />
+                    <ResourceCard
+                        title={(topActivities[0]?.count ?? 0).toString()}
+                        subtitle='Top activity type'
+                        description={topActivities[0]?.name ?? 'No activity data'}
+                        icon={List}
                         className='shadow-none! bg-card/50 backdrop-blur-sm'
                     />
                 </div>

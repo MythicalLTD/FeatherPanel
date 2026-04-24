@@ -17,7 +17,19 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Activity, Server, Users, HardDrive, Settings, FileText, ArrowRight } from 'lucide-react';
+import {
+    Activity,
+    Server,
+    Users,
+    HardDrive,
+    Settings,
+    FileText,
+    ArrowRight,
+    Boxes,
+    Ticket,
+    Puzzle,
+    BookOpen,
+} from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { useRouter } from 'next/navigation';
@@ -80,6 +92,42 @@ export default function AnalyticsDashboardPage() {
             color: 'text-red-500',
             bgColor: 'bg-red-500/10',
             borderColor: 'border-red-500/20',
+        },
+        {
+            title: 'VDS & Platform',
+            description: 'VDS-only analytics (instances, nodes, templates, backups, operations).',
+            icon: Boxes,
+            href: '/admin/analytics/vds',
+            color: 'text-cyan-500',
+            bgColor: 'bg-cyan-500/10',
+            borderColor: 'border-cyan-500/20',
+        },
+        {
+            title: 'Tickets',
+            description: 'Dedicated analytics for ticketing, messages, statuses, and attachments.',
+            icon: Ticket,
+            href: '/admin/analytics/tickets',
+            color: 'text-amber-500',
+            bgColor: 'bg-amber-500/10',
+            borderColor: 'border-amber-500/20',
+        },
+        {
+            title: 'Plugins & Integrations',
+            description: 'Plugin adoption plus imports, proxies, transfers, and auth integrations.',
+            icon: Puzzle,
+            href: '/admin/analytics/plugins',
+            color: 'text-emerald-500',
+            bgColor: 'bg-emerald-500/10',
+            borderColor: 'border-emerald-500/20',
+        },
+        {
+            title: 'Knowledgebase',
+            description: 'Knowledgebase KPIs for categories, articles, tags, and attachments.',
+            icon: BookOpen,
+            href: '/admin/analytics/knowledgebase',
+            color: 'text-sky-500',
+            bgColor: 'bg-sky-500/10',
+            borderColor: 'border-sky-500/20',
         },
     ];
 

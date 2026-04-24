@@ -22,7 +22,7 @@ import { SimplePieChart } from '@/components/admin/analytics/SharedCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Mail, CheckCircle, XCircle, Activity } from 'lucide-react';
+import { Mail, CheckCircle, XCircle, Activity, Bot, KeyRound, ShieldCheck, UserCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface MailQueueStats {
@@ -40,19 +40,34 @@ interface MailQueueStats {
     }[];
 }
 
+interface FeatureAdoptionStats {
+    chatbot_conversations: number;
+    chatbot_messages: number;
+    chatbot_active_users_30d: number;
+    avg_messages_per_conversation: number;
+    api_clients: number;
+    oauth2_authorizations: number;
+    oidc_enabled_providers: number;
+}
+
 export default function SystemAnalyticsPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const [stats, setStats] = useState<MailQueueStats | null>(null);
+    const [featureStats, setFeatureStats] = useState<FeatureAdoptionStats | null>(null);
 
     const fetchData = React.useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await api.get('/admin/analytics/mail-queue/stats');
-            setStats(res.data.data);
+            const [mailRes, featureRes] = await Promise.all([
+                api.get('/admin/analytics/mail-queue/stats'),
+                api.get('/admin/analytics/system/feature-adoption'),
+            ]);
+            setStats(mailRes.data.data);
+            setFeatureStats(featureRes.data.data);
         } catch (err) {
             console.error('Failed to fetch system analytics:', err);
             setError(t('admin.analytics.system.error'));
@@ -127,6 +142,39 @@ export default function SystemAnalyticsPage() {
                             className='shadow-none! bg-card/50 backdrop-blur-sm'
                         />
                     </div>
+
+                    {featureStats && (
+                        <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                            <ResourceCard
+                                title={featureStats.chatbot_conversations.toString()}
+                                subtitle='Chat conversations'
+                                description={`Messages: ${featureStats.chatbot_messages}`}
+                                icon={Bot}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                            <ResourceCard
+                                title={featureStats.chatbot_active_users_30d.toString()}
+                                subtitle='Chat users (30d)'
+                                description={`Avg msgs/conversation: ${featureStats.avg_messages_per_conversation}`}
+                                icon={UserCircle}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                            <ResourceCard
+                                title={featureStats.api_clients.toString()}
+                                subtitle='API clients'
+                                description={`OAuth2 authorizations: ${featureStats.oauth2_authorizations}`}
+                                icon={KeyRound}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                            <ResourceCard
+                                title={featureStats.oidc_enabled_providers.toString()}
+                                subtitle='Enabled OIDC providers'
+                                description='Identity providers configured'
+                                icon={ShieldCheck}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                        </div>
+                    )}
 
                     <div className='grid gap-4 grid-cols-1 md:grid-cols-3'>
                         <div className='md:col-span-1'>

@@ -22,13 +22,14 @@ import { SimplePieChart, TrendChart } from '@/components/admin/analytics/UserCha
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Users, UserX, UserCheck, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { Users, UserX, UserCheck, ShieldCheck, ArrowUpRight, ShieldAlert, UserMinus } from 'lucide-react';
 
 interface UserOverview {
     total: number;
     active: number;
     banned: number;
     verified: number;
+    unverified: number;
     two_fa_enabled: number;
     percentage_verified: number;
     percentage_banned: number;
@@ -63,6 +64,11 @@ interface GrowthStats {
     growth_rate_30d: number;
 }
 
+interface SecurityOverview {
+    fully_secured: number;
+    not_secured: number;
+}
+
 export default function UserAnalyticsPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
@@ -73,6 +79,7 @@ export default function UserAnalyticsPage() {
     const [registrationTrend, setRegistrationTrend] = useState<TrendData[]>([]);
     const [topUsers, setTopUsers] = useState<TopUser[]>([]);
     const [securityStats, setSecurityStats] = useState<{ name: string; value: number }[]>([]);
+    const [securityOverview, setSecurityOverview] = useState<SecurityOverview | null>(null);
     const [growth, setGrowth] = useState<GrowthStats | null>(null);
 
     const fetchData = React.useCallback(async () => {
@@ -106,6 +113,10 @@ export default function UserAnalyticsPage() {
             setGrowth(growthRes.data.data);
 
             const sec = securityRes.data.data;
+            setSecurityOverview({
+                fully_secured: sec.fully_secured,
+                not_secured: sec.not_secured,
+            });
             const securityChartData = [
                 { name: t('admin.analytics.users.security_stats.fully_secured'), value: sec.fully_secured },
                 {
@@ -195,6 +206,20 @@ export default function UserAnalyticsPage() {
                             percentage: String(overview.percentage_two_fa),
                         })}
                         icon={ShieldCheck}
+                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                    />
+                    <ResourceCard
+                        title={overview.unverified.toString()}
+                        subtitle='Unverified'
+                        description='Users pending email verification'
+                        icon={UserMinus}
+                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                    />
+                    <ResourceCard
+                        title={(securityOverview?.not_secured ?? 0).toString()}
+                        subtitle='Not secured'
+                        description={`Fully secured: ${securityOverview?.fully_secured ?? 0}`}
+                        icon={ShieldAlert}
                         className='shadow-none! bg-card/50 backdrop-blur-sm'
                     />
                 </div>

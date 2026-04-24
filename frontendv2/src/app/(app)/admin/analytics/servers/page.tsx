@@ -26,7 +26,7 @@ import {
 } from '@/components/admin/analytics/ServerCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { Server, HardDrive, Cpu, Archive, Users, Clock } from 'lucide-react';
+import { Server, HardDrive, Cpu, Archive, Users, Clock, Settings, ShieldAlert, Activity } from 'lucide-react';
 
 interface ServerOverview {
     total_servers: number;
@@ -81,6 +81,24 @@ interface InstallationStats {
     avg_installation_time_minutes: number;
 }
 
+interface LimitStats {
+    avg_database_limit: number;
+    avg_backup_limit: number;
+}
+
+interface ConfigurationStats {
+    skip_scripts_enabled: number;
+    oom_disabled: number;
+}
+
+interface VariableStats {
+    total_variables: number;
+}
+
+interface ServerActivityStats {
+    total_activities: number;
+}
+
 export default function ServerAnalyticsPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
@@ -98,6 +116,10 @@ export default function ServerAnalyticsPage() {
     const [scheduleStats, setScheduleStats] = useState<ScheduleStats | null>(null);
     const [subuserStats, setSubuserStats] = useState<SubuserStats | null>(null);
     const [installationStats, setInstallationStats] = useState<InstallationStats | null>(null);
+    const [limitStats, setLimitStats] = useState<LimitStats | null>(null);
+    const [configurationStats, setConfigurationStats] = useState<ConfigurationStats | null>(null);
+    const [variableStats, setVariableStats] = useState<VariableStats | null>(null);
+    const [serverActivityStats, setServerActivityStats] = useState<ServerActivityStats | null>(null);
 
     const fetchData = React.useCallback(async () => {
         setLoading(true);
@@ -115,6 +137,10 @@ export default function ServerAnalyticsPage() {
                 scheduleUsageRes,
                 subuserStatsRes,
                 installationStatsRes,
+                limitsRes,
+                configurationRes,
+                variablesRes,
+                serverActivitiesRes,
             ] = await Promise.all([
                 api.get('/admin/analytics/servers/overview'),
                 api.get('/admin/analytics/servers/creation-trend'),
@@ -127,6 +153,10 @@ export default function ServerAnalyticsPage() {
                 api.get('/admin/analytics/servers/schedules'),
                 api.get('/admin/analytics/servers/subusers'),
                 api.get('/admin/analytics/servers/installation'),
+                api.get('/admin/analytics/servers/limits'),
+                api.get('/admin/analytics/servers/configuration'),
+                api.get('/admin/analytics/servers/variables'),
+                api.get('/admin/analytics/servers/server-activities'),
             ]);
 
             setOverview(overviewRes.data.data);
@@ -192,6 +222,10 @@ export default function ServerAnalyticsPage() {
             setScheduleStats(scheduleUsageRes.data.data);
             setSubuserStats(subuserStatsRes.data.data);
             setInstallationStats(installationStatsRes.data.data);
+            setLimitStats(limitsRes.data.data);
+            setConfigurationStats(configurationRes.data.data);
+            setVariableStats(variablesRes.data.data);
+            setServerActivityStats(serverActivitiesRes.data.data);
         } catch (err) {
             console.error('Failed to fetch server analytics:', err);
             setError(t('admin.analytics.servers.error'));
@@ -314,6 +348,47 @@ export default function ServerAnalyticsPage() {
                                 minutes: String(installationStats.avg_installation_time_minutes),
                             })}
                             icon={Clock}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    )}
+                </div>
+            )}
+
+            {(limitStats || configurationStats || variableStats || serverActivityStats) && (
+                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                    {limitStats && (
+                        <ResourceCard
+                            title={String(limitStats.avg_database_limit)}
+                            subtitle='Avg DB limit'
+                            description={`Avg backup limit: ${limitStats.avg_backup_limit}`}
+                            icon={HardDrive}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    )}
+                    {configurationStats && (
+                        <ResourceCard
+                            title={String(configurationStats.skip_scripts_enabled)}
+                            subtitle='Skip scripts enabled'
+                            description={`OOM disabled: ${configurationStats.oom_disabled}`}
+                            icon={Settings}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    )}
+                    {variableStats && (
+                        <ResourceCard
+                            title={String(variableStats.total_variables)}
+                            subtitle='Server variables'
+                            description='Custom runtime variable values'
+                            icon={ShieldAlert}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    )}
+                    {serverActivityStats && (
+                        <ResourceCard
+                            title={String(serverActivityStats.total_activities)}
+                            subtitle='Server activity events'
+                            description='Operational events across all servers'
+                            icon={Activity}
                             className='shadow-none! bg-card/50 backdrop-blur-sm'
                         />
                     )}

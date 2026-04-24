@@ -21,7 +21,7 @@ import api from '@/lib/api';
 import { SimplePieChart, SimpleBarChart, NodeResourceChart } from '@/components/admin/analytics/SharedCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { MapPin, Server, Network, Database } from 'lucide-react';
+import { MapPin, Server, Network, Database, EthernetPort, Globe } from 'lucide-react';
 
 interface InfrastructureOverview {
     locations: { total: number; with_nodes: number };
@@ -41,6 +41,18 @@ interface NodeResourceStats {
     disk_usage: number;
 }
 
+interface PortUsage {
+    port: number;
+    count: number;
+    assigned: number;
+}
+
+interface IpUsage {
+    ip: string;
+    total_ports: number;
+    usage_percentage: number;
+}
+
 export default function InfrastructureAnalyticsPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
@@ -52,6 +64,8 @@ export default function InfrastructureAnalyticsPage() {
     const [serversByNode, setServersByNode] = useState<StatsItem[]>([]);
     const [dbTypes, setDbTypes] = useState<StatsItem[]>([]);
     const [nodeResources, setNodeResources] = useState<NodeResourceStats[]>([]);
+    const [topPort, setTopPort] = useState<PortUsage | null>(null);
+    const [topIp, setTopIp] = useState<IpUsage | null>(null);
 
     const fetchData = React.useCallback(async () => {
         setLoading(true);
@@ -64,6 +78,8 @@ export default function InfrastructureAnalyticsPage() {
                 serversByNodeRes,
                 dbOverviewRes,
                 nodeResourcesRes,
+                portUsageRes,
+                ipUsageRes,
             ] = await Promise.all([
                 api.get('/admin/analytics/infrastructure/dashboard'),
                 api.get('/admin/analytics/nodes/by-location'),
@@ -71,6 +87,8 @@ export default function InfrastructureAnalyticsPage() {
                 api.get('/admin/analytics/servers/by-node'),
                 api.get('/admin/analytics/databases/overview'),
                 api.get('/admin/analytics/nodes/resources'),
+                api.get('/admin/analytics/ports/usage?limit=1'),
+                api.get('/admin/analytics/ips/usage?limit=1'),
             ]);
 
             const dashboard = overviewRes.data.data;
@@ -136,6 +154,9 @@ export default function InfrastructureAnalyticsPage() {
                     }),
                 ),
             );
+
+            setTopPort((portUsageRes.data.data.ports || [])[0] ?? null);
+            setTopIp((ipUsageRes.data.data.ips || [])[0] ?? null);
         } catch (err) {
             console.error('Failed to fetch infrastructure analytics:', err);
             setError(t('admin.analytics.infrastructure.error'));
@@ -212,6 +233,22 @@ export default function InfrastructureAnalyticsPage() {
                         subtitle={t('admin.analytics.infrastructure.db_hosts')}
                         description={t('admin.analytics.infrastructure.across_nodes')}
                         icon={Database}
+                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                    />
+                    <ResourceCard
+                        title={topPort ? String(topPort.port) : '0'}
+                        subtitle='Top used port'
+                        description={`Assigned: ${topPort?.assigned ?? 0} allocations`}
+                        icon={EthernetPort}
+                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                    />
+                    <ResourceCard
+                        title={topIp ? String(topIp.total_ports) : '0'}
+                        subtitle='Top IP total ports'
+                        description={
+                            topIp ? `${topIp.ip} (${topIp.usage_percentage}% used)` : 'No allocation usage data'
+                        }
+                        icon={Globe}
                         className='shadow-none! bg-card/50 backdrop-blur-sm'
                     />
                 </div>

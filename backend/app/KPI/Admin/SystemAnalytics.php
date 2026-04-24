@@ -103,6 +103,71 @@ class SystemAnalytics
     }
 
     /**
+     * Get feature adoption statistics for newer platform capabilities.
+     *
+     * @return array Feature adoption metrics
+     */
+    public static function getFeatureAdoptionStats(): array
+    {
+        $pdo = Database::getPdoConnection();
+
+        $metrics = [
+            'chatbot_conversations' => 0,
+            'chatbot_messages' => 0,
+            'chatbot_active_users_30d' => 0,
+            'api_clients' => 0,
+            'oauth2_authorizations' => 0,
+            'oauth2_pending_authorizations' => 0,
+            'oidc_providers' => 0,
+            'oidc_enabled_providers' => 0,
+        ];
+
+        if (self::tableExists($pdo, 'featherpanel_chatbot_conversations')) {
+            $stmt = $pdo->query('SELECT COUNT(*) FROM featherpanel_chatbot_conversations');
+            $metrics['chatbot_conversations'] = (int) $stmt->fetchColumn();
+
+            $stmt = $pdo->query('
+                SELECT COUNT(DISTINCT user_uuid)
+                FROM featherpanel_chatbot_conversations
+                WHERE updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            ');
+            $metrics['chatbot_active_users_30d'] = (int) $stmt->fetchColumn();
+        }
+
+        if (self::tableExists($pdo, 'featherpanel_chatbot_messages')) {
+            $stmt = $pdo->query('SELECT COUNT(*) FROM featherpanel_chatbot_messages');
+            $metrics['chatbot_messages'] = (int) $stmt->fetchColumn();
+        }
+
+        if (self::tableExists($pdo, 'featherpanel_apikeys_client')) {
+            $stmt = $pdo->query('SELECT COUNT(*) FROM featherpanel_apikeys_client');
+            $metrics['api_clients'] = (int) $stmt->fetchColumn();
+        }
+
+        if (self::tableExists($pdo, 'featherpanel_oauth2_api_authorizations')) {
+            $stmt = $pdo->query('SELECT COUNT(*) FROM featherpanel_oauth2_api_authorizations');
+            $metrics['oauth2_authorizations'] = (int) $stmt->fetchColumn();
+
+            $stmt = $pdo->query("SELECT COUNT(*) FROM featherpanel_oauth2_api_authorizations WHERE status = 'pending'");
+            $metrics['oauth2_pending_authorizations'] = (int) $stmt->fetchColumn();
+        }
+
+        if (self::tableExists($pdo, 'featherpanel_oidc_providers')) {
+            $stmt = $pdo->query('SELECT COUNT(*) FROM featherpanel_oidc_providers');
+            $metrics['oidc_providers'] = (int) $stmt->fetchColumn();
+
+            $stmt = $pdo->query("SELECT COUNT(*) FROM featherpanel_oidc_providers WHERE enabled = 'true'");
+            $metrics['oidc_enabled_providers'] = (int) $stmt->fetchColumn();
+        }
+
+        $metrics['avg_messages_per_conversation'] = $metrics['chatbot_conversations'] > 0
+            ? round($metrics['chatbot_messages'] / $metrics['chatbot_conversations'], 2)
+            : 0;
+
+        return $metrics;
+    }
+
+    /**
      * Get comprehensive system analytics dashboard.
      *
      * @return array Complete system statistics
@@ -111,6 +176,18 @@ class SystemAnalytics
     {
         return [
             'mail_queue' => self::getMailQueueStats(),
+            'feature_adoption' => self::getFeatureAdoptionStats(),
         ];
+    }
+
+    /**
+     * Check if a table exists in the current database.
+     */
+    private static function tableExists(\PDO $pdo, string $tableName): bool
+    {
+        $stmt = $pdo->prepare('SHOW TABLES LIKE :table_name');
+        $stmt->execute(['table_name' => $tableName]);
+
+        return (bool) $stmt->fetchColumn();
     }
 }
