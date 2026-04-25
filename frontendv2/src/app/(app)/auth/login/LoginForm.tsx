@@ -43,6 +43,16 @@ export default function LoginForm() {
         fetchWidgets();
     }, [fetchWidgets]);
 
+    useEffect(() => {
+        const token = searchParams.get('token');
+        if (!token) return;
+
+        const redirect = searchParams.get('redirect');
+        if (redirect && redirect.startsWith('/auth/verify-email')) {
+            router.replace(`/auth/verify-email?token=${encodeURIComponent(token)}`);
+        }
+    }, [router, searchParams]);
+
     const [form, setForm] = useState({
         username_or_email: searchParams.get('username_or_email') || '',
         password: '',

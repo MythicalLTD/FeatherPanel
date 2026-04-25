@@ -30,6 +30,7 @@ export function proxy(request: NextRequest) {
         '/auth/register',
         '/auth/forgot-password',
         '/auth/reset-password',
+        '/auth/verify-email',
         '/auth/setup-2fa',
         '/auth/verify-2fa',
         '/auth/logout',
