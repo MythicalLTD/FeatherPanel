@@ -19,6 +19,7 @@ FORCE_ARM=false
 SKIP_INSTALL_CHECK=false
 SKIP_VIRT_CHECK=false
 SKIP_SYSTEM_UPDATE=false
+CLI_SKIP_OS_CHECK_SET=false
 USE_DEV=false
 DEV_BRANCH=""
 DEV_SHA=""
@@ -28,6 +29,7 @@ while [[ $# -gt 0 ]]; do
 	case $1 in
 	--skip-os-check)
 		SKIP_OS_CHECK=true
+		CLI_SKIP_OS_CHECK_SET=true
 		shift
 		;;
 	--force-arm)
@@ -208,6 +210,8 @@ support_hint() {
 	echo -e "${YELLOW}Need help?${NC} Join Discord: ${BLUE}https://discord.mythical.systems${NC}  Docs: ${BLUE}https://docs.mythical.systems${NC}"
 }
 
+ERROR_HANDLER_ACTIVE=0
+
 upload_logs_on_fail() {
 	if command -v curl >/dev/null 2>&1; then
 		log_info "Uploading logs to mclo.gs for diagnostics..."
@@ -264,10 +268,30 @@ upload_logs_on_fail() {
 	support_hint
 }
 
+handle_unexpected_error() {
+	local exit_code=$?
+	local line_no="${1:-unknown}"
+	local failed_command="${2:-unknown}"
+
+	# Prevent recursive ERR handling if diagnostics upload also fails.
+	if [ "$ERROR_HANDLER_ACTIVE" -eq 1 ]; then
+		exit "$exit_code"
+	fi
+	ERROR_HANDLER_ACTIVE=1
+	trap - ERR
+
+	log_error "Unexpected failure (exit code: $exit_code, line: $line_no)."
+	log_error "Failing command: $failed_command"
+	echo "[ERROR_CONTEXT] exit_code=$exit_code line=$line_no command=$failed_command" >>"$LOG_FILE"
+	upload_logs_on_fail
+	exit "$exit_code"
+}
+
 # Initialize logging before any traps or operations use it
 log_init
 
-trap 'log_error "An unexpected error occurred."; upload_logs_on_fail' ERR
+set -o errtrace
+trap 'handle_unexpected_error "${LINENO}" "${BASH_COMMAND}"' ERR
 set -o pipefail
 
 # ====================================================================
@@ -4624,6 +4648,10 @@ check_eol_status() {
 # This should be done after all functions are defined but before main execution
 init_config
 load_config
+# CLI arguments must take precedence over persisted config values.
+if [ "$CLI_SKIP_OS_CHECK_SET" = true ]; then
+	SKIP_OS_CHECK=true
+fi
 sync_panel_port_env
 
 if [ -f /etc/os-release ]; then
