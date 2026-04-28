@@ -39,7 +39,7 @@ run_as_target_user() {
     if [ "$TARGET_USER" = "root" ]; then
         bash -lc "$cmd"
     else
-        su - "$TARGET_USER" -c "$cmd"
+        su -s /bin/bash -c "$cmd" "$TARGET_USER"
     fi
 }
 
