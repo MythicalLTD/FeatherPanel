@@ -24,7 +24,7 @@ USE_DEV=false
 DEV_BRANCH=""
 DEV_SHA=""
 SHOW_CONFIG_MENU=false
-SCRIPT_VERSION="2.1.10-dev"
+SCRIPT_VERSION="2.1.11-dev"
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -2732,6 +2732,8 @@ install_feathercli() {
 
 	# Make it executable
 	chmod +x /usr/local/bin/feathercli
+
+	apt-get install -y libicu-dev
 
 	# Verify installation
 	if command -v feathercli >/dev/null 2>&1; then

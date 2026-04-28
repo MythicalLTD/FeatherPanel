@@ -75,8 +75,25 @@ prompt_if_empty() {
     local prompt_text="$2"
     local current_value="${!var_name:-}"
     if [ -z "$current_value" ]; then
-        read -r -p "$prompt_text" current_value
+        if [ -t 0 ] || [ -r /dev/tty ]; then
+            read -r -p "$prompt_text" current_value </dev/tty
+        else
+            current_value=""
+        fi
         printf -v "$var_name" "%s" "$current_value"
+    fi
+}
+
+prompt_yes_no_default_no() {
+    local prompt_text="$1"
+    local reply=""
+    if [ -t 0 ] || [ -r /dev/tty ]; then
+        read -r -p "$prompt_text" reply </dev/tty
+    fi
+    if [[ "$reply" =~ ^[yY]([eE][sS])?$ ]]; then
+        echo "true"
+    else
+        echo "false"
     fi
 }
 
@@ -640,7 +657,9 @@ obtain_ssl_certificate() {
 
 configure_cloudflare_tunnel() {
     if [ -z "$CF_TUNNEL_TOKEN" ]; then
-        read -r -p "Enter Cloudflare Tunnel token: " CF_TUNNEL_TOKEN
+        if [ -t 0 ] || [ -r /dev/tty ]; then
+            read -r -p "Enter Cloudflare Tunnel token: " CF_TUNNEL_TOKEN </dev/tty
+        fi
     fi
     if [ -z "$CF_TUNNEL_TOKEN" ]; then
         echo "CF_TUNNEL_TOKEN is required for Cloudflare tunnel mode." >&2
@@ -655,16 +674,10 @@ configure_cloudflare_tunnel() {
 
 configure_nginx() {
     local php_fpm_socket
-    local cf_choice=""
     install_nginx_tools
 
     if [ -z "$CF_TUNNEL_SETUP" ]; then
-        read -r -p "Use Cloudflare Tunnel mode (frontend only via tunnel)? (y/n): " cf_choice
-        if [[ "$cf_choice" =~ ^[yY]([eE][sS])?$ ]]; then
-            CF_TUNNEL_SETUP="true"
-        else
-            CF_TUNNEL_SETUP="false"
-        fi
+        CF_TUNNEL_SETUP="$(prompt_yes_no_default_no "Use Cloudflare Tunnel mode (frontend only via tunnel)? (y/n): ")"
     fi
 
     php_fpm_socket="$(detect_php_fpm_socket)"
@@ -681,7 +694,11 @@ configure_nginx() {
         fi
 
         if [ -z "$ENABLE_SSL" ]; then
-            read -r -p "Enable SSL with Let's Encrypt? (y/n): " ENABLE_SSL
+            if [ "$(prompt_yes_no_default_no "Enable SSL with Let's Encrypt? (y/n): ")" = "true" ]; then
+                ENABLE_SSL="y"
+            else
+                ENABLE_SSL="n"
+            fi
         fi
 
         write_nginx_config_no_ssl "$php_fpm_socket"
