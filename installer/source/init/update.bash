@@ -43,6 +43,25 @@ run_frontend_with_nvm() {
     run_as_www_data "export NVM_DIR=\"/root/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && ${cmd}"
 }
 
+set_runtime_permissions() {
+    step "Applying writable runtime permissions (www-data)..."
+    mkdir -p \
+        "${BACKEND_DIR}/storage/logs" \
+        "${BACKEND_DIR}/storage/caches" \
+        "${BACKEND_DIR}/storage/config" \
+        "${BACKEND_DIR}/public/attachments" \
+        "${BACKEND_DIR}/public/addons" \
+        "${BACKEND_DIR}/public/components"
+
+    chown -R www-data:www-data \
+        "${BACKEND_DIR}/storage" \
+        "${BACKEND_DIR}/public/attachments" \
+        "${BACKEND_DIR}/public/addons" \
+        "${BACKEND_DIR}/public/components"
+
+    chmod -R u+rwX,g+rwX,o-rwx "${BACKEND_DIR}/storage"
+}
+
 update_repo() {
     if [ ! -d "${PANEL_DIR}/.git" ]; then
         echo "Panel repository not found at ${PANEL_DIR}" >&2
@@ -94,6 +113,7 @@ main() {
     step "Updating source repository..."
     update_repo
     chown -R root:root "$PANEL_DIR"
+    set_runtime_permissions
     update_backend
     update_frontend
     update_runner

@@ -150,6 +150,25 @@ upsert_env_var() {
     fi
 }
 
+set_runtime_permissions() {
+    step "Applying writable runtime permissions (www-data)..."
+    mkdir -p \
+        "${BACKEND_DIR}/storage/logs" \
+        "${BACKEND_DIR}/storage/caches" \
+        "${BACKEND_DIR}/storage/config" \
+        "${BACKEND_DIR}/public/attachments" \
+        "${BACKEND_DIR}/public/addons" \
+        "${BACKEND_DIR}/public/components"
+
+    chown -R www-data:www-data \
+        "${BACKEND_DIR}/storage" \
+        "${BACKEND_DIR}/public/attachments" \
+        "${BACKEND_DIR}/public/addons" \
+        "${BACKEND_DIR}/public/components"
+
+    chmod -R u+rwX,g+rwX,o-rwx "${BACKEND_DIR}/storage"
+}
+
 sync_repo() {
     mkdir -p /var/www
     if [ -d "${PANEL_DIR}/.git" ]; then
@@ -791,6 +810,7 @@ main() {
     banner
     step "Syncing panel repository..."
     sync_repo
+    set_runtime_permissions
     step "Installing backend dependencies..."
     install_backend_deps
     step "Installing frontend dependencies..."
@@ -799,6 +819,7 @@ main() {
     configure_database
     step "Writing application environment configuration..."
     setup_application_database_connection
+    set_runtime_permissions
     step "Running database migrations..."
     run_database_migrations
     step "Building async runner..."
