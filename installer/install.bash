@@ -628,6 +628,23 @@ configure_host_service_ports() {
 	log_info "Selected ports -> frontend:${frontend_port}, backend:${backend_port}, mariadb:${mysql_port}, redis:${redis_port}"
 }
 
+compose_with_selected_ports() {
+	(
+		cd /var/www/featherpanel || return 1
+		local effective_backend_port="${BACKEND_HTTP_PORT:-8080}"
+		local effective_backend_upstream="${BACKEND_UPSTREAM:-127.0.0.1:${effective_backend_port}}"
+		MARIADB_PORT="${MARIADB_PORT:-3307}" \
+			REDIS_PORT="${REDIS_PORT:-6380}" \
+			BACKEND_HTTP_PORT="${effective_backend_port}" \
+			BACKEND_LISTEN_ADDR="${BACKEND_LISTEN_ADDR:-:8080}" \
+			FRONTEND_HTTP_PORT="${FRONTEND_HTTP_PORT:-4831}" \
+			FRONTEND_LISTEN_ADDR="${FRONTEND_LISTEN_ADDR:-:4831}" \
+			FEATHERPANEL_PANEL_PORT="${FEATHERPANEL_PANEL_PORT:-4831}" \
+			BACKEND_UPSTREAM="${effective_backend_upstream}" \
+			docker compose "$@"
+	)
+}
+
 get_compose_file_path() {
 	local configured_path="${COMPOSE_FILE_PATH:-/var/www/featherpanel/docker-compose.yml}"
 
@@ -5968,7 +5985,7 @@ if [ -f /etc/os-release ]; then
 		# Stop all existing FeatherPanel containers (including old v1 containers) before starting
 		stop_all_featherpanel_containers
 
-		if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." docker compose up -d; then
+		if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." compose_with_selected_ports up -d; then
 			log_error "Failed to start FeatherPanel stack"
 			echo ""
 			draw_hr
@@ -6209,7 +6226,7 @@ if [ -f /etc/os-release ]; then
 					log_info "ARM64 architecture detected: $ARCH - native images available"
 					# Try to start with native images
 					if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
-						bash -c "cd /var/www/featherpanel && docker compose up -d"; then
+						compose_with_selected_ports up -d; then
 						log_warn "Failed to start FeatherPanel. Reverse proxy configured but Panel is not running."
 					fi
 				elif [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
@@ -6220,13 +6237,13 @@ if [ -f /etc/os-release ]; then
 					fi
 					# Try to start anyway (QEMU should be configured)
 					if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
-						bash -c "cd /var/www/featherpanel && docker compose up -d"; then
+						compose_with_selected_ports up -d; then
 						log_warn "Failed to start FeatherPanel. Reverse proxy configured but Panel is not running."
 						log_info "Ensure QEMU emulation is properly configured."
 					fi
 				else
 					if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
-						bash -c "cd /var/www/featherpanel && docker compose up -d"; then
+						compose_with_selected_ports up -d; then
 						log_error "Failed to start FeatherPanel stack"
 						echo ""
 						draw_hr
@@ -6597,7 +6614,7 @@ if [ -f /etc/os-release ]; then
 			log_warn "Some containers may not have stopped cleanly, continuing..."
 		fi
 
-		if ! run_with_spinner "Pulling FeatherPanel Docker images" "Docker images updated." bash -c "cd /var/www/featherpanel && docker compose pull"; then
+		if ! run_with_spinner "Pulling FeatherPanel Docker images" "Docker images updated." compose_with_selected_ports pull; then
 			upload_logs_on_fail
 			exit 1
 		fi
@@ -6617,7 +6634,7 @@ if [ -f /etc/os-release ]; then
 			setup_qemu_emulation
 		fi
 
-		if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." bash -c "cd /var/www/featherpanel && docker compose up -d"; then
+		if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." compose_with_selected_ports up -d; then
 			log_error "Failed to start FeatherPanel stack"
 			echo ""
 			draw_hr
