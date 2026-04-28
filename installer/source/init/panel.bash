@@ -3,6 +3,9 @@
 set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
+APT_LOCK_TIMEOUT="${APT_LOCK_TIMEOUT:-900}"
+APT_RETRY_COUNT="${APT_RETRY_COUNT:-5}"
+APT_RETRY_DELAY="${APT_RETRY_DELAY:-5}"
 
 PANEL_DIR="${PANEL_DIR:-/var/www/featherpanel}"
 PANEL_REPO="${PANEL_REPO:-https://github.com/mythicalltd/featherpanel.git}"
@@ -58,6 +61,23 @@ require_root() {
         echo "This script must be run as root." >&2
         exit 1
     fi
+}
+
+apt_get() {
+    local attempt=1
+    local max_attempts="$APT_RETRY_COUNT"
+    while [ "$attempt" -le "$max_attempts" ]; do
+        if apt-get -o "DPkg::Lock::Timeout=${APT_LOCK_TIMEOUT}" "$@"; then
+            return 0
+        fi
+        if [ "$attempt" -ge "$max_attempts" ]; then
+            break
+        fi
+        echo "apt-get failed (attempt ${attempt}/${max_attempts}). Retrying in ${APT_RETRY_DELAY}s..."
+        sleep "$APT_RETRY_DELAY"
+        attempt=$((attempt + 1))
+    done
+    return 1
 }
 
 run_as_www_data() {
@@ -324,27 +344,27 @@ EOF
 }
 
 install_nginx_tools() {
-    apt-get update -y
-    apt-get install -y nginx
+    apt_get update -y
+    apt_get install -y nginx
     systemctl enable nginx >/dev/null 2>&1 || true
 }
 
 install_ssl_tools() {
-    apt-get update -y
-    apt-get install -y certbot python3-certbot-nginx
+    apt_get update -y
+    apt_get install -y certbot python3-certbot-nginx
 }
 
 install_cloudflared() {
     if command -v cloudflared >/dev/null 2>&1; then
         return 0
     fi
-    apt-get update -y
-    apt-get install -y curl ca-certificates gnupg
+    apt_get update -y
+    apt_get install -y curl ca-certificates gnupg
     install -m 0755 -d /usr/share/keyrings
     curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | gpg --dearmor -o /usr/share/keyrings/cloudflare-main.gpg
     echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" >/etc/apt/sources.list.d/cloudflared.list
-    apt-get update -y
-    apt-get install -y cloudflared
+    apt_get update -y
+    apt_get install -y cloudflared
 }
 
 resolve_cargo_bin() {
