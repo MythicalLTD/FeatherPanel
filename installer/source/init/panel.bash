@@ -1,0 +1,691 @@
+#!/bin/bash
+
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+
+PANEL_DIR="${PANEL_DIR:-/var/www/featherpanel}"
+PANEL_REPO="${PANEL_REPO:-https://github.com/mythicalltd/featherpanel.git}"
+PANEL_GIT_REF_TYPE="${PANEL_GIT_REF_TYPE:-branch}"
+PANEL_GIT_REF="${PANEL_GIT_REF:-main}"
+BACKEND_DIR="${BACKEND_DIR:-${PANEL_DIR}/backend}"
+FRONTEND_DIR="${FRONTEND_DIR:-${PANEL_DIR}/frontendv2}"
+FRONTEND_MODE="${FRONTEND_MODE:-build}"
+PANEL_DOMAIN="${PANEL_DOMAIN:-}"
+ENABLE_SSL="${ENABLE_SSL:-}"
+SSL_EMAIL="${SSL_EMAIL:-}"
+CF_TUNNEL_SETUP="${CF_TUNNEL_SETUP:-}"
+CF_TUNNEL_TOKEN="${CF_TUNNEL_TOKEN:-}"
+CF_TUNNEL_LOCAL_PORT="${CF_TUNNEL_LOCAL_PORT:-8080}"
+
+DB_NAME="${DB_NAME:-featherpanel}"
+DB_USER="${DB_USER:-featherpanel}"
+DB_HOST="${DB_HOST:-127.0.0.1}"
+DB_PORT="${DB_PORT:-3306}"
+DB_PASSWORD="${DB_PASSWORD:-change-me}"
+DB_ENCRYPTION="${DB_ENCRYPTION:-xchacha20}"
+REDIS_PASSWORD="${REDIS_PASSWORD:-eufefwefwefw}"
+REDIS_HOST="${REDIS_HOST:-127.0.0.1}"
+MARIADB_ROOT_PASSWORD="${MARIADB_ROOT_PASSWORD:-}"
+
+CRON_FILE="/etc/cron.d/featherpanel"
+CRON_RUNNER_BASH="* * * * * www-data bash ${BACKEND_DIR}/storage/cron/runner.bash >/dev/null 2>&1"
+CRON_RUNNER_PHP="* * * * * www-data php ${BACKEND_DIR}/storage/cron/runner.php >/dev/null 2>&1"
+NGINX_SITE_NAME="FeatherPanel.conf"
+NGINX_SITE_FILE="/etc/nginx/sites-available/${NGINX_SITE_NAME}"
+NEXT_SERVICE_NAME="featherpanel-next"
+NEXT_SERVICE_FILE="/etc/systemd/system/${NEXT_SERVICE_NAME}.service"
+RUNNER_DIR="${RUNNER_DIR:-${PANEL_DIR}/runner}"
+RUNNER_SERVICE_NAME="featherpanel-async-runner"
+RUNNER_SERVICE_FILE="/etc/systemd/system/${RUNNER_SERVICE_NAME}.service"
+
+require_root() {
+    if [ "${EUID:-$(id -u)}" -ne 0 ]; then
+        echo "This script must be run as root." >&2
+        exit 1
+    fi
+}
+
+run_as_www_data() {
+    local cmd="$1"
+    su -s /bin/bash -c "$cmd" www-data
+}
+
+prompt_if_empty() {
+    local var_name="$1"
+    local prompt_text="$2"
+    local current_value="${!var_name:-}"
+    if [ -z "$current_value" ]; then
+        read -r -p "$prompt_text" current_value
+        printf -v "$var_name" "%s" "$current_value"
+    fi
+}
+
+upsert_env_var() {
+    local file="$1"
+    local key="$2"
+    local value="$3"
+    if rg -q "^${key}=" "$file"; then
+        sed -i "s|^${key}=.*|${key}=${value}|" "$file"
+    else
+        printf "%s=%s\n" "$key" "$value" >>"$file"
+    fi
+}
+
+sync_repo() {
+    mkdir -p /var/www
+    if [ -d "${PANEL_DIR}/.git" ]; then
+        git -C "$PANEL_DIR" fetch --all --prune
+        if [ "$PANEL_GIT_REF_TYPE" = "tag" ]; then
+            git -C "$PANEL_DIR" fetch --tags --force
+            git -C "$PANEL_DIR" checkout "tags/$PANEL_GIT_REF"
+        else
+            git -C "$PANEL_DIR" checkout "$PANEL_GIT_REF"
+            git -C "$PANEL_DIR" pull --ff-only origin "$PANEL_GIT_REF"
+        fi
+    else
+        rm -rf "$PANEL_DIR"
+        if [ "$PANEL_GIT_REF_TYPE" = "tag" ]; then
+            git clone --branch "$PANEL_GIT_REF" "$PANEL_REPO" "$PANEL_DIR"
+        else
+            git clone --branch "$PANEL_GIT_REF" "$PANEL_REPO" "$PANEL_DIR"
+        fi
+    fi
+    chown -R www-data:www-data "$PANEL_DIR"
+}
+
+install_backend_deps() {
+    if [ ! -f "${BACKEND_DIR}/composer.json" ]; then
+        echo "Backend directory is missing composer.json: ${BACKEND_DIR}" >&2
+        exit 1
+    fi
+    COMPOSER_ALLOW_SUPERUSER=1 composer install --working-dir="$BACKEND_DIR" --no-interaction --prefer-dist
+}
+
+install_frontend_deps() {
+    if [ ! -f "${FRONTEND_DIR}/package.json" ]; then
+        echo "Frontend directory is missing package.json: ${FRONTEND_DIR}" >&2
+        exit 1
+    fi
+    pnpm install --dir "$FRONTEND_DIR" --frozen-lockfile=false
+}
+
+setup_application_database_connection() {
+    local env_file="${BACKEND_DIR}/storage/config/.env"
+    local encryption_key=""
+
+    if [ "$DB_ENCRYPTION" != "xchacha20" ]; then
+        echo "Invalid DB_ENCRYPTION: ${DB_ENCRYPTION}. Allowed: xchacha20" >&2
+        exit 1
+    fi
+
+    mkdir -p "$(dirname "$env_file")"
+    touch "$env_file"
+
+    encryption_key="$(php -r 'echo base64_encode(sodium_crypto_secretbox_keygen());')"
+    if [ -z "$encryption_key" ]; then
+        echo "Failed to generate DATABASE_ENCRYPTION_KEY." >&2
+        exit 1
+    fi
+
+    upsert_env_var "$env_file" "DATABASE_HOST" "$DB_HOST"
+    upsert_env_var "$env_file" "DATABASE_PORT" "$DB_PORT"
+    upsert_env_var "$env_file" "DATABASE_USER" "$DB_USER"
+    upsert_env_var "$env_file" "DATABASE_PASSWORD" "$DB_PASSWORD"
+    upsert_env_var "$env_file" "DATABASE_DATABASE" "$DB_NAME"
+    upsert_env_var "$env_file" "DATABASE_ENCRYPTION" "$DB_ENCRYPTION"
+    upsert_env_var "$env_file" "DATABASE_ENCRYPTION_KEY" "$encryption_key"
+    upsert_env_var "$env_file" "REDIS_PASSWORD" "$REDIS_PASSWORD"
+    upsert_env_var "$env_file" "REDIS_HOST" "$REDIS_HOST"
+    chown www-data:www-data "$env_file"
+}
+
+run_database_migrations() {
+    run_as_www_data "cd '${PANEL_DIR}' && php app migrate"
+}
+
+build_or_watch_frontend() {
+    case "$FRONTEND_MODE" in
+        build)
+            run_as_www_data "cd '${FRONTEND_DIR}' && pnpm build"
+            ;;
+        watch)
+            run_as_www_data "cd '${FRONTEND_DIR}' && pnpm watch"
+            ;;
+        skip)
+            echo "Skipping frontend build (FRONTEND_MODE=skip)."
+            ;;
+        *)
+            echo "Invalid FRONTEND_MODE: ${FRONTEND_MODE}. Use build, watch, or skip." >&2
+            exit 1
+            ;;
+    esac
+}
+
+setup_next_service() {
+    if [ ! -f "${FRONTEND_DIR}/package.json" ]; then
+        echo "Cannot create Next service, package.json missing: ${FRONTEND_DIR}" >&2
+        exit 1
+    fi
+
+    cat >"$NEXT_SERVICE_FILE" <<EOF
+[Unit]
+Description=FeatherPanel Next.js Frontend
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=${FRONTEND_DIR}
+Environment=NODE_ENV=production
+Environment=PORT=3000
+ExecStart=/bin/bash -lc 'pnpm start'
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl daemon-reload
+    systemctl enable "${NEXT_SERVICE_NAME}"
+    systemctl restart "${NEXT_SERVICE_NAME}"
+}
+
+configure_database() {
+    local auth_args=()
+    if [ -n "$MARIADB_ROOT_PASSWORD" ]; then
+        auth_args=(-uroot "-p${MARIADB_ROOT_PASSWORD}")
+    else
+        auth_args=(-uroot)
+    fi
+
+    mariadb "${auth_args[@]}" <<SQL
+CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;
+CREATE USER IF NOT EXISTS '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${DB_PASSWORD}';
+ALTER USER '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'${DB_HOST}';
+FLUSH PRIVILEGES;
+SQL
+
+    mariadb -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" "-p${DB_PASSWORD}" "$DB_NAME" -e "SELECT 1;" >/dev/null
+}
+
+configure_cron() {
+    cat >"$CRON_FILE" <<EOF
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+$CRON_RUNNER_BASH
+$CRON_RUNNER_PHP
+EOF
+    chmod 0644 "$CRON_FILE"
+}
+
+install_nginx_tools() {
+    apt-get update -y
+    apt-get install -y nginx
+    systemctl enable nginx >/dev/null 2>&1 || true
+}
+
+install_ssl_tools() {
+    apt-get update -y
+    apt-get install -y certbot python3-certbot-nginx
+}
+
+install_cloudflared() {
+    if command -v cloudflared >/dev/null 2>&1; then
+        return 0
+    fi
+    apt-get update -y
+    apt-get install -y curl ca-certificates gnupg
+    install -m 0755 -d /usr/share/keyrings
+    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | gpg --dearmor -o /usr/share/keyrings/cloudflare-main.gpg
+    echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" >/etc/apt/sources.list.d/cloudflared.list
+    apt-get update -y
+    apt-get install -y cloudflared
+}
+
+resolve_cargo_bin() {
+    local user_home=""
+    if command -v cargo >/dev/null 2>&1; then
+        command -v cargo
+        return 0
+    fi
+
+    if [ -n "${SUDO_USER:-}" ]; then
+        user_home="$(getent passwd "${SUDO_USER}" | cut -d: -f6)"
+        if [ -n "$user_home" ] && [ -x "${user_home}/.cargo/bin/cargo" ]; then
+            echo "${user_home}/.cargo/bin/cargo"
+            return 0
+        fi
+    fi
+
+    if [ -x "/root/.cargo/bin/cargo" ]; then
+        echo "/root/.cargo/bin/cargo"
+        return 0
+    fi
+
+    echo "cargo not found. Ensure Rust is installed before building runner." >&2
+    exit 1
+}
+
+build_runner_binary() {
+    local cargo_bin=""
+    if [ ! -f "${RUNNER_DIR}/Cargo.toml" ]; then
+        echo "Runner Cargo.toml not found: ${RUNNER_DIR}" >&2
+        exit 1
+    fi
+
+    cargo_bin="$(resolve_cargo_bin)"
+    (cd "$RUNNER_DIR" && "$cargo_bin" build --release)
+
+    if [ ! -x "${RUNNER_DIR}/target/release/async-runner" ]; then
+        echo "Runner binary build failed: ${RUNNER_DIR}/target/release/async-runner" >&2
+        exit 1
+    fi
+
+    chown -R www-data:www-data "${RUNNER_DIR}/target"
+}
+
+setup_runner_service() {
+    local runner_service_template="${RUNNER_DIR}/featherpanel-async-runner.service"
+    local panel_env_file="${BACKEND_DIR}/storage/config/.env"
+
+    if [ -f "$runner_service_template" ]; then
+        cp "$runner_service_template" "$RUNNER_SERVICE_FILE"
+        if rg -q "^EnvironmentFile=" "$RUNNER_SERVICE_FILE"; then
+            sed -i "s|^EnvironmentFile=.*|EnvironmentFile=${panel_env_file}|" "$RUNNER_SERVICE_FILE"
+        else
+            sed -i "/^Environment=\"RUST_LOG=.*\"/a EnvironmentFile=${panel_env_file}" "$RUNNER_SERVICE_FILE"
+        fi
+    else
+        cat >"$RUNNER_SERVICE_FILE" <<EOF
+[Unit]
+Description=FeatherPanel Async Runner
+After=network.target mysql.service redis.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=${RUNNER_DIR}
+Environment="RUST_LOG=info"
+EnvironmentFile=${panel_env_file}
+ExecStart=${RUNNER_DIR}/target/release/async-runner
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    fi
+
+    systemctl daemon-reload
+    systemctl enable "${RUNNER_SERVICE_NAME}"
+    systemctl restart "${RUNNER_SERVICE_NAME}"
+}
+
+detect_php_fpm_socket() {
+    local sockets=()
+    shopt -s nullglob
+    sockets=(/run/php/php*-fpm.sock)
+    shopt -u nullglob
+    if [ "${#sockets[@]}" -eq 0 ]; then
+        echo "Unable to find PHP-FPM socket in /run/php." >&2
+        exit 1
+    fi
+    printf '%s\n' "${sockets[@]}" | sort -V | tail -n 1
+}
+
+write_nginx_config_no_ssl() {
+    local php_fpm_socket="$1"
+    cat >"$NGINX_SITE_FILE" <<EOF
+server {
+    listen 80;
+    server_name ${PANEL_DOMAIN};
+
+    client_max_body_size 100m;
+    client_body_timeout 120s;
+    sendfile off;
+
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy same-origin;
+    proxy_hide_header X-Powered-By;
+    proxy_hide_header Server;
+
+    location /api {
+        proxy_pass http://127.0.0.1:8721;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /pma {
+        proxy_pass http://127.0.0.1:8721;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location ^~ /attachments/ {
+        alias ${BACKEND_DIR}/public/attachments/;
+    }
+
+    location ^~ /addons/ {
+        alias ${BACKEND_DIR}/public/addons/;
+    }
+
+    location ^~ /components/ {
+        alias ${BACKEND_DIR}/public/components/;
+    }
+
+    location / {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_pass http://127.0.0.1:3000;
+    }
+}
+EOF
+}
+
+write_nginx_config_cloudflare_tunnel() {
+    local php_fpm_socket="$1"
+    cat >"$NGINX_SITE_FILE" <<EOF
+server {
+    listen 127.0.0.1:${CF_TUNNEL_LOCAL_PORT};
+    server_name localhost;
+
+    client_max_body_size 100m;
+    client_body_timeout 120s;
+    sendfile off;
+
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy same-origin;
+    proxy_hide_header X-Powered-By;
+    proxy_hide_header Server;
+
+    location /api {
+        proxy_pass http://127.0.0.1:8721;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /pma {
+        proxy_pass http://127.0.0.1:8721;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location ^~ /attachments/ {
+        alias ${BACKEND_DIR}/public/attachments/;
+    }
+
+    location ^~ /addons/ {
+        alias ${BACKEND_DIR}/public/addons/;
+    }
+
+    location ^~ /components/ {
+        alias ${BACKEND_DIR}/public/components/;
+    }
+
+    location / {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_pass http://127.0.0.1:3000;
+    }
+}
+
+server {
+    listen 127.0.0.1:8721;
+    server_name localhost;
+    root ${BACKEND_DIR}/public;
+    index index.php;
+
+    client_max_body_size 100m;
+    client_body_timeout 120s;
+    sendfile off;
+    error_log ${BACKEND_DIR}/storage/logs/featherpanel-web.fplog error;
+
+    location / {
+        try_files \$uri \$uri/ /index.php?\$query_string;
+    }
+
+    location ~ \\.php$ {
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+        fastcgi_param HTTP_PROXY "";
+        fastcgi_param PHP_VALUE "upload_max_filesize = 100M\\npost_max_size = 100M";
+        fastcgi_pass unix:${php_fpm_socket};
+        fastcgi_index index.php;
+        fastcgi_intercept_errors off;
+        fastcgi_buffer_size 16k;
+        fastcgi_buffers 4 16k;
+        fastcgi_connect_timeout 300;
+        fastcgi_send_timeout 300;
+        fastcgi_read_timeout 300;
+    }
+
+    location ~ /\\.ht {
+        deny all;
+    }
+}
+EOF
+}
+
+write_nginx_config_ssl() {
+    local php_fpm_socket="$1"
+    cat >"$NGINX_SITE_FILE" <<EOF
+server {
+    listen 80;
+    server_name ${PANEL_DOMAIN};
+    return 301 https://\$server_name\$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name ${PANEL_DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${PANEL_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${PANEL_DOMAIN}/privkey.pem;
+    ssl_session_cache shared:SSL:10m;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305";
+    ssl_prefer_server_ciphers on;
+
+    client_max_body_size 100m;
+    client_body_timeout 120s;
+    sendfile off;
+
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy same-origin;
+    proxy_hide_header X-Powered-By;
+    proxy_hide_header Server;
+
+    location /api {
+        proxy_pass http://127.0.0.1:8721;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /pma {
+        proxy_pass http://127.0.0.1:8721;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location ^~ /attachments/ {
+        alias ${BACKEND_DIR}/public/attachments/;
+    }
+
+    location ^~ /addons/ {
+        alias ${BACKEND_DIR}/public/addons/;
+    }
+
+    location ^~ /components/ {
+        alias ${BACKEND_DIR}/public/components/;
+    }
+
+    location / {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_pass http://127.0.0.1:3000;
+    }
+}
+
+server {
+    listen 8721;
+    server_name 127.0.0.1 localhost;
+    root ${BACKEND_DIR}/public;
+    index index.php;
+
+    client_max_body_size 100m;
+    client_body_timeout 120s;
+    sendfile off;
+    error_log ${BACKEND_DIR}/storage/logs/featherpanel-web.fplog error;
+
+    location / {
+        try_files \$uri \$uri/ /index.php?\$query_string;
+    }
+
+    location ~ \\.php$ {
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+        fastcgi_param HTTP_PROXY "";
+        fastcgi_param PHP_VALUE "upload_max_filesize = 100M\\npost_max_size = 100M";
+        fastcgi_pass unix:${php_fpm_socket};
+        fastcgi_index index.php;
+        fastcgi_intercept_errors off;
+        fastcgi_buffer_size 16k;
+        fastcgi_buffers 4 16k;
+        fastcgi_connect_timeout 300;
+        fastcgi_send_timeout 300;
+        fastcgi_read_timeout 300;
+    }
+
+    location ~ /\\.ht {
+        deny all;
+    }
+}
+EOF
+}
+
+enable_and_reload_nginx() {
+    rm -f /etc/nginx/sites-enabled/default
+    ln -sf "$NGINX_SITE_FILE" "/etc/nginx/sites-enabled/${NGINX_SITE_NAME}"
+    nginx -t
+    systemctl restart nginx
+}
+
+obtain_ssl_certificate() {
+    if [ -z "$SSL_EMAIL" ]; then
+        SSL_EMAIL="admin@${PANEL_DOMAIN}"
+    fi
+    certbot certonly --nginx -d "$PANEL_DOMAIN" --non-interactive --agree-tos -m "$SSL_EMAIL"
+}
+
+configure_cloudflare_tunnel() {
+    if [ -z "$CF_TUNNEL_TOKEN" ]; then
+        read -r -p "Enter Cloudflare Tunnel token: " CF_TUNNEL_TOKEN
+    fi
+    if [ -z "$CF_TUNNEL_TOKEN" ]; then
+        echo "CF_TUNNEL_TOKEN is required for Cloudflare tunnel mode." >&2
+        exit 1
+    fi
+
+    install_cloudflared
+    cloudflared service install "$CF_TUNNEL_TOKEN"
+    systemctl enable cloudflared >/dev/null 2>&1 || true
+    systemctl restart cloudflared
+}
+
+configure_nginx() {
+    local php_fpm_socket
+    local cf_choice=""
+    install_nginx_tools
+
+    if [ -z "$CF_TUNNEL_SETUP" ]; then
+        read -r -p "Use Cloudflare Tunnel mode (frontend only via tunnel)? (y/n): " cf_choice
+        if [[ "$cf_choice" =~ ^[yY]([eE][sS])?$ ]]; then
+            CF_TUNNEL_SETUP="true"
+        else
+            CF_TUNNEL_SETUP="false"
+        fi
+    fi
+
+    php_fpm_socket="$(detect_php_fpm_socket)"
+
+    if [ "$CF_TUNNEL_SETUP" = "true" ]; then
+        write_nginx_config_cloudflare_tunnel "$php_fpm_socket"
+        enable_and_reload_nginx
+        configure_cloudflare_tunnel
+    else
+        prompt_if_empty PANEL_DOMAIN "Enter panel domain (e.g. panel.example.com): "
+        if [ -z "$PANEL_DOMAIN" ]; then
+            echo "PANEL_DOMAIN cannot be empty." >&2
+            exit 1
+        fi
+
+        if [ -z "$ENABLE_SSL" ]; then
+            read -r -p "Enable SSL with Let's Encrypt? (y/n): " ENABLE_SSL
+        fi
+
+        write_nginx_config_no_ssl "$php_fpm_socket"
+        enable_and_reload_nginx
+
+        if [ "$ENABLE_SSL" = "y" ] || [ "$ENABLE_SSL" = "Y" ] || [ "$ENABLE_SSL" = "yes" ] || [ "$ENABLE_SSL" = "YES" ]; then
+            install_ssl_tools
+            obtain_ssl_certificate
+            write_nginx_config_ssl "$php_fpm_socket"
+            enable_and_reload_nginx
+        fi
+    fi
+}
+
+main() {
+    require_root
+    sync_repo
+    install_backend_deps
+    install_frontend_deps
+    configure_database
+    setup_application_database_connection
+    run_database_migrations
+    build_runner_binary
+    setup_runner_service
+    configure_nginx
+    configure_cron
+    build_or_watch_frontend
+    setup_next_service
+}
+
+main "$@"

@@ -1081,23 +1081,94 @@ set_panel_install_mode() {
 	echo "$mode" >/var/www/featherpanel/.install_mode
 }
 
-show_source_mode_coming_soon() {
-	if [ -t 1 ]; then clear; fi
-	print_banner
-	draw_hr
-	print_centered "Source Mode Coming Soon" "$YELLOW"
-	draw_hr
-	echo ""
-	echo -e "  ${BLUE}Source mode for FeatherPanel is still being built.${NC}"
-	echo -e "  ${BLUE}When available, source mode will provide:${NC}"
-	echo -e "    ${CYAN}•${NC} Full panel source code on disk"
-	echo -e "    ${CYAN}•${NC} Native runtime on your machine"
-	echo -e "    ${CYAN}•${NC} Maximum control for developers"
-	echo ""
-	echo -e "  ${YELLOW}For now, use Docker mode (recommended for most users).${NC}"
-	echo -e "  ${YELLOW}Docker gives stronger isolation and lower host exposure.${NC}"
-	echo ""
-	draw_hr
+get_source_scripts_branch() {
+	echo "main"
+}
+
+get_latest_panel_release_tag() {
+	local latest_tag=""
+	latest_tag=$(curl -fsSL "https://api.github.com/repos/MythicalLTD/FeatherPanel/releases/latest" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1 || true)
+	echo "$latest_tag"
+}
+
+select_source_release_mode() {
+	if [ "$USE_DEV" != "true" ] && [ -z "${FP_DEV:-}" ]; then
+		RELEASE_TYPE=""
+		while [[ ! "$RELEASE_TYPE" =~ ^[1-3]$ ]]; do
+			show_release_type_menu
+			prompt "${BOLD}Enter release type${NC} ${BLUE}(1/2/3)${NC}: " RELEASE_TYPE
+			if [[ ! "$RELEASE_TYPE" =~ ^[1-3]$ ]]; then
+				echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC}, ${YELLOW}2${NC}, or ${YELLOW}3${NC}."
+				sleep 1
+			fi
+		done
+
+		case $RELEASE_TYPE in
+		1)
+			USE_DEV=false
+			log_info "Stable release selected"
+			;;
+		2)
+			USE_DEV=true
+			DEV_BRANCH="main"
+			log_info "Development build from main branch selected"
+			;;
+		3)
+			USE_DEV=true
+			prompt "${BOLD}Branch name${NC} ${BLUE}(e.g., main, develop)${NC}: " DEV_BRANCH
+			if [ -z "$DEV_BRANCH" ]; then
+				DEV_BRANCH="main"
+			fi
+			log_info "Custom dev branch selected: $DEV_BRANCH"
+			;;
+		esac
+	fi
+}
+
+set_source_target_ref_env() {
+	local latest_tag=""
+	if [ "${USE_DEV:-false}" = "true" ]; then
+		export PANEL_GIT_REF_TYPE="branch"
+		export PANEL_GIT_REF="${DEV_BRANCH:-main}"
+	else
+		latest_tag="$(get_latest_panel_release_tag)"
+		if [ -z "$latest_tag" ]; then
+			log_error "Failed to resolve latest stable release tag from GitHub."
+			return 1
+		fi
+		export PANEL_GIT_REF_TYPE="tag"
+		export PANEL_GIT_REF="$latest_tag"
+	fi
+	return 0
+}
+
+run_source_subscript_from_github() {
+	local subscript="$1"
+	local branch
+	local script_url
+	local tmp_script
+
+	branch="$(get_source_scripts_branch)"
+	script_url="https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/${branch}/installer/source/init/${subscript}.bash"
+	tmp_script="/tmp/featherpanel-source-${subscript}.bash"
+
+	log_info "Fetching source ${subscript} script from GitHub (${branch})"
+	if ! curl -fsSL "$script_url" -o "$tmp_script"; then
+		log_error "Failed to download source script: $script_url"
+		return 1
+	fi
+	chmod +x "$tmp_script"
+	if ! set_source_target_ref_env; then
+		rm -f "$tmp_script"
+		return 1
+	fi
+	if ! "$tmp_script"; then
+		log_error "Source ${subscript} script failed."
+		rm -f "$tmp_script"
+		return 1
+	fi
+	rm -f "$tmp_script"
+	return 0
 }
 
 prompt_panel_install_mode() {
@@ -1190,15 +1261,15 @@ show_panel_menu() {
 	echo ""
 	local current_mode="${PANEL_INSTALL_MODE:-$(get_panel_install_mode)}"
 	if [ "$current_mode" = "source" ]; then
-		echo -e "  ${YELLOW}${BOLD}Current Panel Mode:${NC} ${YELLOW}Source${NC} ${YELLOW}(coming soon)${NC}"
-		echo -e "  ${BLUE}Tip:${NC} Source mode is not available yet in this installer."
+		echo -e "  ${YELLOW}${BOLD}Current Panel Mode:${NC} ${YELLOW}Source${NC}"
+		echo -e "  ${BLUE}Tip:${NC} Source mode uses GitHub-hosted installer sub-scripts."
 	else
 		echo -e "  ${GREEN}${BOLD}Current Panel Mode:${NC} ${GREEN}Docker${NC} ${BLUE}(recommended for most users)${NC}"
 	fi
 	echo ""
 	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install Panel${NC}"
 	if [ "$current_mode" = "source" ]; then
-		echo -e "     ${YELLOW}→ Source install mode is coming soon${NC}"
+		echo -e "     ${BLUE}→ Install FeatherPanel from source using GitHub scripts${NC}"
 	else
 		echo -e "     ${BLUE}→ Install FeatherPanel web interface using Docker${NC}"
 	fi
@@ -1207,7 +1278,7 @@ show_panel_menu() {
 	echo ""
 	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall Panel${NC}"
 	if [ "$current_mode" = "source" ]; then
-		echo -e "     ${YELLOW}→ Source uninstall flow is coming soon${NC}"
+		echo -e "     ${YELLOW}⚠️  WARNING: This removes source services and configuration${NC}"
 	else
 		echo -e "     ${YELLOW}⚠️  WARNING: This will remove all Panel data and containers${NC}"
 		echo -e "     ${BLUE}→ Stops and removes Docker containers${NC}"
@@ -1216,7 +1287,7 @@ show_panel_menu() {
 	echo ""
 	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update Panel${NC}"
 	if [ "$current_mode" = "source" ]; then
-		echo -e "     ${YELLOW}→ Source update mode is coming soon${NC}"
+		echo -e "     ${BLUE}→ Pull latest source and rebuild services${NC}"
 	else
 		echo -e "     ${BLUE}→ Pull latest Docker images${NC}"
 		echo -e "     ${BLUE}→ Restart containers with new version${NC}"
@@ -5213,9 +5284,6 @@ if [ -f /etc/os-release ]; then
 	if [ "$COMPONENT_TYPE" = "1" ]; then
 		# Panel operations
 		prompt_panel_install_mode "Operation Selection"
-		if [ "$PANEL_INSTALL_MODE" = "source" ]; then
-			show_source_mode_coming_soon
-		fi
 		while [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; do
 			show_panel_menu
 			echo ""
@@ -5405,7 +5473,12 @@ if [ -f /etc/os-release ]; then
 	if [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "1" ]; then
 		# Panel Install
 		if [ "${PANEL_INSTALL_MODE:-$(get_panel_install_mode)}" = "source" ]; then
-			show_source_mode_coming_soon
+			set_panel_install_mode "source" || true
+			select_source_release_mode
+			if ! run_source_subscript_from_github "panel"; then
+				log_error "Source install failed."
+				exit 1
+			fi
 			exit 0
 		fi
 		set_panel_install_mode "$PANEL_INSTALL_MODE" || true
@@ -6248,7 +6321,16 @@ if [ -f /etc/os-release ]; then
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "2" ]; then
 		# Panel Uninstall
 		if [ "${PANEL_INSTALL_MODE:-$(get_panel_install_mode)}" = "source" ]; then
-			show_source_mode_coming_soon
+			prompt "Are you sure you want to uninstall the source-based installation? (y/n): " confirm
+			if [ "$confirm" = "y" ]; then
+				if ! run_source_subscript_from_github "remove"; then
+					log_error "Source uninstall failed."
+					exit 1
+				fi
+			else
+				echo "Uninstallation cancelled."
+				exit 0
+			fi
 			exit 0
 		fi
 		if ! is_featherpanel_installed; then
@@ -6265,7 +6347,11 @@ if [ -f /etc/os-release ]; then
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "3" ]; then
 		# Panel Update
 		if [ "${PANEL_INSTALL_MODE:-$(get_panel_install_mode)}" = "source" ]; then
-			show_source_mode_coming_soon
+			select_source_release_mode
+			if ! run_source_subscript_from_github "update"; then
+				log_error "Source update failed."
+				exit 1
+			fi
 			exit 0
 		fi
 
