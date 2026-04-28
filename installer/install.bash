@@ -429,6 +429,16 @@ ensure_panel_caddyfiles() {
 
 	mkdir -p "/var/www/featherpanel/backend" "/var/www/featherpanel/frontendv2"
 
+	# If a mistaken directory exists where we need a file, fix it automatically.
+	if [ -d "$backend_caddy" ]; then
+		log_warn "Found directory at $backend_caddy; replacing it with a file."
+		rm -rf "$backend_caddy"
+	fi
+	if [ -d "$frontend_caddy" ]; then
+		log_warn "Found directory at $frontend_caddy; replacing it with a file."
+		rm -rf "$frontend_caddy"
+	fi
+
 	# Ensure backend bind-mount target exists for image-based deployments.
 	cat >"$backend_caddy" <<'EOF'
 # FrankenPHP (Caddy + PHP) - FeatherPanel
@@ -1151,7 +1161,7 @@ print_banner() {
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 
-	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.5${NC}"
+	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.6${NC}"
 
 	echo -e "${CYAN}${BOLD}┌────────────────────────────────────────────────────────────┐${NC}"
 	echo -e "${CYAN}${BOLD}${NC}  🌐 Website:  ${BLUE}www.mythical.systems${NC}           ${CYAN}${BOLD}${NC}"
