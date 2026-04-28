@@ -11,6 +11,7 @@ NPM = npm
 PHP = php
 COMPOSER = COMPOSER_ALLOW_SUPERUSER=1 composer
 SED = sed
+CARGO = cargo	
 
 # Colors and formatting
 RED = \033[0;31m
@@ -122,6 +123,12 @@ release:
 	@echo -e "${PURPLE}${INFO} Running backend tests...${NC}"
 	@cd $(BACKEND_DIR) && $(COMPOSER) test
 	@echo -e "${GREEN}${CHECK} Backend tests completed${NC}\n"
+
+	@echo -e "${PURPLE}${INFO} Building runner...${NC}"
+	@cd $(RUNNER_DIR) && $(CARGO) build --release
+	@echo -e "${GREEN}${CHECK} Runner built${NC}\n"
+
+	
 
 	@echo -e "${GREEN}${ROCKET} Release build successful!${NC}\n"
 

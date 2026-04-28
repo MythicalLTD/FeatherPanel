@@ -316,6 +316,9 @@ DEV_BRANCH="main"
 
 # Custom panel port setting (0 = use default 4831)
 PANEL_PORT=0
+BACKEND_PORT=0
+MYSQL_PORT=0
+REDIS_PORT=0
 
 # Installation preferences
 SKIP_OS_CHECK=no
@@ -379,6 +382,9 @@ load_config() {
 			PANEL_PORT="$FRONTEND_PORT"
 		fi
 		[ -z "${PANEL_PORT:-}" ] && PANEL_PORT=0
+		[ -z "${BACKEND_PORT:-}" ] && BACKEND_PORT=0
+		[ -z "${MYSQL_PORT:-}" ] && MYSQL_PORT=0
+		[ -z "${REDIS_PORT:-}" ] && REDIS_PORT=0
 
 		set -e
 	fi
@@ -415,6 +421,111 @@ apply_panel_port_to_compose() {
 	sed -E -i "s#- \"\\$\\{(PANEL_PORT|FEATHERPANEL_PANEL_PORT):-4831\\}:80\"#- \"${compose_port_template}\"#g" "$compose_file"
 	sed -E -i "s#- \"[0-9]{1,5}:80\"#- \"${panel_port}:80\"#g" "$compose_file"
 	log_info "Applied panel port mapping: ${panel_port}:80 (effective env: FEATHERPANEL_PANEL_PORT=${FEATHERPANEL_PANEL_PORT})"
+}
+
+is_port_available() {
+	local port="$1"
+	if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+		return 1
+	fi
+
+	if command -v ss >/dev/null 2>&1; then
+		if ss -ltnH "( sport = :$port )" 2>/dev/null | grep -q .; then
+			return 1
+		fi
+		return 0
+	fi
+
+	if command -v netstat >/dev/null 2>&1; then
+		if netstat -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]${port}$"; then
+			return 1
+		fi
+		return 0
+	fi
+
+	# If we cannot detect listeners reliably, assume available.
+	return 0
+}
+
+find_next_available_port() {
+	local candidate="$1"
+	local max_port=65535
+	while [ "$candidate" -le "$max_port" ]; do
+		if is_port_available "$candidate"; then
+			echo "$candidate"
+			return 0
+		fi
+		candidate=$((candidate + 1))
+	done
+	return 1
+}
+
+set_env_value() {
+	local env_file="$1"
+	local key="$2"
+	local value="$3"
+	touch "$env_file"
+	if grep -q "^${key}=" "$env_file" 2>/dev/null; then
+		sed -i "s#^${key}=.*#${key}=${value}#g" "$env_file"
+	else
+		echo "${key}=${value}" >>"$env_file"
+	fi
+}
+
+configure_host_service_ports() {
+	local env_file="/var/www/featherpanel/.env"
+	local panel_port
+	panel_port="$(get_panel_port)"
+
+	local preferred_backend="${BACKEND_PORT:-8068}"
+	local preferred_mysql="${MYSQL_PORT:-36307}"
+	local preferred_redis="${REDIS_PORT:-36379}"
+
+	# Treat zero/non-numeric as "use defaults".
+	[[ "$preferred_backend" =~ ^[0-9]+$ ]] || preferred_backend=8068
+	[[ "$preferred_mysql" =~ ^[0-9]+$ ]] || preferred_mysql=36307
+	[[ "$preferred_redis" =~ ^[0-9]+$ ]] || preferred_redis=36379
+	[ "$preferred_backend" -eq 0 ] && preferred_backend=8068
+	[ "$preferred_mysql" -eq 0 ] && preferred_mysql=36307
+	[ "$preferred_redis" -eq 0 ] && preferred_redis=36379
+
+	local backend_port mysql_port redis_port frontend_port
+	backend_port="$(find_next_available_port "$preferred_backend")" || return 1
+	mysql_port="$(find_next_available_port "$preferred_mysql")" || return 1
+	redis_port="$(find_next_available_port "$preferred_redis")" || return 1
+
+	# Avoid accidental collisions among selected ports.
+	if [ "$mysql_port" = "$backend_port" ]; then
+		mysql_port="$(find_next_available_port "$((mysql_port + 1))")" || return 1
+	fi
+	if [ "$redis_port" = "$backend_port" ] || [ "$redis_port" = "$mysql_port" ]; then
+		redis_port="$(find_next_available_port "$((redis_port + 1))")" || return 1
+	fi
+	frontend_port="$panel_port"
+
+	export BACKEND_HTTP_PORT="$backend_port"
+	export BACKEND_LISTEN_ADDR=":${backend_port}"
+	export MARIADB_PORT="$mysql_port"
+	export REDIS_PORT="$redis_port"
+	export FRONTEND_HTTP_PORT="$frontend_port"
+	export FRONTEND_LISTEN_ADDR=":${frontend_port}"
+	export FEATHERPANEL_PANEL_PORT="$panel_port"
+
+	set_env_value "$env_file" "BACKEND_HTTP_PORT" "$backend_port"
+	set_env_value "$env_file" "BACKEND_LISTEN_ADDR" ":${backend_port}"
+	set_env_value "$env_file" "MARIADB_PORT" "$mysql_port"
+	set_env_value "$env_file" "REDIS_PORT" "$redis_port"
+	set_env_value "$env_file" "FRONTEND_HTTP_PORT" "$frontend_port"
+	set_env_value "$env_file" "FRONTEND_LISTEN_ADDR" ":${frontend_port}"
+	set_env_value "$env_file" "FEATHERPANEL_PANEL_PORT" "$panel_port"
+	set_env_value "$env_file" "BACKEND_UPSTREAM" "127.0.0.1:${backend_port}"
+
+	# Persist chosen ports as installer preferences for next run.
+	BACKEND_PORT="$backend_port"
+	MYSQL_PORT="$mysql_port"
+	REDIS_PORT="$redis_port"
+
+	log_info "Selected ports -> frontend:${frontend_port}, backend:${backend_port}, mariadb:${mysql_port}, redis:${redis_port}"
 }
 
 get_compose_file_path() {
@@ -491,6 +602,9 @@ DEV_BRANCH=$DEV_BRANCH
 
 # Custom panel port setting (0 = use default 4831)
 PANEL_PORT=$PANEL_PORT
+BACKEND_PORT=$BACKEND_PORT
+MYSQL_PORT=$MYSQL_PORT
+REDIS_PORT=$REDIS_PORT
 
 # Installation preferences
 SKIP_OS_CHECK=$SKIP_OS_CHECK
@@ -1325,15 +1439,25 @@ show_panel_info() {
 }
 
 manage_panel_firewall() {
-	if [ -t 1 ]; then clear; fi
-	print_banner
-	draw_hr
-	print_centered "Panel Firewall Manager" "$CYAN"
-	draw_hr
-	echo ""
+	local auto_apply=false
+	if [ "${1:-}" = "--auto" ] || [ "${AUTO_APPLY_FIREWALL:-}" = "1" ]; then
+		auto_apply=true
+	fi
+
+	if [ "$auto_apply" = false ]; then
+		if [ -t 1 ]; then clear; fi
+		print_banner
+		draw_hr
+		print_centered "Panel Firewall Manager" "$CYAN"
+		draw_hr
+		echo ""
+	fi
 
 	local panel_port
 	panel_port=$(get_panel_port)
+	local mariadb_port="${MARIADB_PORT:-3307}"
+	local redis_port="${REDIS_PORT:-6380}"
+	local backend_port="${BACKEND_HTTP_PORT:-8080}"
 	local reverse_proxy_detected=false
 	local reverse_proxy_details="none"
 
@@ -1387,6 +1511,7 @@ manage_panel_firewall() {
 	fi
 	echo ""
 	echo -e "${BOLD}Ports to allow (TCP):${NC} ${CYAN}${unique_ports}${NC}"
+	echo -e "${BOLD}Ports to enforce localhost-only (TCP):${NC} ${CYAN}${mariadb_port} ${redis_port} ${backend_port}${NC}"
 	echo -e "${BLUE}Policy:${NC} never enables firewall services; only updates existing ufw/iptables rules"
 	echo ""
 
@@ -1395,11 +1520,15 @@ manage_panel_firewall() {
 		return 1
 	fi
 
-	apply_fw=""
-	prompt "${BOLD}Apply these firewall rules now?${NC} ${BLUE}(y/n)${NC}: " apply_fw
-	if [[ ! "$apply_fw" =~ ^[yY]$ ]]; then
-		log_info "Firewall changes cancelled."
-		return 0
+	if [ "$auto_apply" = false ]; then
+		apply_fw=""
+		prompt "${BOLD}Apply these firewall rules now?${NC} ${BLUE}(y/n)${NC}: " apply_fw
+		if [[ ! "$apply_fw" =~ ^[yY]$ ]]; then
+			log_info "Firewall changes cancelled."
+			return 0
+		fi
+	else
+		log_info "Auto-applying panel firewall policy."
 	fi
 
 	for port in $unique_ports; do
@@ -1411,6 +1540,32 @@ manage_panel_firewall() {
 			iptables -C INPUT -p tcp --dport "$port" -j ACCEPT >/dev/null 2>&1 ||
 				iptables -I INPUT -p tcp --dport "$port" -j ACCEPT >/dev/null 2>&1 ||
 				log_warn "iptables failed to allow ${port}/tcp"
+		fi
+	done
+
+	# Keep internal service ports reachable only from localhost.
+	local localhost_only_ports="${mariadb_port} ${redis_port} ${backend_port}"
+	local internal_port
+	for internal_port in $localhost_only_ports; do
+		# Skip invalid/non-numeric values gracefully.
+		if ! [[ "$internal_port" =~ ^[0-9]+$ ]]; then
+			continue
+		fi
+
+		if [ "$ufw_active" = true ]; then
+			ufw allow from 127.0.0.1 to any port "${internal_port}" proto tcp >>"$LOG_FILE" 2>&1 ||
+				log_warn "ufw failed to allow localhost for ${internal_port}/tcp"
+			ufw deny "${internal_port}/tcp" >>"$LOG_FILE" 2>&1 ||
+				log_warn "ufw failed to block external access for ${internal_port}/tcp"
+		fi
+
+		if [ "$iptables_available" = true ]; then
+			iptables -C INPUT -p tcp --dport "$internal_port" -j DROP >/dev/null 2>&1 ||
+				iptables -I INPUT -p tcp --dport "$internal_port" -j DROP >/dev/null 2>&1 ||
+				log_warn "iptables failed to block external access for ${internal_port}/tcp"
+			iptables -C INPUT -p tcp -s 127.0.0.1 --dport "$internal_port" -j ACCEPT >/dev/null 2>&1 ||
+				iptables -I INPUT -p tcp -s 127.0.0.1 --dport "$internal_port" -j ACCEPT >/dev/null 2>&1 ||
+				log_warn "iptables failed to allow localhost for ${internal_port}/tcp"
 		fi
 	done
 
@@ -1433,13 +1588,22 @@ manage_panel_firewall() {
 	fi
 
 	log_success "Firewall rules applied for TCP ports: ${unique_ports}"
+	log_success "Localhost-only protection applied for internal ports: ${localhost_only_ports}"
 	if [ "$iptables_available" = true ]; then
-		log_warn "If your distro does not persist iptables rules automatically, persist them manually (iptables-save)."
+		if command -v netfilter-persistent >/dev/null 2>&1; then
+			netfilter-persistent save >>"$LOG_FILE" 2>&1 || log_warn "Failed to save iptables rules with netfilter-persistent."
+		elif command -v iptables-save >/dev/null 2>&1 && [ -d /etc/iptables ]; then
+			iptables-save >/etc/iptables/rules.v4 2>>"$LOG_FILE" || log_warn "Failed to save iptables rules to /etc/iptables/rules.v4."
+		else
+			log_warn "Could not auto-persist iptables rules. Persist manually (iptables-save)."
+		fi
 	fi
 
-	echo ""
-	draw_hr
-	read -r -p "Press Enter to continue..."
+	if [ "$auto_apply" = false ]; then
+		echo ""
+		draw_hr
+		read -r -p "Press Enter to continue..."
+	fi
 }
 
 show_backup_menu() {
@@ -1679,6 +1843,43 @@ install_packages() {
 		}
 		log_success "Dependencies installed."
 	fi
+}
+
+# Ensure iptables tooling is present and rules persist across reboot.
+ensure_iptables_persistence() {
+	log_info "Ensuring iptables + persistence tooling is installed..."
+
+	export DEBIAN_FRONTEND=noninteractive
+	export APT_LISTCHANGES_FRONTEND=none
+
+	if ! apt-get update -qq >>"$LOG_FILE" 2>&1; then
+		log_warn "Failed to refresh apt metadata for firewall packages."
+	fi
+
+	# Preseed to avoid interactive save prompts during package install.
+	if command -v debconf-set-selections >/dev/null 2>&1; then
+		echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections || true
+		echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections || true
+	fi
+
+	local fw_packages=()
+	dpkg -s iptables >/dev/null 2>&1 || fw_packages+=("iptables")
+	dpkg -s iptables-persistent >/dev/null 2>&1 || fw_packages+=("iptables-persistent")
+
+	if [ ${#fw_packages[@]} -gt 0 ]; then
+		log_step "Installing firewall dependencies: ${fw_packages[*]}"
+		if ! apt-get -qq install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" "${fw_packages[@]}" >>"$LOG_FILE" 2>&1; then
+			log_error "Failed to install required firewall packages: ${fw_packages[*]}"
+			return 1
+		fi
+	fi
+
+	if command -v netfilter-persistent >/dev/null 2>&1; then
+		systemctl enable netfilter-persistent >>"$LOG_FILE" 2>&1 || true
+	fi
+
+	log_success "iptables firewall tooling is ready."
+	return 0
 }
 
 # Function to setup QEMU emulation for running amd64 containers on unsupported ARM systems
@@ -5601,6 +5802,11 @@ if [ -f /etc/os-release ]; then
 		fi
 
 		apply_panel_port_to_compose "/var/www/featherpanel/docker-compose.yml"
+		if ! configure_host_service_ports; then
+			log_error "Failed to choose available host ports for backend/database/redis."
+			exit 1
+		fi
+		save_config
 
 		# Modify docker-compose.yml for dev images if dev mode is enabled
 		# (Only show confirmation if not already confirmed via GUI)
@@ -5972,6 +6178,12 @@ if [ -f /etc/os-release ]; then
 			draw_hr
 		fi
 
+		if ensure_iptables_persistence; then
+			manage_panel_firewall --auto || log_warn "Automatic firewall policy setup encountered an issue. You can retry via Panel Firewall Manager."
+		else
+			log_warn "Skipping automatic firewall policy setup because iptables dependencies could not be installed."
+		fi
+
 		touch /var/www/featherpanel/.installed
 
 		# Install global featherpanel command
@@ -6269,6 +6481,11 @@ if [ -f /etc/os-release ]; then
 		fi
 
 		apply_panel_port_to_compose "/var/www/featherpanel/docker-compose.yml"
+		if ! configure_host_service_ports; then
+			log_error "Failed to choose available host ports for backend/database/redis."
+			exit 1
+		fi
+		save_config
 
 		# Ask user if they want to create a backup before updating
 		ask_backup_before_update
@@ -6358,6 +6575,12 @@ if [ -f /etc/os-release ]; then
 			draw_hr
 			upload_logs_on_fail
 			exit 1
+		fi
+
+		if ensure_iptables_persistence; then
+			manage_panel_firewall --auto || log_warn "Automatic firewall policy refresh encountered an issue. You can rerun it via Panel Firewall Manager."
+		else
+			log_warn "Skipping automatic firewall policy refresh because iptables dependencies could not be installed."
 		fi
 
 		# Always ensure global featherpanel command is installed/updated

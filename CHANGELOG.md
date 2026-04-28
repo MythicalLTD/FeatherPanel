@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.6 STABLE
+
+### Fixed
+
+- Resolved persistent network connectivity issues affecting OVH and various other installation environments, ensuring stable operation across a wider range of hosting providers. by @nayskutzu
+
 ## v1.3.5 STABLE
 
 ### Fixed

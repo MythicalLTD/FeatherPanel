@@ -1,5 +1,7 @@
 services:
   mysql:
+    network_mode: host
+    command: ["mariadbd", "--port=${MARIADB_PORT:-3307}"]
     image: mariadb:latest
     container_name: featherpanel_mysql
     restart: unless-stopped
@@ -12,8 +14,6 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d
-    networks:
-      - featherpanel_network
     healthcheck:
       test:
         [
@@ -21,7 +21,9 @@ services:
           "mariadb-admin",
           "ping",
           "-h",
-          "localhost",
+          "127.0.0.1",
+          "-P",
+          "${MARIADB_PORT:-3307}",
           "-u",
           "root",
           "-pfeatherpanel_root",
@@ -33,17 +35,17 @@ services:
     image: redis:latest
     container_name: featherpanel_redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-featherpanel_redis}
+    network_mode: host
+    command: redis-server --appendonly yes --port ${REDIS_PORT:-6380} --requirepass ${REDIS_PASSWORD:-featherpanel_redis}
     volumes:
       - redis_data:/data
-    networks:
-      - featherpanel_network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-h", "127.0.0.1", "-p", "${REDIS_PORT:-6380}", "-a", "${REDIS_PASSWORD:-featherpanel_redis}", "ping"]
       timeout: 20s
       retries: 10
 
   backend:
+    network_mode: host
     #image: ghcr.io/mythicalltd/featherpanel-backend:dev
     build:
       context: ./backend
@@ -51,15 +53,17 @@ services:
     container_name: featherpanel_backend
     restart: unless-stopped
     environment:
-      - DATABASE_HOST=mysql
-      - DATABASE_PORT=3306
+      - DATABASE_HOST=127.0.0.1
+      - DATABASE_PORT=${MARIADB_PORT:-3307}
       - DATABASE_DATABASE=${MARIADB_DATABASE:-featherpanel}
       - DATABASE_USER=${MARIADB_USER:-featherpanel}
       - DATABASE_PASSWORD=${MARIADB_PASSWORD:-featherpanel_password}
       - DATABASE_ENCRYPTION=xchacha20
-      - REDIS_HOST=redis
+      - REDIS_HOST=127.0.0.1
+      - REDIS_PORT=${REDIS_PORT:-6380}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
       - TRUST_PROXY_HEADERS=true
+      - BACKEND_LISTEN_ADDR=${BACKEND_LISTEN_ADDR:-:8080}
     depends_on:
       mysql:
         condition: service_healthy
@@ -73,8 +77,6 @@ services:
       - featherpanel_attachments:/var/www/html/public/attachments
       - featherpanel_config:/var/www/html/storage/config
       - featherpanel_snapshots:/var/www/html/storage/backups
-    networks:
-      - featherpanel_network
 
   frontendv2:
     #image: ghcr.io/mythicalltd/featherpanel-frontendv2:dev
@@ -83,8 +85,11 @@ services:
       dockerfile: Dockerfile
     container_name: featherpanel_frontendv2
     restart: unless-stopped
+    network_mode: host
     environment:
-      - INTERNAL_API_URL=http://backend:80
+      - INTERNAL_API_URL=http://127.0.0.1:${BACKEND_HTTP_PORT:-8080}
+      - BACKEND_UPSTREAM=127.0.0.1:${BACKEND_HTTP_PORT:-8080}
+      - FRONTEND_LISTEN_ADDR=${FRONTEND_LISTEN_ADDR:-:4831}
     volumes: []
     depends_on:
       mysql:
@@ -102,16 +107,13 @@ services:
           "--quiet",
           "--tries=1",
           "--spider",
-          "http://localhost:80",
+          "http://127.0.0.1:${FRONTEND_HTTP_PORT:-4831}",
         ]
       timeout: 20s
       retries: 10
-    ports:
-      - "${FEATHERPANEL_PANEL_PORT:-4831}:80"
-    networks:
-      - featherpanel_network
 
   async-runner:
+    network_mode: host
     build:
       context: ./runner
       dockerfile: Dockerfile
@@ -123,12 +125,12 @@ services:
       - net.ipv6.conf.lo.disable_ipv6=1
     environment:
       - RUST_LOG=info
-      - DB_HOST=mysql
-      - DB_PORT=3306
+      - DB_HOST=127.0.0.1
+      - DB_PORT=${MARIADB_PORT:-3307}
       - DB_NAME=${MARIADB_DATABASE:-featherpanel}
       - DB_USER=${MARIADB_USER:-featherpanel}
       - DB_PASS=${MARIADB_PASSWORD:-featherpanel_password}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-featherpanel_redis}@redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-featherpanel_redis}@127.0.0.1:${REDIS_PORT:-6380}
     volumes:
       - featherpanel_config:/app/config:ro
     depends_on:
@@ -140,8 +142,6 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
-    networks:
-      - featherpanel_network
 
 volumes:
   mariadb_data:
@@ -155,6 +155,3 @@ volumes:
   featherpanel_snapshots:
     driver: local
 
-networks:
-  featherpanel_network:
-    driver: bridge
