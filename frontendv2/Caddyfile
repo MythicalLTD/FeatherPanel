@@ -10,7 +10,7 @@
 	}
 }
 
-{$FRONTEND_LISTEN_ADDR::4831} {
+:80 {
 	encode zstd gzip
 
 	request_body {
@@ -24,27 +24,27 @@
 
 	@api path /api*
 	handle @api {
-		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+		reverse_proxy backend:80
 	}
 
 	@pma path /pma*
 	handle @pma {
-		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+		reverse_proxy backend:80
 	}
 
 	@attachments path /attachments*
 	handle @attachments {
-		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+		reverse_proxy backend:80
 	}
 
 	@addons path /addons*
 	handle @addons {
-		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+		reverse_proxy backend:80
 	}
 
 	@components path /components*
 	handle @components {
-		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+		reverse_proxy backend:80
 	}
 
 	handle {

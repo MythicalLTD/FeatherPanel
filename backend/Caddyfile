@@ -1,7 +1,7 @@
 # FrankenPHP (Caddy + PHP) - FeatherPanel
 # Replaces nginx + php-fpm. PHP runs in-process via php_server.
 
-{$BACKEND_LISTEN_ADDR::8080} {
+:80 {
 	root * /var/www/html/public
 	encode zstd br gzip
 	header Server FeatherPanel

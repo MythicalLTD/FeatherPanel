@@ -34,21 +34,17 @@ pub fn load_config() -> Result<Config> {
 
     let redis_url = env::var("REDIS_URL")
         .or_else(|_| -> Result<String, env::VarError> {
-            // Try building from REDIS_HOST/REDIS_PORT and REDIS_PASSWORD
+            // Try building from REDIS_HOST and REDIS_PASSWORD
             let host = env::var("REDIS_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-            let port = env::var("REDIS_PORT").unwrap_or_else(|_| "6379".to_string());
             let password = env::var("REDIS_PASSWORD").ok();
             
             if let Some(pass) = password {
-                Ok(format!("redis://:{}@{}:{}", pass, host, port))
+                Ok(format!("redis://:{}@{}:6379", pass, host))
             } else {
-                Ok(format!("redis://{}:{}", host, port))
+                Ok(format!("redis://{}:6379", host))
             }
         })
-        .unwrap_or_else(|_| {
-            let port = env::var("REDIS_PORT").unwrap_or_else(|_| "6379".to_string());
-            format!("redis://127.0.0.1:{}", port)
-        });
+        .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
 
     let database_url = env::var("DATABASE_URL")
         .or_else(|_| build_database_url_from_env())
