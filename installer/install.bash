@@ -3445,7 +3445,7 @@ install_featherpanel_command() {
 	cat <<'EOF' | tee /usr/local/bin/featherpanel >/dev/null
 #!/bin/bash
 # FeatherPanel CLI wrapper
-# Executes commands in the FeatherPanel backend container
+# Executes commands for Docker or Source installs
 
 # Handle special "run-script" command
 if [ "$1" = "run-script" ]; then
@@ -3454,12 +3454,49 @@ if [ "$1" = "run-script" ]; then
     exit $?
 fi
 
+MODE_FILE="/var/www/featherpanel/.install_mode"
+PANEL_ROOT="/var/www/featherpanel"
+SOURCE_ENTRYPOINT="${PANEL_ROOT}/app"
 CONTAINER_NAME="featherpanel_backend"
 
+detect_mode() {
+    if [ -f "$MODE_FILE" ]; then
+        local mode
+        mode=$(tr -d '[:space:]' <"$MODE_FILE" | tr '[:upper:]' '[:lower:]')
+        if [ "$mode" = "docker" ] || [ "$mode" = "source" ]; then
+            echo "$mode"
+            return 0
+        fi
+    fi
+
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${CONTAINER_NAME}$"; then
+        echo "docker"
+        return 0
+    fi
+
+    if [ -x "$SOURCE_ENTRYPOINT" ]; then
+        echo "source"
+        return 0
+    fi
+
+    echo "unknown"
+}
+
+MODE="$(detect_mode)"
+
+if [ "$MODE" = "source" ]; then
+    if [ ! -x "$SOURCE_ENTRYPOINT" ]; then
+        echo "Error: Source entrypoint not found or not executable at ${SOURCE_ENTRYPOINT}." >&2
+        exit 1
+    fi
+    php "$SOURCE_ENTRYPOINT" "$@"
+    exit $?
+fi
+
 # Check if container exists and is running
-if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+if [ "$MODE" != "docker" ] || ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     echo "Error: FeatherPanel backend container '${CONTAINER_NAME}' is not running." >&2
-    echo "Please ensure FeatherPanel is installed and running." >&2
+    echo "Please ensure FeatherPanel is installed and running (docker or source mode)." >&2
     exit 1
 fi
 
