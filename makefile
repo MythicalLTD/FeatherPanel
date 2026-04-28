@@ -4,6 +4,7 @@
 # Directory configurations
 FRONTENDV2_DIR = frontendv2
 BACKEND_DIR = backend
+RUNNER_DIR = runner
 
 # Commands
 PNPM = pnpm
@@ -128,7 +129,7 @@ release:
 	@cd $(RUNNER_DIR) && $(CARGO) build --release
 	@echo -e "${GREEN}${CHECK} Runner built${NC}\n"
 
-	
+
 
 	@echo -e "${GREEN}${ROCKET} Release build successful!${NC}\n"
 

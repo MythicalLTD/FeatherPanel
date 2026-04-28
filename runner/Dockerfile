@@ -32,7 +32,17 @@ COPY src ./src
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/build/target \
-    cargo build --release && \
+    set -eux; \
+    cargo build --release --locked --bin async-runner; \
+    set +e; \
+    /build/target/release/async-runner >/tmp/runner-smoke.log 2>&1; \
+    code=$?; \
+    set -e; \
+    if [ "$code" -eq 0 ]; then \
+      echo "async-runner smoke check failed: binary exited with code 0" >&2; \
+      cat /tmp/runner-smoke.log >&2 || true; \
+      exit 1; \
+    fi; \
     cp /build/target/release/async-runner /build/async-runner
 
 # Runtime stage

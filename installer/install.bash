@@ -1037,6 +1037,131 @@ print_info_box() {
 	draw_hr
 }
 
+get_panel_install_mode() {
+	local mode_file="/var/www/featherpanel/.install_mode"
+	local mode=""
+
+	if [ -n "${FP_PANEL_MODE:-}" ]; then
+		mode=$(echo "$FP_PANEL_MODE" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+		if [ "$mode" = "docker" ] || [ "$mode" = "source" ]; then
+			echo "$mode"
+			return 0
+		fi
+	fi
+
+	if [ -f "$mode_file" ]; then
+		mode=$(tr -d '[:space:]' <"$mode_file" | tr '[:upper:]' '[:lower:]')
+		if [ "$mode" = "docker" ] || [ "$mode" = "source" ]; then
+			echo "$mode"
+			return 0
+		fi
+	fi
+
+	if [ -f /var/www/featherpanel/docker-compose.yml ]; then
+		echo "docker"
+		return 0
+	fi
+
+	if [ -f /var/www/featherpanel/.installed ] && command -v docker >/dev/null 2>&1; then
+		if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q "^featherpanel_"; then
+			echo "docker"
+			return 0
+		fi
+	fi
+
+	echo "unknown"
+}
+
+set_panel_install_mode() {
+	local mode="$1"
+	if [ "$mode" != "docker" ] && [ "$mode" != "source" ]; then
+		return 1
+	fi
+	mkdir -p /var/www/featherpanel
+	echo "$mode" >/var/www/featherpanel/.install_mode
+}
+
+show_source_mode_coming_soon() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "Source Mode Coming Soon" "$YELLOW"
+	draw_hr
+	echo ""
+	echo -e "  ${BLUE}Source mode for FeatherPanel is still being built.${NC}"
+	echo -e "  ${BLUE}When available, source mode will provide:${NC}"
+	echo -e "    ${CYAN}•${NC} Full panel source code on disk"
+	echo -e "    ${CYAN}•${NC} Native runtime on your machine"
+	echo -e "    ${CYAN}•${NC} Maximum control for developers"
+	echo ""
+	echo -e "  ${YELLOW}For now, use Docker mode (recommended for most users).${NC}"
+	echo -e "  ${YELLOW}Docker gives stronger isolation and lower host exposure.${NC}"
+	echo ""
+	draw_hr
+}
+
+prompt_panel_install_mode() {
+	local action_label="$1"
+	local default_mode
+	default_mode=$(get_panel_install_mode)
+
+	PANEL_INSTALL_MODE="$default_mode"
+	if [ -n "${FP_PANEL_MODE:-}" ]; then
+		PANEL_INSTALL_MODE=$(echo "$FP_PANEL_MODE" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+	fi
+
+	if [ "$PANEL_INSTALL_MODE" != "docker" ] && [ "$PANEL_INSTALL_MODE" != "source" ]; then
+		PANEL_INSTALL_MODE="unknown"
+	fi
+
+	# If mode is detected from disk/env, do not ask again.
+	if [ "$PANEL_INSTALL_MODE" = "unknown" ] && [ -z "${FP_PANEL_MODE:-}" ]; then
+		local mode_choice=""
+		while [[ ! "$mode_choice" =~ ^[12]$ ]]; do
+			if [ -t 1 ]; then clear; fi
+			print_banner
+			draw_hr
+			echo -e "${BOLD}${CYAN}Panel ${action_label} Mode${NC}"
+			draw_hr
+			echo -e "  ${GREEN}[1]${NC} ${BOLD}Docker Mode${NC} ${BLUE}(recommended for ~80% of installs)${NC}"
+			echo -e "     ${BLUE}→ Securely isolates FeatherPanel from the host${NC}"
+			echo -e "     ${BLUE}→ You receive official updates from the official repo${NC}"
+			echo -e "     ${BLUE}→ Better default protection if an exploit happens${NC}"
+			echo -e "     ${YELLOW}→ Does not provide full panel source code on disk${NC}"
+			echo ""
+			echo -e "  ${YELLOW}[2]${NC} ${BOLD}Source Mode${NC} ${YELLOW}(coming soon)${NC}"
+			echo -e "     ${BLUE}→ Full native runtime with a complete source code copy${NC}"
+			echo -e "     ${BLUE}→ 100% control of panel files and behavior${NC}"
+			echo -e "     ${YELLOW}→ More exposed than Docker; not recommended for non-developers${NC}"
+			echo -e "     ${YELLOW}→ Consider only if Docker cannot work on your VM (e.g. some LXC/NAT setups)${NC}"
+			draw_hr
+			prompt "${BOLD}Select mode${NC} ${BLUE}(1/2)${NC}: " mode_choice
+			if [[ ! "$mode_choice" =~ ^[12]$ ]]; then
+				echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC} or ${YELLOW}2${NC}."
+				sleep 1
+			fi
+		done
+		if [ "$mode_choice" = "1" ]; then
+			PANEL_INSTALL_MODE="docker"
+		else
+			PANEL_INSTALL_MODE="source"
+		fi
+	elif [ "$PANEL_INSTALL_MODE" = "unknown" ]; then
+		log_warn "Could not detect panel install mode. Defaulting to docker."
+		PANEL_INSTALL_MODE="docker"
+	fi
+}
+
+require_docker_panel_mode() {
+	local mode
+	mode=$(get_panel_install_mode)
+	if [ "$mode" != "docker" ]; then
+		log_error "$1 is available only for Docker installs."
+		return 1
+	fi
+	return 0
+}
+
 show_main_menu() {
 	if [ -t 1 ]; then clear; fi
 	print_banner
@@ -1063,32 +1188,55 @@ show_panel_menu() {
 	print_centered "Panel Operations" "$CYAN"
 	draw_hr
 	echo ""
+	local current_mode="${PANEL_INSTALL_MODE:-$(get_panel_install_mode)}"
+	if [ "$current_mode" = "source" ]; then
+		echo -e "  ${YELLOW}${BOLD}Current Panel Mode:${NC} ${YELLOW}Source${NC} ${YELLOW}(coming soon)${NC}"
+		echo -e "  ${BLUE}Tip:${NC} Source mode is not available yet in this installer."
+	else
+		echo -e "  ${GREEN}${BOLD}Current Panel Mode:${NC} ${GREEN}Docker${NC} ${BLUE}(recommended for most users)${NC}"
+	fi
+	echo ""
 	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install Panel${NC}"
-	echo -e "     ${BLUE}→ Install FeatherPanel web interface using Docker${NC}"
+	if [ "$current_mode" = "source" ]; then
+		echo -e "     ${YELLOW}→ Source install mode is coming soon${NC}"
+	else
+		echo -e "     ${BLUE}→ Install FeatherPanel web interface using Docker${NC}"
+	fi
 	echo -e "     ${BLUE}→ Choose access method (Cloudflare Tunnel, Nginx, Apache, Direct)${NC}"
 	echo -e "     ${BLUE}→ Choose release type (Stable Release or Development Build)${NC}"
 	echo ""
 	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall Panel${NC}"
-	echo -e "     ${YELLOW}⚠️  WARNING: This will remove all Panel data and containers${NC}"
-	echo -e "     ${BLUE}→ Stops and removes Docker containers${NC}"
-	echo -e "     ${BLUE}→ Removes installation files and configuration${NC}"
+	if [ "$current_mode" = "source" ]; then
+		echo -e "     ${YELLOW}→ Source uninstall flow is coming soon${NC}"
+	else
+		echo -e "     ${YELLOW}⚠️  WARNING: This will remove all Panel data and containers${NC}"
+		echo -e "     ${BLUE}→ Stops and removes Docker containers${NC}"
+		echo -e "     ${BLUE}→ Removes installation files and configuration${NC}"
+	fi
 	echo ""
 	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update Panel${NC}"
-	echo -e "     ${BLUE}→ Pull latest Docker images${NC}"
-	echo -e "     ${BLUE}→ Restart containers with new version${NC}"
-	echo -e "     ${BLUE}→ Switch between release and dev builds${NC}"
+	if [ "$current_mode" = "source" ]; then
+		echo -e "     ${YELLOW}→ Source update mode is coming soon${NC}"
+	else
+		echo -e "     ${BLUE}→ Pull latest Docker images${NC}"
+		echo -e "     ${BLUE}→ Restart containers with new version${NC}"
+		echo -e "     ${BLUE}→ Switch between release and dev builds${NC}"
+	fi
 	echo ""
 	echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Backup Manager${NC}"
 	echo -e "     ${BLUE}→ Create, list, restore, and manage backups${NC}"
 	echo -e "     ${BLUE}→ Backup database, volumes, and configuration${NC}"
 	echo -e "     ${BLUE}→ Export/Import for migrating to another server${NC}"
+	echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
 	echo ""
 	echo -e "  ${MAGENTA}${BOLD}[5]${NC} ${BOLD}Panel Info${NC}"
 	echo -e "     ${BLUE}→ Live CPU, RAM, load, uptime, container health, and storage usage${NC}"
+	echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
 	echo ""
 	echo -e "  ${GREEN}${BOLD}[6]${NC} ${BOLD}Firewall Manager${NC}"
 	echo -e "     ${BLUE}→ Detect ufw/iptables and allow required Panel ports automatically${NC}"
 	echo -e "     ${BLUE}→ Smart port detection based on Panel config and reverse proxy${NC}"
+	echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
 	echo ""
 	draw_hr
 }
@@ -5064,6 +5212,10 @@ if [ -f /etc/os-release ]; then
 	# Show appropriate menu based on component selection
 	if [ "$COMPONENT_TYPE" = "1" ]; then
 		# Panel operations
+		prompt_panel_install_mode "Operation Selection"
+		if [ "$PANEL_INSTALL_MODE" = "source" ]; then
+			show_source_mode_coming_soon
+		fi
 		while [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; do
 			show_panel_menu
 			echo ""
@@ -5252,6 +5404,12 @@ if [ -f /etc/os-release ]; then
 	# Handle operations based on component and action
 	if [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "1" ]; then
 		# Panel Install
+		if [ "${PANEL_INSTALL_MODE:-$(get_panel_install_mode)}" = "source" ]; then
+			show_source_mode_coming_soon
+			exit 0
+		fi
+		set_panel_install_mode "$PANEL_INSTALL_MODE" || true
+
 		# Check if FeatherPanel is already installed (unless skip flag is set)
 		if [ "$SKIP_INSTALL_CHECK" = false ]; then
 			INSTALLED=false
@@ -6089,6 +6247,10 @@ if [ -f /etc/os-release ]; then
 		log_info "Installation log saved at: $LOG_FILE"
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "2" ]; then
 		# Panel Uninstall
+		if [ "${PANEL_INSTALL_MODE:-$(get_panel_install_mode)}" = "source" ]; then
+			show_source_mode_coming_soon
+			exit 0
+		fi
 		if ! is_featherpanel_installed; then
 			echo "FeatherPanel does not appear to be installed. Nothing to uninstall."
 			exit 0
@@ -6102,10 +6264,18 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "3" ]; then
 		# Panel Update
+		if [ "${PANEL_INSTALL_MODE:-$(get_panel_install_mode)}" = "source" ]; then
+			show_source_mode_coming_soon
+			exit 0
+		fi
+
 		if ! is_featherpanel_installed; then
 			echo "FeatherPanel does not appear to be installed. Nothing to update."
 			exit 0
 		fi
+
+		# Current updater is Docker-based; keep legacy installs auto-marked as docker.
+		set_panel_install_mode "docker" || true
 
 		# Check current installation type BEFORE doing anything
 		CURRENT_IS_DEV=false
@@ -6370,6 +6540,10 @@ if [ -f /etc/os-release ]; then
 		exit 0
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "4" ]; then
 		# Panel Backup Manager
+		if ! require_docker_panel_mode "Backup Manager"; then
+			exit 1
+		fi
+
 		if ! is_featherpanel_installed; then
 			log_error "FeatherPanel is not installed. Nothing to backup."
 			exit 1
@@ -6443,10 +6617,16 @@ if [ -f /etc/os-release ]; then
 		esac
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "5" ]; then
 		# Panel Info
+		if ! require_docker_panel_mode "Panel Info"; then
+			exit 1
+		fi
 		show_panel_info
 		log_success "Panel info displayed."
 	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "6" ]; then
 		# Panel Firewall Manager
+		if ! require_docker_panel_mode "Firewall Manager"; then
+			exit 1
+		fi
 		if manage_panel_firewall; then
 			log_success "Panel firewall manager completed."
 		else
