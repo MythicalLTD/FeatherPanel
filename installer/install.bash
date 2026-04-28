@@ -5586,6 +5586,7 @@ if [ -f /etc/os-release ]; then
 				support_hint
 				exit 1
 			fi
+			set_panel_install_mode "source" || true
 			log_success "FeatherPanel source installation completed successfully."
 			log_info "Installation log saved at: $LOG_FILE"
 			support_hint
@@ -6466,6 +6467,7 @@ if [ -f /etc/os-release ]; then
 				support_hint
 				exit 1
 			fi
+			set_panel_install_mode "source" || true
 			log_success "FeatherPanel source update completed successfully."
 			log_info "Installation log saved at: $LOG_FILE"
 			exit 0
