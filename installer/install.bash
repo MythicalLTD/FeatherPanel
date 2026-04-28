@@ -24,6 +24,7 @@ USE_DEV=false
 DEV_BRANCH=""
 DEV_SHA=""
 SHOW_CONFIG_MENU=false
+SCRIPT_VERSION="2.1.6-dev"
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -950,7 +951,7 @@ print_banner() {
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 
-	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}2.1.5${NC}"
+	echo -e "${CYAN}${BOLD}Script Version: ${BLUE}${SCRIPT_VERSION}${NC}"
 
 	echo -e "${CYAN}${BOLD}┌────────────────────────────────────────────────────────────┐${NC}"
 	echo -e "${CYAN}${BOLD}${NC}  🌐 Website:  ${BLUE}www.mythical.systems${NC}           ${CYAN}${BOLD}${NC}"
