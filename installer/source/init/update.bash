@@ -12,6 +12,20 @@ RUNNER_DIR="${RUNNER_DIR:-${PANEL_DIR}/runner}"
 NEXT_SERVICE_NAME="${NEXT_SERVICE_NAME:-featherpanel-next}"
 RUNNER_SERVICE_NAME="${RUNNER_SERVICE_NAME:-featherpanel-async-runner}"
 
+step() {
+    echo ""
+    echo "======================================================================"
+    echo " [SOURCE][UPDATE] $1"
+    echo "======================================================================"
+}
+
+banner() {
+    echo ""
+    echo "######################################################################"
+    echo "#                   FEATHERPANEL SOURCE PANEL UPDATE                 #"
+    echo "######################################################################"
+}
+
 require_root() {
     if [ "${EUID:-$(id -u)}" -ne 0 ]; then
         echo "This script must be run as root." >&2
@@ -22,6 +36,11 @@ require_root() {
 run_as_www_data() {
     local cmd="$1"
     bash -lc "$cmd"
+}
+
+run_frontend_with_nvm() {
+    local cmd="$1"
+    run_as_www_data "export NVM_DIR=\"/root/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && ${cmd}"
 }
 
 update_repo() {
@@ -40,16 +59,19 @@ update_repo() {
 }
 
 update_backend() {
+    step "Installing backend dependencies and running migrations..."
     COMPOSER_ALLOW_SUPERUSER=1 composer install --working-dir="$BACKEND_DIR" --no-interaction --prefer-dist
     run_as_www_data "cd '${PANEL_DIR}' && php app migrate"
 }
 
 update_frontend() {
-    run_as_www_data "cd '${FRONTEND_DIR}' && pnpm install --frozen-lockfile=false"
-    run_as_www_data "cd '${FRONTEND_DIR}' && pnpm build"
+    step "Installing frontend dependencies and building frontend..."
+    run_frontend_with_nvm "cd '${FRONTEND_DIR}' && pnpm install --frozen-lockfile=false"
+    run_frontend_with_nvm "cd '${FRONTEND_DIR}' && pnpm build"
 }
 
 update_runner() {
+    step "Building async runner..."
     if command -v cargo >/dev/null 2>&1; then
         (cd "$RUNNER_DIR" && cargo build --release)
     elif [ -x "/root/.cargo/bin/cargo" ]; then
@@ -60,6 +82,7 @@ update_runner() {
 }
 
 restart_services() {
+    step "Restarting services (runner, frontend, nginx)..."
     systemctl restart "$RUNNER_SERVICE_NAME" || true
     systemctl restart "$NEXT_SERVICE_NAME" || true
     nginx -t && systemctl restart nginx
@@ -67,12 +90,15 @@ restart_services() {
 
 main() {
     require_root
+    banner
+    step "Updating source repository..."
     update_repo
     chown -R root:root "$PANEL_DIR"
     update_backend
     update_frontend
     update_runner
     restart_services
+    step "Source update completed."
 }
 
 main "$@"

@@ -9,6 +9,20 @@ NODE_MAJOR="${NODE_MAJOR:-lts/*}"
 TARGET_USER="${TARGET_USER:-root}"
 TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 
+step() {
+    echo ""
+    echo "======================================================================"
+    echo " [SOURCE][UNIVERSAL] $1"
+    echo "======================================================================"
+}
+
+banner() {
+    echo ""
+    echo "######################################################################"
+    echo "#                 FEATHERPANEL SOURCE UNIVERSAL SETUP                #"
+    echo "######################################################################"
+}
+
 require_root() {
     if [ "${EUID:-$(id -u)}" -ne 0 ]; then
         echo "This script must be run as root." >&2
@@ -62,16 +76,21 @@ install_rust_if_missing() {
 
 main() {
     require_root
+    banner
 
     if [ -z "${TARGET_HOME}" ]; then
         echo "Unable to determine home directory for user: ${TARGET_USER}" >&2
         exit 1
     fi
 
-    install_if_missing curl ca-certificates git build-essential pkg-config
+    step "Installing universal prerequisites (curl, git, build tools, OpenSSL headers)..."
+    install_if_missing curl ca-certificates git build-essential pkg-config libssl-dev
+    step "Installing/updating Node.js toolchain..."
     install_nvm_if_missing
     configure_node_toolchain
+    step "Installing Rust toolchain (if missing)..."
     install_rust_if_missing
+    step "Universal setup completed."
 }
 
 main "$@"

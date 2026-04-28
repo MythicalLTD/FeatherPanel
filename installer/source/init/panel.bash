@@ -39,6 +39,20 @@ RUNNER_DIR="${RUNNER_DIR:-${PANEL_DIR}/runner}"
 RUNNER_SERVICE_NAME="featherpanel-async-runner"
 RUNNER_SERVICE_FILE="/etc/systemd/system/${RUNNER_SERVICE_NAME}.service"
 
+step() {
+    echo ""
+    echo "======================================================================"
+    echo " [SOURCE][PANEL] $1"
+    echo "======================================================================"
+}
+
+banner() {
+    echo ""
+    echo "######################################################################"
+    echo "#                  FEATHERPANEL SOURCE PANEL INSTALL                 #"
+    echo "######################################################################"
+}
+
 require_root() {
     if [ "${EUID:-$(id -u)}" -ne 0 ]; then
         echo "This script must be run as root." >&2
@@ -220,6 +234,7 @@ SQL
 }
 
 configure_cron() {
+    step "Configuring cron jobs to run as www-data..."
     cat >"$CRON_FILE" <<EOF
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -683,18 +698,31 @@ configure_nginx() {
 
 main() {
     require_root
+    banner
+    step "Syncing panel repository..."
     sync_repo
+    step "Installing backend dependencies..."
     install_backend_deps
+    step "Installing frontend dependencies..."
     install_frontend_deps
+    step "Configuring database user and schema..."
     configure_database
+    step "Writing application environment configuration..."
     setup_application_database_connection
+    step "Running database migrations..."
     run_database_migrations
+    step "Building async runner..."
     build_runner_binary
+    step "Installing async runner service..."
     setup_runner_service
+    step "Configuring Nginx / Cloudflare tunnel integration..."
     configure_nginx
     configure_cron
+    step "Building/watching frontend..."
     build_or_watch_frontend
+    step "Installing frontend service..."
     setup_next_service
+    step "Panel source installation completed."
 }
 
 main "$@"
