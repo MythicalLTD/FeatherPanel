@@ -52,6 +52,7 @@ remove_data_if_requested() {
     if [ "$REMOVE_DATA" = "true" ]; then
         rm -rf "$PANEL_DIR"
     fi
+    rm -f "${PANEL_DIR}/.install_mode" "${PANEL_DIR}/.installed" 2>/dev/null || true
 }
 
 main() {

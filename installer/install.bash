@@ -5624,6 +5624,7 @@ if [ -f /etc/os-release ]; then
 				exit 1
 			fi
 			set_panel_install_mode "source" || true
+			install_featherpanel_command
 			log_success "FeatherPanel source installation completed successfully."
 			log_info "Installation log saved at: $LOG_FILE"
 			support_hint
@@ -6471,6 +6472,13 @@ if [ -f /etc/os-release ]; then
 		if [ "${PANEL_INSTALL_MODE:-$(get_panel_install_mode)}" = "source" ]; then
 			prompt "Are you sure you want to uninstall the source-based installation? (y/n): " confirm
 			if [ "$confirm" = "y" ]; then
+				remove_source_data="n"
+				prompt "Delete source files at /var/www/featherpanel too? (y/n): " remove_source_data
+				if [[ "$remove_source_data" =~ ^[yY]$ ]]; then
+					export REMOVE_DATA=true
+				else
+					export REMOVE_DATA=false
+				fi
 				if ! run_source_subscript_from_github "remove"; then
 					log_error "Source uninstall failed."
 					upload_logs_on_fail || true
@@ -6505,6 +6513,7 @@ if [ -f /etc/os-release ]; then
 				exit 1
 			fi
 			set_panel_install_mode "source" || true
+			install_featherpanel_command
 			log_success "FeatherPanel source update completed successfully."
 			log_info "Installation log saved at: $LOG_FILE"
 			exit 0
