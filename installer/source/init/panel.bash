@@ -375,6 +375,49 @@ resolve_cargo_bin() {
     exit 1
 }
 
+ensure_rust_toolchain_healthy() {
+    local cargo_bin="$1"
+    local rustup_bin=""
+    local rustc_bin=""
+
+    rustup_bin="$(dirname "$cargo_bin")/rustup"
+    rustc_bin="$(dirname "$cargo_bin")/rustc"
+
+    if [ ! -x "$rustc_bin" ]; then
+        rustc_bin="$(command -v rustc 2>/dev/null || true)"
+    fi
+
+    if [ -n "$rustc_bin" ] && "$rustc_bin" -vV >/dev/null 2>&1; then
+        return 0
+    fi
+
+    step "Rust toolchain looks corrupted. Attempting automatic repair..."
+    if [ ! -x "$rustup_bin" ]; then
+        rustup_bin="$(command -v rustup 2>/dev/null || true)"
+    fi
+
+    if [ -z "$rustup_bin" ]; then
+        echo "rustup not found, cannot auto-repair Rust toolchain." >&2
+        exit 1
+    fi
+
+    "$rustup_bin" toolchain uninstall stable >/dev/null 2>&1 || true
+    "$rustup_bin" toolchain install stable
+    "$rustup_bin" default stable
+
+    if [ -n "$rustc_bin" ] && "$rustc_bin" -vV >/dev/null 2>&1; then
+        return 0
+    fi
+
+    rustc_bin="$(dirname "$cargo_bin")/rustc"
+    if "$rustc_bin" -vV >/dev/null 2>&1; then
+        return 0
+    fi
+
+    echo "Rust toolchain repair failed. Please check disk/filesystem health and retry." >&2
+    exit 1
+}
+
 build_runner_binary() {
     local cargo_bin=""
     if [ ! -f "${RUNNER_DIR}/Cargo.toml" ]; then
@@ -383,6 +426,7 @@ build_runner_binary() {
     fi
 
     cargo_bin="$(resolve_cargo_bin)"
+    ensure_rust_toolchain_healthy "$cargo_bin"
     (cd "$RUNNER_DIR" && "$cargo_bin" build --release)
 
     if [ ! -x "${RUNNER_DIR}/target/release/async-runner" ]; then
