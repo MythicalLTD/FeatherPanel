@@ -28,6 +28,10 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # Copy source
 COPY src ./src
 
+# Ensure copied sources are newer than the warm-up dummy file.
+# Cargo can rely on mtimes for local crate rebuild decisions.
+RUN find src -type f -exec touch {} +
+
 # Build release binary
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
