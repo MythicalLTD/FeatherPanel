@@ -108,6 +108,9 @@ BACKUP_DIR="/var/www/featherpanel/backups"
 CONFIG_FILE="/var/www/featherpanel/.featherpanel.conf"
 COMPOSE_FILE_PATH="$LOG_DIR/docker-compose.yml"
 
+mkdir -p "$LOG_DIR"
+touch "$LOG_FILE" 2>/dev/null || true
+
 # Colors (use real ANSI escapes)
 NC=$'\033[0m'
 RED=$'\033[0;31m'
@@ -1171,6 +1174,64 @@ run_source_subscript_from_github() {
 	return 0
 }
 
+run_source_prereq_script_from_github() {
+	local script_name="$1"
+	local branch
+	local script_url
+	local tmp_script
+
+	branch="$(get_source_scripts_branch)"
+	script_url="https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/${branch}/installer/source/${script_name}.bash"
+	tmp_script="/tmp/featherpanel-source-${script_name}.bash"
+
+	log_info "Fetching source prereq script from GitHub (${branch}): ${script_name}.bash"
+	if ! curl -fsSL "$script_url" -o "$tmp_script"; then
+		log_error "Failed to download source prereq script: $script_url"
+		return 1
+	fi
+	chmod +x "$tmp_script"
+	if ! "$tmp_script"; then
+		log_error "Source prereq script failed: ${script_name}.bash"
+		rm -f "$tmp_script"
+		return 1
+	fi
+	rm -f "$tmp_script"
+	return 0
+}
+
+run_source_prereqs_from_github() {
+	local os_id=""
+
+	if [ -f /etc/os-release ]; then
+		# shellcheck source=/dev/null
+		. /etc/os-release
+		os_id="${ID:-}"
+	fi
+
+	case "$os_id" in
+	debian)
+		if ! run_source_prereq_script_from_github "debian"; then
+			return 1
+		fi
+		;;
+	ubuntu | ubuntu-server)
+		if ! run_source_prereq_script_from_github "ubuntu"; then
+			return 1
+		fi
+		;;
+	*)
+		log_error "Unsupported source install OS for prereq scripts: ${os_id:-unknown}"
+		return 1
+		;;
+	esac
+
+	if ! run_source_prereq_script_from_github "universal"; then
+		return 1
+	fi
+
+	return 0
+}
+
 prompt_panel_install_mode() {
 	local action_label="$1"
 	local default_mode
@@ -1200,7 +1261,7 @@ prompt_panel_install_mode() {
 			echo -e "     ${BLUE}→ Better default protection if an exploit happens${NC}"
 			echo -e "     ${YELLOW}→ Does not provide full panel source code on disk${NC}"
 			echo ""
-			echo -e "  ${YELLOW}[2]${NC} ${BOLD}Source Mode${NC} ${YELLOW}(coming soon)${NC}"
+			echo -e "  ${YELLOW}[2]${NC} ${BOLD}Source Mode${NC}"
 			echo -e "     ${BLUE}→ Full native runtime with a complete source code copy${NC}"
 			echo -e "     ${BLUE}→ 100% control of panel files and behavior${NC}"
 			echo -e "     ${YELLOW}→ More exposed than Docker; not recommended for non-developers${NC}"
@@ -1298,16 +1359,22 @@ show_panel_menu() {
 	echo -e "     ${BLUE}→ Create, list, restore, and manage backups${NC}"
 	echo -e "     ${BLUE}→ Backup database, volumes, and configuration${NC}"
 	echo -e "     ${BLUE}→ Export/Import for migrating to another server${NC}"
-	echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
+	if [ "$current_mode" = "docker" ]; then
+		echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
+	fi
 	echo ""
 	echo -e "  ${MAGENTA}${BOLD}[5]${NC} ${BOLD}Panel Info${NC}"
 	echo -e "     ${BLUE}→ Live CPU, RAM, load, uptime, container health, and storage usage${NC}"
-	echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
+	if [ "$current_mode" = "docker" ]; then
+		echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
+	fi
 	echo ""
 	echo -e "  ${GREEN}${BOLD}[6]${NC} ${BOLD}Firewall Manager${NC}"
 	echo -e "     ${BLUE}→ Detect ufw/iptables and allow required Panel ports automatically${NC}"
 	echo -e "     ${BLUE}→ Smart port detection based on Panel config and reverse proxy${NC}"
-	echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
+	if [ "$current_mode" = "docker" ]; then
+		echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
+	fi
 	echo ""
 	draw_hr
 }
@@ -5475,6 +5542,10 @@ if [ -f /etc/os-release ]; then
 		if [ "${PANEL_INSTALL_MODE:-$(get_panel_install_mode)}" = "source" ]; then
 			set_panel_install_mode "source" || true
 			select_source_release_mode
+			if ! run_source_prereqs_from_github; then
+				log_error "Source prerequisites failed."
+				exit 1
+			fi
 			if ! run_source_subscript_from_github "panel"; then
 				log_error "Source install failed."
 				exit 1
