@@ -97,6 +97,48 @@ prompt_yes_no_default_no() {
     fi
 }
 
+detect_public_ipv4() {
+    { curl -4 -s --max-time 10 ifconfig.me 2>/dev/null || curl -4 -s --max-time 10 ipinfo.io/ip 2>/dev/null; } | tr -d '[:space:]' | head -n1
+}
+
+detect_public_ipv6() {
+    { curl -6 -s --max-time 10 ifconfig.co 2>/dev/null || true; } | tr -d '[:space:]' | head -n1
+}
+
+show_dns_setup_instructions() {
+    local domain="$1"
+    local ipv4=""
+    local ipv6=""
+    ipv4="$(detect_public_ipv4)"
+    ipv6="$(detect_public_ipv6)"
+
+    echo ""
+    echo "---------------------------------------------------------------------"
+    echo " DNS SETUP REQUIRED FOR SSL"
+    echo "---------------------------------------------------------------------"
+    echo "Create DNS records for: ${domain}"
+    if [ -n "$ipv4" ]; then
+        echo "  - A record:    ${domain} -> ${ipv4}"
+    fi
+    if [ -n "$ipv6" ]; then
+        echo "  - AAAA record: ${domain} -> ${ipv6}"
+    fi
+    if [ -z "$ipv4" ] && [ -z "$ipv6" ]; then
+        echo "  - Could not detect server public IP automatically."
+        echo "  - Create A/AAAA records manually for this server."
+    fi
+    echo "Wait for DNS propagation before continuing (can take 5-60 min)."
+    echo "---------------------------------------------------------------------"
+}
+
+domain_has_dns_record() {
+    local domain="$1"
+    if getent ahosts "$domain" >/dev/null 2>&1; then
+        return 0
+    fi
+    return 1
+}
+
 upsert_env_var() {
     local file="$1"
     local key="$2"
@@ -670,6 +712,14 @@ configure_cloudflare_tunnel() {
     cloudflared service install "$CF_TUNNEL_TOKEN"
     systemctl enable cloudflared >/dev/null 2>&1 || true
     systemctl restart cloudflared
+    echo ""
+    echo "---------------------------------------------------------------------"
+    echo " CLOUDFLARE TUNNEL NEXT STEP"
+    echo "---------------------------------------------------------------------"
+    echo "In Cloudflare Zero Trust, configure a Public Hostname for your panel."
+    echo "Recommended service target: http://127.0.0.1:${CF_TUNNEL_LOCAL_PORT}"
+    echo "Your DNS record must point to the tunnel hostname (CNAME)."
+    echo "---------------------------------------------------------------------"
 }
 
 configure_nginx() {
@@ -706,9 +756,32 @@ configure_nginx() {
 
         if [ "$ENABLE_SSL" = "y" ] || [ "$ENABLE_SSL" = "Y" ] || [ "$ENABLE_SSL" = "yes" ] || [ "$ENABLE_SSL" = "YES" ]; then
             install_ssl_tools
-            obtain_ssl_certificate
-            write_nginx_config_ssl "$php_fpm_socket"
-            enable_and_reload_nginx
+            show_dns_setup_instructions "$PANEL_DOMAIN"
+            if [ -t 0 ] || [ -r /dev/tty ]; then
+                read -r -p "Press Enter after DNS records are created and propagated..." _ </dev/tty
+            fi
+
+            if ! domain_has_dns_record "$PANEL_DOMAIN"; then
+                echo "DNS for ${PANEL_DOMAIN} is not resolving yet."
+                if [ "$(prompt_yes_no_default_no "Continue without SSL for now? (y/n): ")" = "true" ]; then
+                    echo "Continuing without SSL. You can add SSL later from installer SSL menu."
+                    return 0
+                fi
+                echo "Aborting to allow DNS setup. Re-run install when DNS is ready."
+                exit 1
+            fi
+
+            if obtain_ssl_certificate; then
+                write_nginx_config_ssl "$php_fpm_socket"
+                enable_and_reload_nginx
+            else
+                echo "Certificate issuance failed."
+                if [ "$(prompt_yes_no_default_no "Continue without SSL for now? (y/n): ")" = "true" ]; then
+                    echo "Continuing without SSL. You can add SSL later from installer SSL menu."
+                else
+                    exit 1
+                fi
+            fi
         fi
     fi
 }
