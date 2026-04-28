@@ -34,24 +34,24 @@ define('APP_DEBUG', false);
 define('SYSTEM_OS_NAME', gethostname() . '/' . PHP_OS_FAMILY);
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
-define('APP_VERSION', 'v1.3.6');
+define('APP_VERSION', 'v1.3.6.1');
 define('APP_UPSTREAM', 'stable');
 define('REQUEST_ID', uniqid());
 
 if (APP_DEBUG) {
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
-    ini_set('display_startup_errors', 1);
+	error_reporting(E_ALL);
+	ini_set('display_errors', 1);
+	ini_set('display_startup_errors', 1);
 } else {
-    error_reporting(0);
-    ini_set('display_errors', 0);
-    ini_set('display_startup_errors', 0);
+	error_reporting(0);
+	ini_set('display_errors', 0);
+	ini_set('display_startup_errors', 0);
 }
 
 if (APP_DEBUG) {
-    define('RATE_LIMIT', 500000);
+	define('RATE_LIMIT', 500000);
 } else {
-    define('RATE_LIMIT', 150);
+	define('RATE_LIMIT', 150);
 }
 
 /**
@@ -63,8 +63,8 @@ require_once APP_DIR . '/boot/kernel.php';
  * Start the APP. with kernel!
  */
 try {
-    new App(false);
+	new App(false);
 } catch (Exception $e) {
-    echo $e->getMessage();
-    exit;
+	echo $e->getMessage();
+	exit;
 }

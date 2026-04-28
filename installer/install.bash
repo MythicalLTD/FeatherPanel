@@ -423,6 +423,96 @@ apply_panel_port_to_compose() {
 	log_info "Applied panel port mapping: ${panel_port}:80 (effective env: FEATHERPANEL_PANEL_PORT=${FEATHERPANEL_PANEL_PORT})"
 }
 
+ensure_panel_caddyfiles() {
+	local backend_caddy="/var/www/featherpanel/backend/Caddyfile"
+	local frontend_caddy="/var/www/featherpanel/frontendv2/Caddyfile"
+
+	mkdir -p "/var/www/featherpanel/backend" "/var/www/featherpanel/frontendv2"
+
+	# Ensure backend bind-mount target exists for image-based deployments.
+	cat >"$backend_caddy" <<'EOF'
+# FrankenPHP (Caddy + PHP) - FeatherPanel
+{$BACKEND_LISTEN_ADDR::8080} {
+	root * /var/www/html/public
+	encode zstd br gzip
+	header Server FeatherPanel
+
+	request_body {
+		max_size 250MB
+	}
+
+	@block_php path_regexp ^/(attachments|uploads|storage)/.*\.php$
+	handle @block_php {
+		respond 403
+	}
+
+	@dot_ht path_regexp /\.ht
+	handle @dot_ht {
+		respond 403
+	}
+
+	php_server {
+		try_files {path} index.php
+	}
+}
+EOF
+
+	# Ensure frontend bind-mount target exists for image-based deployments.
+	cat >"$frontend_caddy" <<'EOF'
+{
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+{$FRONTEND_LISTEN_ADDR::4831} {
+	encode zstd gzip
+
+	request_body {
+		max_size 250MB
+	}
+
+	header X-Frame-Options "SAMEORIGIN"
+	header X-Content-Type-Options "nosniff"
+	header X-XSS-Protection "1; mode=block"
+	header Referrer-Policy "strict-origin-when-cross-origin"
+
+	@api path /api*
+	handle @api {
+		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+	}
+
+	@pma path /pma*
+	handle @pma {
+		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+	}
+
+	@attachments path /attachments*
+	handle @attachments {
+		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+	}
+
+	@addons path /addons*
+	handle @addons {
+		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+	}
+
+	@components path /components*
+	handle @components {
+		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000 {
+			transport http {
+				read_timeout 86400s
+			}
+		}
+	}
+}
+EOF
+}
+
 is_port_available() {
 	local port="$1"
 	if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
@@ -5802,6 +5892,7 @@ if [ -f /etc/os-release ]; then
 		fi
 
 		apply_panel_port_to_compose "/var/www/featherpanel/docker-compose.yml"
+		ensure_panel_caddyfiles
 		if ! configure_host_service_ports; then
 			log_error "Failed to choose available host ports for backend/database/redis."
 			exit 1
@@ -6481,6 +6572,7 @@ if [ -f /etc/os-release ]; then
 		fi
 
 		apply_panel_port_to_compose "/var/www/featherpanel/docker-compose.yml"
+		ensure_panel_caddyfiles
 		if ! configure_host_service_ports; then
 			log_error "Failed to choose available host ports for backend/database/redis."
 			exit 1
