@@ -24,7 +24,7 @@ USE_DEV=false
 DEV_BRANCH=""
 DEV_SHA=""
 SHOW_CONFIG_MENU=false
-SCRIPT_VERSION="2.1.6-dev"
+SCRIPT_VERSION="2.1.7-dev"
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -1129,6 +1129,22 @@ select_source_release_mode() {
 	fi
 }
 
+show_source_mode_support_warning() {
+	draw_hr
+	echo -e "${YELLOW}${BOLD}⚠️  Source Mode Notice${NC}"
+	draw_hr
+	echo -e "${YELLOW}Support is not guaranteed for source-mode installs.${NC}"
+	echo -e "${YELLOW}Because source files can be modified, behavior and features may differ from official support expectations.${NC}"
+	echo ""
+	echo -e "${RED}${BOLD}NOT SUPPORTED in source mode:${NC}"
+	echo -e "  ${RED}•${NC} Panel backups via installer"
+	echo -e "  ${RED}•${NC} Panel migration export/import to another VPS"
+	echo -e "  ${RED}•${NC} Panel backup restore via installer"
+	echo ""
+	echo -e "${YELLOW}${BOLD}Proceed with care.${NC}"
+	draw_hr
+}
+
 set_source_target_ref_env() {
 	local latest_tag=""
 	if [ "${USE_DEV:-false}" = "true" ]; then
@@ -1166,12 +1182,14 @@ run_source_subscript_from_github() {
 		rm -f "$tmp_script"
 		return 1
 	fi
-	if ! "$tmp_script"; then
+	log_info "Running source script: ${subscript}.bash (target: ${PANEL_GIT_REF_TYPE}=${PANEL_GIT_REF})"
+	if ! "$tmp_script" 2>&1 | tee -a "$LOG_FILE"; then
 		log_error "Source ${subscript} script failed."
 		rm -f "$tmp_script"
 		return 1
 	fi
 	rm -f "$tmp_script"
+	log_success "Source ${subscript} script completed."
 	return 0
 }
 
@@ -1191,12 +1209,14 @@ run_source_prereq_script_from_github() {
 		return 1
 	fi
 	chmod +x "$tmp_script"
-	if ! "$tmp_script"; then
+	log_info "Running source prereq script: ${script_name}.bash"
+	if ! "$tmp_script" 2>&1 | tee -a "$LOG_FILE"; then
 		log_error "Source prereq script failed: ${script_name}.bash"
 		rm -f "$tmp_script"
 		return 1
 	fi
 	rm -f "$tmp_script"
+	log_success "Source prereq script completed: ${script_name}.bash"
 	return 0
 }
 
@@ -1355,28 +1375,21 @@ show_panel_menu() {
 		echo -e "     ${BLUE}→ Restart containers with new version${NC}"
 		echo -e "     ${BLUE}→ Switch between release and dev builds${NC}"
 	fi
-	echo ""
-	echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Backup Manager${NC}"
-	echo -e "     ${BLUE}→ Create, list, restore, and manage backups${NC}"
-	echo -e "     ${BLUE}→ Backup database, volumes, and configuration${NC}"
-	echo -e "     ${BLUE}→ Export/Import for migrating to another server${NC}"
 	if [ "$current_mode" = "docker" ]; then
-		echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
+		echo ""
+		echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Backup Manager${NC}"
+		echo -e "     ${BLUE}→ Create, list, restore, and manage backups${NC}"
+		echo -e "     ${BLUE}→ Backup database, volumes, and configuration${NC}"
+		echo -e "     ${BLUE}→ Export/Import for migrating to another server${NC}"
+		echo ""
+		echo -e "  ${MAGENTA}${BOLD}[5]${NC} ${BOLD}Panel Info${NC}"
+		echo -e "     ${BLUE}→ Live CPU, RAM, load, uptime, container health, and storage usage${NC}"
+		echo ""
+		echo -e "  ${GREEN}${BOLD}[6]${NC} ${BOLD}Firewall Manager${NC}"
+		echo -e "     ${BLUE}→ Detect ufw/iptables and allow required Panel ports automatically${NC}"
+		echo -e "     ${BLUE}→ Smart port detection based on Panel config and reverse proxy${NC}"
+		echo ""
 	fi
-	echo ""
-	echo -e "  ${MAGENTA}${BOLD}[5]${NC} ${BOLD}Panel Info${NC}"
-	echo -e "     ${BLUE}→ Live CPU, RAM, load, uptime, container health, and storage usage${NC}"
-	if [ "$current_mode" = "docker" ]; then
-		echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
-	fi
-	echo ""
-	echo -e "  ${GREEN}${BOLD}[6]${NC} ${BOLD}Firewall Manager${NC}"
-	echo -e "     ${BLUE}→ Detect ufw/iptables and allow required Panel ports automatically${NC}"
-	echo -e "     ${BLUE}→ Smart port detection based on Panel config and reverse proxy${NC}"
-	if [ "$current_mode" = "docker" ]; then
-		echo -e "     ${YELLOW}→ Available only for Docker installs${NC}"
-	fi
-	echo ""
 	draw_hr
 }
 
@@ -5352,18 +5365,33 @@ if [ -f /etc/os-release ]; then
 	if [ "$COMPONENT_TYPE" = "1" ]; then
 		# Panel operations
 		prompt_panel_install_mode "Operation Selection"
-		while [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; do
-			show_panel_menu
-			echo ""
-			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4/5/6)${NC}: " INST_TYPE
-			if [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; then
+		if [ "$PANEL_INSTALL_MODE" = "source" ]; then
+			while [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; do
+				show_panel_menu
 				echo ""
-				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), ${BOLD}4${NC} (Backup), ${BOLD}5${NC} (Info), or ${BOLD}6${NC} (Firewall)${NC}"
+				prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3)${NC}: " INST_TYPE
+				if [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; then
+					echo ""
+					echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+					echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), or ${BOLD}3${NC} (Update)${NC}"
+					echo ""
+					sleep 2
+				fi
+			done
+		else
+			while [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; do
+				show_panel_menu
 				echo ""
-				sleep 2
-			fi
-		done
+				prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4/5/6)${NC}: " INST_TYPE
+				if [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; then
+					echo ""
+					echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+					echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), ${BOLD}4${NC} (Backup), ${BOLD}5${NC} (Info), or ${BOLD}6${NC} (Firewall)${NC}"
+					echo ""
+					sleep 2
+				fi
+			done
+		fi
 
 		# Add confirmation for destructive operations
 		if [ "$INST_TYPE" = "2" ]; then
@@ -5541,16 +5569,24 @@ if [ -f /etc/os-release ]; then
 	if [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "1" ]; then
 		# Panel Install
 		if [ "${PANEL_INSTALL_MODE:-$(get_panel_install_mode)}" = "source" ]; then
+			show_source_mode_support_warning
 			set_panel_install_mode "source" || true
 			select_source_release_mode
 			if ! run_source_prereqs_from_github; then
 				log_error "Source prerequisites failed."
+				upload_logs_on_fail || true
+				support_hint
 				exit 1
 			fi
 			if ! run_source_subscript_from_github "panel"; then
 				log_error "Source install failed."
+				upload_logs_on_fail || true
+				support_hint
 				exit 1
 			fi
+			log_success "FeatherPanel source installation completed successfully."
+			log_info "Installation log saved at: $LOG_FILE"
+			support_hint
 			exit 0
 		fi
 		set_panel_install_mode "$PANEL_INSTALL_MODE" || true
@@ -6397,6 +6433,8 @@ if [ -f /etc/os-release ]; then
 			if [ "$confirm" = "y" ]; then
 				if ! run_source_subscript_from_github "remove"; then
 					log_error "Source uninstall failed."
+					upload_logs_on_fail || true
+					support_hint
 					exit 1
 				fi
 			else
@@ -6422,8 +6460,12 @@ if [ -f /etc/os-release ]; then
 			select_source_release_mode
 			if ! run_source_subscript_from_github "update"; then
 				log_error "Source update failed."
+				upload_logs_on_fail || true
+				support_hint
 				exit 1
 			fi
+			log_success "FeatherPanel source update completed successfully."
+			log_info "Installation log saved at: $LOG_FILE"
 			exit 0
 		fi
 

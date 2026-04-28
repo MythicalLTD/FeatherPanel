@@ -6,7 +6,11 @@ export DEBIAN_FRONTEND=noninteractive
 
 NVM_VERSION="${NVM_VERSION:-v0.40.4}"
 NODE_MAJOR="${NODE_MAJOR:-lts/*}"
-TARGET_USER="${SUDO_USER:-${USER:-root}}"
+if id -u www-data >/dev/null 2>&1; then
+    TARGET_USER="${TARGET_USER:-www-data}"
+else
+    TARGET_USER="${TARGET_USER:-${SUDO_USER:-${USER:-root}}}"
+fi
 TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 
 require_root() {
@@ -68,7 +72,7 @@ main() {
         exit 1
     fi
 
-    install_if_missing curl ca-certificates git
+    install_if_missing curl ca-certificates git build-essential pkg-config
     install_nvm_if_missing
     configure_node_toolchain
     install_rust_if_missing

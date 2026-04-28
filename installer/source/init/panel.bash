@@ -48,7 +48,12 @@ require_root() {
 
 run_as_www_data() {
     local cmd="$1"
-    su -s /bin/bash -c "$cmd" www-data
+    su - www-data -s /bin/bash -c "$cmd"
+}
+
+run_frontend_with_nvm() {
+    local cmd="$1"
+    run_as_www_data "export NVM_DIR=\"/var/www/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && ${cmd}"
 }
 
 prompt_if_empty() {
@@ -99,7 +104,7 @@ install_backend_deps() {
         echo "Backend directory is missing composer.json: ${BACKEND_DIR}" >&2
         exit 1
     fi
-    COMPOSER_ALLOW_SUPERUSER=1 composer install --working-dir="$BACKEND_DIR" --no-interaction --prefer-dist
+    run_as_www_data "cd '${BACKEND_DIR}' && composer install --no-interaction --prefer-dist"
 }
 
 install_frontend_deps() {
@@ -107,7 +112,7 @@ install_frontend_deps() {
         echo "Frontend directory is missing package.json: ${FRONTEND_DIR}" >&2
         exit 1
     fi
-    pnpm install --dir "$FRONTEND_DIR" --frozen-lockfile=false
+    run_frontend_with_nvm "cd '${FRONTEND_DIR}' && pnpm install --frozen-lockfile=false"
 }
 
 setup_application_database_connection() {
@@ -147,10 +152,10 @@ run_database_migrations() {
 build_or_watch_frontend() {
     case "$FRONTEND_MODE" in
         build)
-            run_as_www_data "cd '${FRONTEND_DIR}' && pnpm build"
+            run_frontend_with_nvm "cd '${FRONTEND_DIR}' && pnpm build"
             ;;
         watch)
-            run_as_www_data "cd '${FRONTEND_DIR}' && pnpm watch"
+            run_frontend_with_nvm "cd '${FRONTEND_DIR}' && pnpm watch"
             ;;
         skip)
             echo "Skipping frontend build (FRONTEND_MODE=skip)."
@@ -180,7 +185,7 @@ Group=www-data
 WorkingDirectory=${FRONTEND_DIR}
 Environment=NODE_ENV=production
 Environment=PORT=3000
-ExecStart=/bin/bash -lc 'pnpm start'
+ExecStart=/bin/bash -lc 'export NVM_DIR=/var/www/.nvm && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && pnpm start'
 Restart=always
 RestartSec=5
 KillSignal=SIGINT
@@ -265,6 +270,10 @@ resolve_cargo_bin() {
 
     if [ -x "/root/.cargo/bin/cargo" ]; then
         echo "/root/.cargo/bin/cargo"
+        return 0
+    fi
+    if [ -x "/var/www/.cargo/bin/cargo" ]; then
+        echo "/var/www/.cargo/bin/cargo"
         return 0
     fi
 
