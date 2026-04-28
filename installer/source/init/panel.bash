@@ -167,6 +167,7 @@ set_runtime_permissions() {
         "${BACKEND_DIR}/public/components"
 
     chmod -R u+rwX,g+rwX,o-rwx "${BACKEND_DIR}/storage"
+    chown -R www-data:www-data /var/www/featherpanel/*
 }
 
 sync_repo() {
