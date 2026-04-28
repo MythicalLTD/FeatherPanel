@@ -48,7 +48,7 @@ define('APP_ADDONS_DIR', APP_STORAGE_DIR . 'addons');
 define('APP_SOURCECODE_DIR', APP_DIR . 'app');
 define('APP_ROUTES_DIR', APP_SOURCECODE_DIR . '/Api');
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
-define('APP_VERSION', 'v1.3.6.5');
+define('APP_VERSION', 'v1.3.6.6');
 define('APP_UPSTREAM', 'stable');
 define('TELEMETRY', true);
 define('IS_CLI', true);
