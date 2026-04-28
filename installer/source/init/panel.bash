@@ -48,12 +48,12 @@ require_root() {
 
 run_as_www_data() {
     local cmd="$1"
-    su - www-data -s /bin/bash -c "$cmd"
+    bash -lc "$cmd"
 }
 
 run_frontend_with_nvm() {
     local cmd="$1"
-    run_as_www_data "export NVM_DIR=\"/var/www/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && ${cmd}"
+    run_as_www_data "export NVM_DIR=\"/root/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && ${cmd}"
 }
 
 prompt_if_empty() {
@@ -96,7 +96,7 @@ sync_repo() {
             git clone --branch "$PANEL_GIT_REF" "$PANEL_REPO" "$PANEL_DIR"
         fi
     fi
-    chown -R www-data:www-data "$PANEL_DIR"
+    chown -R root:root "$PANEL_DIR"
 }
 
 install_backend_deps() {
@@ -142,7 +142,7 @@ setup_application_database_connection() {
     upsert_env_var "$env_file" "DATABASE_ENCRYPTION_KEY" "$encryption_key"
     upsert_env_var "$env_file" "REDIS_PASSWORD" "$REDIS_PASSWORD"
     upsert_env_var "$env_file" "REDIS_HOST" "$REDIS_HOST"
-    chown www-data:www-data "$env_file"
+    chown root:root "$env_file"
 }
 
 run_database_migrations() {
@@ -180,12 +180,12 @@ After=network.target
 
 [Service]
 Type=simple
-User=www-data
-Group=www-data
+User=root
+Group=root
 WorkingDirectory=${FRONTEND_DIR}
 Environment=NODE_ENV=production
 Environment=PORT=3000
-ExecStart=/bin/bash -lc 'export NVM_DIR=/var/www/.nvm && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && pnpm start'
+ExecStart=/bin/bash -lc 'export NVM_DIR=/root/.nvm && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && pnpm start'
 Restart=always
 RestartSec=5
 KillSignal=SIGINT
@@ -296,7 +296,7 @@ build_runner_binary() {
         exit 1
     fi
 
-    chown -R www-data:www-data "${RUNNER_DIR}/target"
+    chown -R root:root "${RUNNER_DIR}/target"
 }
 
 setup_runner_service() {
@@ -318,8 +318,8 @@ After=network.target mysql.service redis.service
 
 [Service]
 Type=simple
-User=www-data
-Group=www-data
+User=root
+Group=root
 WorkingDirectory=${RUNNER_DIR}
 Environment="RUST_LOG=info"
 EnvironmentFile=${panel_env_file}

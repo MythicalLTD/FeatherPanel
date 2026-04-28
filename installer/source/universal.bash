@@ -6,11 +6,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 NVM_VERSION="${NVM_VERSION:-v0.40.4}"
 NODE_MAJOR="${NODE_MAJOR:-lts/*}"
-if id -u www-data >/dev/null 2>&1; then
-    TARGET_USER="${TARGET_USER:-www-data}"
-else
-    TARGET_USER="${TARGET_USER:-${SUDO_USER:-${USER:-root}}}"
-fi
+TARGET_USER="${TARGET_USER:-root}"
 TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 
 require_root() {

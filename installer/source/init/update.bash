@@ -21,7 +21,7 @@ require_root() {
 
 run_as_www_data() {
     local cmd="$1"
-    su -s /bin/bash -c "$cmd" www-data
+    bash -lc "$cmd"
 }
 
 update_repo() {
@@ -68,7 +68,7 @@ restart_services() {
 main() {
     require_root
     update_repo
-    chown -R www-data:www-data "$PANEL_DIR"
+    chown -R root:root "$PANEL_DIR"
     update_backend
     update_frontend
     update_runner
