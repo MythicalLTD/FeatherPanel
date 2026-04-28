@@ -26,6 +26,49 @@ banner() {
     echo "######################################################################"
 }
 
+prompt_yes_no_default_no() {
+    local prompt_text="$1"
+    local reply=""
+    if [ -t 0 ] || [ -r /dev/tty ]; then
+        read -r -p "$prompt_text" reply </dev/tty
+    fi
+    if [[ "$reply" =~ ^[yY]([eE][sS])?$ ]]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+has_local_changes() {
+    git -C "$PANEL_DIR" update-index -q --refresh || true
+    if [ -n "$(git -C "$PANEL_DIR" status --porcelain)" ]; then
+        return 0
+    fi
+    return 1
+}
+
+handle_local_changes_before_update() {
+    if ! has_local_changes; then
+        return 0
+    fi
+
+    step "Local changes detected in repository."
+    echo "Changes detected locally; update will not continue automatically."
+    echo "Please save/commit/stash your changes, or allow the updater to discard them."
+    echo ""
+    git -C "$PANEL_DIR" status --short || true
+    echo ""
+
+    if [ "$(prompt_yes_no_default_no "Discard ALL local changes and continue update? (y/n): ")" != "true" ]; then
+        echo "Update cancelled. Please save your changes and rerun update."
+        exit 1
+    fi
+
+    step "Discarding local changes..."
+    git -C "$PANEL_DIR" reset --hard HEAD
+    git -C "$PANEL_DIR" clean -fd
+}
+
 require_root() {
     if [ "${EUID:-$(id -u)}" -ne 0 ]; then
         echo "This script must be run as root." >&2
@@ -68,13 +111,15 @@ update_repo() {
         echo "Panel repository not found at ${PANEL_DIR}" >&2
         exit 1
     fi
+    handle_local_changes_before_update
     git -C "$PANEL_DIR" fetch --all --prune
     if [ "$PANEL_GIT_REF_TYPE" = "tag" ]; then
         git -C "$PANEL_DIR" fetch --tags --force
-        git -C "$PANEL_DIR" checkout "tags/$PANEL_GIT_REF"
+        git -C "$PANEL_DIR" checkout -f "tags/$PANEL_GIT_REF"
     else
-        git -C "$PANEL_DIR" checkout "$PANEL_GIT_REF"
-        git -C "$PANEL_DIR" pull --ff-only origin "$PANEL_GIT_REF"
+        git -C "$PANEL_DIR" checkout -f "$PANEL_GIT_REF" || git -C "$PANEL_DIR" checkout -f -B "$PANEL_GIT_REF" "origin/$PANEL_GIT_REF"
+        git -C "$PANEL_DIR" reset --hard "origin/$PANEL_GIT_REF"
+        git -C "$PANEL_DIR" clean -fd
     fi
 }
 
