@@ -948,7 +948,7 @@ class UsersController
         try {
             AccountDeleted::send([
                 'email' => $user['email'],
-                'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'subject' => 'Your ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel') . ' account has been deleted',
                 'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
                 'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
                 'first_name' => $user['first_name'],
