@@ -431,7 +431,10 @@ export default function AdminSubdomainsPage() {
     };
 
     const addSpell = () => {
-        if (spells.length === 0) return;
+        if (spells.length === 0) {
+            toast.error('Please create a spell first in the Spells section.');
+            return;
+        }
         setDomainForm((prev) => ({
             ...prev,
             spells: [
