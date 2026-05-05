@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.7-STABLE
+
+### Fixed
+
+- Fixed an issue where two loading spinners would appear simultaneously when creating a new VDS instance, ensuring only one spinner is shown as intended. by @nayskutzu
+
 ## v1.3.6 STABLE
 
 ### Fixed

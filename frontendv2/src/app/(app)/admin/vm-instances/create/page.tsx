@@ -1008,10 +1008,7 @@ export default function VmInstancesCreatePage() {
                             className='gap-2'
                         >
                             {submitting ? (
-                                <>
-                                    <Loader2 className='h-4 w-4 animate-spin' />
-                                    {t('admin.vmInstances.creating_clone') ?? 'Creating…'}
-                                </>
+                                <>{t('admin.vmInstances.creating_clone') ?? 'Creating…'}</>
                             ) : (
                                 <>
                                     <Plus className='h-4 w-4' />
