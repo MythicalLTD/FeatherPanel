@@ -1997,6 +1997,145 @@ class SettingsController
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/admin/settings/email/test',
+        summary: 'Send test email to current user',
+        description: 'Send a test email to the currently authenticated user to verify SMTP configuration. This is useful for testing email settings, especially with providers like SendGrid that require email verification.',
+        tags: ['Admin - Settings'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Test email queued successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                        new OA\Property(property: 'queue_id', type: 'integer', description: 'Mail queue ID'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - SMTP not enabled or user has no email'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to queue test email'),
+        ]
+    )]
+    public function sendTestEmail(Request $request): Response
+    {
+        $user = $request->get('user');
+        if (!$user || empty($user['email'])) {
+            return ApiResponse::error('User email not found', 'USER_EMAIL_NOT_FOUND', 400);
+        }
+
+        // Check if SMTP is enabled
+        $smtpEnabled = $this->app->getConfig()->getSetting(ConfigInterface::SMTP_ENABLED, 'false');
+        if ($smtpEnabled !== 'true') {
+            return ApiResponse::error('SMTP is not enabled. Please enable and configure SMTP settings first.', 'SMTP_NOT_ENABLED', 400);
+        }
+
+        $appName = $this->app->getConfig()->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
+        $appUrl = $this->app->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
+
+        // Create test email content
+        $subject = '[TEST] Email Configuration Test from ' . $appName;
+        $body = <<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Email</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="padding: 40px 40px 30px 40px; text-align: center; border-bottom: 3px solid #8b5cf6;">
+                            <h1 style="margin: 0; color: #1f2937; font-size: 28px; font-weight: 600;">✉️ Test Email</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                Hello <strong>{$user['username']}</strong>,
+                            </p>
+                            <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                This is a test email from <strong>{$appName}</strong> to verify that your SMTP email configuration is working correctly.
+                            </p>
+                            <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0; border-radius: 4px;">
+                                <p style="margin: 0; color: #065f46; font-size: 14px; line-height: 1.5;">
+                                    <strong>✓ Success!</strong> If you're reading this, your email settings are configured correctly and emails are being delivered successfully.
+                                </p>
+                            </div>
+                            <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                                <strong>Email Details:</strong><br>
+                                • Recipient: {$user['email']}<br>
+                                • Sent at: {date('Y-m-d H:i:s')}<br>
+                                • From: {$appName}
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+                            <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 13px; text-align: center;">
+                                This is an automated test email from {$appName}
+                            </p>
+                            <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                                <a href="{$appUrl}" style="color: #8b5cf6; text-decoration: none;">{$appUrl}</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+
+        // Create mail queue entry
+        $queueData = [
+            'user_uuid' => $user['uuid'],
+            'subject' => $subject,
+            'body' => $body,
+            'status' => 'pending',
+            'locked' => 'false',
+            'created_at' => date('Y-m-d H:i:s'),
+            'deleted' => 'false',
+        ];
+
+        $queueId = \App\Chat\MailQueue::create($queueData);
+
+        if (!$queueId) {
+            return ApiResponse::error('Failed to queue test email', 'FAILED_TO_QUEUE_EMAIL', 500);
+        }
+
+        // Create mail list entry
+        $listData = [
+            'queue_id' => $queueId,
+            'user_uuid' => $user['uuid'],
+            'created_at' => date('Y-m-d H:i:s'),
+            'deleted' => 'false',
+        ];
+
+        if (!\App\Chat\MailList::create($listData)) {
+            return ApiResponse::error('Failed to create mail list entry', 'FAILED_TO_CREATE_MAIL_LIST', 500);
+        }
+
+        // Log activity
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'],
+            'name' => 'send_test_email_settings',
+            'context' => 'Sent test email from settings page to: ' . $user['email'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'queue_id' => $queueId,
+        ], 'Test email queued successfully. Please check your inbox at ' . $user['email'], 200);
+    }
+
     private function organizeSettingsByCategory(): array
     {
         $organized = [];

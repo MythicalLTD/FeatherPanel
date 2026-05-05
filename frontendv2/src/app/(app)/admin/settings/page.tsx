@@ -32,6 +32,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
+import axios from 'axios';
 import {
     Settings,
     Mail,
@@ -45,6 +46,7 @@ import {
     Copy,
     Search,
     X,
+    Send,
 } from 'lucide-react';
 import { copyToClipboard, cn } from '@/lib/utils';
 
@@ -197,6 +199,7 @@ export default function SettingsPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [sendingTestEmail, setSendingTestEmail] = useState(false);
     const [organizedSettings, setOrganizedSettings] = useState<OrganizedSettings | null>(null);
     const [settings, setSettings] = useState<Record<string, Setting>>({});
     const [initialSettings, setInitialSettings] = useState<Record<string, Setting>>({});
@@ -373,6 +376,26 @@ export default function SettingsPage() {
                 return error instanceof Error ? error.message : t('admin.settings.logs.upload_failed');
             },
         });
+    };
+
+    const handleSendTestEmail = async () => {
+        setSendingTestEmail(true);
+        try {
+            const response = await axios.post('/api/admin/settings/email/test');
+            if (response.data.success) {
+                toast.success(response.data.message || 'Test email sent successfully! Please check your inbox.');
+            } else {
+                toast.error(response.data.message || 'Failed to send test email');
+            }
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error('Failed to send test email. Please check your SMTP settings.');
+            }
+        } finally {
+            setSendingTestEmail(false);
+        }
     };
 
     const getIconForCategory = (category: string) => {
@@ -584,6 +607,44 @@ export default function SettingsPage() {
                                             </div>
                                         ) : (
                                             <div className='space-y-6'>
+                                                {key === 'email' && (
+                                                    <div className='space-y-4'>
+                                                        <div className='rounded-2xl border border-border/50 bg-gradient-to-br from-primary/5 to-primary/10 p-6'>
+                                                            <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
+                                                                <div className='space-y-1'>
+                                                                    <h3 className='text-base font-semibold text-foreground flex items-center gap-2'>
+                                                                        <Mail className='h-5 w-5 text-primary' />
+                                                                        {t('admin.settings.email_test.title')}
+                                                                    </h3>
+                                                                    <p className='text-sm text-muted-foreground max-w-xl'>
+                                                                        {t('admin.settings.email_test.description')}
+                                                                    </p>
+                                                                </div>
+                                                                <Button
+                                                                    onClick={handleSendTestEmail}
+                                                                    disabled={sendingTestEmail}
+                                                                    variant='default'
+                                                                    className='shrink-0 w-full sm:w-auto'
+                                                                >
+                                                                    {sendingTestEmail ? (
+                                                                        <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                                                                    ) : (
+                                                                        <Send className='w-4 h-4 mr-2' />
+                                                                    )}
+                                                                    {sendingTestEmail
+                                                                        ? t('admin.settings.email_test.sending')
+                                                                        : t('admin.settings.email_test.button')}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                        <div className='rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/20 p-4'>
+                                                            <p className='text-xs text-amber-900 dark:text-amber-200 font-mono'>
+                                                                <strong className='font-semibold'>Troubleshooting:</strong>{' '}
+                                                                {t('admin.settings.email_test.troubleshooting')}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 {filteredEntries.map(([settingKey, setting]) => {
                                                     const currentSetting = settings[settingKey] || setting;
                                                     const formattedName = formatSettingName(

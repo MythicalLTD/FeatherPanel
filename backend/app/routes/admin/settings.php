@@ -82,4 +82,14 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_SETTINGS_VIEW,
         ['GET']
     );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-settings-email-test',
+        '/api/admin/settings/email/test',
+        function (Request $request) {
+            return (new SettingsController())->sendTestEmail($request);
+        },
+        Permissions::ADMIN_SETTINGS_EDIT,
+        ['POST']
+    );
 };

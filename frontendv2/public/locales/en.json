@@ -6159,6 +6159,15 @@
 				"panel_logs": "Panel logs (web)",
 				"system_logs": "System logs (app)",
 				"upload_failed_generic": "Failed to upload logs."
+			},
+			"email_test": {
+				"title": "Test Email Configuration",
+				"description": "Send a test email to your account to verify SMTP settings are working correctly. Required by some providers like SendGrid.",
+				"button": "Send Test Email",
+				"sending": "Sending test email...",
+				"success": "Test email sent successfully! Please check your inbox.",
+				"failed": "Failed to send test email. Please check your SMTP settings.",
+				"troubleshooting": "If emails aren't being sent, check the async_runner logs on your server: cd /var/www/featherpanel && docker compose logs async-runner -f"
 			}
 		},
 		"rate_limits": {
