@@ -8,6 +8,7 @@
 - Enhanced OAuth2 configuration by displaying the authorization URL, allowing users to easily identify and verify their OCID endpoint. by @nayskutzu
 - Introduced UUID-based response for /admin/api/users when creating a new user, aligning with other API endpoints that rely on UUID identifiers. by @nayskutzu
 - Added server and VM instance expiry date feature with automatic suspension—set an expiration date on any server or VDS/VPS instance, and it will be automatically suspended when the date is reached. by @nayskutzu
+- Enhance power control with state-based actions and kill confirmation by @nayskutzu
 
 ### Fixed
 
@@ -15,6 +16,12 @@
 - Resolved an issue where users were redirected to a raw JSON page after logging in via an OIDC provider, ensuring a seamless post-login experience.
 - Fixed Proxmox node selection displaying in inconsistent order when creating VDS instances—nodes are now sorted alphabetically for predictable selection.
 - Fixed inconsistency where /admin/api/users returned userId instead of UUID, which caused issues when interacting with endpoints such as user retrieval and SSO token creation that require UUID. by @nayskutzu
+
+### Improved
+
+- Enhanced server power control buttons with proper state-based enabling/disabling (e.g., start only works when stopped, stop/restart only when running). by @nayskutzu
+- Added confirmation dialog for the dangerous "Kill" action with a "Don't ask me again" option to prevent accidental server termination that could corrupt files. by @nayskutzu
+- Made the kill button less prominent (ghost variant) to further reduce accidental clicks. by @nayskutzu
 
 ## v1.3.6 STABLE
 

@@ -19,7 +19,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Play, Square, RotateCw, Skull, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface ServerHeaderProps {
     serverName: string;
@@ -58,14 +70,51 @@ export default function ServerHeader({
 }: ServerHeaderProps) {
     const { t } = useTranslation();
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [showKillConfirm, setShowKillConfirm] = useState(false);
+    const [dontAskAgain, setDontAskAgain] = useState(false);
+    const [skipKillConfirm, setSkipKillConfirm] = useState(false);
+
+    // Load "don't ask again" preference from localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('featherpanel_skip_kill_confirm');
+            setSkipKillConfirm(saved === 'true');
+        }
+    }, []);
 
     const handleAction = async (action: string, callback?: () => Promise<void> | void) => {
         if (!callback) return;
+
+        // Show confirmation for kill action if not skipped
+        if (action === 'kill' && !skipKillConfirm) {
+            setShowKillConfirm(true);
+            return;
+        }
+
         setActionLoading(action);
         try {
             await callback();
         } finally {
             setActionLoading(null);
+        }
+    };
+
+    const handleKillConfirm = async () => {
+        // Save "don't ask again" preference
+        if (dontAskAgain && typeof window !== 'undefined') {
+            localStorage.setItem('featherpanel_skip_kill_confirm', 'true');
+            setSkipKillConfirm(true);
+        }
+
+        setShowKillConfirm(false);
+
+        if (onKill) {
+            setActionLoading('kill');
+            try {
+                await onKill();
+            } finally {
+                setActionLoading(null);
+            }
         }
     };
 
@@ -133,7 +182,10 @@ export default function ServerHeader({
                             <Button
                                 variant='outline'
                                 size='sm'
-                                disabled={serverStatus === 'running' || actionLoading === 'start'}
+                                disabled={
+                                    (serverStatus !== 'stopped' && serverStatus !== 'offline') ||
+                                    actionLoading === 'start'
+                                }
                                 onClick={() => handleAction('start', onStart)}
                                 className='flex items-center gap-2'
                             >
@@ -150,7 +202,7 @@ export default function ServerHeader({
                             <Button
                                 variant='outline'
                                 size='sm'
-                                disabled={actionLoading === 'restart'}
+                                disabled={serverStatus !== 'running' || actionLoading === 'restart'}
                                 onClick={() => handleAction('restart', onRestart)}
                                 className='flex items-center gap-2'
                             >
@@ -167,7 +219,10 @@ export default function ServerHeader({
                             <Button
                                 variant='outline'
                                 size='sm'
-                                disabled={actionLoading === 'stop'}
+                                disabled={
+                                    (serverStatus !== 'running' && serverStatus !== 'starting') ||
+                                    actionLoading === 'stop'
+                                }
                                 onClick={() => handleAction('stop', onStop)}
                                 className='flex items-center gap-2'
                             >
@@ -184,7 +239,9 @@ export default function ServerHeader({
                             <Button
                                 variant='destructive'
                                 size='sm'
-                                disabled={actionLoading === 'kill'}
+                                disabled={
+                                    serverStatus === 'stopped' || serverStatus === 'offline' || actionLoading === 'kill'
+                                }
                                 onClick={() => handleAction('kill', onKill)}
                                 className='flex items-center gap-2'
                             >
@@ -199,6 +256,34 @@ export default function ServerHeader({
                     </div>
                 </div>
             </div>
+
+            <AlertDialog open={showKillConfirm} onOpenChange={setShowKillConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('servers.console.kill_confirm_title')}</AlertDialogTitle>
+                        <AlertDialogDescription>{t('servers.console.kill_confirm_description')}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className='flex items-center space-x-2 py-4'>
+                        <Checkbox
+                            id='dont-ask-kill'
+                            checked={dontAskAgain}
+                            onCheckedChange={(checked) => setDontAskAgain(checked === true)}
+                        />
+                        <Label htmlFor='dont-ask-kill' className='text-sm font-normal cursor-pointer'>
+                            {t('servers.console.kill_dont_ask_again')}
+                        </Label>
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleKillConfirm}
+                            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                        >
+                            {t('servers.console.kill_confirm')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

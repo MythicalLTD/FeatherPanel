@@ -497,7 +497,7 @@ export default function VdsConsolePage() {
                                 <Button
                                     variant='glass'
                                     size='sm'
-                                    className='text-red-400 border-red-400/20 hover:bg-red-400/10'
+                                    className='text-muted-foreground border-border/20 hover:bg-muted/10 hover:text-red-400'
                                     disabled={powering !== null || liveStatus === 'stopped'}
                                     onClick={() => handlePower('stop')}
                                 >
@@ -506,7 +506,7 @@ export default function VdsConsolePage() {
                                     ) : (
                                         <Square className='h-4 w-4 mr-1.5' />
                                     )}
-                                    {t('vds.console.power.kill')}
+                                    {t('vds.console.power.stop')}
                                 </Button>
                             </>
                         )}

@@ -712,6 +712,10 @@
 				"info": "Real-time console and stats will be available once connected"
 			},
 			"kill": "Kill",
+			"kill_confirm_title": "Force Kill Server?",
+			"kill_confirm_description": "This will forcefully terminate the server process immediately, which may cause data corruption or loss. Use 'Stop' for a graceful shutdown instead.",
+			"kill_confirm": "Force Kill",
+			"kill_dont_ask_again": "Don't ask me again",
 			"uuid": "UUID",
 			"upload_logs": "Upload Logs",
 			"info_cards": {
