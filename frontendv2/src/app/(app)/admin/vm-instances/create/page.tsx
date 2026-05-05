@@ -194,8 +194,12 @@ export default function VmInstancesCreatePage() {
                 setTemplates(tplRes.data.data?.templates ?? []);
                 setNetworks([{ key: 'net0', vm_ip_id: ips[0]?.id ?? null }]);
                 const clusterNodes = clusterRes.data.data?.nodes ?? [];
-                setPveNodes(clusterNodes);
-                setPveNode(clusterNodes[0]?.node ?? '');
+                // Sort nodes alphabetically for consistent ordering
+                const sortedNodes = [...clusterNodes].sort((a, b) => 
+                    (a.node || '').localeCompare(b.node || '')
+                );
+                setPveNodes(sortedNodes);
+                setPveNode(sortedNodes[0]?.node ?? '');
             })
             .catch(() => toast.error(t('admin.vmInstances.errors.fetch_failed')))
             .finally(() => setLoadingMeta(false));

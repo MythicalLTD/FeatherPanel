@@ -6,6 +6,7 @@
 
 - Fixed an issue where two loading spinners would appear simultaneously when creating a new VDS instance, ensuring only one spinner is shown as intended. by @nayskutzu
 - Resolved an issue where users were redirected to a raw JSON page after logging in via an OIDC provider, ensuring a seamless post-login experience.
+- Fixed Proxmox node selection displaying in inconsistent order when creating VDS instances—nodes are now sorted alphabetically for predictable selection.
 
 
 ## v1.3.6 STABLE
