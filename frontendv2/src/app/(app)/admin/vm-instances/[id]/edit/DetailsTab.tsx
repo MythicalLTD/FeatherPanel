@@ -28,6 +28,8 @@ interface DetailsTabProps {
     setHostname: (v: string) => void;
     notes: string;
     setNotes: (v: string) => void;
+    expiresAt: string | null;
+    setExpiresAt: (v: string | null) => void;
     selectedOwner: OwnerUser | null;
     setSelectedOwner: (v: OwnerUser | null) => void;
     onOpenOwnerModal: () => void;
@@ -45,6 +47,8 @@ export function DetailsTab({
     setHostname,
     notes,
     setNotes,
+    expiresAt,
+    setExpiresAt,
     selectedOwner,
     setSelectedOwner,
     onOpenOwnerModal,
@@ -79,6 +83,19 @@ export function DetailsTab({
                             placeholder='Optional notes'
                             className='mt-1 min-h-[80px] bg-muted/30 rounded-xl'
                         />
+                    </div>
+                    <div>
+                        <Label>{t('admin.vmInstances.expires_at') ?? 'Expiry Date'}</Label>
+                        <Input
+                            type='datetime-local'
+                            value={expiresAt || ''}
+                            onChange={(e) => setExpiresAt(e.target.value || null)}
+                            className='mt-1 bg-muted/30 h-11 rounded-xl'
+                        />
+                        <p className='text-xs text-muted-foreground mt-1'>
+                            {t('admin.vmInstances.expires_at_help') ??
+                                'VM will be automatically suspended on this date. Leave empty for no expiration.'}
+                        </p>
                     </div>
                     {isLxc && setDnsNameserver != null && setDnsSearchDomain != null && (
                         <>

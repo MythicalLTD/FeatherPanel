@@ -60,6 +60,7 @@ export default function VmInstanceEditPage() {
     const [freeIps, setFreeIps] = useState<FreeIp[]>([]);
     const [hostname, setHostname] = useState('');
     const [notes, setNotes] = useState('');
+    const [expiresAt, setExpiresAt] = useState<string | null>(null);
     const [selectedOwner, setSelectedOwner] = useState<OwnerUser | null>(null);
     const [vmIpId, setVmIpId] = useState<number | null>(null);
     const [memory, setMemory] = useState(512);
@@ -203,6 +204,7 @@ export default function VmInstanceEditPage() {
                     setInstance(inst);
                     setHostname((inst.hostname as string) ?? '');
                     setNotes((inst.notes as string) ?? '');
+                    setExpiresAt(inst.expires_at ? String(inst.expires_at).slice(0, 16) : null);
                     setVmBackupLimit(Math.max(0, Math.min(100, Number(inst.backup_limit ?? 5))));
                     const br0 = (inst.backup_retention_mode as string) || '';
                     setVmBackupRetention(
@@ -378,6 +380,7 @@ export default function VmInstanceEditPage() {
             const payload: Record<string, unknown> = {
                 hostname: hostname || null,
                 notes: notes || null,
+                expires_at: expiresAt || null,
                 user_uuid: selectedOwner?.uuid ?? null,
             };
             if (isLxc) {
@@ -681,6 +684,8 @@ export default function VmInstanceEditPage() {
                             setHostname={setHostname}
                             notes={notes}
                             setNotes={setNotes}
+                            expiresAt={expiresAt}
+                            setExpiresAt={setExpiresAt}
                             selectedOwner={selectedOwner}
                             setSelectedOwner={setSelectedOwner}
                             onOpenOwnerModal={() => {

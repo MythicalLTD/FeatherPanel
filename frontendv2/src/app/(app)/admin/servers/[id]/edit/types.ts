@@ -115,6 +115,7 @@ export interface ServerFormData {
     skip_scripts: boolean;
     skip_zerotrust: boolean;
     external_id: string;
+    expires_at: string | null;
 
     // Application
     realms_id: number | null;

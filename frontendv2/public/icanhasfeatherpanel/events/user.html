@@ -111,7 +111,7 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> array user data, int user id, array created by.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> created_by, user, user_id</p>
+  <p class="muted"><strong>Data keys:</strong> created_by, user, user_id, uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
@@ -125,9 +125,9 @@ use App\Plugins\Events\Events\UserEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(UserEvent::onUserCreated(), function ($createdBy, $user, $userId) {
+    $evt->on(UserEvent::onUserCreated(), function ($createdBy, $user, $userId, $uuid) {
         // Handle featherpanel:user:created
-        // Data keys: created_by, user, user_id
+        // Data keys: created_by, user, user_id, uuid
     });
 }</code></pre>
 </article>

@@ -137,6 +137,19 @@ export function DetailsTab({
                         </p>
                     </div>
 
+                    <div className='space-y-3'>
+                        <Label>{t('admin.servers.edit.details.expires_at')}</Label>
+                        <Input
+                            type='datetime-local'
+                            value={form.expires_at || ''}
+                            onChange={(e) => setForm((prev) => ({ ...prev, expires_at: e.target.value || null }))}
+                            className='bg-muted/30 h-11'
+                        />
+                        <p className='text-xs text-muted-foreground'>
+                            {t('admin.servers.edit.details.expires_at_help')}
+                        </p>
+                    </div>
+
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                         <div className='flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50'>
                             <div className='space-y-0.5'>

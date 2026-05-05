@@ -7,6 +7,7 @@
 - Introduced robust LDAP/Active Directory authentication support for FeatherPanel, enabling seamless integration with existing enterprise login systems. by @nayskutzu
 - Enhanced OAuth2 configuration by displaying the authorization URL, allowing users to easily identify and verify their OCID endpoint. by @nayskutzu
 - Introduced UUID-based response for /admin/api/users when creating a new user, aligning with other API endpoints that rely on UUID identifiers. by @nayskutzu
+- Added server and VM instance expiry date feature with automatic suspension—set an expiration date on any server or VDS/VPS instance, and it will be automatically suspended when the date is reached. by @nayskutzu
 
 ### Fixed
 

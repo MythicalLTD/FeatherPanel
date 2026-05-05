@@ -1312,6 +1312,23 @@ class ServersController
             }
         }
 
+        // Validate expires_at field if provided
+        if (array_key_exists('expires_at', $data)) {
+            if ($data['expires_at'] === null || $data['expires_at'] === '') {
+                $data['expires_at'] = null;
+            } elseif (!is_string($data['expires_at'])) {
+                return ApiResponse::error('Expires at must be a valid datetime string or null', 'INVALID_DATA_TYPE', 400);
+            } else {
+                // Validate datetime format
+                $datetime = \DateTime::createFromFormat('Y-m-d\TH:i', $data['expires_at']);
+                if (!$datetime) {
+                    return ApiResponse::error('Expires at must be in format YYYY-MM-DDTHH:MM', 'INVALID_DATETIME_FORMAT', 400);
+                }
+                // Convert to MySQL datetime format
+                $data['expires_at'] = $datetime->format('Y-m-d H:i:s');
+            }
+        }
+
         // Validate boolean fields
         $booleanFields = ['skip_scripts', 'skip_zerotrust', 'oom_disabled', 'oom_killer'];
         foreach ($data as $field => $value) {
