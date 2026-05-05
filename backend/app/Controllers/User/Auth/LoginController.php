@@ -30,6 +30,7 @@ use App\CloudFlare\CloudFlareTurnstile;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 #[OA\Schema(
     schema: 'LoginRequest',
@@ -274,7 +275,7 @@ class LoginController
      * This method is public so that other authentication flows (e.g. OAuth/OIDC)
      * can reuse the same session and activity logic.
      */
-    public function completeLogin(array $userInfo): Response
+    public function completeLogin(array $userInfo, ?string $redirectTo = null): Response
     {
         $app = App::getInstance(true);
         // Set session/cookie and log in
@@ -311,6 +312,10 @@ class LoginController
 
             // Load user preferences
             $preferences = UserPreference::getPreferences($userInfo['uuid']);
+
+            if (is_string($redirectTo) && $redirectTo !== '') {
+                return new RedirectResponse($redirectTo);
+            }
 
             return ApiResponse::success([
                 'user' => $userInfo,

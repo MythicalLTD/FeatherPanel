@@ -294,7 +294,7 @@ class OidcController
 
         $loginController = new LoginController();
 
-        return $loginController->completeLogin($user);
+        return $loginController->completeLogin($user, '/dashboard');
     }
 
     /**
