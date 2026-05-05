@@ -36,6 +36,7 @@ import { JavaVersionDialog } from '@/components/server/features/JavaVersionDialo
 import { PidLimitDialog } from '@/components/server/features/PidLimitDialog';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import PlayerStatusWidget from '@/components/server/PlayerStatusWidget';
 import { toast } from 'sonner';
 import { copyToClipboard } from '@/lib/utils';
 
@@ -633,6 +634,8 @@ export default function ServerConsolePage() {
                             className='xl:grid-cols-1'
                         />
                     )}
+
+                    <PlayerStatusWidget uuidShort={serverUuid} />
 
                     <WidgetRenderer widgets={getWidgets('server-console', 'under-server-info-cards')} />
                 </div>

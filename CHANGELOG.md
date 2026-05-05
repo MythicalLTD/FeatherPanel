@@ -9,6 +9,7 @@
 - Introduced UUID-based response for /admin/api/users when creating a new user, aligning with other API endpoints that rely on UUID identifiers. by @nayskutzu
 - Added server and VM instance expiry date feature with automatic suspension—set an expiration date on any server or VDS/VPS instance, and it will be automatically suspended when the date is reached. by @nayskutzu
 - Enhance power control with state-based actions and kill confirmation by @nayskutzu
+- Support for a really early in development player counter by @nayskutzu
 
 ### Fixed
 

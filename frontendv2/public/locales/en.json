@@ -774,6 +774,14 @@
 				"color_cyan": "Cyan",
 				"color_gray": "Gray"
 			},
+			"players": {
+				"title": "Players",
+				"online": "Players Online",
+				"offline": "Server offline",
+				"error": "Unable to load player status",
+				"stale": "Data may be outdated",
+				"names_unavailable": "Player names not available"
+			},
 			"not_found": {
 				"title": "Server not found",
 				"message": "The requested server could not be loaded."

@@ -639,7 +639,9 @@ export default function SettingsPage() {
                                                         </div>
                                                         <div className='rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/20 p-4'>
                                                             <p className='text-xs text-amber-900 dark:text-amber-200 font-mono'>
-                                                                <strong className='font-semibold'>Troubleshooting:</strong>{' '}
+                                                                <strong className='font-semibold'>
+                                                                    Troubleshooting:
+                                                                </strong>{' '}
                                                                 {t('admin.settings.email_test.troubleshooting')}
                                                             </p>
                                                         </div>
