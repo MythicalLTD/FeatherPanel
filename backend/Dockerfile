@@ -37,7 +37,8 @@ RUN install-php-extensions \
     intl \
     bcmath \
     zip \
-    redis
+    redis \
+    ldap
 
 # Reset environment variables
 ENV DEBIAN_FRONTEND=

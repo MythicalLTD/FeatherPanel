@@ -397,6 +397,18 @@ class User
     }
 
     /**
+     * Get a user by LDAP provider UUID and DN.
+     */
+    public static function getUserByLdapProviderAndDn(string $providerUuid, string $dn): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE ldap_provider_uuid = :provider_uuid AND ldap_dn = :dn LIMIT 1');
+        $stmt->execute(['provider_uuid' => $providerUuid, 'dn' => $dn]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
      * Get a user by its remember token.
      */
     public static function getUserByRememberToken(string $rememberToken): ?array

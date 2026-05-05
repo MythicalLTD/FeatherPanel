@@ -86,6 +86,10 @@ interface ApiUser {
     discord_oauth2_linked?: string;
     discord_oauth2_username?: string | null;
     discord_oauth2_name?: string | null;
+    oidc_provider?: string | null;
+    oidc_subject?: string | null;
+    ldap_provider_uuid?: string | null;
+    ldap_dn?: string | null;
     activities?: { name: string; context: string; ip_address: string; created_at: string }[];
     mails?: { subject: string; status: string; created_at: string; body?: string }[];
 }
@@ -610,6 +614,19 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 {user.discord_oauth2_linked === 'true' && (
                                     <Badge className='bg-[#5865F2]/10 text-[#5865F2] border-[#5865F2]/20'>
                                         {t('admin.users.badges.discord_linked')}
+                                    </Badge>
+                                )}
+                                {user.ldap_provider_uuid && user.ldap_dn ? (
+                                    <Badge className='bg-purple-500/10 text-purple-600 border-purple-500/20'>
+                                        {t('admin.users.badges.ldap')}
+                                    </Badge>
+                                ) : user.oidc_provider && user.oidc_subject ? (
+                                    <Badge className='bg-cyan-500/10 text-cyan-600 border-cyan-500/20'>
+                                        {t('admin.users.badges.oidc')}
+                                    </Badge>
+                                ) : (
+                                    <Badge className='bg-gray-500/10 text-gray-600 border-gray-500/20'>
+                                        {t('admin.users.badges.local')}
                                     </Badge>
                                 )}
                             </div>

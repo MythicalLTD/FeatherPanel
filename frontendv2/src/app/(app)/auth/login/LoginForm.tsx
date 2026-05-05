@@ -20,6 +20,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select-native';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -269,11 +270,85 @@ export default function LoginForm() {
         window.location.href = `/api/user/auth/oidc/login?provider=${encodeURIComponent(providerUuid)}`;
     };
 
+    const handleLdapLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        if (!form.username_or_email || !form.password) {
+            setError(t('validation.fill_all_fields'));
+            return;
+        }
+
+        if (!selectedLdapProvider) {
+            setError('Please select an LDAP provider');
+            return;
+        }
+
+        if (turnstileEnabled && !form.turnstile_token) {
+            setError(t('validation.captcha_required'));
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const res = await fetch('/api/user/auth/ldap/login', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    provider_uuid: selectedLdapProvider,
+                    username: form.username_or_email,
+                    password: form.password,
+                    turnstile_token: form.turnstile_token,
+                }),
+            });
+
+            const json = await res.json();
+
+            if (json.success) {
+                setSuccess(t('common.success'));
+                await fetchSession(true);
+
+                setTimeout(() => {
+                    const redirect = searchParams.get('redirect');
+                    if (redirect && redirect.startsWith('/')) {
+                        router.push(redirect);
+                    } else {
+                        router.push('/dashboard');
+                    }
+                }, 1000);
+            } else {
+                setError(json.message || t('common.error'));
+
+                if (showTurnstile) {
+                    setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                    setTurnstileKey((prev) => prev + 1);
+                }
+            }
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } };
+            setError(error.response?.data?.message || t('common.error'));
+
+            if (showTurnstile) {
+                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                setTurnstileKey((prev) => prev + 1);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleTurnstileSuccess = (token: string) => {
         setForm({ ...form, turnstile_token: token });
     };
 
     const [oidcProviders, setOidcProviders] = useState<{ uuid: string; name: string }[]>([]);
+    const [ldapProviders, setLdapProviders] = useState<{ uuid: string; name: string }[]>([]);
+    const [selectedLdapProvider, setSelectedLdapProvider] = useState<string>('');
+    const [showLdapLogin, setShowLdapLogin] = useState(false);
 
     useEffect(() => {
         const fetchOidcProviders = async () => {
@@ -289,15 +364,33 @@ export default function LoginForm() {
             }
         };
 
+        const fetchLdapProviders = async () => {
+            try {
+                const res = await fetch('/api/ldap/providers', { cache: 'no-store' });
+                if (!res.ok) return;
+                const json = await res.json();
+                if (json.success && Array.isArray(json.data?.providers)) {
+                    setLdapProviders(json.data.providers);
+                    if (json.data.providers.length > 0) {
+                        setSelectedLdapProvider(json.data.providers[0].uuid);
+                    }
+                }
+            } catch {
+                // ignore
+            }
+        };
+
         fetchOidcProviders();
+        fetchLdapProviders();
     }, []);
 
     const turnstileEnabled = settings?.turnstile_enabled === 'true';
     const turnstileSiteKey = settings?.turnstile_key_pub || '';
     const discordEnabled = settings?.discord_oauth_enabled === 'true';
     const oidcEnabled = oidcProviders.length > 0;
+    const ldapEnabled = ldapProviders.length > 0;
     const showTurnstile = turnstileEnabled && turnstileSiteKey;
-    const showLocalLogin = true;
+    const showLocalLogin = !showLdapLogin;
 
     return (
         <div className='space-y-6'>
@@ -402,7 +495,104 @@ export default function LoginForm() {
                 <>
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-before-form')} />
 
-                    {showLocalLogin && (
+                    {ldapEnabled && (
+                        <div className='flex gap-2 mb-4'>
+                            <Button
+                                type='button'
+                                variant={!showLdapLogin ? 'default' : 'outline'}
+                                className='flex-1'
+                                onClick={() => setShowLdapLogin(false)}
+                            >
+                                Local Login
+                            </Button>
+                            <Button
+                                type='button'
+                                variant={showLdapLogin ? 'default' : 'outline'}
+                                className='flex-1'
+                                onClick={() => setShowLdapLogin(true)}
+                            >
+                                LDAP Login
+                            </Button>
+                        </div>
+                    )}
+
+                    {showLdapLogin && ldapEnabled ? (
+                        <form onSubmit={handleLdapLogin} className='space-y-5'>
+                            <Select
+                                label='LDAP Provider'
+                                value={selectedLdapProvider}
+                                onChange={(e) => setSelectedLdapProvider(e.target.value)}
+                                required
+                            >
+                                {ldapProviders.map((provider) => (
+                                    <option key={provider.uuid} value={provider.uuid}>
+                                        {provider.name}
+                                    </option>
+                                ))}
+                            </Select>
+
+                            <Input
+                                label='LDAP Username'
+                                type='text'
+                                value={form.username_or_email || ''}
+                                onChange={(e) => setForm({ ...form, username_or_email: e.target.value })}
+                                required
+                                autoComplete='username'
+                                icon={<Mail className='h-5 w-5' />}
+                                placeholder='Enter your LDAP username'
+                            />
+
+                            <Input
+                                label={t('auth.login.password')}
+                                type='password'
+                                value={form.password}
+                                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                required
+                                autoComplete='current-password'
+                                icon={<Lock className='h-5 w-5' />}
+                                placeholder={t('auth.login.password')}
+                            />
+
+                            {showTurnstile && (
+                                <div className='flex justify-center'>
+                                    <Turnstile
+                                        key={turnstileKey}
+                                        sitekey={turnstileSiteKey}
+                                        theme={theme === 'dark' ? 'dark' : 'light'}
+                                        size='normal'
+                                        refreshExpired='auto'
+                                        onVerify={handleTurnstileSuccess}
+                                        onError={() => {
+                                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                        }}
+                                        onExpire={() => {
+                                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                        }}
+                                    />
+                                </div>
+                            )}
+
+                            <Button type='submit' className='w-full group' loading={loading}>
+                                {!loading && (
+                                    <>
+                                        Login with LDAP
+                                        <ArrowRight className='ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform' />
+                                    </>
+                                )}
+                            </Button>
+
+                            {error && (
+                                <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in'>
+                                    {error}
+                                </div>
+                            )}
+                            {success && (
+                                <div className='p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm animate-fade-in'>
+                                    {success}
+                                </div>
+                            )}
+                        </form>
+                    ) : showLocalLogin ? (
                         <form onSubmit={handleSubmit} className='space-y-5'>
                             <Input
                                 label={t('auth.login.username')}
@@ -474,7 +664,7 @@ export default function LoginForm() {
                                 </div>
                             )}
                         </form>
-                    )}
+                    ) : null}
 
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-after-form')} />
 

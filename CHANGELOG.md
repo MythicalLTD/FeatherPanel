@@ -2,6 +2,11 @@
 
 ## v1.3.7-STABLE
 
+### Added
+
+- Introduced robust LDAP/Active Directory authentication support for FeatherPanel, enabling seamless integration with existing enterprise login systems. by @nayskutzu
+- Enhanced OAuth2 configuration by displaying the authorization URL, allowing users to easily identify and verify their OCID endpoint. by @nayskutzu
+
 ### Fixed
 
 - Fixed an issue where two loading spinners would appear simultaneously when creating a new VDS instance, ensuring only one spinner is shown as intended. by @nayskutzu

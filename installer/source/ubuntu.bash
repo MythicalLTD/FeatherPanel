@@ -126,6 +126,7 @@ main() {
         "php${PHP_VERSION}-mongodb" \
         "php${PHP_VERSION}-pgsql" \
         "php${PHP_VERSION}-sqlite3" \
+		"php${PHP_VERSION}-ldap" \
         mariadb-server nginx tar unzip zip git redis-server make dos2unix
 
     install_composer

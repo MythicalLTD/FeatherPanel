@@ -375,6 +375,17 @@ export const getAdminNavigationItems = (
             group: 'system',
         },
         {
+            id: 'admin-ldap-providers',
+            name: t('navigation.items.ldapProviders'),
+            title: t('navigation.items.ldapProviders'),
+            url: '/admin/ldap-providers',
+            icon: Server,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_SETTINGS_VIEW,
+            group: 'system',
+        },
+        {
             id: 'admin-rate-limits',
             name: t('navigation.items.rateLimits'),
             title: t('navigation.items.rateLimits'),

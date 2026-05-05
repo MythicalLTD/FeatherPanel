@@ -66,6 +66,10 @@ interface ApiUser {
     discord_oauth2_username?: string | null;
     discord_oauth2_name?: string | null;
     last_ip?: string | null;
+    oidc_provider?: string | null;
+    oidc_subject?: string | null;
+    ldap_provider_uuid?: string | null;
+    ldap_dn?: string | null;
 }
 
 interface Pagination {
@@ -371,6 +375,24 @@ export default function UsersPage() {
                             badges.push({
                                 label: t('admin.users.badges.discord_linked'),
                                 className: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
+                            });
+                        }
+
+                        // Authentication type badges
+                        if (user.ldap_provider_uuid && user.ldap_dn) {
+                            badges.push({
+                                label: t('admin.users.badges.ldap'),
+                                className: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+                            });
+                        } else if (user.oidc_provider && user.oidc_subject) {
+                            badges.push({
+                                label: t('admin.users.badges.oidc'),
+                                className: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20',
+                            });
+                        } else {
+                            badges.push({
+                                label: t('admin.users.badges.local'),
+                                className: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
                             });
                         }
 
