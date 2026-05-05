@@ -20,11 +20,11 @@ namespace App\Controllers\Admin;
 use App\App;
 use App\Chat\LdapProvider;
 use App\Helpers\ApiResponse;
-use App\Helpers\LdapAuthenticator;
-use App\Plugins\Events\Events\LdapProvidersEvent;
 use OpenApi\Attributes as OA;
+use App\Helpers\LdapAuthenticator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\LdapProvidersEvent;
 
 #[OA\Schema(
     schema: 'LdapProvider',
@@ -324,6 +324,7 @@ class LdapProvidersController
     private static function stripBindPassword(array $provider): array
     {
         unset($provider['bind_password']);
+
         return $provider;
     }
 

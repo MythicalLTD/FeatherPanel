@@ -184,16 +184,13 @@ export default function LdapProvidersPage() {
 
         try {
             const isNew = !editing.uuid;
-            const res = await fetch(
-                isNew ? '/api/admin/ldap/providers' : `/api/admin/ldap/providers/${editing.uuid}`,
-                {
-                    method: isNew ? 'PUT' : 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload),
+            const res = await fetch(isNew ? '/api/admin/ldap/providers' : `/api/admin/ldap/providers/${editing.uuid}`, {
+                method: isNew ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                 },
-            );
+                body: JSON.stringify(payload),
+            });
             const json = await res.json();
             if (json.success) {
                 toast.success(t('admin.ldapProviders.messages.saved'));
@@ -230,9 +227,7 @@ export default function LdapProvidersPage() {
                 {loading ? (
                     <div className='py-8 text-center text-muted-foreground'>{t('admin.ldapProviders.loading')}</div>
                 ) : providers.length === 0 ? (
-                    <div className='py-8 text-center text-muted-foreground'>
-                        {t('admin.ldapProviders.noProviders')}
-                    </div>
+                    <div className='py-8 text-center text-muted-foreground'>{t('admin.ldapProviders.noProviders')}</div>
                 ) : (
                     <div className='space-y-3'>
                         {providers.map((provider) => {
@@ -267,7 +262,9 @@ export default function LdapProvidersPage() {
                                                         : 'bg-muted text-muted-foreground border border-border/60')
                                                 }
                                             >
-                                                {isEnabled ? t('admin.ldapProviders.enabled') : t('admin.ldapProviders.disabled')}
+                                                {isEnabled
+                                                    ? t('admin.ldapProviders.enabled')
+                                                    : t('admin.ldapProviders.disabled')}
                                             </span>
                                             {provider.auto_provision === 'true' && (
                                                 <span className='inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/40'>
@@ -294,25 +291,33 @@ export default function LdapProvidersPage() {
                                             onClick={async () => {
                                                 const next = isEnabled ? 'false' : 'true';
                                                 try {
-                                                    const res = await fetch(`/api/admin/ldap/providers/${provider.uuid}`, {
-                                                        method: 'POST',
-                                                        headers: {
-                                                            'Content-Type': 'application/json',
+                                                    const res = await fetch(
+                                                        `/api/admin/ldap/providers/${provider.uuid}`,
+                                                        {
+                                                            method: 'POST',
+                                                            headers: {
+                                                                'Content-Type': 'application/json',
+                                                            },
+                                                            body: JSON.stringify({ enabled: next }),
                                                         },
-                                                        body: JSON.stringify({ enabled: next }),
-                                                    });
+                                                    );
                                                     const json = await res.json();
                                                     if (json.success) {
                                                         fetchProviders();
                                                     } else {
-                                                        toast.error(json.message || t('admin.ldapProviders.messages.toggle_failed'));
+                                                        toast.error(
+                                                            json.message ||
+                                                                t('admin.ldapProviders.messages.toggle_failed'),
+                                                        );
                                                     }
                                                 } catch {
                                                     toast.error(t('admin.ldapProviders.messages.toggle_failed'));
                                                 }
                                             }}
                                         >
-                                            {isEnabled ? t('admin.ldapProviders.disable') : t('admin.ldapProviders.enable')}
+                                            {isEnabled
+                                                ? t('admin.ldapProviders.disable')
+                                                : t('admin.ldapProviders.enable')}
                                         </Button>
                                         <Button variant='destructive' size='sm' onClick={() => handleDelete(provider)}>
                                             {t('admin.ldapProviders.delete')}
@@ -326,13 +331,23 @@ export default function LdapProvidersPage() {
             </PageCard>
 
             {editing && (
-                <PageCard title={editing.uuid ? t('admin.ldapProviders.editProvider') : t('admin.ldapProviders.createProvider')} icon={Shield}>
+                <PageCard
+                    title={
+                        editing.uuid ? t('admin.ldapProviders.editProvider') : t('admin.ldapProviders.createProvider')
+                    }
+                    icon={Shield}
+                >
                     <div className='space-y-4'>
                         {/* Basic Settings */}
                         <div className='space-y-4 pb-4 border-b border-border'>
-                            <h3 className='text-sm font-semibold text-foreground'>{t('admin.ldapProviders.form.basicSettings')}</h3>
+                            <h3 className='text-sm font-semibold text-foreground'>
+                                {t('admin.ldapProviders.form.basicSettings')}
+                            </h3>
                             <div className='space-y-2'>
-                                <Label htmlFor='ldap-name' className='flex items-center gap-2 text-foreground font-medium'>
+                                <Label
+                                    htmlFor='ldap-name'
+                                    className='flex items-center gap-2 text-foreground font-medium'
+                                >
                                     <User className='h-4 w-4 text-muted-foreground' />
                                     {t('admin.ldapProviders.form.providerName')}
                                 </Label>
@@ -346,7 +361,10 @@ export default function LdapProvidersPage() {
                             </div>
                             <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
                                 <div className='space-y-2 md:col-span-2'>
-                                    <Label htmlFor='ldap-host' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-host'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         <Network className='h-4 w-4 text-muted-foreground' />
                                         {t('admin.ldapProviders.form.ldapHost')}
                                     </Label>
@@ -359,21 +377,29 @@ export default function LdapProvidersPage() {
                                     />
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label htmlFor='ldap-port' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-port'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         {t('admin.ldapProviders.form.port')}
                                     </Label>
                                     <Input
                                         id='ldap-port'
                                         type='number'
                                         value={editing.port}
-                                        onChange={(e) => setEditing({ ...editing, port: parseInt(e.target.value) || 389 })}
+                                        onChange={(e) =>
+                                            setEditing({ ...editing, port: parseInt(e.target.value) || 389 })
+                                        }
                                         className='mt-0'
                                     />
                                 </div>
                             </div>
                             <div className='flex flex-col gap-3'>
                                 <div className='flex items-center justify-between gap-4'>
-                                    <Label htmlFor='ldap-use-tls' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-use-tls'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         <Lock className='h-4 w-4 text-muted-foreground' />
                                         {t('admin.ldapProviders.form.useTls')}
                                     </Label>
@@ -386,7 +412,10 @@ export default function LdapProvidersPage() {
                                     />
                                 </div>
                                 <div className='flex items-center justify-between gap-4'>
-                                    <Label htmlFor='ldap-use-ssl' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-use-ssl'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         <Lock className='h-4 w-4 text-muted-foreground' />
                                         {t('admin.ldapProviders.form.useSsl')}
                                     </Label>
@@ -403,12 +432,17 @@ export default function LdapProvidersPage() {
 
                         {/* Bind Configuration */}
                         <div className='space-y-4 pb-4 border-b border-border'>
-                            <h3 className='text-sm font-semibold text-foreground'>{t('admin.ldapProviders.form.bindConfiguration')}</h3>
+                            <h3 className='text-sm font-semibold text-foreground'>
+                                {t('admin.ldapProviders.form.bindConfiguration')}
+                            </h3>
                             <p className='text-xs text-muted-foreground'>
                                 {t('admin.ldapProviders.form.bindConfigDescription')}
                             </p>
                             <div className='space-y-2'>
-                                <Label htmlFor='ldap-bind-dn' className='flex items-center gap-2 text-foreground font-medium'>
+                                <Label
+                                    htmlFor='ldap-bind-dn'
+                                    className='flex items-center gap-2 text-foreground font-medium'
+                                >
                                     <User className='h-4 w-4 text-muted-foreground' />
                                     {t('admin.ldapProviders.form.bindDn')}
                                 </Label>
@@ -421,7 +455,10 @@ export default function LdapProvidersPage() {
                                 />
                             </div>
                             <div className='space-y-2'>
-                                <Label htmlFor='ldap-bind-password' className='flex items-center gap-2 text-foreground font-medium'>
+                                <Label
+                                    htmlFor='ldap-bind-password'
+                                    className='flex items-center gap-2 text-foreground font-medium'
+                                >
                                     <Lock className='h-4 w-4 text-muted-foreground' />
                                     {t('admin.ldapProviders.form.bindPassword')}
                                 </Label>
@@ -430,7 +467,9 @@ export default function LdapProvidersPage() {
                                     type='password'
                                     value={bindPassword}
                                     onChange={(e) => setBindPassword(e.target.value)}
-                                    placeholder={editing.uuid ? t('admin.ldapProviders.form.bindPasswordPlaceholder') : ''}
+                                    placeholder={
+                                        editing.uuid ? t('admin.ldapProviders.form.bindPasswordPlaceholder') : ''
+                                    }
                                     className='mt-0'
                                 />
                             </div>
@@ -438,9 +477,14 @@ export default function LdapProvidersPage() {
 
                         {/* User Search Configuration */}
                         <div className='space-y-4 pb-4 border-b border-border'>
-                            <h3 className='text-sm font-semibold text-foreground'>{t('admin.ldapProviders.form.userSearchConfiguration')}</h3>
+                            <h3 className='text-sm font-semibold text-foreground'>
+                                {t('admin.ldapProviders.form.userSearchConfiguration')}
+                            </h3>
                             <div className='space-y-2'>
-                                <Label htmlFor='ldap-base-dn' className='flex items-center gap-2 text-foreground font-medium'>
+                                <Label
+                                    htmlFor='ldap-base-dn'
+                                    className='flex items-center gap-2 text-foreground font-medium'
+                                >
                                     <Database className='h-4 w-4 text-muted-foreground' />
                                     {t('admin.ldapProviders.form.baseDnLabel')}
                                 </Label>
@@ -453,7 +497,10 @@ export default function LdapProvidersPage() {
                                 />
                             </div>
                             <div className='space-y-2'>
-                                <Label htmlFor='ldap-user-filter' className='flex items-center gap-2 text-foreground font-medium'>
+                                <Label
+                                    htmlFor='ldap-user-filter'
+                                    className='flex items-center gap-2 text-foreground font-medium'
+                                >
                                     <Hash className='h-4 w-4 text-muted-foreground' />
                                     {t('admin.ldapProviders.form.userFilter')}
                                 </Label>
@@ -472,10 +519,15 @@ export default function LdapProvidersPage() {
 
                         {/* Attribute Mapping */}
                         <div className='space-y-4 pb-4 border-b border-border'>
-                            <h3 className='text-sm font-semibold text-foreground'>{t('admin.ldapProviders.form.attributeMapping')}</h3>
+                            <h3 className='text-sm font-semibold text-foreground'>
+                                {t('admin.ldapProviders.form.attributeMapping')}
+                            </h3>
                             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                                 <div className='space-y-2'>
-                                    <Label htmlFor='ldap-username-attr' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-username-attr'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         <User className='h-4 w-4 text-muted-foreground' />
                                         {t('admin.ldapProviders.form.usernameAttribute')}
                                     </Label>
@@ -488,7 +540,10 @@ export default function LdapProvidersPage() {
                                     />
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label htmlFor='ldap-email-attr' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-email-attr'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         <Mail className='h-4 w-4 text-muted-foreground' />
                                         {t('admin.ldapProviders.form.emailAttribute')}
                                     </Label>
@@ -501,25 +556,35 @@ export default function LdapProvidersPage() {
                                     />
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label htmlFor='ldap-firstname-attr' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-firstname-attr'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         {t('admin.ldapProviders.form.firstNameAttribute')}
                                     </Label>
                                     <Input
                                         id='ldap-firstname-attr'
                                         value={editing.first_name_attribute || ''}
-                                        onChange={(e) => setEditing({ ...editing, first_name_attribute: e.target.value })}
+                                        onChange={(e) =>
+                                            setEditing({ ...editing, first_name_attribute: e.target.value })
+                                        }
                                         placeholder={t('admin.ldapProviders.form.firstNameAttributePlaceholder')}
                                         className='mt-0'
                                     />
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label htmlFor='ldap-lastname-attr' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-lastname-attr'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         {t('admin.ldapProviders.form.lastNameAttribute')}
                                     </Label>
                                     <Input
                                         id='ldap-lastname-attr'
                                         value={editing.last_name_attribute || ''}
-                                        onChange={(e) => setEditing({ ...editing, last_name_attribute: e.target.value })}
+                                        onChange={(e) =>
+                                            setEditing({ ...editing, last_name_attribute: e.target.value })
+                                        }
                                         placeholder={t('admin.ldapProviders.form.lastNameAttributePlaceholder')}
                                         className='mt-0'
                                     />
@@ -529,9 +594,14 @@ export default function LdapProvidersPage() {
 
                         {/* Group-Based Access */}
                         <div className='space-y-4 pb-4 border-b border-border'>
-                            <h3 className='text-sm font-semibold text-foreground'>{t('admin.ldapProviders.form.groupBasedAccess')}</h3>
+                            <h3 className='text-sm font-semibold text-foreground'>
+                                {t('admin.ldapProviders.form.groupBasedAccess')}
+                            </h3>
                             <div className='space-y-2'>
-                                <Label htmlFor='ldap-group-attr' className='flex items-center gap-2 text-foreground font-medium'>
+                                <Label
+                                    htmlFor='ldap-group-attr'
+                                    className='flex items-center gap-2 text-foreground font-medium'
+                                >
                                     <Users className='h-4 w-4 text-muted-foreground' />
                                     {t('admin.ldapProviders.form.groupAttribute')}
                                 </Label>
@@ -544,7 +614,10 @@ export default function LdapProvidersPage() {
                                 />
                             </div>
                             <div className='space-y-2'>
-                                <Label htmlFor='ldap-required-group' className='flex items-center gap-2 text-foreground font-medium'>
+                                <Label
+                                    htmlFor='ldap-required-group'
+                                    className='flex items-center gap-2 text-foreground font-medium'
+                                >
                                     <Users className='h-4 w-4 text-muted-foreground' />
                                     {t('admin.ldapProviders.form.requiredGroup')}
                                 </Label>
@@ -563,10 +636,15 @@ export default function LdapProvidersPage() {
 
                         {/* Provisioning Options */}
                         <div className='flex flex-col gap-4 pt-2'>
-                            <h3 className='text-sm font-semibold text-foreground'>{t('admin.ldapProviders.form.provisioningOptions')}</h3>
+                            <h3 className='text-sm font-semibold text-foreground'>
+                                {t('admin.ldapProviders.form.provisioningOptions')}
+                            </h3>
                             <div className='flex items-center justify-between gap-4'>
                                 <div>
-                                    <Label htmlFor='ldap-auto-provision' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-auto-provision'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         <Shield className='h-4 w-4 text-muted-foreground' />
                                         {t('admin.ldapProviders.form.autoProvisionLabel')}
                                     </Label>
@@ -584,7 +662,10 @@ export default function LdapProvidersPage() {
                             </div>
                             <div className='flex items-center justify-between gap-4'>
                                 <div>
-                                    <Label htmlFor='ldap-sync-attrs' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-sync-attrs'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         <Mail className='h-4 w-4 text-muted-foreground' />
                                         {t('admin.ldapProviders.form.syncAttributesLabel')}
                                     </Label>
@@ -602,7 +683,10 @@ export default function LdapProvidersPage() {
                             </div>
                             <div className='flex items-center justify-between gap-4'>
                                 <div>
-                                    <Label htmlFor='ldap-generate-email' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-generate-email'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         <Mail className='h-4 w-4 text-muted-foreground' />
                                         {t('admin.ldapProviders.form.generateEmailLabel')}
                                     </Label>
@@ -614,13 +698,19 @@ export default function LdapProvidersPage() {
                                     id='ldap-generate-email'
                                     checked={editing.generate_email_if_missing === 'true'}
                                     onCheckedChange={(checked) =>
-                                        setEditing({ ...editing, generate_email_if_missing: checked ? 'true' : 'false' })
+                                        setEditing({
+                                            ...editing,
+                                            generate_email_if_missing: checked ? 'true' : 'false',
+                                        })
                                     }
                                 />
                             </div>
                             <div className='flex items-center justify-between gap-4'>
                                 <div>
-                                    <Label htmlFor='ldap-enabled' className='flex items-center gap-2 text-foreground font-medium'>
+                                    <Label
+                                        htmlFor='ldap-enabled'
+                                        className='flex items-center gap-2 text-foreground font-medium'
+                                    >
                                         <Server className='h-4 w-4 text-muted-foreground' />
                                         {t('admin.ldapProviders.form.enableProviderLabel')}
                                     </Label>

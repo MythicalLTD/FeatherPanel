@@ -195,9 +195,7 @@ export default function VmInstancesCreatePage() {
                 setNetworks([{ key: 'net0', vm_ip_id: ips[0]?.id ?? null }]);
                 const clusterNodes = clusterRes.data.data?.nodes ?? [];
                 // Sort nodes alphabetically for consistent ordering
-                const sortedNodes = [...clusterNodes].sort((a, b) => 
-                    (a.node || '').localeCompare(b.node || '')
-                );
+                const sortedNodes = [...clusterNodes].sort((a, b) => (a.node || '').localeCompare(b.node || ''));
                 setPveNodes(sortedNodes);
                 setPveNode(sortedNodes[0]?.node ?? '');
             })

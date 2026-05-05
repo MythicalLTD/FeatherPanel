@@ -48,11 +48,9 @@ export default function OidcProvidersPage() {
     const [saving, setSaving] = useState(false);
     const [editing, setEditing] = useState<OidcProvider | null>(null);
     const [clientSecret, setClientSecret] = useState('');
-    
+
     // Get callback URL
-    const callbackUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/api/user/auth/oidc/callback`
-        : '';
+    const callbackUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/user/auth/oidc/callback` : '';
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -187,15 +185,8 @@ export default function OidcProvidersPage() {
                         {t('admin.oidcProviders.callbackUrlDescription')}
                     </p>
                     <div className='flex items-center gap-2'>
-                        <Input
-                            value={callbackUrl}
-                            readOnly
-                            className='font-mono text-sm'
-                        />
-                        <Button
-                            variant='outline'
-                            onClick={() => copyToClipboard(callbackUrl)}
-                        >
+                        <Input value={callbackUrl} readOnly className='font-mono text-sm' />
+                        <Button variant='outline' onClick={() => copyToClipboard(callbackUrl)}>
                             {t('admin.oidcProviders.copyCallbackUrl')}
                         </Button>
                     </div>

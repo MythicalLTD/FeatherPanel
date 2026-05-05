@@ -16,9 +16,9 @@
  */
 
 use App\App;
+use App\Controllers\User\Auth\LdapController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
-use App\Controllers\User\Auth\LdapController;
 
 return function (RouteCollection $routes): void {
     // LDAP login

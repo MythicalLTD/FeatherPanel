@@ -24,256 +24,268 @@ use App\App;
  */
 class LdapAuthenticator
 {
-	private $connection;
-	private array $config;
-	private ?string $lastError = null;
+    private $connection;
+    private array $config;
+    private ?string $lastError = null;
 
-	public function __construct(array $config)
-	{
-		$this->config = $config;
-	}
+    public function __construct(array $config)
+    {
+        $this->config = $config;
+    }
 
-	/**
-	 * Connect to LDAP server.
-	 */
-	public function connect(): bool
-	{
-		if (!extension_loaded('ldap')) {
-			$this->lastError = 'LDAP extension is not loaded';
-			return false;
-		}
+    /**
+     * Connect to LDAP server.
+     */
+    public function connect(): bool
+    {
+        if (!extension_loaded('ldap')) {
+            $this->lastError = 'LDAP extension is not loaded';
 
-		$protocol = 'ldap://';
-		if (($this->config['use_ssl'] ?? 'false') === 'true') {
-			$protocol = 'ldaps://';
-		}
+            return false;
+        }
 
-		$host = $protocol . $this->config['host'];
-		$port = (int) ($this->config['port'] ?? 389);
+        $protocol = 'ldap://';
+        if (($this->config['use_ssl'] ?? 'false') === 'true') {
+            $protocol = 'ldaps://';
+        }
 
-		$this->connection = @ldap_connect($host, $port);
+        $host = $protocol . $this->config['host'];
+        $port = (int) ($this->config['port'] ?? 389);
 
-		if (!$this->connection) {
-			$this->lastError = 'Failed to connect to LDAP server';
-			return false;
-		}
+        $this->connection = @ldap_connect($host, $port);
 
-		// Set LDAP options
-		ldap_set_option($this->connection, LDAP_OPT_PROTOCOL_VERSION, 3);
-		ldap_set_option($this->connection, LDAP_OPT_REFERRALS, 0);
-		ldap_set_option($this->connection, LDAP_OPT_NETWORK_TIMEOUT, 10);
+        if (!$this->connection) {
+            $this->lastError = 'Failed to connect to LDAP server';
 
-		// Enable TLS if configured
-		if (($this->config['use_tls'] ?? 'false') === 'true' && ($this->config['use_ssl'] ?? 'false') !== 'true') {
-			if (!@ldap_start_tls($this->connection)) {
-				$this->lastError = 'Failed to start TLS: ' . ldap_error($this->connection);
-				return false;
-			}
-		}
+            return false;
+        }
 
-		return true;
-	}
+        // Set LDAP options
+        ldap_set_option($this->connection, LDAP_OPT_PROTOCOL_VERSION, 3);
+        ldap_set_option($this->connection, LDAP_OPT_REFERRALS, 0);
+        ldap_set_option($this->connection, LDAP_OPT_NETWORK_TIMEOUT, 10);
 
-	/**
-	 * Authenticate user against LDAP.
-	 */
-	public function authenticate(string $username, string $password): ?array
-	{
-		if (!$this->connect()) {
-			return null;
-		}
+        // Enable TLS if configured
+        if (($this->config['use_tls'] ?? 'false') === 'true' && ($this->config['use_ssl'] ?? 'false') !== 'true') {
+            if (!@ldap_start_tls($this->connection)) {
+                $this->lastError = 'Failed to start TLS: ' . ldap_error($this->connection);
 
-		try {
-			// Bind with service account if configured
-			if (!empty($this->config['bind_dn']) && !empty($this->config['bind_password'])) {
-				$app = App::getInstance(true);
-				$bindPassword = $app->decryptValue($this->config['bind_password']);
+                return false;
+            }
+        }
 
-				if (!@ldap_bind($this->connection, $this->config['bind_dn'], $bindPassword)) {
-					$this->lastError = 'Service account bind failed: ' . ldap_error($this->connection);
-					return null;
-				}
-			} else {
-				// Anonymous bind
-				if (!@ldap_bind($this->connection)) {
-					$this->lastError = 'Anonymous bind failed: ' . ldap_error($this->connection);
-					return null;
-				}
-			}
+        return true;
+    }
 
-			// Search for user
-			$userFilter = str_replace('{username}', ldap_escape($username, '', LDAP_ESCAPE_FILTER), $this->config['user_filter']);
-			$baseDn = $this->config['base_dn'];
+    /**
+     * Authenticate user against LDAP.
+     */
+    public function authenticate(string $username, string $password): ?array
+    {
+        if (!$this->connect()) {
+            return null;
+        }
 
-			$usernameAttr = $this->config['username_attribute'] ?? 'uid';
-			$emailAttr = $this->config['email_attribute'] ?? 'mail';
-			$firstNameAttr = $this->config['first_name_attribute'] ?? 'givenName';
-			$lastNameAttr = $this->config['last_name_attribute'] ?? 'sn';
+        try {
+            // Bind with service account if configured
+            if (!empty($this->config['bind_dn']) && !empty($this->config['bind_password'])) {
+                $app = App::getInstance(true);
+                $bindPassword = $app->decryptValue($this->config['bind_password']);
 
-			$attributes = ['dn', $usernameAttr, $emailAttr];
-			if (!empty($firstNameAttr)) {
-				$attributes[] = $firstNameAttr;
-			}
-			if (!empty($lastNameAttr)) {
-				$attributes[] = $lastNameAttr;
-			}
-			if (!empty($this->config['group_attribute'])) {
-				$attributes[] = $this->config['group_attribute'];
-			}
+                if (!@ldap_bind($this->connection, $this->config['bind_dn'], $bindPassword)) {
+                    $this->lastError = 'Service account bind failed: ' . ldap_error($this->connection);
 
-			$search = @ldap_search($this->connection, $baseDn, $userFilter, $attributes);
+                    return null;
+                }
+            } else {
+                // Anonymous bind
+                if (!@ldap_bind($this->connection)) {
+                    $this->lastError = 'Anonymous bind failed: ' . ldap_error($this->connection);
 
-			if (!$search) {
-				$this->lastError = 'User search failed: ' . ldap_error($this->connection);
-				return null;
-			}
+                    return null;
+                }
+            }
 
-			$entries = ldap_get_entries($this->connection, $search);
+            // Search for user
+            $userFilter = str_replace('{username}', ldap_escape($username, '', LDAP_ESCAPE_FILTER), $this->config['user_filter']);
+            $baseDn = $this->config['base_dn'];
 
-			if ($entries['count'] === 0) {
-				$this->lastError = 'User not found in LDAP directory';
-				return null;
-			}
+            $usernameAttr = $this->config['username_attribute'] ?? 'uid';
+            $emailAttr = $this->config['email_attribute'] ?? 'mail';
+            $firstNameAttr = $this->config['first_name_attribute'] ?? 'givenName';
+            $lastNameAttr = $this->config['last_name_attribute'] ?? 'sn';
 
-			if ($entries['count'] > 1) {
-				$this->lastError = 'Multiple users found with same username';
-				return null;
-			}
+            $attributes = ['dn', $usernameAttr, $emailAttr];
+            if (!empty($firstNameAttr)) {
+                $attributes[] = $firstNameAttr;
+            }
+            if (!empty($lastNameAttr)) {
+                $attributes[] = $lastNameAttr;
+            }
+            if (!empty($this->config['group_attribute'])) {
+                $attributes[] = $this->config['group_attribute'];
+            }
 
-			$entry = $entries[0];
-			$userDn = $entry['dn'];
+            $search = @ldap_search($this->connection, $baseDn, $userFilter, $attributes);
 
-			// Check group membership if required
-			if (!empty($this->config['required_group'])) {
-				$groupAttr = $this->config['group_attribute'] ?? 'memberOf';
-				$userGroups = [];
+            if (!$search) {
+                $this->lastError = 'User search failed: ' . ldap_error($this->connection);
 
-				if (isset($entry[strtolower($groupAttr)])) {
-					$groupData = $entry[strtolower($groupAttr)];
-					$count = $groupData['count'] ?? 0;
-					for ($i = 0; $i < $count; $i++) {
-						$userGroups[] = $groupData[$i];
-					}
-				}
+                return null;
+            }
 
-				$requiredGroup = $this->config['required_group'];
-				$hasRequiredGroup = false;
+            $entries = ldap_get_entries($this->connection, $search);
 
-				foreach ($userGroups as $group) {
-					if (stripos($group, $requiredGroup) !== false) {
-						$hasRequiredGroup = true;
-						break;
-					}
-				}
+            if ($entries['count'] === 0) {
+                $this->lastError = 'User not found in LDAP directory';
 
-				if (!$hasRequiredGroup) {
-					$this->lastError = 'User is not a member of required group';
-					return null;
-				}
-			}
+                return null;
+            }
 
-			// Authenticate user with their password
-			if (!@ldap_bind($this->connection, $userDn, $password)) {
-				$this->lastError = 'Invalid password';
-				return null;
-			}
+            if ($entries['count'] > 1) {
+                $this->lastError = 'Multiple users found with same username';
 
-			// Extract user attributes
-			$userData = [
-				'dn' => $userDn,
-				'username' => $this->getAttributeValue($entry, $usernameAttr),
-				'email' => $this->getAttributeValue($entry, $emailAttr),
-			];
+                return null;
+            }
 
-			if (!empty($firstNameAttr)) {
-				$userData['first_name'] = $this->getAttributeValue($entry, $firstNameAttr);
-			}
-			if (!empty($lastNameAttr)) {
-				$userData['last_name'] = $this->getAttributeValue($entry, $lastNameAttr);
-			}
+            $entry = $entries[0];
+            $userDn = $entry['dn'];
 
-			// Generate email if missing and option is enabled
-			if (empty($userData['email']) && ($this->config['generate_email_if_missing'] ?? 'false') === 'true') {
-				$app = App::getInstance(true);
-				$panelUrl = $app->getConfig()->getSetting(\App\Config\ConfigInterface::APP_URL, 'localhost');
-				// Extract domain from panel URL
-				$domain = parse_url($panelUrl, PHP_URL_HOST) ?? 'localhost';
-				$userData['email'] = $userData['username'] . '@' . $domain;
-				$app->getLogger()->info('LDAP: Generated email for user ' . $userData['username'] . ' as ' . $userData['email']);
-			}
+            // Check group membership if required
+            if (!empty($this->config['required_group'])) {
+                $groupAttr = $this->config['group_attribute'] ?? 'memberOf';
+                $userGroups = [];
 
-			// Debug logging
-			$app = App::getInstance(true);
-			$app->getLogger()->debug('LDAP: User authenticated successfully. Username: ' . $userData['username'] . ', Email: ' . ($userData['email'] ?? 'null') . ', DN: ' . $userDn);
+                if (isset($entry[strtolower($groupAttr)])) {
+                    $groupData = $entry[strtolower($groupAttr)];
+                    $count = $groupData['count'] ?? 0;
+                    for ($i = 0; $i < $count; ++$i) {
+                        $userGroups[] = $groupData[$i];
+                    }
+                }
 
-			return $userData;
+                $requiredGroup = $this->config['required_group'];
+                $hasRequiredGroup = false;
 
-		} finally {
-			if ($this->connection) {
-				@ldap_unbind($this->connection);
-			}
-		}
-	}
+                foreach ($userGroups as $group) {
+                    if (stripos($group, $requiredGroup) !== false) {
+                        $hasRequiredGroup = true;
+                        break;
+                    }
+                }
 
-	/**
-	 * Test connection to LDAP server.
-	 */
-	public function testConnection(): bool
-	{
-		if (!$this->connect()) {
-			return false;
-		}
+                if (!$hasRequiredGroup) {
+                    $this->lastError = 'User is not a member of required group';
 
-		try {
-			// Try to bind
-			if (!empty($this->config['bind_dn']) && !empty($this->config['bind_password'])) {
-				$app = App::getInstance(true);
-				$bindPassword = $app->decryptValue($this->config['bind_password']);
+                    return null;
+                }
+            }
 
-				if (!@ldap_bind($this->connection, $this->config['bind_dn'], $bindPassword)) {
-					$this->lastError = 'Bind failed: ' . ldap_error($this->connection);
-					return false;
-				}
-			} else {
-				if (!@ldap_bind($this->connection)) {
-					$this->lastError = 'Anonymous bind failed: ' . ldap_error($this->connection);
-					return false;
-				}
-			}
+            // Authenticate user with their password
+            if (!@ldap_bind($this->connection, $userDn, $password)) {
+                $this->lastError = 'Invalid password';
 
-			// Try to read base DN
-			$search = @ldap_read($this->connection, $this->config['base_dn'], '(objectClass=*)', ['dn']);
-			if (!$search) {
-				$this->lastError = 'Cannot read base DN: ' . ldap_error($this->connection);
-				return false;
-			}
+                return null;
+            }
 
-			return true;
+            // Extract user attributes
+            $userData = [
+                'dn' => $userDn,
+                'username' => $this->getAttributeValue($entry, $usernameAttr),
+                'email' => $this->getAttributeValue($entry, $emailAttr),
+            ];
 
-		} finally {
-			if ($this->connection) {
-				@ldap_unbind($this->connection);
-			}
-		}
-	}
+            if (!empty($firstNameAttr)) {
+                $userData['first_name'] = $this->getAttributeValue($entry, $firstNameAttr);
+            }
+            if (!empty($lastNameAttr)) {
+                $userData['last_name'] = $this->getAttributeValue($entry, $lastNameAttr);
+            }
 
-	/**
-	 * Get attribute value from LDAP entry.
-	 */
-	private function getAttributeValue(array $entry, string $attribute): ?string
-	{
-		$attrLower = strtolower($attribute);
-		if (isset($entry[$attrLower][0])) {
-			return $entry[$attrLower][0];
-		}
-		return null;
-	}
+            // Generate email if missing and option is enabled
+            if (empty($userData['email']) && ($this->config['generate_email_if_missing'] ?? 'false') === 'true') {
+                $app = App::getInstance(true);
+                $panelUrl = $app->getConfig()->getSetting(\App\Config\ConfigInterface::APP_URL, 'localhost');
+                // Extract domain from panel URL
+                $domain = parse_url($panelUrl, PHP_URL_HOST) ?? 'localhost';
+                $userData['email'] = $userData['username'] . '@' . $domain;
+                $app->getLogger()->info('LDAP: Generated email for user ' . $userData['username'] . ' as ' . $userData['email']);
+            }
 
-	/**
-	 * Get last error message.
-	 */
-	public function getLastError(): ?string
-	{
-		return $this->lastError;
-	}
+            // Debug logging
+            $app = App::getInstance(true);
+            $app->getLogger()->debug('LDAP: User authenticated successfully. Username: ' . $userData['username'] . ', Email: ' . ($userData['email'] ?? 'null') . ', DN: ' . $userDn);
+
+            return $userData;
+        } finally {
+            if ($this->connection) {
+                @ldap_unbind($this->connection);
+            }
+        }
+    }
+
+    /**
+     * Test connection to LDAP server.
+     */
+    public function testConnection(): bool
+    {
+        if (!$this->connect()) {
+            return false;
+        }
+
+        try {
+            // Try to bind
+            if (!empty($this->config['bind_dn']) && !empty($this->config['bind_password'])) {
+                $app = App::getInstance(true);
+                $bindPassword = $app->decryptValue($this->config['bind_password']);
+
+                if (!@ldap_bind($this->connection, $this->config['bind_dn'], $bindPassword)) {
+                    $this->lastError = 'Bind failed: ' . ldap_error($this->connection);
+
+                    return false;
+                }
+            } else {
+                if (!@ldap_bind($this->connection)) {
+                    $this->lastError = 'Anonymous bind failed: ' . ldap_error($this->connection);
+
+                    return false;
+                }
+            }
+
+            // Try to read base DN
+            $search = @ldap_read($this->connection, $this->config['base_dn'], '(objectClass=*)', ['dn']);
+            if (!$search) {
+                $this->lastError = 'Cannot read base DN: ' . ldap_error($this->connection);
+
+                return false;
+            }
+
+            return true;
+        } finally {
+            if ($this->connection) {
+                @ldap_unbind($this->connection);
+            }
+        }
+    }
+
+    /**
+     * Get last error message.
+     */
+    public function getLastError(): ?string
+    {
+        return $this->lastError;
+    }
+
+    /**
+     * Get attribute value from LDAP entry.
+     */
+    private function getAttributeValue(array $entry, string $attribute): ?string
+    {
+        $attrLower = strtolower($attribute);
+        if (isset($entry[$attrLower][0])) {
+            return $entry[$attrLower][0];
+        }
+
+        return null;
+    }
 }

@@ -267,10 +267,11 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> ip_address, reason, user, username_or_email</p>
+  <p class="muted"><strong>Data keys:</strong> error, ip_address, provider, reason, user, username, username_or_email</p>
 
   <h3>Emitted From</h3>
   <ul>
+<li><code>backend/app/Controllers/User/Auth/LdapController.php</code></li>
 <li><code>backend/app/Controllers/User/Auth/LoginController.php</code></li>
   </ul>
 
@@ -280,9 +281,9 @@ use App\Plugins\Events\Events\AuthEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(AuthEvent::onAuthLoginFailed(), function ($ipAddress, $reason, $user, $usernameOrEmail) {
+    $evt->on(AuthEvent::onAuthLoginFailed(), function ($error, $ipAddress, $provider, $reason, $user, $username, $usernameOrEmail) {
         // Handle featherpanel:auth:login:failed
-        // Data keys: ip_address, reason, user, username_or_email
+        // Data keys: error, ip_address, provider, reason, user, username, username_or_email
     });
 }</code></pre>
 </article>
