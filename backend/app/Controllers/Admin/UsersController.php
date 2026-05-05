@@ -689,12 +689,16 @@ class UsersController
                 [
                     'user' => $data,
                     'user_id' => $userId,
+                    'uuid' => $data['uuid'],
                     'created_by' => $request->get('user'),
                 ]
             );
         }
 
-        return ApiResponse::success(['user_id' => $userId], 'User created successfully', 201);
+        return ApiResponse::success([
+            'user_id' => $userId,
+            'uuid' => $data['uuid'],
+        ], 'User created successfully', 201);
     }
 
     #[OA\Patch(

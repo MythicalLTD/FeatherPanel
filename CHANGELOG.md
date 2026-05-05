@@ -6,13 +6,14 @@
 
 - Introduced robust LDAP/Active Directory authentication support for FeatherPanel, enabling seamless integration with existing enterprise login systems. by @nayskutzu
 - Enhanced OAuth2 configuration by displaying the authorization URL, allowing users to easily identify and verify their OCID endpoint. by @nayskutzu
+- Introduced UUID-based response for /admin/api/users when creating a new user, aligning with other API endpoints that rely on UUID identifiers. by @nayskutzu
 
 ### Fixed
 
 - Fixed an issue where two loading spinners would appear simultaneously when creating a new VDS instance, ensuring only one spinner is shown as intended. by @nayskutzu
 - Resolved an issue where users were redirected to a raw JSON page after logging in via an OIDC provider, ensuring a seamless post-login experience.
 - Fixed Proxmox node selection displaying in inconsistent order when creating VDS instances—nodes are now sorted alphabetically for predictable selection.
-
+- Fixed inconsistency where /admin/api/users returned userId instead of UUID, which caused issues when interacting with endpoints such as user retrieval and SSO token creation that require UUID. by @nayskutzu
 
 ## v1.3.6 STABLE
 
