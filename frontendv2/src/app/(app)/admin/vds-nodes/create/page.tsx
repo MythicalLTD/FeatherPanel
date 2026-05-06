@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { cn } from '@/lib/utils';
 
 interface Location {
     id: number;
@@ -56,6 +57,14 @@ export default function CreateVdsNodePage() {
     const [loading, setLoading] = useState(false);
     const [locations, setLocations] = useState<Location[]>([]);
     const [locationModalOpen, setLocationModalOpen] = useState(false);
+    const [locationPickerMode, setLocationPickerMode] = useState<'select' | 'create'>('select');
+    const [newLocationForm, setNewLocationForm] = useState({
+        name: '',
+        description: '',
+        flag_code: '__NONE__' as string,
+    });
+    const [countryCodes, setCountryCodes] = useState<Record<string, string>>({});
+    const [creatingLocation, setCreatingLocation] = useState(false);
     const [selectedLocationName, setSelectedLocationName] = useState<string>('');
     const [locationSearch, setLocationSearch] = useState('');
     const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
@@ -128,11 +137,40 @@ export default function CreateVdsNodePage() {
         }
     }, [locationPagination.current_page, locationPagination.per_page, debouncedLocationSearch]);
 
+    const openLocationPicker = useCallback(() => {
+        setLocationPickerMode('select');
+        fetchLocations();
+        setLocationModalOpen(true);
+    }, [fetchLocations]);
+
     useEffect(() => {
         if (locationModalOpen) {
             fetchLocations();
         }
     }, [locationModalOpen, locationPagination.current_page, debouncedLocationSearch, fetchLocations]);
+
+    useEffect(() => {
+        if (!locationModalOpen || locationPickerMode !== 'create') return;
+        let cancelled = false;
+        const loadCountryCodes = async () => {
+            try {
+                const { data } = await axios.get('/api/system/country-codes');
+                if (cancelled || !data?.success || !data.data?.country_codes) return;
+                const sorted = Object.entries(data.data.country_codes as Record<string, string>).sort((a, b) =>
+                    a[1].localeCompare(b[1]),
+                );
+                setCountryCodes(Object.fromEntries(sorted));
+            } catch {
+                if (!cancelled) {
+                    toast.error(t('admin.locations.messages.country_codes_failed'));
+                }
+            }
+        };
+        void loadCountryCodes();
+        return () => {
+            cancelled = true;
+        };
+    }, [locationModalOpen, locationPickerMode, t]);
 
     const validate = useCallback(() => {
         const newErrors: Record<string, string> = {};
@@ -216,6 +254,44 @@ export default function CreateVdsNodePage() {
         }
     };
 
+    const handleCreateLocationInline = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const name = newLocationForm.name.trim();
+        if (name.length < 2) {
+            toast.error(t('admin.vdsNodes.form.create_location_name_required'));
+            return;
+        }
+        setCreatingLocation(true);
+        try {
+            const payload = {
+                name,
+                type: 'vps' as const,
+                ...(newLocationForm.description.trim() ? { description: newLocationForm.description.trim() } : {}),
+                flag_code: newLocationForm.flag_code === '__NONE__' ? null : newLocationForm.flag_code || null,
+            };
+            const { data } = await axios.put('/api/admin/locations', payload);
+            const loc = data?.data?.location as { id: number; name: string } | undefined;
+            if (!loc?.id) {
+                toast.error(t('admin.locations.messages.create_failed'));
+                return;
+            }
+            setForm((prev) => ({ ...prev, location_id: loc.id.toString() }));
+            setSelectedLocationName(loc.name);
+            setLocationPickerMode('select');
+            setNewLocationForm({ name: '', description: '', flag_code: '__NONE__' });
+            setLocationModalOpen(false);
+            toast.success(t('admin.locations.messages.created'));
+        } catch (error: unknown) {
+            if (isAxiosError(error) && error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error(t('admin.locations.messages.create_failed'));
+            }
+        } finally {
+            setCreatingLocation(false);
+        }
+    };
+
     return (
         <div className='max-w-5xl mx-auto py-8 px-4'>
             <WidgetRenderer widgets={getWidgets('admin-vds-nodes-create', 'top-of-page')} />
@@ -267,7 +343,12 @@ export default function CreateVdsNodePage() {
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.location')}</Label>
                                     <div className='flex gap-2'>
-                                        <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                                        <button
+                                            type='button'
+                                            onClick={openLocationPicker}
+                                            aria-label={t('admin.vdsNodes.form.select_location')}
+                                            className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center text-left cursor-pointer hover:bg-muted/45 hover:border-border transition-colors'
+                                        >
                                             {form.location_id && selectedLocationName ? (
                                                 <div className='flex items-center gap-2'>
                                                     <MapPin className='h-4 w-4 text-primary' />
@@ -280,15 +361,8 @@ export default function CreateVdsNodePage() {
                                                     {t('admin.vdsNodes.form.select_location')}
                                                 </span>
                                             )}
-                                        </div>
-                                        <Button
-                                            type='button'
-                                            size='icon'
-                                            onClick={() => {
-                                                fetchLocations();
-                                                setLocationModalOpen(true);
-                                            }}
-                                        >
+                                        </button>
+                                        <Button type='button' size='icon' onClick={openLocationPicker}>
                                             <SearchIcon className='h-4 w-4' />
                                         </Button>
                                     </div>
@@ -581,95 +655,206 @@ export default function CreateVdsNodePage() {
                 </div>
             </form>
 
-            <Sheet open={locationModalOpen} onOpenChange={setLocationModalOpen}>
+            <Sheet
+                open={locationModalOpen}
+                onOpenChange={(open) => {
+                    setLocationModalOpen(open);
+                    if (!open) {
+                        setLocationPickerMode('select');
+                        setNewLocationForm({ name: '', description: '', flag_code: '__NONE__' });
+                    }
+                }}
+            >
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.vdsNodes.form.select_location')}</SheetTitle>
-                        <SheetDescription>{t('admin.vdsNodes.form.select_location_description')}</SheetDescription>
+                        <SheetDescription>
+                            {locationPickerMode === 'select'
+                                ? t('admin.vdsNodes.form.select_location_sheet_description', {
+                                      total: String(locationPagination.total_records || 0),
+                                  })
+                                : t('admin.vdsNodes.form.create_location_hint')}
+                        </SheetDescription>
                     </SheetHeader>
 
                     <div className='mt-6 space-y-4'>
-                        <div className='relative'>
-                            <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-                            <Input
-                                placeholder={t('admin.vdsNodes.form.search_locations')}
-                                value={locationSearch}
-                                onChange={(e) => setLocationSearch(e.target.value)}
-                                className='pl-10'
-                            />
+                        <div className='flex rounded-xl border border-border/60 p-1 bg-muted/30 gap-1'>
+                            <button
+                                type='button'
+                                onClick={() => setLocationPickerMode('select')}
+                                className={cn(
+                                    'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                    locationPickerMode === 'select'
+                                        ? 'bg-background text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                )}
+                            >
+                                <SearchIcon className='h-4 w-4' />
+                                {t('admin.vdsNodes.form.location_picker_existing')}
+                            </button>
+                            <button
+                                type='button'
+                                onClick={() => setLocationPickerMode('create')}
+                                className={cn(
+                                    'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                    locationPickerMode === 'create'
+                                        ? 'bg-background text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                )}
+                            >
+                                <Plus className='h-4 w-4' />
+                                {t('admin.vdsNodes.form.location_picker_create')}
+                            </button>
                         </div>
 
-                        {locationPagination.total_pages > 1 && (
-                            <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_prev}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page - 1,
-                                        }))
-                                    }
-                                    className='gap-1 h-8'
-                                >
-                                    <ChevronLeft className='h-3 w-3' />
-                                    {t('common.previous')}
-                                </Button>
-                                <span className='text-xs font-medium'>
-                                    {locationPagination.current_page} / {locationPagination.total_pages}
-                                </span>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_next}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page + 1,
-                                        }))
-                                    }
-                                    className='gap-1 h-8'
-                                >
-                                    {t('common.next')}
-                                    <ChevronRight className='h-3 w-3' />
-                                </Button>
-                            </div>
-                        )}
-
-                        <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
-                            {locations.length === 0 ? (
-                                <div className='text-center py-8 text-muted-foreground'>
-                                    {t('admin.vdsNodes.form.no_locations_found')}
+                        {locationPickerMode === 'create' ? (
+                            <form onSubmit={handleCreateLocationInline} className='space-y-4'>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='vds-inline-loc-name'>{t('admin.locations.form.name')} *</Label>
+                                    <Input
+                                        id='vds-inline-loc-name'
+                                        value={newLocationForm.name}
+                                        onChange={(e) =>
+                                            setNewLocationForm((prev) => ({ ...prev, name: e.target.value }))
+                                        }
+                                        placeholder={t('admin.locations.form.name')}
+                                        required
+                                        minLength={2}
+                                    />
                                 </div>
-                            ) : (
-                                locations.map((location) => (
-                                    <button
-                                        key={location.id}
-                                        onClick={() => {
-                                            setForm((prev) => ({ ...prev, location_id: location.id.toString() }));
-                                            setSelectedLocationName(location.name);
-                                            setLocationModalOpen(false);
-                                        }}
-                                        className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                <div className='space-y-2'>
+                                    <Label htmlFor='vds-inline-loc-desc'>{t('admin.locations.form.description')}</Label>
+                                    <Input
+                                        id='vds-inline-loc-desc'
+                                        value={newLocationForm.description}
+                                        onChange={(e) =>
+                                            setNewLocationForm((prev) => ({ ...prev, description: e.target.value }))
+                                        }
+                                    />
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='vds-inline-loc-flag'>{t('admin.locations.form.flag')}</Label>
+                                    <Select
+                                        id='vds-inline-loc-flag'
+                                        value={newLocationForm.flag_code}
+                                        onChange={(e) =>
+                                            setNewLocationForm((prev) => ({
+                                                ...prev,
+                                                flag_code: e.target.value,
+                                            }))
+                                        }
                                     >
-                                        <div className='flex items-start gap-3'>
-                                            <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
-                                                <MapPin className='h-5 w-5 text-primary' />
-                                            </div>
-                                            <div className='flex-1 min-w-0'>
-                                                <div className='font-medium'>{location.name}</div>
-                                                {location.description && (
-                                                    <div className='text-sm text-muted-foreground mt-1'>
-                                                        {location.description}
-                                                    </div>
-                                                )}
-                                            </div>
+                                        <option value='__NONE__'>{t('admin.locations.form.flag_none')}</option>
+                                        {Object.entries(countryCodes).map(([code, name]) => (
+                                            <option key={code} value={code}>
+                                                {name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </div>
+                                <div className='flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2'>
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        onClick={() => setLocationPickerMode('select')}
+                                    >
+                                        {t('common.cancel')}
+                                    </Button>
+                                    <Button type='submit' loading={creatingLocation}>
+                                        <Plus className='h-4 w-4 mr-2' />
+                                        {t('admin.vdsNodes.form.create_location_submit')}
+                                    </Button>
+                                </div>
+                            </form>
+                        ) : (
+                            <>
+                                <div className='relative'>
+                                    <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                                    <Input
+                                        placeholder={t('admin.vdsNodes.form.search_locations')}
+                                        value={locationSearch}
+                                        onChange={(e) => setLocationSearch(e.target.value)}
+                                        className='pl-10'
+                                    />
+                                </div>
+
+                                {locationPagination.total_pages > 1 && (
+                                    <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                        <Button
+                                            variant='outline'
+                                            size='sm'
+                                            disabled={!locationPagination.has_prev}
+                                            onClick={() =>
+                                                setLocationPagination((prev) => ({
+                                                    ...prev,
+                                                    current_page: prev.current_page - 1,
+                                                }))
+                                            }
+                                            className='gap-1 h-8'
+                                        >
+                                            <ChevronLeft className='h-3 w-3' />
+                                            {t('common.previous')}
+                                        </Button>
+                                        <span className='text-xs font-medium'>
+                                            {locationPagination.current_page} / {locationPagination.total_pages}
+                                        </span>
+                                        <Button
+                                            variant='outline'
+                                            size='sm'
+                                            disabled={!locationPagination.has_next}
+                                            onClick={() =>
+                                                setLocationPagination((prev) => ({
+                                                    ...prev,
+                                                    current_page: prev.current_page + 1,
+                                                }))
+                                            }
+                                            className='gap-1 h-8'
+                                        >
+                                            {t('common.next')}
+                                            <ChevronRight className='h-3 w-3' />
+                                        </Button>
+                                    </div>
+                                )}
+
+                                <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
+                                    {locations.length === 0 ? (
+                                        <div className='text-center py-8 text-muted-foreground'>
+                                            {t('admin.vdsNodes.form.no_locations_found')}
                                         </div>
-                                    </button>
-                                ))
-                            )}
-                        </div>
+                                    ) : (
+                                        locations.map((location) => (
+                                            <button
+                                                key={location.id}
+                                                type='button'
+                                                onClick={() => {
+                                                    setForm((prev) => ({
+                                                        ...prev,
+                                                        location_id: location.id.toString(),
+                                                    }));
+                                                    setSelectedLocationName(location.name);
+                                                    setLocationModalOpen(false);
+                                                }}
+                                                className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                            >
+                                                <div className='flex items-start gap-3'>
+                                                    <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
+                                                        <MapPin className='h-5 w-5 text-primary' />
+                                                    </div>
+                                                    <div className='flex-1 min-w-0'>
+                                                        <div className='font-medium'>{location.name}</div>
+                                                        {location.description && (
+                                                            <div className='text-sm text-muted-foreground mt-1'>
+                                                                {location.description}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </SheetContent>
             </Sheet>
