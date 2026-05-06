@@ -90,6 +90,8 @@ interface ConfigInterface
      */
     public const REGISTRATION_ENABLED = 'registration_enabled';
     public const REGISTRATION_REQUIRE_EMAIL_VERIFICATION = 'registration_require_email_verification';
+    /** When true, reject registration/email changes whose domain matches featherpanel_blocked_email_domains (admin-managed). */
+    public const EMAIL_DOMAIN_BLOCKING_ENABLED = 'email_domain_blocking_enabled';
     public const REQUIRE_TWO_FA_ADMINS = 'require_two_fa_admins';
     /**
      * Telemetry.

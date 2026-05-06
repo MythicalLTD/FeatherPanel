@@ -29,6 +29,7 @@ use App\Chat\MailQueue;
 use App\Helpers\UUIDUtils;
 use App\Cli\CommandBuilder;
 use App\Config\ConfigInterface;
+use App\Helpers\EmailDomainValidator;
 
 class Users extends App implements CommandBuilder
 {
@@ -321,6 +322,14 @@ class Users extends App implements CommandBuilder
             return;
         }
 
+        $domainRejection = EmailDomainValidator::getRejection(self::$app->getConfig(), $email);
+        if ($domainRejection !== null) {
+            self::$cliApp->send('&c' . $domainRejection['message'] . ' Press any key...');
+            self::waitForInput();
+
+            return;
+        }
+
         if (User::getUserByEmail($email)) {
             self::$cliApp->send('&cEmail already exists. Press any key...');
             self::waitForInput();
@@ -459,6 +468,13 @@ class Users extends App implements CommandBuilder
             case 'email':
                 if (!filter_var($newValue, FILTER_VALIDATE_EMAIL)) {
                     self::$cliApp->send('&cInvalid email address. Press any key...');
+                    self::waitForInput();
+
+                    return;
+                }
+                $domainRejection = EmailDomainValidator::getRejection(self::$app->getConfig(), $newValue);
+                if ($domainRejection !== null) {
+                    self::$cliApp->send('&c' . $domainRejection['message'] . ' Press any key...');
                     self::waitForInput();
 
                     return;

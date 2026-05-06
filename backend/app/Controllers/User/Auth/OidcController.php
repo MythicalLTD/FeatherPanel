@@ -22,6 +22,7 @@ use App\Chat\User;
 use App\Cache\Cache;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Helpers\EmailDomainValidator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -326,6 +327,15 @@ class OidcController
         }
         $emailValue = trim($email);
         if (!filter_var($emailValue, FILTER_VALIDATE_EMAIL)) {
+            return null;
+        }
+
+        $domainRejection = EmailDomainValidator::getRejection($app->getConfig(), $emailValue);
+        if ($domainRejection !== null) {
+            $app->getLogger()->warning(
+                'OIDC auto-provision rejected email domain policy: ' . $emailValue . ' (' . $domainRejection['code'] . ')'
+            );
+
             return null;
         }
 

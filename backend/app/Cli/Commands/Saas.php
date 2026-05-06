@@ -24,6 +24,7 @@ use App\Helpers\UUIDUtils;
 use App\Cli\CommandBuilder;
 use App\Config\ConfigFactory;
 use App\Config\ConfigInterface;
+use App\Helpers\EmailDomainValidator;
 
 class Saas extends App implements CommandBuilder
 {
@@ -159,6 +160,13 @@ class Saas extends App implements CommandBuilder
         // Validate email
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             self::$cliApp->send('&cError: Invalid email address');
+
+            return;
+        }
+
+        $domainRejection = EmailDomainValidator::getRejection(self::$config, $email);
+        if ($domainRejection !== null) {
+            self::$cliApp->send('&cError: ' . $domainRejection['message']);
 
             return;
         }

@@ -25,6 +25,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\LdapAuthenticator;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\EmailDomainValidator;
 use App\CloudFlare\CloudFlareTurnstile;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -211,6 +212,16 @@ class LdapController
                 return null;
             }
 
+            $domainRejection = EmailDomainValidator::getRejection($app->getConfig(), $ldapUser['email']);
+            if ($domainRejection !== null) {
+                $logger->warning(
+                    'LDAP: User provisioning rejected by email domain policy. Email: '
+                    . $ldapUser['email'] . ', DN: ' . ($ldapUser['dn'] ?? 'unknown') . ', Reason: ' . $domainRejection['code']
+                );
+
+                return null;
+            }
+
             // Check if email already exists
             $existingUser = User::getUserByEmail($ldapUser['email']);
             if ($existingUser) {
@@ -279,10 +290,19 @@ class LdapController
         $updates = [];
 
         if (!empty($ldapUser['email']) && $ldapUser['email'] !== $userInfo['email']) {
-            // Only update email if it's not already taken by another user
-            $existingUser = User::getUserByEmail($ldapUser['email']);
-            if (!$existingUser || $existingUser['uuid'] === $userInfo['uuid']) {
-                $updates['email'] = $ldapUser['email'];
+            $app = App::getInstance(true);
+            $domainRejection = EmailDomainValidator::getRejection($app->getConfig(), $ldapUser['email']);
+            if ($domainRejection !== null) {
+                $app->getLogger()->warning(
+                    'LDAP: Skipped email sync — domain policy. User UUID: ' . ($userInfo['uuid'] ?? 'unknown')
+                    . ', Attempted email: ' . $ldapUser['email'] . ', Reason: ' . $domainRejection['code']
+                );
+            } else {
+                // Only update email if it's not already taken by another user
+                $existingUser = User::getUserByEmail($ldapUser['email']);
+                if (!$existingUser || $existingUser['uuid'] === $userInfo['uuid']) {
+                    $updates['email'] = $ldapUser['email'];
+                }
             }
         }
 

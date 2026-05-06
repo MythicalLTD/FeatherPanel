@@ -53,6 +53,8 @@ export interface AppSettings {
     legal_tos: string;
     legal_privacy: string;
     registration_enabled: string;
+    /** When true, email domain blocking uses featherpanel_blocked_email_domains */
+    email_domain_blocking_enabled?: string;
     require_two_fa_admins: string;
     telemetry: string;
     discord_oauth_enabled: string;

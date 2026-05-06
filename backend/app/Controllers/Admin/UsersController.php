@@ -37,6 +37,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\EmailDomainValidator;
 use App\Mail\templates\AccountBanned;
 use App\Mail\templates\AccountDeleted;
 use App\Mail\templates\AccountUnBanned;
@@ -625,6 +626,10 @@ class UsersController
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             return ApiResponse::error('Invalid email address', 'INVALID_EMAIL_ADDRESS');
         }
+        $domainRejection = EmailDomainValidator::getRejection($config, $data['email']);
+        if ($domainRejection !== null) {
+            return ApiResponse::error($domainRejection['message'], $domainRejection['code'], 400);
+        }
         // Check for existing email/username
         if (User::getUserByEmail($data['email'])) {
             return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS', 409);
@@ -793,6 +798,12 @@ class UsersController
         if (isset($data['email'])) {
             if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
                 return ApiResponse::error('Invalid email address', 'INVALID_EMAIL_ADDRESS');
+            }
+            if ($data['email'] !== $user['email']) {
+                $domainRejection = EmailDomainValidator::getRejection($config, $data['email']);
+                if ($domainRejection !== null) {
+                    return ApiResponse::error($domainRejection['message'], $domainRejection['code'], 400);
+                }
             }
             $existingUser = User::getUserByEmail($data['email']);
             if ($existingUser && $existingUser['uuid'] !== $user['uuid']) {

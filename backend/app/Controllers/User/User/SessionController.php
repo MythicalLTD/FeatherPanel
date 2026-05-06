@@ -30,6 +30,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\EmailDomainValidator;
 use App\CloudFlare\CloudFlareTurnstile;
 use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -246,6 +247,10 @@ class SessionController
             }
             // Only check for duplicate email if it's different from the current user's email
             if ($data['email'] !== $user['email']) {
+                $domainRejection = EmailDomainValidator::getRejection($config, $data['email']);
+                if ($domainRejection !== null) {
+                    return ApiResponse::error($domainRejection['message'], $domainRejection['code'], 400);
+                }
                 $existingUser = User::getUserByEmail($data['email']);
                 if ($existingUser) {
                     return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS', 409);

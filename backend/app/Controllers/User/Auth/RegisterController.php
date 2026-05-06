@@ -28,6 +28,7 @@ use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
 use App\Mail\templates\VerifyEmail;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\EmailDomainValidator;
 use App\CloudFlare\CloudFlareTurnstile;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -148,6 +149,24 @@ class RegisterController
         // Validate email format
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             return ApiResponse::error('Invalid email address', 'INVALID_EMAIL_ADDRESS');
+        }
+
+        $domainRejection = EmailDomainValidator::getRejection($config, $data['email']);
+        if ($domainRejection !== null) {
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthRegistrationFailed(),
+                    [
+                        'email' => $data['email'],
+                        'username' => $data['username'],
+                        'reason' => $domainRejection['code'],
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
+
+            return ApiResponse::error($domainRejection['message'], $domainRejection['code'], 400);
         }
 
         // Validate username format (optional: only allow alphanumeric and underscores)

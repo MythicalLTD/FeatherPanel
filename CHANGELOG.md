@@ -10,6 +10,7 @@
 - Added server and VM instance expiry date feature with automatic suspension—set an expiration date on any server or VDS/VPS instance, and it will be automatically suspended when the date is reached. by @nayskutzu
 - Enhance power control with state-based actions and kill confirmation by @nayskutzu
 - Support for a really early in development player counter by @nayskutzu
+- Added an email domain blacklist feature, allowing you to block registrations from unwanted or spammy domains, keeping your platform cleaner. by @nayskutzu
 
 ### Fixed
 
@@ -23,6 +24,7 @@
 - Enhanced server power control buttons with proper state-based enabling/disabling (e.g., start only works when stopped, stop/restart only when running). by @nayskutzu
 - Added confirmation dialog for the dangerous "Kill" action with a "Don't ask me again" option to prevent accidental server termination that could corrupt files. by @nayskutzu
 - Made the kill button less prominent (ghost variant) to further reduce accidental clicks. by @nayskutzu
+- Completely reimagined the admin sidebar user experience for enhanced usability and navigation. by @nayskutzu
 
 ## v1.3.6 STABLE
 
