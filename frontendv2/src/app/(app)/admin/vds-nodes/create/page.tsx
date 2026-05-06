@@ -41,7 +41,6 @@ import {
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { AffiliatesShowcase } from '@/components/admin/AffiliatesShowcase';
 
 interface Location {
     id: number;
@@ -234,7 +233,6 @@ export default function CreateVdsNodePage() {
             />
 
             <WidgetRenderer widgets={getWidgets('admin-vds-nodes-create', 'after-header')} />
-            <AffiliatesShowcase endpoint='/api/admin/vm-nodes/affiliates' />
 
             <form onSubmit={handleSubmit} className='space-y-8 mt-8'>
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>

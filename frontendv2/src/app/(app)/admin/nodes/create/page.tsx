@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { getFeatherpanelApiErrorCode, getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -29,10 +29,10 @@ import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Server, ArrowLeft, Save, Search as SearchIcon, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Server, ArrowLeft, Save, Search as SearchIcon, MapPin, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { AffiliatesShowcase } from '@/components/admin/AffiliatesShowcase';
 
 interface Location {
     id: number;
@@ -47,6 +47,14 @@ export default function CreateNodePage() {
     const [loading, setLoading] = useState(false);
     const [locations, setLocations] = useState<Location[]>([]);
     const [locationModalOpen, setLocationModalOpen] = useState(false);
+    const [locationPickerMode, setLocationPickerMode] = useState<'select' | 'create'>('select');
+    const [newLocationForm, setNewLocationForm] = useState({
+        name: '',
+        description: '',
+        flag_code: '__NONE__' as string,
+    });
+    const [countryCodes, setCountryCodes] = useState<Record<string, string>>({});
+    const [creatingLocation, setCreatingLocation] = useState(false);
     const [selectedLocationName, setSelectedLocationName] = useState<string>('');
     const [locationSearch, setLocationSearch] = useState('');
     const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
@@ -121,11 +129,40 @@ export default function CreateNodePage() {
         }
     }, [locationPagination.current_page, locationPagination.per_page, debouncedLocationSearch]);
 
+    const openLocationPicker = useCallback(() => {
+        setLocationPickerMode('select');
+        fetchLocations();
+        setLocationModalOpen(true);
+    }, [fetchLocations]);
+
     useEffect(() => {
         if (locationModalOpen) {
             fetchLocations();
         }
     }, [locationModalOpen, locationPagination.current_page, debouncedLocationSearch, fetchLocations]);
+
+    useEffect(() => {
+        if (!locationModalOpen || locationPickerMode !== 'create') return;
+        let cancelled = false;
+        const loadCountryCodes = async () => {
+            try {
+                const { data } = await axios.get('/api/system/country-codes');
+                if (cancelled || !data?.success || !data.data?.country_codes) return;
+                const sorted = Object.entries(data.data.country_codes as Record<string, string>).sort((a, b) =>
+                    a[1].localeCompare(b[1]),
+                );
+                setCountryCodes(Object.fromEntries(sorted));
+            } catch {
+                if (!cancelled) {
+                    toast.error(t('admin.locations.messages.country_codes_failed'));
+                }
+            }
+        };
+        void loadCountryCodes();
+        return () => {
+            cancelled = true;
+        };
+    }, [locationModalOpen, locationPickerMode, t]);
 
     const validate = useCallback(() => {
         const newErrors: Record<string, string> = {};
@@ -214,6 +251,44 @@ export default function CreateNodePage() {
         }
     };
 
+    const handleCreateLocationInline = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const name = newLocationForm.name.trim();
+        if (name.length < 2) {
+            toast.error(t('admin.node.form.create_location_name_required'));
+            return;
+        }
+        setCreatingLocation(true);
+        try {
+            const payload = {
+                name,
+                type: 'game' as const,
+                ...(newLocationForm.description.trim() ? { description: newLocationForm.description.trim() } : {}),
+                flag_code: newLocationForm.flag_code === '__NONE__' ? null : newLocationForm.flag_code || null,
+            };
+            const { data } = await axios.put('/api/admin/locations', payload);
+            const loc = data?.data?.location as { id: number; name: string } | undefined;
+            if (!loc?.id) {
+                toast.error(t('admin.locations.messages.create_failed'));
+                return;
+            }
+            setForm((prev) => ({ ...prev, location_id: loc.id.toString() }));
+            setSelectedLocationName(loc.name);
+            setLocationPickerMode('select');
+            setNewLocationForm({ name: '', description: '', flag_code: '__NONE__' });
+            setLocationModalOpen(false);
+            toast.success(t('admin.locations.messages.created'));
+        } catch (error: unknown) {
+            if (isAxiosError(error) && error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error(t('admin.locations.messages.create_failed'));
+            }
+        } finally {
+            setCreatingLocation(false);
+        }
+    };
+
     return (
         <div className='max-w-6xl mx-auto py-8 px-4'>
             <WidgetRenderer widgets={getWidgets('admin-nodes-create', 'top-of-page')} />
@@ -231,7 +306,6 @@ export default function CreateNodePage() {
             />
 
             <WidgetRenderer widgets={getWidgets('admin-nodes-create', 'after-header')} />
-            <AffiliatesShowcase endpoint='/api/admin/nodes/affiliates' />
 
             <form onSubmit={handleSubmit} className='space-y-8 mt-8'>
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
@@ -259,7 +333,12 @@ export default function CreateNodePage() {
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.node.form.location')}</Label>
                                     <div className='flex gap-2'>
-                                        <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                                        <button
+                                            type='button'
+                                            onClick={openLocationPicker}
+                                            aria-label={t('admin.node.form.select_location')}
+                                            className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center text-left cursor-pointer hover:bg-muted/45 hover:border-border transition-colors'
+                                        >
                                             {form.location_id && selectedLocationName ? (
                                                 <div className='flex items-center gap-2'>
                                                     <MapPin className='h-4 w-4 text-primary' />
@@ -272,15 +351,8 @@ export default function CreateNodePage() {
                                                     {t('admin.node.form.select_location')}
                                                 </span>
                                             )}
-                                        </div>
-                                        <Button
-                                            type='button'
-                                            size='icon'
-                                            onClick={() => {
-                                                fetchLocations();
-                                                setLocationModalOpen(true);
-                                            }}
-                                        >
+                                        </button>
+                                        <Button type='button' size='icon' onClick={openLocationPicker}>
                                             <SearchIcon className='h-4 w-4' />
                                         </Button>
                                     </div>
@@ -554,18 +626,119 @@ export default function CreateNodePage() {
                 </div>
             </form>
 
-            <Sheet open={locationModalOpen} onOpenChange={setLocationModalOpen}>
+            <Sheet
+                open={locationModalOpen}
+                onOpenChange={(open) => {
+                    setLocationModalOpen(open);
+                    if (!open) {
+                        setLocationPickerMode('select');
+                        setNewLocationForm({ name: '', description: '', flag_code: '__NONE__' });
+                    }
+                }}
+            >
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.node.form.select_location')}</SheetTitle>
                         <SheetDescription>
-                            {t('admin.node.form.select_location_description', {
-                                total: String(locationPagination.total_records || 0),
-                            })}
+                            {locationPickerMode === 'select'
+                                ? t('admin.node.form.select_location_description', {
+                                      total: String(locationPagination.total_records || 0),
+                                  })
+                                : t('admin.node.form.create_location_hint')}
                         </SheetDescription>
                     </SheetHeader>
 
                     <div className='mt-6 space-y-4'>
+                        <div className='flex rounded-xl border border-border/60 p-1 bg-muted/30 gap-1'>
+                            <button
+                                type='button'
+                                onClick={() => setLocationPickerMode('select')}
+                                className={cn(
+                                    'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                    locationPickerMode === 'select'
+                                        ? 'bg-background text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                )}
+                            >
+                                <SearchIcon className='h-4 w-4' />
+                                {t('admin.node.form.location_picker_existing')}
+                            </button>
+                            <button
+                                type='button'
+                                onClick={() => setLocationPickerMode('create')}
+                                className={cn(
+                                    'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                    locationPickerMode === 'create'
+                                        ? 'bg-background text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                )}
+                            >
+                                <Plus className='h-4 w-4' />
+                                {t('admin.node.form.location_picker_create')}
+                            </button>
+                        </div>
+
+                        {locationPickerMode === 'create' ? (
+                            <form onSubmit={handleCreateLocationInline} className='space-y-4'>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='inline-loc-name'>{t('admin.locations.form.name')} *</Label>
+                                    <Input
+                                        id='inline-loc-name'
+                                        value={newLocationForm.name}
+                                        onChange={(e) =>
+                                            setNewLocationForm((prev) => ({ ...prev, name: e.target.value }))
+                                        }
+                                        placeholder={t('admin.locations.form.name')}
+                                        required
+                                        minLength={2}
+                                    />
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='inline-loc-desc'>{t('admin.locations.form.description')}</Label>
+                                    <Input
+                                        id='inline-loc-desc'
+                                        value={newLocationForm.description}
+                                        onChange={(e) =>
+                                            setNewLocationForm((prev) => ({ ...prev, description: e.target.value }))
+                                        }
+                                    />
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='inline-loc-flag'>{t('admin.locations.form.flag')}</Label>
+                                    <Select
+                                        id='inline-loc-flag'
+                                        value={newLocationForm.flag_code}
+                                        onChange={(e) =>
+                                            setNewLocationForm((prev) => ({
+                                                ...prev,
+                                                flag_code: e.target.value,
+                                            }))
+                                        }
+                                    >
+                                        <option value='__NONE__'>{t('admin.locations.form.flag_none')}</option>
+                                        {Object.entries(countryCodes).map(([code, name]) => (
+                                            <option key={code} value={code}>
+                                                {name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </div>
+                                <div className='flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2'>
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        onClick={() => setLocationPickerMode('select')}
+                                    >
+                                        {t('common.cancel')}
+                                    </Button>
+                                    <Button type='submit' loading={creatingLocation}>
+                                        <Plus className='h-4 w-4 mr-2' />
+                                        {t('admin.node.form.create_location_submit')}
+                                    </Button>
+                                </div>
+                            </form>
+                        ) : (
+                            <>
                         <div className='relative'>
                             <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
@@ -695,6 +868,8 @@ export default function CreateNodePage() {
                                     </Button>
                                 </div>
                             </div>
+                        )}
+                            </>
                         )}
                     </div>
                 </SheetContent>

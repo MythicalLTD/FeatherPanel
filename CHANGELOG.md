@@ -25,6 +25,8 @@
 - Added confirmation dialog for the dangerous "Kill" action with a "Don't ask me again" option to prevent accidental server termination that could corrupt files. by @nayskutzu
 - Made the kill button less prominent (ghost variant) to further reduce accidental clicks. by @nayskutzu
 - Completely reimagined the admin sidebar user experience for enhanced usability and navigation. by @nayskutzu
+- Completely removed the FeatherPanel partner showcases from the UI for a cleaner user experience. by @nayskutzu
+- You can now seamlessly create a new location while creating a node—no more jumping between steps or prerequisites, making your setup process much easier. by @nayskutzu
 
 ## v1.3.6 STABLE
 
