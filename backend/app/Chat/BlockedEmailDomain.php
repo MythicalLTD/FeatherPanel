@@ -18,10 +18,10 @@
 namespace App\Chat;
 
 use App\App;
-use App\Helpers\BlockedEmailDomainImportUrlValidator;
-use App\Helpers\EmailDomainValidator;
 use GuzzleHttp\Client;
+use App\Helpers\EmailDomainValidator;
 use GuzzleHttp\Exception\GuzzleException;
+use App\Helpers\BlockedEmailDomainImportUrlValidator;
 
 /**
  * Persisted hostname blocklist used by EmailDomainValidator.
@@ -258,8 +258,8 @@ class BlockedEmailDomain
     }
 
     /**
-     * @param list<string>           $lines
-     * @param 'preset'|'import'      $source
+     * @param list<string> $lines
+     * @param 'preset'|'import' $source
      *
      * @return array{inserted: int, skipped_lines: int}|false
      */

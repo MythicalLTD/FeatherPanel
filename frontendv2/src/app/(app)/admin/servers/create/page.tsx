@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -25,7 +26,7 @@ import { Input } from '@/components/featherui/Input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { toast } from 'sonner';
-import { Server, X, ChevronRight, ChevronLeft, Plus, Search as SearchIcon, Loader2 } from 'lucide-react';
+import { Server, X, ChevronRight, ChevronLeft, Plus, Search as SearchIcon, Loader2, AlertTriangle, RefreshCw, MapPin } from 'lucide-react';
 import {
     ServerFormData,
     SelectedEntities,
@@ -47,6 +48,9 @@ import { Step6Review } from './Step6Review';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { AllocationPickerSheet } from '@/components/admin/AllocationPickerSheet';
+import { RealmPickerSheet } from '@/components/admin/RealmPickerSheet';
+import { SpellPickerSheet } from '@/components/admin/SpellPickerSheet';
+import { OwnerPickerSheet } from '@/components/admin/OwnerPickerSheet';
 
 const initialFormData: ServerFormData = {
     name: '',
@@ -178,7 +182,42 @@ export default function CreateServerPage() {
 
     const [submitting, setSubmitting] = useState(false);
 
+    type InfraGate =
+        | { status: 'loading' }
+        | { status: 'ready' }
+        | { status: 'blocked'; gameLocations: number; nodes: number }
+        | { status: 'error' };
+
+    const [infraGate, setInfraGate] = useState<InfraGate>({ status: 'loading' });
+
+    const refreshInfrastructureCheck = useCallback(async () => {
+        setInfraGate({ status: 'loading' });
+        try {
+            const [locRes, nodeRes] = await Promise.all([
+                axios.get('/api/admin/locations', { params: { type: 'game', page: 1, limit: 1 } }),
+                axios.get('/api/admin/nodes', { params: { page: 1, limit: 1 } }),
+            ]);
+            const gameLocations = Number(locRes.data?.data?.pagination?.total_records ?? 0);
+            const nodes = Number(nodeRes.data?.data?.pagination?.total_records ?? 0);
+            if (gameLocations > 0 && nodes > 0) {
+                setInfraGate({ status: 'ready' });
+            } else {
+                setInfraGate({ status: 'blocked', gameLocations, nodes });
+            }
+        } catch (e) {
+            console.error('Infrastructure prerequisite check failed:', e);
+            setInfraGate({ status: 'error' });
+        }
+    }, []);
+
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-servers-create');
+
+    useEffect(() => {
+        void refreshInfrastructureCheck();
+    }, [refreshInfrastructureCheck]);
+
+    const wizardBlockedByInfra = infraGate.status === 'blocked';
+    const wizardNavWaitingInfra = infraGate.status === 'loading';
 
     useEffect(() => {
         fetchWidgets();
@@ -511,6 +550,12 @@ export default function CreateServerPage() {
     };
 
     const handleNext = () => {
+        if (wizardBlockedByInfra || wizardNavWaitingInfra) {
+            if (wizardBlockedByInfra) {
+                toast.error(t('admin.servers.form.infra_prerequisite_toast'));
+            }
+            return;
+        }
         if (validateCurrentStep()) {
             setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
         }
@@ -521,6 +566,12 @@ export default function CreateServerPage() {
     };
 
     const handleSubmit = async () => {
+        if (wizardBlockedByInfra || wizardNavWaitingInfra) {
+            if (wizardBlockedByInfra) {
+                toast.error(t('admin.servers.form.infra_prerequisite_toast'));
+            }
+            return;
+        }
         if (!validateCurrentStep()) return;
         setSubmitting(true);
 
@@ -613,6 +664,8 @@ export default function CreateServerPage() {
         spellVariablesData,
     };
 
+    const navDisabled = wizardBlockedByInfra || wizardNavWaitingInfra;
+
     return (
         <div className='max-w-5xl mx-auto pb-20'>
             <WidgetRenderer widgets={getWidgets('admin-servers-create', 'top-of-page')} />
@@ -630,6 +683,64 @@ export default function CreateServerPage() {
             />
 
             <WidgetRenderer widgets={getWidgets('admin-servers-create', 'after-header')} />
+
+            {infraGate.status === 'blocked' && (
+                <div className='mt-6 rounded-2xl border border-border/50 bg-card/70 backdrop-blur-md shadow-sm'>
+                    <div className='flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6'>
+                        <div className='flex min-w-0 flex-1 gap-3'>
+                            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20'>
+                                <AlertTriangle className='h-5 w-5' aria-hidden />
+                            </div>
+                            <div className='min-w-0 space-y-1'>
+                                <p className='text-sm font-semibold leading-snug'>
+                                    {t('admin.servers.form.infra_prerequisite_title')}
+                                </p>
+                                <p className='text-sm text-muted-foreground leading-relaxed'>
+                                    {infraGate.gameLocations === 0
+                                        ? t('admin.servers.form.infra_short_locations')
+                                        : t('admin.servers.form.infra_short_nodes')}
+                                </p>
+                                <p className='text-xs text-muted-foreground/80'>
+                                    {t('admin.servers.form.infra_counts_hint', {
+                                        locations: String(infraGate.gameLocations),
+                                        nodes: String(infraGate.nodes),
+                                    })}
+                                </p>
+                            </div>
+                        </div>
+                        <div className='flex shrink-0 items-center justify-end gap-2 sm:justify-start'>
+                            <Button
+                                type='button'
+                                variant='ghost'
+                                size='icon'
+                                className='h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground'
+                                title={t('admin.servers.form.infra_refresh_check')}
+                                onClick={() => void refreshInfrastructureCheck()}
+                            >
+                                <RefreshCw className='h-4 w-4' />
+                            </Button>
+                            <Button asChild className='h-10 min-w-[8.5rem] rounded-xl px-5'>
+                                <Link
+                                    href={infraGate.gameLocations === 0 ? '/admin/locations' : '/admin/nodes/create'}
+                                    className='inline-flex items-center justify-center gap-2'
+                                >
+                                    {infraGate.gameLocations === 0 ? (
+                                        <>
+                                            <MapPin className='h-4 w-4 shrink-0' />
+                                            {t('admin.servers.form.infra_cta_locations')}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Server className='h-4 w-4 shrink-0' />
+                                            {t('admin.servers.form.infra_cta_nodes')}
+                                        </>
+                                    )}
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className='mt-8 mb-12 p-6 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
                 <StepIndicator steps={wizardSteps} currentStep={currentStep} />
@@ -693,12 +804,12 @@ export default function CreateServerPage() {
                 </span>
 
                 {currentStep < totalSteps ? (
-                    <Button onClick={handleNext} className='gap-2'>
+                    <Button onClick={handleNext} disabled={navDisabled} className='gap-2'>
                         {t('admin.servers.form.wizard.next')}
                         <ChevronRight className='h-4 w-4' />
                     </Button>
                 ) : (
-                    <Button onClick={handleSubmit} disabled={submitting} className='gap-2'>
+                    <Button onClick={handleSubmit} disabled={submitting || navDisabled} className='gap-2'>
                         {submitting ? (
                             <>
                                 <Loader2 className='h-4 w-4 animate-spin' />
@@ -714,22 +825,16 @@ export default function CreateServerPage() {
                 )}
             </div>
 
-            <SelectionSheet
+            <OwnerPickerSheet
                 open={ownerModalOpen}
                 onOpenChange={setOwnerModalOpen}
-                title={t('admin.servers.form.select_owner')}
-                items={owners}
-                onSelect={handleSelectOwner}
-                search={ownerSearch}
-                onSearchChange={setOwnerSearch}
-                pagination={ownerPagination}
-                onPaginationChange={setOwnerPagination}
-                renderItem={(owner) => (
-                    <div className='flex flex-col'>
-                        <span className='font-semibold'>{owner.username}</span>
-                        <span className='text-xs text-muted-foreground'>{owner.email}</span>
-                    </div>
-                )}
+                owners={owners}
+                ownerSearch={ownerSearch}
+                setOwnerSearch={setOwnerSearch}
+                ownerPagination={ownerPagination}
+                setOwnerPagination={setOwnerPagination}
+                fetchOwners={fetchOwners}
+                onSelectOwner={handleSelectOwner}
             />
 
             <SelectionSheet
@@ -778,36 +883,32 @@ export default function CreateServerPage() {
                 />
             )}
 
-            <SelectionSheet
+            <RealmPickerSheet
                 open={realmModalOpen}
                 onOpenChange={setRealmModalOpen}
-                title={t('admin.servers.form.select_realm')}
-                items={realms}
-                onSelect={handleSelectRealm}
-                search={realmSearch}
-                onSearchChange={setRealmSearch}
-                pagination={realmPagination}
-                onPaginationChange={setRealmPagination}
-                renderItem={(realm) => <span className='font-semibold'>{realm.name}</span>}
+                realms={realms}
+                realmSearch={realmSearch}
+                setRealmSearch={setRealmSearch}
+                realmPagination={realmPagination}
+                setRealmPagination={setRealmPagination}
+                fetchRealms={fetchRealms}
+                onSelectRealm={handleSelectRealm}
             />
 
-            <SelectionSheet
-                open={spellModalOpen}
-                onOpenChange={setSpellModalOpen}
-                title={t('admin.servers.form.select_spell')}
-                items={spells}
-                onSelect={handleSelectSpell}
-                search={spellSearch}
-                onSearchChange={setSpellSearch}
-                pagination={spellPagination}
-                onPaginationChange={setSpellPagination}
-                renderItem={(spell) => (
-                    <div className='flex flex-col'>
-                        <span className='font-semibold'>{spell.name}</span>
-                        <span className='text-xs text-muted-foreground line-clamp-1'>{spell.description}</span>
-                    </div>
-                )}
-            />
+            {formData.realmId != null && (
+                <SpellPickerSheet
+                    open={spellModalOpen}
+                    onOpenChange={setSpellModalOpen}
+                    realmId={formData.realmId}
+                    spells={spells}
+                    spellSearch={spellSearch}
+                    setSpellSearch={setSpellSearch}
+                    spellPagination={spellPagination}
+                    setSpellPagination={setSpellPagination}
+                    fetchSpells={fetchSpells}
+                    onSelectSpell={handleSelectSpell}
+                />
+            )}
 
             <WidgetRenderer widgets={getWidgets('admin-servers-create', 'bottom-of-page')} />
         </div>

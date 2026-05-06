@@ -20,7 +20,6 @@ namespace App\Controllers\Admin;
 use App\App;
 use App\Chat\Activity;
 use App\Helpers\ApiResponse;
-use App\Helpers\BlockedEmailDomainImportUrlValidator;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Chat\BlockedEmailDomain;
@@ -28,6 +27,7 @@ use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Helpers\BlockedEmailDomainImportUrlValidator;
 
 #[OA\Schema(
     schema: 'BlockedEmailDomainRow',
