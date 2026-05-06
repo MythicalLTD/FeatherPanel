@@ -238,6 +238,54 @@ class ServerEvent implements PluginEvent
     }
 
     /**
+     * Callback: string user uuid, string server uuid, string power action, int hook id, string hook type.
+     */
+    public static function onServerLifecycleHookStarted(): string
+    {
+        return 'featherpanel:server:lifecycle-hook:started';
+    }
+
+    /**
+     * Callback: string user uuid, string server uuid, string power action, int hook id, string hook type.
+     */
+    public static function onServerLifecycleHookCompleted(): string
+    {
+        return 'featherpanel:server:lifecycle-hook:completed';
+    }
+
+    /**
+     * Callback: string user uuid, string server uuid, string power action, int hook id, string hook type, string error.
+     */
+    public static function onServerLifecycleHookFailed(): string
+    {
+        return 'featherpanel:server:lifecycle-hook:failed';
+    }
+
+    /**
+     * Callback: string user uuid, string server uuid, string power action, int hook id, int step id, string task type.
+     */
+    public static function onServerLifecycleHookStepStarted(): string
+    {
+        return 'featherpanel:server:lifecycle-hook:step:started';
+    }
+
+    /**
+     * Callback: string user uuid, string server uuid, string power action, int hook id, int step id, string task type.
+     */
+    public static function onServerLifecycleHookStepCompleted(): string
+    {
+        return 'featherpanel:server:lifecycle-hook:step:completed';
+    }
+
+    /**
+     * Callback: string user uuid, string server uuid, string power action, int hook id, int step id, string task type, string error.
+     */
+    public static function onServerLifecycleHookStepFailed(): string
+    {
+        return 'featherpanel:server:lifecycle-hook:step:failed';
+    }
+
+    /**
      * Callback: string user uuid, string server uuid.
      */
     public static function onServerFilesDeleted(): string

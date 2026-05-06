@@ -58,7 +58,14 @@ interface LogData {
     error?: string;
 }
 
+const ADMIN_SETTING_DISPLAY_NAMES: Record<string, string> = {
+    server_lifecycle_hooks_enabled: 'Lifecycle hooks (pre-start / pre-stop)',
+};
+
 function formatSettingName(name: string, key: string) {
+    if (ADMIN_SETTING_DISPLAY_NAMES[key]) {
+        return ADMIN_SETTING_DISPLAY_NAMES[key];
+    }
     const textToFormat = name || key;
     return textToFormat
         .split('_')

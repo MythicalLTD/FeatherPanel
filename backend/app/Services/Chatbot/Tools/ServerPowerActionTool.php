@@ -24,6 +24,8 @@ use App\Chat\ServerActivity;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
+use App\Services\Server\LifecycleHookPowerGate;
+use App\Services\Server\LifecycleHookExecutorService;
 
 /**
  * Tool to perform server power actions (start, stop, restart, kill).
@@ -125,6 +127,18 @@ class ServerPowerActionTool implements ToolInterface
 
         // Execute power action via Wings
         try {
+            $hookExecutor = new LifecycleHookExecutorService();
+            $hookResult = $hookExecutor->executeForPowerAction($server, $node, $action, $user);
+            if (LifecycleHookPowerGate::isBlocked($hookResult)) {
+                return [
+                    'success' => false,
+                    'error' => LifecycleHookPowerGate::chatbotErrorMessage($hookResult),
+                    'action_type' => 'server_power',
+                    'is_destructive' => in_array($action, ['stop', 'restart', 'kill']),
+                    'lifecycle_hooks' => $hookResult,
+                ];
+            }
+
             $wings = new Wings(
                 $node['fqdn'],
                 $node['daemonListen'],
@@ -210,6 +224,7 @@ class ServerPowerActionTool implements ToolInterface
             'server_name' => $server['name'],
             'server_uuid' => $server['uuid'],
             'is_destructive' => in_array($action, ['stop', 'restart', 'kill']),
+            'lifecycle_hooks' => $hookResult ?? ['attempted' => false, 'blocked' => false, 'pipelines' => []],
             'message' => "Server '{$server['name']}' {$actionPast} successfully",
         ];
     }

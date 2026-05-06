@@ -56,40 +56,40 @@ class LogParser
                 'stop' => '/\[.*\]: Stopping the server/',
             ],
             'cs2' => [
-                'join' => '/"(.+?)<\d+>".*connected/',
-                'leave' => '/"(.+?)<\d+>".*disconnected/',
+                'join' => '/"(.+?)<\d+>".*\bconnected\b/',
+                'leave' => '/"(.+?)<\d+>".*\bdisconnected\b/',
                 'stop' => '/Log file closed/',
             ],
             'garrysmod' => [
-                'join' => '/"(.+?)<\d+>".*connected/',
-                'leave' => '/"(.+?)<\d+>".*disconnected/',
+                'join' => '/"(.+?)<\d+>".*\bconnected\b/',
+                'leave' => '/"(.+?)<\d+>".*\bdisconnected\b/',
                 'stop' => '/Log file closed/',
             ],
             'tf2' => [
-                'join' => '/"(.+?)<\d+>".*connected/',
-                'leave' => '/"(.+?)<\d+>".*disconnected/',
+                'join' => '/"(.+?)<\d+>".*\bconnected\b/',
+                'leave' => '/"(.+?)<\d+>".*\bdisconnected\b/',
                 'stop' => '/Log file closed/',
             ],
             'rust' => [
-                'join' => '/"(.+?)<\d+>".*connected/',
-                'leave' => '/"(.+?)<\d+>".*disconnected/',
+                'join' => '/"(.+?)<\d+>".*\bconnected\b/',
+                'leave' => '/"(.+?)<\d+>".*\bdisconnected\b/',
                 'stop' => '/Log file closed/',
             ],
             'arkse' => [
-                'join' => '/"(.+?)<\d+>".*connected/',
-                'leave' => '/"(.+?)<\d+>".*disconnected/',
+                'join' => '/"(.+?)<\d+>".*\bconnected\b/',
+                'leave' => '/"(.+?)<\d+>".*\bdisconnected\b/',
                 'stop' => '/Log file closed/',
             ],
             'fivem' => [
-                'join' => '/"(.+?)<\d+>".*connected/',
-                'leave' => '/"(.+?)<\d+>".*disconnected/',
+                'join' => '/"(.+?)<\d+>".*\bconnected\b/',
+                'leave' => '/"(.+?)<\d+>".*\bdisconnected\b/',
                 'stop' => '/Log file closed/',
             ],
         ];
 
         return $patterns[$gameType] ?? [
-            'join' => '/"(.+?)<\d+>".*connected/',
-            'leave' => '/"(.+?)<\d+>".*disconnected/',
+            'join' => '/"(.+?)<\d+>".*\bconnected\b/',
+            'leave' => '/"(.+?)<\d+>".*\bdisconnected\b/',
             'stop' => '/Log file closed/',
         ];
     }

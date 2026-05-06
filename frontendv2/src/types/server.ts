@@ -545,6 +545,28 @@ export interface TaskCreateRequest {
 export interface TaskUpdateRequest extends TaskCreateRequest {
     sequence_id?: number;
 }
+
+export type LifecycleHookType = 'pre_start' | 'pre_stop';
+export type LifecycleTaskType = 'discord_webhook' | 'container_command' | 'http_request';
+
+export interface LifecycleHookStep {
+    id: number;
+    hook_id: number;
+    sequence_id: number;
+    task_type: LifecycleTaskType;
+    payload: string;
+    continue_on_failure: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface LifecycleHook {
+    id: number | null;
+    server_id: number;
+    hook_type: LifecycleHookType;
+    is_active: number;
+    steps: LifecycleHookStep[];
+}
 export interface Subuser {
     id: number;
     server_id: number;

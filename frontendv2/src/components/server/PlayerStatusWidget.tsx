@@ -176,9 +176,7 @@ export default function PlayerStatusWidget({ uuidShort, pollingInterval = 30000 
                     {t('servers.console.players.names_unavailable')}
                 </p>
             ) : (
-                <p className='text-xs text-muted-foreground px-2'>
-                    {t('servers.console.players.empty')}
-                </p>
+                <p className='text-xs text-muted-foreground px-2'>{t('servers.console.players.empty')}</p>
             )}
         </div>
     );

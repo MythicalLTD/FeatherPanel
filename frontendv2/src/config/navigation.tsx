@@ -54,6 +54,7 @@ import {
     Folder,
     Sparkles,
     Code,
+    Workflow,
 } from 'lucide-react';
 import { isEnabled } from '@/lib/utils';
 
@@ -669,6 +670,20 @@ export const getServerNavigationItems = (
             title: t('navigation.items.schedules'),
             url: `/server/${serverUuid}/schedules`,
             icon: Calendar,
+            isActive: false,
+            category: 'server',
+            group: 'automation',
+            permission: 'schedule.read',
+        });
+    }
+
+    if (isEnabled(settings?.server_lifecycle_hooks_enabled)) {
+        items.push({
+            id: 'server-lifecycle-hooks',
+            name: t('navigation.items.lifecycleHooks'),
+            title: t('navigation.items.lifecycleHooks'),
+            url: `/server/${serverUuid}/lifecycle-hooks`,
+            icon: Workflow,
             isActive: false,
             category: 'server',
             group: 'automation',

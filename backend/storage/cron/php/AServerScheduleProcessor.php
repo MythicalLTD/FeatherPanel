@@ -41,6 +41,8 @@ use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
 use App\Services\Backup\BackupFifoEviction;
 use App\Cli\Utils\MinecraftColorCodeSupport;
+use App\Services\Server\LifecycleHookPowerGate;
+use App\Services\Server\LifecycleHookExecutorService;
 
 class AServerScheduleProcessor implements TimeTask
 {
@@ -330,6 +332,7 @@ class AServerScheduleProcessor implements TimeTask
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aStarting server: ' . $server['name']);
 
         try {
+            $this->runLifecycleHooksForAction($server, 'start');
             $wings = $this->getWingsConnection($server);
             $response = $wings->getServer()->startServer($server['uuid']);
 
@@ -357,6 +360,7 @@ class AServerScheduleProcessor implements TimeTask
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aStopping server: ' . $server['name']);
 
         try {
+            $this->runLifecycleHooksForAction($server, 'stop');
             $wings = $this->getWingsConnection($server);
             $response = $wings->getServer()->stopServer($server['uuid']);
 
@@ -384,6 +388,7 @@ class AServerScheduleProcessor implements TimeTask
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aRestarting server: ' . $server['name']);
 
         try {
+            $this->runLifecycleHooksForAction($server, 'restart');
             $wings = $this->getWingsConnection($server);
             $response = $wings->getServer()->restartServer($server['uuid']);
 
@@ -539,6 +544,9 @@ class AServerScheduleProcessor implements TimeTask
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aExecuting power action: ' . $powerAction . ' for server: ' . $server['name']);
 
         try {
+            if (in_array($powerAction, ['start', 'stop', 'restart'], true)) {
+                $this->runLifecycleHooksForAction($server, $powerAction);
+            }
             $wings = $this->getWingsConnection($server);
             $response = null;
 
@@ -673,6 +681,23 @@ class AServerScheduleProcessor implements TimeTask
         $timeout = 30;
 
         return new Wings($host, $port, $scheme, $token, $timeout);
+    }
+
+    /**
+     * Run lifecycle hooks and throw if they block action.
+     */
+    private function runLifecycleHooksForAction(array $server, string $powerAction): void
+    {
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            throw new \Exception('Node not found for lifecycle hook execution');
+        }
+
+        $executor = new LifecycleHookExecutorService();
+        $result = $executor->executeForPowerAction($server, $node, $powerAction, null);
+        if (LifecycleHookPowerGate::isBlocked($result)) {
+            throw new \Exception(LifecycleHookPowerGate::scheduleExceptionMessage($result));
+        }
     }
 
     /**

@@ -24,7 +24,7 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>Server</h1>
-      <p class="muted">45 events in this category.</p>
+      <p class="muted">51 events in this category.</p>
     </header>
 
 <article class="card">
@@ -597,6 +597,162 @@ public static function processEvents(PluginEvents $evt): void
     $evt->on(ServerEvent::onServerFileWritten(), function ($uuid, $uuid, $path) {
         // Handle featherpanel:server:file:write
         // Parameters: string user uuid, string server uuid, string file path.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:server:lifecycle-hook:completed</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookCompleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, string hook type.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerEvent::onServerLifecycleHookCompleted(), function ($uuid, $uuid, $action, $id, $type) {
+        // Handle featherpanel:server:lifecycle-hook:completed
+        // Parameters: string user uuid, string server uuid, string power action, int hook id, string hook type.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:server:lifecycle-hook:failed</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookFailed</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, string hook type, string error.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerEvent::onServerLifecycleHookFailed(), function ($uuid, $uuid, $action, $id, $type, $error) {
+        // Handle featherpanel:server:lifecycle-hook:failed
+        // Parameters: string user uuid, string server uuid, string power action, int hook id, string hook type, string error.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:server:lifecycle-hook:started</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookStarted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, string hook type.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerEvent::onServerLifecycleHookStarted(), function ($uuid, $uuid, $action, $id, $type) {
+        // Handle featherpanel:server:lifecycle-hook:started
+        // Parameters: string user uuid, string server uuid, string power action, int hook id, string hook type.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:server:lifecycle-hook:step:completed</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookStepCompleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, int step id, string task type.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerEvent::onServerLifecycleHookStepCompleted(), function ($uuid, $uuid, $action, $id, $id, $type) {
+        // Handle featherpanel:server:lifecycle-hook:step:completed
+        // Parameters: string user uuid, string server uuid, string power action, int hook id, int step id, string task type.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:server:lifecycle-hook:step:failed</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookStepFailed</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, int step id, string task type, string error.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerEvent::onServerLifecycleHookStepFailed(), function ($uuid, $uuid, $action, $id, $id, $type, $error) {
+        // Handle featherpanel:server:lifecycle-hook:step:failed
+        // Parameters: string user uuid, string server uuid, string power action, int hook id, int step id, string task type, string error.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:server:lifecycle-hook:step:started</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookStepStarted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, int step id, string task type.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\ServerEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(ServerEvent::onServerLifecycleHookStepStarted(), function ($uuid, $uuid, $action, $id, $id, $type) {
+        // Handle featherpanel:server:lifecycle-hook:step:started
+        // Parameters: string user uuid, string server uuid, string power action, int hook id, int step id, string task type.
     });
 }</code></pre>
 </article>

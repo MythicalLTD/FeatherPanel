@@ -27,6 +27,8 @@ use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Server\LifecycleHookPowerGate;
+use App\Services\Server\LifecycleHookExecutorService;
 use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
 
 #[OA\Schema(
@@ -130,6 +132,19 @@ class ServerPowerController
         $port = $node['daemonListen'];
         $token = $node['daemon_token'];
 
+        $hookExecutor = new LifecycleHookExecutorService();
+        $hookResult = $hookExecutor->executeForPowerAction($server, $node, $action, $user);
+        if (LifecycleHookPowerGate::isBlocked($hookResult)) {
+            App::getInstance(true)->getLogger()->warning('Power action blocked by lifecycle hook for server ' . $server['uuid'] . ' action ' . $action . ': ' . LifecycleHookPowerGate::blockedReason($hookResult));
+
+            return ApiResponse::error(
+                LifecycleHookPowerGate::apiErrorMessage($hookResult),
+                'LIFECYCLE_HOOK_BLOCKED',
+                409,
+                ['lifecycle_hooks' => $hookResult]
+            );
+        }
+
         // Increase timeout for kill action as it may take longer
         $timeout = (int) ($action === 'kill' ? 60 : 30);
         try {
@@ -184,6 +199,9 @@ class ServerPowerController
             );
         }
 
-        return ApiResponse::success(['response' => $response->getData()], 'Response from Wings', 200);
+        return ApiResponse::success([
+            'response' => $response->getData(),
+            'lifecycle_hooks' => $hookResult,
+        ], 'Response from Wings', 200);
     }
 }

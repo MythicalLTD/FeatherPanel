@@ -164,6 +164,8 @@ interface ConfigInterface
     public const SERVER_ALLOW_USER_MADE_FASTDL = 'server_allow_user_made_fastdl';
     public const SERVER_ALLOW_USER_MADE_SUBDOMAINS = 'server_allow_user_made_subdomains';
     public const SERVER_HIDE_IPS = 'server_hide_ips';
+    /** When false, lifecycle hook UI and execution are disabled (default off until enabled by an administrator). */
+    public const SERVER_LIFECYCLE_HOOKS_ENABLED = 'server_lifecycle_hooks_enabled';
 
     /**
      * User Related Configs.
