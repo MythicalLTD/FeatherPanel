@@ -46,6 +46,7 @@ import { Step5FeatureLimits } from './Step5FeatureLimits';
 import { Step6Review } from './Step6Review';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { AllocationPickerSheet } from '@/components/admin/AllocationPickerSheet';
 
 const initialFormData: ServerFormData = {
     name: '',
@@ -762,22 +763,20 @@ export default function CreateServerPage() {
                 )}
             />
 
-            <SelectionSheet
-                open={allocationModalOpen}
-                onOpenChange={setAllocationModalOpen}
-                title={t('admin.servers.form.select_allocation')}
-                items={allocations}
-                onSelect={handleSelectAllocation}
-                search={allocationSearch}
-                onSearchChange={setAllocationSearch}
-                pagination={allocationPagination}
-                onPaginationChange={setAllocationPagination}
-                renderItem={(allocation) => (
-                    <span className='font-semibold font-mono'>
-                        {allocation.ip}:{allocation.port}
-                    </span>
-                )}
-            />
+            {formData.nodeId != null && (
+                <AllocationPickerSheet
+                    open={allocationModalOpen}
+                    onOpenChange={setAllocationModalOpen}
+                    nodeId={formData.nodeId}
+                    allocations={allocations}
+                    allocationSearch={allocationSearch}
+                    setAllocationSearch={setAllocationSearch}
+                    allocationPagination={allocationPagination}
+                    setAllocationPagination={setAllocationPagination}
+                    fetchAllocations={fetchAllocations}
+                    onSelectAllocation={handleSelectAllocation}
+                />
+            )}
 
             <SelectionSheet
                 open={realmModalOpen}

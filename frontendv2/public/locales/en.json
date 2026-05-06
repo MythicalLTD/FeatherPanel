@@ -1137,7 +1137,7 @@
 		"poweredBy": "powered by featherpanel",
 		"localStorageMenu": "Browser storage",
 		"localStorageDefaultAppName": "Hosting panel",
-		"localStorageTitle": "{appName} — browser storage",
+		"localStorageTitle": "{appName} browser storage",
 		"localStorageDesc": "Values your browser keeps for {appName} (layouts, themes, sidebar, and similar). Use this to inspect, copy, remove one key, or clear everything listed. Other browser data may still exist outside this list.",
 		"localStorageFootnote": "Translation caches and the public app settings cache are not shown here on purpose (large or refetched automatically).",
 		"localStorageSearch": "Search keys or values…",
@@ -1325,7 +1325,7 @@
 		"rowsReturned": "{count} row(s) returned",
 		"rowsAffected": "{count} row(s) affected",
 		"truncatedTo": "(truncated to {limit})",
-		"queryExecuted": "Query executed — {count} row(s) affected"
+		"queryExecuted": "Query executed {count} row(s) affected"
 	},
 	"serverBackups": {
 		"title": "Backups",
@@ -1646,7 +1646,7 @@
 		"featureDisabledDescription": "The schedules feature has been disabled by the administrator. Please contact support if you need to automate server tasks.",
 		"disabled": "Schedule is disabled",
 		"runNow": "Run Now",
-		"runQueued": "Schedule queued — it will run on the next cron tick",
+		"runQueued": "Schedule queued it will run on the next cron tick",
 		"runFailed": "Failed to run schedule",
 		"export": "Export",
 		"exportSuccess": "Schedule exported",
@@ -2226,7 +2226,7 @@
 			"embedBuilder": "Embed builder",
 			"livePreview": "Live preview",
 			"previewTitle": "Preview",
-			"previewEmpty": "Add message content or fill in embed fields — shown here as plain text.",
+			"previewEmpty": "Add message content or fill in embed fields shown here as plain text.",
 			"addEmbed": "Add embed",
 			"removeEmbed": "Remove embed",
 			"embedNumber": "Embed {n}",
@@ -3156,7 +3156,7 @@
 		"storage_sense": {
 			"title": "Storage Sense",
 			"subtitle": "Audit database history tables, preview reclaimable rows, and run safe retention purges.",
-			"warning": "This permanently deletes rows. Take a database backup first. Wings backups and server files are not touched — only panel MySQL data you select.",
+			"warning": "This permanently deletes rows. Take a database backup first. Wings backups and server files are not touched only panel MySQL data you select.",
 			"retention_label": "Retention period (days)",
 			"retention_hint": "Rows older than this age are counted as eligible (7–3650). SSO tokens use expiry time instead.",
 			"retention_presets": "Quick presets",
@@ -3223,7 +3223,7 @@
 				},
 				"mail_history": {
 					"title": "Mail queue (sent / failed)",
-					"description": "Completed mail jobs only — pending mail is never deleted."
+					"description": "Completed mail jobs only pending mail is never deleted."
 				},
 				"admin_notifications": {
 					"title": "Admin notifications",
@@ -3535,13 +3535,13 @@
 				"col_actions": "Actions",
 				"create_title": "Add template",
 				"create_desc": "Register a Proxmox template so it appears when creating VMs. The Template VMID is the VMID of the template VM in Proxmox (Datacenter → your node → the template).",
-				"create_desc_select": "Select a VM from Proxmox — name and VMID will be filled. Prefer VMs you have converted to template in Proxmox.",
+				"create_desc_select": "Select a VM from Proxmox name and VMID will be filled. Prefer VMs you have converted to template in Proxmox.",
 				"field_name": "Template name",
 				"field_name_placeholder": "e.g. Ubuntu 22.04",
 				"field_name_help": "Editable; used as the template name in the panel.",
 				"field_name_required": "Template name is required",
 				"field_select_vm": "Select VM from Proxmox",
-				"select_vm_placeholder": "— Select a VM —",
+				"select_vm_placeholder": "Select a VM  ",
 				"select_vm_first": "Select a VM from Proxmox first",
 				"loading_vms": "Loading VMs from Proxmox…",
 				"no_vms": "No VMs found. Create a VM in Proxmox and convert to template (right‑click VM → Convert to template), then try again.",
@@ -3658,7 +3658,7 @@
 			},
 			"advanced": {
 				"headers_title": "Custom Request Headers",
-				"headers_description": "Inject additional HTTP headers into every Proxmox API request — useful for reverse-proxy authentication or custom routing.",
+				"headers_description": "Inject additional HTTP headers into every Proxmox API request useful for reverse-proxy authentication or custom routing.",
 				"params_title": "Custom Query Parameters",
 				"params_description": "Append extra query string parameters to every Proxmox API request.",
 				"no_headers": "No custom headers configured.",
@@ -3681,7 +3681,7 @@
 				"offline": "Offline",
 				"unknown": "Unknown",
 				"test_button": "Test Connection",
-				"success": "Connected — {count} node(s) returned in {ms}ms.",
+				"success": "Connected {count} node(s) returned in {ms}ms.",
 				"failed": "Connection failed.",
 				"token_setup_reminder_title": "Token setup reminder",
 				"token_setup_reminder_description": "Use a Proxmox API token created for the intended account, and verify the permissions match the actions FeatherPanel will perform on this node."
@@ -3785,7 +3785,7 @@
 				"col_notes": "Notes",
 				"col_status": "Status",
 				"primary_badge": "Primary",
-				"primary_proxmox_help": "Proxmox host IP — do not assign to VMs",
+				"primary_proxmox_help": "Proxmox host IP do not assign to VMs",
 				"in_use_badge": "In use",
 				"available": "Available",
 				"cannot_delete_in_use": "Cannot delete: IP is assigned to a VM",
@@ -3820,7 +3820,7 @@
 					"what_are_ips": "What is the IP Pool?",
 					"what_are_ips_text": "The IP pool lists all public IP addresses available on this Proxmox node. These IPs can be assigned to virtual machines when provisioning.",
 					"primary_ip": "Primary IP",
-					"primary_ip_text": "The primary IP is the default outbound address for the node. Only one IP can be marked as primary at a time — click the star icon on any row to change it."
+					"primary_ip_text": "The primary IP is the default outbound address for the node. Only one IP can be marked as primary at a time click the star icon on any row to change it."
 				}
 			},
 			"plans": {
@@ -3913,7 +3913,7 @@
 				},
 				"qemu": {
 					"title": "QEMU/KVM Virtual Machines",
-					"description": "Full hardware virtualisation — runs any OS. Supports CPU passthrough, live migration, snapshots, and nested virtualisation."
+					"description": "Full hardware virtualisation runs any OS. Supports CPU passthrough, live migration, snapshots, and nested virtualisation."
 				},
 				"lxc": {
 					"title": "LXC Containers",
@@ -3921,7 +3921,7 @@
 				},
 				"templates": {
 					"title": "What are VM Templates?",
-					"description": "Templates are pre-built VM images (e.g. Ubuntu 22.04, Debian 12) that Proxmox clones when creating a new VM. For QEMU/KVM plans, creating an instance always uses a template — the panel clones that VM and applies the plan's CPU, RAM and disk. LXC can use different flows.",
+					"description": "Templates are pre-built VM images (e.g. Ubuntu 22.04, Debian 12) that Proxmox clones when creating a new VM. For QEMU/KVM plans, creating an instance always uses a template the panel clones that VM and applies the plan's CPU, RAM and disk. LXC can use different flows.",
 					"how_to_setup": "How to set up templates",
 					"step1": "On your Proxmox host: create a VM, install the OS, clean it (e.g. remove machine-id, cloud-init if needed), then in the Proxmox UI right‑click the VM → Convert to template.",
 					"step2": "In FeatherPanel: go to VM Nodes (VDS Nodes), open the node that runs that Proxmox host, and open the Templates tab. Add a template: give it a name and the Template VMID (the VMID of the template VM in Proxmox). Once registered, that template appears when creating a VM instance from a plan on this node."
@@ -4292,8 +4292,8 @@
 				"config_copied": "Wings configuration copied to clipboard",
 				"setup_command_title": "Quick setup",
 				"setup_command_help": "Run these commands on your node server in order. Step 1 installs FeatherWings; step 2 fetches config from the panel and restarts the daemon.",
-				"setup_step_1": "Step 1 — Install FeatherWings",
-				"setup_step_2": "Step 2 — Fetch config and restart FeatherWings",
+				"setup_step_1": "Step 1 Install FeatherWings",
+				"setup_step_2": "Step 2 Fetch config and restart FeatherWings",
 				"copy_setup_command": "Copy command",
 				"setup_command_copied": "Setup command copied to clipboard",
 				"setup_command_then": "Step 2 creates /etc/featherpanel if needed, writes the config, and restarts FeatherWings. Run step 1 first if FeatherWings is not installed.",
@@ -4825,6 +4825,10 @@
 				"allocation": "Default Allocation",
 				"allocation_help": "The main allocation that will be assigned to this server.",
 				"select_allocation": "Select allocation...",
+				"allocation_picker_existing": "Browse allocations",
+				"allocation_picker_create": "Create new",
+				"allocation_create_tab_description": "Add allocations on this node using manual IP/port or a game preset range (same as the node allocations tab).",
+				"allocation_created_multiple_hint": "Created {count} allocations. The first is selected for this server.",
 				"realm": "Realm",
 				"select_realm": "Select a realm...",
 				"select_realm_description": "Select a realm for this server. Total realms: {total}",
@@ -4914,7 +4918,7 @@
 						"startup_command": "Startup Command",
 						"unlimited": "∞ Unlimited",
 						"disabled": "Disabled",
-						"no_value": "—"
+						"no_value": " "
 					},
 					"validation": {
 						"name_required": "Server name is required",
@@ -5325,7 +5329,7 @@
 			"integrity_files": "Files hashed",
 			"integrity_duration": "Duration",
 			"integrity_bytes": "Bytes hashed",
-			"integrity_scope": "Does not include vendor, storage data, or uploaded assets — only panel source and bootstrap files.",
+			"integrity_scope": "Does not include vendor, storage data, or uploaded assets only panel source and bootstrap files.",
 			"integrity_baseline_title": "Saved baseline",
 			"integrity_baseline_saved_at": "Recorded {date}",
 			"integrity_baseline_unknown_date": "Baseline file present (record date unknown)",
@@ -5338,7 +5342,7 @@
 			"integrity_read_errors": "{count} file(s) could not be read.",
 			"integrity_skipped_large": "{count} file(s) skipped (over size limit).",
 			"integrity_match_ok": "All tracked paths match the saved baseline.",
-			"integrity_drift_warning": "Differences detected — review modified or missing paths. New files may be normal after an update; update your baseline if intentional.",
+			"integrity_drift_warning": "Differences detected review modified or missing paths. New files may be normal after an update; update your baseline if intentional.",
 			"integrity_save_baseline": "Save current scan as baseline",
 			"integrity_copy_report": "Copy full report",
 			"integrity_baseline_saved": "Baseline saved to storage/config.",
@@ -6373,7 +6377,7 @@
 			"import_confirm": "Import the bundled disposable-domain preset ({file})? This may take a minute.",
 			"import_url_label": "Plain-text URL",
 			"import_url_placeholder": "https://example.com/disposable-domains.txt",
-			"import_url_hint": "Must be reachable over HTTP(S). Redirects are not followed—open the raw file URL. Private or local addresses are rejected.",
+			"import_url_hint": "Must be reachable over HTTP(S). Redirects are not followed open the raw file URL. Private or local addresses are rejected.",
 			"import_run_preset": "Run preset import",
 			"import_run_url": "Fetch and import",
 			"import_paste_label": "Domain list",
@@ -6596,7 +6600,7 @@
 		"node_databases": {
 			"title": "Node Databases",
 			"viewAndManage_node": "Managing databases for node: {node}",
-			"description": "These are databases that your users (clients) can create for their servers. Mark a host as “all nodes” or bind it to one Wings node—servers only see hosts that match their node (or global hosts).",
+			"description": "These are databases that your users (clients) can create for their servers. Mark a host as “all nodes” or bind it to one Wings node servers only see hosts that match their node (or global hosts).",
 			"search_placeholder": "Search by name, host or username...",
 			"no_results": "No databases found",
 			"create": "Add Database",
@@ -7379,7 +7383,7 @@
 			"title": "Global Subdomains",
 			"description": "Manage the global domains and their SRV mappings for the subdomain system.",
 			"featureEnabledAlertTitle": "User subdomains are enabled",
-			"featureEnabledAlertBody": "Panel settings allow users to create subdomains for their game servers. All of that traffic goes through the Cloudflare integration on this page. Configure the Cloudflare email and API key below, add at least one domain, and set spell mappings—or users will see errors when they try to use subdomains.",
+			"featureEnabledAlertBody": "Panel settings allow users to create subdomains for their game servers. All of that traffic goes through the Cloudflare integration on this page. Configure the Cloudflare email and API key below, add at least one domain, and set spell mappings or users will see errors when they try to use subdomains.",
 			"featureEnabledAlertIncomplete": "Cloudflare email or API key is missing or incomplete. Save valid credentials in the section below so DNS updates can run.",
 			"featureEnabledAlertCta": "Open Cloudflare settings",
 			"featureDisabledAlertTitle": "User-made subdomains are turned off",

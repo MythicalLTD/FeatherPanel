@@ -51,7 +51,7 @@ import {
     ChevronRight,
     Loader2,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { AllocationCreateForm } from '@/components/admin/AllocationCreateForm';
 
 interface Allocation {
     id: number;
@@ -64,30 +64,6 @@ interface Allocation {
     created_at: string;
     updated_at: string;
 }
-
-interface GamePreset {
-    id: string;
-    name: string;
-    defaultPort: number;
-}
-
-const gamePresets: GamePreset[] = [
-    { id: 'minecraft_java', name: 'Minecraft Java Edition', defaultPort: 25565 },
-    { id: 'minecraft_bedrock', name: 'Minecraft Bedrock Edition', defaultPort: 19132 },
-    { id: 'rust', name: 'Rust', defaultPort: 28015 },
-    { id: 'csgo', name: 'CS:GO / Source', defaultPort: 27015 },
-    { id: 'ark', name: 'ARK: Survival Evolved', defaultPort: 7777 },
-    { id: 'ark_query', name: 'ARK: Survival Evolved (Query)', defaultPort: 27015 },
-    { id: 'valheim', name: 'Valheim', defaultPort: 2456 },
-    { id: 'terraria', name: 'Terraria', defaultPort: 7777 },
-    { id: 'starbound', name: 'Starbound', defaultPort: 21025 },
-    { id: '7dtd', name: '7 Days to Die', defaultPort: 26900 },
-    { id: 'unturned', name: 'Unturned', defaultPort: 27015 },
-    { id: 'gmod', name: "Garry's Mod", defaultPort: 27015 },
-    { id: 'tf2', name: 'Team Fortress 2', defaultPort: 27015 },
-    { id: 'satisfactory', name: 'Satisfactory', defaultPort: 15777 },
-    { id: 'palworld', name: 'Palworld', defaultPort: 8211 },
-];
 
 interface AllocationsTabProps {
     nodeId: string | number;
@@ -117,12 +93,6 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
     const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
     const [editForm, setEditForm] = useState({ ip: '', port: '', ip_alias: '', notes: '' });
     const [creatingAllocation, setCreatingAllocation] = useState(false);
-    const [createMode, setCreateMode] = useState<'manual' | 'preset'>('manual');
-    const [createForm, setCreateForm] = useState({ ip: '', port: '', ip_alias: '', notes: '' });
-    const [selectedGamePreset, setSelectedGamePreset] = useState('');
-    const [presetPortCount, setPresetPortCount] = useState(100);
-    const [includeDefaultPort, setIncludeDefaultPort] = useState(true);
-    const [customIP, setCustomIP] = useState(false);
     const [editCustomIP, setEditCustomIP] = useState(false);
 
     const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
@@ -188,38 +158,6 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
         fetchAllocations();
         checkHealthAndIPs();
     }, [nodeId, fetchAllocations, checkHealthAndIPs]);
-
-    const handleCreate = async () => {
-        setSubmitting(true);
-        try {
-            let port = createForm.port;
-            if (createMode === 'preset') {
-                const preset = gamePresets.find((p) => p.id === selectedGamePreset);
-                if (preset) {
-                    const start = includeDefaultPort ? preset.defaultPort : preset.defaultPort + 1;
-                    const end = start + presetPortCount - 1;
-                    port = `${start}-${end}`;
-                }
-            }
-
-            await axios.put('/api/admin/allocations', {
-                ...createForm,
-                node_id: nodeId,
-                port,
-            });
-            toast.success(t('admin.node.allocations.messages.create_success'));
-            setCreatingAllocation(false);
-            fetchAllocations();
-        } catch (error: unknown) {
-            console.error('Error creating allocation:', error);
-            const errorMessage = axios.isAxiosError(error)
-                ? error.response?.data?.message
-                : t('admin.node.allocations.messages.create_failed');
-            toast.error(errorMessage || t('admin.node.allocations.messages.create_failed'));
-        } finally {
-            setSubmitting(false);
-        }
-    };
 
     const handleEdit = async () => {
         if (!editingAllocation) return;
@@ -755,179 +693,17 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                     <SheetTitle>{t('admin.node.allocations.create.title')}</SheetTitle>
                     <SheetDescription>{t('admin.node.allocations.create.description')}</SheetDescription>
                 </SheetHeader>
-                <div className='space-y-6 mt-8'>
-                    <div className='space-y-2'>
-                        <Label className='text-sm font-semibold'>{t('admin.node.allocations.create.mode')}</Label>
-                        <div className='flex p-1 bg-muted/50 rounded-xl gap-1'>
-                            <Button
-                                variant='ghost'
-                                className={cn(
-                                    'flex-1 rounded-lg h-9 text-xs',
-                                    createMode === 'manual' && 'bg-background shadow-sm hover:bg-background',
-                                )}
-                                onClick={() => setCreateMode('manual')}
-                            >
-                                {t('admin.node.allocations.create.manual')}
-                            </Button>
-                            <Button
-                                variant='ghost'
-                                className={cn(
-                                    'flex-1 rounded-lg h-9 text-xs',
-                                    createMode === 'preset' && 'bg-background shadow-sm hover:bg-background',
-                                )}
-                                onClick={() => setCreateMode('preset')}
-                            >
-                                {t('admin.node.allocations.create.preset')}
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div className='space-y-2'>
-                        <Label className='text-sm font-semibold'>{t('admin.node.allocations.ip_address')}</Label>
-                        {!customIP ? (
-                            <div className='flex gap-2'>
-                                <HeadlessSelect
-                                    value={createForm.ip}
-                                    onChange={(val) => setCreateForm((prev) => ({ ...prev, ip: String(val) }))}
-                                    options={availableIPs.map((ip) => ({ id: ip, name: ip }))}
-                                    className='flex-1'
-                                />
-                                <Button
-                                    variant='outline'
-                                    size='icon'
-                                    className='h-11 w-11 shrink-0'
-                                    onClick={() => setCustomIP(true)}
-                                >
-                                    <Plus className='h-4 w-4' />
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className='flex gap-2'>
-                                <Input
-                                    placeholder='0.0.0.0'
-                                    value={createForm.ip}
-                                    className='h-11 font-mono'
-                                    onChange={(e) => setCreateForm((prev) => ({ ...prev, ip: e.target.value }))}
-                                />
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    className='shrink-0'
-                                    onClick={() => setCustomIP(false)}
-                                >
-                                    Dropdown
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-
-                    {createMode === 'preset' ? (
-                        <div className='space-y-6'>
-                            <div className='space-y-2'>
-                                <Label className='text-sm font-semibold'>
-                                    {t('admin.node.allocations.create.game_preset')}
-                                </Label>
-                                <HeadlessSelect
-                                    value={selectedGamePreset}
-                                    onChange={(val) => setSelectedGamePreset(String(val))}
-                                    options={gamePresets.map((preset) => ({
-                                        id: preset.id,
-                                        name: `${preset.name} (Default: ${preset.defaultPort})`,
-                                    }))}
-                                />
-                            </div>
-                            <div className='space-y-2'>
-                                <Label className='text-sm font-semibold'>
-                                    {t('admin.node.allocations.create.port_count')}
-                                </Label>
-                                <Input
-                                    type='number'
-                                    value={presetPortCount}
-                                    className='h-11'
-                                    min={1}
-                                    max={1000}
-                                    onChange={(e) => setPresetPortCount(Number(e.target.value))}
-                                />
-                            </div>
-                            <div className='flex items-center gap-2 p-4 bg-muted/30 rounded-2xl border border-border/50'>
-                                <input
-                                    type='checkbox'
-                                    id='includeDefault'
-                                    className='rounded border-border bg-background h-4 w-4 text-primary'
-                                    checked={includeDefaultPort}
-                                    onChange={(e) => setIncludeDefaultPort(e.target.checked)}
-                                />
-                                <Label htmlFor='includeDefault' className='flex-1 cursor-pointer'>
-                                    <span className='block text-sm font-medium'>
-                                        {t('admin.node.allocations.create.include_default')}
-                                    </span>
-                                    {selectedGamePreset && (
-                                        <span className='block text-[10px] text-muted-foreground mt-0.5 uppercase font-bold tracking-wider'>
-                                            {includeDefaultPort
-                                                ? t('admin.node.allocations.create.include_default_help', {
-                                                      port: String(
-                                                          gamePresets.find((p) => p.id === selectedGamePreset)
-                                                              ?.defaultPort,
-                                                      ),
-                                                  })
-                                                : t('admin.node.allocations.create.exclude_default_help', {
-                                                      port: String(
-                                                          (gamePresets.find((p) => p.id === selectedGamePreset)
-                                                              ?.defaultPort || 0) + 1,
-                                                      ),
-                                                      default: String(
-                                                          gamePresets.find((p) => p.id === selectedGamePreset)
-                                                              ?.defaultPort,
-                                                      ),
-                                                  })}
-                                        </span>
-                                    )}
-                                </Label>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className='space-y-2'>
-                            <Label className='text-sm font-semibold'>{t('admin.node.allocations.port')}</Label>
-                            <Input
-                                placeholder='25565 or 25565-25700'
-                                value={createForm.port}
-                                className='h-11 font-mono'
-                                onChange={(e) => setCreateForm((prev) => ({ ...prev, port: e.target.value }))}
-                            />
-                            <p className='text-[10px] text-muted-foreground italic'>
-                                {t('admin.node.allocations.create.port_range_help')}
-                            </p>
-                        </div>
-                    )}
-
-                    <div className='space-y-2'>
-                        <Label className='text-sm font-semibold'>{t('admin.node.allocations.ip_alias')}</Label>
-                        <Input
-                            placeholder='domain.com'
-                            value={createForm.ip_alias}
-                            className='h-11 font-mono'
-                            onChange={(e) => setCreateForm((prev) => ({ ...prev, ip_alias: e.target.value }))}
-                        />
-                    </div>
-
-                    <div className='space-y-2'>
-                        <Label className='text-sm font-semibold'>{t('admin.node.allocations.notes')}</Label>
-                        <Textarea
-                            placeholder='Notes...'
-                            value={createForm.notes}
-                            className='min-h-[100px]'
-                            onChange={(e) => setCreateForm((prev) => ({ ...prev, notes: e.target.value }))}
-                        />
-                    </div>
+                <div className='mt-8'>
+                    <AllocationCreateForm
+                        nodeId={Number(nodeId)}
+                        onCreated={() => {
+                            setCreatingAllocation(false);
+                            fetchAllocations();
+                        }}
+                        onCancel={() => setCreatingAllocation(false)}
+                        showFooter
+                    />
                 </div>
-                <SheetFooter>
-                    <Button variant='outline' onClick={() => setCreatingAllocation(false)}>
-                        {t('common.cancel')}
-                    </Button>
-                    <Button onClick={handleCreate} loading={submitting}>
-                        {t('common.create')}
-                    </Button>
-                </SheetFooter>
             </Sheet>
 
             <AlertDialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
