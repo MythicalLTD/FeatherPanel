@@ -182,10 +182,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             let allDbs = data.data.databases || [];
 
             if (nodeId) {
-                allDbs = allDbs.filter(
-                    (db: Database) =>
-                        db.node_id == null || Number(db.node_id) === Number(nodeId),
-                );
+                allDbs = allDbs.filter((db: Database) => db.node_id == null || Number(db.node_id) === Number(nodeId));
             }
 
             const filteredDbs = allDbs.filter(
@@ -710,10 +707,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 {t('admin.node_databases.form.node_assignment_help')}
                             </p>
                             {!nodeId && hostScope === 'single' && (
-                                <Select
-                                    value={scopeNodeId}
-                                    onChange={(e) => setScopeNodeId(e.target.value)}
-                                >
+                                <Select value={scopeNodeId} onChange={(e) => setScopeNodeId(e.target.value)}>
                                     <option value=''>{t('admin.node_databases.form.select_node')}</option>
                                     {adminNodes.map((n) => (
                                         <option key={n.id} value={String(n.id)}>
@@ -846,10 +840,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     {t('admin.node_databases.form.node_assignment_help')}
                                 </p>
                                 {!nodeId && hostScope === 'single' && (
-                                    <Select
-                                        value={scopeNodeId}
-                                        onChange={(e) => setScopeNodeId(e.target.value)}
-                                    >
+                                    <Select value={scopeNodeId} onChange={(e) => setScopeNodeId(e.target.value)}>
                                         <option value=''>{t('admin.node_databases.form.select_node')}</option>
                                         {adminNodes.map((n) => (
                                             <option key={n.id} value={String(n.id)}>
@@ -920,8 +911,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     {selectedDatabase.node_id == null
                                         ? t('admin.node_databases.status.all_nodes')
                                         : t('admin.node_databases.status.node_label', {
-                                              name:
-                                                  selectedDatabase.node_name || `#${selectedDatabase.node_id}`,
+                                              name: selectedDatabase.node_name || `#${selectedDatabase.node_id}`,
                                           })}
                                 </div>
                             </div>

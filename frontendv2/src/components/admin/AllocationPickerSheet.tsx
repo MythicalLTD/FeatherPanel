@@ -79,9 +79,7 @@ export function AllocationPickerSheet({
     const handleCreated = (created: CreatedAllocationRow[]) => {
         if (!created.length) return;
         if (created.length > 1) {
-            toast.info(
-                t('admin.servers.form.allocation_created_multiple_hint', { count: String(created.length) }),
-            );
+            toast.info(t('admin.servers.form.allocation_created_multiple_hint', { count: String(created.length) }));
         }
         const first = created[0];
         onSelectAllocation(mapCreatedToAllocation(first, nodeId));
@@ -210,7 +208,9 @@ export function AllocationPickerSheet({
 
                             <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
                                 {allocations.length === 0 ? (
-                                    <div className='text-center py-8 text-muted-foreground'>{t('common.no_results')}</div>
+                                    <div className='text-center py-8 text-muted-foreground'>
+                                        {t('common.no_results')}
+                                    </div>
                                 ) : (
                                     allocations.map((allocation) => (
                                         <button

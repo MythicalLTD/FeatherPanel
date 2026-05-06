@@ -435,7 +435,7 @@ export const getAdminNavigationItems = (
                     category: 'admin',
                     permission: Permissions.ADMIN_ROOT,
                     group: 'content',
-                }
+                },
             ],
             icon: Settings,
             isActive: false,

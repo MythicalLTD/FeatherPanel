@@ -26,7 +26,18 @@ import { Input } from '@/components/featherui/Input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { toast } from 'sonner';
-import { Server, X, ChevronRight, ChevronLeft, Plus, Search as SearchIcon, Loader2, AlertTriangle, RefreshCw, MapPin } from 'lucide-react';
+import {
+    Server,
+    X,
+    ChevronRight,
+    ChevronLeft,
+    Plus,
+    Search as SearchIcon,
+    Loader2,
+    AlertTriangle,
+    RefreshCw,
+    MapPin,
+} from 'lucide-react';
 import {
     ServerFormData,
     SelectedEntities,

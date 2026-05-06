@@ -445,9 +445,7 @@ export default function BlockedEmailDomainsPage() {
                                 {t('admin.blocked_email_domains.import_tab_preset')}
                             </TabsTrigger>
                             <TabsTrigger value='url'>{t('admin.blocked_email_domains.import_tab_url')}</TabsTrigger>
-                            <TabsTrigger value='paste'>
-                                {t('admin.blocked_email_domains.import_tab_paste')}
-                            </TabsTrigger>
+                            <TabsTrigger value='paste'>{t('admin.blocked_email_domains.import_tab_paste')}</TabsTrigger>
                         </TabsList>
                         <TabsContent value='preset' className='mt-4 space-y-3'>
                             <p className='text-muted-foreground text-sm'>
@@ -468,7 +466,9 @@ export default function BlockedEmailDomainsPage() {
                                 disabled={importBusy}
                                 onChange={(e) => setImportUrl(e.target.value)}
                             />
-                            <p className='text-muted-foreground text-xs'>{t('admin.blocked_email_domains.import_url_hint')}</p>
+                            <p className='text-muted-foreground text-xs'>
+                                {t('admin.blocked_email_domains.import_url_hint')}
+                            </p>
                         </TabsContent>
                         <TabsContent value='paste' className='mt-4 space-y-3'>
                             <Label htmlFor='bulk-paste'>{t('admin.blocked_email_domains.import_paste_label')}</Label>
@@ -523,7 +523,9 @@ export default function BlockedEmailDomainsPage() {
                         <Label htmlFor='blocking-switch' className='text-base font-semibold'>
                             {t('admin.blocked_email_domains.switch_label')}
                         </Label>
-                        <p className='text-muted-foreground max-w-xl text-sm'>{t('admin.blocked_email_domains.switch_help')}</p>
+                        <p className='text-muted-foreground max-w-xl text-sm'>
+                            {t('admin.blocked_email_domains.switch_help')}
+                        </p>
                     </div>
                     <div className='flex shrink-0 items-center gap-3'>
                         {toggleSaving && <Loader2 className='text-muted-foreground h-5 w-5 animate-spin' />}
@@ -555,7 +557,11 @@ export default function BlockedEmailDomainsPage() {
                             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                         />
                     </div>
-                    <Button className='h-11 shrink-0 sm:min-w-[120px]' disabled={adding || !newDomain.trim()} onClick={handleAdd}>
+                    <Button
+                        className='h-11 shrink-0 sm:min-w-[120px]'
+                        disabled={adding || !newDomain.trim()}
+                        onClick={handleAdd}
+                    >
                         {adding ? (
                             <Loader2 className='h-4 w-4 animate-spin' />
                         ) : (
@@ -684,7 +690,10 @@ export default function BlockedEmailDomainsPage() {
                                             <span className='font-mono text-[13px] tracking-tight'>{r.domain}</span>
                                         </td>
                                         <td className='text-muted-foreground px-4 py-3 align-middle'>
-                                            <Badge variant='outline' className={cn('font-medium', sourceBadgeClass(r.source))}>
+                                            <Badge
+                                                variant='outline'
+                                                className={cn('font-medium', sourceBadgeClass(r.source))}
+                                            >
                                                 {sourceLabel(r.source)}
                                             </Badge>
                                         </td>

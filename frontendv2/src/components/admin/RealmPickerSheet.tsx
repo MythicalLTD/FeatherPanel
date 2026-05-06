@@ -183,7 +183,12 @@ export function RealmPickerSheet({
                                 {realms.length === 0 ? (
                                     <div className='text-center py-8 text-muted-foreground space-y-3'>
                                         <p>{t('common.no_results')}</p>
-                                        <Button type='button' variant='outline' size='sm' onClick={() => setPickerMode('create')}>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={() => setPickerMode('create')}
+                                        >
                                             <Plus className='h-4 w-4 mr-2' />
                                             {t('admin.servers.form.realm_picker_create')}
                                         </Button>

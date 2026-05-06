@@ -53,12 +53,7 @@ interface AllocationCreateFormProps {
     showFooter?: boolean;
 }
 
-export function AllocationCreateForm({
-    nodeId,
-    onCreated,
-    onCancel,
-    showFooter = true,
-}: AllocationCreateFormProps) {
+export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter = true }: AllocationCreateFormProps) {
     const { t } = useTranslation();
     const [submitting, setSubmitting] = useState(false);
     const [nodeIPs, setNodeIPs] = useState<string[]>([]);
@@ -129,9 +124,7 @@ export function AllocationCreateForm({
 
     return (
         <div className='space-y-6'>
-            {isLoadingIps && (
-                <p className='text-xs text-muted-foreground'>{t('admin.node.health.checking')}</p>
-            )}
+            {isLoadingIps && <p className='text-xs text-muted-foreground'>{t('admin.node.health.checking')}</p>}
             <div className='space-y-2'>
                 <Label className='text-sm font-semibold'>{t('admin.node.allocations.create.mode')}</Label>
                 <div className='flex p-1 bg-muted/50 rounded-xl gap-1'>
@@ -188,7 +181,13 @@ export function AllocationCreateForm({
                             className='h-11 font-mono'
                             onChange={(e) => setCreateForm((prev) => ({ ...prev, ip: e.target.value }))}
                         />
-                        <Button type='button' variant='outline' size='sm' className='shrink-0' onClick={() => setCustomIP(false)}>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            className='shrink-0'
+                            onClick={() => setCustomIP(false)}
+                        >
                             {t('admin.node.allocations.create.manual')}
                         </Button>
                     </div>
@@ -198,7 +197,9 @@ export function AllocationCreateForm({
             {createMode === 'preset' ? (
                 <div className='space-y-6'>
                     <div className='space-y-2'>
-                        <Label className='text-sm font-semibold'>{t('admin.node.allocations.create.game_preset')}</Label>
+                        <Label className='text-sm font-semibold'>
+                            {t('admin.node.allocations.create.game_preset')}
+                        </Label>
                         <HeadlessSelect
                             value={selectedGamePreset}
                             onChange={(val) => setSelectedGamePreset(String(val))}
@@ -228,22 +229,26 @@ export function AllocationCreateForm({
                             onChange={(e) => setIncludeDefaultPort(e.target.checked)}
                         />
                         <Label htmlFor='includeDefaultAllocationCreate' className='flex-1 cursor-pointer'>
-                            <span className='block text-sm font-medium'>{t('admin.node.allocations.create.include_default')}</span>
+                            <span className='block text-sm font-medium'>
+                                {t('admin.node.allocations.create.include_default')}
+                            </span>
                             {selectedGamePreset && (
                                 <span className='block text-[10px] text-muted-foreground mt-0.5 uppercase font-bold tracking-wider'>
                                     {includeDefaultPort
                                         ? t('admin.node.allocations.create.include_default_help', {
                                               port: String(
-                                                  allocationGamePresets.find((p) => p.id === selectedGamePreset)?.defaultPort,
+                                                  allocationGamePresets.find((p) => p.id === selectedGamePreset)
+                                                      ?.defaultPort,
                                               ),
                                           })
                                         : t('admin.node.allocations.create.exclude_default_help', {
                                               port: String(
-                                                  (allocationGamePresets.find((p) => p.id === selectedGamePreset)?.defaultPort ||
-                                                      0) + 1,
+                                                  (allocationGamePresets.find((p) => p.id === selectedGamePreset)
+                                                      ?.defaultPort || 0) + 1,
                                               ),
                                               default: String(
-                                                  allocationGamePresets.find((p) => p.id === selectedGamePreset)?.defaultPort,
+                                                  allocationGamePresets.find((p) => p.id === selectedGamePreset)
+                                                      ?.defaultPort,
                                               ),
                                           })}
                                 </span>

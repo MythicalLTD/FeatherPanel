@@ -311,7 +311,9 @@ export function SpellPickerSheet({
                                 {spells.length === 0 ? (
                                     <div className='text-center py-8 text-muted-foreground space-y-4'>
                                         <p>{t('common.no_results')}</p>
-                                        <p className='text-sm'>{t('admin.servers.form.spell_picker_browse_empty_hint')}</p>
+                                        <p className='text-sm'>
+                                            {t('admin.servers.form.spell_picker_browse_empty_hint')}
+                                        </p>
                                         <Button type='button' onClick={() => setPickerMode('cloud')}>
                                             <CloudDownload className='h-4 w-4 mr-2' />
                                             {t('admin.servers.form.spell_picker_cloud')}
@@ -414,7 +416,10 @@ export function SpellPickerSheet({
                                     description={onlineError}
                                     icon={AlertCircle}
                                     action={
-                                        <Button variant='outline' onClick={() => void fetchOnlineSpells(1, debouncedCloudSearch)}>
+                                        <Button
+                                            variant='outline'
+                                            onClick={() => void fetchOnlineSpells(1, debouncedCloudSearch)}
+                                        >
                                             <RefreshCw className='h-4 w-4 mr-2' />
                                             {t('admin.marketplace.plugins.try_again')}
                                         </Button>
@@ -431,7 +436,12 @@ export function SpellPickerSheet({
                                     {onlineSpells.map((spell) => {
                                         const IconComponent = ({ className }: { className?: string }) =>
                                             spell.icon ? (
-                                                <div className={cn('relative h-10 w-10 rounded-lg overflow-hidden shrink-0', className)}>
+                                                <div
+                                                    className={cn(
+                                                        'relative h-10 w-10 rounded-lg overflow-hidden shrink-0',
+                                                        className,
+                                                    )}
+                                                >
                                                     <Image
                                                         src={spell.icon}
                                                         alt={spell.name}
@@ -456,8 +466,11 @@ export function SpellPickerSheet({
                                             ...(spell.verified
                                                 ? [
                                                       {
-                                                          label: t('admin.marketplace.spells.grid.pterodactyl_verified'),
-                                                          className: 'bg-green-500/10 text-green-600 border-green-500/20',
+                                                          label: t(
+                                                              'admin.marketplace.spells.grid.pterodactyl_verified',
+                                                          ),
+                                                          className:
+                                                              'bg-green-500/10 text-green-600 border-green-500/20',
                                                       },
                                                   ]
                                                 : []),
@@ -478,7 +491,9 @@ export function SpellPickerSheet({
                                                 title={spell.name}
                                                 subtitle={
                                                     spell.author
-                                                        ? t('admin.marketplace.common.by_author', { author: spell.author })
+                                                        ? t('admin.marketplace.common.by_author', {
+                                                              author: spell.author,
+                                                          })
                                                         : undefined
                                                 }
                                                 badges={badges}
@@ -491,7 +506,9 @@ export function SpellPickerSheet({
                                                         {!spell.verified && (
                                                             <div className='text-[10px] text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 flex items-center gap-2'>
                                                                 <AlertCircle className='h-3 w-3 shrink-0' />
-                                                                <span>{t('admin.marketplace.spells.grid.external_source')}</span>
+                                                                <span>
+                                                                    {t('admin.marketplace.spells.grid.external_source')}
+                                                                </span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -516,7 +533,9 @@ export function SpellPickerSheet({
                                                                 variant='outline'
                                                                 size='icon'
                                                                 type='button'
-                                                                onClick={() => window.open(spell.website as string, '_blank')}
+                                                                onClick={() =>
+                                                                    window.open(spell.website as string, '_blank')
+                                                                }
                                                             >
                                                                 <Globe className='h-4 w-4' />
                                                             </Button>

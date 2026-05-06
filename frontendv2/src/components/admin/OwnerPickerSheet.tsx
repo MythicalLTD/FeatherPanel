@@ -130,7 +130,11 @@ export function OwnerPickerSheet({
                     </div>
 
                     {pickerMode === 'create' ? (
-                        <OwnerCreateForm onCreated={handleCreated} onCancel={() => setPickerMode('browse')} showFooter />
+                        <OwnerCreateForm
+                            onCreated={handleCreated}
+                            onCancel={() => setPickerMode('browse')}
+                            showFooter
+                        />
                     ) : (
                         <>
                             <div className='relative group'>
@@ -179,7 +183,12 @@ export function OwnerPickerSheet({
                                 {owners.length === 0 ? (
                                     <div className='text-center py-8 text-muted-foreground space-y-3'>
                                         <p>{t('admin.servers.form.no_users_found')}</p>
-                                        <Button type='button' variant='outline' size='sm' onClick={() => setPickerMode('create')}>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={() => setPickerMode('create')}
+                                        >
                                             <Plus className='h-4 w-4 mr-2' />
                                             {t('admin.servers.form.owner_picker_create')}
                                         </Button>
@@ -198,7 +207,9 @@ export function OwnerPickerSheet({
                                                 </div>
                                                 <div className='min-w-0'>
                                                     <div className='font-semibold truncate'>{owner.username}</div>
-                                                    <div className='text-xs text-muted-foreground truncate'>{owner.email}</div>
+                                                    <div className='text-xs text-muted-foreground truncate'>
+                                                        {owner.email}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </button>

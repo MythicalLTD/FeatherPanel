@@ -739,136 +739,139 @@ export default function CreateNodePage() {
                             </form>
                         ) : (
                             <>
-                        <div className='relative'>
-                            <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-                            <Input
-                                placeholder={t('admin.node.form.search_locations')}
-                                value={locationSearch}
-                                onChange={(e) => setLocationSearch(e.target.value)}
-                                className='pl-10'
-                            />
-                        </div>
-
-                        {locationPagination.total_pages > 1 && (
-                            <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_prev}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page - 1,
-                                        }))
-                                    }
-                                    className='gap-1 h-8'
-                                >
-                                    <ChevronLeft className='h-3 w-3' />
-                                    {t('common.previous')}
-                                </Button>
-                                <span className='text-xs font-medium'>
-                                    {locationPagination.current_page} / {locationPagination.total_pages}
-                                </span>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_next}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page + 1,
-                                        }))
-                                    }
-                                    className='gap-1 h-8'
-                                >
-                                    {t('common.next')}
-                                    <ChevronRight className='h-3 w-3' />
-                                </Button>
-                            </div>
-                        )}
-
-                        <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
-                            {locations.length === 0 ? (
-                                <div className='text-center py-8 text-muted-foreground'>
-                                    {t('admin.node.form.no_locations_found')}
+                                <div className='relative'>
+                                    <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                                    <Input
+                                        placeholder={t('admin.node.form.search_locations')}
+                                        value={locationSearch}
+                                        onChange={(e) => setLocationSearch(e.target.value)}
+                                        className='pl-10'
+                                    />
                                 </div>
-                            ) : (
-                                locations.map((location) => (
-                                    <button
-                                        key={location.id}
-                                        onClick={() => {
-                                            setForm((prev) => ({ ...prev, location_id: location.id.toString() }));
-                                            setSelectedLocationName(location.name);
-                                            setLocationModalOpen(false);
-                                        }}
-                                        className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
-                                    >
-                                        <div className='flex items-start gap-3'>
-                                            <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
-                                                <MapPin className='h-5 w-5 text-primary' />
-                                            </div>
-                                            <div className='flex-1 min-w-0'>
-                                                <div className='font-medium'>{location.name}</div>
-                                                {location.description && (
-                                                    <div className='text-sm text-muted-foreground mt-1'>
-                                                        {location.description}
-                                                    </div>
-                                                )}
-                                            </div>
+
+                                {locationPagination.total_pages > 1 && (
+                                    <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                        <Button
+                                            variant='outline'
+                                            size='sm'
+                                            disabled={!locationPagination.has_prev}
+                                            onClick={() =>
+                                                setLocationPagination((prev) => ({
+                                                    ...prev,
+                                                    current_page: prev.current_page - 1,
+                                                }))
+                                            }
+                                            className='gap-1 h-8'
+                                        >
+                                            <ChevronLeft className='h-3 w-3' />
+                                            {t('common.previous')}
+                                        </Button>
+                                        <span className='text-xs font-medium'>
+                                            {locationPagination.current_page} / {locationPagination.total_pages}
+                                        </span>
+                                        <Button
+                                            variant='outline'
+                                            size='sm'
+                                            disabled={!locationPagination.has_next}
+                                            onClick={() =>
+                                                setLocationPagination((prev) => ({
+                                                    ...prev,
+                                                    current_page: prev.current_page + 1,
+                                                }))
+                                            }
+                                            className='gap-1 h-8'
+                                        >
+                                            {t('common.next')}
+                                            <ChevronRight className='h-3 w-3' />
+                                        </Button>
+                                    </div>
+                                )}
+
+                                <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
+                                    {locations.length === 0 ? (
+                                        <div className='text-center py-8 text-muted-foreground'>
+                                            {t('admin.node.form.no_locations_found')}
                                         </div>
-                                    </button>
-                                ))
-                            )}
-                        </div>
+                                    ) : (
+                                        locations.map((location) => (
+                                            <button
+                                                key={location.id}
+                                                onClick={() => {
+                                                    setForm((prev) => ({
+                                                        ...prev,
+                                                        location_id: location.id.toString(),
+                                                    }));
+                                                    setSelectedLocationName(location.name);
+                                                    setLocationModalOpen(false);
+                                                }}
+                                                className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                            >
+                                                <div className='flex items-start gap-3'>
+                                                    <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
+                                                        <MapPin className='h-5 w-5 text-primary' />
+                                                    </div>
+                                                    <div className='flex-1 min-w-0'>
+                                                        <div className='font-medium'>{location.name}</div>
+                                                        {location.description && (
+                                                            <div className='text-sm text-muted-foreground mt-1'>
+                                                                {location.description}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
 
-                        {locationPagination.total_pages > 1 && (
-                            <div className='flex items-center justify-between pt-4 border-t'>
-                                <div className='text-sm text-muted-foreground'>
-                                    {t('common.showing', {
-                                        from: String(
-                                            locationPagination.current_page * locationPagination.per_page -
-                                                locationPagination.per_page +
-                                                1,
-                                        ),
-                                        to: String(
-                                            Math.min(
-                                                locationPagination.current_page * locationPagination.per_page,
-                                                locationPagination.total_records,
-                                            ),
-                                        ),
-                                        total: String(locationPagination.total_records),
-                                    })}
-                                </div>
-                                <div className='flex gap-2'>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        onClick={() =>
-                                            setLocationPagination((prev) => ({
-                                                ...prev,
-                                                current_page: prev.current_page - 1,
-                                            }))
-                                        }
-                                        disabled={!locationPagination.has_prev}
-                                    >
-                                        {t('common.previous')}
-                                    </Button>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        onClick={() =>
-                                            setLocationPagination((prev) => ({
-                                                ...prev,
-                                                current_page: prev.current_page + 1,
-                                            }))
-                                        }
-                                        disabled={!locationPagination.has_next}
-                                    >
-                                        {t('common.next')}
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
+                                {locationPagination.total_pages > 1 && (
+                                    <div className='flex items-center justify-between pt-4 border-t'>
+                                        <div className='text-sm text-muted-foreground'>
+                                            {t('common.showing', {
+                                                from: String(
+                                                    locationPagination.current_page * locationPagination.per_page -
+                                                        locationPagination.per_page +
+                                                        1,
+                                                ),
+                                                to: String(
+                                                    Math.min(
+                                                        locationPagination.current_page * locationPagination.per_page,
+                                                        locationPagination.total_records,
+                                                    ),
+                                                ),
+                                                total: String(locationPagination.total_records),
+                                            })}
+                                        </div>
+                                        <div className='flex gap-2'>
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() =>
+                                                    setLocationPagination((prev) => ({
+                                                        ...prev,
+                                                        current_page: prev.current_page - 1,
+                                                    }))
+                                                }
+                                                disabled={!locationPagination.has_prev}
+                                            >
+                                                {t('common.previous')}
+                                            </Button>
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() =>
+                                                    setLocationPagination((prev) => ({
+                                                        ...prev,
+                                                        current_page: prev.current_page + 1,
+                                                    }))
+                                                }
+                                                disabled={!locationPagination.has_next}
+                                            >
+                                                {t('common.next')}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>
