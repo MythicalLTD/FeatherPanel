@@ -87,6 +87,8 @@ class BPlayerStatusPoller implements TimeTask
                 'realm' => [
                     'name' => $row['realm_name'],
                 ],
+                'node_fqdn' => $row['node_fqdn'] ?? null,
+                'node_public_ip' => $row['node_public_ip'] ?? null,
             ];
 
             // Skip servers where player status is disabled (Requirement 5.5)
@@ -137,11 +139,14 @@ class BPlayerStatusPoller implements TimeTask
                 a.port,
                 sp.name AS spell_name,
                 sp.gamedig_type,
-                r.name AS realm_name
+                r.name AS realm_name,
+                n.fqdn AS node_fqdn,
+                n.public_ip_v4 AS node_public_ip
             FROM featherpanel_servers s
             INNER JOIN featherpanel_allocations a ON a.id = s.allocation_id
             INNER JOIN featherpanel_spells sp ON sp.id = s.spell_id
             INNER JOIN featherpanel_realms r ON r.id = s.realms_id
+            INNER JOIN featherpanel_nodes n ON n.id = s.node_id
             WHERE s.status = :status
         ');
         $stmt->execute(['status' => 'running']);

@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Cache\Cache;
+use App\Chat\Database;
 
 /**
  * Orchestrates game server player status queries, caching, and fallback logic.
@@ -51,7 +52,7 @@ class PlayerStatusService
      * falls back to LogParser for player names if GameQ returns empty names,
      * and caches the result in Redis.
      *
-     * @param array $server Server array with keys: uuid_short, uuid, name, status, ip, port, spell, realm
+     * @param array $server Server array with keys: uuid_short, uuid, name, status, ip, port, spell, realm, node_fqdn, node_public_ip
      *
      * @return array|null Player status data or null if the server is unsupported
      */
@@ -64,6 +65,10 @@ class PlayerStatusService
         $ip = $server['ip'] ?? '';
         $port = (int) ($server['port'] ?? 0);
 
+        // Resolve the actual query IP — if allocation IP is 0.0.0.0, use node public IP or FQDN
+        $queryIp = self::resolveQueryIp($ip, $server);
+        $displayAddress = $queryIp . ':' . $port;
+
         // When server is not running, return zero players
         if ($status !== 'running') {
             $data = [
@@ -74,7 +79,7 @@ class PlayerStatusService
                 'last_updated' => gmdate('Y-m-d\TH:i:s\Z'),
                 'is_stale' => false,
                 'server_name' => $serverName,
-                'address' => $ip . ':' . $port,
+                'address' => $displayAddress,
             ];
 
             $pollingInterval = self::getEffectivePollingInterval(null);
@@ -93,11 +98,11 @@ class PlayerStatusService
             return null;
         }
 
-        // Query the game server
+        // Query the game server using the resolved IP
         $queryResult = null;
 
         try {
-            $queryResult = GameServerQuery::query($gameType, $ip, $port);
+            $queryResult = GameServerQuery::query($gameType, $queryIp, $port);
         } catch (\Throwable) {
             // Query failed, will fall back to cached data below
         }
@@ -113,8 +118,24 @@ class PlayerStatusService
                 return $cached;
             }
 
-            // No cached data available either
-            return null;
+            // No cached data — return a basic response so the widget knows the game type
+            $data = [
+                'player_count' => 0,
+                'max_players' => 0,
+                'players' => [],
+                'game_type' => $gameType,
+                'last_updated' => gmdate('Y-m-d\TH:i:s\Z'),
+                'is_stale' => true,
+                'server_name' => $serverName,
+                'address' => $displayAddress,
+            ];
+
+            $pollingInterval = self::getEffectivePollingInterval(null);
+            $cacheKey = self::buildCacheKey($uuidShort);
+            $cacheTtl = self::getCacheTtl($pollingInterval);
+            Cache::put($cacheKey, $data, $cacheTtl);
+
+            return $data;
         }
 
         // Build player list — fall back to LogParser if GameQ returns empty names
@@ -132,8 +153,9 @@ class PlayerStatusService
             'game_type' => $gameType,
             'last_updated' => gmdate('Y-m-d\TH:i:s\Z'),
             'is_stale' => false,
-            'server_name' => $serverName,
-            'address' => $ip . ':' . $port,
+            'server_name' => !empty($queryResult['name']) ? $queryResult['name'] : $serverName,
+            'address' => $displayAddress,
+            'version' => $queryResult['version'] ?? null,
         ];
 
         // Cache the result
@@ -161,8 +183,14 @@ class PlayerStatusService
             return $cached;
         }
 
-        // Cache miss — cannot trigger a fresh query without server data
-        return null;
+        // Cache miss — fetch server data from DB and trigger a fresh query
+        $server = self::fetchServerData($uuidShort);
+
+        if ($server === null) {
+            return null;
+        }
+
+        return self::queryServer($server);
     }
 
     /**
@@ -208,5 +236,156 @@ class PlayerStatusService
 
         // Ensure at least 1 minute TTL
         return max(1, $ttlMinutes);
+    }
+
+    /**
+     * Fetch server data from the database by uuidShort.
+     *
+     * @param string $uuidShort The server's short UUID
+     *
+     * @return array|null Server data array or null if not found
+     */
+    private static function fetchServerData(string $uuidShort): ?array
+    {
+        try {
+            $pdo = Database::getPdoConnection();
+            $row = null;
+
+            // Try the full query first (with all optional columns)
+            $queries = [
+                // Full query with gamedig_type and public_ip_v4
+                'SELECT
+                    s.uuidShort AS uuid_short,
+                    s.uuid,
+                    s.name,
+                    s.status,
+                    a.ip,
+                    a.port,
+                    sp.name AS spell_name,
+                    sp.gamedig_type,
+                    r.name AS realm_name,
+                    n.fqdn AS node_fqdn,
+                    n.public_ip_v4 AS node_public_ip
+                FROM featherpanel_servers s
+                INNER JOIN featherpanel_allocations a ON a.id = s.allocation_id
+                INNER JOIN featherpanel_spells sp ON sp.id = s.spell_id
+                INNER JOIN featherpanel_realms r ON r.id = s.realms_id
+                INNER JOIN featherpanel_nodes n ON n.id = s.node_id
+                WHERE s.uuidShort = :uuidShort
+                LIMIT 1',
+                // Without public_ip_v4
+                'SELECT
+                    s.uuidShort AS uuid_short,
+                    s.uuid,
+                    s.name,
+                    s.status,
+                    a.ip,
+                    a.port,
+                    sp.name AS spell_name,
+                    sp.gamedig_type,
+                    r.name AS realm_name,
+                    n.fqdn AS node_fqdn
+                FROM featherpanel_servers s
+                INNER JOIN featherpanel_allocations a ON a.id = s.allocation_id
+                INNER JOIN featherpanel_spells sp ON sp.id = s.spell_id
+                INNER JOIN featherpanel_realms r ON r.id = s.realms_id
+                INNER JOIN featherpanel_nodes n ON n.id = s.node_id
+                WHERE s.uuidShort = :uuidShort
+                LIMIT 1',
+                // Without gamedig_type and public_ip_v4
+                'SELECT
+                    s.uuidShort AS uuid_short,
+                    s.uuid,
+                    s.name,
+                    s.status,
+                    a.ip,
+                    a.port,
+                    sp.name AS spell_name,
+                    r.name AS realm_name,
+                    n.fqdn AS node_fqdn
+                FROM featherpanel_servers s
+                INNER JOIN featherpanel_allocations a ON a.id = s.allocation_id
+                INNER JOIN featherpanel_spells sp ON sp.id = s.spell_id
+                INNER JOIN featherpanel_realms r ON r.id = s.realms_id
+                INNER JOIN featherpanel_nodes n ON n.id = s.node_id
+                WHERE s.uuidShort = :uuidShort
+                LIMIT 1',
+            ];
+
+            foreach ($queries as $sql) {
+                try {
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute(['uuidShort' => $uuidShort]);
+                    $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+                    break; // Query succeeded
+                } catch (\Throwable) {
+                    continue; // Try next query
+                }
+            }
+
+            if (!$row) {
+                return null;
+            }
+
+            return [
+                'uuid_short' => $row['uuid_short'],
+                'uuid' => $row['uuid'],
+                'name' => $row['name'],
+                'status' => $row['status'],
+                'ip' => $row['ip'],
+                'port' => $row['port'],
+                'spell' => [
+                    'name' => $row['spell_name'],
+                    'gamedig_type' => $row['gamedig_type'] ?? null,
+                ],
+                'realm' => [
+                    'name' => $row['realm_name'],
+                ],
+                'node_fqdn' => $row['node_fqdn'] ?? null,
+                'node_public_ip' => $row['node_public_ip'] ?? null,
+            ];
+        } catch (\Throwable $e) {
+            // Log the error so we can debug
+            try {
+                \App\App::getInstance(false, true)->getLogger()->error('PlayerStatusService::fetchServerData failed: ' . $e->getMessage());
+            } catch (\Throwable) {
+                // Ignore logging failures
+            }
+
+            return null;
+        }
+    }
+
+    /**
+     * Resolve the actual IP to use for querying the game server.
+     *
+     * If the allocation IP is 0.0.0.0 (wildcard), use the node's public IP or FQDN instead.
+     *
+     * @param string $allocationIp The allocation IP from the database
+     * @param array $server The server data array (may contain node_fqdn, node_public_ip)
+     *
+     * @return string The resolved IP/hostname to query
+     */
+    private static function resolveQueryIp(string $allocationIp, array $server): string
+    {
+        // If the IP is not a wildcard, use it directly
+        if ($allocationIp !== '0.0.0.0' && $allocationIp !== '') {
+            return $allocationIp;
+        }
+
+        // Try node public IPv4 first
+        $nodePublicIp = $server['node_public_ip'] ?? null;
+        if (!empty($nodePublicIp)) {
+            return $nodePublicIp;
+        }
+
+        // Fall back to node FQDN
+        $nodeFqdn = $server['node_fqdn'] ?? null;
+        if (!empty($nodeFqdn)) {
+            return $nodeFqdn;
+        }
+
+        // Last resort — return the original IP (will likely fail but at least won't crash)
+        return $allocationIp;
     }
 }

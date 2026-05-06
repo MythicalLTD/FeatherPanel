@@ -778,6 +778,7 @@
 				"title": "Players",
 				"online": "Players Online",
 				"offline": "Server offline",
+				"empty": "No players online",
 				"error": "Unable to load player status",
 				"stale": "Data may be outdated",
 				"names_unavailable": "Player names not available"

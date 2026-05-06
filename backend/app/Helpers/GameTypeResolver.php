@@ -40,9 +40,26 @@ class GameTypeResolver
         'minecraft (bedrock)' => 'minecraftbe',
         'minecraft java' => 'minecraft',
         'minecraft bedrock' => 'minecraftbe',
+        // Common Minecraft server software
+        'paper' => 'minecraft',
+        'purpur' => 'minecraft',
+        'spigot' => 'minecraft',
+        'bukkit' => 'minecraft',
+        'vanilla' => 'minecraft',
+        'fabric' => 'minecraft',
+        'forge' => 'minecraft',
+        'velocity' => 'minecraft',
+        'waterfall' => 'minecraft',
+        'bungeecord' => 'minecraft',
+        'sponge' => 'minecraft',
+        'pocketmine' => 'minecraftbe',
+        'nukkit' => 'minecraftbe',
+        'bedrock' => 'minecraftbe',
+        // Source Engine
         'cs2' => 'cs2',
         'counter-strike 2' => 'cs2',
         'counter strike 2' => 'cs2',
+        'csgo' => 'cs2',
         'garrysmod' => 'garrysmod',
         "garry's mod" => 'garrysmod',
         'garrys mod' => 'garrysmod',
@@ -165,6 +182,16 @@ class GameTypeResolver
 
         if (str_contains($lowerName, 'minecraft')) {
             return 'minecraft';
+        }
+
+        // Common Minecraft Java server software names
+        if (str_contains($lowerName, 'paper') || str_contains($lowerName, 'purpur') || str_contains($lowerName, 'spigot') || str_contains($lowerName, 'bukkit') || str_contains($lowerName, 'fabric') || str_contains($lowerName, 'forge') || str_contains($lowerName, 'velocity') || str_contains($lowerName, 'waterfall') || str_contains($lowerName, 'bungeecord') || str_contains($lowerName, 'sponge')) {
+            return 'minecraft';
+        }
+
+        // Common Minecraft Bedrock server software names
+        if (str_contains($lowerName, 'pocketmine') || str_contains($lowerName, 'nukkit') || str_contains($lowerName, 'bedrock dedicated')) {
+            return 'minecraftbe';
         }
 
         if (str_contains($lowerName, 'counter-strike') || str_contains($lowerName, 'counter strike') || str_contains($lowerName, 'cs2')) {

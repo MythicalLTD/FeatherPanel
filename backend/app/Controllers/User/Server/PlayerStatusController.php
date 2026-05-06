@@ -57,6 +57,7 @@ class PlayerStatusController
             'is_stale' => $data['is_stale'] ?? false,
             'server_name' => $data['server_name'] ?? '',
             'address' => $data['address'] ?? '',
+            'version' => $data['version'] ?? null,
         ]);
     }
 }

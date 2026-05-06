@@ -613,6 +613,8 @@ export default function ServerConsolePage() {
                 </div>
 
                 <div className='xl:col-span-3 space-y-6'>
+                    <PlayerStatusWidget uuidShort={serverUuid} />
+
                     {shouldConnectToWings && (
                         <ServerInfoCards
                             serverIp={
@@ -634,8 +636,6 @@ export default function ServerConsolePage() {
                             className='xl:grid-cols-1'
                         />
                     )}
-
-                    <PlayerStatusWidget uuidShort={serverUuid} />
 
                     <WidgetRenderer widgets={getWidgets('server-console', 'under-server-info-cards')} />
                 </div>
