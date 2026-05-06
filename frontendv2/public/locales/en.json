@@ -6596,7 +6596,7 @@
 		"node_databases": {
 			"title": "Node Databases",
 			"viewAndManage_node": "Managing databases for node: {node}",
-			"description": "These are databases that your users (clients) can create for their servers.",
+			"description": "These are databases that your users (clients) can create for their servers. Mark a host as “all nodes” or bind it to one Wings node—servers only see hosts that match their node (or global hosts).",
 			"search_placeholder": "Search by name, host or username...",
 			"no_results": "No databases found",
 			"create": "Add Database",
@@ -6611,14 +6611,15 @@
 				"delete_failed": "Failed to delete database",
 				"delete_confirm": "Are you sure you want to delete this database?",
 				"health_healthy": "Database is healthy",
-				"health_unhealthy": "Database is unhealthy"
+				"health_unhealthy": "Database is unhealthy",
+				"node_required": "Select which node this database host is for."
 			},
 			"table": {
 				"created": "Created"
 			},
 			"form": {
 				"create_title": "Add Database",
-				"create_description": "Add a new database to this node.",
+				"create_description": "Add a database host that users can provision from. Choose whether it applies to all nodes or only one.",
 				"edit_title": "Edit Database",
 				"edit_description": "Edit the selected database.",
 				"view_title": "View Database",
@@ -6638,18 +6639,27 @@
 				"username_placeholder": "root",
 				"password": "Password",
 				"password_placeholder": "Enter password",
+				"password_edit_hint": "Leave blank to keep the current password unchanged.",
 				"submit_create": "Create Database",
-				"submit_update": "Update Database"
+				"submit_update": "Update Database",
+				"node_assignment": "Availability",
+				"node_assignment_help": "Global hosts appear for every server. Node-only hosts are shown only to servers on that node, and new databases are created on that host.",
+				"node_assignment_all_nodes": "All nodes (global)",
+				"node_assignment_one_node": "Single node only",
+				"node_assignment_this_only": "This node only ({node})",
+				"select_node": "Select node…"
 			},
 			"status": {
 				"healthy": "Healthy",
 				"unhealthy": "Unhealthy",
-				"no_node": "No Node"
+				"no_node": "No Node",
+				"all_nodes": "All nodes",
+				"node_label": "Node: {name}"
 			},
 			"help": {
 				"about_databases": {
 					"title": "About Databases",
-					"description": "These are databases that your users (clients) can create for their servers. Users can create multiple database types depending on the limits you set as the hosting owner. FeatherPanel supports a broad range of popular databases to fit many workloads."
+					"description": "These entries are database hosts (MySQL/MariaDB/PostgreSQL) that customers attach to game servers. Use “all nodes” for a shared cluster anyone can use, or assign a host to one Wings node so workloads stay local to that machine."
 				}
 			}
 		},

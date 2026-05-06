@@ -340,11 +340,15 @@ class DatabaseInstance
             return false;
         }
 
-        // Validate node_id if provided
-        if (isset($data['node_id']) && !Node::getNodeById($data['node_id'])) {
-            App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for database update with data: ' . json_encode($data));
+        // Validate node_id if present (null = all nodes / global host)
+        if (array_key_exists('node_id', $data)) {
+            if ($data['node_id'] !== null && $data['node_id'] !== '') {
+                if (!is_numeric($data['node_id']) || (int) $data['node_id'] <= 0 || !Node::getNodeById((int) $data['node_id'])) {
+                    App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for database update with data: ' . json_encode($data));
 
-            return false;
+                    return false;
+                }
+            }
         }
 
         // Validate database_type if provided
@@ -460,6 +464,32 @@ class DatabaseInstance
         ');
         $stmt->execute();
 
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            $row = self::decryptSensitiveFields($row);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Database hosts available for servers on a given Wings node:
+     * global hosts (node_id NULL) plus hosts tied to that node.
+     */
+    public static function getDatabasesForServerNode(int $serverNodeId): array
+    {
+        if ($serverNodeId <= 0) {
+            return [];
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('
+            SELECT d.*, n.name as node_name, n.description as node_description
+            FROM ' . self::$table . ' d
+            LEFT JOIN featherpanel_nodes n ON d.node_id = n.id
+            WHERE d.node_id IS NULL OR d.node_id = :node_id
+            ORDER BY d.name ASC
+        ');
+        $stmt->execute(['node_id' => $serverNodeId]);
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
             $row = self::decryptSensitiveFields($row);

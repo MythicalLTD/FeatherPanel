@@ -491,6 +491,17 @@ class DatabasesController
             unset($data['id']);
         }
 
+        // Omit password when empty so PATCH can update other fields without rotating credentials
+        if (array_key_exists('database_password', $data)) {
+            if ($data['database_password'] === null || trim((string) $data['database_password']) === '') {
+                unset($data['database_password']);
+            }
+        }
+
+        if (empty($data)) {
+            return ApiResponse::error('No data provided', 'NO_DATA_PROVIDED', 400);
+        }
+
         // Validation rules (only for fields being updated)
         $lengthRules = [
             'name' => [1, 255],
@@ -525,12 +536,13 @@ class DatabasesController
             }
         }
 
-        // Validate node_id if updating
-        if (isset($data['node_id'])) {
-            if (!is_numeric($data['node_id']) || (int) $data['node_id'] <= 0) {
-                return ApiResponse::error('Node ID must be a positive number', 'INVALID_NODE_ID');
-            }
-            if (!Node::getNodeById($data['node_id'])) {
+        // Validate node_id if updating (null = all nodes / global database host)
+        if (array_key_exists('node_id', $data)) {
+            if ($data['node_id'] === null || $data['node_id'] === '') {
+                $data['node_id'] = null;
+            } elseif (!is_numeric($data['node_id']) || (int) $data['node_id'] <= 0) {
+                return ApiResponse::error('Node ID must be a positive number or null', 'INVALID_NODE_ID');
+            } elseif (!Node::getNodeById((int) $data['node_id'])) {
                 return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
             }
         }

@@ -415,6 +415,16 @@ class ServerDatabaseController
             return ApiResponse::error('Database host not found', 'DATABASE_HOST_NOT_FOUND', 404);
         }
 
+        // Host must be global (all nodes) or tied to this server's node
+        $hostNodeId = $databaseHost['node_id'] ?? null;
+        if ($hostNodeId !== null && (int) $hostNodeId > 0 && (int) $server['node_id'] !== (int) $hostNodeId) {
+            return ApiResponse::error(
+                'This database host is assigned to a different node. Choose a host for this server\'s node or a global host.',
+                'DATABASE_HOST_NODE_MISMATCH',
+                400
+            );
+        }
+
         // Check if database type is supported
         if (!in_array($databaseHost['database_type'], ['mysql', 'mariadb', 'postgresql'])) {
             return ApiResponse::error(
@@ -809,8 +819,8 @@ class ServerDatabaseController
             return $permissionCheck;
         }
 
-        // Get all available database hosts
-        $databaseHosts = DatabaseInstance::getAllDatabasesWithNode();
+        // Hosts available for this server: global (all nodes) + hosts for this server's node
+        $databaseHosts = DatabaseInstance::getDatabasesForServerNode((int) $server['node_id']);
 
         return ApiResponse::success($databaseHosts);
     }

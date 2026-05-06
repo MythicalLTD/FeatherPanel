@@ -94,11 +94,11 @@ class CreateDatabaseTool implements ToolInterface
         // Get database host ID
         $databaseHostId = $params['database_host_id'] ?? null;
         if (!$databaseHostId) {
-            // Try to get first available database host
-            $databaseHosts = DatabaseInstance::getAllDatabases();
+            // First host allowed for this server's node (global or node-specific)
+            $databaseHosts = DatabaseInstance::getDatabasesForServerNode((int) $server['node_id']);
             if (empty($databaseHosts)) {
                 return [
-                    'error' => 'No database hosts available',
+                    'error' => 'No database hosts available for this server\'s node',
                     'success' => false,
                 ];
             }
@@ -110,6 +110,14 @@ class CreateDatabaseTool implements ToolInterface
         if (!$databaseHost) {
             return [
                 'error' => 'Database host not found',
+                'success' => false,
+            ];
+        }
+
+        $hostNodeId = $databaseHost['node_id'] ?? null;
+        if ($hostNodeId !== null && (int) $hostNodeId > 0 && (int) $server['node_id'] !== (int) $hostNodeId) {
+            return [
+                'error' => 'That database host is not available for this server\'s node',
                 'success' => false,
             ];
         }

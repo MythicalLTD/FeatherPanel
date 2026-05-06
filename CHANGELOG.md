@@ -11,6 +11,7 @@
 - Enhance power control with state-based actions and kill confirmation by @nayskutzu
 - Support for a really early in development player counter by @nayskutzu
 - Added an email domain blacklist feature, allowing you to block registrations from unwanted or spammy domains, keeping your platform cleaner. by @nayskutzu
+- Added the ability to assign databases to specific nodes—now you can restrict a database (e.g., "hiyra") to be accessible only on selected nodes such as node 1 or node 2, as desired. by @nayskutzu
 
 ### Fixed
 

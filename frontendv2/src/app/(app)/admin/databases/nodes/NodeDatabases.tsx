@@ -49,6 +49,7 @@ interface Database {
     id: number;
     name: string;
     node_id: number | null;
+    node_name?: string | null;
     database_type: string;
     database_port: number;
     database_username: string;
@@ -116,6 +117,11 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
         database_password: '',
     });
 
+    /** all = any server node; single = restrict to one Wings node */
+    const [hostScope, setHostScope] = useState<'all' | 'single'>('all');
+    const [scopeNodeId, setScopeNodeId] = useState('');
+    const [adminNodes, setAdminNodes] = useState<Node[]>([]);
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
@@ -125,6 +131,32 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
         }, 500);
         return () => clearTimeout(timer);
     }, [searchQuery, debouncedSearchQuery]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const loadNodes = async () => {
+            try {
+                const { data } = await axios.get('/api/admin/nodes', { params: { page: 1, limit: 500 } });
+                const raw = data?.data?.nodes ?? [];
+                if (!cancelled) {
+                    setAdminNodes(
+                        raw.map((n: { id: number; name: string }) => ({
+                            id: n.id,
+                            name: n.name,
+                        })),
+                    );
+                }
+            } catch {
+                if (!cancelled) {
+                    setAdminNodes([]);
+                }
+            }
+        };
+        void loadNodes();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const fetchNode = useCallback(async () => {
         if (!nodeId) return;
@@ -150,7 +182,10 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             let allDbs = data.data.databases || [];
 
             if (nodeId) {
-                allDbs = allDbs.filter((db: Database) => db.node_id === nodeId || db.node_id === null);
+                allDbs = allDbs.filter(
+                    (db: Database) =>
+                        db.node_id == null || Number(db.node_id) === Number(nodeId),
+                );
             }
 
             const filteredDbs = allDbs.filter(
@@ -190,13 +225,33 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
         fetchWidgets();
     }, [fetchDatabases, refreshKey, fetchWidgets]);
 
+    useEffect(() => {
+        if (createOpen) {
+            setHostScope(nodeId ? 'single' : 'all');
+            setScopeNodeId('');
+        }
+    }, [createOpen, nodeId]);
+
+    const resolvePayloadNodeId = useCallback((): number | null | 'invalid' => {
+        if (hostScope === 'all') return null;
+        if (nodeId) return nodeId;
+        const id = parseInt(scopeNodeId, 10);
+        if (!id || id < 1) return 'invalid';
+        return id;
+    }, [hostScope, nodeId, scopeNodeId]);
+
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+        const payloadNodeId = resolvePayloadNodeId();
+        if (payloadNodeId === 'invalid') {
+            toast.error(t('admin.node_databases.messages.node_required'));
+            return;
+        }
         setIsSubmitting(true);
         try {
             await axios.put('/api/admin/databases', {
                 ...formData,
-                node_id: nodeId || null,
+                node_id: payloadNodeId,
             });
             toast.success(t('admin.node_databases.messages.created'));
             setCreateOpen(false);
@@ -225,12 +280,22 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingDatabase) return;
+        const payloadNodeId = resolvePayloadNodeId();
+        if (payloadNodeId === 'invalid') {
+            toast.error(t('admin.node_databases.messages.node_required'));
+            return;
+        }
         setIsSubmitting(true);
         try {
-            await axios.patch(`/api/admin/databases/${editingDatabase.id}`, {
-                ...formData,
-                node_id: nodeId || editingDatabase.node_id,
-            });
+            const { database_password: pwd, ...restForm } = formData;
+            const patchBody: Record<string, unknown> = {
+                ...restForm,
+                node_id: payloadNodeId,
+            };
+            if (pwd.trim() !== '') {
+                patchBody.database_password = pwd;
+            }
+            await axios.patch(`/api/admin/databases/${editingDatabase.id}`, patchBody);
             toast.success(t('admin.node_databases.messages.updated'));
             setEditOpen(false);
             setEditingDatabase(null);
@@ -406,14 +471,21 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     label: db.database_type.toUpperCase(),
                                     className: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
                                 },
-                                ...(db.node_id === null
+                                ...(db.node_id == null
                                     ? [
                                           {
-                                              label: t('admin.node_databases.status.no_node'),
-                                              className: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+                                              label: t('admin.node_databases.status.all_nodes'),
+                                              className: 'bg-slate-500/10 text-slate-300 border-slate-500/25',
                                           },
                                       ]
-                                    : []),
+                                    : [
+                                          {
+                                              label: t('admin.node_databases.status.node_label', {
+                                                  name: db.node_name || `#${db.node_id}`,
+                                              }),
+                                              className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
+                                          },
+                                      ]),
                             ]}
                             description={
                                 <div className='flex flex-col gap-1 mt-2 text-sm text-muted-foreground font-mono'>
@@ -452,6 +524,8 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                         variant='ghost'
                                         onClick={() => {
                                             setEditingDatabase(db);
+                                            setHostScope(db.node_id == null ? 'all' : 'single');
+                                            setScopeNodeId(db.node_id != null ? String(db.node_id) : '');
                                             setFormData({
                                                 name: db.name,
                                                 database_type: db.database_type,
@@ -600,6 +674,55 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 required
                             />
                         </div>
+                        <div className='space-y-2'>
+                            <Label>{t('admin.node_databases.form.node_assignment')}</Label>
+                            <Select
+                                value={hostScope}
+                                onChange={(e) => {
+                                    const v = e.target.value as 'all' | 'single';
+                                    setHostScope(v);
+                                    if (v === 'all') setScopeNodeId('');
+                                }}
+                            >
+                                {nodeId ? (
+                                    <>
+                                        <option value='single'>
+                                            {t('admin.node_databases.form.node_assignment_this_only', {
+                                                node: node?.name ?? '…',
+                                            })}
+                                        </option>
+                                        <option value='all'>
+                                            {t('admin.node_databases.form.node_assignment_all_nodes')}
+                                        </option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value='all'>
+                                            {t('admin.node_databases.form.node_assignment_all_nodes')}
+                                        </option>
+                                        <option value='single'>
+                                            {t('admin.node_databases.form.node_assignment_one_node')}
+                                        </option>
+                                    </>
+                                )}
+                            </Select>
+                            <p className='text-xs text-muted-foreground'>
+                                {t('admin.node_databases.form.node_assignment_help')}
+                            </p>
+                            {!nodeId && hostScope === 'single' && (
+                                <Select
+                                    value={scopeNodeId}
+                                    onChange={(e) => setScopeNodeId(e.target.value)}
+                                >
+                                    <option value=''>{t('admin.node_databases.form.select_node')}</option>
+                                    {adminNodes.map((n) => (
+                                        <option key={n.id} value={String(n.id)}>
+                                            {n.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            )}
+                        </div>
                         <SheetFooter>
                             <Button type='submit' loading={isSubmitting}>
                                 {t('admin.node_databases.form.submit_create')}
@@ -681,7 +804,60 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     value={formData.database_password}
                                     onChange={(e) => setFormData({ ...formData, database_password: e.target.value })}
                                     placeholder={t('admin.node_databases.form.password_placeholder')}
+                                    autoComplete='new-password'
                                 />
+                                <p className='text-xs text-muted-foreground'>
+                                    {t('admin.node_databases.form.password_edit_hint')}
+                                </p>
+                            </div>
+                            <div className='space-y-2'>
+                                <Label>{t('admin.node_databases.form.node_assignment')}</Label>
+                                <Select
+                                    value={hostScope}
+                                    onChange={(e) => {
+                                        const v = e.target.value as 'all' | 'single';
+                                        setHostScope(v);
+                                        if (v === 'all') setScopeNodeId('');
+                                    }}
+                                >
+                                    {nodeId ? (
+                                        <>
+                                            <option value='single'>
+                                                {t('admin.node_databases.form.node_assignment_this_only', {
+                                                    node: node?.name ?? '…',
+                                                })}
+                                            </option>
+                                            <option value='all'>
+                                                {t('admin.node_databases.form.node_assignment_all_nodes')}
+                                            </option>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <option value='all'>
+                                                {t('admin.node_databases.form.node_assignment_all_nodes')}
+                                            </option>
+                                            <option value='single'>
+                                                {t('admin.node_databases.form.node_assignment_one_node')}
+                                            </option>
+                                        </>
+                                    )}
+                                </Select>
+                                <p className='text-xs text-muted-foreground'>
+                                    {t('admin.node_databases.form.node_assignment_help')}
+                                </p>
+                                {!nodeId && hostScope === 'single' && (
+                                    <Select
+                                        value={scopeNodeId}
+                                        onChange={(e) => setScopeNodeId(e.target.value)}
+                                    >
+                                        <option value=''>{t('admin.node_databases.form.select_node')}</option>
+                                        {adminNodes.map((n) => (
+                                            <option key={n.id} value={String(n.id)}>
+                                                {n.name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                )}
                             </div>
                             <SheetFooter>
                                 <Button type='submit' loading={isSubmitting}>
@@ -736,6 +912,19 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 </Label>
                                 <div className='font-mono text-sm'>{selectedDatabase.database_username}</div>
                             </div>
+                            <div className='space-y-1'>
+                                <Label className='text-xs uppercase text-muted-foreground'>
+                                    {t('admin.node_databases.form.node_assignment')}
+                                </Label>
+                                <div className='text-sm'>
+                                    {selectedDatabase.node_id == null
+                                        ? t('admin.node_databases.status.all_nodes')
+                                        : t('admin.node_databases.status.node_label', {
+                                              name:
+                                                  selectedDatabase.node_name || `#${selectedDatabase.node_id}`,
+                                          })}
+                                </div>
+                            </div>
                             <div className='grid grid-cols-2 gap-4'>
                                 <div className='space-y-1'>
                                     <Label className='text-xs uppercase text-muted-foreground'>
@@ -756,7 +945,6 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                     )}
                 </div>
             </Sheet>
-            <WidgetRenderer widgets={getWidgets(slug, 'bottom-of-page')} />
         </div>
     );
 }
