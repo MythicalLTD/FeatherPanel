@@ -503,6 +503,30 @@ refresh_host_updater_scripts() {
 	fi
 }
 
+refresh_compose_from_upstream() {
+	local branch="main"
+	local upstream_name="docker-compose.yml"
+
+	# Match installer get_compose_file_url: dev stacks use docker-compose.v2.dev.yml from GitHub.
+	if grep -qE 'featherpanel-backend:dev|featherpanel-frontendv2:dev|featherpanel-async-runner:dev' "$COMPOSE_FILE" 2>/dev/null; then
+		upstream_name="docker-compose.v2.dev.yml"
+		if grep -q 'featherpanel-backend:dev-' "$COMPOSE_FILE" 2>/dev/null; then
+			branch=$(grep -m1 'featherpanel-backend:dev-' "$COMPOSE_FILE" | sed -n 's/.*featherpanel-backend:dev-\([^-]*\).*/\1/p' || true)
+			[ -z "$branch" ] && branch="main"
+		fi
+	fi
+
+	local url="https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/${branch}/${upstream_name}"
+	log "featherpanel-docker-updater: fetching ${url}"
+	if curl -fsSL -o "${COMPOSE_FILE}.new" "$url"; then
+		mv -f "${COMPOSE_FILE}.new" "$COMPOSE_FILE"
+		log "featherpanel-docker-updater: refreshed ${COMPOSE_FILE} from upstream (${upstream_name} @ ${branch})"
+	else
+		rm -f "${COMPOSE_FILE}.new"
+		log "featherpanel-docker-updater: warning: could not download compose; keeping existing ${COMPOSE_FILE}"
+	fi
+}
+
 log "featherpanel-docker-updater: starting compose cycle"
 
 if ! command -v docker >/dev/null 2>&1; then
@@ -519,6 +543,8 @@ if [ ! -f "$COMPOSE_FILE" ]; then
 	log "featherpanel-docker-updater: ERROR missing ${COMPOSE_FILE}"
 	exit 1
 fi
+
+refresh_compose_from_upstream
 
 {
 	log "featherpanel-docker-updater: docker compose down"

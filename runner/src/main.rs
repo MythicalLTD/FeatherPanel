@@ -15,11 +15,13 @@ mod types;
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logging – file layer (no rotation) + stdout layer
-    // LOG_DIR can be overridden via env var; Docker mounts the shared volume at /app/logs,
-    // bare-metal dev falls back to the backend's storage/logs directory.
+    // LOG_DIR can be overridden via env var. Docker Compose mounts the backend log volume at
+    // `/var/www/html/storage/logs` so the panel log viewer reads `runner.fplog`; bare-metal
+    // dev falls back to paths next to this crate.
     let log_dir = std::env::var("LOG_DIR").unwrap_or_else(|_| {
-        // Probe the Docker path first, then fall back to the dev-relative path
-        if std::path::Path::new("/app/logs").exists() {
+        if std::path::Path::new("/var/www/html/storage/logs").exists() {
+            "/var/www/html/storage/logs".to_string()
+        } else if std::path::Path::new("/app/logs").exists() {
             "/app/logs".to_string()
         } else {
             "../backend/storage/logs".to_string()
@@ -27,9 +29,12 @@ async fn main() -> Result<()> {
     });
     // `tracing_appender::rolling::never` panics on permission errors.
     // Catch that so the service can still run with stdout logging instead of crash-looping.
+    // WorkerGuard must outlive the process: dropping it stops the non-blocking writer thread.
+    // See: https://docs.rs/tracing-appender/latest/tracing_appender/non_blocking/struct.WorkerGuard.html
     let file_layer = std::panic::catch_unwind(|| {
         let file_appender = tracing_appender::rolling::never(&log_dir, "runner.fplog");
-        let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+        let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
+        std::mem::forget(guard);
         fmt::layer().with_ansi(false).with_writer(non_blocking)
     });
 

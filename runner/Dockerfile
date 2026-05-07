@@ -64,11 +64,8 @@ RUN apt-get update && apt-get install -y \
 # Copy binary from builder
 COPY --from=builder /build/async-runner /app/runner
 
-# Create non-root user
-RUN useradd -m -u 1000 runner \
-    && mkdir -p /tmp/runner-logs \
-    && chown -R runner:runner /app /tmp/runner-logs
-ENV LOG_DIR=/tmp/runner-logs
-USER runner
+# Run as root so we can write to the shared `featherpanel_logs` volume (same path as PHP backend).
+RUN mkdir -p /tmp/runner-logs /var/www/html/storage/logs
+ENV LOG_DIR=/var/www/html/storage/logs
 
 CMD ["/app/runner"]
