@@ -32,7 +32,20 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Editor } from '@monaco-editor/react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Globe, Plus, Search, Pencil, Trash2, Download, Upload, Check, X, FileCode, Users, MoreHorizontal } from 'lucide-react';
+import {
+    Globe,
+    Plus,
+    Search,
+    Pencil,
+    Trash2,
+    Download,
+    Upload,
+    Check,
+    X,
+    FileCode,
+    Users,
+    MoreHorizontal,
+} from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -372,9 +385,7 @@ export default function TranslationsPage() {
                     icon={Globe}
                     title={t('admin.translations.no_results')}
                     description={t('admin.translations.search_placeholder')}
-                    action={
-                        <Button onClick={() => setCreateOpen(true)}>{t('admin.translations.create')}</Button>
-                    }
+                    action={<Button onClick={() => setCreateOpen(true)}>{t('admin.translations.create')}</Button>}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>

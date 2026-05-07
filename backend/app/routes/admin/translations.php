@@ -188,5 +188,4 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_ROOT,
         ['POST']
     );
-
 };
