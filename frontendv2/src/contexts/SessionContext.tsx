@@ -132,7 +132,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                         !window.location.pathname.startsWith('/auth') &&
                         !isPublicNoAuthRoute(window.location.pathname)
                     ) {
-                        router.push('/auth/logout');
+                        router.push('/auth/login');
                     }
                 }
                 setIsSessionChecked(true);

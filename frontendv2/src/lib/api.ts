@@ -39,9 +39,9 @@ const handleAuthStateFailure = () => {
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
     });
 
-    // Redirect to logout page (which will clean up and redirect to login)
+    // Redirect unauthenticated users directly to login.
     if (!window.location.pathname.startsWith('/auth')) {
-        window.location.href = '/auth/logout';
+        window.location.href = '/auth/login';
     }
 };
 
