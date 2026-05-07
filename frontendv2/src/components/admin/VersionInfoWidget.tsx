@@ -201,9 +201,9 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                                     ? t('admin.settings.docker_update.updating')
                                     : updateInProgress
                                       ? t('admin.settings.docker_update.in_progress_button')
-                                    : canForceUpdateToLatest
-                                      ? t('admin.settings.docker_update.confirm_modal.confirm')
-                                      : t('admin.version.update_now')}
+                                      : canForceUpdateToLatest
+                                        ? t('admin.settings.docker_update.confirm_modal.confirm')
+                                        : t('admin.version.update_now')}
                             </button>
                         </div>
                     )}

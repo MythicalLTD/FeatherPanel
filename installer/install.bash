@@ -8,10 +8,20 @@ if [ "$EUID" -ne 0 ]; then
 	exit 1
 fi
 
+REFRESH_DOCKER_UPDATER_ONLY=false
+for _fp_early_arg in "$@"; do
+	if [ "$_fp_early_arg" = "--refresh-docker-updater-only" ]; then
+		REFRESH_DOCKER_UPDATER_ONLY=true
+		break
+	fi
+done
+
+if [ "$REFRESH_DOCKER_UPDATER_ONLY" != true ]; then
 apt update -y
 apt upgrade -y
 apt purge -y
 apt autoremove -y
+fi
 
 # Parse command-line arguments
 SKIP_OS_CHECK=false
@@ -67,6 +77,10 @@ while [[ $# -gt 0 ]]; do
 		SHOW_CONFIG_MENU=true
 		shift
 		;;
+	--refresh-docker-updater-only)
+		REFRESH_DOCKER_UPDATER_ONLY=true
+		shift
+		;;
 	--help | -h)
 		echo "FeatherPanel Installer"
 		echo ""
@@ -78,6 +92,7 @@ while [[ $# -gt 0 ]]; do
 		echo "  --skip-install-check   Skip check for existing installation"
 		echo "  --skip-virt-check      Skip virtualization compatibility checks"
 		echo "  --skip-system-update   Skip apt update and essential package installation"
+		echo "  --refresh-docker-updater-only  Rewrite /etc/featherpanel host updater scripts only (no full install)"
 		echo "  --dev                  Use latest dev release images"
 		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., main, develop)"
 		echo "  --dev-sha SHA          Use dev images for specific commit SHA (requires --dev-branch)"
@@ -452,8 +467,37 @@ setup_host_docker_updater() {
 set -euo pipefail
 
 cd /var/www/featherpanel
-docker compose -f /var/www/featherpanel/docker-compose.yml pull
-docker compose -f /var/www/featherpanel/docker-compose.yml up -d --remove-orphans
+COMPOSE_FILE="/var/www/featherpanel/docker-compose.yml"
+docker compose -f "$COMPOSE_FILE" down
+docker compose -f "$COMPOSE_FILE" pull
+docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+
+refresh_host_updater_scripts() {
+	local log_file="/var/www/featherpanel/install.log"
+	local installer="/var/www/featherpanel/installer/install.bash"
+
+	mkdir -p /var/www/featherpanel
+	touch "$log_file" 2>/dev/null || true
+
+	if [ -f "$installer" ]; then
+		bash "$installer" --refresh-docker-updater-only >>"$log_file" 2>&1 || true
+		return 0
+	fi
+
+	local tmp branch="main"
+	if grep -q 'featherpanel-backend:dev-' "$COMPOSE_FILE" 2>/dev/null; then
+		branch=$(grep -m1 'featherpanel-backend:dev-' "$COMPOSE_FILE" | sed -n 's/.*featherpanel-backend:dev-\([^-]*\).*/\1/p' || true)
+		[ -z "$branch" ] && branch="main"
+	fi
+
+	tmp=$(mktemp) || return 0
+	if curl -fsSL -o "$tmp" "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/${branch}/installer/install.bash"; then
+		bash "$tmp" --refresh-docker-updater-only >>"$log_file" 2>&1 || true
+	fi
+	rm -f "$tmp"
+}
+
+refresh_host_updater_scripts
 EOF
 	chmod 700 "$runner_script"
 
@@ -5144,6 +5188,14 @@ if [ "$CLI_SKIP_OS_CHECK_SET" = true ]; then
 	SKIP_OS_CHECK=true
 fi
 sync_panel_port_env
+
+if [ "$REFRESH_DOCKER_UPDATER_ONLY" = true ]; then
+	mkdir -p /var/www/featherpanel
+	ensure_docker_updater_env
+	setup_host_docker_updater
+	log_success "Host Docker updater scripts refreshed."
+	exit 0
+fi
 
 if [ -f /etc/os-release ]; then
 	# shellcheck source=/dev/null

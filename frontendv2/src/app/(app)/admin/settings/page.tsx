@@ -849,7 +849,9 @@ export default function SettingsPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('admin.settings.docker_update.progress_modal.title')}</DialogTitle>
-                        <DialogDescription>{t('admin.settings.docker_update.progress_modal.description')}</DialogDescription>
+                        <DialogDescription>
+                            {t('admin.settings.docker_update.progress_modal.description')}
+                        </DialogDescription>
                     </DialogHeader>
                 </DialogContent>
             </Dialog>
@@ -858,7 +860,9 @@ export default function SettingsPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('admin.settings.docker_update.confirm_modal.title')}</DialogTitle>
-                        <DialogDescription>{t('admin.settings.docker_update.confirm_modal.description')}</DialogDescription>
+                        <DialogDescription>
+                            {t('admin.settings.docker_update.confirm_modal.description')}
+                        </DialogDescription>
                     </DialogHeader>
                     <div className='flex justify-end gap-2 pt-2'>
                         <Button
