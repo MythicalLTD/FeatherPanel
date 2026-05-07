@@ -87,7 +87,7 @@ class OidcProvidersController
     )]
     public function create(Request $request): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $data = json_decode($request->getContent(), true) ?? [];
 
         $required = ['name', 'issuer_url', 'client_id', 'client_secret'];
@@ -166,7 +166,7 @@ class OidcProvidersController
     )]
     public function update(Request $request, string $uuid): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $existing = OidcProvider::getProviderByUuid($uuid);
         if (!$existing) {
             return ApiResponse::error('Provider not found', 'NOT_FOUND', 404);
@@ -260,7 +260,7 @@ class OidcProvidersController
     )]
     public function delete(Request $request, string $uuid): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $existing = OidcProvider::getProviderByUuid($uuid);
         if (!$existing) {
             return ApiResponse::error('Provider not found', 'NOT_FOUND', 404);

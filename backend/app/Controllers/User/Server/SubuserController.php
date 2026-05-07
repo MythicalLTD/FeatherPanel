@@ -214,7 +214,7 @@ class SubuserController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'subusers_retrieved', [
             'subusers' => $subusers,
         ], $user);
@@ -388,7 +388,7 @@ class SubuserController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'subuser_created', [
             'subuser_id' => $subuserId,
         ], $user);
@@ -402,7 +402,7 @@ class SubuserController
             $eventManager->emit(
                 ServerSubuserEvent::onServerSubuserCreated(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'subuser_id' => $subuserId,
                 ]
@@ -496,7 +496,7 @@ class SubuserController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'subuser_updated', [
             'subuser_id' => $subuserId,
         ], $user);
@@ -510,7 +510,7 @@ class SubuserController
             $eventManager->emit(
                 ServerSubuserEvent::onServerSubuserUpdated(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'subuser_id' => $subuserId,
                 ]
@@ -600,7 +600,7 @@ class SubuserController
             $eventManager->emit(
                 ServerSubuserEvent::onServerSubuserDeleted(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'subuser_id' => $subuserId,
                 ]
@@ -631,7 +631,7 @@ class SubuserController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'subuser_deleted', [
             'subuser_id' => $subuserId,
         ], $user);
@@ -697,7 +697,7 @@ class SubuserController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'subuser_with_details_retrieved', [
             'subuser' => $subuser,
         ], $user);
@@ -752,7 +752,7 @@ class SubuserController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'subusers_with_details_retrieved', [
             'subusers' => $subusers,
         ], $user);
@@ -841,7 +841,7 @@ class SubuserController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'users_searched', [
             'users' => $formattedUsers,
         ], $user);

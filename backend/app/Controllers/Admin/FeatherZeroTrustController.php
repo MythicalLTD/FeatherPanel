@@ -111,7 +111,7 @@ class FeatherZeroTrustController
                     [
                         'old_config' => $oldConfig,
                         'new_config' => $newConfig,
-                        'updated_by' => $request->get('user'),
+                        'updated_by' => $request->attributes->get('user'),
                     ]
                 );
             }
@@ -191,7 +191,7 @@ class FeatherZeroTrustController
                         'server_uuid' => $serverUuid,
                         'directory' => $directory,
                         'max_depth' => $maxDepth,
-                        'started_by' => $request->get('user'),
+                        'started_by' => $request->attributes->get('user'),
                     ]
                 );
             }

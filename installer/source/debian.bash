@@ -132,6 +132,9 @@ main() {
         "php${PHP_VERSION}-sqlite3" \
 		"php${PHP_VERSION}-ldap" \
 		"php${PHP_VERSION}-bz2" \
+		"php${PHP_VERSION}-gmp" \
+		"php${PHP_VERSION}-imagick" \
+		"php${PHP_VERSION}-yaml" \
         mariadb-server nginx tar unzip git redis-server zip dos2unix make
 
     install_composer

@@ -377,7 +377,7 @@ class KnowledgebaseController
         $category = KnowledgebaseCategory::getById($id);
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'create_knowledgebase_category',
@@ -488,7 +488,7 @@ class KnowledgebaseController
         $category = KnowledgebaseCategory::getById($id);
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'update_knowledgebase_category',
@@ -555,7 +555,7 @@ class KnowledgebaseController
         }
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'delete_knowledgebase_category',
@@ -860,7 +860,7 @@ class KnowledgebaseController
         $article = KnowledgebaseArticle::getById($id);
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'create_knowledgebase_article',
@@ -997,7 +997,7 @@ class KnowledgebaseController
         $article = KnowledgebaseArticle::getById($id);
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'update_knowledgebase_article',
@@ -1064,7 +1064,7 @@ class KnowledgebaseController
         }
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'delete_knowledgebase_article',
@@ -1172,7 +1172,7 @@ class KnowledgebaseController
         $url = $baseUrl . '/attachments/' . $filename;
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'upload_knowledgebase_icon',
@@ -1416,7 +1416,7 @@ class KnowledgebaseController
         $attachment = KnowledgebaseArticleAttachment::getById($attachmentId);
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'upload_knowledgebase_attachment',
@@ -1570,7 +1570,7 @@ class KnowledgebaseController
         }
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'delete_knowledgebase_attachment',
@@ -1730,7 +1730,7 @@ class KnowledgebaseController
         $tag = KnowledgebaseArticleTag::getById($tagId);
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'add_knowledgebase_tag',
@@ -1815,7 +1815,7 @@ class KnowledgebaseController
         }
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'delete_knowledgebase_tag',

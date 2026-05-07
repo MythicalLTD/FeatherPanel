@@ -270,7 +270,7 @@ class PermissionsController
         }
         $permission = Permission::getById($id);
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'create_permission',
@@ -361,7 +361,7 @@ class PermissionsController
         }
         $permission = Permission::getById($id);
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'update_permission',
@@ -427,7 +427,7 @@ class PermissionsController
             return ApiResponse::error('Failed to delete permission', 'PERMISSION_DELETE_FAILED', 400);
         }
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'delete_permission',

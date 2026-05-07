@@ -273,7 +273,7 @@ class RealmsController
         }
         $realm = Realm::getById($id);
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'create_realm',
@@ -369,7 +369,7 @@ class RealmsController
         }
         $realm = Realm::getById($id);
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'update_realm',
@@ -453,7 +453,7 @@ class RealmsController
         }
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'delete_realm',

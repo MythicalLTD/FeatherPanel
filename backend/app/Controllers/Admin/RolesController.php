@@ -262,7 +262,7 @@ class RolesController
         }
         $role = Role::getById($id);
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'create_role',
@@ -366,7 +366,7 @@ class RolesController
         }
         $role = Role::getById($id);
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'update_role',
@@ -437,7 +437,7 @@ class RolesController
         }
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'delete_role',

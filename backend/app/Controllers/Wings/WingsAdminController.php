@@ -124,7 +124,7 @@ class WingsAdminController
     )]
     public function utilization(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -202,7 +202,7 @@ class WingsAdminController
     )]
     public function getDockerDiskUsage(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -268,7 +268,7 @@ class WingsAdminController
     )]
     public function getDockerPrune(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -334,7 +334,7 @@ class WingsAdminController
     )]
     public function getIps(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -431,7 +431,7 @@ class WingsAdminController
     )]
     public function system(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -506,7 +506,7 @@ class WingsAdminController
     )]
     public function listModules(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -575,7 +575,7 @@ class WingsAdminController
     )]
     public function getModuleConfig(Request $request, int $id, string $module): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -644,7 +644,7 @@ class WingsAdminController
     )]
     public function updateModuleConfig(Request $request, int $id, string $module): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -718,7 +718,7 @@ class WingsAdminController
     )]
     public function enableModule(Request $request, int $id, string $module): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -787,7 +787,7 @@ class WingsAdminController
     )]
     public function disableModule(Request $request, int $id, string $module): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);

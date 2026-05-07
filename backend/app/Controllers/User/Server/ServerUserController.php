@@ -254,7 +254,7 @@ class ServerUserController
     public function getUserServers(Request $request): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -481,7 +481,7 @@ class ServerUserController
      */
     public function getAdminAllOtherServers(Request $request): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -638,7 +638,7 @@ class ServerUserController
     public function getServer(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $config = App::getInstance(true)->getConfig();
 
         if (!$user) {
@@ -867,7 +867,7 @@ class ServerUserController
     public function generateServerJwt(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -980,7 +980,7 @@ class ServerUserController
     public function updateServer(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -1519,7 +1519,7 @@ class ServerUserController
     public function reinstallServer(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -1677,7 +1677,7 @@ class ServerUserController
     public function sendCommand(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -1817,7 +1817,7 @@ class ServerUserController
         $app = App::getInstance(true);
         // Get authenticated user
         $app = App::getInstance(true, false);
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }

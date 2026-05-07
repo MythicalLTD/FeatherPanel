@@ -259,7 +259,7 @@ class AllocationsController
     public function create(Request $request): Response
     {
         $logger = App::getInstance(true)->getLogger();
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $data = json_decode($request->getContent(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -510,7 +510,7 @@ class AllocationsController
     public function update(Request $request, int $id): Response
     {
         $logger = App::getInstance(true)->getLogger();
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $data = json_decode($request->getContent(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -652,7 +652,7 @@ class AllocationsController
     public function delete(Request $request, int $id): Response
     {
         $logger = App::getInstance(true)->getLogger();
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
 
         $allocation = Allocation::getById($id);
         if (!$allocation) {
@@ -738,7 +738,7 @@ class AllocationsController
     public function assignToServer(Request $request, int $id): Response
     {
         $logger = App::getInstance(true)->getLogger();
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $data = json_decode($request->getContent(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -808,7 +808,7 @@ class AllocationsController
     public function unassignFromServer(Request $request, int $id): Response
     {
         $logger = App::getInstance(true)->getLogger();
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
 
         $allocation = Allocation::getById($id);
         if (!$allocation) {
@@ -942,7 +942,7 @@ class AllocationsController
     public function bulkDelete(Request $request): Response
     {
         $logger = App::getInstance(true)->getLogger();
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $data = json_decode($request->getContent(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -1037,7 +1037,7 @@ class AllocationsController
     public function deleteUnused(Request $request): Response
     {
         $logger = App::getInstance(true)->getLogger();
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $data = json_decode($request->getContent(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE && $request->getContent() !== '') {

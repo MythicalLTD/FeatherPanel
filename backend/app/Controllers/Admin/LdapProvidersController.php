@@ -91,7 +91,7 @@ class LdapProvidersController
     )]
     public function create(Request $request): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $data = json_decode($request->getContent(), true);
 
         $required = ['name', 'host', 'base_dn'];
@@ -173,7 +173,7 @@ class LdapProvidersController
     )]
     public function update(Request $request, string $uuid): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $existing = LdapProvider::getProviderByUuid($uuid);
         if (!$existing) {
             return ApiResponse::error('Provider not found', 'NOT_FOUND', 404);
@@ -262,7 +262,7 @@ class LdapProvidersController
     )]
     public function delete(Request $request, string $uuid): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $existing = LdapProvider::getProviderByUuid($uuid);
         if (!$existing) {
             return ApiResponse::error('Provider not found', 'NOT_FOUND', 404);

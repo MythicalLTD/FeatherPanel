@@ -92,7 +92,7 @@ class ServerProxyController
     )]
     public function listProxies(Request $request, int $serverId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -159,7 +159,7 @@ class ServerProxyController
     )]
     public function createProxy(Request $request, int $serverId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -345,7 +345,7 @@ class ServerProxyController
     )]
     public function deleteProxy(Request $request, int $serverId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -486,7 +486,7 @@ class ServerProxyController
     )]
     public function verifyDns(Request $request, int $serverId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }

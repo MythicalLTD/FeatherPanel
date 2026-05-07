@@ -330,7 +330,7 @@ class MailTemplatesController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'create_mail_template',
             'context' => 'Created mail template: ' . $data['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -344,7 +344,7 @@ class MailTemplatesController
                 [
                     'template_id' => $templateId,
                     'template_data' => $data,
-                    'created_by' => $request->get('user'),
+                    'created_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -446,7 +446,7 @@ class MailTemplatesController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'update_mail_template',
             'context' => 'Updated mail template: ' . ($data['name'] ?? $template['name']),
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -460,7 +460,7 @@ class MailTemplatesController
                 [
                     'template' => $template,
                     'updated_data' => $data,
-                    'updated_by' => $request->get('user'),
+                    'updated_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -517,7 +517,7 @@ class MailTemplatesController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'delete_mail_template',
             'context' => 'Deleted mail template: ' . $template['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -530,7 +530,7 @@ class MailTemplatesController
                 MailTemplatesEvent::onMailTemplateDeleted(),
                 [
                     'template' => $template,
-                    'deleted_by' => $request->get('user'),
+                    'deleted_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -583,7 +583,7 @@ class MailTemplatesController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'restore_mail_template',
             'context' => 'Restored mail template: ' . $template['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -637,7 +637,7 @@ class MailTemplatesController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'hard_delete_mail_template',
             'context' => 'Permanently deleted mail template: ' . $template['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -757,7 +757,7 @@ class MailTemplatesController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'send_mass_email',
             'context' => "Sent mass email to $queuedCount users. Subject: " . $data['subject'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -864,7 +864,7 @@ class MailTemplatesController
             );
         }
 
-        $actorUuid = $request->get('user')['uuid'] ?? null;
+        $actorUuid = $request->attributes->get('user')['uuid'] ?? null;
 
         // Create mail queue entry
         $queueData = [

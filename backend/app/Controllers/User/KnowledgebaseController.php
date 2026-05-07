@@ -197,7 +197,7 @@ class KnowledgebaseController
         }
 
         // Get user if authenticated (may be null for public access)
-        $viewer = $request->attributes->has('user') ? $request->get('user') : null;
+        $viewer = $request->attributes->has('user') ? $request->attributes->get('user') : null;
 
         // Emit event
         global $eventManager;

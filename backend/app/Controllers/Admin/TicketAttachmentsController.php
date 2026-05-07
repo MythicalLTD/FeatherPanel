@@ -282,7 +282,7 @@ class TicketAttachmentsController
         );
         $url = rtrim($baseUrl, '/') . $relativePath;
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? null,
             'name' => 'upload_ticket_attachment',
@@ -434,7 +434,7 @@ class TicketAttachmentsController
             return ApiResponse::error('Failed to delete attachment', 'DELETE_FAILED', 500);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? null,
             'name' => 'delete_ticket_attachment',

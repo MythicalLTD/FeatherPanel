@@ -654,7 +654,7 @@ class VmInstancesController
     )]
     public function update(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $instance = VmInstance::getById($id);
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
@@ -1224,7 +1224,7 @@ class VmInstancesController
     )]
     public function vncTicket(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $instance = VmInstance::getById($id);
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
@@ -1687,7 +1687,7 @@ class VmInstancesController
     )]
     public function power(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $instance = VmInstance::getById($id);
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
@@ -1800,7 +1800,7 @@ class VmInstancesController
     )]
     public function reinstall(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $instance = VmInstance::getById($id);
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
@@ -2059,7 +2059,7 @@ class VmInstancesController
             ],
         ]);
 
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'vm_instance_backup_start',
@@ -2198,7 +2198,7 @@ class VmInstancesController
             VmInstanceBackup::deleteById((int) $backup['id']);
         }
 
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'vm_instance_backup_delete',
@@ -2325,7 +2325,7 @@ class VmInstancesController
             ],
         ]);
 
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'vm_instance_restore_start',
@@ -2485,7 +2485,7 @@ class VmInstancesController
             return ApiResponse::error('Failed to update backup limit', 'DB_ERROR', 500);
         }
 
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'vm_instance_backup_limit_set',
@@ -2561,7 +2561,7 @@ class VmInstancesController
             $user = User::getUserByUuid($instance['user_uuid']);
         }
 
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'vm_instance_suspend',
@@ -2674,7 +2674,7 @@ class VmInstancesController
             $user = User::getUserByUuid($instance['user_uuid']);
         }
 
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'vm_instance_unsuspend',
@@ -2738,7 +2738,7 @@ class VmInstancesController
     )]
     public function delete(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $instance = VmInstance::getById($id);
         if (!$instance) {
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);

@@ -277,7 +277,7 @@ class DiscordController
     public function unlink(Request $request): Response
     {
         // Get current user from request (set by auth middleware)
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('Unauthorized', 'UNAUTHORIZED', 401);
         }

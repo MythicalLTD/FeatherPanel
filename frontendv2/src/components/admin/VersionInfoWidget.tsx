@@ -34,6 +34,8 @@ import { ChangelogSection } from './ChangelogSection';
 import { IntegrityCheckDialog } from './IntegrityCheckDialog';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { copyToClipboard } from '@/lib/utils';
+import { adminSettingsApi } from '@/lib/admin-settings-api';
+import { toast } from 'sonner';
 
 interface ChangelogData {
     changelog_added?: string[];
@@ -79,10 +81,14 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
     const [showChangelog, setShowChangelog] = useState(version?.update_available ?? false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [integrityOpen, setIntegrityOpen] = useState(false);
+    const [isUpdatingDocker, setIsUpdatingDocker] = useState(false);
 
     const isLatest = !version?.update_available;
     const current = version?.current;
     const latest = version?.latest;
+    const normalizedCurrentVersion = (current?.version || '').trim().toLowerCase();
+    const isCurrentVersionUnknown = normalizedCurrentVersion === '' || normalizedCurrentVersion === 'unknown';
+    const canForceUpdateToLatest = isCurrentVersionUnknown && Boolean(latest?.version);
 
     const hasChangelog = (data: ChangelogData | null) => {
         if (!data) return false;
@@ -96,6 +102,27 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
     };
 
     const changelogData = version?.update_available ? latest : current;
+
+    const handleUpdateNow = async () => {
+        const confirmed = window.confirm(t('admin.settings.docker_update.confirm'));
+        if (!confirmed || isUpdatingDocker) return;
+
+        setIsUpdatingDocker(true);
+        try {
+            const response = await adminSettingsApi.triggerDockerUpdate();
+            if (response.success) {
+                toast.success(response.message || t('admin.settings.docker_update.success'));
+                setShowUpdateModal(false);
+                return;
+            }
+
+            toast.error(response.message || t('admin.settings.docker_update.failed'));
+        } catch {
+            toast.error(t('admin.settings.docker_update.failed'));
+        } finally {
+            setIsUpdatingDocker(false);
+        }
+    };
 
     return (
         <PageCard title={t('admin.version.title')} description={t('admin.version.description')} icon={Package}>
@@ -118,7 +145,7 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                 </div>
 
                 <div className='flex flex-col gap-3'>
-                    {isLatest ? (
+                    {isLatest && !canForceUpdateToLatest ? (
                         <div className='flex items-center gap-3 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-500'>
                             <CheckCircle2 className='h-5 w-5' />
                             <p className='text-sm font-bold'>{t('admin.version.up_to_date')}</p>
@@ -129,18 +156,29 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                                 <Download className='h-5 w-5 animate-bounce' />
                                 <div className='space-y-0.5'>
                                     <p className='text-sm font-black uppercase tracking-tight'>
-                                        {t('admin.version.update_available', { version: latest?.version || 'Unknown' })}
+                                        {canForceUpdateToLatest
+                                            ? 'Current version unknown'
+                                            : t('admin.version.update_available', {
+                                                  version: latest?.version || 'Unknown',
+                                              })}
                                     </p>
                                     <p className='text-[10px] font-bold uppercase opacity-70'>
-                                        {t('admin.version.update_description')}
+                                        {canForceUpdateToLatest
+                                            ? 'Update to latest stable build'
+                                            : t('admin.version.update_description')}
                                     </p>
                                 </div>
                             </div>
                             <button
-                                onClick={() => setShowUpdateModal(true)}
-                                className='w-full py-3 rounded-xl bg-amber-500 text-amber-950 text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-colors '
+                                onClick={handleUpdateNow}
+                                disabled={isUpdatingDocker}
+                                className='w-full py-3 rounded-xl bg-amber-500 text-amber-950 text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed'
                             >
-                                {t('admin.version.update_now')}
+                                {isUpdatingDocker
+                                    ? t('admin.settings.docker_update.updating')
+                                    : canForceUpdateToLatest
+                                      ? 'Update to Latest'
+                                      : t('admin.version.update_now')}
                             </button>
                         </div>
                     )}
@@ -148,7 +186,7 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                     {current?.php_version && (
                         <div className='flex items-center gap-2 md:gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl bg-primary/5 border border-primary/10'>
                             <Cpu className='h-4 w-4 text-primary shrink-0' />
-                            <p className='text-[10px] md:text-xs font-bold text-muted-foreground break-words'>
+                            <p className='text-[10px] md:text-xs font-bold text-muted-foreground wrap-break-word'>
                                 {t('admin.version.recommended_php')}{' '}
                                 <span className='text-foreground'>{current.php_version}</span>
                             </p>

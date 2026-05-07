@@ -222,7 +222,7 @@ class DatabaseSnapshotsController
             $size = filesize($filepath);
 
             // Log activity
-            $currentUser = $request->get('user');
+            $currentUser = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $currentUser['uuid'] ?? null,
                 'name' => 'database_snapshot_created',
@@ -319,7 +319,7 @@ class DatabaseSnapshotsController
             }
 
             // Log activity
-            $currentUser = $request->get('user');
+            $currentUser = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $currentUser['uuid'] ?? null,
                 'name' => 'database_snapshot_downloaded',
@@ -452,7 +452,7 @@ class DatabaseSnapshotsController
 
             // If restore was successful, log activity and emit event
             if ($restoreResult->getStatusCode() === 200) {
-                $currentUser = $request->get('user');
+                $currentUser = $request->attributes->get('user');
                 Activity::createActivity([
                     'user_uuid' => $currentUser['uuid'] ?? null,
                     'name' => 'database_snapshot_restored',
@@ -557,7 +557,7 @@ class DatabaseSnapshotsController
             }
 
             // Log activity
-            $currentUser = $request->get('user');
+            $currentUser = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $currentUser['uuid'] ?? null,
                 'name' => 'database_snapshot_deleted',
@@ -736,7 +736,7 @@ class DatabaseSnapshotsController
             }
 
             // Get current user info before wiping
-            $currentUser = $request->get('user');
+            $currentUser = $request->attributes->get('user');
             if (!$currentUser || !isset($currentUser['id'])) {
                 return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
             }
@@ -857,7 +857,7 @@ class DatabaseSnapshotsController
     private function verifyPassword(Request $request, ?string $password): ?Response
     {
         // Get current user from request
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         if (!$currentUser || !isset($currentUser['id'])) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }

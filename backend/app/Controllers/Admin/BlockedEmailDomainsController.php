@@ -114,7 +114,7 @@ class BlockedEmailDomainsController
         EmailDomainValidator::invalidateBlockedDomainsCache();
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'blocked_email_domain_create',
             'context' => 'Added blocked email domain: ' . $normalized,
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -144,7 +144,7 @@ class BlockedEmailDomainsController
         EmailDomainValidator::invalidateBlockedDomainsCache();
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'blocked_email_domain_delete',
             'context' => 'Removed blocked email domain id ' . $id,
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -173,7 +173,7 @@ class BlockedEmailDomainsController
         EmailDomainValidator::invalidateBlockedDomainsCache();
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'blocked_email_domain_import_preset',
             'context' => 'Imported preset disposable domains; new rows (approx): ' . $result['inserted'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -224,7 +224,7 @@ class BlockedEmailDomainsController
         EmailDomainValidator::invalidateBlockedDomainsCache();
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'blocked_email_domain_import_url',
             'context' => 'Imported blocked domains from URL; new rows: ' . $result['inserted'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -272,7 +272,7 @@ class BlockedEmailDomainsController
         EmailDomainValidator::invalidateBlockedDomainsCache();
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'blocked_email_domain_import_text',
             'context' => 'Imported blocked domains from pasted text; new rows: ' . $result['inserted'],
             'ip_address' => CloudFlareRealIP::getRealIP(),

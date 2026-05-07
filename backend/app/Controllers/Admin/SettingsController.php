@@ -2635,7 +2635,7 @@ class SettingsController
         // Log the activity
         if (!empty($updatedSettings)) {
             Activity::createActivity([
-                'user_uuid' => $request->get('user')['uuid'] ?? null,
+                'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
                 'name' => 'update_settings',
                 'context' => 'Updated settings: ' . implode(', ', $updatedSettings),
                 'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -2647,7 +2647,7 @@ class SettingsController
                 $eventManager->emit(SettingsEvent::onSettingsUpdated(), [
                     'updated_settings' => $updatedSettings,
                     'settings_data' => $data,
-                    'user' => $request->get('user'),
+                    'user' => $request->attributes->get('user'),
                 ]);
             }
 
@@ -2796,7 +2796,7 @@ class SettingsController
     ),]
     public function sendTestEmail(Request $request): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user || empty($user['email'])) {
             return ApiResponse::error(
                 'User email not found',
@@ -2987,7 +2987,7 @@ class SettingsController
             );
         }
 
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $payload = json_encode([
             'requested_by' => [
                 'uuid' => $user['uuid'] ?? null,

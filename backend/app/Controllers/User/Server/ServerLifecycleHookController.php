@@ -113,7 +113,7 @@ class ServerLifecycleHookController
             return ApiResponse::error('Lifecycle hook not found', 'HOOK_NOT_FOUND', 404);
         }
 
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         self::emitEvent(ServerEvent::onServerUpdated(), [
             'user_uuid' => $user['uuid'] ?? null,
             'server_uuid' => $server['uuid'],
@@ -188,7 +188,7 @@ class ServerLifecycleHookController
         }
 
         $step = ServerLifecycleHookStep::getStepById((int) $stepId);
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         self::emitEvent(ServerEvent::onServerUpdated(), [
             'user_uuid' => $user['uuid'] ?? null,
             'server_uuid' => $server['uuid'],
@@ -264,7 +264,7 @@ class ServerLifecycleHookController
             return ApiResponse::error('Failed to update lifecycle hook step', 'UPDATE_FAILED', 500);
         }
 
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         self::emitEvent(ServerEvent::onServerUpdated(), [
             'user_uuid' => $user['uuid'] ?? null,
             'server_uuid' => $server['uuid'],
@@ -323,7 +323,7 @@ class ServerLifecycleHookController
             return ApiResponse::error('Failed to update sequence', 'UPDATE_FAILED', 500);
         }
 
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         self::emitEvent(ServerEvent::onServerUpdated(), [
             'user_uuid' => $user['uuid'] ?? null,
             'server_uuid' => $server['uuid'],
@@ -373,7 +373,7 @@ class ServerLifecycleHookController
 
         ServerLifecycleHookStep::reorderSteps((int) $hook['id']);
 
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         self::emitEvent(ServerEvent::onServerUpdated(), [
             'user_uuid' => $user['uuid'] ?? null,
             'server_uuid' => $server['uuid'],

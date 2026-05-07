@@ -184,7 +184,7 @@ class StorageSenseController
 
     private static function logPurgeActivity(Request $request, string $context): void
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (is_array($user) && isset($user['uuid']) && is_string($user['uuid'])) {
             Activity::createActivity([
                 'user_uuid' => $user['uuid'],

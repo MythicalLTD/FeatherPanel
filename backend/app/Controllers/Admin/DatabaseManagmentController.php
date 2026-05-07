@@ -236,7 +236,7 @@ class DatabaseManagmentController
                         'skipped' => $skipped,
                         'failed' => $failed,
                         'total_time' => $totalTime,
-                        'executed_by' => $request->get('user'),
+                        'executed_by' => $request->attributes->get('user'),
                     ]
                 );
             }

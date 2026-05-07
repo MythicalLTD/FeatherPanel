@@ -1103,7 +1103,7 @@ class ServersController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'create_server',
             'context' => 'Created a new server ' . $data['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -1117,7 +1117,7 @@ class ServersController
                 [
                     'server_id' => $serverId,
                     'server_data' => $data,
-                    'created_by' => $request->get('user'),
+                    'created_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -1787,7 +1787,7 @@ class ServersController
                                 ServerEvent::onServerReinstalled(),
                                 [
                                     'server' => Server::getServerById($id),
-                                    'updated_by' => $request->get('user'),
+                                    'updated_by' => $request->attributes->get('user'),
                                 ]
                             );
                         }
@@ -1806,7 +1806,7 @@ class ServersController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'update_server',
             'context' => 'Updated server ' . $server['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -1823,7 +1823,7 @@ class ServersController
                 [
                     'server' => $updatedServer,
                     'updated_data' => $data,
-                    'updated_by' => $request->get('user'),
+                    'updated_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -1951,7 +1951,7 @@ class ServersController
         }
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'delete_server',
             'context' => 'Deleted server ' . $server['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -1964,7 +1964,7 @@ class ServersController
                 ServerEvent::onServerDeleted(),
                 [
                     'server' => $server,
-                    'deleted_by' => $request->get('user'),
+                    'deleted_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -2064,7 +2064,7 @@ class ServersController
 
         // Log activity with clear indication this was a hard delete
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'hard_delete_server',
             'context' => 'Hard deleted server ' . $server['name'] . ' (database only, Wings not contacted)',
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -2074,7 +2074,7 @@ class ServersController
         App::getInstance(true)->getLogger()->warning(
             'Server hard deleted (database only): ' . $server['name'] .
             ' (ID: ' . $id . ', UUID: ' . $server['uuid'] . ') by user ' .
-            $request->get('user')['username'] . '. Wings was NOT contacted - server files may still exist on node.'
+            $request->attributes->get('user')['username'] . '. Wings was NOT contacted - server files may still exist on node.'
         );
 
         // Emit event
@@ -2084,7 +2084,7 @@ class ServersController
                 ServerEvent::onServerDeleted(),
                 [
                     'server' => $server,
-                    'deleted_by' => $request->get('user'),
+                    'deleted_by' => $request->attributes->get('user'),
                     'hard_delete' => true,
                 ]
             );
@@ -2411,7 +2411,7 @@ class ServersController
         $user = User::getUserById($server['owner_id']);
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'suspend_server',
             'context' => 'Suspended server ' . $server['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -2461,7 +2461,7 @@ class ServersController
                 ServerEvent::onServerSuspended(),
                 [
                     'server' => $server,
-                    'suspended_by' => $request->get('user'),
+                    'suspended_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -2534,7 +2534,7 @@ class ServersController
         $user = User::getUserById($server['owner_id']);
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'unsuspend_server',
             'context' => 'Unsuspended server ' . $server['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -2547,7 +2547,7 @@ class ServersController
                 ServerEvent::onServerUnsuspended(),
                 [
                     'server' => $server,
-                    'unsuspended_by' => $request->get('user'),
+                    'unsuspended_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -2750,7 +2750,7 @@ class ServersController
 
             $transferToken = $jwtService->generateTransferToken(
                 $server['uuid'],
-                $request->get('user')['uuid'],
+                $request->attributes->get('user')['uuid'],
                 ['*'] // Full permissions for transfer
             );
 
@@ -2785,7 +2785,7 @@ class ServersController
 
             // Log activity
             Activity::createActivity([
-                'user_uuid' => $request->get('user')['uuid'],
+                'user_uuid' => $request->attributes->get('user')['uuid'],
                 'name' => 'initiate_server_transfer',
                 'context' => 'Initiated transfer of server ' . $server['name'] . ' from node ' . $sourceNode['name'] . ' to node ' . $destinationNode['name'],
                 'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -2800,7 +2800,7 @@ class ServersController
                         'server' => $server,
                         'source_node' => $sourceNode,
                         'destination_node' => $destinationNode,
-                        'initiated_by' => $request->get('user'),
+                        'initiated_by' => $request->attributes->get('user'),
                     ]
                 );
             }
@@ -3018,7 +3018,7 @@ class ServersController
 
             // Log activity
             Activity::createActivity([
-                'user_uuid' => $request->get('user')['uuid'],
+                'user_uuid' => $request->attributes->get('user')['uuid'],
                 'name' => 'cancel_server_transfer',
                 'context' => 'Cancelled transfer of server ' . $server['name'],
                 'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -3031,7 +3031,7 @@ class ServersController
                     ServerEvent::onServerTransferCancelled(),
                     [
                         'server' => $server,
-                        'cancelled_by' => $request->get('user'),
+                        'cancelled_by' => $request->attributes->get('user'),
                     ]
                 );
             }

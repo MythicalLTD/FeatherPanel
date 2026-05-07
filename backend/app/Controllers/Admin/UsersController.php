@@ -680,7 +680,7 @@ class UsersController
         ]);
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'create_user',
             'context' => 'Created a new user ' . $data['username'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -695,7 +695,7 @@ class UsersController
                     'user' => $data,
                     'user_id' => $userId,
                     'uuid' => $data['uuid'],
-                    'created_by' => $request->get('user'),
+                    'created_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -838,7 +838,7 @@ class UsersController
                 [
                     'user' => $user,
                     'updated_data' => $data,
-                    'updated_by' => $request->get('user'),
+                    'updated_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -952,7 +952,7 @@ class UsersController
                 UserEvent::onUserDeleted(),
                 [
                     'user' => $user,
-                    'deleted_by' => $request->get('user'),
+                    'deleted_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -1368,7 +1368,7 @@ class UsersController
         }
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'send_user_email',
             'context' => 'Sent email to user ' . ($user['username'] ?? $user['uuid']) . '. Subject: ' . $subject,
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -1432,7 +1432,7 @@ class UsersController
                 [
                     'user' => $user,
                     'updated_data' => ['banned' => 'true'],
-                    'updated_by' => $request->get('user'),
+                    'updated_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -1452,7 +1452,7 @@ class UsersController
             'suspension_time' => date('Y-m-d H:i:s'),
         ]);
 
-        $app->getLogger()->info('User ' . $user['uuid'] . ' banned by ' . ($request->get('user')['uuid'] ?? 'unknown'));
+        $app->getLogger()->info('User ' . $user['uuid'] . ' banned by ' . ($request->attributes->get('user')['uuid'] ?? 'unknown'));
 
         return ApiResponse::success([], 'User banned successfully', 200);
     }
@@ -1510,7 +1510,7 @@ class UsersController
                 [
                     'user' => $user,
                     'updated_data' => ['banned' => 'false'],
-                    'updated_by' => $request->get('user'),
+                    'updated_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -1530,7 +1530,7 @@ class UsersController
             'unsuspension_time' => date('Y-m-d H:i:s'),
         ]);
 
-        $app->getLogger()->info('User ' . $user['uuid'] . ' unbanned by ' . ($request->get('user')['uuid'] ?? 'unknown'));
+        $app->getLogger()->info('User ' . $user['uuid'] . ' unbanned by ' . ($request->attributes->get('user')['uuid'] ?? 'unknown'));
 
         return ApiResponse::success([], 'User unbanned successfully', 200);
     }

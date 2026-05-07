@@ -90,7 +90,7 @@ class ServerImportController
     )]
     public function importServer(Request $request, string $uuidShort): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -289,7 +289,7 @@ class ServerImportController
     public function listImports(Request $request, string $serverUuid): Response
     {
         try {
-            $user = $request->get('user');
+            $user = $request->attributes->get('user');
             if (!$user) {
                 return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
             }

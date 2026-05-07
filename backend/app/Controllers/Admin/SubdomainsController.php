@@ -296,7 +296,7 @@ class SubdomainsController
                 SubdomainsEvent::onSubdomainDomainCreated(),
                 [
                     'domain_data' => $createdDomain,
-                    'created_by' => $request->get('user'),
+                    'created_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -370,7 +370,7 @@ class SubdomainsController
                     'domain_uuid' => $uuid,
                     'old_data' => $oldDomain,
                     'new_data' => $updatedDomain,
-                    'updated_by' => $request->get('user'),
+                    'updated_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -418,7 +418,7 @@ class SubdomainsController
                 [
                     'domain_uuid' => $uuid,
                     'domain_data' => $domain,
-                    'deleted_by' => $request->get('user'),
+                    'deleted_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -550,7 +550,7 @@ class SubdomainsController
                             'max_subdomains_per_server' => $currentMax,
                             'allow_user_subdomains' => $enabled,
                         ],
-                        'updated_by' => $request->get('user'),
+                        'updated_by' => $request->attributes->get('user'),
                     ]
                 );
             }
@@ -602,7 +602,7 @@ class SubdomainsController
                         'cloudflare_api_key_set' => $apiKey !== '',
                         'max_subdomains_per_server' => $max,
                     ],
-                    'updated_by' => $request->get('user'),
+                    'updated_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -670,7 +670,7 @@ class SubdomainsController
 
     private function logActivity(Request $request, string $name, string $context): void
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user || !isset($user['uuid'])) {
             return;
         }

@@ -281,7 +281,7 @@ class VmNodesController
     )]
     public function create(Request $request): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $data = json_decode($request->getContent(), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
@@ -412,7 +412,7 @@ class VmNodesController
     )]
     public function update(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $vmNode = VmNode::getVmNodeById($id);
         if (!$vmNode) {
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
@@ -531,7 +531,7 @@ class VmNodesController
     )]
     public function delete(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $vmNode = VmNode::getVmNodeById($id);
         if (!$vmNode) {
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
@@ -1316,7 +1316,7 @@ class VmNodesController
     )]
     public function createIp(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
 
         if ($id <= 0) {
             return ApiResponse::error('Invalid VM node ID', 'INVALID_VM_NODE_ID', 400);
@@ -1404,7 +1404,7 @@ class VmNodesController
     )]
     public function updateIp(Request $request, int $id, int $ipId): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
 
         if ($id <= 0 || $ipId <= 0) {
             return ApiResponse::error('Invalid VM node or IP ID', 'INVALID_ID', 400);
@@ -1484,7 +1484,7 @@ class VmNodesController
     )]
     public function deleteIp(Request $request, int $id, int $ipId): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
 
         if ($id <= 0 || $ipId <= 0) {
             return ApiResponse::error('Invalid VM node or IP ID', 'INVALID_ID', 400);
@@ -1552,7 +1552,7 @@ class VmNodesController
     )]
     public function setPrimaryIp(Request $request, int $id, int $ipId): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
 
         if ($id <= 0 || $ipId <= 0) {
             return ApiResponse::error('Invalid VM node or IP ID', 'INVALID_ID', 400);
@@ -1630,7 +1630,7 @@ class VmNodesController
      */
     public function createTemplate(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $vmNode = VmNode::getVmNodeById($id);
         if (!$vmNode) {
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
@@ -1676,7 +1676,7 @@ class VmNodesController
      */
     public function updateTemplate(Request $request, int $templateId): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $template = VmTemplate::getById($templateId);
         if (!$template) {
             return ApiResponse::error('Template not found', 'TEMPLATE_NOT_FOUND', 404);
@@ -1709,7 +1709,7 @@ class VmNodesController
      */
     public function deleteTemplate(Request $request, int $templateId): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $template = VmTemplate::getById($templateId);
         if (!$template) {
             return ApiResponse::error('Template not found', 'TEMPLATE_NOT_FOUND', 404);

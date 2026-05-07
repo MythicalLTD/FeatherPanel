@@ -266,7 +266,7 @@ class TicketCategoriesController
         }
 
         // Log activity
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'],
             'name' => 'create_ticket_category',
@@ -352,7 +352,7 @@ class TicketCategoriesController
         }
 
         // Log activity
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'],
             'name' => 'update_ticket_category',
@@ -429,7 +429,7 @@ class TicketCategoriesController
         }
 
         // Log activity
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'],
             'name' => 'delete_ticket_category',
@@ -536,7 +536,7 @@ class TicketCategoriesController
         $url = $baseUrl . '/attachments/' . $filename;
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'upload_ticket_category_icon',

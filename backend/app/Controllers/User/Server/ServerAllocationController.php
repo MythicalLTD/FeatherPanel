@@ -128,7 +128,7 @@ class ServerAllocationController
     public function getServerAllocations(Request $request, int $serverId): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -218,7 +218,7 @@ class ServerAllocationController
     public function deleteAllocation(Request $request, int $serverId, int $allocationId): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -365,7 +365,7 @@ class ServerAllocationController
     public function setPrimaryAllocation(Request $request, int $serverId, int $allocationId): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -525,7 +525,7 @@ class ServerAllocationController
     public function getAvailableAllocations(Request $request, int $serverId): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -644,7 +644,7 @@ class ServerAllocationController
     public function autoAllocate(Request $request, int $serverId): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }

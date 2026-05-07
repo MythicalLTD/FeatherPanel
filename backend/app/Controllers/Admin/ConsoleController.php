@@ -162,7 +162,7 @@ class ConsoleController
                         'working_directory' => $workingDirectory,
                         'return_code' => $returnCode,
                         'execution_time' => $executionTime,
-                        'executed_by' => $request->get('user'),
+                        'executed_by' => $request->attributes->get('user'),
                     ]
                 );
             }

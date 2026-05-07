@@ -366,7 +366,7 @@ class NotificationsController
         }
 
         // Log activity
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? '',
             'name' => 'create_notification',
@@ -492,7 +492,7 @@ class NotificationsController
         }
 
         // Log activity
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? '',
             'name' => 'update_notification',
@@ -568,7 +568,7 @@ class NotificationsController
         }
 
         // Log activity
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? '',
             'name' => 'delete_notification',

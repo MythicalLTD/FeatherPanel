@@ -61,7 +61,7 @@ class NotificationController
     )]
     public function index(Request $request): Response
     {
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
 
         if (!$currentUser || !isset($currentUser['id'])) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
@@ -120,7 +120,7 @@ class NotificationController
             return ApiResponse::error('Invalid notification ID', 'INVALID_ID', 400);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
 
         if (!$currentUser || !isset($currentUser['id'])) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);

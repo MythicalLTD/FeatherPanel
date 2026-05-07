@@ -312,7 +312,7 @@ class ImagesController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'create_image',
             'context' => 'Created image: ' . $data['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -326,7 +326,7 @@ class ImagesController
                 [
                     'image_id' => $imageId,
                     'image_data' => $data,
-                    'created_by' => $request->get('user'),
+                    'created_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -449,7 +449,7 @@ class ImagesController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'upload_image',
             'context' => 'Uploaded image: ' . $name,
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -570,7 +570,7 @@ class ImagesController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'update_image',
             'context' => 'Updated image: ' . ($data['name'] ?? $image['name']),
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -584,7 +584,7 @@ class ImagesController
                 [
                     'image' => $image,
                     'updated_data' => $data,
-                    'updated_by' => $request->get('user'),
+                    'updated_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -637,7 +637,7 @@ class ImagesController
 
         // Log activity
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
             'name' => 'delete_image',
             'context' => 'Deleted image: ' . $image['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -650,7 +650,7 @@ class ImagesController
                 ImagesEvent::onImageDeleted(),
                 [
                     'image' => $image,
-                    'deleted_by' => $request->get('user'),
+                    'deleted_by' => $request->attributes->get('user'),
                 ]
             );
         }

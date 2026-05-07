@@ -486,7 +486,7 @@ class SpellsController
         $spell = Spell::getSpellById($spellId);
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'create_spell',
@@ -624,7 +624,7 @@ class SpellsController
         $spell = Spell::getSpellById($id);
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'update_spell',
@@ -705,7 +705,7 @@ class SpellsController
         }
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'delete_spell',
@@ -1017,7 +1017,7 @@ class SpellsController
         }
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'import_spell',
@@ -1150,7 +1150,7 @@ class SpellsController
         $filename = strtolower(str_replace(' ', '-', $spell['name'])) . '.json';
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'export_spell',
@@ -1767,7 +1767,7 @@ class SpellsController
             }
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'online_install_spell',

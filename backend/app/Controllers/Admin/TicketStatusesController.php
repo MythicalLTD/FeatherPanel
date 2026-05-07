@@ -243,7 +243,7 @@ class TicketStatusesController
             return ApiResponse::error('Failed to create status', 'CREATE_FAILED', 500);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? null,
             'name' => 'create_ticket_status',
@@ -327,7 +327,7 @@ class TicketStatusesController
             return ApiResponse::error('Failed to update status', 'UPDATE_FAILED', 500);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? null,
             'name' => 'update_ticket_status',
@@ -399,7 +399,7 @@ class TicketStatusesController
             return ApiResponse::error('Failed to delete status', 'DELETE_FAILED', 500);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? null,
             'name' => 'delete_ticket_status',

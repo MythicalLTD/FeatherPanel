@@ -253,7 +253,7 @@ class TicketMessagesController
             return ApiResponse::error('Message is required', 'MISSING_MESSAGE', 400);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
 
         $messageData = [
             'ticket_id' => $ticket['id'],
@@ -376,7 +376,7 @@ class TicketMessagesController
         }
 
         // Log activity
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'],
             'name' => 'update_ticket_message',
@@ -471,7 +471,7 @@ class TicketMessagesController
         }
 
         // Log activity
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'],
             'name' => 'delete_ticket_message',

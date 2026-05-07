@@ -161,7 +161,7 @@ class CloudManagementController
             $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, $privateKey);
             $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, $timestamp);
 
-            $user = $request->get('user');
+            $user = $request->attributes->get('user');
             $userUuid = $user['uuid'] ?? null;
 
             Activity::createActivity([
@@ -243,7 +243,7 @@ class CloudManagementController
             $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PRIVATE_KEY, $privateKey);
             $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_LAST_ROTATED, $timestamp);
 
-            $user = $request->get('user');
+            $user = $request->attributes->get('user');
             $userUuid = $user['uuid'] ?? null;
 
             Activity::createActivity([
@@ -312,7 +312,7 @@ class CloudManagementController
             $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, null);
             $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, null);
 
-            $user = $request->get('user');
+            $user = $request->attributes->get('user');
             $userUuid = $user['uuid'] ?? null;
 
             Activity::createActivity([
@@ -386,7 +386,7 @@ class CloudManagementController
                 $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, $panelPrivate);
                 $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, $timestamp);
 
-                $user = $request->get('user');
+                $user = $request->attributes->get('user');
                 $userUuid = $user['uuid'] ?? null;
 
                 Activity::createActivity([
@@ -474,7 +474,7 @@ class CloudManagementController
             $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PRIVATE_KEY, $cloudApiSecret);
             $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_LAST_ROTATED, $timestamp);
 
-            $user = $request->get('user');
+            $user = $request->attributes->get('user');
             $userUuid = $user['uuid'] ?? null;
 
             Activity::createActivity([

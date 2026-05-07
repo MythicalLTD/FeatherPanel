@@ -243,7 +243,7 @@ class TicketPrioritiesController
             return ApiResponse::error('Failed to create priority', 'CREATE_FAILED', 500);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? null,
             'name' => 'create_ticket_priority',
@@ -327,7 +327,7 @@ class TicketPrioritiesController
             return ApiResponse::error('Failed to update priority', 'UPDATE_FAILED', 500);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? null,
             'name' => 'update_ticket_priority',
@@ -399,7 +399,7 @@ class TicketPrioritiesController
             return ApiResponse::error('Failed to delete priority', 'DELETE_FAILED', 500);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? null,
             'name' => 'delete_ticket_priority',

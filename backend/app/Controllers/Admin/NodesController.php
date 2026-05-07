@@ -318,7 +318,7 @@ class NodesController
     public function create(Request $request): Response
     {
         $logger = App::getInstance(true)->getLogger();
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $data = json_decode($request->getContent(), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
@@ -464,7 +464,7 @@ class NodesController
     )]
     public function update(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -598,7 +598,7 @@ class NodesController
     )]
     public function delete(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -835,7 +835,7 @@ class NodesController
     )]
     public function triggerSelfUpdate(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -950,7 +950,7 @@ class NodesController
     )]
     public function resetKey(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -1097,7 +1097,7 @@ class NodesController
     )]
     public function executeTerminalCommand(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -1286,7 +1286,7 @@ class NodesController
     )]
     public function putConfig(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -1402,7 +1402,7 @@ class NodesController
     )]
     public function patchConfig(Request $request, int $id): Response
     {
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);

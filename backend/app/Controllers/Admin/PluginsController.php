@@ -307,7 +307,7 @@ class PluginsController
             PluginSettings::setSettings($identifier, $key, ['value' => $value]);
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'plugin_setting_update',
@@ -393,7 +393,7 @@ class PluginsController
             $key = $data['key'];
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'plugin_setting_delete',
@@ -497,7 +497,7 @@ class PluginsController
             ]);
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'plugin_spell_restrictions_update',

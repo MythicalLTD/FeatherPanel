@@ -966,7 +966,7 @@ class CloudPluginsController
 
             // If install was successful, log activity and emit event
             if ($installResult->getStatusCode() === 200 || $installResult->getStatusCode() === 201) {
-                $currentUser = $request->get('user');
+                $currentUser = $request->attributes->get('user');
                 $responseData = json_decode($installResult->getContent(), true);
                 $isUpdate = $responseData['data']['is_update'] ?? false;
 

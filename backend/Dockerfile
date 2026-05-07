@@ -39,7 +39,10 @@ RUN install-php-extensions \
     zip \
     redis \
     ldap \ 
-	bz2
+	bz2 \ 
+	yaml \
+	gmp \ 
+	imagick 
 
 # Reset environment variables
 ENV DEBIAN_FRONTEND=

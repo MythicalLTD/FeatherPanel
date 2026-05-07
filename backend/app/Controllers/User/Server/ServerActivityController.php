@@ -133,7 +133,7 @@ class ServerActivityController
     public function getServerActivities(Request $request, int $serverId): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -191,7 +191,7 @@ class ServerActivityController
      */
     private function userCanAccessServer(Request $request, array $server): bool
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return false;
         }

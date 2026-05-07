@@ -233,7 +233,7 @@ class LogViewerController
                 $eventManager->emit(LogViewerEvent::onLogCleared(), [
                     'log_type' => $logType,
                     'log_file' => basename($logFile),
-                    'cleared_by' => $request->get('user'),
+                    'cleared_by' => $request->attributes->get('user'),
                 ]);
             }
 
@@ -497,7 +497,7 @@ class LogViewerController
             if (isset($eventManager) && $eventManager !== null) {
                 $eventManager->emit(LogViewerEvent::onLogsUploaded(), [
                     'results' => $results,
-                    'uploaded_by' => $request->get('user'),
+                    'uploaded_by' => $request->attributes->get('user'),
                 ]);
             }
 

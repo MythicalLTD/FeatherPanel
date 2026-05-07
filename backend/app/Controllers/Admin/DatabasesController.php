@@ -417,7 +417,7 @@ class DatabasesController
         }
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'create_database',
             'context' => 'Created a new database ' . $data['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -431,7 +431,7 @@ class DatabasesController
                 [
                     'database_id' => $databaseId,
                     'database_data' => $data,
-                    'created_by' => $request->get('user'),
+                    'created_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -568,7 +568,7 @@ class DatabasesController
         }
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'update_database',
             'context' => 'Updated database ' . $database['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -582,7 +582,7 @@ class DatabasesController
                 [
                     'database' => $database,
                     'updated_data' => $data,
-                    'updated_by' => $request->get('user'),
+                    'updated_by' => $request->attributes->get('user'),
                 ]
             );
         }
@@ -637,7 +637,7 @@ class DatabasesController
         }
 
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'delete_database',
             'context' => 'Deleted database ' . $database['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -650,7 +650,7 @@ class DatabasesController
                 DatabasesEvent::onDatabaseDeleted(),
                 [
                     'database' => $database,
-                    'deleted_by' => $request->get('user'),
+                    'deleted_by' => $request->attributes->get('user'),
                 ]
             );
         }

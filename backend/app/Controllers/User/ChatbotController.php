@@ -70,7 +70,7 @@ class ChatbotController
     )]
     public function chat(Request $request): Response
     {
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
 
         if (!$currentUser || !isset($currentUser['id'])) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
@@ -201,7 +201,7 @@ class ChatbotController
     )]
     public function getConversations(Request $request): Response
     {
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
 
         if (!$currentUser || !isset($currentUser['uuid'])) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
@@ -250,7 +250,7 @@ class ChatbotController
     )]
     public function getConversation(Request $request, int $id): Response
     {
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
 
         if (!$currentUser || !isset($currentUser['uuid'])) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
@@ -303,7 +303,7 @@ class ChatbotController
     )]
     public function deleteConversation(Request $request, int $id): Response
     {
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
 
         if (!$currentUser || !isset($currentUser['uuid'])) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
@@ -371,7 +371,7 @@ class ChatbotController
     )]
     public function updateMemory(Request $request, int $id): Response
     {
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
 
         if (!$currentUser || !isset($currentUser['uuid'])) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);

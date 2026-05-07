@@ -203,7 +203,7 @@ class ServerScheduleController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'schedules_retrieved', [
             'schedules' => $schedules,
         ], $user);
@@ -285,7 +285,7 @@ class ServerScheduleController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'schedule_retrieved', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
@@ -406,7 +406,7 @@ class ServerScheduleController
             $eventManager->emit(
                 ServerScheduleEvent::onServerScheduleCreated(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'schedule_id' => $scheduleId,
                 ]
@@ -418,7 +418,7 @@ class ServerScheduleController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'schedule_created', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $body['name'],
@@ -530,7 +530,7 @@ class ServerScheduleController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'schedule_updated', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
@@ -543,7 +543,7 @@ class ServerScheduleController
             $eventManager->emit(
                 ServerScheduleEvent::onServerScheduleUpdated(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'schedule_id' => $scheduleId,
                 ]
@@ -626,7 +626,7 @@ class ServerScheduleController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'schedule_status_toggled', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
@@ -639,7 +639,7 @@ class ServerScheduleController
             $eventManager->emit(
                 ServerEvent::onServerScheduleStatusToggled(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'schedule_id' => $scheduleId,
                 ]
@@ -727,7 +727,7 @@ class ServerScheduleController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'schedule_deleted', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
@@ -739,7 +739,7 @@ class ServerScheduleController
             $eventManager->emit(
                 ServerScheduleEvent::onServerScheduleDeleted(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'schedule_id' => $scheduleId,
                 ]
@@ -978,7 +978,7 @@ class ServerScheduleController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'schedule_run_now', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
@@ -989,7 +989,7 @@ class ServerScheduleController
             $eventManager->emit(
                 ServerScheduleEvent::onServerScheduleUpdated(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'schedule_id' => $scheduleId,
                 ]
@@ -1079,7 +1079,7 @@ class ServerScheduleController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'schedule_exported', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
@@ -1252,7 +1252,7 @@ class ServerScheduleController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'schedule_imported', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $body['name'],
@@ -1264,7 +1264,7 @@ class ServerScheduleController
             $eventManager->emit(
                 ServerScheduleEvent::onServerScheduleCreated(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'schedule_id' => $scheduleId,
                 ]

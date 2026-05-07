@@ -314,7 +314,7 @@ class FileManagerController
                     [
                         'path' => $path,
                         'size' => $result,
-                        'saved_by' => $request->get('user'),
+                        'saved_by' => $request->attributes->get('user'),
                     ]
                 );
             }
@@ -396,7 +396,7 @@ class FileManagerController
                     [
                         'path' => $path,
                         'is_directory' => $isDirectory,
-                        'created_by' => $request->get('user'),
+                        'created_by' => $request->attributes->get('user'),
                     ]
                 );
             }
@@ -485,7 +485,7 @@ class FileManagerController
                     [
                         'path' => $path,
                         'was_directory' => $isDirectory,
-                        'deleted_by' => $request->get('user'),
+                        'deleted_by' => $request->attributes->get('user'),
                     ]
                 );
             }

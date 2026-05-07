@@ -406,7 +406,7 @@ class PluginManagerController
                     [
                         'identifier' => $identifier,
                         'plugin_data' => $data,
-                        'created_by' => $request->get('user'),
+                        'created_by' => $request->attributes->get('user'),
                     ]
                 );
             }
@@ -543,7 +543,7 @@ class PluginManagerController
                     [
                         'identifier' => $identifier,
                         'updated_data' => $data,
-                        'updated_by' => $request->get('user'),
+                        'updated_by' => $request->attributes->get('user'),
                     ]
                 );
             }
@@ -686,7 +686,7 @@ class PluginManagerController
                     [
                         'identifier' => $identifier,
                         'settings' => $data['settings'],
-                        'updated_by' => $request->get('user'),
+                        'updated_by' => $request->attributes->get('user'),
                     ]
                 );
             }
@@ -897,7 +897,7 @@ class PluginManagerController
                             'identifier' => $pluginId,
                             'file_type' => $fileType,
                             'file_data' => $result,
-                            'created_by' => $request->get('user'),
+                            'created_by' => $request->attributes->get('user'),
                         ]
                     );
                 }
@@ -1184,7 +1184,7 @@ class PluginManagerController
                         'identifier' => $identifier,
                         'file_type' => 'widget_config',
                         'file_data' => ['widgets' => $data],
-                        'created_by' => $request->get('user'),
+                        'created_by' => $request->attributes->get('user'),
                     ]
                 );
             }
@@ -1307,7 +1307,7 @@ class PluginManagerController
                         'identifier' => $identifier,
                         'file_type' => 'widget_deleted',
                         'file_data' => ['widget_id' => $widgetId],
-                        'created_by' => $request->get('user'),
+                        'created_by' => $request->attributes->get('user'),
                     ]
                 );
             }

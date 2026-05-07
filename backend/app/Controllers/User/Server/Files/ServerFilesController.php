@@ -1708,7 +1708,7 @@ class ServerFilesController
      */
     private function validateUser(Request $request): array
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             throw new \Exception('User not authenticated', 401);
         }

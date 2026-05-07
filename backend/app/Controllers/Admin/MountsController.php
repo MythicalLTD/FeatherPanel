@@ -128,7 +128,7 @@ class MountsController
             return ApiResponse::error('Failed to create mount', 'CREATE_FAILED', 500);
         }
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'create_mount',
             'context' => 'Created mount: ' . $name,
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -198,7 +198,7 @@ class MountsController
             return ApiResponse::error('Failed to update mount', 'UPDATE_FAILED', 500);
         }
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'update_mount',
             'context' => 'Updated mount ID ' . $id,
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -220,7 +220,7 @@ class MountsController
             return ApiResponse::error('Failed to delete mount', 'DELETE_FAILED', 500);
         }
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'delete_mount',
             'context' => 'Deleted mount ID ' . $id,
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -236,7 +236,7 @@ class MountsController
 
     public function setSpells(Request $request, int $id): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SPELLS_EDIT)) {
             return ApiResponse::error('Insufficient permissions to modify spell mount links', 'FORBIDDEN', 403);
         }
@@ -249,7 +249,7 @@ class MountsController
      */
     public function setNodesAndSpells(Request $request, int $id): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SPELLS_EDIT)) {
             return ApiResponse::error('Insufficient permissions to modify spell mount links', 'FORBIDDEN', 403);
         }
@@ -290,7 +290,7 @@ class MountsController
             return ApiResponse::error('Failed to update mount links', 'UPDATE_FAILED', 500);
         }
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'update_mount_nodes_spells',
             'context' => 'Updated node and spell links for mount ' . $id,
             'ip_address' => CloudFlareRealIP::getRealIP(),
@@ -301,7 +301,7 @@ class MountsController
 
     public function setServers(Request $request, int $id): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SERVERS_EDIT)) {
             return ApiResponse::error('Insufficient permissions to modify server mount links', 'FORBIDDEN', 403);
         }
@@ -413,7 +413,7 @@ class MountsController
             return ApiResponse::error('Failed to update mount links', 'UPDATE_FAILED', 500);
         }
         Activity::createActivity([
-            'user_uuid' => $request->get('user')['uuid'],
+            'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'update_mount_' . $type . 's',
             'context' => 'Updated ' . $type . ' links for mount ' . $mountId,
             'ip_address' => CloudFlareRealIP::getRealIP(),

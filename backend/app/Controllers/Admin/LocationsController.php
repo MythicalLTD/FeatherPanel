@@ -304,7 +304,7 @@ class LocationsController
         }
         $location = Location::getById($id);
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'create_location',
@@ -424,7 +424,7 @@ class LocationsController
         }
         $location = Location::getById($id);
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'update_location',
@@ -505,7 +505,7 @@ class LocationsController
         }
 
         // Log activity
-        $admin = $request->get('user');
+        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'delete_location',

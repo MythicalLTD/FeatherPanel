@@ -84,7 +84,7 @@ class ServerPowerController
     public function sendPowerAction(Request $request, string $uuidShort, string $action): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }

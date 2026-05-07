@@ -78,7 +78,7 @@ class ServerLogsController
     public function getLogs(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -176,7 +176,7 @@ class ServerLogsController
     public function getInstallLogs(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -279,7 +279,7 @@ class ServerLogsController
     public function uploadLogs(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -411,7 +411,7 @@ class ServerLogsController
     public function uploadInstallLogs(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }

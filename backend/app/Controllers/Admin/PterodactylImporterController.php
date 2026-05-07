@@ -559,7 +559,7 @@ class PterodactylImporterController
             }
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'import_node',
@@ -746,7 +746,7 @@ class PterodactylImporterController
             }
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'import_allocation',
@@ -943,7 +943,7 @@ class PterodactylImporterController
             unset($createdUser['password'], $createdUser['remember_token'], $createdUser['two_fa_key']);
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'import_user',
@@ -1112,7 +1112,7 @@ class PterodactylImporterController
             }
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'import_ssh_key',
@@ -1593,7 +1593,7 @@ class PterodactylImporterController
             }
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'import_server',
@@ -1792,7 +1792,7 @@ class PterodactylImporterController
             }
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'import_server_database',
@@ -1951,7 +1951,7 @@ class PterodactylImporterController
             }
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'import_backup',
@@ -2120,7 +2120,7 @@ class PterodactylImporterController
             }
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'import_subuser',
@@ -2290,7 +2290,7 @@ class PterodactylImporterController
             }
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'import_schedule',
@@ -2444,7 +2444,7 @@ class PterodactylImporterController
             }
 
             // Log activity
-            $admin = $request->get('user');
+            $admin = $request->attributes->get('user');
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
                 'name' => 'import_task',

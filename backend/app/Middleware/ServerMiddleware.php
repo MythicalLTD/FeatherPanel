@@ -46,7 +46,7 @@ class ServerMiddleware implements MiddlewareInterface
             $serverUuid = (string) $request->attributes->get($serverParamName);
         }
         if (!$serverUuid) {
-            $serverUuid = (string) ($request->attributes->get('uuidShort') ?? $request->get('uuidShort'));
+            $serverUuid = (string) ($request->attributes->get('uuidShort') ?? $request->query->get('uuidShort'));
         }
 
         if (!$serverUuid) {
@@ -101,7 +101,7 @@ class ServerMiddleware implements MiddlewareInterface
      */
     public static function getServerUuid(Request $request): ?string
     {
-        return $request->attributes->get('server') ?? $request->get('uuidShort');
+        return $request->attributes->get('server') ?? $request->query->get('uuidShort');
     }
 
     /**

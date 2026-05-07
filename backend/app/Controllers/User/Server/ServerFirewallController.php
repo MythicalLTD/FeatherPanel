@@ -115,7 +115,7 @@ class ServerFirewallController
     )]
     public function listRules(Request $request, int $serverId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -206,7 +206,7 @@ class ServerFirewallController
     )]
     public function createRule(Request $request, int $serverId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -347,7 +347,7 @@ class ServerFirewallController
     )]
     public function updateRule(Request $request, int $serverId, int $ruleId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -482,7 +482,7 @@ class ServerFirewallController
     )]
     public function deleteRule(Request $request, int $serverId, int $ruleId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -593,7 +593,7 @@ class ServerFirewallController
     )]
     public function getRulesByPort(Request $request, int $serverId, int $port): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -681,7 +681,7 @@ class ServerFirewallController
     )]
     public function syncRules(Request $request, int $serverId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }

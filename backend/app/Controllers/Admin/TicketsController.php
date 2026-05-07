@@ -532,7 +532,7 @@ class TicketsController
         $ticket = Ticket::getById($ticketId);
 
         // Log activity
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'],
             'name' => 'create_ticket',
@@ -667,7 +667,7 @@ class TicketsController
         $newStatusName = $newStatus ? strtolower($newStatus['name']) : null;
 
         // Log activity
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'],
             'name' => 'update_ticket',
@@ -772,7 +772,7 @@ class TicketsController
         }
 
         // Log activity
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'],
             'name' => 'delete_ticket',
@@ -853,7 +853,7 @@ class TicketsController
             return ApiResponse::error('Failed to close ticket', 'UPDATE_FAILED', 500);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         $updatedTicket = Ticket::getById($ticket['id']);
 
         // Emit close-related events consistent with update()
@@ -939,7 +939,7 @@ class TicketsController
             return ApiResponse::error('Failed to reopen ticket', 'UPDATE_FAILED', 500);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         $updatedTicket = Ticket::getById($ticket['id']);
 
         global $eventManager;
@@ -1022,7 +1022,7 @@ class TicketsController
             return ApiResponse::error('Message is required', 'MISSING_MESSAGE', 400);
         }
 
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
 
         // Get message content
         $messageContent = trim($data['message']);

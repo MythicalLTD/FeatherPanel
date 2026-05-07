@@ -416,7 +416,7 @@ class TaskController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'task_created', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
@@ -431,7 +431,7 @@ class TaskController
             $eventManager->emit(
                 ServerTaskEvent::onServerTaskCreated(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'schedule_id' => $scheduleId,
                     'task_id' => $taskId,
@@ -570,7 +570,7 @@ class TaskController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'task_updated', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
@@ -584,7 +584,7 @@ class TaskController
             $eventManager->emit(
                 ServerTaskEvent::onServerTaskUpdated(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'schedule_id' => $scheduleId,
                     'task_id' => $taskId,
@@ -700,7 +700,7 @@ class TaskController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'task_sequence_updated', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
@@ -716,7 +716,7 @@ class TaskController
             $eventManager->emit(
                 ServerTaskEvent::onServerTaskSequenceUpdated(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'schedule_id' => $scheduleId,
                     'task_id' => $taskId,
@@ -816,7 +816,7 @@ class TaskController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'task_queued_status_toggled', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
@@ -831,7 +831,7 @@ class TaskController
             $eventManager->emit(
                 ServerEvent::onServerTaskStatusToggled(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'schedule_id' => $scheduleId,
                     'task_id' => $taskId,
@@ -943,7 +943,7 @@ class TaskController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'task_deleted', [
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
@@ -958,7 +958,7 @@ class TaskController
             $eventManager->emit(
                 ServerTaskEvent::onServerTaskDeleted(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'schedule_id' => $scheduleId,
                     'task_id' => $taskId,

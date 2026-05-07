@@ -49,7 +49,7 @@ class VmInstanceMiddleware implements MiddlewareInterface
         }
 
         if (!$vmInstanceId) {
-            $vmInstanceId = (int) ($request->attributes->get('id') ?? $request->get('id'));
+            $vmInstanceId = (int) ($request->attributes->get('id') ?? $request->query->get('id'));
         }
 
         if (!$vmInstanceId || $vmInstanceId <= 0) {
@@ -106,7 +106,7 @@ class VmInstanceMiddleware implements MiddlewareInterface
      */
     public static function getVmInstanceId(Request $request): ?int
     {
-        $id = $request->attributes->get('id') ?? $request->get('id');
+        $id = $request->attributes->get('id') ?? $request->query->get('id');
 
         return $id ? (int) $id : null;
     }

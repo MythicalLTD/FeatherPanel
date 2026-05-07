@@ -2132,6 +2132,7 @@ install_packages() {
 	fi
 }
 
+
 # Function to setup QEMU emulation for running amd64 containers on unsupported ARM systems
 # Note: ARM64 (aarch64) is now natively supported, so QEMU is only needed for older ARM architectures
 setup_qemu_emulation() {

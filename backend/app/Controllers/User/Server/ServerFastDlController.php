@@ -101,7 +101,7 @@ class ServerFastDlController
     )]
     public function getFastDl(Request $request, int $serverId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -205,7 +205,7 @@ class ServerFastDlController
     )]
     public function enableFastDl(Request $request, int $serverId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -330,7 +330,7 @@ class ServerFastDlController
     )]
     public function disableFastDl(Request $request, int $serverId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
@@ -436,7 +436,7 @@ class ServerFastDlController
     )]
     public function updateFastDl(Request $request, int $serverId): Response
     {
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }

@@ -307,7 +307,7 @@ class ServerDatabaseController
         }
 
         // Check if user has permission to view password
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $userId = $user['id'] ?? 0;
         $serverId = $server['id'] ?? 0;
 
@@ -475,7 +475,7 @@ class ServerDatabaseController
             }
 
             // Log activity
-            $user = $request->get('user');
+            $user = $request->attributes->get('user');
             $this->logActivity($server, $node, 'database_created', [
                 'database_id' => $databaseId,
                 'database_name' => $databaseName,
@@ -489,7 +489,7 @@ class ServerDatabaseController
                 $eventManager->emit(
                     ServerDatabaseEvent::onServerDatabaseCreated(),
                     [
-                        'user_uuid' => $request->get('user')['uuid'],
+                        'user_uuid' => $request->attributes->get('user')['uuid'],
                         'server_uuid' => $server['uuid'],
                         'database_id' => $databaseId,
                     ]
@@ -617,7 +617,7 @@ class ServerDatabaseController
         }
 
         // Log activity
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'database_updated', [
             'database_id' => $databaseId,
             'database_name' => $database['database'],
@@ -630,7 +630,7 @@ class ServerDatabaseController
             $eventManager->emit(
                 ServerDatabaseEvent::onServerDatabaseUpdated(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'database_id' => $databaseId,
                 ]
@@ -736,7 +736,7 @@ class ServerDatabaseController
             }
 
             // Log activity
-            $user = $request->get('user');
+            $user = $request->attributes->get('user');
             $this->logActivity($server, $node, 'database_deleted', [
                 'database_id' => $databaseId,
                 'database_name' => $database['database'],
@@ -750,7 +750,7 @@ class ServerDatabaseController
                 $eventManager->emit(
                     ServerDatabaseEvent::onServerDatabaseDeleted(),
                     [
-                        'user_uuid' => $request->get('user')['uuid'],
+                        'user_uuid' => $request->attributes->get('user')['uuid'],
                         'server_uuid' => $server['uuid'],
                         'database_id' => $databaseId,
                     ]
@@ -960,7 +960,7 @@ class ServerDatabaseController
         }
 
         // Check if user has permission to view password
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $userId = $user['id'] ?? 0;
         $serverId = $server['id'] ?? 0;
 
@@ -1074,7 +1074,7 @@ class ServerDatabaseController
         }
 
         // Log activity
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'database_host_connection_tested', [
             'database_host_id' => $databaseHostId,
         ], $user);
@@ -1135,7 +1135,7 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $canViewPassword = \App\Helpers\SubuserPermissionChecker::hasPermission(
             $user['id'],
             $server['id'],
@@ -1297,7 +1297,7 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $canViewPassword = \App\Helpers\SubuserPermissionChecker::hasPermission(
             $user['id'],
             $server['id'],
@@ -1458,7 +1458,7 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $canViewPassword = \App\Helpers\SubuserPermissionChecker::hasPermission(
             $user['id'],
             $server['id'],
@@ -1567,7 +1567,7 @@ class ServerDatabaseController
      */
     private function userCanAccessServer(Request $request, array $server): bool
     {
-        $currentUser = $request->get('user');
+        $currentUser = $request->attributes->get('user');
         if (!$currentUser || !isset($currentUser['uuid'])) {
             return false;
         }

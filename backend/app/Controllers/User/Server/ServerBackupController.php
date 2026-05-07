@@ -438,7 +438,7 @@ class ServerBackupController
             return ApiResponse::error('Failed to initiate backup on Wings: ' . $e->getMessage(), 'FAILED_TO_INITIATE_BACKUP_ON_WINGS', 500);
         }
         // Log activity
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'backup_created', [
             'backup_uuid' => $backupUuid,
             'adapter' => $adapter,
@@ -451,7 +451,7 @@ class ServerBackupController
             $eventManager->emit(
                 ServerBackupEvent::onServerBackupCreated(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'backup_uuid' => $backupUuid,
                 ]
@@ -604,7 +604,7 @@ class ServerBackupController
             return ApiResponse::error('Failed to initiate restore on Wings: ' . $e->getMessage(), 'FAILED_TO_INITIATE_RESTORE_ON_WINGS', 500);
         }
         // Log activity
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         // Log activity
         $this->logActivity($server, $node, 'backup_restored', [
             'backup_uuid' => $backupUuid,
@@ -618,7 +618,7 @@ class ServerBackupController
             $eventManager->emit(
                 ServerBackupEvent::onServerBackupRestored(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'backup_uuid' => $backupUuid,
                 ]
@@ -712,7 +712,7 @@ class ServerBackupController
         }
 
         // Log activity
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'backup_locked', [
             'backup_uuid' => $backupUuid,
             'backup_name' => $backup['name'],
@@ -724,7 +724,7 @@ class ServerBackupController
             $eventManager->emit(
                 ServerEvent::onServerBackupLocked(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'backup_uuid' => $backupUuid,
                 ]
@@ -812,7 +812,7 @@ class ServerBackupController
         }
 
         // Log activity
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'backup_unlocked', [
             'backup_uuid' => $backupUuid,
             'backup_name' => $backup['name'],
@@ -823,7 +823,7 @@ class ServerBackupController
             $eventManager->emit(
                 ServerEvent::onServerBackupUnlocked(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'backup_uuid' => $backupUuid,
                 ]
@@ -961,7 +961,7 @@ class ServerBackupController
         }
 
         // Log activity
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'backup_deleted', [
             'backup_uuid' => $backupUuid,
             'backup_name' => $backup['name'],
@@ -973,7 +973,7 @@ class ServerBackupController
             $eventManager->emit(
                 ServerBackupEvent::onServerBackupDeleted(),
                 [
-                    'user_uuid' => $request->get('user')['uuid'],
+                    'user_uuid' => $request->attributes->get('user')['uuid'],
                     'server_uuid' => $server['uuid'],
                     'backup_uuid' => $backupUuid,
                 ]
@@ -1063,7 +1063,7 @@ class ServerBackupController
         }
 
         // Get authenticated user for permissions
-        $user = $request->get('user');
+        $user = $request->attributes->get('user');
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
