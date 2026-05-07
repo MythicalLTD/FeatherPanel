@@ -35,6 +35,16 @@ interface ZeroTrustConfig {
     auto_suspend?: boolean;
     webhook_enabled?: boolean;
     webhook_url?: string;
+    malwarebazaar_enabled?: boolean;
+    malwarebazaar_api_key?: string;
+    malwarebazaar_selector?: string;
+    malwarebazaar_import_limit?: number;
+    malwarebazaar_confirm_imported?: boolean;
+    malwarebazaar_require_signature?: boolean;
+    malwarebazaar_default_detection_type?: string;
+    malwarebazaar_max_age_hours?: number;
+    malwarebazaar_allowed_file_types?: string[];
+    malwarebazaar_blocked_tags?: string[];
     ignored_extensions?: string[];
     ignored_files?: string[];
     ignored_paths?: string[];
@@ -69,6 +79,8 @@ const ConfigTab = () => {
     const [minerIndicatorsText, setMinerIndicatorsText] = useState('');
     const [suspiciousWordsText, setSuspiciousWordsText] = useState('');
     const [suspiciousContentText, setSuspiciousContentText] = useState('');
+    const [malwareBazaarAllowedTypesText, setMalwareBazaarAllowedTypesText] = useState('');
+    const [malwareBazaarBlockedTagsText, setMalwareBazaarBlockedTagsText] = useState('');
 
     const fetchConfig = async () => {
         setLoading(true);
@@ -88,6 +100,8 @@ const ConfigTab = () => {
             setMinerIndicatorsText(fetchedConfig.miner_indicators?.join(', '));
             setSuspiciousWordsText(fetchedConfig.suspicious_words?.join(', '));
             setSuspiciousContentText(fetchedConfig.suspicious_content?.join(', '));
+            setMalwareBazaarAllowedTypesText(fetchedConfig.malwarebazaar_allowed_file_types?.join(', '));
+            setMalwareBazaarBlockedTagsText(fetchedConfig.malwarebazaar_blocked_tags?.join(', '));
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
             toast.error(err.response?.data?.message || t('admin.featherzerotrust.config.messages.loadFailed'));
@@ -145,6 +159,14 @@ const ConfigTab = () => {
                     .split(',')
                     .map((s) => s.trim())
                     .filter(Boolean),
+                malwarebazaar_allowed_file_types: malwareBazaarAllowedTypesText
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                malwarebazaar_blocked_tags: malwareBazaarBlockedTagsText
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean),
             };
 
             await axios.put('/api/admin/featherzerotrust/config', updatedConfig);
@@ -159,7 +181,7 @@ const ConfigTab = () => {
     };
 
     const resetConfig = async () => {
-        if (!confirm('Are you sure you want to reset all configuration to defaults?')) return;
+        if (!confirm(t('admin.featherzerotrust.config.messages.resetConfirm'))) return;
         setSaving(true);
         try {
             await axios.put('/api/admin/featherzerotrust/config', {});
@@ -342,6 +364,197 @@ const ConfigTab = () => {
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    <div className='space-y-6 pt-6 border-t'>
+                        <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                            {t('admin.featherzerotrust.config.malwarebazaar.title')}
+                        </h3>
+                        <div className='space-y-4'>
+                            <div className='flex items-center justify-between p-4 bg-muted/30 border border-border/50 rounded-xl transition-all hover:bg-muted/50'>
+                                <div className='space-y-0.5'>
+                                    <Label className='text-sm font-medium'>
+                                        {t('admin.featherzerotrust.config.malwarebazaar.enable')}
+                                    </Label>
+                                    <p className='text-xs text-muted-foreground'>
+                                        {t('admin.featherzerotrust.config.malwarebazaar.enableDesc')}
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={config.malwarebazaar_enabled}
+                                    onCheckedChange={(val) => setConfig({ ...config, malwarebazaar_enabled: val })}
+                                />
+                            </div>
+
+                            {config.malwarebazaar_enabled && (
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300'>
+                                    <div className='space-y-2 md:col-span-2'>
+                                        <Label>{t('admin.featherzerotrust.config.malwarebazaar.apiKey')}</Label>
+                                        <Input
+                                            type='password'
+                                            value={config.malwarebazaar_api_key || ''}
+                                            onChange={(e) =>
+                                                setConfig({ ...config, malwarebazaar_api_key: e.target.value })
+                                            }
+                                            placeholder={t('admin.featherzerotrust.config.malwarebazaar.apiKeyPlaceholder')}
+                                        />
+                                        <p className='text-[10px] text-muted-foreground'>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.apiKeyDesc')}
+                                        </p>
+                                    </div>
+
+                                    <div className='space-y-2'>
+                                        <Label>{t('admin.featherzerotrust.config.malwarebazaar.selector')}</Label>
+                                        <select
+                                            className='w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm'
+                                            value={config.malwarebazaar_selector || '100'}
+                                            onChange={(e) =>
+                                                setConfig({
+                                                    ...config,
+                                                    malwarebazaar_selector: e.target.value || '100',
+                                                })
+                                            }
+                                        >
+                                            <option value='100'>
+                                                {t('admin.featherzerotrust.config.malwarebazaar.selectorOptions.latest100')}
+                                            </option>
+                                            <option value='time'>
+                                                {t('admin.featherzerotrust.config.malwarebazaar.selectorOptions.lastHour')}
+                                            </option>
+                                        </select>
+                                        <p className='text-[10px] text-muted-foreground'>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.selectorDesc')}
+                                        </p>
+                                    </div>
+
+                                    <div className='space-y-2'>
+                                        <Label>{t('admin.featherzerotrust.config.malwarebazaar.importLimit')}</Label>
+                                        <Input
+                                            type='number'
+                                            min={1}
+                                            max={1000}
+                                            value={config.malwarebazaar_import_limit || 100}
+                                            onChange={(e) =>
+                                                setConfig({
+                                                    ...config,
+                                                    malwarebazaar_import_limit: Math.min(
+                                                        1000,
+                                                        Math.max(1, parseInt(e.target.value) || 100),
+                                                    ),
+                                                })
+                                            }
+                                            placeholder={t('admin.featherzerotrust.config.malwarebazaar.importLimitPlaceholder')}
+                                        />
+                                        <p className='text-[10px] text-muted-foreground'>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.importLimitDesc')}
+                                        </p>
+                                    </div>
+
+                                    <div className='space-y-2'>
+                                        <Label>{t('admin.featherzerotrust.config.malwarebazaar.defaultDetectionType')}</Label>
+                                        <Input
+                                            value={config.malwarebazaar_default_detection_type || 'malware'}
+                                            onChange={(e) =>
+                                                setConfig({
+                                                    ...config,
+                                                    malwarebazaar_default_detection_type: e.target.value || 'malware',
+                                                })
+                                            }
+                                            placeholder={t(
+                                                'admin.featherzerotrust.config.malwarebazaar.defaultDetectionTypePlaceholder',
+                                            )}
+                                        />
+                                        <p className='text-[10px] text-muted-foreground'>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.defaultDetectionTypeDesc')}
+                                        </p>
+                                    </div>
+
+                                    <div className='space-y-2'>
+                                        <Label>{t('admin.featherzerotrust.config.malwarebazaar.maxAgeHours')}</Label>
+                                        <Input
+                                            type='number'
+                                            min={0}
+                                            value={config.malwarebazaar_max_age_hours || 0}
+                                            onChange={(e) =>
+                                                setConfig({
+                                                    ...config,
+                                                    malwarebazaar_max_age_hours: Math.max(0, parseInt(e.target.value) || 0),
+                                                })
+                                            }
+                                            placeholder={t('admin.featherzerotrust.config.malwarebazaar.maxAgeHoursPlaceholder')}
+                                        />
+                                        <p className='text-[10px] text-muted-foreground'>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.maxAgeHoursDesc')}
+                                        </p>
+                                    </div>
+
+                                    <div className='space-y-2 md:col-span-2'>
+                                        <Label>{t('admin.featherzerotrust.config.malwarebazaar.allowedFileTypes')}</Label>
+                                        <Textarea
+                                            value={malwareBazaarAllowedTypesText}
+                                            onChange={(e) => setMalwareBazaarAllowedTypesText(e.target.value)}
+                                            placeholder={t(
+                                                'admin.featherzerotrust.config.malwarebazaar.allowedFileTypesPlaceholder',
+                                            )}
+                                            className='font-mono text-xs min-h-[80px]'
+                                        />
+                                        <p className='text-[10px] text-muted-foreground'>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.allowedFileTypesDesc')}
+                                        </p>
+                                    </div>
+
+                                    <div className='space-y-2 md:col-span-2'>
+                                        <Label>{t('admin.featherzerotrust.config.malwarebazaar.blockedTags')}</Label>
+                                        <Textarea
+                                            value={malwareBazaarBlockedTagsText}
+                                            onChange={(e) => setMalwareBazaarBlockedTagsText(e.target.value)}
+                                            placeholder={t('admin.featherzerotrust.config.malwarebazaar.blockedTagsPlaceholder')}
+                                            className='font-mono text-xs min-h-[80px]'
+                                        />
+                                        <p className='text-[10px] text-muted-foreground'>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.blockedTagsDesc')}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {config.malwarebazaar_enabled && (
+                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                <div className='flex items-center justify-between p-4 bg-muted/30 border border-border/50 rounded-xl transition-all hover:bg-muted/50'>
+                                    <div className='space-y-0.5'>
+                                        <Label className='text-sm font-medium'>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.autoConfirm')}
+                                        </Label>
+                                        <p className='text-xs text-muted-foreground'>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.autoConfirmDesc')}
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        checked={config.malwarebazaar_confirm_imported ?? true}
+                                        onCheckedChange={(val) =>
+                                            setConfig({ ...config, malwarebazaar_confirm_imported: val })
+                                        }
+                                    />
+                                </div>
+
+                                <div className='flex items-center justify-between p-4 bg-muted/30 border border-border/50 rounded-xl transition-all hover:bg-muted/50'>
+                                    <div className='space-y-0.5'>
+                                        <Label className='text-sm font-medium'>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.requireSignature')}
+                                        </Label>
+                                        <p className='text-xs text-muted-foreground'>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.requireSignatureDesc')}
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        checked={config.malwarebazaar_require_signature ?? false}
+                                        onCheckedChange={(val) =>
+                                            setConfig({ ...config, malwarebazaar_require_signature: val })
+                                        }
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className='space-y-6 pt-6 border-t'>

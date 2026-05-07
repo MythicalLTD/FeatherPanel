@@ -184,6 +184,18 @@ return function (RouteCollection $routes): void {
         ['POST'],
     );
 
+    // Import hashes from MalwareBazaar
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherzerotrust-hashes-import-malwarebazaar',
+        '/api/admin/featherzerotrust/hashes/import/malwarebazaar',
+        function (Request $request) {
+            return (new FeatherZeroTrustController())->importMalwareBazaarHashes($request);
+        },
+        Permissions::ADMIN_FEATHERZEROTRUST_MANAGE,
+        ['POST'],
+    );
+
     // Delete hash
     App::getInstance(true)->registerAdminRoute(
         $routes,

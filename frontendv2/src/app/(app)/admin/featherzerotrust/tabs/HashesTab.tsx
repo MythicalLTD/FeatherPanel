@@ -31,6 +31,7 @@ import {
     Plus,
     RefreshCw,
     X,
+    Download,
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -108,6 +109,7 @@ const HashesTab = () => {
 
     const [bulkDeleting, setBulkDeleting] = useState(false);
     const [bulkConfirming, setBulkConfirming] = useState(false);
+    const [importingMalwareBazaar, setImportingMalwareBazaar] = useState(false);
 
     const fetchStats = async () => {
         try {
@@ -263,7 +265,7 @@ const HashesTab = () => {
     };
 
     const handleDeleteHash = async (hash: string) => {
-        if (!confirm('Are you sure you want to delete this hash?')) return;
+        if (!confirm(t('admin.featherzerotrust.hashes.messages.confirmDeleteSingle'))) return;
         try {
             const { data } = await axios.delete(`/api/admin/featherzerotrust/hashes/${hash}`);
             if (data.success) {
@@ -279,7 +281,8 @@ const HashesTab = () => {
 
     const handleBulkConfirm = async () => {
         if (selectedHashes.size === 0) return;
-        if (!confirm(`Confirm ${selectedHashes.size} hashes as malicious?`)) return;
+        if (!confirm(t('admin.featherzerotrust.hashes.messages.confirmBulkConfirm', { count: selectedHashes.size })))
+            return;
 
         setBulkConfirming(true);
         try {
@@ -304,7 +307,8 @@ const HashesTab = () => {
 
     const handleBulkDelete = async () => {
         if (selectedHashes.size === 0) return;
-        if (!confirm(`Delete ${selectedHashes.size} hashes?`)) return;
+        if (!confirm(t('admin.featherzerotrust.hashes.messages.confirmBulkDelete', { count: selectedHashes.size })))
+            return;
 
         setBulkDeleting(true);
         try {
@@ -332,6 +336,34 @@ const HashesTab = () => {
         setSelectedHashes(next);
     };
 
+    const handleImportMalwareBazaar = async () => {
+        if (!confirm(t('admin.featherzerotrust.hashes.messages.importConfirm'))) return;
+
+        setImportingMalwareBazaar(true);
+        try {
+            const { data } = await axios.post('/api/admin/featherzerotrust/hashes/import/malwarebazaar');
+            if (data.success) {
+                const imported = data.data?.imported ?? 0;
+                const failed = data.data?.failed ?? 0;
+                const skipped = data.data?.skipped ?? 0;
+                toast.success(
+                    t('admin.featherzerotrust.hashes.messages.importCompleted', {
+                        imported,
+                        skipped,
+                        failed,
+                    }),
+                );
+                fetchHashes();
+                fetchStats();
+            }
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || t('admin.featherzerotrust.hashes.messages.importFailed'));
+        } finally {
+            setImportingMalwareBazaar(false);
+        }
+    };
+
     return (
         <div className='space-y-6'>
             <div className='flex flex-col sm:flex-row items-center justify-between gap-4 bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border/50 shadow-lg'>
@@ -339,6 +371,14 @@ const HashesTab = () => {
                     <Button onClick={() => setAddHashDialogOpen(true)}>
                         <Plus className='h-4 w-4 mr-2' />
                         {t('admin.featherzerotrust.hashes.addHash')}
+                    </Button>
+                    <Button variant='outline' onClick={handleImportMalwareBazaar} disabled={importingMalwareBazaar}>
+                        {importingMalwareBazaar ? (
+                            <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
+                        ) : (
+                            <Download className='h-4 w-4 mr-2' />
+                        )}
+                        {t('admin.featherzerotrust.hashes.importMalwareBazaar')}
                     </Button>
                     <Button variant='outline' onClick={() => setCheckHashesDialogOpen(true)}>
                         <Search className='h-4 w-4 mr-2' />
@@ -414,7 +454,7 @@ const HashesTab = () => {
                 <div className='relative flex-1 group'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                     <Input
-                        placeholder='Search by hash, file name or detection type...'
+                        placeholder={t('admin.featherzerotrust.hashes.searchPlaceholder')}
                         className='pl-10'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -452,7 +492,9 @@ const HashesTab = () => {
                 <EmptyState
                     title={t('admin.featherzerotrust.hashes.noHashesFound')}
                     description={
-                        searchQuery ? `No results for "${searchQuery}"` : 'The suspicious file hash database is empty.'
+                        searchQuery
+                            ? t('admin.featherzerotrust.hashes.noResultsFor', { query: searchQuery })
+                            : t('admin.featherzerotrust.hashes.emptyDatabase')
                     }
                     icon={Database}
                 />
@@ -596,7 +638,7 @@ const HashesTab = () => {
                                     </option>
                                     <option value='virus'>{t('admin.featherzerotrust.hashes.types.virus')}</option>
                                     <option value='trojan'>{t('admin.featherzerotrust.hashes.types.trojan')}</option>
-                                    <option value='malware'>Malware</option>
+                                    <option value='malware'>{t('admin.featherzerotrust.hashes.types.malware')}</option>
                                     <option value='miner'>{t('admin.featherzerotrust.hashes.types.miner')}</option>
                                     <option value='backdoor'>
                                         {t('admin.featherzerotrust.hashes.types.backdoor')}
@@ -675,7 +717,9 @@ const HashesTab = () => {
                                     >
                                         <code className='truncate max-w-[70%]'>{r.hash}</code>
                                         <Badge variant={r.found ? 'destructive' : 'secondary'}>
-                                            {r.found ? 'THREAT FOUND' : 'CLEAR'}
+                                            {r.found
+                                                ? t('admin.featherzerotrust.hashes.checkResults.threatFound')
+                                                : t('admin.featherzerotrust.hashes.checkResults.clear')}
                                         </Badge>
                                     </div>
                                 ))}

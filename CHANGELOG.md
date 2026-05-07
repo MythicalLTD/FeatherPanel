@@ -4,6 +4,7 @@
 
 ### Added
 
+- Integrated MalwareBazaar as an additional hash database source for Feather Zero Trust, enabling automated import of the latest threat intelligence. by @nayskutzu
 - Server **lifecycle hooks**: configurable pre-start and pre-stop pipelines (container commands, Discord webhooks with multi-embed builder and preview, HTTP requests). by @nayskutzu
 - Enhanced OAuth2 configuration by displaying the authorization URL, allowing users to easily identify and verify their OCID endpoint. by @nayskutzu
 - Introduced UUID-based response for /admin/api/users when creating a new user, aligning with other API endpoints that rely on UUID identifiers. by @nayskutzu

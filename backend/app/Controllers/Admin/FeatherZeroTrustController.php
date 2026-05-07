@@ -29,6 +29,7 @@ use App\Services\FeatherZeroTrust\Scanner;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\FeatherZeroTrust\Configuration;
+use App\Services\FeatherZeroTrust\MalwareBazaarService;
 use App\Services\FeatherZeroTrust\WebhookService;
 use App\Plugins\Events\Events\FeatherZeroTrustEvent;
 use App\Services\FeatherZeroTrust\SuspensionService;
@@ -724,6 +725,76 @@ class FeatherZeroTrustController
             ], "Deleted {$deleted} out of " . count($hashes) . ' hashes');
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to delete hashes: ' . $e->getMessage(), 'BULK_DELETE_ERROR', 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/admin/featherzerotrust/hashes/import/malwarebazaar',
+        summary: 'Import hashes from MalwareBazaar',
+        description: 'Pull recent suspicious hashes from MalwareBazaar and store them in FeatherZeroTrust hash database.',
+        tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'MalwareBazaar import completed'
+            ),
+        ],
+    )]
+    public function importMalwareBazaarHashes(Request $request): Response
+    {
+        try {
+            $config = new Configuration();
+            $configData = $config->getAll();
+
+            $payload = json_decode($request->getContent(), true);
+            $configuredLimit = (int) ($configData['malwarebazaar_import_limit'] ?? 100);
+            $limit = isset($payload['limit']) && is_numeric($payload['limit']) ? (int) $payload['limit'] : $configuredLimit;
+            if ($limit < 1) {
+                $limit = 1;
+            }
+            if ($limit > 1000) {
+                $limit = 1000;
+            }
+
+            $overrides = [];
+            if (isset($payload['selector']) && is_string($payload['selector']) && trim($payload['selector']) !== '') {
+                $overrides['selector'] = trim($payload['selector']);
+            }
+            if (isset($payload['confirm_imported'])) {
+                $overrides['confirm_imported'] = (bool) $payload['confirm_imported'];
+            }
+            if (isset($payload['require_signature'])) {
+                $overrides['require_signature'] = (bool) $payload['require_signature'];
+            }
+            if (isset($payload['default_detection_type']) && is_string($payload['default_detection_type'])) {
+                $overrides['default_detection_type'] = trim($payload['default_detection_type']);
+            }
+            if (isset($payload['max_age_hours']) && is_numeric($payload['max_age_hours'])) {
+                $maxAgeHours = (int) $payload['max_age_hours'];
+                if ($maxAgeHours < 0) {
+                    $maxAgeHours = 0;
+                }
+                if ($maxAgeHours > 24 * 365) {
+                    $maxAgeHours = 24 * 365;
+                }
+                $overrides['max_age_hours'] = $maxAgeHours;
+            }
+            if (isset($payload['allowed_file_types']) && is_array($payload['allowed_file_types'])) {
+                $overrides['allowed_file_types'] = $payload['allowed_file_types'];
+            }
+            if (isset($payload['blocked_tags']) && is_array($payload['blocked_tags'])) {
+                $overrides['blocked_tags'] = $payload['blocked_tags'];
+            }
+
+            $service = new MalwareBazaarService();
+            $result = $service->importRecentHashes($limit, $overrides);
+            if (($result['success'] ?? false) !== true) {
+                return ApiResponse::error($result['message'] ?? 'Import failed', 'MALWAREBAZAAR_IMPORT_FAILED', 502);
+            }
+
+            return ApiResponse::success($result, 'MalwareBazaar hashes imported successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to import MalwareBazaar hashes: ' . $e->getMessage(), 'MALWAREBAZAAR_IMPORT_ERROR', 500);
         }
     }
 

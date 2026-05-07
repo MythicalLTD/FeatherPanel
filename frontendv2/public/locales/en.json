@@ -7528,6 +7528,7 @@
 			},
 			"hashes": {
 				"addHash": "Add Hash",
+				"importMalwareBazaar": "Import MalwareBazaar",
 				"checkHashes": "Check Hashes",
 				"confirmedOnly": "Confirmed Only",
 				"refresh": "Refresh",
@@ -7557,6 +7558,9 @@
 				"checkHashesDesc": "Bulk check file signatures against known threats",
 				"hashList": "Hash List (one per line)",
 				"checkButton": "Start Comparison",
+				"searchPlaceholder": "Search by hash, file name or detection type...",
+				"noResultsFor": "No results for \"{query}\"",
+				"emptyDatabase": "The suspicious file hash database is empty.",
 				"stats": {
 					"total": "Total Hashes",
 					"totalDesc": "All records",
@@ -7574,8 +7578,13 @@
 					"suspicious": "Suspicious",
 					"virus": "Virus",
 					"trojan": "Trojan",
+					"malware": "Malware",
 					"miner": "Miner",
 					"backdoor": "Backdoor"
+				},
+				"checkResults": {
+					"threatFound": "THREAT FOUND",
+					"clear": "CLEAR"
 				},
 				"messages": {
 					"hashRequired": "Hash and file name are required",
@@ -7594,7 +7603,13 @@
 					"confirmFailed": "Failed to confirm hash",
 					"deleteFailed": "Failed to delete hash",
 					"bulkConfirmFailed": "Failed to bulk confirm hashes",
-					"bulkDeleteFailed": "Failed to bulk delete hashes"
+					"bulkDeleteFailed": "Failed to bulk delete hashes",
+					"confirmDeleteSingle": "Are you sure you want to delete this hash?",
+					"confirmBulkConfirm": "Confirm {count} hashes as malicious?",
+					"confirmBulkDelete": "Delete {count} hashes?",
+					"importConfirm": "Import recent suspicious hashes from MalwareBazaar now?",
+					"importCompleted": "MalwareBazaar import complete. Imported {imported}, skipped {skipped}, failed {failed}.",
+					"importFailed": "Failed to import hashes from MalwareBazaar."
 				}
 			},
 			"logs": {
@@ -7652,12 +7667,46 @@
 				"highCpuThreshold": "High CPU Threshold (0-1)",
 				"highNetwork": "High Network (bytes)",
 				"smallVolumeSize": "Small Volume Size (MB)",
+				"malwarebazaar": {
+					"title": "MalwareBazaar Integration",
+					"enable": "Enable MalwareBazaar Import",
+					"enableDesc": "Allow importing suspicious hashes from MalwareBazaar into FeatherZeroTrust.",
+					"apiKey": "MalwareBazaar API Key (optional)",
+					"apiKeyPlaceholder": "Auth-Key value (optional)",
+					"apiKeyDesc": "Leave empty if your usage does not require authentication.",
+					"selector": "Recent Selector",
+					"selectorOptions": {
+						"latest100": "100 (latest 100 samples)",
+						"lastHour": "time (last hour)"
+					},
+					"selectorDesc": "Only supported values are `100` and `time`.",
+					"importLimit": "Default Import Limit",
+					"importLimitPlaceholder": "100",
+					"importLimitDesc": "Number of samples pulled per import request (1-1000).",
+					"defaultDetectionType": "Default Detection Type Fallback",
+					"defaultDetectionTypePlaceholder": "malware",
+					"defaultDetectionTypeDesc": "Used when a sample has no signature.",
+					"maxAgeHours": "Max Sample Age (hours)",
+					"maxAgeHoursPlaceholder": "0",
+					"maxAgeHoursDesc": "0 means no age filter.",
+					"allowedFileTypes": "Allowed File Types (optional)",
+					"allowedFileTypesPlaceholder": "exe, dll, jar",
+					"allowedFileTypesDesc": "If set, only these MalwareBazaar `file_type` values are imported.",
+					"blockedTags": "Blocked Tags (optional)",
+					"blockedTagsPlaceholder": "ransomware, apt",
+					"blockedTagsDesc": "Samples containing these tags are skipped.",
+					"autoConfirm": "Auto-confirm Imported Hashes",
+					"autoConfirmDesc": "Mark every imported hash as confirmed malicious.",
+					"requireSignature": "Require Signature",
+					"requireSignatureDesc": "Skip entries that do not have a MalwareBazaar signature."
+				},
 				"messages": {
 					"loadFailed": "Failed to load configuration",
 					"saved": "Configuration saved successfully",
 					"saveFailed": "Failed to save configuration",
 					"reset": "Configuration reset to defaults",
-					"resetFailed": "Failed to reset configuration"
+					"resetFailed": "Failed to reset configuration",
+					"resetConfirm": "Are you sure you want to reset all configuration to defaults?"
 				}
 			}
 		}
