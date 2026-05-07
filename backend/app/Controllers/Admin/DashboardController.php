@@ -366,10 +366,10 @@ class DashboardController
                 // Parse last_run_at as UTC since it is stored via UTC_TIMESTAMP()
                 $lastRunAt =
                     isset($row['last_run_at']) && $row['last_run_at'] !== null
-                        ? (new \DateTime(
+                        ? new \DateTime(
                             $row['last_run_at'],
                             new \DateTimeZone('UTC'),
-                        ))->getTimestamp()
+                        )->getTimestamp()
                         : null;
                 $expected = $expectedMap[$name] ?? 300; // default 5 minutes if unknown
                 $late = $lastRunAt ? $now - $lastRunAt > $expected * 2 : true; // late if never ran or >2x expected
@@ -705,8 +705,9 @@ class DashboardController
             }
         }
 
-        $versionInfo['current_listed_on_update_server'] =
-            $currentListedOnUpdateServer;
+        $versionInfo[
+            'current_listed_on_update_server'
+        ] = $currentListedOnUpdateServer;
 
         return $versionInfo;
     }
