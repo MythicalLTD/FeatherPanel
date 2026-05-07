@@ -65,7 +65,10 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /build/async-runner /app/runner
 
 # Create non-root user
-RUN useradd -m -u 1000 runner && chown -R runner:runner /app
+RUN useradd -m -u 1000 runner \
+    && mkdir -p /tmp/runner-logs \
+    && chown -R runner:runner /app /tmp/runner-logs
+ENV LOG_DIR=/tmp/runner-logs
 USER runner
 
 CMD ["/app/runner"]

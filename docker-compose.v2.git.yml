@@ -133,6 +133,7 @@ services:
       - net.ipv6.conf.lo.disable_ipv6=1
     environment:
       - RUST_LOG=info
+      - LOG_DIR=/tmp/runner-logs
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_NAME=${MARIADB_DATABASE:-featherpanel}
@@ -141,7 +142,6 @@ services:
       - REDIS_URL=redis://:${REDIS_PASSWORD:-featherpanel_redis}@redis:6379
     volumes:
       - featherpanel_config:/app/config:ro
-      - featherpanel_logs:/app/logs
     depends_on:
       mysql:
         condition: service_healthy
