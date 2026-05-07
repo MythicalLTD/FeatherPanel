@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useFeatherCloud, type CloudSummary, type CreditsData, type TeamData } from '@/hooks/useFeatherCloud';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,7 @@ import {
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -82,6 +84,7 @@ function StatusBadge({ connected }: { connected: boolean }) {
 
 export default function CloudManagementPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-cloud-management');
     const { fetchSummary, fetchCredits, fetchTeam, loading: cloudLoading } = useFeatherCloud();
 
     const [keys, setKeys] = useState<CredentialResponse>({
@@ -209,8 +212,14 @@ export default function CloudManagementPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasCloudKeys]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     return (
-        <div className='space-y-6 md:space-y-8'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-cloud-management', 'top-of-page')} />
+            <div className='space-y-6 md:space-y-8'>
             <PageHeader
                 title={t('admin.cloud_management.title')}
                 description={t('admin.cloud_management.subtitle')}
@@ -543,6 +552,8 @@ export default function CloudManagementPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-cloud-management', 'bottom-of-page')} />
+        </>
     );
 }

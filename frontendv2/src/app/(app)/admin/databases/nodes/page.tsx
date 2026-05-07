@@ -15,8 +15,23 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { useEffect } from 'react';
 import { NodeDatabases } from './NodeDatabases';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 export default function AllNodeDatabasesPage() {
-    return <NodeDatabases />;
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-node-databases');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
+    return (
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-node-databases', 'top-of-page')} />
+            <NodeDatabases />
+            <WidgetRenderer widgets={getWidgets('admin-node-databases', 'bottom-of-page')} />
+        </>
+    );
 }

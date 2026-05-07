@@ -21,7 +21,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { SimpleBarChart } from '@/components/admin/analytics/SharedCharts';
 import { Puzzle, ShieldCheck, Plug, Import, FileCode, FileJson, BookOpenText } from 'lucide-react';
@@ -34,6 +36,7 @@ interface Data {
 
 export default function PluginsAnalyticsPage() {
     const [data, setData] = useState<Data | null>(null);
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-plugins');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -61,7 +64,9 @@ export default function PluginsAnalyticsPage() {
     ];
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-plugins', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title='Plugins & Integrations Analytics'
                 description='KPIs for plugins and integration-related entities.'
@@ -125,5 +130,7 @@ export default function PluginsAnalyticsPage() {
                 />
             </div>
         </div>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-plugins', 'bottom-of-page')} />
+        </>
     );
 }

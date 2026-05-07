@@ -18,9 +18,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import api from '@/lib/api';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { ActivityTrendChart, ActivityBreakdownChart } from '@/components/admin/analytics/ActivityCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Activity, Clock, Calendar, TrendingUp, List } from 'lucide-react';
 
 interface ActivityStats {
@@ -49,6 +51,7 @@ interface TopActivity {
 
 export default function ActivityAnalyticsPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-activity');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -90,6 +93,10 @@ export default function ActivityAnalyticsPage() {
         fetchData();
     }, [fetchData]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     if (loading) {
         return (
             <div className='flex items-center justify-center min-h-[400px]'>
@@ -113,7 +120,9 @@ export default function ActivityAnalyticsPage() {
     }
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-activity', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.analytics.activity.title')}
                 description={t('admin.analytics.activity.subtitle')}
@@ -174,5 +183,7 @@ export default function ActivityAnalyticsPage() {
                 <ActivityBreakdownChart data={breakdown} />
             </div>
         </div>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-activity', 'bottom-of-page')} />
+        </>
     );
 }

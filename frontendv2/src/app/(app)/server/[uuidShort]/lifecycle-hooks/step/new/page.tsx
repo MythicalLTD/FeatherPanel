@@ -23,9 +23,11 @@ import { ArrowLeft, Lock, Loader2, Power } from 'lucide-react';
 
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { LifecycleStepForm } from '../../LifecycleStepForm';
 import {
     defaultForm,
@@ -42,6 +44,7 @@ type HooksApi = {
 
 export default function NewLifecycleHookStepPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
+    const { fetchWidgets, getWidgets } = usePluginWidgets('server-lifecycle-step-create');
     const router = useRouter();
     const searchParams = useSearchParams();
     const { t } = useTranslation();
@@ -87,6 +90,10 @@ export default function NewLifecycleHookStepPage() {
             cancelled = true;
         };
     }, [uuidShort, t]);
+
+    React.useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const back = React.useCallback(() => {
         router.push(`/server/${uuidShort}/lifecycle-hooks`);
@@ -204,7 +211,9 @@ export default function NewLifecycleHookStepPage() {
     }
 
     return (
-        <div className='space-y-8 pb-12'>
+        <>
+            <WidgetRenderer widgets={getWidgets('server-lifecycle-step-create', 'top-of-page')} />
+            <div className='space-y-8 pb-12'>
             <PageHeader
                 title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
                 description={t('lifecycleHooks.stepNew.description')}
@@ -231,6 +240,8 @@ export default function NewLifecycleHookStepPage() {
                     submitLabel={t('lifecycleHooks.form.saveStep')}
                 />
             </PageCard>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('server-lifecycle-step-create', 'bottom-of-page')} />
+        </>
     );
 }

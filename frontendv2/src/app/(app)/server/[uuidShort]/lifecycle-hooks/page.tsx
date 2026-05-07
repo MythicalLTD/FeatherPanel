@@ -17,6 +17,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
 import axios, { AxiosError } from 'axios';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -76,6 +78,7 @@ const EMPTY_HOOKS: Record<LifecycleHookType, LifecycleHook> = {
 
 export default function ServerLifecycleHooksPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
+    const { fetchWidgets, getWidgets } = usePluginWidgets('server-lifecycle-hooks');
     const { t } = useTranslation();
     const router = useRouter();
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
@@ -142,6 +145,10 @@ export default function ServerLifecycleHooksPage() {
         }
         fetchHooks();
     }, [permissionsLoading, canRead, fetchHooks, router, t, uuidShort]);
+
+    React.useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const updateHookActive = async (hookType: LifecycleHookType, isActive: number) => {
         if (!featureEnabled) return;
@@ -414,7 +421,9 @@ export default function ServerLifecycleHooksPage() {
     }
 
     return (
-        <div className='space-y-8 pb-12'>
+        <>
+            <WidgetRenderer widgets={getWidgets('server-lifecycle-hooks', 'top-of-page')} />
+            <div className='space-y-8 pb-12'>
             <PageHeader
                 title={t('lifecycleHooks.title')}
                 description={t('lifecycleHooks.description')}
@@ -626,6 +635,8 @@ export default function ServerLifecycleHooksPage() {
                     </Button>
                 </div>
             </HeadlessModal>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('server-lifecycle-hooks', 'bottom-of-page')} />
+        </>
     );
 }

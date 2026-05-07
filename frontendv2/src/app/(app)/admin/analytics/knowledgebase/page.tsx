@@ -21,7 +21,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { SimplePieChart, SimpleBarChart } from '@/components/admin/analytics/SharedCharts';
 import { BookOpen, FolderTree, Paperclip, Tags } from 'lucide-react';
@@ -33,6 +35,7 @@ interface Data {
 
 export default function KnowledgebaseAnalyticsPage() {
     const [data, setData] = useState<Data | null>(null);
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-knowledgebase');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -52,7 +55,9 @@ export default function KnowledgebaseAnalyticsPage() {
     ];
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-knowledgebase', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader title='Knowledgebase Analytics' description='Knowledgebase content KPIs.' icon={BookOpen} />
             <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                 <ResourceCard
@@ -93,5 +98,7 @@ export default function KnowledgebaseAnalyticsPage() {
                 />
             </div>
         </div>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-knowledgebase', 'bottom-of-page')} />
+        </>
     );
 }

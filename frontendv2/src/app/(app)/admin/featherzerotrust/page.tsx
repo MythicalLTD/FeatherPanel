@@ -17,9 +17,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ShieldCheck, Database, Eye, Settings } from 'lucide-react';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 import ScannerTab from './tabs/ScannerTab';
 import HashesTab from './tabs/HashesTab';
@@ -28,7 +30,12 @@ import ConfigTab from './tabs/ConfigTab';
 
 const FeatherZeroTrustPage = () => {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-featherzerotrust');
     const [activeTab, setActiveTab] = useState<'scanner' | 'hashes' | 'logs' | 'config'>('scanner');
+
+    React.useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const tabs = [
         { id: 'scanner', label: t('admin.featherzerotrust.tabs.scanner'), icon: ShieldCheck },
@@ -38,7 +45,9 @@ const FeatherZeroTrustPage = () => {
     ] as const;
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-featherzerotrust', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.featherzerotrust.title')}
                 description={t('admin.featherzerotrust.description')}
@@ -70,7 +79,9 @@ const FeatherZeroTrustPage = () => {
                     <ConfigTab />
                 </TabsContent>
             </Tabs>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-featherzerotrust', 'bottom-of-page')} />
+        </>
     );
 };
 

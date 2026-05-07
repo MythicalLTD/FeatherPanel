@@ -17,8 +17,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { SimplePieChart, SimpleBarChart } from '@/components/admin/analytics/SharedCharts';
 import { Boxes, Server, Archive, Activity } from 'lucide-react';
 
@@ -30,6 +32,7 @@ interface DashboardData {
 }
 
 export default function VdsAnalyticsPage() {
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-vds');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -51,6 +54,10 @@ export default function VdsAnalyticsPage() {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     if (loading) {
         return (
@@ -90,7 +97,9 @@ export default function VdsAnalyticsPage() {
     ];
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-vds', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title='VDS Analytics'
                 description='VDS-only KPIs for nodes, templates, instances, backups, and operations.'
@@ -149,5 +158,7 @@ export default function VdsAnalyticsPage() {
                 />
             </div>
         </div>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-vds', 'bottom-of-page')} />
+        </>
     );
 }

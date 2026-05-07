@@ -18,9 +18,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import api from '@/lib/api';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { SimplePieChart, SimpleBarChart } from '@/components/admin/analytics/ContentCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Box, Layers, Image as ImageIcon, ExternalLink, ShieldAlert, Mail } from 'lucide-react';
 
 interface ContentOverview {
@@ -52,6 +54,7 @@ interface RealmDetail {
 
 export default function ContentAnalyticsPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-content');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -133,6 +136,10 @@ export default function ContentAnalyticsPage() {
         fetchData();
     }, [fetchData]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     if (loading) {
         return (
             <div className='flex items-center justify-center min-h-[400px]'>
@@ -156,7 +163,9 @@ export default function ContentAnalyticsPage() {
     }
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-content', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.analytics.content.title')}
                 description={t('admin.analytics.content.subtitle')}
@@ -236,5 +245,7 @@ export default function ContentAnalyticsPage() {
                 />
             </div>
         </div>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-content', 'bottom-of-page')} />
+        </>
     );
 }

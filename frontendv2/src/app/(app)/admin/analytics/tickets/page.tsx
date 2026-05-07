@@ -21,7 +21,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { SimplePieChart, SimpleBarChart } from '@/components/admin/analytics/SharedCharts';
 import { Ticket, MessageSquare, Paperclip, TrendingUp } from 'lucide-react';
@@ -40,6 +42,7 @@ interface Data {
 
 export default function TicketsAnalyticsPage() {
     const [data, setData] = useState<Data | null>(null);
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-tickets');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -67,7 +70,9 @@ export default function TicketsAnalyticsPage() {
     const trendBars = (data.trend_42d || []).slice(-14).map((p) => ({ name: p.date.slice(5), value: p.count }));
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-tickets', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader title='Tickets Analytics' description='Ticketing KPIs and usage metrics.' icon={Ticket} />
             <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                 <ResourceCard
@@ -111,5 +116,7 @@ export default function TicketsAnalyticsPage() {
                 />
             </div>
         </div>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-tickets', 'bottom-of-page')} />
+        </>
     );
 }

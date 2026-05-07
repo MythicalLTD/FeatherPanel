@@ -21,6 +21,7 @@ import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -29,6 +30,7 @@ import { Textarea } from '@/components/featherui/Textarea';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { toast } from 'sonner';
 import { Code, ArrowLeft, Save, Lock, Loader2 } from 'lucide-react';
@@ -68,6 +70,7 @@ interface CreatePluginData {
 
 export default function CreatePluginPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-dev-plugins-create');
     const router = useRouter();
     const { user } = useSession();
     const { settings } = useSettings();
@@ -156,6 +159,10 @@ export default function CreatePluginPage() {
             setForm((prev) => ({ ...prev, author: [prev.author[0], settings.app_name] }));
         }
     }, [user, settings, form.author]);
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const generateIdentifier = (name: string): string => {
         return name
@@ -252,7 +259,9 @@ export default function CreatePluginPage() {
     }
 
     return (
-        <div className='max-w-4xl mx-auto py-8 px-4'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-dev-plugins-create', 'top-of-page')} />
+            <div className='max-w-4xl mx-auto py-8 px-4'>
             <PageHeader
                 title={t('admin.dev.plugins.create.title')}
                 description={t('admin.dev.plugins.create.description')}
@@ -845,6 +854,8 @@ export default function CreatePluginPage() {
                     </Button>
                 </div>
             </form>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-dev-plugins-create', 'bottom-of-page')} />
+        </>
     );
 }

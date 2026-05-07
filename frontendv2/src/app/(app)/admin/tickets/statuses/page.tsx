@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { Activity, Plus, Pencil, Trash2, Search, GitBranch, Eye, Settings2 } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -29,6 +30,7 @@ import { Input } from '@/components/featherui/Input';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Status {
     id: number;
@@ -38,6 +40,7 @@ interface Status {
 
 export default function TicketStatusesPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-tickets-statuses');
     const [statuses, setStatuses] = useState<Status[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -69,6 +72,10 @@ export default function TicketStatusesPage() {
         };
         fetchStatuses();
     }, [refreshKey, t]);
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const filteredStatuses = statuses.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -136,7 +143,9 @@ export default function TicketStatusesPage() {
     };
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-tickets-statuses', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.tickets.statuses.title')}
                 description={t('admin.tickets.statuses.subtitle')}
@@ -321,6 +330,8 @@ export default function TicketStatusesPage() {
                     </p>
                 </PageCard>
             </div>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-tickets-statuses', 'bottom-of-page')} />
+        </>
     );
 }

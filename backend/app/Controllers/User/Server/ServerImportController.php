@@ -26,6 +26,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Chat\ServerImport as ServerImportModel;
@@ -208,6 +209,12 @@ class ServerImportController
                 ],
                 $user
             );
+
+            self::emitEvent(ServerEvent::onServerUpdated(), [
+                'user_uuid' => $user['uuid'] ?? null,
+                'server_uuid' => $server['uuid'],
+                'import_id' => $importId,
+            ]);
 
             return ApiResponse::success([
                 'message' => 'Import process started successfully',
@@ -406,6 +413,14 @@ class ServerImportController
         $timeout = 30;
 
         return new Wings($host, $port, $scheme, $token, $timeout);
+    }
+
+    private static function emitEvent(string $eventName, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($eventName, $payload);
+        }
     }
 
     /**

@@ -19,11 +19,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { toast } from 'sonner';
 import { Terminal, Lock, Loader2, RefreshCw, Trash2, Eye, EyeOff } from 'lucide-react';
@@ -76,6 +78,7 @@ function formatBytes(bytes: number): string {
 
 export default function ConsolePage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-dev-console');
     const router = useRouter();
     const { isDeveloperModeEnabled, loading: developerModeLoading } = useDeveloperMode();
     const [commandInput, setCommandInput] = useState('');
@@ -270,6 +273,10 @@ export default function ConsolePage() {
         }
     }, [isDeveloperModeEnabled, fetchSystemInfo, addTerminalLine]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     if (developerModeLoading) {
         return (
             <div className='flex items-center justify-center p-12'>
@@ -314,7 +321,9 @@ export default function ConsolePage() {
     ];
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-dev-console', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.dev.console.title')}
                 description={t('admin.dev.console.description')}
@@ -468,6 +477,8 @@ export default function ConsolePage() {
                     ))}
                 </div>
             </PageCard>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-dev-console', 'bottom-of-page')} />
+        </>
     );
 }

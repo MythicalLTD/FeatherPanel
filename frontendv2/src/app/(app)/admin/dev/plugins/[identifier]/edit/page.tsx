@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -27,6 +28,7 @@ import { Textarea } from '@/components/featherui/Textarea';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { toast } from 'sonner';
 import { Code, ArrowLeft, Save, Loader2, Lock } from 'lucide-react';
@@ -65,6 +67,7 @@ interface EditPluginData {
 
 export default function EditPluginPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-dev-plugins-edit');
     const router = useRouter();
     const params = useParams();
     const identifier = params.identifier as string;
@@ -184,6 +187,10 @@ export default function EditPluginPage() {
         }
     }, [loadPlugin, isDeveloperModeEnabled]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     const updatePlugin = async () => {
         if (!form.identifier || !form.name) {
             toast.error(t('admin.dev.plugins.edit.validation.identifier_name_required'));
@@ -262,7 +269,9 @@ export default function EditPluginPage() {
     }
 
     return (
-        <div className='max-w-4xl mx-auto py-8 px-4'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-dev-plugins-edit', 'top-of-page')} />
+            <div className='max-w-4xl mx-auto py-8 px-4'>
             <PageHeader
                 title={t('admin.dev.plugins.edit.title')}
                 description={t('admin.dev.plugins.edit.description')}
@@ -797,6 +806,8 @@ export default function EditPluginPage() {
                     </Button>
                 </div>
             </form>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-dev-plugins-edit', 'bottom-of-page')} />
+        </>
     );
 }

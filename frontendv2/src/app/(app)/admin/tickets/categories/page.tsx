@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import axios from 'axios';
 import { Plus, Search, Pencil, Trash2, Ticket as TicketIcon, Tags, Info, HelpCircle } from 'lucide-react';
 import Image from 'next/image';
@@ -31,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { PageCard } from '@/components/featherui/PageCard';
 import { cn } from '@/lib/utils';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Category {
     id: number;
@@ -43,6 +45,7 @@ interface Category {
 
 export default function TicketCategoriesPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-tickets-categories');
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -77,6 +80,10 @@ export default function TicketCategoriesPage() {
     useEffect(() => {
         fetchCategories();
     }, [fetchCategories]);
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -202,7 +209,9 @@ export default function TicketCategoriesPage() {
     );
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-tickets-categories', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.tickets.categories.title')}
                 description={t('admin.tickets.categories.description')}
@@ -468,6 +477,8 @@ export default function TicketCategoriesPage() {
                     </p>
                 </PageCard>
             </div>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-tickets-categories', 'bottom-of-page')} />
+        </>
     );
 }

@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import api from '@/lib/api';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import {
     SimplePieChart,
     SimpleBarChart,
@@ -26,6 +27,7 @@ import {
 } from '@/components/admin/analytics/ServerCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Server, HardDrive, Cpu, Archive, Users, Clock, Settings, ShieldAlert, Activity } from 'lucide-react';
 
 interface ServerOverview {
@@ -101,6 +103,7 @@ interface ServerActivityStats {
 
 export default function ServerAnalyticsPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-servers');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -238,6 +241,10 @@ export default function ServerAnalyticsPage() {
         fetchData();
     }, [fetchData]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     if (loading) {
         return (
             <div className='flex items-center justify-center min-h-[400px]'>
@@ -261,7 +268,9 @@ export default function ServerAnalyticsPage() {
     }
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-servers', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.analytics.servers.title')}
                 description={t('admin.analytics.servers.subtitle')}
@@ -442,5 +451,7 @@ export default function ServerAnalyticsPage() {
                 />
             </div>
         </div>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-servers', 'bottom-of-page')} />
+        </>
     );
 }

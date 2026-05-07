@@ -18,13 +18,16 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { CheckCircle2, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 export default function CloudManagementFinishPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-cloud-management-finish');
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -78,9 +81,15 @@ export default function CloudManagementFinishPage() {
         saveCloudCredentials();
     }, [saveCloudCredentials]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     return (
-        <div className='min-h-screen flex items-center justify-center p-6'>
-            <div className='w-full max-w-md space-y-8 text-center'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-cloud-management-finish', 'top-of-page')} />
+            <div className='min-h-screen flex items-center justify-center p-6'>
+                <div className='w-full max-w-md space-y-8 text-center'>
                 <div className='flex justify-center'>
                     {isLoading || isSaving ? (
                         <div className='relative'>
@@ -174,7 +183,9 @@ export default function CloudManagementFinishPage() {
                 {isSuccess && (
                     <p className='text-xs text-muted-foreground'>{t('admin.cloud_management.finish.redirecting')}</p>
                 )}
+                </div>
             </div>
-        </div>
+            <WidgetRenderer widgets={getWidgets('admin-cloud-management-finish', 'bottom-of-page')} />
+        </>
     );
 }

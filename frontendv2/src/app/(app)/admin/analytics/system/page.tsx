@@ -18,9 +18,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import api from '@/lib/api';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { SimplePieChart } from '@/components/admin/analytics/SharedCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Mail, CheckCircle, XCircle, Activity, Bot, KeyRound, ShieldCheck, UserCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -52,6 +54,7 @@ interface FeatureAdoptionStats {
 
 export default function SystemAnalyticsPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-system');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -80,6 +83,10 @@ export default function SystemAnalyticsPage() {
         fetchData();
     }, [fetchData]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     if (loading) {
         return (
             <div className='flex items-center justify-center min-h-[400px]'>
@@ -103,7 +110,9 @@ export default function SystemAnalyticsPage() {
     }
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-system', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.analytics.system.title')}
                 description={t('admin.analytics.system.subtitle')}
@@ -239,5 +248,7 @@ export default function SystemAnalyticsPage() {
                 </>
             )}
         </div>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-system', 'bottom-of-page')} />
+        </>
     );
 }

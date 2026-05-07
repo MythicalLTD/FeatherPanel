@@ -26,6 +26,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -283,6 +284,11 @@ class ServerFirewallController
                 $user
             );
 
+            self::emitEvent(ServerEvent::onServerUpdated(), [
+                'user_uuid' => $user['uuid'] ?? null,
+                'server_uuid' => $server['uuid'],
+            ]);
+
             return ApiResponse::success(
                 [
                     'data' => $rule,
@@ -423,6 +429,11 @@ class ServerFirewallController
                 $user
             );
 
+            self::emitEvent(ServerEvent::onServerUpdated(), [
+                'user_uuid' => $user['uuid'] ?? null,
+                'server_uuid' => $server['uuid'],
+            ]);
+
             return ApiResponse::success(
                 [
                     'data' => $rule,
@@ -525,6 +536,11 @@ class ServerFirewallController
                 ],
                 $user
             );
+
+            self::emitEvent(ServerEvent::onServerUpdated(), [
+                'user_uuid' => $user['uuid'] ?? null,
+                'server_uuid' => $server['uuid'],
+            ]);
 
             return ApiResponse::success([], 'Firewall rule deleted successfully', 204);
         } catch (\Exception $e) {
@@ -714,6 +730,11 @@ class ServerFirewallController
                 $user
             );
 
+            self::emitEvent(ServerEvent::onServerUpdated(), [
+                'user_uuid' => $user['uuid'] ?? null,
+                'server_uuid' => $server['uuid'],
+            ]);
+
             return ApiResponse::success([
                 'message' => 'Firewall rules synced successfully',
             ]);
@@ -872,6 +893,14 @@ class ServerFirewallController
     /**
      * Helper method to log server activity.
      */
+    private static function emitEvent(string $eventName, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($eventName, $payload);
+        }
+    }
+
     private function logActivity(array $server, array $node, string $event, array $metadata, array $user): void
     {
         ServerActivity::createActivity([

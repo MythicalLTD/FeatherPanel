@@ -31,11 +31,14 @@ import {
     BookOpen,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { useRouter } from 'next/navigation';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 
 export default function AnalyticsDashboardPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics');
     const router = useRouter();
 
     const analyticsModules = [
@@ -132,7 +135,9 @@ export default function AnalyticsDashboardPage() {
     ];
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-analytics', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.analytics.title')}
                 description={t('admin.analytics.subtitle')}
@@ -157,5 +162,7 @@ export default function AnalyticsDashboardPage() {
                 ))}
             </div>
         </div>
+            <WidgetRenderer widgets={getWidgets('admin-analytics', 'bottom-of-page')} />
+        </>
     );
 }

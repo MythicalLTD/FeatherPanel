@@ -15,8 +15,23 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { useEffect } from 'react';
 import ApiKeysTab from '@/components/account/ApiKeysTab';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 export default function CloudManagementPage() {
-    return <ApiKeysTab slug='admin-api-keys' />;
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-api-keys');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
+    return (
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-api-keys', 'top-of-page')} />
+            <ApiKeysTab slug='admin-api-keys' />
+            <WidgetRenderer widgets={getWidgets('admin-api-keys', 'bottom-of-page')} />
+        </>
+    );
 }

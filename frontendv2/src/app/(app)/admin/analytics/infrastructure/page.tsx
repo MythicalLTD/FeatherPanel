@@ -18,9 +18,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import api from '@/lib/api';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { SimplePieChart, SimpleBarChart, NodeResourceChart } from '@/components/admin/analytics/SharedCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { MapPin, Server, Network, Database, EthernetPort, Globe } from 'lucide-react';
 
 interface InfrastructureOverview {
@@ -55,6 +57,7 @@ interface IpUsage {
 
 export default function InfrastructureAnalyticsPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-infrastructure');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -169,6 +172,10 @@ export default function InfrastructureAnalyticsPage() {
         fetchData();
     }, [fetchData]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     if (loading) {
         return (
             <div className='flex items-center justify-center min-h-[400px]'>
@@ -192,7 +199,9 @@ export default function InfrastructureAnalyticsPage() {
     }
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-infrastructure', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.analytics.infrastructure.title')}
                 description={t('admin.analytics.infrastructure.subtitle')}
@@ -288,5 +297,7 @@ export default function InfrastructureAnalyticsPage() {
                 />
             </div>
         </div>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-infrastructure', 'bottom-of-page')} />
+        </>
     );
 }

@@ -17,10 +17,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import axios from 'axios';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Select } from '@/components/ui/select-native';
 import { toast } from 'sonner';
 import { FileText, Loader2, RefreshCw, Trash2, Play, Square } from 'lucide-react';
@@ -64,6 +66,7 @@ function formatDate(timestamp: number): string {
 
 export default function AdminLogsPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-logs');
     const [loading, setLoading] = useState(true);
     const [logs, setLogs] = useState('');
     const [currentLogType, setCurrentLogType] = useState<'app' | 'web' | 'mail'>('app');
@@ -158,6 +161,10 @@ export default function AdminLogsPage() {
     }, [fetchLogFiles, fetchLogs]);
 
     useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
+    useEffect(() => {
         fetchLogs();
     }, [currentLogType, lines, fetchLogs]);
 
@@ -170,7 +177,9 @@ export default function AdminLogsPage() {
     }, []);
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-logs', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.logs.title')}
                 description={t('admin.logs.description')}
@@ -284,6 +293,8 @@ export default function AdminLogsPage() {
                     {logs || t('admin.logs.no_logs')}
                 </pre>
             </PageCard>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-logs', 'bottom-of-page')} />
+        </>
     );
 }

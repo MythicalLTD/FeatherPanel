@@ -17,14 +17,27 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 /**
  * Redirect /admin/dev/logs to /admin/logs (canonical logs page).
  */
 export default function DevLogsRedirectPage() {
     const router = useRouter();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-dev-logs-redirect');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     useEffect(() => {
         router.replace('/admin/logs');
     }, [router]);
-    return null;
+    return (
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-dev-logs-redirect', 'top-of-page')} />
+            <WidgetRenderer widgets={getWidgets('admin-dev-logs-redirect', 'bottom-of-page')} />
+        </>
+    );
 }

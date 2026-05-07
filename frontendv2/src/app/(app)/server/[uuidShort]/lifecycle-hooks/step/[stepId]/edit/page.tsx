@@ -23,9 +23,11 @@ import { ArrowLeft, Lock, Loader2, Power } from 'lucide-react';
 
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { LifecycleStepForm } from '../../../LifecycleStepForm';
 import {
     deserializeLifecyclePayload,
@@ -48,6 +50,7 @@ type HooksApi = {
 
 export default function EditLifecycleHookStepPage() {
     const { uuidShort, stepId: stepIdParam } = useParams() as { uuidShort: string; stepId: string };
+    const { fetchWidgets, getWidgets } = usePluginWidgets('server-lifecycle-step-edit');
     const router = useRouter();
     const searchParams = useSearchParams();
     const { t } = useTranslation();
@@ -111,6 +114,10 @@ export default function EditLifecycleHookStepPage() {
             cancelled = true;
         };
     }, [uuidShort, hookType, stepId, t]);
+
+    React.useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -245,7 +252,9 @@ export default function EditLifecycleHookStepPage() {
     }
 
     return (
-        <div className='space-y-8 pb-12'>
+        <>
+            <WidgetRenderer widgets={getWidgets('server-lifecycle-step-edit', 'top-of-page')} />
+            <div className='space-y-8 pb-12'>
             <PageHeader
                 title={t('lifecycleHooks.stepEdit.title', { hookType: hookLabels[hookType] })}
                 description={t('lifecycleHooks.stepEdit.description')}
@@ -272,6 +281,8 @@ export default function EditLifecycleHookStepPage() {
                     submitLabel={t('lifecycleHooks.form.saveStep')}
                 />
             </PageCard>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('server-lifecycle-step-edit', 'bottom-of-page')} />
+        </>
     );
 }

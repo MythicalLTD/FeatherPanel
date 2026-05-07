@@ -15,10 +15,24 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { use } from 'react';
+import { use, useEffect } from 'react';
 import PluginPage from '@/components/dashboard/PluginPage';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 export default function AdminPluginPage({ params }: { params: Promise<{ pluginPath: string[] }> }) {
     use(params);
-    return <PluginPage context='admin' />;
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-plugin-page');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
+    return (
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-plugin-page', 'top-of-page')} />
+            <PluginPage context='admin' />
+            <WidgetRenderer widgets={getWidgets('admin-plugin-page', 'bottom-of-page')} />
+        </>
+    );
 }

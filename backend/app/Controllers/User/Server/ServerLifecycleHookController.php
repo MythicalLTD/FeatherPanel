@@ -22,6 +22,7 @@ use App\Chat\Server;
 use App\SubuserPermissions;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
+use App\Plugins\Events\Events\ServerEvent;
 use App\Chat\ServerLifecycleHook;
 use App\Chat\ServerLifecycleHookStep;
 use Symfony\Component\HttpFoundation\Request;
@@ -112,6 +113,14 @@ class ServerLifecycleHookController
             return ApiResponse::error('Lifecycle hook not found', 'HOOK_NOT_FOUND', 404);
         }
 
+        $user = $request->get('user');
+        self::emitEvent(ServerEvent::onServerUpdated(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'server_uuid' => $server['uuid'],
+            'hook_type' => $hookType,
+            'action' => 'lifecycle_hook_upsert',
+        ]);
+
         return ApiResponse::success([
             'hook' => [
                 ...$hook,
@@ -179,6 +188,14 @@ class ServerLifecycleHookController
         }
 
         $step = ServerLifecycleHookStep::getStepById((int) $stepId);
+        $user = $request->get('user');
+        self::emitEvent(ServerEvent::onServerUpdated(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'server_uuid' => $server['uuid'],
+            'hook_type' => $hookType,
+            'step_id' => (int) $stepId,
+            'action' => 'lifecycle_step_create',
+        ]);
 
         return ApiResponse::success(['step' => $step], 'Step created', 201);
     }
@@ -247,6 +264,15 @@ class ServerLifecycleHookController
             return ApiResponse::error('Failed to update lifecycle hook step', 'UPDATE_FAILED', 500);
         }
 
+        $user = $request->get('user');
+        self::emitEvent(ServerEvent::onServerUpdated(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'server_uuid' => $server['uuid'],
+            'hook_type' => $hookType,
+            'step_id' => $stepId,
+            'action' => 'lifecycle_step_update',
+        ]);
+
         return ApiResponse::success([
             'step' => ServerLifecycleHookStep::getStepById($stepId),
         ]);
@@ -297,6 +323,16 @@ class ServerLifecycleHookController
             return ApiResponse::error('Failed to update sequence', 'UPDATE_FAILED', 500);
         }
 
+        $user = $request->get('user');
+        self::emitEvent(ServerEvent::onServerUpdated(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'server_uuid' => $server['uuid'],
+            'hook_type' => $hookType,
+            'step_id' => $stepId,
+            'sequence_id' => $newSequenceId,
+            'action' => 'lifecycle_step_reorder',
+        ]);
+
         return ApiResponse::success(null, 'Step sequence updated');
     }
 
@@ -336,6 +372,15 @@ class ServerLifecycleHookController
         }
 
         ServerLifecycleHookStep::reorderSteps((int) $hook['id']);
+
+        $user = $request->get('user');
+        self::emitEvent(ServerEvent::onServerUpdated(), [
+            'user_uuid' => $user['uuid'] ?? null,
+            'server_uuid' => $server['uuid'],
+            'hook_type' => $hookType,
+            'step_id' => $stepId,
+            'action' => 'lifecycle_step_delete',
+        ]);
 
         return ApiResponse::success(null, 'Step deleted');
     }
@@ -769,5 +814,13 @@ class ServerLifecycleHookController
         }
 
         return true;
+    }
+
+    private static function emitEvent(string $eventName, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($eventName, $payload);
+        }
     }
 }

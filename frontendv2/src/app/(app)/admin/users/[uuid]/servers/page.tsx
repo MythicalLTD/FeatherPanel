@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
@@ -26,6 +27,7 @@ import { Input } from '@/components/featherui/Input';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/servers/StatusBadge';
 import { displayStatus } from '@/lib/server-utils';
@@ -103,6 +105,7 @@ function formatCpu(percent: number): string {
 
 export default function UserServersPage({ params }: { params: Promise<{ uuid: string }> }) {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-users-servers');
     const router = useRouter();
     const resolvedParams = use(params);
     const uuid = resolvedParams.uuid;
@@ -205,6 +208,10 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
         fetchVms();
     }, [fetchVms]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     const changePage = (newPage: number) => {
         if (newPage >= 1 && newPage <= pagination.total_pages) {
             setPagination((p) => ({ ...p, current_page: newPage }));
@@ -212,7 +219,9 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
     };
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-users-servers', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.users.servers.title', { defaultValue: 'User Servers' })}
                 description={
@@ -491,6 +500,8 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                     </div>
                 </>
             )}
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-users-servers', 'bottom-of-page')} />
+        </>
     );
 }

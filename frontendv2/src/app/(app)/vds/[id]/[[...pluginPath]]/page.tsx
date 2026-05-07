@@ -15,16 +15,35 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { use } from 'react';
+import { use, useEffect } from 'react';
 import PluginPage from '@/components/dashboard/PluginPage';
 import VdsConsolePage from '../VdsConsolePage';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 export default function VdsPluginPage({ params }: { params: Promise<{ id: string; pluginPath?: string[] }> }) {
     const { id, pluginPath } = use(params);
+    const { fetchWidgets, getWidgets } = usePluginWidgets('vds-plugin-page');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     if (!pluginPath || pluginPath.length === 0) {
-        return <VdsConsolePage />;
+        return (
+            <>
+                <WidgetRenderer widgets={getWidgets('vds-plugin-page', 'top-of-page')} />
+                <VdsConsolePage />
+                <WidgetRenderer widgets={getWidgets('vds-plugin-page', 'bottom-of-page')} />
+            </>
+        );
     }
 
-    return <PluginPage context='vds' vdsId={id} />;
+    return (
+        <>
+            <WidgetRenderer widgets={getWidgets('vds-plugin-page', 'top-of-page')} />
+            <PluginPage context='vds' vdsId={id} />
+            <WidgetRenderer widgets={getWidgets('vds-plugin-page', 'bottom-of-page')} />
+        </>
+    );
 }

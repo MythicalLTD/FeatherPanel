@@ -15,9 +15,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { use } from 'react';
+import { use, useEffect } from 'react';
 import PluginPage from '@/components/dashboard/PluginPage';
 import ServerConsolePage from '@/components/server/ServerConsolePage';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 export default function ServerPluginPage({
     params,
@@ -25,10 +27,27 @@ export default function ServerPluginPage({
     params: Promise<{ uuidShort: string; pluginPath?: string[] }>;
 }) {
     const { uuidShort, pluginPath } = use(params);
+    const { fetchWidgets, getWidgets } = usePluginWidgets('server-plugin-page');
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     if (!pluginPath || pluginPath.length === 0) {
-        return <ServerConsolePage />;
+        return (
+            <>
+                <WidgetRenderer widgets={getWidgets('server-plugin-page', 'top-of-page')} />
+                <ServerConsolePage />
+                <WidgetRenderer widgets={getWidgets('server-plugin-page', 'bottom-of-page')} />
+            </>
+        );
     }
 
-    return <PluginPage context='server' serverUuid={uuidShort} />;
+    return (
+        <>
+            <WidgetRenderer widgets={getWidgets('server-plugin-page', 'top-of-page')} />
+            <PluginPage context='server' serverUuid={uuidShort} />
+            <WidgetRenderer widgets={getWidgets('server-plugin-page', 'bottom-of-page')} />
+        </>
+    );
 }

@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { Server, User, Lock, Mail, Hash, Users, Shield, Network, Database } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -25,6 +26,7 @@ import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface LdapProvider {
     uuid: string;
@@ -51,6 +53,7 @@ interface LdapProvider {
 
 export default function LdapProvidersPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-ldap-providers');
     const [providers, setProviders] = useState<LdapProvider[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -78,6 +81,10 @@ export default function LdapProvidersPage() {
     useEffect(() => {
         fetchProviders();
     }, [fetchProviders]);
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const resetForm = () => {
         setEditing({
@@ -208,7 +215,9 @@ export default function LdapProvidersPage() {
     };
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-ldap-providers', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.ldapProviders.title')}
                 description={t('admin.ldapProviders.description')}
@@ -739,6 +748,8 @@ export default function LdapProvidersPage() {
                     </div>
                 </PageCard>
             )}
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-ldap-providers', 'bottom-of-page')} />
+        </>
     );
 }

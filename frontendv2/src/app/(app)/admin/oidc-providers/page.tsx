@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { ShieldCheck, User, Link, Key, Lock, Mail, Hash, Users, Shield } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -25,6 +26,7 @@ import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface OidcProvider {
     uuid: string;
@@ -43,6 +45,7 @@ interface OidcProvider {
 
 export default function OidcProvidersPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-oidc-providers');
     const [providers, setProviders] = useState<OidcProvider[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -77,6 +80,10 @@ export default function OidcProvidersPage() {
     useEffect(() => {
         fetchProviders();
     }, [fetchProviders]);
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const resetForm = () => {
         setEditing({
@@ -172,7 +179,9 @@ export default function OidcProvidersPage() {
     };
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-oidc-providers', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.oidcProviders.title')}
                 description={t('admin.oidcProviders.description')}
@@ -496,6 +505,8 @@ export default function OidcProvidersPage() {
                     </div>
                 </PageCard>
             )}
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-oidc-providers', 'bottom-of-page')} />
+        </>
     );
 }

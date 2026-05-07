@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { Flag, Plus, Pencil, Trash2, Search, Zap, Palette, AlertTriangle } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -29,6 +30,7 @@ import { Input } from '@/components/featherui/Input';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Priority {
     id: number;
@@ -38,6 +40,7 @@ interface Priority {
 
 export default function TicketPrioritiesPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-tickets-priorities');
     const [priorities, setPriorities] = useState<Priority[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -69,6 +72,10 @@ export default function TicketPrioritiesPage() {
         };
         fetchPriorities();
     }, [refreshKey, t]);
+
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
 
     const filteredPriorities = priorities.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -138,7 +145,9 @@ export default function TicketPrioritiesPage() {
     };
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-tickets-priorities', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.tickets.priorities.title')}
                 description={t('admin.tickets.priorities.subtitle')}
@@ -325,6 +334,8 @@ export default function TicketPrioritiesPage() {
                     </p>
                 </PageCard>
             </div>
-        </div>
+            </div>
+            <WidgetRenderer widgets={getWidgets('admin-tickets-priorities', 'bottom-of-page')} />
+        </>
     );
 }

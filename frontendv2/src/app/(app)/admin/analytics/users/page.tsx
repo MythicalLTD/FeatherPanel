@@ -18,9 +18,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import api from '@/lib/api';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { SimplePieChart, TrendChart } from '@/components/admin/analytics/UserCharts';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Users, UserX, UserCheck, ShieldCheck, ArrowUpRight, ShieldAlert, UserMinus } from 'lucide-react';
 
@@ -71,6 +73,7 @@ interface SecurityOverview {
 
 export default function UserAnalyticsPage() {
     const { t } = useTranslation();
+    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-users');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -142,6 +145,10 @@ export default function UserAnalyticsPage() {
         fetchData();
     }, [fetchData]);
 
+    useEffect(() => {
+        fetchWidgets();
+    }, [fetchWidgets]);
+
     if (loading) {
         return (
             <div className='flex items-center justify-center min-h-[400px]'>
@@ -165,7 +172,9 @@ export default function UserAnalyticsPage() {
     }
 
     return (
-        <div className='space-y-6'>
+        <>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-users', 'top-of-page')} />
+            <div className='space-y-6'>
             <PageHeader
                 title={t('admin.analytics.users.title')}
                 description={t('admin.analytics.users.subtitle')}
@@ -332,5 +341,7 @@ export default function UserAnalyticsPage() {
                 </Card>
             </div>
         </div>
+            <WidgetRenderer widgets={getWidgets('admin-analytics-users', 'bottom-of-page')} />
+        </>
     );
 }
