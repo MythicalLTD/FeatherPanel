@@ -426,6 +426,17 @@ export const getAdminNavigationItems = (
                     group: 'content',
                 },
                 {
+                    id: 'admin-mythicalcloud',
+                    name: 'MythicalCloud',
+                    title: 'MythicalCloud',
+                    url: '/admin/cloud-management',
+                    icon: Globe,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_ROOT,
+                    group: 'content',
+                },
+                {
                     id: 'admin-translations',
                     name: t('navigation.items.translations'),
                     title: t('navigation.items.translations'),

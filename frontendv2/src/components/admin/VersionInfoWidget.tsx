@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Package,
     Download,
@@ -25,7 +25,6 @@ import {
     ChevronDown,
     ChevronUp,
     Cpu,
-    Copy,
     X,
 } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -33,9 +32,11 @@ import ReactMarkdown from 'react-markdown';
 import { ChangelogSection } from './ChangelogSection';
 import { IntegrityCheckDialog } from './IntegrityCheckDialog';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { copyToClipboard } from '@/lib/utils';
 import { adminSettingsApi } from '@/lib/admin-settings-api';
 import { toast } from 'sonner';
+
+const UPDATE_PROGRESS_STORAGE_KEY = 'featherpanel:update_in_progress';
+const UPDATE_PROGRESS_TTL_MS = 10 * 60 * 1000;
 
 interface ChangelogData {
     changelog_added?: string[];
@@ -82,6 +83,25 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [integrityOpen, setIntegrityOpen] = useState(false);
     const [isUpdatingDocker, setIsUpdatingDocker] = useState(false);
+    const [updateInProgress, setUpdateInProgress] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        const raw = window.localStorage.getItem(UPDATE_PROGRESS_STORAGE_KEY);
+        if (!raw) return false;
+        const startedAt = Number(raw);
+        if (Number.isFinite(startedAt) && Date.now() - startedAt <= UPDATE_PROGRESS_TTL_MS) {
+            return true;
+        }
+        window.localStorage.removeItem(UPDATE_PROGRESS_STORAGE_KEY);
+        return false;
+    });
+
+    useEffect(() => {
+        if (!updateInProgress || typeof window === 'undefined') return;
+        const interval = window.setInterval(() => {
+            window.location.reload();
+        }, 15000);
+        return () => window.clearInterval(interval);
+    }, [updateInProgress]);
 
     const isLatest = !version?.update_available;
     const current = version?.current;
@@ -104,15 +124,18 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
     const changelogData = version?.update_available ? latest : current;
 
     const handleUpdateNow = async () => {
-        const confirmed = window.confirm(t('admin.settings.docker_update.confirm'));
-        if (!confirmed || isUpdatingDocker) return;
+        if (isUpdatingDocker || updateInProgress) return;
 
         setIsUpdatingDocker(true);
         try {
             const response = await adminSettingsApi.triggerDockerUpdate();
             if (response.success) {
+                if (typeof window !== 'undefined') {
+                    window.localStorage.setItem(UPDATE_PROGRESS_STORAGE_KEY, String(Date.now()));
+                }
+                setUpdateInProgress(true);
+                setShowUpdateModal(true);
                 toast.success(response.message || t('admin.settings.docker_update.success'));
-                setShowUpdateModal(false);
                 return;
             }
 
@@ -157,27 +180,29 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                                 <div className='space-y-0.5'>
                                     <p className='text-sm font-black uppercase tracking-tight'>
                                         {canForceUpdateToLatest
-                                            ? 'Current version unknown'
+                                            ? t('admin.version.current_version_unknown')
                                             : t('admin.version.update_available', {
                                                   version: latest?.version || 'Unknown',
                                               })}
                                     </p>
                                     <p className='text-[10px] font-bold uppercase opacity-70'>
                                         {canForceUpdateToLatest
-                                            ? 'Update to latest stable build'
+                                            ? t('admin.version.update_to_latest_hint')
                                             : t('admin.version.update_description')}
                                     </p>
                                 </div>
                             </div>
                             <button
-                                onClick={handleUpdateNow}
-                                disabled={isUpdatingDocker}
+                                onClick={() => setShowUpdateModal(true)}
+                                disabled={isUpdatingDocker || updateInProgress}
                                 className='w-full py-3 rounded-xl bg-amber-500 text-amber-950 text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed'
                             >
                                 {isUpdatingDocker
                                     ? t('admin.settings.docker_update.updating')
+                                    : updateInProgress
+                                      ? t('admin.settings.docker_update.in_progress_button')
                                     : canForceUpdateToLatest
-                                      ? 'Update to Latest'
+                                      ? t('admin.settings.docker_update.confirm_modal.confirm')
                                       : t('admin.version.update_now')}
                             </button>
                         </div>
@@ -290,59 +315,53 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
 
             <IntegrityCheckDialog open={integrityOpen} onOpenChange={setIntegrityOpen} />
 
-            {showUpdateModal && (
+            {showUpdateModal && !updateInProgress && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'>
-                    <div className='bg-background border border-border rounded-2xl md:rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-300'>
-                        <div className='sticky top-0 flex items-center justify-between p-4 md:p-6 border-b border-border bg-card/50 backdrop-blur-xl'>
-                            <div>
-                                <h2 className='text-lg md:text-2xl font-black'>
-                                    {t('admin.version.update_instructions.title')}
-                                </h2>
-                                <p className='text-xs md:text-sm text-muted-foreground mt-1'>
-                                    {t('admin.version.update_instructions.description')}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setShowUpdateModal(false)}
-                                className='p-2 hover:bg-muted rounded-lg transition-colors shrink-0'
-                            >
-                                <X className='h-5 w-5' />
-                            </button>
+                    <div className='bg-background border border-border rounded-2xl md:rounded-3xl max-w-xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-300'>
+                        <div className='p-4 md:p-6 border-b border-border bg-card/50 backdrop-blur-xl'>
+                            <h2 className='text-lg md:text-2xl font-black'>
+                                {t('admin.settings.docker_update.confirm_modal.title')}
+                            </h2>
+                            <p className='text-sm md:text-base text-muted-foreground mt-2 leading-relaxed'>
+                                {t('admin.settings.docker_update.confirm_modal.description')}
+                            </p>
                         </div>
-
-                        <div className='p-4 md:p-6 space-y-6'>
-                            <div className='h-px bg-border' />
-
-                            {/* Curl Method */}
-                            <div className='space-y-3'>
-                                <h3 className='font-bold text-sm md:text-base flex items-center gap-2'>
-                                    <span className='inline-flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-primary text-xs font-black'>
-                                        1
-                                    </span>
-                                    {t('admin.version.update_instructions.curl_method')}
-                                </h3>
-                                <div className='bg-muted/30 border border-border rounded-xl p-3 md:p-4 font-mono text-xs md:text-sm break-all text-muted-foreground'>
-                                    curl -sSL https://get.featherpanel.com/installer.sh | bash
-                                </div>
-                                <button
-                                    onClick={() =>
-                                        copyToClipboard('curl -sSL https://get.featherpanel.com/installer.sh | bash')
-                                    }
-                                    className='flex items-center gap-2 text-xs md:text-sm font-semibold text-primary hover:text-primary/80 transition-colors'
-                                >
-                                    <Copy className='h-3.5 w-3.5' />
-                                    {t('admin.version.update_instructions.copy_command')}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className='sticky bottom-0 flex justify-end gap-2 p-4 md:p-6 border-t border-border bg-card/50 backdrop-blur-xl'>
+                        <div className='p-4 md:p-6 flex justify-end gap-2'>
                             <button
                                 onClick={() => setShowUpdateModal(false)}
                                 className='px-4 md:px-6 py-2 md:py-3 rounded-xl border border-border hover:bg-muted transition-colors text-sm md:text-base font-semibold'
                             >
-                                {t('admin.version.update_instructions.close')}
+                                {t('admin.settings.docker_update.confirm_modal.cancel')}
                             </button>
+                            <button
+                                onClick={handleUpdateNow}
+                                disabled={isUpdatingDocker}
+                                className='px-4 md:px-6 py-2 md:py-3 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-sm md:text-base font-semibold disabled:opacity-60 disabled:cursor-not-allowed'
+                            >
+                                {isUpdatingDocker
+                                    ? t('admin.settings.docker_update.updating')
+                                    : t('admin.settings.docker_update.confirm_modal.confirm')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showUpdateModal && updateInProgress && (
+                <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'>
+                    <div className='bg-background border border-border rounded-2xl md:rounded-3xl max-w-xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-300'>
+                        <div className='flex items-center justify-between p-4 md:p-6 border-b border-border bg-card/50 backdrop-blur-xl'>
+                            <div>
+                                <h2 className='text-lg md:text-2xl font-black'>
+                                    {t('admin.settings.docker_update.progress_modal.title')}
+                                </h2>
+                            </div>
+                            <X className='h-5 w-5 text-muted-foreground/60 shrink-0' />
+                        </div>
+                        <div className='p-4 md:p-6'>
+                            <p className='text-sm md:text-base text-muted-foreground leading-relaxed'>
+                                {t('admin.settings.docker_update.progress_modal.description')}
+                            </p>
                         </div>
                     </div>
                 </div>

@@ -43,6 +43,20 @@ class LogHelper
             case 'mail':
                 return $logDir . 'mail.fplog';
             case 'runner':
+                $configuredRunnerDir = trim((string) ($_ENV['LOG_DIR'] ?? ''));
+                if ($configuredRunnerDir !== '') {
+                    $configuredPath = rtrim($configuredRunnerDir, '/') . '/runner.fplog';
+                    if (file_exists($configuredPath)) {
+                        return $configuredPath;
+                    }
+                }
+
+                // Docker runtime fallback used by async-runner image.
+                $tmpRunnerPath = '/tmp/runner-logs/runner.fplog';
+                if (file_exists($tmpRunnerPath)) {
+                    return $tmpRunnerPath;
+                }
+
                 return $logDir . 'runner.fplog';
             default:
                 return $logDir . 'featherpanel-web.fplog';

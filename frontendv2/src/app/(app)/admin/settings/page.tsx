@@ -59,6 +59,9 @@ interface LogData {
     error?: string;
 }
 
+const UPDATE_PROGRESS_STORAGE_KEY = 'featherpanel:update_in_progress';
+const UPDATE_PROGRESS_TTL_MS = 10 * 60 * 1000;
+
 const ADMIN_SETTING_DISPLAY_NAMES: Record<string, string> = {
     server_lifecycle_hooks_enabled: 'Lifecycle hooks (pre-start / pre-stop)',
 };
@@ -209,6 +212,9 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [sendingTestEmail, setSendingTestEmail] = useState(false);
     const [updatingDocker, setUpdatingDocker] = useState(false);
+    const [updateInProgress, setUpdateInProgress] = useState(false);
+    const [showUpdateProgressModal, setShowUpdateProgressModal] = useState(false);
+    const [showDockerConfirmModal, setShowDockerConfirmModal] = useState(false);
     const [organizedSettings, setOrganizedSettings] = useState<OrganizedSettings | null>(null);
     const [settings, setSettings] = useState<Record<string, Setting>>({});
     const [initialSettings, setInitialSettings] = useState<Record<string, Setting>>({});
@@ -263,6 +269,27 @@ export default function SettingsPage() {
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const raw = window.localStorage.getItem(UPDATE_PROGRESS_STORAGE_KEY);
+        if (!raw) return;
+        const startedAt = Number(raw);
+        if (Number.isFinite(startedAt) && Date.now() - startedAt <= UPDATE_PROGRESS_TTL_MS) {
+            setUpdateInProgress(true);
+            setShowUpdateProgressModal(true);
+            return;
+        }
+        window.localStorage.removeItem(UPDATE_PROGRESS_STORAGE_KEY);
+    }, []);
+
+    useEffect(() => {
+        if (!updateInProgress || typeof window === 'undefined') return;
+        const interval = window.setInterval(() => {
+            window.location.reload();
+        }, 15000);
+        return () => window.clearInterval(interval);
+    }, [updateInProgress]);
 
     const handleCategoryChange = useCallback(
         (newTab: string) => {
@@ -413,13 +440,17 @@ export default function SettingsPage() {
     };
 
     const handleDockerUpdate = async () => {
-        const confirmed = window.confirm(t('admin.settings.docker_update.confirm'));
-        if (!confirmed) return;
-
+        if (updatingDocker || updateInProgress) return;
         setUpdatingDocker(true);
         try {
             const response = await adminSettingsApi.triggerDockerUpdate();
             if (response.success) {
+                if (typeof window !== 'undefined') {
+                    window.localStorage.setItem(UPDATE_PROGRESS_STORAGE_KEY, String(Date.now()));
+                }
+                setUpdateInProgress(true);
+                setShowUpdateProgressModal(true);
+                setShowDockerConfirmModal(false);
                 toast.success(response.message || t('admin.settings.docker_update.success'));
             } else {
                 toast.error(response.message || t('admin.settings.docker_update.failed'));
@@ -480,8 +511,8 @@ export default function SettingsPage() {
                         </Button>
                         <Button
                             variant='outline'
-                            onClick={handleDockerUpdate}
-                            disabled={updatingDocker}
+                            onClick={() => setShowDockerConfirmModal(true)}
+                            disabled={updatingDocker || updateInProgress}
                             className='shrink-0'
                         >
                             {updatingDocker ? (
@@ -491,7 +522,9 @@ export default function SettingsPage() {
                             )}
                             {updatingDocker
                                 ? t('admin.settings.docker_update.updating')
-                                : t('admin.settings.docker_update.button')}
+                                : updateInProgress
+                                  ? t('admin.settings.docker_update.in_progress_button')
+                                  : t('admin.settings.docker_update.button')}
                         </Button>
                         <Button onClick={handleSave} disabled={saving} className='shrink-0'>
                             {saving ? (
@@ -803,6 +836,44 @@ export default function SettingsPage() {
                             )}
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={showUpdateProgressModal}
+                onOpenChange={(open) => {
+                    if (updateInProgress) return;
+                    setShowUpdateProgressModal(open);
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('admin.settings.docker_update.progress_modal.title')}</DialogTitle>
+                        <DialogDescription>{t('admin.settings.docker_update.progress_modal.description')}</DialogDescription>
+                    </DialogHeader>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showDockerConfirmModal} onOpenChange={setShowDockerConfirmModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('admin.settings.docker_update.confirm_modal.title')}</DialogTitle>
+                        <DialogDescription>{t('admin.settings.docker_update.confirm_modal.description')}</DialogDescription>
+                    </DialogHeader>
+                    <div className='flex justify-end gap-2 pt-2'>
+                        <Button
+                            variant='outline'
+                            onClick={() => setShowDockerConfirmModal(false)}
+                            disabled={updatingDocker}
+                        >
+                            {t('admin.settings.docker_update.confirm_modal.cancel')}
+                        </Button>
+                        <Button onClick={handleDockerUpdate} disabled={updatingDocker}>
+                            {updatingDocker
+                                ? t('admin.settings.docker_update.updating')
+                                : t('admin.settings.docker_update.confirm_modal.confirm')}
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
 

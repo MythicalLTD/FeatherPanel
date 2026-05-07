@@ -5380,6 +5380,8 @@
             "release_type": "Release Type",
             "up_to_date": "Your system is up to date and secured.",
             "update_available": "Update {version} Available",
+            "current_version_unknown": "Current version unknown",
+            "update_to_latest_hint": "Update to latest stable build",
             "update_description": "Security patches and performance optimizations",
             "update_now": "Update System Now",
             "recommended_php": "Recommended PHP Version: ",
@@ -6376,10 +6378,21 @@
             },
             "docker_update": {
                 "button": "Update Docker Deployment",
+                "in_progress_button": "System Update Ongoing",
                 "updating": "Updating Docker Deployment...",
                 "confirm": "This will pull the latest FeatherPanel Docker images and recreate containers. Continue?",
                 "success": "Docker update has been triggered successfully.",
-                "failed": "Failed to trigger Docker update."
+                "failed": "Failed to trigger Docker update.",
+                "confirm_modal": {
+                    "title": "Update FeatherPanel",
+                    "description": "This will pull the latest FeatherPanel Docker images and recreate containers. Do you want to continue?",
+                    "confirm": "Update to Latest",
+                    "cancel": "Cancel"
+                },
+                "progress_modal": {
+                    "title": "System update ongoing",
+                    "description": "Please wait for FeatherPanel to update. Do not do anything while this is happening. The panel will restart in a bit, and this page will keep refreshing automatically."
+                }
             }
         },
         "rate_limits": {
