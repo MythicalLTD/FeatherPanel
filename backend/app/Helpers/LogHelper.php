@@ -42,9 +42,37 @@ class LogHelper
                 return $logDir . 'App.fplog';
             case 'mail':
                 return $logDir . 'mail.fplog';
+            case 'runner':
+                return $logDir . 'runner.fplog';
             default:
                 return $logDir . 'featherpanel-web.fplog';
         }
+    }
+
+    /**
+     * Ensure the log directory exists and the log file for the given type is
+     * present on disk. Creates both with safe permissions if missing.
+     * Returns the full path to the log file.
+     *
+     * @param string $type Log type ('web', 'app', 'mail', 'runner', …)
+     *
+     * @return string Full path to the (now-guaranteed) log file
+     */
+    public static function ensureLogFile(string $type): string
+    {
+        $path = self::getLogFilePath($type);
+        $dir = dirname($path);
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+
+        if (!file_exists($path)) {
+            file_put_contents($path, '');
+            chmod($path, 0664);
+        }
+
+        return $path;
     }
 
     /**
@@ -94,7 +122,11 @@ class LogHelper
         try {
             $ch = curl_init('https://api.featherpanel.com/1/log');
             curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['content' => $content]));
+            curl_setopt(
+                $ch,
+                CURLOPT_POSTFIELDS,
+                http_build_query(['content' => $content]),
+            );
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_TIMEOUT, 30); // 30 second timeout
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // 10 second connection timeout
@@ -107,7 +139,9 @@ class LogHelper
             $curlError = curl_error($ch);
 
             if ($curlError) {
-                App::getInstance(true)->getLogger()->error('mclo.gs curl error: ' . $curlError);
+                App::getInstance(true)
+                    ->getLogger()
+                    ->error('mclo.gs curl error: ' . $curlError);
 
                 return [
                     'success' => false,
@@ -116,7 +150,9 @@ class LogHelper
             }
 
             if ($response === false) {
-                App::getInstance(true)->getLogger()->error('mclo.gs curl_exec returned false');
+                App::getInstance(true)
+                    ->getLogger()
+                    ->error('mclo.gs curl_exec returned false');
 
                 return [
                     'success' => false,
@@ -125,7 +161,14 @@ class LogHelper
             }
 
             if ($httpCode !== 200) {
-                App::getInstance(true)->getLogger()->error('mclo.gs HTTP error: ' . $httpCode . ', Response: ' . substr($response, 0, 500));
+                App::getInstance(true)
+                    ->getLogger()
+                    ->error(
+                        'mclo.gs HTTP error: ' .
+                            $httpCode .
+                            ', Response: ' .
+                            substr($response, 0, 500),
+                    );
 
                 return [
                     'success' => false,
@@ -137,17 +180,34 @@ class LogHelper
             $jsonError = json_last_error();
 
             if ($jsonError !== JSON_ERROR_NONE) {
-                App::getInstance(true)->getLogger()->error('mclo.gs JSON decode error: ' . json_last_error_msg() . ', Response: ' . substr($response, 0, 500));
+                App::getInstance(true)
+                    ->getLogger()
+                    ->error(
+                        'mclo.gs JSON decode error: ' .
+                            json_last_error_msg() .
+                            ', Response: ' .
+                            substr($response, 0, 500),
+                    );
 
                 return [
                     'success' => false,
-                    'error' => 'Invalid response from mclo.gs: ' . json_last_error_msg(),
+                    'error' => 'Invalid response from mclo.gs: ' .
+                        json_last_error_msg(),
                 ];
             }
 
             if (!$result || !isset($result['success']) || !$result['success']) {
-                $errorMsg = $result['error'] ?? ($result['message'] ?? 'Unknown error from mclo.gs');
-                App::getInstance(true)->getLogger()->error('mclo.gs API error: ' . $errorMsg . ', Full response: ' . json_encode($result));
+                $errorMsg =
+                    $result['error'] ??
+                    ($result['message'] ?? 'Unknown error from mclo.gs');
+                App::getInstance(true)
+                    ->getLogger()
+                    ->error(
+                        'mclo.gs API error: ' .
+                            $errorMsg .
+                            ', Full response: ' .
+                            json_encode($result),
+                    );
 
                 return [
                     'success' => false,
@@ -186,6 +246,9 @@ class LogHelper
         }
         if (strpos($filename, 'mail') !== false) {
             return 'mail';
+        }
+        if (strpos($filename, 'runner') !== false) {
+            return 'runner';
         }
 
         return 'unknown';

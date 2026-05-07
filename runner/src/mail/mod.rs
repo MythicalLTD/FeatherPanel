@@ -14,10 +14,48 @@ use crate::types::SmtpConfig;
 
 static PREFER_IPV4_SMTP: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(false));
 
+/// Sanitise a display name for use in an RFC 5322 `From` header.
+///
+/// If the name contains any RFC 5322 special character (parens, angle brackets,
+/// commas, dots, colons, semicolons, at-signs, backslashes, quotes) or any
+/// non-ASCII / control character, the whole name is wrapped in double-quotes
+/// with internal backslashes and double-quotes escaped.
+///
+/// This prevents lettre's address parser from returning "Invalid input" when
+/// `app_name` contains apostrophes, parentheses, commas, etc.
+fn sanitize_display_name(name: &str) -> String {
+    let needs_quoting = name.chars().any(|c| {
+        matches!(
+            c,
+            '(' | ')' | '<' | '>' | '[' | ']' | ':' | ';' | '@' | '\\' | ',' | '.' | '"'
+        ) || !c.is_ascii()
+            || c.is_ascii_control()
+    });
+
+    if needs_quoting {
+        let escaped = name.replace('\\', "\\\\").replace('"', "\\\"");
+        format!("\"{}\"", escaped)
+    } else {
+        name.to_string()
+    }
+}
+
 pub async fn send_email(config: &SmtpConfig, to: &str, subject: &str, body: &str) -> Result<()> {
+    let from_name = sanitize_display_name(&config.from_name);
+    let from_header = format!("{} <{}>", from_name, config.from);
+
     let email = Message::builder()
-        .from(format!("{} <{}>", config.from_name, config.from).parse()?)
-        .to(to.parse()?)
+        .from(
+            from_header
+                .parse()
+                .with_context(|| {
+                    format!(
+                        "Invalid From address '{}' — check smtp_from ('{}') and app_name ('{}')",
+                        from_header, config.from, config.from_name
+                    )
+                })?,
+        )
+        .to(to.parse().with_context(|| format!("Invalid To address '{}'", to))?)
         .subject(subject)
         .header(ContentType::TEXT_HTML)
         .body(body.to_string())?;
@@ -82,11 +120,10 @@ pub async fn send_email(config: &SmtpConfig, to: &str, subject: &str, body: &str
     let primary_send = send_via_host(config, &creds, &email, primary_connect_host, &config.host);
     if let Err(primary_error) = primary_send {
         let primary_error_str = primary_error.to_string();
-        let should_try_ipv4_fallback =
-            primary_connect_host == config.host
-                && primary_error_str.contains("Network is unreachable")
-                && ipv4_count > 0
-                && ipv6_count > 0;
+        let should_try_ipv4_fallback = primary_connect_host == config.host
+            && primary_error_str.contains("Network is unreachable")
+            && ipv4_count > 0
+            && ipv6_count > 0;
 
         if should_try_ipv4_fallback {
             PREFER_IPV4_SMTP.store(true, Ordering::Relaxed);

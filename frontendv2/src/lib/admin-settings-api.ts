@@ -117,6 +117,8 @@ export const adminSettingsApi = {
             data: {
                 web: { success: boolean; id?: string; url?: string; raw?: string; error?: string };
                 app: { success: boolean; id?: string; url?: string; raw?: string; error?: string };
+                runner?: { success: boolean; id?: string; url?: string; raw?: string; error?: string };
+                mail?: { success: boolean; id?: string; url?: string; raw?: string; error?: string };
             };
             message?: string;
         }>('/api/admin/log-viewer/upload');

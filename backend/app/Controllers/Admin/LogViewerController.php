@@ -29,30 +29,70 @@ use Symfony\Component\HttpFoundation\Response;
     schema: 'LogFile',
     type: 'object',
     properties: [
-        new OA\Property(property: 'name', type: 'string', description: 'Log file name'),
-        new OA\Property(property: 'size', type: 'integer', description: 'File size in bytes'),
-        new OA\Property(property: 'modified', type: 'integer', description: 'Last modification timestamp'),
-        new OA\Property(property: 'type', type: 'string', description: 'Log type (web, app, mail, unknown)', enum: ['web', 'app', 'mail', 'unknown']),
-    ]
-)]
+        new OA\Property(
+            property: 'name',
+            type: 'string',
+            description: 'Log file name',
+        ),
+        new OA\Property(
+            property: 'size',
+            type: 'integer',
+            description: 'File size in bytes',
+        ),
+        new OA\Property(
+            property: 'modified',
+            type: 'integer',
+            description: 'Last modification timestamp',
+        ),
+        new OA\Property(
+            property: 'type',
+            type: 'string',
+            description: 'Log type (web, app, mail, runner, unknown)',
+            enum: ['web', 'app', 'mail', 'runner', 'unknown'],
+        ),
+    ],
+),]
 #[OA\Schema(
     schema: 'LogContent',
     type: 'object',
     properties: [
-        new OA\Property(property: 'logs', type: 'string', description: 'Log content as string'),
-        new OA\Property(property: 'file', type: 'string', description: 'Log file name'),
-        new OA\Property(property: 'type', type: 'string', description: 'Log type', enum: ['web', 'app', 'mail']),
-        new OA\Property(property: 'lines_count', type: 'integer', description: 'Number of lines in the log content'),
-    ]
-)]
+        new OA\Property(
+            property: 'logs',
+            type: 'string',
+            description: 'Log content as string',
+        ),
+        new OA\Property(
+            property: 'file',
+            type: 'string',
+            description: 'Log file name',
+        ),
+        new OA\Property(
+            property: 'type',
+            type: 'string',
+            description: 'Log type',
+            enum: ['web', 'app', 'mail', 'runner'],
+        ),
+        new OA\Property(
+            property: 'lines_count',
+            type: 'integer',
+            description: 'Number of lines in the log content',
+        ),
+    ],
+),]
 #[OA\Schema(
     schema: 'LogClear',
     type: 'object',
     required: ['type'],
     properties: [
-        new OA\Property(property: 'type', type: 'string', description: 'Log type to clear', enum: ['web', 'app', 'mail'], default: 'web'),
-    ]
-)]
+        new OA\Property(
+            property: 'type',
+            type: 'string',
+            description: 'Log type to clear',
+            enum: ['web', 'app', 'mail', 'runner'],
+            default: 'web',
+        ),
+    ],
+),]
 class LogViewerController
 {
     #[OA\Get(
@@ -66,50 +106,75 @@ class LogViewerController
                 in: 'query',
                 description: 'Log type to retrieve',
                 required: false,
-                schema: new OA\Schema(type: 'string', enum: ['web', 'app', 'mail'], default: 'web')
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['web', 'app', 'mail', 'runner'],
+                    default: 'web',
+                ),
             ),
             new OA\Parameter(
                 name: 'lines',
                 in: 'query',
                 description: 'Number of lines to retrieve from the end of the log file',
                 required: false,
-                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 10000, default: 100)
+                schema: new OA\Schema(
+                    type: 'integer',
+                    minimum: 1,
+                    maximum: 10000,
+                    default: 100,
+                ),
             ),
         ],
         responses: [
             new OA\Response(
                 response: 200,
                 description: 'Log content retrieved successfully',
-                content: new OA\JsonContent(ref: '#/components/schemas/LogContent')
+                content: new OA\JsonContent(
+                    ref: '#/components/schemas/LogContent',
+                ),
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Developer mode not enabled or insufficient permissions'),
-            new OA\Response(response: 404, description: 'Log file not found'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to fetch logs'),
-        ]
-    )]
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Developer mode not enabled or insufficient permissions',
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Log file not found',
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Internal server error - Failed to fetch logs',
+            ),
+        ],
+    ),]
     public function getLogs(Request $request): Response
     {
         try {
             $logType = $request->query->get('type', 'web');
             $lines = (int) $request->query->get('lines', 100);
 
-            $logFile = LogHelper::getLogFilePath($logType);
-
-            if (!file_exists($logFile)) {
-                return ApiResponse::error('Log file not found', 404);
-            }
+            // ensureLogFile creates the file (and parent directory) if missing,
+            // so a fresh Docker volume or a new log type never returns 404.
+            $logFile = LogHelper::ensureLogFile($logType);
 
             $content = LogHelper::readLastLines($logFile, $lines);
 
-            return ApiResponse::success([
-                'logs' => $content,
-                'file' => basename($logFile),
-                'type' => $logType,
-                'lines_count' => count(explode("\n", $content)),
-            ], 'Logs fetched successfully', 200);
+            return ApiResponse::success(
+                [
+                    'logs' => $content,
+                    'file' => basename($logFile),
+                    'type' => $logType,
+                    'lines_count' => count(explode("\n", $content)),
+                ],
+                'Logs fetched successfully',
+                200,
+            );
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch logs: ' . $e->getMessage(), 500);
+            return ApiResponse::error(
+                'Failed to fetch logs: ' . $e->getMessage(),
+                500,
+            );
         }
     }
 
@@ -120,7 +185,9 @@ class LogViewerController
         tags: ['Admin - Log Viewer'],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/LogClear')
+            content: new OA\JsonContent(
+                ref: '#/components/schemas/LogClear',
+            ),
         ),
         responses: [
             new OA\Response(
@@ -128,44 +195,54 @@ class LogViewerController
                 description: 'Log file cleared successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
-                    ]
-                )
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            description: 'Success message',
+                        ),
+                    ],
+                ),
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Developer mode not enabled or insufficient permissions'),
-            new OA\Response(response: 404, description: 'Log file not found'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to clear logs'),
-        ]
-    )]
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Developer mode not enabled or insufficient permissions',
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Log file not found',
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Internal server error - Failed to clear logs',
+            ),
+        ],
+    ),]
     public function clearLogs(Request $request): Response
     {
         try {
             $logType = $request->request->get('type', 'web');
-            $logFile = LogHelper::getLogFilePath($logType);
-
-            if (!file_exists($logFile)) {
-                return ApiResponse::error('Log file not found', 404);
-            }
+            // ensureLogFile guarantees the file exists before we truncate it.
+            $logFile = LogHelper::ensureLogFile($logType);
 
             file_put_contents($logFile, '');
 
             // Emit event
             global $eventManager;
             if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit(
-                    LogViewerEvent::onLogCleared(),
-                    [
-                        'log_type' => $logType,
-                        'log_file' => basename($logFile),
-                        'cleared_by' => $request->get('user'),
-                    ]
-                );
+                $eventManager->emit(LogViewerEvent::onLogCleared(), [
+                    'log_type' => $logType,
+                    'log_file' => basename($logFile),
+                    'cleared_by' => $request->get('user'),
+                ]);
             }
 
             return ApiResponse::success([], 'Logs cleared successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to clear logs: ' . $e->getMessage(), 500);
+            return ApiResponse::error(
+                'Failed to clear logs: ' . $e->getMessage(),
+                500,
+            );
         }
     }
 
@@ -180,15 +257,27 @@ class LogViewerController
                 description: 'Log files retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'files', type: 'array', items: new OA\Items(ref: '#/components/schemas/LogFile')),
-                    ]
-                )
+                        new OA\Property(
+                            property: 'files',
+                            type: 'array',
+                            items: new OA\Items(
+                                ref: '#/components/schemas/LogFile',
+                            ),
+                        ),
+                    ],
+                ),
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Developer mode not enabled or insufficient permissions'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to fetch log files'),
-        ]
-    )]
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Developer mode not enabled or insufficient permissions',
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Internal server error - Failed to fetch log files',
+            ),
+        ],
+    ),]
     public function getLogFiles(Request $request): Response
     {
         try {
@@ -198,7 +287,11 @@ class LogViewerController
             if (is_dir($logDir)) {
                 $logFiles = scandir($logDir);
                 foreach ($logFiles as $file) {
-                    if ($file !== '.' && $file !== '..' && pathinfo($file, PATHINFO_EXTENSION) === 'fplog') {
+                    if (
+                        $file !== '.'
+                        && $file !== '..'
+                        && pathinfo($file, PATHINFO_EXTENSION) === 'fplog'
+                    ) {
                         $filePath = $logDir . $file;
                         $files[] = [
                             'name' => $file,
@@ -215,11 +308,18 @@ class LogViewerController
                 return $b['modified'] - $a['modified'];
             });
 
-            return ApiResponse::success([
-                'files' => $files,
-            ], 'Log files fetched successfully', 200);
+            return ApiResponse::success(
+                [
+                    'files' => $files,
+                ],
+                'Log files fetched successfully',
+                200,
+            );
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch log files: ' . $e->getMessage(), 500);
+            return ApiResponse::error(
+                'Failed to fetch log files: ' . $e->getMessage(),
+                500,
+            );
         }
     }
 
@@ -238,30 +338,82 @@ class LogViewerController
                             property: 'web',
                             type: 'object',
                             properties: [
-                                new OA\Property(property: 'success', type: 'boolean'),
-                                new OA\Property(property: 'url', type: 'string'),
-                                new OA\Property(property: 'raw', type: 'string'),
-                                new OA\Property(property: 'id', type: 'string'),
-                            ]
+                                new OA\Property(
+                                    property: 'success',
+                                    type: 'boolean',
+                                ),
+                                new OA\Property(
+                                    property: 'url',
+                                    type: 'string',
+                                ),
+                                new OA\Property(
+                                    property: 'raw',
+                                    type: 'string',
+                                ),
+                                new OA\Property(
+                                    property: 'id',
+                                    type: 'string',
+                                ),
+                            ],
                         ),
                         new OA\Property(
                             property: 'app',
                             type: 'object',
                             properties: [
-                                new OA\Property(property: 'success', type: 'boolean'),
-                                new OA\Property(property: 'url', type: 'string'),
-                                new OA\Property(property: 'raw', type: 'string'),
-                                new OA\Property(property: 'id', type: 'string'),
-                            ]
+                                new OA\Property(
+                                    property: 'success',
+                                    type: 'boolean',
+                                ),
+                                new OA\Property(
+                                    property: 'url',
+                                    type: 'string',
+                                ),
+                                new OA\Property(
+                                    property: 'raw',
+                                    type: 'string',
+                                ),
+                                new OA\Property(
+                                    property: 'id',
+                                    type: 'string',
+                                ),
+                            ],
                         ),
-                    ]
-                )
+                        new OA\Property(
+                            property: 'runner',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'success',
+                                    type: 'boolean',
+                                ),
+                                new OA\Property(
+                                    property: 'url',
+                                    type: 'string',
+                                ),
+                                new OA\Property(
+                                    property: 'raw',
+                                    type: 'string',
+                                ),
+                                new OA\Property(
+                                    property: 'id',
+                                    type: 'string',
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Developer mode not enabled or insufficient permissions'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to upload logs'),
-        ]
-    )]
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Developer mode not enabled or insufficient permissions',
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Internal server error - Failed to upload logs',
+            ),
+        ],
+    ),]
     public function uploadLogs(Request $request): Response
     {
         try {
@@ -286,7 +438,9 @@ class LogViewerController
             // Upload web logs (often missing when web server logs are external)
             $webLogFile = LogHelper::getLogFilePath('web');
             if (file_exists($webLogFile)) {
-                $webContent = $truncateContent(LogHelper::readLastLines($webLogFile, $lineLimit));
+                $webContent = $truncateContent(
+                    LogHelper::readLastLines($webLogFile, $lineLimit),
+                );
                 $results['web'] = LogHelper::uploadToMcloGs($webContent);
             } else {
                 // Do not fail the whole upload if web logs are missing – this is expected on some setups.
@@ -299,7 +453,9 @@ class LogViewerController
             // Upload app logs
             $appLogFile = LogHelper::getLogFilePath('app');
             if (file_exists($appLogFile)) {
-                $appContent = $truncateContent(LogHelper::readLastLines($appLogFile, $lineLimit));
+                $appContent = $truncateContent(
+                    LogHelper::readLastLines($appLogFile, $lineLimit),
+                );
                 $results['app'] = LogHelper::uploadToMcloGs($appContent);
             } else {
                 $results['app'] = [
@@ -311,7 +467,9 @@ class LogViewerController
             // Upload mail logs
             $mailLogFile = LogHelper::getLogFilePath('mail');
             if (file_exists($mailLogFile)) {
-                $mailContent = $truncateContent(LogHelper::readLastLines($mailLogFile, $lineLimit));
+                $mailContent = $truncateContent(
+                    LogHelper::readLastLines($mailLogFile, $lineLimit),
+                );
                 $results['mail'] = LogHelper::uploadToMcloGs($mailContent);
             } else {
                 $results['mail'] = [
@@ -320,21 +478,39 @@ class LogViewerController
                 ];
             }
 
+            // Upload runner logs
+            $runnerLogFile = LogHelper::getLogFilePath('runner');
+            if (file_exists($runnerLogFile)) {
+                $runnerContent = $truncateContent(
+                    LogHelper::readLastLines($runnerLogFile, $lineLimit),
+                );
+                $results['runner'] = LogHelper::uploadToMcloGs($runnerContent);
+            } else {
+                $results['runner'] = [
+                    'success' => false,
+                    'error' => 'Runner log file not found',
+                ];
+            }
+
             // Emit event
             global $eventManager;
             if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit(
-                    LogViewerEvent::onLogsUploaded(),
-                    [
-                        'results' => $results,
-                        'uploaded_by' => $request->get('user'),
-                    ]
-                );
+                $eventManager->emit(LogViewerEvent::onLogsUploaded(), [
+                    'results' => $results,
+                    'uploaded_by' => $request->get('user'),
+                ]);
             }
 
-            return ApiResponse::success($results, 'Logs uploaded successfully', 200);
+            return ApiResponse::success(
+                $results,
+                'Logs uploaded successfully',
+                200,
+            );
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to upload logs: ' . $e->getMessage(), 500);
+            return ApiResponse::error(
+                'Failed to upload logs: ' . $e->getMessage(),
+                500,
+            );
         }
     }
 }

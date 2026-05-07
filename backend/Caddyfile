@@ -6,6 +6,18 @@
 	encode zstd br gzip
 	header Server FeatherPanel
 
+	# Write access logs to the shared storage/logs volume so the panel
+	# log viewer can display them. Format is plain text to match the
+	# other .fplog files read by LogHelper.
+	log {
+		output file /var/www/html/storage/logs/featherpanel-web.fplog {
+			roll_size 50mb
+			roll_keep 3
+		}
+		format console
+		level INFO
+	}
+
 	# Match nginx: allow larger uploads and long timeouts
 	request_body {
 		max_size 250MB

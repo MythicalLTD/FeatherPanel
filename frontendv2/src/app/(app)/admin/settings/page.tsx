@@ -217,7 +217,12 @@ export default function SettingsPage() {
     const urlCategory = searchParams.get('category');
 
     const [showLogDialog, setShowLogDialog] = useState(false);
-    const [uploadedLogs, setUploadedLogs] = useState<{ web: LogData; app: LogData } | null>(null);
+    const [uploadedLogs, setUploadedLogs] = useState<{
+        web: LogData;
+        app: LogData;
+        runner?: LogData;
+        mail?: LogData;
+    } | null>(null);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-settings');
 
@@ -734,6 +739,32 @@ export default function SettingsPage() {
                                     </p>
                                 )}
                             </div>
+                            {uploadedLogs.runner && (
+                                <div className='space-y-2'>
+                                    <Label>{t('admin.settings.logs.runner_logs')}</Label>
+                                    {uploadedLogs.runner.success && uploadedLogs.runner.url ? (
+                                        <div className='flex gap-2'>
+                                            <Input value={uploadedLogs.runner.url} readOnly />
+                                            <Button
+                                                size='icon'
+                                                variant='outline'
+                                                onClick={() => {
+                                                    if (uploadedLogs.runner!.url) {
+                                                        copyToClipboard(uploadedLogs.runner!.url);
+                                                    }
+                                                }}
+                                            >
+                                                <Copy className='h-4 w-4' />
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <p className='text-sm text-destructive'>
+                                            {uploadedLogs.runner.error ||
+                                                t('admin.settings.logs.upload_failed_generic')}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
                 </DialogContent>
