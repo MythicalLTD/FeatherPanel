@@ -464,39 +464,77 @@ setup_host_docker_updater() {
 
 	cat <<'EOF' >"$runner_script"
 #!/bin/bash
-set -euo pipefail
+# Host-side FeatherPanel stack refresh (invoked by docker-updater-handler over socat).
+set -uo pipefail
 
-cd /var/www/featherpanel
-COMPOSE_FILE="/var/www/featherpanel/docker-compose.yml"
-docker compose -f "$COMPOSE_FILE" down
-docker compose -f "$COMPOSE_FILE" pull
-docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+PANEL_ROOT="/var/www/featherpanel"
+COMPOSE_FILE="${PANEL_ROOT}/docker-compose.yml"
+LOG_FILE="${PANEL_ROOT}/install.log"
+
+log() {
+	printf '%s %s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$*" >>"$LOG_FILE" || true
+}
 
 refresh_host_updater_scripts() {
 	local log_file="/var/www/featherpanel/install.log"
 	local installer="/var/www/featherpanel/installer/install.bash"
+	local cache_dir="/var/www/featherpanel/.featherpanel-installer-cache"
+	local tmp branch="main"
 
-	mkdir -p /var/www/featherpanel
+	mkdir -p /var/www/featherpanel "$cache_dir" || true
 	touch "$log_file" 2>/dev/null || true
 
-	if [ -f "$installer" ]; then
-		bash "$installer" --refresh-docker-updater-only >>"$log_file" 2>&1 || true
-		return 0
-	fi
-
-	local tmp branch="main"
-	if grep -q 'featherpanel-backend:dev-' "$COMPOSE_FILE" 2>/dev/null; then
-		branch=$(grep -m1 'featherpanel-backend:dev-' "$COMPOSE_FILE" | sed -n 's/.*featherpanel-backend:dev-\([^-]*\).*/\1/p' || true)
+	if grep -q 'featherpanel-backend:dev-' /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
+		branch=$(grep -m1 'featherpanel-backend:dev-' /var/www/featherpanel/docker-compose.yml | sed -n 's/.*featherpanel-backend:dev-\([^-]*\).*/\1/p' || true)
 		[ -z "$branch" ] && branch="main"
 	fi
 
-	tmp=$(mktemp) || return 0
+	tmp="${cache_dir}/install.bash.tmp.$$"
+	# Canonical installer is on GitHub; VMs often have no local installer path.
 	if curl -fsSL -o "$tmp" "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/${branch}/installer/install.bash"; then
 		bash "$tmp" --refresh-docker-updater-only >>"$log_file" 2>&1 || true
+		rm -f "$tmp"
+		return 0
 	fi
 	rm -f "$tmp"
+
+	if [ -f "$installer" ]; then
+		bash "$installer" --refresh-docker-updater-only >>"$log_file" 2>&1 || true
+	fi
 }
 
+log "featherpanel-docker-updater: starting compose cycle"
+
+if ! command -v docker >/dev/null 2>&1; then
+	log "featherpanel-docker-updater: ERROR docker not found in PATH"
+	exit 1
+fi
+
+cd "$PANEL_ROOT" || {
+	log "featherpanel-docker-updater: ERROR cannot cd to ${PANEL_ROOT}"
+	exit 1
+}
+
+if [ ! -f "$COMPOSE_FILE" ]; then
+	log "featherpanel-docker-updater: ERROR missing ${COMPOSE_FILE}"
+	exit 1
+fi
+
+{
+	log "featherpanel-docker-updater: docker compose down"
+	docker compose -f "$COMPOSE_FILE" down
+} >>"$LOG_FILE" 2>&1 || log "featherpanel-docker-updater: warning: docker compose down exited non-zero (continuing)"
+
+log "featherpanel-docker-updater: docker compose up (--pull always)"
+if ! docker compose -f "$COMPOSE_FILE" up -d --pull always --remove-orphans >>"$LOG_FILE" 2>&1; then
+	log "featherpanel-docker-updater: ERROR docker compose up failed (see ${LOG_FILE})"
+	exit 1
+fi
+
+log "featherpanel-docker-updater: pruning dangling Docker images (safe / not volumes)"
+docker image prune -f >>"$LOG_FILE" 2>&1 || true
+
+log "featherpanel-docker-updater: compose cycle finished OK"
 refresh_host_updater_scripts
 EOF
 	chmod 700 "$runner_script"
@@ -514,6 +552,21 @@ token_from_env() {
 		return
 	fi
 	awk -F= '/^DOCKER_UPDATER_TOKEN=/{print $2; exit}' "$TOKEN_FILE" | tr -d '"' | tr -d "'"
+}
+
+json_string_escape() {
+	local text="$1"
+	if command -v jq >/dev/null 2>&1; then
+		printf '%s' "$text" | jq -Rs .
+		return
+	fi
+	if command -v python3 >/dev/null 2>&1; then
+		printf '%s' "$text" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+		return
+	fi
+	log_err="featherpanel-docker-updater-handler: install jq or python3 to encode JSON responses"
+	logger -t featherpanel-docker-updater "$log_err" 2>/dev/null || printf '%s\n' "$log_err" >&2
+	printf '"%s"' "$(printf '%s' "$text" | tr -d '\r\n' | sed 's/\\/\\\\/g;s/"/\\"/g')"
 }
 
 send_json_response() {
@@ -560,14 +613,14 @@ if [[ "$request_line" != "POST /update HTTP/"* ]]; then
 fi
 
 output="$("$RUNNER_SCRIPT" 2>&1)" || {
-	output_json=$(printf '%s' "$output" | jq -Rs .)
+	output_json=$(json_string_escape "$output")
 	body=$(printf '{"success":false,"message":"Docker update command failed","data":{"output":%s}}' "$output_json")
 	send_json_response "500 Internal Server Error" "$body"
 	exit 0
 }
 
 ts="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-output_json=$(printf '%s' "$output" | jq -Rs .)
+output_json=$(json_string_escape "$output")
 body=$(printf '{"success":true,"message":"Docker update completed successfully","data":{"triggered_at":"%s","output":%s}}' "$ts" "$output_json")
 send_json_response "200 OK" "$body"
 EOF
@@ -596,6 +649,8 @@ EOF
 	}
 
 	log_info "Host Docker updater service is active on 127.0.0.1:9418."
+	log_info "Host updater logs: journalctl -u featherpanel-docker-updater.service -e"
+	log_info "Update runner log file: /var/www/featherpanel/install.log"
 }
 
 apply_panel_port_to_compose() {

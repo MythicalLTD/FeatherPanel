@@ -50,6 +50,7 @@ import {
     RefreshCw,
 } from 'lucide-react';
 import { copyToClipboard, cn } from '@/lib/utils';
+import { isDockerUpdateTriggerLikelyStartedError } from '@/lib/is-docker-update-connection-loss';
 
 interface LogData {
     success: boolean;
@@ -287,7 +288,7 @@ export default function SettingsPage() {
         if (!updateInProgress || typeof window === 'undefined') return;
         const interval = window.setInterval(() => {
             window.location.reload();
-        }, 15000);
+        }, 10000);
         return () => window.clearInterval(interval);
     }, [updateInProgress]);
 
@@ -455,7 +456,16 @@ export default function SettingsPage() {
             } else {
                 toast.error(response.message || t('admin.settings.docker_update.failed'));
             }
-        } catch {
+        } catch (error: unknown) {
+            if (isDockerUpdateTriggerLikelyStartedError(error)) {
+                if (typeof window !== 'undefined') {
+                    window.localStorage.setItem(UPDATE_PROGRESS_STORAGE_KEY, String(Date.now()));
+                }
+                setUpdateInProgress(true);
+                setShowUpdateProgressModal(true);
+                setShowDockerConfirmModal(false);
+                return;
+            }
             toast.error(t('admin.settings.docker_update.failed'));
         } finally {
             setUpdatingDocker(false);

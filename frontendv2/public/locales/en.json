@@ -6391,7 +6391,7 @@
                 },
                 "progress_modal": {
                     "title": "System update ongoing",
-                    "description": "Please wait for FeatherPanel to update. Do not do anything while this is happening. The panel will restart in a bit, and this page will keep refreshing automatically."
+                    "description": "Please wait for FeatherPanel to update. Do not close this tab. Containers are restarting, so your browser may show a connection error—that usually means the update has started. This page will refresh periodically until the panel responds again."
                 }
             }
         },

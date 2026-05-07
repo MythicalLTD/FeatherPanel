@@ -33,6 +33,7 @@ import { ChangelogSection } from './ChangelogSection';
 import { IntegrityCheckDialog } from './IntegrityCheckDialog';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { adminSettingsApi } from '@/lib/admin-settings-api';
+import { isDockerUpdateTriggerLikelyStartedError } from '@/lib/is-docker-update-connection-loss';
 import { toast } from 'sonner';
 
 const UPDATE_PROGRESS_STORAGE_KEY = 'featherpanel:update_in_progress';
@@ -99,7 +100,7 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
         if (!updateInProgress || typeof window === 'undefined') return;
         const interval = window.setInterval(() => {
             window.location.reload();
-        }, 15000);
+        }, 10000);
         return () => window.clearInterval(interval);
     }, [updateInProgress]);
 
@@ -140,7 +141,15 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
             }
 
             toast.error(response.message || t('admin.settings.docker_update.failed'));
-        } catch {
+        } catch (error: unknown) {
+            if (isDockerUpdateTriggerLikelyStartedError(error)) {
+                if (typeof window !== 'undefined') {
+                    window.localStorage.setItem(UPDATE_PROGRESS_STORAGE_KEY, String(Date.now()));
+                }
+                setUpdateInProgress(true);
+                setShowUpdateModal(true);
+                return;
+            }
             toast.error(t('admin.settings.docker_update.failed'));
         } finally {
             setIsUpdatingDocker(false);
