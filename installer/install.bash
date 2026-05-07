@@ -24,7 +24,7 @@ USE_DEV=false
 DEV_BRANCH=""
 DEV_SHA=""
 SHOW_CONFIG_MENU=false
-SCRIPT_VERSION="2.1.14-dev"
+SCRIPT_VERSION="2.1.15-dev"
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -6842,6 +6842,8 @@ if [ -f /etc/os-release ]; then
 		fi
 
 		apply_panel_port_to_compose "/var/www/featherpanel/docker-compose.yml"
+		ensure_docker_updater_env
+		setup_host_docker_updater
 
 		# Ask user if they want to create a backup before updating
 		ask_backup_before_update

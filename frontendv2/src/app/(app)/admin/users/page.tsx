@@ -278,7 +278,7 @@ export default function UsersPage() {
                                 setRoleFilter(e.target.value);
                                 setPagination({ ...pagination, page: 1 });
                             }}
-                            className='w-[160px] h-11 rounded-xl bg-background/50 border-border/50'
+                            className='w-[160px] h-11 rounded-xl'
                         >
                             <option value=''>{t('admin.users.filters.all_roles')}</option>
                             {availableRoles.map((role) => (
@@ -294,7 +294,7 @@ export default function UsersPage() {
                             setBannedFilter(e.target.value);
                             setPagination({ ...pagination, page: 1 });
                         }}
-                        className='w-[160px] h-11 rounded-xl bg-background/50 border-border/50'
+                        className='w-[160px] h-11 rounded-xl'
                     >
                         <option value=''>{t('admin.users.filters.any_status')}</option>
                         <option value='false'>{t('admin.users.filters.status_active')}</option>

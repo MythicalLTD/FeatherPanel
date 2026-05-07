@@ -323,7 +323,7 @@ export default function VmInstancesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-vm-instances', 'after-header')} />
 
-            <div className='flex flex-col gap-4 items-stretch bg-card/40 backdrop-blur-md p-4 rounded-2xl'>
+            <div className='flex flex-col gap-4 items-stretch bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
                 <div className='relative flex-1 group w-full'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                     <Input
