@@ -64,6 +64,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
       - TRUST_PROXY_HEADERS=true
       - PANEL_DOCKER_DEPLOYMENT=true
+      - FEATHERPANEL_VERSION_CHANNEL=development
       - DOCKER_UPDATER_URL=http://host.docker.internal:9418/update
       - DOCKER_UPDATER_TOKEN=${DOCKER_UPDATER_TOKEN:-}
     extra_hosts:

@@ -292,6 +292,14 @@ export default function SettingsPage() {
         return () => window.clearInterval(interval);
     }, [updateInProgress]);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (loading || !organizedSettings) return;
+        window.localStorage.removeItem(UPDATE_PROGRESS_STORAGE_KEY);
+        setUpdateInProgress(false);
+        setShowUpdateProgressModal(false);
+    }, [loading, organizedSettings]);
+
     const handleCategoryChange = useCallback(
         (newTab: string) => {
             router.push(`${pathname}?category=${encodeURIComponent(newTab)}`);

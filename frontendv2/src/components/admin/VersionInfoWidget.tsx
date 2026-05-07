@@ -26,6 +26,7 @@ import {
     ChevronUp,
     Cpu,
     X,
+    AlertTriangle,
 } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import ReactMarkdown from 'react-markdown';
@@ -74,6 +75,7 @@ interface VersionInfoWidgetProps {
         } | null;
         update_available: boolean;
         last_checked: string | null;
+        current_listed_on_update_server?: boolean;
     };
     loading?: boolean;
 }
@@ -104,12 +106,22 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
         return () => window.clearInterval(interval);
     }, [updateInProgress]);
 
+    // Panel is reachable again after Docker update — stop "System update ongoing" and reload loop.
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (!version?.last_checked) return;
+        window.localStorage.removeItem(UPDATE_PROGRESS_STORAGE_KEY);
+        setUpdateInProgress(false);
+    }, [version?.last_checked]);
+
     const isLatest = !version?.update_available;
     const current = version?.current;
     const latest = version?.latest;
     const normalizedCurrentVersion = (current?.version || '').trim().toLowerCase();
     const isCurrentVersionUnknown = normalizedCurrentVersion === '' || normalizedCurrentVersion === 'unknown';
-    const canForceUpdateToLatest = isCurrentVersionUnknown && Boolean(latest?.version);
+    const isDevelopmentChannel = (current?.type || '').toLowerCase() === 'development';
+    const canForceUpdateToLatest =
+        isCurrentVersionUnknown && Boolean(latest?.version) && !isDevelopmentChannel;
 
     const hasChangelog = (data: ChangelogData | null) => {
         if (!data) return false;
@@ -175,6 +187,23 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                         </span>
                     </div>
                 </div>
+
+                {version?.current_listed_on_update_server === false && Boolean(current?.version) ? (
+                    <div
+                        className='flex items-start gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400'
+                        role='status'
+                    >
+                        <AlertTriangle className='h-5 w-5 shrink-0 mt-0.5' aria-hidden />
+                        <div className='space-y-1 min-w-0'>
+                            <p className='text-[10px] md:text-xs font-black uppercase tracking-wide'>
+                                {t('admin.version.unlisted_update_server_badge')}
+                            </p>
+                            <p className='text-[10px] md:text-xs font-medium leading-relaxed opacity-90'>
+                                {t('admin.version.unlisted_update_server_hint')}
+                            </p>
+                        </div>
+                    </div>
+                ) : null}
 
                 <div className='flex flex-col gap-3'>
                     {isLatest && !canForceUpdateToLatest ? (

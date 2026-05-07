@@ -62,6 +62,7 @@ interface AdminDashboardData {
         } | null;
         update_available: boolean;
         last_checked: string | null;
+        current_listed_on_update_server?: boolean;
     };
 }
 
