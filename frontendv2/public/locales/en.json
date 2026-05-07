@@ -5382,6 +5382,8 @@
             "update_available": "Update {version} Available",
             "current_version_unknown": "Current version unknown",
             "update_to_latest_hint": "Update to latest stable build",
+            "docker_pull_offer_title": "Docker pull available",
+            "docker_pull_offer_hint": "The catalog may not resolve this channel or exact build tag. Trigger a Docker update to pull whatever your compose/stack targets.",
             "unlisted_update_server_badge": "Not registered on the FeatherPanel update server",
             "unlisted_update_server_hint": "This build’s version string is not listed in the public FeatherPanel version API. That is normal for development images, custom builds, or forks. Release metadata and comparisons to “latest stable” may be limited.",
             "update_description": "Security patches and performance optimizations",

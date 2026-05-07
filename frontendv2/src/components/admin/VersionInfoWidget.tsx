@@ -120,7 +120,13 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
     const normalizedCurrentVersion = (current?.version || '').trim().toLowerCase();
     const isCurrentVersionUnknown = normalizedCurrentVersion === '' || normalizedCurrentVersion === 'unknown';
     const isDevelopmentChannel = (current?.type || '').toLowerCase() === 'development';
-    const canForceUpdateToLatest = isCurrentVersionUnknown && Boolean(latest?.version) && !isDevelopmentChannel;
+    const isUnlistedOnUpdateServer = version?.current_listed_on_update_server === false;
+    const hasLatestKnown = Boolean((latest?.version || '').trim());
+    // Dev / custom / unlisted builds often report "no update" from the catalog but can still docker pull newer images.
+    const canOfferManualDockerPull =
+        hasLatestKnown && (isCurrentVersionUnknown || isDevelopmentChannel || isUnlistedOnUpdateServer);
+    const showUpdateSection = !isLatest || canOfferManualDockerPull;
+    const useManualPullMessaging = isLatest && canOfferManualDockerPull;
 
     const hasChangelog = (data: ChangelogData | null) => {
         if (!data) return false;
@@ -205,7 +211,7 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                 ) : null}
 
                 <div className='flex flex-col gap-3'>
-                    {isLatest && !canForceUpdateToLatest ? (
+                    {!showUpdateSection ? (
                         <div className='flex items-center gap-3 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-500'>
                             <CheckCircle2 className='h-5 w-5' />
                             <p className='text-sm font-bold'>{t('admin.version.up_to_date')}</p>
@@ -216,16 +222,20 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                                 <Download className='h-5 w-5 animate-bounce' />
                                 <div className='space-y-0.5'>
                                     <p className='text-sm font-black uppercase tracking-tight'>
-                                        {canForceUpdateToLatest
-                                            ? t('admin.version.current_version_unknown')
-                                            : t('admin.version.update_available', {
-                                                  version: latest?.version || 'Unknown',
-                                              })}
+                                        {useManualPullMessaging
+                                            ? t('admin.version.docker_pull_offer_title')
+                                            : isCurrentVersionUnknown
+                                              ? t('admin.version.current_version_unknown')
+                                              : t('admin.version.update_available', {
+                                                    version: latest?.version || 'Unknown',
+                                                })}
                                     </p>
                                     <p className='text-[10px] font-bold uppercase opacity-70'>
-                                        {canForceUpdateToLatest
-                                            ? t('admin.version.update_to_latest_hint')
-                                            : t('admin.version.update_description')}
+                                        {useManualPullMessaging
+                                            ? t('admin.version.docker_pull_offer_hint')
+                                            : isCurrentVersionUnknown
+                                              ? t('admin.version.update_to_latest_hint')
+                                              : t('admin.version.update_description')}
                                     </p>
                                 </div>
                             </div>
@@ -238,7 +248,7 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                                     ? t('admin.settings.docker_update.updating')
                                     : updateInProgress
                                       ? t('admin.settings.docker_update.in_progress_button')
-                                      : canForceUpdateToLatest
+                                      : useManualPullMessaging || isCurrentVersionUnknown
                                         ? t('admin.settings.docker_update.confirm_modal.confirm')
                                         : t('admin.version.update_now')}
                             </button>
