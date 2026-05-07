@@ -26,6 +26,23 @@ use App\Services\FeatherCloud\FeatherCloudException;
 
 class CloudDataController
 {
+    /**
+     * Map FeatherCloud errors to panel-safe HTTP responses.
+     * External credential failures must not look like panel auth/session failures.
+     */
+    private function cloudErrorResponse(FeatherCloudException $e): Response
+    {
+        $status = $e->getHttpStatusCode();
+        $code = $e->getErrorCode();
+
+        // Prevent frontend global-auth handlers from treating external 401s as session expiry.
+        if ($status === 401) {
+            $status = 503;
+        }
+
+        return ApiResponse::error($e->getMessage(), $code, $status);
+    }
+
     #[OA\Get(
         path: '/api/admin/cloud/data/summary',
         summary: 'Get FeatherCloud summary',
@@ -59,7 +76,7 @@ class CloudDataController
 
             return ApiResponse::success($data, 'Cloud summary retrieved successfully', 200);
         } catch (FeatherCloudException $e) {
-            return ApiResponse::error($e->getMessage(), $e->getErrorCode(), $e->getHttpStatusCode());
+            return $this->cloudErrorResponse($e);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to retrieve cloud summary: ' . $e->getMessage(), 'INTERNAL_ERROR', 500);
         }
@@ -98,7 +115,7 @@ class CloudDataController
 
             return ApiResponse::success($data, 'Credits retrieved successfully', 200);
         } catch (FeatherCloudException $e) {
-            return ApiResponse::error($e->getMessage(), $e->getErrorCode(), $e->getHttpStatusCode());
+            return $this->cloudErrorResponse($e);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to retrieve credits: ' . $e->getMessage(), 'INTERNAL_ERROR', 500);
         }
@@ -135,7 +152,7 @@ class CloudDataController
 
             return ApiResponse::success($data, 'Team information retrieved successfully', 200);
         } catch (FeatherCloudException $e) {
-            return ApiResponse::error($e->getMessage(), $e->getErrorCode(), $e->getHttpStatusCode());
+            return $this->cloudErrorResponse($e);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to retrieve team information: ' . $e->getMessage(), 'INTERNAL_ERROR', 500);
         }
@@ -192,7 +209,7 @@ class CloudDataController
 
             return ApiResponse::success($data, 'Products retrieved successfully', 200);
         } catch (FeatherCloudException $e) {
-            return ApiResponse::error($e->getMessage(), $e->getErrorCode(), $e->getHttpStatusCode());
+            return $this->cloudErrorResponse($e);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to retrieve products: ' . $e->getMessage(), 'INTERNAL_ERROR', 500);
         }

@@ -236,7 +236,9 @@ class DashboardController
 
         try {
             // Fetch current version details
-            $currentVersionUrl = 'https://api.featherpanel.com/versions/' . $currentVersion;
+            // API expects semantic version without a leading "v".
+            $normalizedCurrentVersion = ltrim($currentVersion, 'vV');
+            $currentVersionUrl = 'https://api.featherpanel.com/versions/' . $normalizedCurrentVersion;
             $context = stream_context_create([
                 'http' => [
                     'timeout' => 10,

@@ -69,8 +69,16 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
             // Handle common auth state errors
             const errorCode = error.response?.data?.error_code;
             const status = error.response?.status;
+            const requestUrl = String(error.config?.url || '');
+            // Only force logout on explicit session/auth failures.
+            // Some non-auth endpoints (e.g. FeatherCloud integration) can also return 401
+            // for external credential issues and should not clear the user's panel session.
+            const isSessionEndpoint = requestUrl.includes('/api/user/session') || requestUrl.includes('/user/session');
+            const isAuthEndpoint = requestUrl.includes('/api/user/auth/') || requestUrl.includes('/user/auth/');
             const shouldForceLogout =
-                status === 401 || errorCode === 'INVALID_ACCOUNT_TOKEN' || errorCode === 'USER_BANNED';
+                errorCode === 'INVALID_ACCOUNT_TOKEN' ||
+                errorCode === 'USER_BANNED' ||
+                (status === 401 && (isSessionEndpoint || isAuthEndpoint));
 
             if (shouldForceLogout) {
                 handleAuthStateFailure();
