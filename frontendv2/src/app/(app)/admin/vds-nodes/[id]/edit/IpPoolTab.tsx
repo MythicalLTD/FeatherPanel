@@ -63,7 +63,9 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
     });
 
     const [createOpen, setCreateOpen] = useState(false);
+    const [createMode, setCreateMode] = useState<'single' | 'bulk'>('single');
     const [createForm, setCreateForm] = useState({ ip: '', cidr: '', gateway: '', notes: '' });
+    const [bulkIpsInput, setBulkIpsInput] = useState('');
     const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
     const [creating, setCreating] = useState(false);
 
@@ -153,6 +155,70 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
         } catch (error) {
             if (isAxiosError(error) && error.response?.data?.message) {
                 toast.error(error.response.data.message);
+            } else {
+                toast.error(t('admin.vdsNodes.ips.add_failed'));
+            }
+        } finally {
+            setCreating(false);
+        }
+    };
+
+    const handleCreateBulk = async () => {
+        const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+        const entries = Array.from(
+            new Set(
+                bulkIpsInput
+                    .split(/[\n,\s]+/g)
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+            ),
+        );
+        if (entries.length === 0) {
+            toast.error('Add at least one IP (one per line, comma, or space separated).');
+            return;
+        }
+        const invalid = entries.find((ip) => !ipRegex.test(ip));
+        if (invalid) {
+            toast.error(`Invalid IP in list: ${invalid}`);
+            return;
+        }
+        if (createForm.cidr !== '') {
+            const cidr = parseInt(createForm.cidr, 10);
+            if (isNaN(cidr) || cidr < 0 || cidr > 32) {
+                toast.error(t('admin.vdsNodes.ips.errors.cidr_invalid'));
+                return;
+            }
+        }
+        if (createForm.gateway && !ipRegex.test(createForm.gateway)) {
+            toast.error(t('admin.vdsNodes.ips.errors.gateway_invalid'));
+            return;
+        }
+
+        setCreating(true);
+        let success = 0;
+        let failed = 0;
+        try {
+            for (const ip of entries) {
+                try {
+                    await axios.put(`/api/admin/vm-nodes/${nodeId}/ips`, {
+                        ip,
+                        cidr: createForm.cidr !== '' ? parseInt(createForm.cidr, 10) : null,
+                        gateway: createForm.gateway || null,
+                        notes: createForm.notes || null,
+                    });
+                    success++;
+                } catch {
+                    failed++;
+                }
+            }
+            if (success > 0) {
+                toast.success(`Created ${success} IP${success > 1 ? 's' : ''}.`);
+                if (failed > 0) toast.warning(`Failed ${failed} IP${failed > 1 ? 's' : ''}.`);
+                setCreateOpen(false);
+                setBulkIpsInput('');
+                setCreateForm({ ip: '', cidr: '', gateway: '', notes: '' });
+                setCreateErrors({});
+                loadIps();
             } else {
                 toast.error(t('admin.vdsNodes.ips.add_failed'));
             }
@@ -490,6 +556,39 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                     <SheetDescription>{t('admin.vdsNodes.ips.create.description')}</SheetDescription>
                 </SheetHeader>
                 <div className='space-y-6 mt-8'>
+                    <div className='flex p-1 bg-muted/50 rounded-xl gap-1'>
+                        <Button
+                            type='button'
+                            variant='ghost'
+                            className={createMode === 'single' ? 'flex-1 rounded-lg h-9 text-xs bg-background shadow-sm hover:bg-background' : 'flex-1 rounded-lg h-9 text-xs'}
+                            onClick={() => setCreateMode('single')}
+                        >
+                            Single
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='ghost'
+                            className={createMode === 'bulk' ? 'flex-1 rounded-lg h-9 text-xs bg-background shadow-sm hover:bg-background' : 'flex-1 rounded-lg h-9 text-xs'}
+                            onClick={() => setCreateMode('bulk')}
+                        >
+                            Bulk
+                        </Button>
+                    </div>
+                    {createMode === 'bulk' && (
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>IP list</Label>
+                            <Textarea
+                                placeholder={'10.0.0.10\n10.0.0.11\n10.0.0.12'}
+                                value={bulkIpsInput}
+                                className='min-h-[120px] font-mono'
+                                onChange={(e) => setBulkIpsInput(e.target.value)}
+                            />
+                            <p className='text-xs text-muted-foreground'>
+                                One IP per line, or comma/space separated. CIDR/gateway/notes apply to all.
+                            </p>
+                        </div>
+                    )}
+                    {createMode === 'single' && (
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_ip')}</Label>
                         <Input
@@ -502,6 +601,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                             <p className='text-[10px] uppercase font-bold text-red-500'>{createErrors.ip}</p>
                         )}
                     </div>
+                    )}
                     <div className='grid grid-cols-2 gap-4'>
                         <div className='space-y-2'>
                             <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_cidr')}</Label>
@@ -545,7 +645,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                     <Button variant='outline' onClick={() => setCreateOpen(false)}>
                         {t('common.cancel')}
                     </Button>
-                    <Button onClick={handleCreate} loading={creating}>
+                    <Button onClick={createMode === 'bulk' ? handleCreateBulk : handleCreate} loading={creating}>
                         {t('common.create')}
                     </Button>
                 </SheetFooter>

@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -30,9 +31,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { VmTemplatePickerSheet } from '@/components/admin/VmTemplatePickerSheet';
+import { VmIpPickerSheet } from '@/components/admin/VmIpPickerSheet';
+import { OwnerCreateForm } from '@/components/admin/OwnerCreateForm';
 import {
     Server,
     Loader2,
+    AlertTriangle,
+    RefreshCw,
+    MapPin,
     Search as SearchIcon,
     UserCircle,
     X,
@@ -98,11 +105,16 @@ export default function VmInstancesCreatePage() {
     const [loadingMeta, setLoadingMeta] = useState(false);
     const [freeIps, setFreeIps] = useState<FreeIp[]>([]);
     const [templates, setTemplates] = useState<VmTemplate[]>([]);
+    const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+    const [ipPickerOpen, setIpPickerOpen] = useState(false);
+    const [ipPickerInitialMode, setIpPickerInitialMode] = useState<'browse' | 'create'>('browse');
+    const [targetNetworkKey, setTargetNetworkKey] = useState<string>('net0');
     const [submitting, setSubmitting] = useState(false);
     const [creatingMessage, setCreatingMessage] = useState<string | null>(null);
 
     const [selectedOwner, setSelectedOwner] = useState<OwnerUser | null>(null);
     const [ownerModalOpen, setOwnerModalOpen] = useState(false);
+    const [ownerPickerMode, setOwnerPickerMode] = useState<'browse' | 'create'>('browse');
     const [owners, setOwners] = useState<OwnerUser[]>([]);
     const [ownerSearch, setOwnerSearch] = useState('');
     const [ownerPagination, setOwnerPagination] = useState({
@@ -113,6 +125,13 @@ export default function VmInstancesCreatePage() {
         has_next: false,
         has_prev: false,
     });
+
+    type InfraGate =
+        | { status: 'loading' }
+        | { status: 'ready' }
+        | { status: 'blocked'; vpsLocations: number; vdsNodes: number }
+        | { status: 'error' };
+    const [infraGate, setInfraGate] = useState<InfraGate>({ status: 'loading' });
 
     const wizardSteps = [
         {
@@ -145,7 +164,7 @@ export default function VmInstancesCreatePage() {
     const [loadingBridges, setLoadingBridges] = useState(false);
     const [loadingStorage, setLoadingStorage] = useState(false);
 
-    const [ciUser, setCiUser] = useState('debian');
+    const [ciUser, setCiUser] = useState('root');
     const [ciPassword, setCiPassword] = useState('');
     const [backupLimit, setBackupLimit] = useState(5);
     const [backupRetentionMode, setBackupRetentionMode] = useState<'inherit' | 'hard_limit' | 'fifo_rolling'>(
@@ -157,6 +176,25 @@ export default function VmInstancesCreatePage() {
     const selectedTemplate = templates.find((tpl) => tpl.id === templateId) || null;
     const isLxcTemplate = selectedTemplate?.guest_type === 'lxc';
     const primaryNetwork = networks[0] ?? null;
+    const wizardBlockedByInfra = infraGate.status === 'blocked';
+    const wizardNavWaitingInfra = infraGate.status === 'loading';
+
+    const refreshInfrastructureCheck = useCallback(async () => {
+        setInfraGate({ status: 'loading' });
+        try {
+            const [locRes, nodeRes] = await Promise.all([
+                axios.get('/api/admin/locations', { params: { type: 'vps', page: 1, limit: 1 } }),
+                axios.get('/api/admin/vm-nodes', { params: { page: 1, limit: 1 } }),
+            ]);
+            const vpsLocations = Number(locRes.data?.data?.pagination?.total_records ?? 0);
+            const vdsNodes = Number(nodeRes.data?.data?.pagination?.total_records ?? 0);
+            if (vpsLocations > 0 && vdsNodes > 0) setInfraGate({ status: 'ready' });
+            else setInfraGate({ status: 'blocked', vpsLocations, vdsNodes });
+        } catch (e) {
+            console.error('VDS infrastructure prerequisite check failed:', e);
+            setInfraGate({ status: 'error' });
+        }
+    }, []);
 
     useEffect(() => {
         axios
@@ -167,45 +205,73 @@ export default function VmInstancesCreatePage() {
     }, [t]);
 
     useEffect(() => {
+        const timer = setTimeout(() => {
+            void refreshInfrastructureCheck();
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [refreshInfrastructureCheck]);
+
+    useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    useEffect(() => {
-        if (nodeId <= 0) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setFreeIps([]);
-            setTemplates([]);
-            setBridges([]);
-            setStorageList([]);
-            setPveNodes([]);
-            setPveNode('');
-            return;
-        }
-        setLoadingMeta(true);
-        setTemplateId(0);
-        Promise.all([
-            axios.get(`/api/admin/vm-nodes/${nodeId}/free-ips`),
-            axios.get(`/api/admin/vm-nodes/${nodeId}/templates`),
-            axios.get(`/api/admin/vm-nodes/${nodeId}/cluster-nodes`),
-        ])
-            .then(([ipsRes, tplRes, clusterRes]) => {
-                const ips = ipsRes.data.data?.free_ips ?? [];
+    const loadNodeMeta = useCallback(
+        async (opts?: { preserveSelections?: boolean }) => {
+            if (nodeId <= 0) {
+                setFreeIps([]);
+                setTemplates([]);
+                setBridges([]);
+                setStorageList([]);
+                setPveNodes([]);
+                setPveNode('');
+                return;
+            }
+            setLoadingMeta(true);
+            try {
+                const [ipsRes, tplRes, clusterRes] = await Promise.all([
+                    axios.get(`/api/admin/vm-nodes/${nodeId}/free-ips`),
+                    axios.get(`/api/admin/vm-nodes/${nodeId}/templates`),
+                    axios.get(`/api/admin/vm-nodes/${nodeId}/cluster-nodes`),
+                ]);
+                const ips = (ipsRes.data.data?.free_ips ?? []) as FreeIp[];
+                const tpls = (tplRes.data.data?.templates ?? []) as VmTemplate[];
                 setFreeIps(ips);
-                setTemplates(tplRes.data.data?.templates ?? []);
-                setNetworks([{ key: 'net0', vm_ip_id: ips[0]?.id ?? null }]);
+                setTemplates(tpls);
+
+                const preserve = opts?.preserveSelections === true;
+                setNetworks((prev) => {
+                    const head = prev[0];
+                    const validHeadSelection = head?.vm_ip_id != null && ips.some((ip) => ip.id === head.vm_ip_id);
+                    if (preserve && head && validHeadSelection) {
+                        return prev;
+                    }
+                    return [{ key: 'net0', vm_ip_id: ips[0]?.id ?? null }];
+                });
+
+                if (!preserve) {
+                    setTemplateId((prev) => (tpls.some((tpl) => tpl.id === prev) ? prev : 0));
+                }
+
                 const clusterNodes = clusterRes.data.data?.nodes ?? [];
-                // Sort nodes alphabetically for consistent ordering
                 const sortedNodes = [...clusterNodes].sort((a, b) => (a.node || '').localeCompare(b.node || ''));
                 setPveNodes(sortedNodes);
-                setPveNode(sortedNodes[0]?.node ?? '');
-            })
-            .catch(() => toast.error(t('admin.vmInstances.errors.fetch_failed')))
-            .finally(() => setLoadingMeta(false));
-    }, [nodeId, t]);
+                setPveNode((prev) => (sortedNodes.some((n) => n.node === prev) ? prev : (sortedNodes[0]?.node ?? '')));
+            } catch {
+                toast.error(t('admin.vmInstances.errors.fetch_failed'));
+            } finally {
+                setLoadingMeta(false);
+            }
+        },
+        [nodeId, t],
+    );
+
+    useEffect(() => {
+        if (nodeId > 0) setTemplateId(0);
+        void loadNodeMeta();
+    }, [nodeId, loadNodeMeta]);
 
     useEffect(() => {
         if (nodeId <= 0 || pveNode === '') {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setBridges([]);
             setStorageList([]);
             return;
@@ -260,13 +326,20 @@ export default function VmInstancesCreatePage() {
 
     useEffect(() => {
         if (ownerModalOpen) {
+            if (ownerPickerMode === 'create') return;
             const timer = setTimeout(() => fetchOwners(), 300);
             return () => clearTimeout(timer);
         }
-    }, [ownerModalOpen, ownerSearch, ownerPagination.current_page, fetchOwners]);
+    }, [ownerModalOpen, ownerPickerMode, ownerSearch, ownerPagination.current_page, fetchOwners]);
 
     const handlePrevious = () => setCurrentStep((s) => Math.max(1, s - 1));
     const handleNext = () => {
+        if (wizardBlockedByInfra || wizardNavWaitingInfra) {
+            if (wizardBlockedByInfra) {
+                toast.error('Add at least one VPS location and one VDS node before continuing.');
+            }
+            return;
+        }
         if (currentStep === 1) {
             if (nodeId <= 0) {
                 toast.error(t('admin.vmInstances.select_node') ?? 'Select a node first.');
@@ -283,23 +356,14 @@ export default function VmInstancesCreatePage() {
                 );
                 return;
             }
+            if (primaryNetwork?.vm_ip_id == null) {
+                toast.error(t('admin.vmInstances.select_ip') ?? 'Select a primary IP.');
+                return;
+            }
         }
 
         setCurrentStep((s) => Math.min(totalSteps, s + 1));
     };
-
-    const getRowIpOptions = useCallback(
-        (row: NetworkRow) => {
-            const selectedElsewhere = new Set(
-                networks
-                    .filter((candidate) => candidate.key !== row.key && candidate.vm_ip_id != null)
-                    .map((candidate) => candidate.vm_ip_id),
-            );
-
-            return freeIps.filter((ip) => !selectedElsewhere.has(ip.id) || ip.id === row.vm_ip_id);
-        },
-        [freeIps, networks],
-    );
 
     const addNetworkRow = () => {
         const nextIndex =
@@ -314,7 +378,13 @@ export default function VmInstancesCreatePage() {
         setNetworks((prev) => prev.filter((row) => row.key !== key));
     };
 
-    const canProceedStep1 = nodeId > 0 && pveNode !== '' && templateId > 0 && freeIps.length > 0;
+    const openIpPickerForRow = (rowKey: string, mode: 'browse' | 'create' = 'browse') => {
+        setTargetNetworkKey(rowKey);
+        setIpPickerInitialMode(mode);
+        setIpPickerOpen(true);
+    };
+
+    const canProceedStep1 = nodeId > 0 && pveNode !== '' && templateId > 0 && primaryNetwork?.vm_ip_id != null;
     const noFreeIpsAvailable = nodeId > 0 && !loadingMeta && freeIps.length === 0;
     const hostnameValid = hostname.trim().length > 0;
     const ownerSelected = selectedOwner != null;
@@ -333,6 +403,12 @@ export default function VmInstancesCreatePage() {
     };
 
     const handleCreate = async () => {
+        if (wizardBlockedByInfra || wizardNavWaitingInfra) {
+            if (wizardBlockedByInfra) {
+                toast.error('Add at least one VPS location and one VDS node before continuing.');
+            }
+            return;
+        }
         if (currentStep !== totalSteps) return;
         if (!canProceedStep1) {
             toast.error(
@@ -476,6 +552,59 @@ export default function VmInstancesCreatePage() {
 
             <WidgetRenderer widgets={getWidgets('admin-vm-instances-create', 'after-header')} />
 
+            {infraGate.status === 'blocked' && (
+                <div className='mt-6 rounded-2xl border border-border/50 bg-card/70 backdrop-blur-md shadow-sm'>
+                    <div className='flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6'>
+                        <div className='flex min-w-0 flex-1 gap-3'>
+                            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20'>
+                                <AlertTriangle className='h-5 w-5' aria-hidden />
+                            </div>
+                            <div className='min-w-0 space-y-1'>
+                                <p className='text-sm font-semibold leading-snug'>Infrastructure required</p>
+                                <p className='text-sm text-muted-foreground leading-relaxed'>
+                                    {infraGate.vpsLocations === 0
+                                        ? 'Create at least one VPS location first.'
+                                        : 'Create at least one VDS node and link it to a location.'}
+                                </p>
+                                <p className='text-xs text-muted-foreground/80'>
+                                    {infraGate.vpsLocations} VPS location(s) · {infraGate.vdsNodes} VDS node(s)
+                                </p>
+                            </div>
+                        </div>
+                        <div className='flex shrink-0 items-center justify-end gap-2 sm:justify-start'>
+                            <Button
+                                type='button'
+                                variant='ghost'
+                                size='icon'
+                                className='h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground'
+                                title='Recheck infrastructure'
+                                onClick={() => void refreshInfrastructureCheck()}
+                            >
+                                <RefreshCw className='h-4 w-4' />
+                            </Button>
+                            <Button asChild className='h-10 min-w-[8.5rem] rounded-xl px-5'>
+                                <Link
+                                    href={infraGate.vpsLocations === 0 ? '/admin/locations' : '/admin/vds-nodes/create'}
+                                    className='inline-flex items-center justify-center gap-2'
+                                >
+                                    {infraGate.vpsLocations === 0 ? (
+                                        <>
+                                            <MapPin className='h-4 w-4 shrink-0' />
+                                            Add VPS location
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Server className='h-4 w-4 shrink-0' />
+                                            Create node
+                                        </>
+                                    )}
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className='mt-8 mb-12 p-6 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
                 <StepIndicator steps={wizardSteps} currentStep={currentStep} />
                 {loadingPlans && (
@@ -554,22 +683,42 @@ export default function VmInstancesCreatePage() {
                                                 {t('admin.vmInstances.template') ?? 'Template'}
                                                 <span className='text-red-500 font-bold'>*</span>
                                             </Label>
-                                            <Select
-                                                value={templateId || ''}
-                                                onChange={(e) => setTemplateId(Number(e.target.value))}
-                                                className='bg-muted/30 h-11 rounded-xl'
-                                            >
-                                                <option value=''>
-                                                    {t('admin.vmInstances.select_template') ?? 'Select template'}
-                                                </option>
-                                                {templates.map((tpl) => (
-                                                    <option key={tpl.id} value={tpl.id}>
-                                                        {tpl.name}{' '}
-                                                        {tpl.template_file ? `(VMID ${tpl.template_file})` : ''}{' '}
-                                                        {tpl.guest_type === 'lxc' ? 'LXC' : 'QEMU'}
-                                                    </option>
-                                                ))}
-                                            </Select>
+                                            <div className='flex gap-2'>
+                                                <div
+                                                    role='button'
+                                                    tabIndex={0}
+                                                    onClick={() => setTemplatePickerOpen(true)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault();
+                                                            setTemplatePickerOpen(true);
+                                                        }
+                                                    }}
+                                                    className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                                >
+                                                    {selectedTemplate ? (
+                                                        <div className='min-w-0'>
+                                                            <div className='font-medium truncate'>{selectedTemplate.name}</div>
+                                                            <div className='text-xs text-muted-foreground truncate font-mono'>
+                                                                VMID {selectedTemplate.template_file ?? '—'} ·{' '}
+                                                                {selectedTemplate.guest_type === 'lxc' ? 'LXC' : 'QEMU/KVM'}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <span className='text-muted-foreground'>
+                                                            {t('admin.vmInstances.select_template') ?? 'Select template'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <Button
+                                                    type='button'
+                                                    size='icon'
+                                                    onClick={() => setTemplatePickerOpen(true)}
+                                                    className='h-11 w-11'
+                                                >
+                                                    <SearchIcon className='h-4 w-4' />
+                                                </Button>
+                                            </div>
                                             {templates.length === 0 && (
                                                 <p className='text-xs text-muted-foreground'>
                                                     {t('admin.vmInstances.no_templates_qemu')}
@@ -734,30 +883,58 @@ export default function VmInstancesCreatePage() {
                                                             : (t('admin.vmInstances.secondary_ip') ?? 'Secondary')}
                                                     </div>
                                                 </div>
-                                                <Select
-                                                    value={row.vm_ip_id ?? ''}
-                                                    onChange={(e) => {
-                                                        const value = e.target.value;
-                                                        setNetworks((prev) =>
-                                                            prev.map((candidate) =>
-                                                                candidate.key === row.key
-                                                                    ? {
-                                                                          ...candidate,
-                                                                          vm_ip_id: value === '' ? null : Number(value),
-                                                                      }
-                                                                    : candidate,
-                                                            ),
-                                                        );
+                                                <div
+                                                    role='button'
+                                                    tabIndex={0}
+                                                    onClick={() => openIpPickerForRow(row.key, 'browse')}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault();
+                                                            openIpPickerForRow(row.key, 'browse');
+                                                        }
                                                     }}
-                                                    className='bg-muted/30 h-11 rounded-xl flex-1'
+                                                    className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
                                                 >
-                                                    <option value=''>Select IP</option>
-                                                    {getRowIpOptions(row).map((ip) => (
-                                                        <option key={ip.id} value={ip.id}>
-                                                            {ip.ip}
-                                                        </option>
-                                                    ))}
-                                                </Select>
+                                                    {row.vm_ip_id != null ? (
+                                                        <div className='min-w-0'>
+                                                            <div className='font-mono font-medium truncate'>
+                                                                {freeIps.find((ip) => ip.id === row.vm_ip_id)?.ip ||
+                                                                    (t('admin.vmInstances.select_ip') ?? 'Select IP')}
+                                                            </div>
+                                                            <div className='text-xs text-muted-foreground font-mono'>
+                                                                {(() => {
+                                                                    const selected = freeIps.find((ip) => ip.id === row.vm_ip_id);
+                                                                    if (!selected) return '';
+                                                                    return `${selected.cidr !== null ? `/${selected.cidr}` : 'No CIDR'} · ${selected.gateway || 'No gateway'}`;
+                                                                })()}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <span className='text-muted-foreground'>
+                                                            {t('admin.vmInstances.select_ip') ?? 'Select IP'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <Button
+                                                    type='button'
+                                                    variant='ghost'
+                                                    size='icon'
+                                                    onClick={() => openIpPickerForRow(row.key, 'create')}
+                                                    title='Create IP and assign'
+                                                    className='self-end sm:self-auto'
+                                                >
+                                                    <Plus className='h-4 w-4' />
+                                                </Button>
+                                                <Button
+                                                    type='button'
+                                                    variant='ghost'
+                                                    size='icon'
+                                                    onClick={() => openIpPickerForRow(row.key, 'browse')}
+                                                    title={t('admin.vmInstances.select_ip') ?? 'Select IP'}
+                                                    className='self-end sm:self-auto'
+                                                >
+                                                    <SearchIcon className='h-4 w-4' />
+                                                </Button>
                                                 <Button
                                                     type='button'
                                                     variant='ghost'
@@ -776,10 +953,21 @@ export default function VmInstancesCreatePage() {
                                             {t('admin.vmInstances.ip_help') ??
                                                 'Leave on Auto to assign the first free IP from the node pool.'}
                                         </p>
-                                        <Button type='button' variant='outline' size='sm' onClick={addNetworkRow}>
-                                            <Plus className='h-4 w-4 mr-2' />
-                                            {t('admin.vmInstances.add_ip') ?? 'Add IP'}
-                                        </Button>
+                                        <div className='flex items-center gap-2'>
+                                            <Button
+                                                type='button'
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() => openIpPickerForRow(networks[0]?.key || 'net0', 'create')}
+                                            >
+                                                <Plus className='h-4 w-4 mr-2' />
+                                                Create IP
+                                            </Button>
+                                            <Button type='button' variant='outline' size='sm' onClick={addNetworkRow}>
+                                                <Plus className='h-4 w-4 mr-2' />
+                                                {t('admin.vmInstances.add_ip') ?? 'Add IP'}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -886,7 +1074,7 @@ export default function VmInstancesCreatePage() {
                                             <Input
                                                 value={ciUser}
                                                 onChange={(e) => setCiUser(e.target.value)}
-                                                placeholder='debian'
+                                                placeholder='root'
                                                 className='bg-muted/30 h-11'
                                             />
                                             <p className='text-xs text-muted-foreground'>
@@ -920,7 +1108,26 @@ export default function VmInstancesCreatePage() {
                                         <span className='text-red-500 font-bold'>*</span>
                                     </Label>
                                     <div className='flex gap-2'>
-                                        <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center'>
+                                            <div
+                                                role='button'
+                                                tabIndex={0}
+                                                onClick={() => {
+                                                    setOwnerSearch('');
+                                                    setOwnerPagination((p) => ({ ...p, current_page: 1 }));
+                                                    setOwnerPickerMode('browse');
+                                                    setOwnerModalOpen(true);
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                        e.preventDefault();
+                                                        setOwnerSearch('');
+                                                        setOwnerPagination((p) => ({ ...p, current_page: 1 }));
+                                                        setOwnerPickerMode('browse');
+                                                        setOwnerModalOpen(true);
+                                                    }
+                                                }}
+                                                className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                            >
                                             {selectedOwner ? (
                                                 <div className='flex items-center gap-2'>
                                                     <UserCircle className='h-4 w-4 text-primary' />
@@ -943,6 +1150,7 @@ export default function VmInstancesCreatePage() {
                                             onClick={() => {
                                                 setOwnerSearch('');
                                                 setOwnerPagination((p) => ({ ...p, current_page: 1 }));
+                                                    setOwnerPickerMode('browse');
                                                 setOwnerModalOpen(true);
                                             }}
                                             className='h-11 w-11'
@@ -997,7 +1205,12 @@ export default function VmInstancesCreatePage() {
                     </span>
 
                     {currentStep < totalSteps ? (
-                        <Button type='button' onClick={handleNext} className='gap-2'>
+                        <Button
+                            type='button'
+                            onClick={handleNext}
+                            disabled={wizardBlockedByInfra || wizardNavWaitingInfra}
+                            className='gap-2'
+                        >
                             {t('admin.servers.form.wizard.next') ?? t('common.next')}
                             <ChevronRight className='h-4 w-4' />
                         </Button>
@@ -1005,7 +1218,7 @@ export default function VmInstancesCreatePage() {
                         <Button
                             type='button'
                             onClick={handleCreate}
-                            disabled={!canCreate || submitting}
+                            disabled={!canCreate || submitting || wizardBlockedByInfra || wizardNavWaitingInfra}
                             loading={submitting}
                             className='gap-2'
                         >
@@ -1022,12 +1235,76 @@ export default function VmInstancesCreatePage() {
                 </div>
             </form>
 
+            {nodeId > 0 && (
+                <VmTemplatePickerSheet
+                    open={templatePickerOpen}
+                    onOpenChange={setTemplatePickerOpen}
+                    nodeId={nodeId}
+                    templates={templates}
+                    selectedTemplateId={templateId}
+                    onSelectTemplate={setTemplateId}
+                    onTemplateCreated={(created) => {
+                        setTemplates((prev) => [created, ...prev.filter((t) => t.id !== created.id)]);
+                        setTemplateId(created.id);
+                        setTemplatePickerOpen(false);
+                    }}
+                />
+            )}
+
+            {nodeId > 0 && (
+                <VmIpPickerSheet
+                    open={ipPickerOpen}
+                    onOpenChange={setIpPickerOpen}
+                    nodeId={nodeId}
+                    ips={freeIps}
+                    selectedIpId={networks.find((r) => r.key === targetNetworkKey)?.vm_ip_id ?? null}
+                    initialMode={ipPickerInitialMode}
+                    onSelectIp={(ipId) =>
+                        setNetworks((prev) => {
+                            if (prev.length === 0) return [{ key: 'net0', vm_ip_id: ipId }];
+                            return prev.map((row) =>
+                                row.key === targetNetworkKey ? { ...row, vm_ip_id: ipId } : row,
+                            );
+                        })
+                    }
+                    onIpCreated={(created) => {
+                        setFreeIps((prev) => {
+                            if (prev.some((i) => i.id === created.id)) return prev;
+                            return [created, ...prev];
+                        });
+                        setNetworks((prev) => {
+                            if (prev.length === 0) return [{ key: 'net0', vm_ip_id: created.id }];
+                            return prev.map((row) =>
+                                row.key === targetNetworkKey ? { ...row, vm_ip_id: created.id } : row,
+                            );
+                        });
+                        setIpPickerOpen(false);
+                    }}
+                    onIpsCreated={(createdList) => {
+                        if (createdList.length === 0) return;
+                        setFreeIps((prev) => {
+                            const map = new Map(prev.map((i) => [i.id, i]));
+                            createdList.forEach((c) => map.set(c.id, c));
+                            return Array.from(map.values());
+                        });
+                        const first = createdList[0];
+                        setNetworks((prev) => {
+                            if (prev.length === 0) return [{ key: 'net0', vm_ip_id: first.id }];
+                            return prev.map((row) =>
+                                row.key === targetNetworkKey ? { ...row, vm_ip_id: first.id } : row,
+                            );
+                        });
+                        setIpPickerOpen(false);
+                    }}
+                />
+            )}
+
             <Sheet open={ownerModalOpen} onOpenChange={setOwnerModalOpen}>
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.vmInstances.select_owner') ?? 'Select owner'}</SheetTitle>
                         <SheetDescription>
-                            {ownerPagination.total_records > 0
+                            {ownerPickerMode === 'browse' && ownerPagination.total_records > 0
                                 ? t('common.showing', {
                                       from: String((ownerPagination.current_page - 1) * ownerPagination.per_page + 1),
                                       to: String(
@@ -1038,75 +1315,124 @@ export default function VmInstancesCreatePage() {
                                       ),
                                       total: String(ownerPagination.total_records),
                                   })
-                                : (t('common.search') ?? 'Search')}
+                                : ownerPickerMode === 'create'
+                                  ? 'Create a new user and assign as owner.'
+                                  : (t('common.search') ?? 'Search')}
                         </SheetDescription>
                     </SheetHeader>
                     <div className='mt-6 space-y-4'>
-                        <div className='relative'>
-                            <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-                            <Input
-                                placeholder={t('common.search') ?? 'Search'}
-                                value={ownerSearch}
-                                onChange={(e) => {
-                                    setOwnerSearch(e.target.value);
-                                    setOwnerPagination((p) => ({ ...p, current_page: 1 }));
+                        <div className='flex rounded-xl border border-border/60 p-1 bg-muted/30 gap-1'>
+                            <button
+                                type='button'
+                                onClick={() => setOwnerPickerMode('browse')}
+                                className={`flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${ownerPickerMode === 'browse' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                <SearchIcon className='h-4 w-4' />
+                                Browse users
+                            </button>
+                            <button
+                                type='button'
+                                onClick={() => setOwnerPickerMode('create')}
+                                className={`flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${ownerPickerMode === 'create' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                <Plus className='h-4 w-4' />
+                                Create user
+                            </button>
+                        </div>
+
+                        {ownerPickerMode === 'create' ? (
+                            <OwnerCreateForm
+                                onCreated={(user) => {
+                                    setSelectedOwner({
+                                        id: user.id,
+                                        uuid: user.uuid,
+                                        username: user.username,
+                                        email: user.email,
+                                    });
+                                    setOwners((prev) => [
+                                        {
+                                            id: user.id,
+                                            uuid: user.uuid,
+                                            username: user.username,
+                                            email: user.email,
+                                        },
+                                        ...prev.filter((u) => u.id !== user.id),
+                                    ]);
+                                    setOwnerModalOpen(false);
+                                    setOwnerPickerMode('browse');
                                 }}
-                                className='pl-10'
+                                onCancel={() => setOwnerPickerMode('browse')}
+                                showFooter
                             />
-                        </div>
-                        {ownerPagination.total_pages > 1 && (
-                            <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
-                                <Button
-                                    type='button'
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!ownerPagination.has_prev}
-                                    onClick={() =>
-                                        setOwnerPagination((p) => ({ ...p, current_page: p.current_page - 1 }))
-                                    }
-                                >
-                                    {t('common.previous') ?? 'Previous'}
-                                </Button>
-                                <span className='text-xs font-medium'>
-                                    {ownerPagination.current_page} / {ownerPagination.total_pages}
-                                </span>
-                                <Button
-                                    type='button'
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!ownerPagination.has_next}
-                                    onClick={() =>
-                                        setOwnerPagination((p) => ({ ...p, current_page: p.current_page + 1 }))
-                                    }
-                                >
-                                    {t('common.next') ?? 'Next'}
-                                </Button>
-                            </div>
-                        )}
-                        <div className='space-y-2 max-h-[60vh] overflow-y-auto'>
-                            {owners.length === 0 ? (
-                                <p className='text-center py-6 text-muted-foreground'>
-                                    {t('common.no_results') ?? 'No results'}
-                                </p>
-                            ) : (
-                                owners.map((user) => (
-                                    <button
-                                        key={user.id}
-                                        type='button'
-                                        onClick={() => {
-                                            setSelectedOwner(user);
-                                            setOwnerModalOpen(false);
+                        ) : (
+                            <>
+                                <div className='relative'>
+                                    <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                                    <Input
+                                        placeholder={t('common.search') ?? 'Search'}
+                                        value={ownerSearch}
+                                        onChange={(e) => {
+                                            setOwnerSearch(e.target.value);
+                                            setOwnerPagination((p) => ({ ...p, current_page: 1 }));
                                         }}
-                                        className='w-full p-3 rounded-xl border border-border/50 hover:border-primary hover:bg-primary/5 text-left transition-all'
-                                    >
-                                        <div className='flex flex-col'>
-                                            <span className='font-semibold'>{user.username}</span>
-                                            <span className='text-xs text-muted-foreground'>{user.email}</span>
-                                        </div>
-                                    </button>
-                                ))
-                            )}
-                        </div>
+                                        className='pl-10'
+                                    />
+                                </div>
+                                {ownerPagination.total_pages > 1 && (
+                                    <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            disabled={!ownerPagination.has_prev}
+                                            onClick={() =>
+                                                setOwnerPagination((p) => ({ ...p, current_page: p.current_page - 1 }))
+                                            }
+                                        >
+                                            {t('common.previous') ?? 'Previous'}
+                                        </Button>
+                                        <span className='text-xs font-medium'>
+                                            {ownerPagination.current_page} / {ownerPagination.total_pages}
+                                        </span>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            disabled={!ownerPagination.has_next}
+                                            onClick={() =>
+                                                setOwnerPagination((p) => ({ ...p, current_page: p.current_page + 1 }))
+                                            }
+                                        >
+                                            {t('common.next') ?? 'Next'}
+                                        </Button>
+                                    </div>
+                                )}
+                                <div className='space-y-2 max-h-[60vh] overflow-y-auto'>
+                                    {owners.length === 0 ? (
+                                        <p className='text-center py-6 text-muted-foreground'>
+                                            {t('common.no_results') ?? 'No results'}
+                                        </p>
+                                    ) : (
+                                        owners.map((user) => (
+                                            <button
+                                                key={user.id}
+                                                type='button'
+                                                onClick={() => {
+                                                    setSelectedOwner(user);
+                                                    setOwnerModalOpen(false);
+                                                }}
+                                                className='w-full p-3 rounded-xl border border-border/50 hover:border-primary hover:bg-primary/5 text-left transition-all'
+                                            >
+                                                <div className='flex flex-col'>
+                                                    <span className='font-semibold'>{user.username}</span>
+                                                    <span className='text-xs text-muted-foreground'>{user.email}</span>
+                                                </div>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </SheetContent>
             </Sheet>

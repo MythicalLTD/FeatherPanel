@@ -14,6 +14,7 @@
 - Added the ability to assign databases to specific nodes—now you can restrict a database (e.g., "hiyra") to be accessible only on selected nodes such as node 1 or node 2, as desired. by @nayskutzu
 - Seamlessly create new allocations directly from the server creation tab—no need to leave the page or interrupt your workflow. by @nayskutzu
 - Significantly streamlined and enhanced the server creation workflow for a faster, smoother, and more intuitive experience. by @nayskutzu
+- Significantly streamlined and enhanced the vds creation workflow for a faster, smoother, and more intuitive experience. by @nayskutzu
 
 ### Fixed
 
