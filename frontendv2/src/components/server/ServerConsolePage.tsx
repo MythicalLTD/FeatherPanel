@@ -362,7 +362,12 @@ export default function ServerConsolePage() {
                     pendingActionResolveRef.current();
                 }
                 pendingActionResolveRef.current = resolve;
-                sendPowerAction(action);
+                void sendPowerAction(action).finally(() => {
+                    if (pendingActionResolveRef.current === resolve) {
+                        pendingActionResolveRef.current();
+                        pendingActionResolveRef.current = null;
+                    }
+                });
 
                 setTimeout(() => {
                     if (pendingActionResolveRef.current === resolve) {

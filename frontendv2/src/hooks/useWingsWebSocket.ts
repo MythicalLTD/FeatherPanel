@@ -74,7 +74,7 @@ interface WingsWebSocketReturn {
     ping: number | null;
     stats: WingsStats | null;
     sendCommand: (command: string) => void;
-    sendPowerAction: (action: 'start' | 'stop' | 'restart' | 'kill') => void;
+    sendPowerAction: (action: 'start' | 'stop' | 'restart' | 'kill') => Promise<void>;
     reconnect: () => void;
     requestStats: () => void;
     requestLogs: () => void;
@@ -166,16 +166,13 @@ export function useWingsWebSocket({
         [connectionStatus],
     );
 
-    const sendPowerAction = useCallback((action: 'start' | 'stop' | 'restart' | 'kill') => {
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(
-                JSON.stringify({
-                    event: 'set state',
-                    args: [action],
-                }),
-            );
-        }
-    }, []);
+    const sendPowerAction = useCallback(
+        async (action: 'start' | 'stop' | 'restart' | 'kill') => {
+            // Route power actions through panel API so lifecycle hooks execute.
+            await axios.post(`/api/user/servers/${serverUuid}/power/${action}`);
+        },
+        [serverUuid],
+    );
 
     const refreshToken = useCallback(async () => {
         try {

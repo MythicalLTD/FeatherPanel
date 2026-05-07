@@ -48,8 +48,10 @@ class LifecycleHookExecutorService
      */
     public function executeForPowerAction(array $server, array $node, string $powerAction, ?array $actor = null): array
     {
+        App::getInstance(true)->getLogger()->info('Lifecycle hooks requested for server ' . ($server['uuid'] ?? 'unknown') . ' action ' . $powerAction);
         $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED, 'false') === 'true';
         if (!$enabled) {
+            App::getInstance(true)->getLogger()->info('Lifecycle hooks skipped because feature is disabled for server ' . ($server['uuid'] ?? 'unknown') . ' action ' . $powerAction);
             return [
                 'attempted' => false,
                 'blocked' => false,
@@ -79,9 +81,11 @@ class LifecycleHookExecutorService
         foreach ($pipelines as $hookType) {
             $hook = $this->getActiveHookByServerAndType((int) $server['id'], $hookType);
             if (!$hook) {
+                App::getInstance(true)->getLogger()->info('Lifecycle hook pipeline ' . $hookType . ' not configured or inactive for server ' . ($server['uuid'] ?? 'unknown'));
                 continue;
             }
 
+            App::getInstance(true)->getLogger()->info('Executing lifecycle hook pipeline ' . $hookType . ' for server ' . ($server['uuid'] ?? 'unknown'));
             $pipelineResult = $this->executeHookPipeline($hook, $server, $node, $powerAction, $actor);
             $result['pipelines'][] = $pipelineResult;
 
@@ -205,7 +209,9 @@ class LifecycleHookExecutorService
         }
 
         if (!str_contains($url, 'discord.com/api/webhooks/')) {
-            throw new \Exception('Webhook URL must be a Discord webhook');
+            if (!str_contains($url, 'discordapp.com/api/webhooks/')) {
+                throw new \Exception('Webhook URL must be a Discord webhook');
+            }
         }
 
         $body = [];
@@ -229,6 +235,7 @@ class LifecycleHookExecutorService
         if ($status < 200 || $status >= 300) {
             throw new \Exception('Discord webhook request failed with status ' . $status);
         }
+        App::getInstance(true)->getLogger()->info('Lifecycle Discord webhook delivered with status ' . $status);
 
         return ['status_code' => $status];
     }

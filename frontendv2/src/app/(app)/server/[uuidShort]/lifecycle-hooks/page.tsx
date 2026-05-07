@@ -31,6 +31,8 @@ import {
     Loader2,
     RefreshCw,
     Settings2,
+    Download,
+    Upload,
 } from 'lucide-react';
 
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -50,6 +52,21 @@ type LifecycleHookResponse = {
         hooks: LifecycleHook[];
         feature_enabled: boolean;
     };
+};
+
+type LifecycleHookExportFile = {
+    version: 1;
+    exported_at: string;
+    hooks: Array<{
+        hook_type: LifecycleHookType;
+        is_active: number;
+        steps: Array<{
+            sequence_id: number;
+            task_type: LifecycleTaskType;
+            payload: Record<string, unknown>;
+            continue_on_failure: number;
+        }>;
+    }>;
 };
 
 const EMPTY_HOOKS: Record<LifecycleHookType, LifecycleHook> = {
@@ -72,6 +89,8 @@ export default function ServerLifecycleHooksPage() {
     const [togglingHookType, setTogglingHookType] = React.useState<LifecycleHookType | null>(null);
     const [hooks, setHooks] = React.useState<Record<LifecycleHookType, LifecycleHook>>(EMPTY_HOOKS);
     const [featureEnabled, setFeatureEnabled] = React.useState(false);
+    const [importing, setImporting] = React.useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
     const [selectedHookType, setSelectedHookType] = React.useState<LifecycleHookType>('pre_start');
     const [selectedStep, setSelectedStep] = React.useState<LifecycleHookStep | null>(null);
@@ -210,10 +229,163 @@ export default function ServerLifecycleHooksPage() {
         router.push(`/server/${uuidShort}/lifecycle-hooks/step/${step.id}/edit?hook=${selectedHookType}`);
     };
 
+    const exportHooks = () => {
+        const payload: LifecycleHookExportFile = {
+            version: 1,
+            exported_at: new Date().toISOString(),
+            hooks: (['pre_start', 'pre_stop'] as LifecycleHookType[]).map((hookType) => ({
+                hook_type: hookType,
+                is_active: hooks[hookType].is_active,
+                steps: [...hooks[hookType].steps]
+                    .sort((a, b) => a.sequence_id - b.sequence_id)
+                    .map((step) => {
+                        let parsedPayload: Record<string, unknown> = {};
+                        try {
+                            parsedPayload = JSON.parse(step.payload);
+                        } catch {
+                            parsedPayload = {};
+                        }
+                        return {
+                            sequence_id: step.sequence_id,
+                            task_type: step.task_type,
+                            payload: parsedPayload,
+                            continue_on_failure: step.continue_on_failure,
+                        };
+                    }),
+            })),
+        };
+
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `lifecycle-hooks-${uuidShort}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const importHooks = async (file: File) => {
+        if (!featureEnabled || !canUpdate) return;
+        setImporting(true);
+        try {
+            const raw = await file.text();
+            const parsed = JSON.parse(raw) as Partial<LifecycleHookExportFile>;
+            if (!parsed || !Array.isArray(parsed.hooks)) {
+                toast.error(t('lifecycleHooks.messages.importInvalid'));
+                return;
+            }
+
+            const validTaskTypes: LifecycleTaskType[] = ['container_command', 'discord_webhook', 'http_request'];
+            for (const hookType of ['pre_start', 'pre_stop'] as LifecycleHookType[]) {
+                const importedHook = parsed.hooks.find((h) => h.hook_type === hookType);
+                if (!importedHook) continue;
+
+                await axios.put(`/api/user/servers/${uuidShort}/lifecycle-hooks/${hookType}`, {
+                    is_active: importedHook.is_active ? 1 : 0,
+                });
+
+                const existing = hooks[hookType]?.steps ?? [];
+                for (const step of existing) {
+                    await axios.delete(`/api/user/servers/${uuidShort}/lifecycle-hooks/${hookType}/steps/${step.id}`);
+                }
+
+                const sortedImportedSteps = [...(importedHook.steps ?? [])].sort(
+                    (a, b) => (a.sequence_id ?? 0) - (b.sequence_id ?? 0),
+                );
+                for (const step of sortedImportedSteps) {
+                    if (!step || !validTaskTypes.includes(step.task_type as LifecycleTaskType)) continue;
+                    await axios.post(`/api/user/servers/${uuidShort}/lifecycle-hooks/${hookType}/steps`, {
+                        task_type: step.task_type,
+                        continue_on_failure: step.continue_on_failure ? 1 : 0,
+                        payload: step.payload ?? {},
+                    });
+                }
+            }
+
+            await fetchHooks();
+            toast.success(t('lifecycleHooks.messages.importSuccess'));
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message?: string }>;
+            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.importFailed'));
+        } finally {
+            setImporting(false);
+        }
+    };
+
     const selectedHook = hooks[selectedHookType];
     const sortedSteps = React.useMemo(
         () => [...(selectedHook?.steps || [])].sort((a, b) => a.sequence_id - b.sequence_id),
         [selectedHook],
+    );
+
+    const summarizeStepPayload = React.useCallback(
+        (step: LifecycleHookStep): React.ReactNode => {
+            let parsed: Record<string, unknown> = {};
+            try {
+                parsed = JSON.parse(step.payload);
+            } catch {
+                return <span className='text-xs text-muted-foreground'>{t('lifecycleHooks.payloadUnavailable')}</span>;
+            }
+
+            if (step.task_type === 'discord_webhook') {
+                const rawUrl = typeof parsed.url === 'string' ? parsed.url : '';
+                let safeUrl = t('lifecycleHooks.discord.urlHidden');
+                if (rawUrl) {
+                    try {
+                        const u = new URL(rawUrl);
+                        safeUrl = `${u.origin}/api/webhooks/***`;
+                    } catch {
+                        safeUrl = t('lifecycleHooks.discord.urlHidden');
+                    }
+                }
+                const content =
+                    typeof parsed.content === 'string' && parsed.content.trim() !== ''
+                        ? parsed.content.trim().slice(0, 140)
+                        : '';
+                const embeds = Array.isArray(parsed.embeds) ? parsed.embeds.length : 0;
+                return (
+                    <div className='text-xs space-y-1'>
+                        <p className='text-muted-foreground'>
+                            <span className='font-semibold text-foreground/80'>{t('lifecycleHooks.form.webhookUrl')}:</span>{' '}
+                            {safeUrl}
+                        </p>
+                        <p className='text-muted-foreground'>
+                            <span className='font-semibold text-foreground/80'>{t('lifecycleHooks.form.content')}:</span>{' '}
+                            {content || t('lifecycleHooks.discord.contentEmpty')}
+                        </p>
+                        <p className='text-muted-foreground'>
+                            <span className='font-semibold text-foreground/80'>Embeds:</span> {embeds}
+                        </p>
+                    </div>
+                );
+            }
+
+            if (step.task_type === 'container_command') {
+                const command = typeof parsed.command === 'string' ? parsed.command : '';
+                return (
+                    <code className='text-xs whitespace-pre-wrap break-all'>
+                        {command || t('lifecycleHooks.payloadUnavailable')}
+                    </code>
+                );
+            }
+
+            const method = typeof parsed.method === 'string' ? parsed.method.toUpperCase() : 'GET';
+            const url = typeof parsed.url === 'string' ? parsed.url : '';
+            return (
+                <div className='text-xs space-y-1'>
+                    <p className='text-muted-foreground'>
+                        <span className='font-semibold text-foreground/80'>{t('lifecycleHooks.form.method')}:</span> {method}
+                    </p>
+                    <p className='text-muted-foreground break-all'>
+                        <span className='font-semibold text-foreground/80'>{t('lifecycleHooks.form.url')}:</span>{' '}
+                        {url || t('lifecycleHooks.payloadUnavailable')}
+                    </p>
+                </div>
+            );
+        },
+        [t],
     );
 
     const mutationsAllowed = featureEnabled && canUpdate;
@@ -252,6 +424,36 @@ export default function ServerLifecycleHooksPage() {
                             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                             {t('common.refresh')}
                         </Button>
+                        <Button variant='glass' size='sm' onClick={exportHooks} disabled={loading}>
+                            <Download className='h-4 w-4 mr-2' />
+                            {t('lifecycleHooks.export')}
+                        </Button>
+                        {mutationsAllowed ? (
+                            <>
+                                <input
+                                    ref={fileInputRef}
+                                    type='file'
+                                    accept='application/json,.json'
+                                    className='hidden'
+                                    onChange={(event) => {
+                                        const file = event.target.files?.[0];
+                                        if (file) {
+                                            void importHooks(file);
+                                        }
+                                        event.currentTarget.value = '';
+                                    }}
+                                />
+                                <Button
+                                    variant='glass'
+                                    size='sm'
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={importing}
+                                >
+                                    <Upload className='h-4 w-4 mr-2' />
+                                    {importing ? t('common.loading') : t('lifecycleHooks.import')}
+                                </Button>
+                            </>
+                        ) : null}
                     </div>
                 }
             />
@@ -348,7 +550,7 @@ export default function ServerLifecycleHooksPage() {
                             key={step.id}
                             icon={ListCheck}
                             title={taskTypeLabels[step.task_type]}
-                            description={<code className='text-xs'>{step.payload}</code>}
+                            description={summarizeStepPayload(step)}
                             badges={[
                                 {
                                     label: `#${step.sequence_id}`,
