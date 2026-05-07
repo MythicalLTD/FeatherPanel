@@ -17,6 +17,7 @@
 - Significantly streamlined and enhanced the server creation workflow for a faster, smoother, and more intuitive experience. by @nayskutzu
 - Significantly streamlined and enhanced the vds creation workflow for a faster, smoother, and more intuitive experience. by @nayskutzu
 - Added a Redis notification system to reload settings across all services when settings are updated. by @nayskutzu
+- Addon installations are now preserved during FeatherPanel updates, ensuring your enhancements remain intact after every upgrade. by @nayskutzu
 
 ### Fixed
 

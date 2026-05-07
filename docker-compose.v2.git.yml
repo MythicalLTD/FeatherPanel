@@ -78,6 +78,7 @@ services:
       - featherpanel_snapshots:/var/www/html/storage/backups
       - featherpanel_logs:/var/www/html/storage/logs
       - featherpanel_translations:/var/www/html/public/translations
+      - featherpanel_addons:/var/www/html/storage/addons
     networks:
       - featherpanel_network
 
@@ -162,6 +163,8 @@ volumes:
   featherpanel_logs:
     driver: local
   featherpanel_translations:
+    driver: local
+  featherpanel_addons:
     driver: local
 
 networks:

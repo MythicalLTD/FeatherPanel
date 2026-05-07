@@ -88,6 +88,41 @@ echo "Migrations finished."
 
 # Set ownership and permissions (first run only, and only where needed)
 
+# Regenerate addon public symlinks from storage/addons (deterministic on every boot)
+# Source of truth is storage/addons (persisted via volume); public/addons and
+# public/components are derived state and live inside the image layer, so we
+# rebuild them here to guarantee they match disk reality after every restart
+# or panel image upgrade.
+echo "Resyncing addon public symlinks..."
+ADDONS_DIR="/var/www/html/storage/addons"
+PUBLIC_ADDONS="/var/www/html/public/addons"
+PUBLIC_COMPONENTS="/var/www/html/public/components"
+
+mkdir -p "$PUBLIC_ADDONS" "$PUBLIC_COMPONENTS"
+
+find "$PUBLIC_ADDONS" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} + 2>/dev/null || true
+find "$PUBLIC_COMPONENTS" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} + 2>/dev/null || true
+
+if [ -d "$ADDONS_DIR" ]; then
+	for addon_path in "$ADDONS_DIR"/*/; do
+		[ -d "$addon_path" ] || continue
+		id="$(basename "$addon_path")"
+		case "$id" in
+			.|..|'') continue ;;
+		esac
+
+		if [ -d "${addon_path}Public" ]; then
+			ln -s "${addon_path%/}/Public" "$PUBLIC_ADDONS/$id" 2>/dev/null || true
+		fi
+		if [ -d "${addon_path}Frontend/Components" ]; then
+			ln -s "${addon_path%/}/Frontend/Components" "$PUBLIC_COMPONENTS/$id" 2>/dev/null || true
+		fi
+	done
+fi
+
+chown -R www-data:www-data "$PUBLIC_ADDONS" "$PUBLIC_COMPONENTS" 2>/dev/null || true
+echo "Addon symlinks resynced."
+
 # Setup cron jobs (fallback method)
 echo "Setting up cron jobs..."
 /usr/local/bin/setup-cron.sh
