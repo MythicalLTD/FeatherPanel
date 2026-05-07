@@ -31,46 +31,116 @@ use Symfony\Component\HttpFoundation\Response;
     schema: 'Setting',
     type: 'object',
     properties: [
-        new OA\Property(property: 'name', type: 'string', description: 'Setting name/key'),
-        new OA\Property(property: 'value', type: 'string', description: 'Current setting value'),
-        new OA\Property(property: 'description', type: 'string', description: 'Setting description'),
-        new OA\Property(property: 'type', type: 'string', description: 'Setting input type', enum: ['text', 'select', 'number', 'textarea']),
-        new OA\Property(property: 'required', type: 'boolean', description: 'Whether the setting is required'),
-        new OA\Property(property: 'placeholder', type: 'string', description: 'Placeholder text for the input'),
-        new OA\Property(property: 'validation', type: 'string', description: 'Validation rules'),
-        new OA\Property(property: 'options', type: 'array', items: new OA\Items(type: 'string'), description: 'Available options for select fields'),
-        new OA\Property(property: 'category', type: 'string', description: 'Setting category', enum: ['app', 'security', 'email', 'other']),
-    ]
-)]
+        new OA\Property(
+            property: 'name',
+            type: 'string',
+            description: 'Setting name/key',
+        ),
+        new OA\Property(
+            property: 'value',
+            type: 'string',
+            description: 'Current setting value',
+        ),
+        new OA\Property(
+            property: 'description',
+            type: 'string',
+            description: 'Setting description',
+        ),
+        new OA\Property(
+            property: 'type',
+            type: 'string',
+            description: 'Setting input type',
+            enum: ['text', 'select', 'number', 'textarea'],
+        ),
+        new OA\Property(
+            property: 'required',
+            type: 'boolean',
+            description: 'Whether the setting is required',
+        ),
+        new OA\Property(
+            property: 'placeholder',
+            type: 'string',
+            description: 'Placeholder text for the input',
+        ),
+        new OA\Property(
+            property: 'validation',
+            type: 'string',
+            description: 'Validation rules',
+        ),
+        new OA\Property(
+            property: 'options',
+            type: 'array',
+            items: new OA\Items(type: 'string'),
+            description: 'Available options for select fields',
+        ),
+        new OA\Property(
+            property: 'category',
+            type: 'string',
+            description: 'Setting category',
+            enum: ['app', 'security', 'email', 'other'],
+        ),
+    ],
+),]
 #[OA\Schema(
     schema: 'SettingCategory',
     type: 'object',
     properties: [
-        new OA\Property(property: 'id', type: 'string', description: 'Category ID'),
-        new OA\Property(property: 'name', type: 'string', description: 'Category name'),
-        new OA\Property(property: 'description', type: 'string', description: 'Category description'),
-        new OA\Property(property: 'icon', type: 'string', description: 'Category icon'),
-        new OA\Property(property: 'settings_count', type: 'integer', description: 'Number of settings in this category'),
-    ]
-)]
+        new OA\Property(
+            property: 'id',
+            type: 'string',
+            description: 'Category ID',
+        ),
+        new OA\Property(
+            property: 'name',
+            type: 'string',
+            description: 'Category name',
+        ),
+        new OA\Property(
+            property: 'description',
+            type: 'string',
+            description: 'Category description',
+        ),
+        new OA\Property(
+            property: 'icon',
+            type: 'string',
+            description: 'Category icon',
+        ),
+        new OA\Property(
+            property: 'settings_count',
+            type: 'integer',
+            description: 'Number of settings in this category',
+        ),
+    ],
+),]
 #[OA\Schema(
     schema: 'SettingsUpdate',
     type: 'object',
     additionalProperties: new OA\AdditionalProperties(type: 'string'),
-    description: 'Key-value pairs of settings to update'
-)]
+    description: 'Key-value pairs of settings to update',
+),]
 #[OA\Schema(
     schema: 'OrganizedSettings',
     type: 'object',
     additionalProperties: new OA\AdditionalProperties(
         type: 'object',
         properties: [
-            new OA\Property(property: 'category', type: 'object', description: 'Category information'),
-            new OA\Property(property: 'settings', type: 'object', additionalProperties: new OA\AdditionalProperties(ref: '#/components/schemas/Setting'), description: 'Settings in this category'),
-        ]
+            new OA\Property(
+                property: 'category',
+                type: 'object',
+                description: 'Category information',
+            ),
+            new OA\Property(
+                property: 'settings',
+                type: 'object',
+                additionalProperties: new OA\AdditionalProperties(
+                    ref: '#/components/schemas/Setting',
+                ),
+                description: 'Settings in this category',
+            ),
+        ],
     ),
-    description: 'Settings organized by category'
-)]
+    description: 'Settings organized by category',
+),]
 class SettingsController
 {
     private $app;
@@ -300,7 +370,9 @@ class SettingsController
         $this->settings = [
             ConfigInterface::APP_NAME => [
                 'name' => ConfigInterface::APP_NAME,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
                 'description' => 'The name of the application',
                 'type' => 'text',
                 'required' => true,
@@ -311,7 +383,9 @@ class SettingsController
             ],
             ConfigInterface::APP_BACKGROUND_IMAGE_URL => [
                 'name' => ConfigInterface::APP_BACKGROUND_IMAGE_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_BACKGROUND_IMAGE_URL, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_BACKGROUND_IMAGE_URL, ''),
                 'description' => 'Default background image URL for all users (leave empty to use theme defaults)',
                 'type' => 'text',
                 'required' => false,
@@ -322,7 +396,9 @@ class SettingsController
             ],
             ConfigInterface::APP_BACKGROUND_LOCK => [
                 'name' => ConfigInterface::APP_BACKGROUND_LOCK,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_BACKGROUND_LOCK, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_BACKGROUND_LOCK, 'false'),
                 'description' => 'Force the configured background image URL for all users (disables per-user background overrides)',
                 'type' => 'select',
                 'required' => true,
@@ -333,7 +409,12 @@ class SettingsController
             ],
             ConfigInterface::APP_LOGO_WHITE => [
                 'name' => ConfigInterface::APP_LOGO_WHITE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/mythicalltd.png'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_LOGO_WHITE,
+                        'https://github.com/mythicalltd.png',
+                    ),
                 'description' => 'The logo of the application (For white mode)',
                 'type' => 'text',
                 'required' => true,
@@ -344,7 +425,9 @@ class SettingsController
             ],
             ConfigInterface::TELEMETRY => [
                 'name' => ConfigInterface::TELEMETRY,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TELEMETRY, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::TELEMETRY, 'true'),
                 'description' => 'Should the application send telemetry data to the telemetry service?',
                 'type' => 'select',
                 'required' => true,
@@ -355,7 +438,12 @@ class SettingsController
             ],
             ConfigInterface::APP_LOGO_DARK => [
                 'name' => ConfigInterface::APP_LOGO_DARK,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_LOGO_DARK, 'https://github.com/featherpanel-com.png'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_LOGO_DARK,
+                        'https://github.com/featherpanel-com.png',
+                    ),
                 'description' => 'The logo of the application (For dark mode)',
                 'type' => 'text',
                 'required' => true,
@@ -366,7 +454,12 @@ class SettingsController
             ],
             ConfigInterface::APP_URL => [
                 'name' => ConfigInterface::APP_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_URL,
+                        'https://featherpanel.mythical.systems',
+                    ),
                 'description' => 'The URL of the application',
                 'type' => 'text',
                 'required' => true,
@@ -377,7 +470,9 @@ class SettingsController
             ],
             ConfigInterface::APP_SSO_REDIRECT_PATH => [
                 'name' => ConfigInterface::APP_SSO_REDIRECT_PATH,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_SSO_REDIRECT_PATH, '/'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_SSO_REDIRECT_PATH, '/'),
                 'description' => 'Path used by generated SSO login links after authentication (must start with /, e.g. /dashboard)',
                 'type' => 'text',
                 'required' => true,
@@ -388,7 +483,9 @@ class SettingsController
             ],
             ConfigInterface::APP_TIMEZONE => [
                 'name' => ConfigInterface::APP_TIMEZONE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_TIMEZONE, 'UTC'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_TIMEZONE, 'UTC'),
                 'description' => 'The timezone of the application',
                 'type' => 'select',
                 'required' => true,
@@ -399,18 +496,44 @@ class SettingsController
             ],
             ConfigInterface::APP_ACCENT_COLOR_DEFAULT => [
                 'name' => ConfigInterface::APP_ACCENT_COLOR_DEFAULT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_ACCENT_COLOR_DEFAULT, 'purple'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_ACCENT_COLOR_DEFAULT,
+                        'purple',
+                    ),
                 'description' => 'Default accent color for the UI (purple, blue, green, red, orange, pink, teal, yellow, white, violet, cyan, lime, amber, rose, slate)',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'purple',
                 'validation' => 'required|string|max:255',
-                'options' => ['purple', 'blue', 'green', 'red', 'orange', 'pink', 'teal', 'yellow', 'white', 'violet', 'cyan', 'lime', 'amber', 'rose', 'slate'],
+                'options' => [
+                    'purple',
+                    'blue',
+                    'green',
+                    'red',
+                    'orange',
+                    'pink',
+                    'teal',
+                    'yellow',
+                    'white',
+                    'violet',
+                    'cyan',
+                    'lime',
+                    'amber',
+                    'rose',
+                    'slate',
+                ],
                 'category' => 'app',
             ],
             ConfigInterface::APP_ACCENT_COLOR_LOCK => [
                 'name' => ConfigInterface::APP_ACCENT_COLOR_LOCK,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_ACCENT_COLOR_LOCK, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_ACCENT_COLOR_LOCK,
+                        'false',
+                    ),
                 'description' => 'Force the configured accent color for all users (disables per-user accent selection)',
                 'type' => 'select',
                 'required' => true,
@@ -421,7 +544,9 @@ class SettingsController
             ],
             ConfigInterface::APP_THEME_DEFAULT => [
                 'name' => ConfigInterface::APP_THEME_DEFAULT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_THEME_DEFAULT, 'dark'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_THEME_DEFAULT, 'dark'),
                 'description' => 'Default theme (light or dark)',
                 'type' => 'select',
                 'required' => true,
@@ -432,7 +557,9 @@ class SettingsController
             ],
             ConfigInterface::APP_THEME_LOCK => [
                 'name' => ConfigInterface::APP_THEME_LOCK,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_THEME_LOCK, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_THEME_LOCK, 'false'),
                 'description' => 'Force the configured theme (light/dark) for all users (disables per-user theme toggle)',
                 'type' => 'select',
                 'required' => true,
@@ -443,18 +570,34 @@ class SettingsController
             ],
             ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT => [
                 'name' => ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT, 'pattern'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT,
+                        'pattern',
+                    ),
                 'description' => 'Default background type (aurora, gradient, solid, image, pattern) used when no user preference is stored',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'pattern',
                 'validation' => 'required|string|max:255',
-                'options' => ['aurora', 'gradient', 'solid', 'image', 'pattern'],
+                'options' => [
+                    'aurora',
+                    'gradient',
+                    'solid',
+                    'image',
+                    'pattern',
+                ],
                 'category' => 'app',
             ],
             ConfigInterface::APP_BACKGROUND_TYPE_LOCK => [
                 'name' => ConfigInterface::APP_BACKGROUND_TYPE_LOCK,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_BACKGROUND_TYPE_LOCK, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_BACKGROUND_TYPE_LOCK,
+                        'false',
+                    ),
                 'description' => 'Force the configured background type for all users (disables per-user background mode selection)',
                 'type' => 'select',
                 'required' => true,
@@ -465,7 +608,12 @@ class SettingsController
             ],
             ConfigInterface::APP_BACKDROP_BLUR_DEFAULT => [
                 'name' => ConfigInterface::APP_BACKDROP_BLUR_DEFAULT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_BACKDROP_BLUR_DEFAULT, '0'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_BACKDROP_BLUR_DEFAULT,
+                        '0',
+                    ),
                 'description' => 'Default backdrop blur in pixels (0, 4, 8, 12, 16, 24)',
                 'type' => 'number',
                 'required' => true,
@@ -476,7 +624,12 @@ class SettingsController
             ],
             ConfigInterface::APP_BACKDROP_BLUR_LOCK => [
                 'name' => ConfigInterface::APP_BACKDROP_BLUR_LOCK,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_BACKDROP_BLUR_LOCK, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_BACKDROP_BLUR_LOCK,
+                        'false',
+                    ),
                 'description' => 'Force the configured backdrop blur value for all users',
                 'type' => 'select',
                 'required' => true,
@@ -487,7 +640,12 @@ class SettingsController
             ],
             ConfigInterface::APP_BACKDROP_DARKEN_DEFAULT => [
                 'name' => ConfigInterface::APP_BACKDROP_DARKEN_DEFAULT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_BACKDROP_DARKEN_DEFAULT, '0'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_BACKDROP_DARKEN_DEFAULT,
+                        '0',
+                    ),
                 'description' => 'Default backdrop darken overlay in percent (0–100)',
                 'type' => 'number',
                 'required' => true,
@@ -498,7 +656,12 @@ class SettingsController
             ],
             ConfigInterface::APP_BACKDROP_DARKEN_LOCK => [
                 'name' => ConfigInterface::APP_BACKDROP_DARKEN_LOCK,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_BACKDROP_DARKEN_LOCK, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_BACKDROP_DARKEN_LOCK,
+                        'false',
+                    ),
                 'description' => 'Force the configured backdrop darken value for all users',
                 'type' => 'select',
                 'required' => true,
@@ -509,7 +672,12 @@ class SettingsController
             ],
             ConfigInterface::APP_BACKGROUND_IMAGE_FIT_DEFAULT => [
                 'name' => ConfigInterface::APP_BACKGROUND_IMAGE_FIT_DEFAULT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_BACKGROUND_IMAGE_FIT_DEFAULT, 'cover'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_BACKGROUND_IMAGE_FIT_DEFAULT,
+                        'cover',
+                    ),
                 'description' => 'Default background image fit (cover, contain, fill)',
                 'type' => 'select',
                 'required' => true,
@@ -520,7 +688,12 @@ class SettingsController
             ],
             ConfigInterface::APP_BACKGROUND_IMAGE_FIT_LOCK => [
                 'name' => ConfigInterface::APP_BACKGROUND_IMAGE_FIT_LOCK,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_BACKGROUND_IMAGE_FIT_LOCK, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_BACKGROUND_IMAGE_FIT_LOCK,
+                        'false',
+                    ),
                 'description' => 'Force the configured background image fit for all users',
                 'type' => 'select',
                 'required' => true,
@@ -531,7 +704,12 @@ class SettingsController
             ],
             ConfigInterface::APP_SUPPORT_URL => [
                 'name' => ConfigInterface::APP_SUPPORT_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://mythical.systems'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_SUPPORT_URL,
+                        'https://mythical.systems',
+                    ),
                 'description' => 'The support URL of the application',
                 'type' => 'text',
                 'required' => true,
@@ -542,7 +720,9 @@ class SettingsController
             ],
             ConfigInterface::LINKEDIN_URL => [
                 'name' => ConfigInterface::LINKEDIN_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::LINKEDIN_URL, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::LINKEDIN_URL, ''),
                 'description' => 'LinkedIn profile or page URL',
                 'type' => 'text',
                 'required' => false,
@@ -553,7 +733,9 @@ class SettingsController
             ],
             ConfigInterface::TELEGRAM_URL => [
                 'name' => ConfigInterface::TELEGRAM_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TELEGRAM_URL, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::TELEGRAM_URL, ''),
                 'description' => 'Telegram channel or group URL',
                 'type' => 'text',
                 'required' => false,
@@ -564,7 +746,9 @@ class SettingsController
             ],
             ConfigInterface::TIKTOK_URL => [
                 'name' => ConfigInterface::TIKTOK_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TIKTOK_URL, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::TIKTOK_URL, ''),
                 'description' => 'TikTok profile URL',
                 'type' => 'text',
                 'required' => false,
@@ -575,7 +759,9 @@ class SettingsController
             ],
             ConfigInterface::TWITTER_URL => [
                 'name' => ConfigInterface::TWITTER_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TWITTER_URL, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::TWITTER_URL, ''),
                 'description' => 'Twitter/X profile URL',
                 'type' => 'text',
                 'required' => false,
@@ -586,7 +772,9 @@ class SettingsController
             ],
             ConfigInterface::WHATSAPP_URL => [
                 'name' => ConfigInterface::WHATSAPP_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::WHATSAPP_URL, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::WHATSAPP_URL, ''),
                 'description' => 'WhatsApp contact or group URL',
                 'type' => 'text',
                 'required' => false,
@@ -597,7 +785,9 @@ class SettingsController
             ],
             ConfigInterface::YOUTUBE_URL => [
                 'name' => ConfigInterface::YOUTUBE_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::YOUTUBE_URL, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::YOUTUBE_URL, ''),
                 'description' => 'YouTube channel URL',
                 'type' => 'text',
                 'required' => false,
@@ -608,7 +798,9 @@ class SettingsController
             ],
             ConfigInterface::WEBSITE_URL => [
                 'name' => ConfigInterface::WEBSITE_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::WEBSITE_URL, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::WEBSITE_URL, ''),
                 'description' => 'Main website URL',
                 'type' => 'text',
                 'required' => false,
@@ -619,7 +811,9 @@ class SettingsController
             ],
             ConfigInterface::STATUS_PAGE_URL => [
                 'name' => ConfigInterface::STATUS_PAGE_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::STATUS_PAGE_URL, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::STATUS_PAGE_URL, ''),
                 'description' => 'Status page URL (e.g., status.example.com)',
                 'type' => 'text',
                 'required' => false,
@@ -630,7 +824,9 @@ class SettingsController
             ],
             ConfigInterface::SMTP_ENABLED => [
                 'name' => ConfigInterface::SMTP_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
                 'description' => 'The SMTP enabled of the application',
                 'type' => 'select',
                 'required' => true,
@@ -641,7 +837,9 @@ class SettingsController
             ],
             ConfigInterface::SMTP_HOST => [
                 'name' => ConfigInterface::SMTP_HOST,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SMTP_HOST, 'localhost'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::SMTP_HOST, 'localhost'),
                 'description' => 'The SMTP host of the application',
                 'type' => 'text',
                 'required' => true,
@@ -652,7 +850,9 @@ class SettingsController
             ],
             ConfigInterface::SMTP_PORT => [
                 'name' => ConfigInterface::SMTP_PORT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SMTP_PORT, '587'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::SMTP_PORT, '587'),
                 'description' => 'The SMTP port of the application',
                 'type' => 'number',
                 'required' => true,
@@ -663,7 +863,12 @@ class SettingsController
             ],
             ConfigInterface::SMTP_USER => [
                 'name' => ConfigInterface::SMTP_USER,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SMTP_USER, 'example@example.com'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SMTP_USER,
+                        'example@example.com',
+                    ),
                 'description' => 'The SMTP user of the application',
                 'type' => 'text',
                 'required' => true,
@@ -674,7 +879,10 @@ class SettingsController
             ],
             ConfigInterface::SMTP_PASS => [
                 'name' => ConfigInterface::SMTP_PASS,
-                'value' => $this->maskSensitiveSetting(ConfigInterface::SMTP_PASS, 'password'),
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::SMTP_PASS,
+                    'password',
+                ),
                 'description' => 'The SMTP password of the application',
                 'type' => 'password',
                 'required' => true,
@@ -686,7 +894,12 @@ class SettingsController
             ],
             ConfigInterface::SMTP_FROM => [
                 'name' => ConfigInterface::SMTP_FROM,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SMTP_FROM, 'noreply@featherpanel.com'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SMTP_FROM,
+                        'noreply@featherpanel.com',
+                    ),
                 'description' => 'The SMTP from of the application',
                 'type' => 'text',
                 'required' => true,
@@ -697,7 +910,9 @@ class SettingsController
             ],
             ConfigInterface::SMTP_ENCRYPTION => [
                 'name' => ConfigInterface::SMTP_ENCRYPTION,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SMTP_ENCRYPTION, 'tls'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::SMTP_ENCRYPTION, 'tls'),
                 'description' => 'The SMTP encryption of the application',
                 'type' => 'select',
                 'required' => true,
@@ -708,7 +923,9 @@ class SettingsController
             ],
             ConfigInterface::TURNSTILE_ENABLED => [
                 'name' => ConfigInterface::TURNSTILE_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false'),
                 'description' => 'The Turnstile enabled of the application',
                 'type' => 'select',
                 'required' => true,
@@ -719,7 +936,9 @@ class SettingsController
             ],
             ConfigInterface::TURNSTILE_KEY_PUB => [
                 'name' => ConfigInterface::TURNSTILE_KEY_PUB,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TURNSTILE_KEY_PUB, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::TURNSTILE_KEY_PUB, ''),
                 'description' => 'The Turnstile key pub of the application',
                 'type' => 'text',
                 'required' => false,
@@ -730,7 +949,10 @@ class SettingsController
             ],
             ConfigInterface::TURNSTILE_KEY_PRIV => [
                 'name' => ConfigInterface::TURNSTILE_KEY_PRIV,
-                'value' => $this->maskSensitiveSetting(ConfigInterface::TURNSTILE_KEY_PRIV, ''),
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::TURNSTILE_KEY_PRIV,
+                    '',
+                ),
                 'description' => 'The Turnstile private key of the application',
                 'type' => 'password',
                 'required' => false,
@@ -742,7 +964,9 @@ class SettingsController
             ],
             ConfigInterface::LEGAL_TOS => [
                 'name' => ConfigInterface::LEGAL_TOS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::LEGAL_TOS, '/tos'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::LEGAL_TOS, '/tos'),
                 'description' => 'The legal TOS of the application',
                 'type' => 'text',
                 'required' => true,
@@ -753,7 +977,9 @@ class SettingsController
             ],
             ConfigInterface::LEGAL_PRIVACY => [
                 'name' => ConfigInterface::LEGAL_PRIVACY,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::LEGAL_PRIVACY, '/privacy'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::LEGAL_PRIVACY, '/privacy'),
                 'description' => 'The legal privacy of the application',
                 'type' => 'text',
                 'required' => true,
@@ -764,7 +990,9 @@ class SettingsController
             ],
             ConfigInterface::REGISTRATION_ENABLED => [
                 'name' => ConfigInterface::REGISTRATION_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'true'),
                 'description' => 'Can users register themselves?',
                 'type' => 'select',
                 'required' => true,
@@ -775,7 +1003,12 @@ class SettingsController
             ],
             ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION => [
                 'name' => ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION,
+                        'false',
+                    ),
                 'description' => 'Require users to verify their email before they can log in after registration.',
                 'type' => 'select',
                 'required' => true,
@@ -786,7 +1019,12 @@ class SettingsController
             ],
             ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED => [
                 'name' => ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED,
+                        'false',
+                    ),
                 'description' => 'When enabled, registration and email changes are rejected if the address domain matches a row in Admin → Blocked email domains (suffix match). Manage the list on that page.',
                 'type' => 'select',
                 'required' => true,
@@ -797,7 +1035,9 @@ class SettingsController
             ],
             ConfigInterface::APP_DEVELOPER_MODE => [
                 'name' => ConfigInterface::APP_DEVELOPER_MODE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false'),
                 'description' => 'Is the application in developer mode?',
                 'type' => 'select',
                 'required' => true,
@@ -808,7 +1048,12 @@ class SettingsController
             ],
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => [
                 'name' => ConfigInterface::USER_ALLOW_AVATAR_CHANGE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::USER_ALLOW_AVATAR_CHANGE, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::USER_ALLOW_AVATAR_CHANGE,
+                        'true',
+                    ),
                 'description' => 'Allow users to change their avatar',
                 'type' => 'select',
                 'required' => true,
@@ -819,7 +1064,12 @@ class SettingsController
             ],
             ConfigInterface::USER_ALLOW_USERNAME_CHANGE => [
                 'name' => ConfigInterface::USER_ALLOW_USERNAME_CHANGE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::USER_ALLOW_USERNAME_CHANGE, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::USER_ALLOW_USERNAME_CHANGE,
+                        'true',
+                    ),
                 'description' => 'Allow users to change their username',
                 'type' => 'select',
                 'required' => true,
@@ -830,7 +1080,12 @@ class SettingsController
             ],
             ConfigInterface::USER_ALLOW_EMAIL_CHANGE => [
                 'name' => ConfigInterface::USER_ALLOW_EMAIL_CHANGE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::USER_ALLOW_EMAIL_CHANGE, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::USER_ALLOW_EMAIL_CHANGE,
+                        'true',
+                    ),
                 'description' => 'Allow users to change their email address',
                 'type' => 'select',
                 'required' => true,
@@ -841,7 +1096,12 @@ class SettingsController
             ],
             ConfigInterface::USER_ALLOW_FIRST_NAME_CHANGE => [
                 'name' => ConfigInterface::USER_ALLOW_FIRST_NAME_CHANGE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::USER_ALLOW_FIRST_NAME_CHANGE, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::USER_ALLOW_FIRST_NAME_CHANGE,
+                        'true',
+                    ),
                 'description' => 'Allow users to change their first name',
                 'type' => 'select',
                 'required' => true,
@@ -852,7 +1112,12 @@ class SettingsController
             ],
             ConfigInterface::USER_ALLOW_LAST_NAME_CHANGE => [
                 'name' => ConfigInterface::USER_ALLOW_LAST_NAME_CHANGE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::USER_ALLOW_LAST_NAME_CHANGE, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::USER_ALLOW_LAST_NAME_CHANGE,
+                        'true',
+                    ),
                 'description' => 'Allow users to change their last name',
                 'type' => 'select',
                 'required' => true,
@@ -863,7 +1128,12 @@ class SettingsController
             ],
             ConfigInterface::USER_ALLOW_API_KEYS_CREATE => [
                 'name' => ConfigInterface::USER_ALLOW_API_KEYS_CREATE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::USER_ALLOW_API_KEYS_CREATE, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::USER_ALLOW_API_KEYS_CREATE,
+                        'true',
+                    ),
                 'description' => 'Allow users to create API keys',
                 'type' => 'select',
                 'required' => true,
@@ -874,7 +1144,12 @@ class SettingsController
             ],
             ConfigInterface::REQUIRE_TWO_FA_ADMINS => [
                 'name' => ConfigInterface::REQUIRE_TWO_FA_ADMINS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::REQUIRE_TWO_FA_ADMINS, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::REQUIRE_TWO_FA_ADMINS,
+                        'false',
+                    ),
                 'description' => 'Require two-factor authentication for admins',
                 'type' => 'select',
                 'required' => true,
@@ -885,8 +1160,20 @@ class SettingsController
             ],
             ConfigInterface::DISCORD_OAUTH_ENABLED => [
                 'name' => ConfigInterface::DISCORD_OAUTH_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::DISCORD_OAUTH_ENABLED, 'false'),
-                'description' => 'The Discord OAuth enabled of the application Callback URL: ' . $this->app->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems') . '/api/user/auth/discord/callback',
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::DISCORD_OAUTH_ENABLED,
+                        'false',
+                    ),
+                'description' => 'The Discord OAuth enabled of the application Callback URL: ' .
+                    $this->app
+                        ->getConfig()
+                        ->getSetting(
+                            ConfigInterface::APP_URL,
+                            'https://featherpanel.mythical.systems',
+                        ) .
+                    '/api/user/auth/discord/callback',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -896,7 +1183,9 @@ class SettingsController
             ],
             ConfigInterface::DISCORD_OAUTH_CLIENT_ID => [
                 'name' => ConfigInterface::DISCORD_OAUTH_CLIENT_ID,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::DISCORD_OAUTH_CLIENT_ID, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::DISCORD_OAUTH_CLIENT_ID, ''),
                 'description' => 'The Discord OAuth client ID of the application',
                 'type' => 'text',
                 'required' => false,
@@ -907,7 +1196,10 @@ class SettingsController
             ],
             ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET => [
                 'name' => ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET,
-                'value' => $this->maskSensitiveSetting(ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET, ''),
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET,
+                    '',
+                ),
                 'description' => 'The Discord OAuth client secret of the application',
                 'type' => 'password',
                 'required' => false,
@@ -917,7 +1209,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_EGG_CHANGE => [
                 'name' => ConfigInterface::SERVER_ALLOW_EGG_CHANGE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_EGG_CHANGE, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_EGG_CHANGE,
+                        'false',
+                    ),
                 'description' => 'Allow users to change the server spells/eggs',
                 'type' => 'select',
                 'required' => true,
@@ -928,7 +1225,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE => [
                 'name' => ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE,
+                        'false',
+                    ),
                 'description' => 'Allow users to change server spells/eggs across different realms. When disabled, users can only select spells from the same realm as their server.',
                 'type' => 'select',
                 'required' => true,
@@ -939,7 +1241,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_SUBUSERS => [
                 'name' => ConfigInterface::SERVER_ALLOW_SUBUSERS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_SUBUSERS, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_SUBUSERS,
+                        'true',
+                    ),
                 'description' => 'Allow users to add subusers to their servers',
                 'type' => 'select',
                 'required' => true,
@@ -950,7 +1257,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_USER_SERVER_DELETION => [
                 'name' => ConfigInterface::SERVER_ALLOW_USER_SERVER_DELETION,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_SERVER_DELETION, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_USER_SERVER_DELETION,
+                        'false',
+                    ),
                 'description' => 'Allow users to delete their servers. When disabled, users can only delete their servers via the admin panel.',
                 'type' => 'select',
                 'required' => true,
@@ -961,7 +1273,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE => [
                 'name' => ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE,
+                        'true',
+                    ),
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -972,7 +1289,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_SCHEDULES => [
                 'name' => ConfigInterface::SERVER_ALLOW_SCHEDULES,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_SCHEDULES, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_SCHEDULES,
+                        'true',
+                    ),
                 'description' => 'Allow users to create and manage schedules for their servers',
                 'type' => 'select',
                 'required' => true,
@@ -983,7 +1305,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED => [
                 'name' => ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED,
+                        'false',
+                    ),
                 'description' => 'Show the Lifecycle Hooks page in server navigation and allow configuration. Uses the same schedule permissions as tasks (schedule.read / schedule.update). When disabled, the menu entry is hidden, hooks do not run on power actions, and API changes are rejected. Independent of schedules: you can enable hooks without enabling cron schedules.',
                 'type' => 'select',
                 'required' => true,
@@ -994,7 +1321,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_BACKUP_RETENTION_MODE => [
                 'name' => ConfigInterface::SERVER_BACKUP_RETENTION_MODE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_BACKUP_RETENTION_MODE, 'hard_limit'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_BACKUP_RETENTION_MODE,
+                        'hard_limit',
+                    ),
                 'description' => 'Default backup retention when limit is reached (servers/VMs can override per entity). Hard limit blocks new backups. FIFO rolling removes the oldest eligible backup to make room.',
                 'type' => 'select',
                 'required' => true,
@@ -1005,7 +1337,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT => [
                 'name' => ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT,
+                        'true',
+                    ),
                 'description' => 'Allow server owners to change backup retention mode (inherit / hard limit / FIFO) from the panel and user API. Backup slot count (backup limit) is admin-only. Admins can always edit servers and VM instances.',
                 'type' => 'select',
                 'required' => true,
@@ -1019,7 +1356,12 @@ class SettingsController
              */
             ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL => [
                 'name' => ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL,
+                        'false',
+                    ),
                 'description' => 'Allow users to create and manage their own FastDL configurations',
                 'type' => 'select',
                 'required' => true,
@@ -1030,7 +1372,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT => [
                 'name' => ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT,
+                        'false',
+                    ),
                 'description' => 'Allow users to select which allocation to assign when auto-allocating',
                 'type' => 'select',
                 'required' => true,
@@ -1041,7 +1388,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_USER_MADE_FIREWALL => [
                 'name' => ConfigInterface::SERVER_ALLOW_USER_MADE_FIREWALL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_FIREWALL, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_USER_MADE_FIREWALL,
+                        'false',
+                    ),
                 'description' => 'Allow users to create and manage their own server firewall rules',
                 'type' => 'select',
                 'required' => true,
@@ -1052,7 +1404,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY => [
                 'name' => ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY,
+                        'false',
+                    ),
                 'description' => 'Allow users to create and manage their own server reverse proxy configurations',
                 'type' => 'select',
                 'required' => true,
@@ -1063,7 +1420,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_PROXY_MAX_PER_SERVER => [
                 'name' => ConfigInterface::SERVER_PROXY_MAX_PER_SERVER,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_PROXY_MAX_PER_SERVER, '5'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_PROXY_MAX_PER_SERVER,
+                        '5',
+                    ),
                 'description' => 'Maximum number of reverse proxy configurations per server',
                 'type' => 'number',
                 'required' => true,
@@ -1074,7 +1436,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT => [
                 'name' => ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT,
+                        'false',
+                    ),
                 'description' => 'Allow users to import server files from remote SFTP or FTP servers. The server must be offline for imports to work.',
                 'type' => 'select',
                 'required' => true,
@@ -1085,7 +1452,12 @@ class SettingsController
             ],
             ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS => [
                 'name' => ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS,
+                        'false',
+                    ),
                 'description' => 'Allow users to create and manage server subdomains',
                 'type' => 'select',
                 'required' => true,
@@ -1096,7 +1468,9 @@ class SettingsController
             ],
             ConfigInterface::SERVER_HIDE_IPS => [
                 'name' => ConfigInterface::SERVER_HIDE_IPS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false'),
                 'description' => 'Hide IP addresses in server activity logs and other views. When enabled, IPs will be masked with "***.***.***.***" to protect user privacy.',
                 'type' => 'select',
                 'required' => true,
@@ -1107,7 +1481,9 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_ENABLED => [
                 'name' => ConfigInterface::CHATBOT_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_ENABLED, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::CHATBOT_ENABLED, 'false'),
                 'description' => 'Enable the AI chatbot',
                 'type' => 'select',
                 'required' => true,
@@ -1119,7 +1495,12 @@ class SettingsController
             // SEO Settings
             ConfigInterface::APP_SEO_TITLE => [
                 'name' => ConfigInterface::APP_SEO_TITLE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_SEO_TITLE, 'FeatherPanel'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_SEO_TITLE,
+                        'FeatherPanel',
+                    ),
                 'description' => 'The default title for the application pages',
                 'type' => 'text',
                 'required' => true,
@@ -1130,7 +1511,12 @@ class SettingsController
             ],
             ConfigInterface::APP_SEO_DESCRIPTION => [
                 'name' => ConfigInterface::APP_SEO_DESCRIPTION,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_SEO_DESCRIPTION, 'A powerful game server management panel.'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_SEO_DESCRIPTION,
+                        'A powerful game server management panel.',
+                    ),
                 'description' => 'The default description for the application pages',
                 'type' => 'textarea',
                 'required' => true,
@@ -1141,7 +1527,12 @@ class SettingsController
             ],
             ConfigInterface::APP_SEO_KEYWORDS => [
                 'name' => ConfigInterface::APP_SEO_KEYWORDS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_SEO_KEYWORDS, 'game, server, management, panel, hosting'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_SEO_KEYWORDS,
+                        'game, server, management, panel, hosting',
+                    ),
                 'description' => 'Comma-separated keywords for SEO',
                 'type' => 'textarea',
                 'required' => true,
@@ -1152,7 +1543,9 @@ class SettingsController
             ],
             ConfigInterface::APP_SEO_INDEXING => [
                 'name' => ConfigInterface::APP_SEO_INDEXING,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_SEO_INDEXING, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_SEO_INDEXING, 'false'),
                 'description' => 'Allow search engines to index this panel (when disabled, we send noindex,nofollow).',
                 'type' => 'select',
                 'required' => true,
@@ -1164,7 +1557,9 @@ class SettingsController
             // PWA Settings
             ConfigInterface::APP_PWA_ENABLED => [
                 'name' => ConfigInterface::APP_PWA_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_PWA_ENABLED, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_PWA_ENABLED, 'false'),
                 'description' => 'Enable Progressive Web App features',
                 'type' => 'select',
                 'required' => true,
@@ -1175,7 +1570,12 @@ class SettingsController
             ],
             ConfigInterface::APP_PWA_SHORT_NAME => [
                 'name' => ConfigInterface::APP_PWA_SHORT_NAME,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_PWA_SHORT_NAME, 'FeatherPanel'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_PWA_SHORT_NAME,
+                        'FeatherPanel',
+                    ),
                 'description' => 'Short name for the PWA (used in app launcher)',
                 'type' => 'text',
                 'required' => true,
@@ -1186,7 +1586,12 @@ class SettingsController
             ],
             ConfigInterface::APP_PWA_DESCRIPTION => [
                 'name' => ConfigInterface::APP_PWA_DESCRIPTION,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_PWA_DESCRIPTION, 'Manage your game servers on the go.'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_PWA_DESCRIPTION,
+                        'Manage your game servers on the go.',
+                    ),
                 'description' => 'Description for the PWA',
                 'type' => 'textarea',
                 'required' => true,
@@ -1197,7 +1602,12 @@ class SettingsController
             ],
             ConfigInterface::APP_PWA_THEME_COLOR => [
                 'name' => ConfigInterface::APP_PWA_THEME_COLOR,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_PWA_THEME_COLOR, '#000000'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::APP_PWA_THEME_COLOR,
+                        '#000000',
+                    ),
                 'description' => 'Theme color for the PWA browser bar',
                 'type' => 'text',
                 'required' => true,
@@ -1208,7 +1618,9 @@ class SettingsController
             ],
             ConfigInterface::APP_PWA_BG_COLOR => [
                 'name' => ConfigInterface::APP_PWA_BG_COLOR,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_PWA_BG_COLOR, '#ffffff'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_PWA_BG_COLOR, '#ffffff'),
                 'description' => 'Background color for the PWA splash screen',
                 'type' => 'text',
                 'required' => true,
@@ -1220,18 +1632,30 @@ class SettingsController
 
             ConfigInterface::CHATBOT_AI_PROVIDER => [
                 'name' => ConfigInterface::CHATBOT_AI_PROVIDER,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_AI_PROVIDER, 'basic'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::CHATBOT_AI_PROVIDER, 'basic'),
                 'description' => 'AI provider for the chatbot',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'basic',
                 'validation' => 'required|string|max:255',
-                'options' => ['basic', 'google_gemini', 'openrouter', 'openai', 'ollama', 'grok', 'perplexity'],
+                'options' => [
+                    'basic',
+                    'google_gemini',
+                    'openrouter',
+                    'openai',
+                    'ollama',
+                    'grok',
+                    'perplexity',
+                ],
                 'category' => 'chatbot',
             ],
             ConfigInterface::CHATBOT_TEMPERATURE => [
                 'name' => ConfigInterface::CHATBOT_TEMPERATURE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_TEMPERATURE, '0.7'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::CHATBOT_TEMPERATURE, '0.7'),
                 'description' => 'Temperature for AI responses (0.0-1.0). Lower = more focused, Higher = more creative',
                 'type' => 'number',
                 'required' => false,
@@ -1242,7 +1666,9 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_MAX_TOKENS => [
                 'name' => ConfigInterface::CHATBOT_MAX_TOKENS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_MAX_TOKENS, '2048'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::CHATBOT_MAX_TOKENS, '2048'),
                 'description' => 'Maximum number of tokens in AI responses',
                 'type' => 'number',
                 'required' => false,
@@ -1253,7 +1679,9 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_MAX_HISTORY => [
                 'name' => ConfigInterface::CHATBOT_MAX_HISTORY,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_MAX_HISTORY, '10'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::CHATBOT_MAX_HISTORY, '10'),
                 'description' => 'Maximum number of previous messages to include in context',
                 'type' => 'number',
                 'required' => false,
@@ -1264,7 +1692,10 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_GOOGLE_AI_API_KEY => [
                 'name' => ConfigInterface::CHATBOT_GOOGLE_AI_API_KEY,
-                'value' => $this->maskSensitiveSetting(ConfigInterface::CHATBOT_GOOGLE_AI_API_KEY, ''),
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::CHATBOT_GOOGLE_AI_API_KEY,
+                    '',
+                ),
                 'description' => 'Google AI Studio API key for Gemini',
                 'type' => 'password',
                 'required' => false,
@@ -1274,7 +1705,12 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_GOOGLE_AI_MODEL => [
                 'name' => ConfigInterface::CHATBOT_GOOGLE_AI_MODEL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_GOOGLE_AI_MODEL, 'gemini-2.5-flash'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::CHATBOT_GOOGLE_AI_MODEL,
+                        'gemini-2.5-flash',
+                    ),
                 'description' => 'Google Gemini model to use (e.g., gemini-2.5-flash, gemini-2.5-pro)',
                 'type' => 'text',
                 'required' => false,
@@ -1285,7 +1721,10 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_OPENROUTER_API_KEY => [
                 'name' => ConfigInterface::CHATBOT_OPENROUTER_API_KEY,
-                'value' => $this->maskSensitiveSetting(ConfigInterface::CHATBOT_OPENROUTER_API_KEY, ''),
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::CHATBOT_OPENROUTER_API_KEY,
+                    '',
+                ),
                 'description' => 'OpenRouter API key',
                 'type' => 'password',
                 'required' => false,
@@ -1295,7 +1734,12 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_OPENROUTER_MODEL => [
                 'name' => ConfigInterface::CHATBOT_OPENROUTER_MODEL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_OPENROUTER_MODEL, 'openai/gpt-4o-mini'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::CHATBOT_OPENROUTER_MODEL,
+                        'openai/gpt-4o-mini',
+                    ),
                 'description' => 'OpenRouter model to use (e.g., openai/gpt-4o-mini, anthropic/claude-3-haiku)',
                 'type' => 'text',
                 'required' => false,
@@ -1306,7 +1750,10 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_OPENAI_API_KEY => [
                 'name' => ConfigInterface::CHATBOT_OPENAI_API_KEY,
-                'value' => $this->maskSensitiveSetting(ConfigInterface::CHATBOT_OPENAI_API_KEY, ''),
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::CHATBOT_OPENAI_API_KEY,
+                    '',
+                ),
                 'description' => 'OpenAI API key',
                 'type' => 'password',
                 'required' => false,
@@ -1316,7 +1763,12 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_OPENAI_MODEL => [
                 'name' => ConfigInterface::CHATBOT_OPENAI_MODEL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_OPENAI_MODEL, 'gpt-4o-mini'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::CHATBOT_OPENAI_MODEL,
+                        'gpt-4o-mini',
+                    ),
                 'description' => 'OpenAI model to use (e.g., gpt-4o-mini, gpt-4o, gpt-3.5-turbo)',
                 'type' => 'text',
                 'required' => false,
@@ -1327,10 +1779,12 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_OPENAI_BASE_URL => [
                 'name' => ConfigInterface::CHATBOT_OPENAI_BASE_URL,
-                'value' => $this->app->getConfig()->getSetting(
-                    ConfigInterface::CHATBOT_OPENAI_BASE_URL,
-                    'https://api.openai.com'
-                ),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::CHATBOT_OPENAI_BASE_URL,
+                        'https://api.openai.com',
+                    ),
                 'description' => 'OpenAI base URL (e.g., https://api.openai.com)',
                 'type' => 'text',
                 'required' => false,
@@ -1341,7 +1795,10 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_PERPLEXITY_API_KEY => [
                 'name' => ConfigInterface::CHATBOT_PERPLEXITY_API_KEY,
-                'value' => $this->maskSensitiveSetting(ConfigInterface::CHATBOT_PERPLEXITY_API_KEY, ''),
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::CHATBOT_PERPLEXITY_API_KEY,
+                    '',
+                ),
                 'description' => 'Perplexity API key',
                 'type' => 'password',
                 'required' => false,
@@ -1353,7 +1810,12 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_PERPLEXITY_MODEL => [
                 'name' => ConfigInterface::CHATBOT_PERPLEXITY_MODEL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_PERPLEXITY_MODEL, 'sonar-pro'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::CHATBOT_PERPLEXITY_MODEL,
+                        'sonar-pro',
+                    ),
                 'description' => 'Perplexity model to use (e.g., sonar-pro, sonar-small-chat)',
                 'type' => 'text',
                 'required' => false,
@@ -1364,10 +1826,12 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_PERPLEXITY_BASE_URL => [
                 'name' => ConfigInterface::CHATBOT_PERPLEXITY_BASE_URL,
-                'value' => $this->app->getConfig()->getSetting(
-                    ConfigInterface::CHATBOT_PERPLEXITY_BASE_URL,
-                    'https://api.perplexity.ai'
-                ),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::CHATBOT_PERPLEXITY_BASE_URL,
+                        'https://api.perplexity.ai',
+                    ),
                 'description' => 'Perplexity base URL (e.g., https://api.perplexity.ai)',
                 'type' => 'text',
                 'required' => false,
@@ -1378,7 +1842,9 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_SYSTEM_PROMPT => [
                 'name' => ConfigInterface::CHATBOT_SYSTEM_PROMPT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_SYSTEM_PROMPT, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::CHATBOT_SYSTEM_PROMPT, ''),
                 'description' => 'System prompt to prepend to all messages (optional)',
                 'type' => 'textarea',
                 'required' => false,
@@ -1390,7 +1856,9 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_USER_PROMPT => [
                 'name' => ConfigInterface::CHATBOT_USER_PROMPT,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_USER_PROMPT, ''),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::CHATBOT_USER_PROMPT, ''),
                 'description' => 'User context prompt to append to all messages (optional)',
                 'type' => 'textarea',
                 'required' => false,
@@ -1402,7 +1870,12 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_OLLAMA_BASE_URL => [
                 'name' => ConfigInterface::CHATBOT_OLLAMA_BASE_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_OLLAMA_BASE_URL, 'http://localhost:11434'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::CHATBOT_OLLAMA_BASE_URL,
+                        'http://localhost:11434',
+                    ),
                 'description' => 'Ollama server base URL (e.g., http://localhost:11434)',
                 'type' => 'text',
                 'required' => false,
@@ -1413,7 +1886,12 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_OLLAMA_MODEL => [
                 'name' => ConfigInterface::CHATBOT_OLLAMA_MODEL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_OLLAMA_MODEL, 'llama3.2'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::CHATBOT_OLLAMA_MODEL,
+                        'llama3.2',
+                    ),
                 'description' => 'Ollama model to use (e.g., llama3.2, mistral, codellama)',
                 'type' => 'text',
                 'required' => false,
@@ -1424,7 +1902,10 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_GROK_API_KEY => [
                 'name' => ConfigInterface::CHATBOT_GROK_API_KEY,
-                'value' => $this->maskSensitiveSetting(ConfigInterface::CHATBOT_GROK_API_KEY, ''),
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::CHATBOT_GROK_API_KEY,
+                    '',
+                ),
                 'description' => 'xAI (Grok) API key',
                 'type' => 'password',
                 'required' => false,
@@ -1435,7 +1916,12 @@ class SettingsController
             ],
             ConfigInterface::CHATBOT_GROK_MODEL => [
                 'name' => ConfigInterface::CHATBOT_GROK_MODEL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_GROK_MODEL, 'grok-2-1212'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::CHATBOT_GROK_MODEL,
+                        'grok-2-1212',
+                    ),
                 'description' => 'xAI (Grok) model to use (e.g., grok-2-1212, grok-beta, grok-vision-beta)',
                 'type' => 'text',
                 'required' => false,
@@ -1446,7 +1932,9 @@ class SettingsController
             ],
             ConfigInterface::STATUS_PAGE_ENABLED => [
                 'name' => ConfigInterface::STATUS_PAGE_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::STATUS_PAGE_ENABLED, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::STATUS_PAGE_ENABLED, 'false'),
                 'description' => 'Enable the user-facing status page',
                 'type' => 'select',
                 'required' => true,
@@ -1457,7 +1945,12 @@ class SettingsController
             ],
             ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED => [
                 'name' => ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED,
+                        'true',
+                    ),
                 'description' => 'Allow unauthenticated users to access /status and /api/status publicly',
                 'type' => 'select',
                 'required' => true,
@@ -1468,7 +1961,12 @@ class SettingsController
             ],
             ConfigInterface::STATUS_PAGE_SHOW_NODE_STATUS => [
                 'name' => ConfigInterface::STATUS_PAGE_SHOW_NODE_STATUS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::STATUS_PAGE_SHOW_NODE_STATUS, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::STATUS_PAGE_SHOW_NODE_STATUS,
+                        'true',
+                    ),
                 'description' => 'Show node status (healthy/unhealthy counts) on status page',
                 'type' => 'select',
                 'required' => true,
@@ -1479,7 +1977,12 @@ class SettingsController
             ],
             ConfigInterface::STATUS_PAGE_SHOW_LOAD_USAGE => [
                 'name' => ConfigInterface::STATUS_PAGE_SHOW_LOAD_USAGE,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::STATUS_PAGE_SHOW_LOAD_USAGE, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::STATUS_PAGE_SHOW_LOAD_USAGE,
+                        'true',
+                    ),
                 'description' => 'Show CPU, memory, and disk usage on status page',
                 'type' => 'select',
                 'required' => true,
@@ -1490,7 +1993,12 @@ class SettingsController
             ],
             ConfigInterface::STATUS_PAGE_SHOW_TOTAL_SERVERS => [
                 'name' => ConfigInterface::STATUS_PAGE_SHOW_TOTAL_SERVERS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::STATUS_PAGE_SHOW_TOTAL_SERVERS, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::STATUS_PAGE_SHOW_TOTAL_SERVERS,
+                        'true',
+                    ),
                 'description' => 'Show total server count on status page',
                 'type' => 'select',
                 'required' => true,
@@ -1501,7 +2009,12 @@ class SettingsController
             ],
             ConfigInterface::STATUS_PAGE_SHOW_INDIVIDUAL_NODES => [
                 'name' => ConfigInterface::STATUS_PAGE_SHOW_INDIVIDUAL_NODES,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::STATUS_PAGE_SHOW_INDIVIDUAL_NODES, 'false'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::STATUS_PAGE_SHOW_INDIVIDUAL_NODES,
+                        'false',
+                    ),
                 'description' => 'Show individual node details on status page',
                 'type' => 'select',
                 'required' => true,
@@ -1512,7 +2025,12 @@ class SettingsController
             ],
             ConfigInterface::KNOWLEDGEBASE_ENABLED => [
                 'name' => ConfigInterface::KNOWLEDGEBASE_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::KNOWLEDGEBASE_ENABLED, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::KNOWLEDGEBASE_ENABLED,
+                        'true',
+                    ),
                 'description' => 'Enable the knowledgebase feature for users',
                 'type' => 'select',
                 'required' => true,
@@ -1523,7 +2041,12 @@ class SettingsController
             ],
             ConfigInterface::KNOWLEDGEBASE_PUBLIC_ENABLED => [
                 'name' => ConfigInterface::KNOWLEDGEBASE_PUBLIC_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::KNOWLEDGEBASE_PUBLIC_ENABLED, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::KNOWLEDGEBASE_PUBLIC_ENABLED,
+                        'true',
+                    ),
                 'description' => 'Allow unauthenticated users to access /knowledgebase and /api/knowledgebase/* publicly',
                 'type' => 'select',
                 'required' => true,
@@ -1534,7 +2057,12 @@ class SettingsController
             ],
             ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES => [
                 'name' => ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES,
+                        'true',
+                    ),
                 'description' => 'Show category listings in knowledgebase',
                 'type' => 'select',
                 'required' => true,
@@ -1545,7 +2073,12 @@ class SettingsController
             ],
             ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES => [
                 'name' => ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES,
+                        'true',
+                    ),
                 'description' => 'Show article listings in knowledgebase',
                 'type' => 'select',
                 'required' => true,
@@ -1556,7 +2089,12 @@ class SettingsController
             ],
             ConfigInterface::KNOWLEDGEBASE_SHOW_ATTACHMENTS => [
                 'name' => ConfigInterface::KNOWLEDGEBASE_SHOW_ATTACHMENTS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::KNOWLEDGEBASE_SHOW_ATTACHMENTS, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::KNOWLEDGEBASE_SHOW_ATTACHMENTS,
+                        'true',
+                    ),
                 'description' => 'Show downloadable attachments in articles',
                 'type' => 'select',
                 'required' => true,
@@ -1567,7 +2105,12 @@ class SettingsController
             ],
             ConfigInterface::KNOWLEDGEBASE_SHOW_TAGS => [
                 'name' => ConfigInterface::KNOWLEDGEBASE_SHOW_TAGS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::KNOWLEDGEBASE_SHOW_TAGS, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::KNOWLEDGEBASE_SHOW_TAGS,
+                        'true',
+                    ),
                 'description' => 'Show article tags in knowledgebase',
                 'type' => 'select',
                 'required' => true,
@@ -1578,7 +2121,12 @@ class SettingsController
             ],
             ConfigInterface::TICKET_SYSTEM_ENABLED => [
                 'name' => ConfigInterface::TICKET_SYSTEM_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TICKET_SYSTEM_ENABLED, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::TICKET_SYSTEM_ENABLED,
+                        'true',
+                    ),
                 'description' => 'Enable or disable the ticket system feature',
                 'type' => 'select',
                 'required' => true,
@@ -1589,7 +2137,12 @@ class SettingsController
             ],
             ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS => [
                 'name' => ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS, 'true'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS,
+                        'true',
+                    ),
                 'description' => 'Allow users to attach files to tickets',
                 'type' => 'select',
                 'required' => true,
@@ -1600,7 +2153,12 @@ class SettingsController
             ],
             ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS => [
                 'name' => ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS, '10'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS,
+                        '10',
+                    ),
                 'description' => 'Maximum number of open tickets a user can have at once (0 = unlimited)',
                 'type' => 'number',
                 'required' => true,
@@ -1611,7 +2169,12 @@ class SettingsController
             ],
             ConfigInterface::CUSTOM_JS => [
                 'name' => ConfigInterface::CUSTOM_JS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CUSTOM_JS, '// dummy script - does nothing'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::CUSTOM_JS,
+                        '// dummy script - does nothing',
+                    ),
                 'description' => 'Custom JavaScript to inject into the page',
                 'type' => 'textarea',
                 'required' => false,
@@ -1622,7 +2185,12 @@ class SettingsController
             ],
             ConfigInterface::CUSTOM_CSS => [
                 'name' => ConfigInterface::CUSTOM_CSS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CUSTOM_CSS, '/* dummy css - does nothing */'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::CUSTOM_CSS,
+                        '/* dummy css - does nothing */',
+                    ),
                 'description' => 'Custom CSS to inject into the page',
                 'type' => 'textarea',
                 'required' => false,
@@ -1633,7 +2201,9 @@ class SettingsController
             ],
             ConfigInterface::CACHE_DRIVER => [
                 'name' => ConfigInterface::CACHE_DRIVER,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CACHE_DRIVER, 'file'),
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::CACHE_DRIVER, 'file'),
                 'description' => 'Cache driver to use (file, redis) (redis is recommended for production) but redis can be unstable in some cases',
                 'type' => 'select',
                 'required' => true,
@@ -1656,7 +2226,10 @@ class SettingsController
                 in: 'query',
                 description: 'Filter settings by category',
                 required: false,
-                schema: new OA\Schema(type: 'string', enum: ['app', 'security', 'email', 'other'])
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['app', 'security', 'email', 'other'],
+                ),
             ),
         ],
         responses: [
@@ -1665,16 +2238,37 @@ class SettingsController
                 description: 'Settings retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'settings', type: 'object', additionalProperties: new OA\AdditionalProperties(ref: '#/components/schemas/Setting'), description: 'All settings'),
-                        new OA\Property(property: 'categories', type: 'object', additionalProperties: new OA\AdditionalProperties(type: 'object'), description: 'Settings categories'),
-                        new OA\Property(property: 'organized_settings', ref: '#/components/schemas/OrganizedSettings', description: 'Settings organized by category'),
-                    ]
-                )
+                        new OA\Property(
+                            property: 'settings',
+                            type: 'object',
+                            additionalProperties: new OA\AdditionalProperties(
+                                ref: '#/components/schemas/Setting',
+                            ),
+                            description: 'All settings',
+                        ),
+                        new OA\Property(
+                            property: 'categories',
+                            type: 'object',
+                            additionalProperties: new OA\AdditionalProperties(
+                                type: 'object',
+                            ),
+                            description: 'Settings categories',
+                        ),
+                        new OA\Property(
+                            property: 'organized_settings',
+                            ref: '#/components/schemas/OrganizedSettings',
+                            description: 'Settings organized by category',
+                        ),
+                    ],
+                ),
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-        ]
-    )]
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Insufficient permissions',
+            ),
+        ],
+    ),]
     public function index(Request $request): Response
     {
         $category = $request->query->get('category');
@@ -1688,21 +2282,22 @@ class SettingsController
         // Emit event
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
-            $eventManager->emit(
-                SettingsEvent::onSettingsRetrieved(),
-                [
-                    'settings' => $this->settings,
-                    'categories' => $this->settingsCategories,
-                    'organized_settings' => $organizedSettings,
-                ]
-            );
+            $eventManager->emit(SettingsEvent::onSettingsRetrieved(), [
+                'settings' => $this->settings,
+                'categories' => $this->settingsCategories,
+                'organized_settings' => $organizedSettings,
+            ]);
         }
 
-        return ApiResponse::success([
-            'settings' => $this->settings,
-            'categories' => $this->settingsCategories,
-            'organized_settings' => $organizedSettings,
-        ], 'Settings fetched successfully', 200);
+        return ApiResponse::success(
+            [
+                'settings' => $this->settings,
+                'categories' => $this->settingsCategories,
+                'organized_settings' => $organizedSettings,
+            ],
+            'Settings fetched successfully',
+            200,
+        );
     }
 
     #[OA\Get(
@@ -1716,14 +2311,24 @@ class SettingsController
                 description: 'Categories retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'categories', type: 'object', additionalProperties: new OA\AdditionalProperties(ref: '#/components/schemas/SettingCategory'), description: 'Settings categories'),
-                    ]
-                )
+                        new OA\Property(
+                            property: 'categories',
+                            type: 'object',
+                            additionalProperties: new OA\AdditionalProperties(
+                                ref: '#/components/schemas/SettingCategory',
+                            ),
+                            description: 'Settings categories',
+                        ),
+                    ],
+                ),
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-        ]
-    )]
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Insufficient permissions',
+            ),
+        ],
+    ),]
     public function categories(Request $request): Response
     {
         $categories = [];
@@ -1745,11 +2350,15 @@ class SettingsController
                 SettingsEvent::onSettingsByCategoryRetrieved(),
                 [
                     'categories' => $categories,
-                ]
+                ],
             );
         }
 
-        return ApiResponse::success(['categories' => $categories], 'Categories fetched successfully', 200);
+        return ApiResponse::success(
+            ['categories' => $categories],
+            'Categories fetched successfully',
+            200,
+        );
     }
 
     #[OA\Get(
@@ -1763,7 +2372,10 @@ class SettingsController
                 in: 'path',
                 description: 'Category name',
                 required: true,
-                schema: new OA\Schema(type: 'string', enum: ['app', 'security', 'email', 'other'])
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['app', 'security', 'email', 'other'],
+                ),
             ),
         ],
         responses: [
@@ -1772,16 +2384,33 @@ class SettingsController
                 description: 'Category settings retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'category', type: 'object', description: 'Category information'),
-                        new OA\Property(property: 'settings', type: 'object', additionalProperties: new OA\AdditionalProperties(ref: '#/components/schemas/Setting'), description: 'Settings in this category'),
-                    ]
-                )
+                        new OA\Property(
+                            property: 'category',
+                            type: 'object',
+                            description: 'Category information',
+                        ),
+                        new OA\Property(
+                            property: 'settings',
+                            type: 'object',
+                            additionalProperties: new OA\AdditionalProperties(
+                                ref: '#/components/schemas/Setting',
+                            ),
+                            description: 'Settings in this category',
+                        ),
+                    ],
+                ),
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 404, description: 'Category not found'),
-        ]
-    )]
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Insufficient permissions',
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Category not found',
+            ),
+        ],
+    ),]
     public function getSettingsByCategory(string $category): Response
     {
         if (!isset($this->settingsCategories[$category])) {
@@ -1806,14 +2435,18 @@ class SettingsController
                     'category' => $category,
                     'category_config' => $categoryConfig,
                     'settings' => $categorySettings,
-                ]
+                ],
             );
         }
 
-        return ApiResponse::success([
-            'category' => $categoryConfig,
-            'settings' => $categorySettings,
-        ], 'Category settings fetched successfully', 200);
+        return ApiResponse::success(
+            [
+                'category' => $categoryConfig,
+                'settings' => $categorySettings,
+            ],
+            'Category settings fetched successfully',
+            200,
+        );
     }
 
     #[OA\Get(
@@ -1827,7 +2460,7 @@ class SettingsController
                 in: 'path',
                 description: 'Setting name/key',
                 required: true,
-                schema: new OA\Schema(type: 'string')
+                schema: new OA\Schema(type: 'string'),
             ),
         ],
         responses: [
@@ -1836,15 +2469,24 @@ class SettingsController
                 description: 'Setting retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'setting', ref: '#/components/schemas/Setting'),
-                    ]
-                )
+                        new OA\Property(
+                            property: 'setting',
+                            ref: '#/components/schemas/Setting',
+                        ),
+                    ],
+                ),
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 404, description: 'Setting not found'),
-        ]
-    )]
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Insufficient permissions',
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Setting not found',
+            ),
+        ],
+    ),]
     public function show(Request $request, string $setting): Response
     {
         if (!isset($this->settings[$setting])) {
@@ -1854,16 +2496,17 @@ class SettingsController
         // Emit event
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
-            $eventManager->emit(
-                SettingsEvent::onSettingRetrieved(),
-                [
-                    'setting_name' => $setting,
-                    'setting_data' => $this->settings[$setting],
-                ]
-            );
+            $eventManager->emit(SettingsEvent::onSettingRetrieved(), [
+                'setting_name' => $setting,
+                'setting_data' => $this->settings[$setting],
+            ]);
         }
 
-        return ApiResponse::success(['setting' => $this->settings[$setting]], 'Setting fetched successfully', 200);
+        return ApiResponse::success(
+            ['setting' => $this->settings[$setting]],
+            'Setting fetched successfully',
+            200,
+        );
     }
 
     #[OA\Patch(
@@ -1873,7 +2516,9 @@ class SettingsController
         tags: ['Admin - Settings'],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/SettingsUpdate')
+            content: new OA\JsonContent(
+                ref: '#/components/schemas/SettingsUpdate',
+            ),
         ),
         responses: [
             new OA\Response(
@@ -1881,17 +2526,35 @@ class SettingsController
                 description: 'Settings updated successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
-                        new OA\Property(property: 'updated_settings', type: 'array', items: new OA\Items(type: 'string'), description: 'List of updated setting names'),
-                    ]
-                )
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            description: 'Success message',
+                        ),
+                        new OA\Property(
+                            property: 'updated_settings',
+                            type: 'array',
+                            items: new OA\Items(type: 'string'),
+                            description: 'List of updated setting names',
+                        ),
+                    ],
+                ),
             ),
-            new OA\Response(response: 400, description: 'Bad request - Invalid setting name, required field empty, or value too long'),
+            new OA\Response(
+                response: 400,
+                description: 'Bad request - Invalid setting name, required field empty, or value too long',
+            ),
             new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to update setting'),
-        ]
-    )]
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Insufficient permissions',
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Internal server error - Failed to update setting',
+            ),
+        ],
+    ),]
     public function update(Request $request): Response
     {
         $raw = $request->getContent();
@@ -1906,7 +2569,11 @@ class SettingsController
         // Validate and update each setting
         foreach ($data as $setting => $value) {
             if (!is_string($setting) || !isset($this->settings[$setting])) {
-                return ApiResponse::error('Invalid or unknown setting key', 'INVALID_SETTING', 400);
+                return ApiResponse::error(
+                    'Invalid or unknown setting key',
+                    'INVALID_SETTING',
+                    400,
+                );
             }
 
             $settingConfig = $this->settings[$setting];
@@ -1915,31 +2582,53 @@ class SettingsController
             if ($this->isSensitiveSetting($setting)) {
                 // If the value is the masked value (••••••••), skip updating
                 if ($value === '••••••••' || $value === '' || $value === null) {
-                    $app->getLogger()->debug("Skipping sensitive setting update for {$setting} - value not changed");
+                    $app->getLogger()->debug(
+                        "Skipping sensitive setting update for {$setting} - value not changed",
+                    );
                     continue;
                 }
             }
 
-            $stringValue = $this->normalizeSettingValueForStorage($settingConfig, $value);
+            $stringValue = $this->normalizeSettingValueForStorage(
+                $settingConfig,
+                $value,
+            );
 
             // Basic validation (use normalized string so 0 / "false" are handled correctly)
             if ($settingConfig['required'] && $stringValue === '') {
-                return ApiResponse::error("Setting {$setting} is required", 400);
+                return ApiResponse::error(
+                    "Setting {$setting} is required",
+                    400,
+                );
             }
 
             // Match UI "max length" as Unicode characters, not raw bytes (strlen breaks UTF-8 prompts)
             $maxLength = $settingConfig['max_length'] ?? 255;
-            if ($stringValue !== '' && $this->settingValueTextLength($stringValue) > $maxLength) {
-                return ApiResponse::error("Setting {$setting} value is too long (max {$maxLength} characters)", 400);
+            if (
+                $stringValue !== ''
+                && $this->settingValueTextLength($stringValue) > $maxLength
+            ) {
+                return ApiResponse::error(
+                    "Setting {$setting} value is too long (max {$maxLength} characters)",
+                    400,
+                );
             }
 
-            $app->getLogger()->debug("Updating setting: {$setting} with value: " . ($this->isSensitiveSetting($setting) ? '[MASKED]' : $stringValue));
+            $app->getLogger()->debug(
+                "Updating setting: {$setting} with value: " .
+                    ($this->isSensitiveSetting($setting)
+                        ? '[MASKED]'
+                        : $stringValue),
+            );
 
             // Update the setting
             if ($app->getConfig()->setSetting($setting, $stringValue)) {
                 $updatedSettings[] = $setting;
             } else {
-                return ApiResponse::error("Failed to update setting: {$setting}", 500);
+                return ApiResponse::error(
+                    "Failed to update setting: {$setting}",
+                    500,
+                );
             }
         }
 
@@ -1955,21 +2644,41 @@ class SettingsController
             // Emit event
             global $eventManager;
             if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit(
-                    SettingsEvent::onSettingsUpdated(),
-                    [
-                        'updated_settings' => $updatedSettings,
-                        'settings_data' => $data,
-                        'user' => $request->get('user'),
-                    ]
+                $eventManager->emit(SettingsEvent::onSettingsUpdated(), [
+                    'updated_settings' => $updatedSettings,
+                    'settings_data' => $data,
+                    'user' => $request->get('user'),
+                ]);
+            }
+
+            // Publish a Redis notification so other services can reload settings
+            try {
+                $redis = $app->getRedisConnection();
+                if ($redis !== null) {
+                    $redis->publish(
+                        'featherpanel:settings:reload',
+                        json_encode(['reason' => 'settings_updated']),
+                    );
+                    $app->getLogger()->debug(
+                        'Published settings reload notification to Redis channel featherpanel:settings:reload',
+                    );
+                }
+            } catch (\Throwable $e) {
+                $app->getLogger()->error(
+                    'Failed to publish settings reload notification to Redis: ' .
+                        $e->getMessage(),
                 );
             }
         }
 
-        return ApiResponse::success([
-            'message' => 'Settings updated successfully',
-            'updated_settings' => $updatedSettings,
-        ], 'Settings updated successfully', 200);
+        return ApiResponse::success(
+            [
+                'message' => 'Settings updated successfully',
+                'updated_settings' => $updatedSettings,
+            ],
+            'Settings updated successfully',
+            200,
+        );
     }
 
     /**
@@ -1990,30 +2699,55 @@ class SettingsController
                 description: 'System prompt retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'system_prompt', type: 'string', description: 'The system prompt content'),
-                    ]
-                )
+                        new OA\Property(
+                            property: 'system_prompt',
+                            type: 'string',
+                            description: 'The system prompt content',
+                        ),
+                    ],
+                ),
             ),
-            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
-            new OA\Response(response: 403, description: 'Forbidden - Admin access required'),
-            new OA\Response(response: 404, description: 'Not found - System prompt file not found'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to read system prompt'),
-        ]
-    )]
+            new OA\Response(
+                response: 401,
+                description: 'Unauthorized - User not authenticated',
+            ),
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Admin access required',
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Not found - System prompt file not found',
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Internal server error - Failed to read system prompt',
+            ),
+        ],
+    ),]
     public function getSystemPrompt(Request $request): Response
     {
         // Path relative to app directory: app/Services/Chatbot/system-prompt.txt
         // From app/Controllers/Admin/ we need to go up 2 levels to app/, then into Services/Chatbot/
-        $systemPromptPath = __DIR__ . '/../../Services/Chatbot/system-prompt.txt';
+        $systemPromptPath =
+            __DIR__ . '/../../Services/Chatbot/system-prompt.txt';
 
         if (!file_exists($systemPromptPath)) {
-            return ApiResponse::error('System prompt file not found', 'FILE_NOT_FOUND', 404);
+            return ApiResponse::error(
+                'System prompt file not found',
+                'FILE_NOT_FOUND',
+                404,
+            );
         }
 
         $systemPrompt = file_get_contents($systemPromptPath);
 
         if ($systemPrompt === false) {
-            return ApiResponse::error('Failed to read system prompt file', 'READ_ERROR', 500);
+            return ApiResponse::error(
+                'Failed to read system prompt file',
+                'READ_ERROR',
+                500,
+            );
         }
 
         return ApiResponse::success([
@@ -2032,91 +2766,125 @@ class SettingsController
                 description: 'Test email queued successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
-                        new OA\Property(property: 'queue_id', type: 'integer', description: 'Mail queue ID'),
-                    ]
-                )
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            description: 'Success message',
+                        ),
+                        new OA\Property(
+                            property: 'queue_id',
+                            type: 'integer',
+                            description: 'Mail queue ID',
+                        ),
+                    ],
+                ),
             ),
-            new OA\Response(response: 400, description: 'Bad request - SMTP not enabled or user has no email'),
+            new OA\Response(
+                response: 400,
+                description: 'Bad request - SMTP not enabled or user has no email',
+            ),
             new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to queue test email'),
-        ]
-    )]
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Insufficient permissions',
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Internal server error - Failed to queue test email',
+            ),
+        ],
+    ),]
     public function sendTestEmail(Request $request): Response
     {
         $user = $request->get('user');
         if (!$user || empty($user['email'])) {
-            return ApiResponse::error('User email not found', 'USER_EMAIL_NOT_FOUND', 400);
+            return ApiResponse::error(
+                'User email not found',
+                'USER_EMAIL_NOT_FOUND',
+                400,
+            );
         }
 
         // Check if SMTP is enabled
-        $smtpEnabled = $this->app->getConfig()->getSetting(ConfigInterface::SMTP_ENABLED, 'false');
+        $smtpEnabled = $this->app
+            ->getConfig()
+            ->getSetting(ConfigInterface::SMTP_ENABLED, 'false');
         if ($smtpEnabled !== 'true') {
-            return ApiResponse::error('SMTP is not enabled. Please enable and configure SMTP settings first.', 'SMTP_NOT_ENABLED', 400);
+            return ApiResponse::error(
+                'SMTP is not enabled. Please enable and configure SMTP settings first.',
+                'SMTP_NOT_ENABLED',
+                400,
+            );
         }
 
-        $appName = $this->app->getConfig()->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
-        $appUrl = $this->app->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
+        $appName = $this->app
+            ->getConfig()
+            ->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
+        $appUrl = $this->app
+            ->getConfig()
+            ->getSetting(
+                ConfigInterface::APP_URL,
+                'https://featherpanel.mythical.systems',
+            );
 
         // Create test email content
         $subject = '[TEST] Email Configuration Test from ' . $appName;
         $body = <<<HTML
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Email</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
-        <tr>
-            <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <tr>
-                        <td style="padding: 40px 40px 30px 40px; text-align: center; border-bottom: 3px solid #8b5cf6;">
-                            <h1 style="margin: 0; color: #1f2937; font-size: 28px; font-weight: 600;">✉️ Test Email</h1>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 40px;">
-                            <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                                Hello <strong>{$user['username']}</strong>,
-                            </p>
-                            <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                                This is a test email from <strong>{$appName}</strong> to verify that your SMTP email configuration is working correctly.
-                            </p>
-                            <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0; border-radius: 4px;">
-                                <p style="margin: 0; color: #065f46; font-size: 14px; line-height: 1.5;">
-                                    <strong>✓ Success!</strong> If you're reading this, your email settings are configured correctly and emails are being delivered successfully.
-                                </p>
-                            </div>
-                            <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
-                                <strong>Email Details:</strong><br>
-                                • Recipient: {$user['email']}<br>
-                                • Sent at: {date('Y-m-d H:i:s')}<br>
-                                • From: {$appName}
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
-                            <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 13px; text-align: center;">
-                                This is an automated test email from {$appName}
-                            </p>
-                            <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                                <a href="{$appUrl}" style="color: #8b5cf6; text-decoration: none;">{$appUrl}</a>
-                            </p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>
-HTML;
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Test Email</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <tr>
+                                <td style="padding: 40px 40px 30px 40px; text-align: center; border-bottom: 3px solid #8b5cf6;">
+                                    <h1 style="margin: 0; color: #1f2937; font-size: 28px; font-weight: 600;">✉️ Test Email</h1>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 40px;">
+                                    <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Hello <strong>{$user['username']}</strong>,
+                                    </p>
+                                    <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        This is a test email from <strong>{$appName}</strong> to verify that your SMTP email configuration is working correctly.
+                                    </p>
+                                    <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0; border-radius: 4px;">
+                                        <p style="margin: 0; color: #065f46; font-size: 14px; line-height: 1.5;">
+                                            <strong>✓ Success!</strong> If you're reading this, your email settings are configured correctly and emails are being delivered successfully.
+                                        </p>
+                                    </div>
+                                    <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                                        <strong>Email Details:</strong><br>
+                                        • Recipient: {$user['email']}<br>
+                                        • Sent at: {date('Y-m-d H:i:s')}<br>
+                                        • From: {$appName}
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+                                    <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 13px; text-align: center;">
+                                        This is an automated test email from {$appName}
+                                    </p>
+                                    <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                                        <a href="{$appUrl}" style="color: #8b5cf6; text-decoration: none;">{$appUrl}</a>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        HTML;
 
         // Create mail queue entry
         $queueData = [
@@ -2132,7 +2900,11 @@ HTML;
         $queueId = \App\Chat\MailQueue::create($queueData);
 
         if (!$queueId) {
-            return ApiResponse::error('Failed to queue test email', 'FAILED_TO_QUEUE_EMAIL', 500);
+            return ApiResponse::error(
+                'Failed to queue test email',
+                'FAILED_TO_QUEUE_EMAIL',
+                500,
+            );
         }
 
         // Create mail list entry
@@ -2144,7 +2916,11 @@ HTML;
         ];
 
         if (!\App\Chat\MailList::create($listData)) {
-            return ApiResponse::error('Failed to create mail list entry', 'FAILED_TO_CREATE_MAIL_LIST', 500);
+            return ApiResponse::error(
+                'Failed to create mail list entry',
+                'FAILED_TO_CREATE_MAIL_LIST',
+                500,
+            );
         }
 
         // Log activity
@@ -2155,9 +2931,14 @@ HTML;
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
-        return ApiResponse::success([
-            'queue_id' => $queueId,
-        ], 'Test email queued successfully. Please check your inbox at ' . $user['email'], 200);
+        return ApiResponse::success(
+            [
+                'queue_id' => $queueId,
+            ],
+            'Test email queued successfully. Please check your inbox at ' .
+                $user['email'],
+            200,
+        );
     }
 
     private function organizeSettingsByCategory(): array
@@ -2172,7 +2953,8 @@ HTML;
 
             foreach ($categoryConfig['settings'] as $settingKey) {
                 if (isset($this->settings[$settingKey])) {
-                    $organized[$categoryKey]['settings'][$settingKey] = $this->settings[$settingKey];
+                    $organized[$categoryKey]['settings'][$settingKey] =
+                        $this->settings[$settingKey];
                 }
             }
         }
@@ -2185,8 +2967,10 @@ HTML;
      *
      * @param array<string,mixed> $settingConfig
      */
-    private function normalizeSettingValueForStorage(array $settingConfig, mixed $value): string
-    {
+    private function normalizeSettingValueForStorage(
+        array $settingConfig,
+        mixed $value,
+    ): string {
         if ($value === null) {
             return '';
         }
@@ -2217,9 +3001,13 @@ HTML;
     /**
      * Mask sensitive setting values for frontend display.
      */
-    private function maskSensitiveSetting(string $settingKey, string $defaultValue = ''): string
-    {
-        $actualValue = $this->app->getConfig()->getSetting($settingKey, $defaultValue);
+    private function maskSensitiveSetting(
+        string $settingKey,
+        string $defaultValue = '',
+    ): string {
+        $actualValue = $this->app
+            ->getConfig()
+            ->getSetting($settingKey, $defaultValue);
 
         // If the setting has a value, mask it
         if (!empty($actualValue)) {

@@ -7,28 +7,38 @@ use tracing::{error, info, warn};
 
 use crate::database;
 use crate::processor;
-use crate::types::{MailNotification, VmNotification};
+use crate::types::{MailNotification, SettingsReloadNotification, VmNotification};
 
 pub async fn listen(redis_url: &str, pool: MySqlPool, encryption_key: String) -> Result<()> {
     let retry_delay = Duration::from_secs(5);
 
     loop {
         info!("📡 Connecting to Redis...");
-        
+
         match connect_and_listen(redis_url, pool.clone(), encryption_key.clone()).await {
             Ok(_) => {
-                warn!("⚠️  Redis connection closed unexpectedly, reconnecting in {:?}...", retry_delay);
+                warn!(
+                    "⚠️  Redis connection closed unexpectedly, reconnecting in {:?}...",
+                    retry_delay
+                );
             }
             Err(e) => {
-                error!("❌ Redis connection failed: {}. Reconnecting in {:?}...", e, retry_delay);
+                error!(
+                    "❌ Redis connection failed: {}. Reconnecting in {:?}...",
+                    e, retry_delay
+                );
             }
         }
-        
+
         tokio::time::sleep(retry_delay).await;
     }
 }
 
-async fn connect_and_listen(redis_url: &str, pool: MySqlPool, encryption_key: String) -> Result<()> {
+async fn connect_and_listen(
+    redis_url: &str,
+    pool: MySqlPool,
+    encryption_key: String,
+) -> Result<()> {
     let client = redis::Client::open(redis_url)?;
     let mut pubsub: PubSub = client.get_async_pubsub().await?;
 
@@ -36,8 +46,9 @@ async fn connect_and_listen(redis_url: &str, pool: MySqlPool, encryption_key: St
 
     pubsub.subscribe("featherpanel:mail:pending").await?;
     pubsub.subscribe("featherpanel:vm:pending").await?;
+    pubsub.subscribe("featherpanel:settings:reload").await?;
     info!("✅ Redis connected");
-    info!("👂 Listening on channels: featherpanel:mail:pending, featherpanel:vm:pending");
+    info!("👂 Listening on channels: featherpanel:mail:pending, featherpanel:vm:pending, featherpanel:settings:reload");
 
     let mut stream = pubsub.on_message();
 
@@ -52,7 +63,9 @@ async fn connect_and_listen(redis_url: &str, pool: MySqlPool, encryption_key: St
                     tokio::spawn({
                         let pool = pool.clone();
                         async move {
-                            if let Err(e) = process_mail_with_timeout(&pool, &notification.queue_id).await {
+                            if let Err(e) =
+                                process_mail_with_timeout(&pool, &notification.queue_id).await
+                            {
                                 error!(
                                     "❌ Failed to process mail {}: {}",
                                     notification.queue_id, e
@@ -72,7 +85,13 @@ async fn connect_and_listen(redis_url: &str, pool: MySqlPool, encryption_key: St
                     tokio::spawn({
                         let pool = pool.clone();
                         async move {
-                            if let Err(e) = processor::process_vm_task(&pool, &notification.task_id, &enc_key, false).await
+                            if let Err(e) = processor::process_vm_task(
+                                &pool,
+                                &notification.task_id,
+                                &enc_key,
+                                false,
+                            )
+                            .await
                             {
                                 error!(
                                     "❌ Failed to process VM task {}: {}",
@@ -84,6 +103,30 @@ async fn connect_and_listen(redis_url: &str, pool: MySqlPool, encryption_key: St
                 }
                 Err(e) => {
                     warn!("⚠️  Invalid VM payload: {}", e);
+                }
+            }
+        } else if channel == "featherpanel:settings:reload" {
+            match serde_json::from_str::<SettingsReloadNotification>(&payload) {
+                Ok(notification) => {
+                    let pool = pool.clone();
+                    let enc_key = encryption_key.clone();
+                    tokio::spawn(async move {
+                        match crate::settings::load_settings(&pool, &enc_key).await {
+                            Ok(new_settings) => {
+                                crate::settings::update_settings(new_settings).await;
+                                info!(
+                                    "🔄 Settings reloaded via Redis notification (reason: {:?})",
+                                    notification.reason
+                                );
+                            }
+                            Err(e) => {
+                                error!("❌ Failed to reload settings: {}", e);
+                            }
+                        }
+                    });
+                }
+                Err(e) => {
+                    warn!("⚠️  Invalid settings reload payload: {}", e);
                 }
             }
         }
@@ -125,7 +168,12 @@ async fn recover_pending_mail(pool: &MySqlPool) -> Result<()> {
 }
 
 async fn process_mail_with_timeout(pool: &MySqlPool, queue_id: &str) -> Result<()> {
-    match tokio::time::timeout(Duration::from_secs(120), processor::process_mail(pool, queue_id)).await {
+    match tokio::time::timeout(
+        Duration::from_secs(120),
+        processor::process_mail(pool, queue_id),
+    )
+    .await
+    {
         Ok(result) => result,
         Err(_) => {
             error!("❌ Mail processing timed out for queue {}", queue_id);

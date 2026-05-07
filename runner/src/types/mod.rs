@@ -10,6 +10,11 @@ pub struct VmNotification {
     pub task_id: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SettingsReloadNotification {
+    pub reason: Option<String>,
+}
+
 #[derive(Clone, Debug)]
 pub struct SmtpConfig {
     pub host: String,

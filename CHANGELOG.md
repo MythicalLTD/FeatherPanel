@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.3.7-STABLE
+## v1.3.7 STABLE
 
 ### Added
 
