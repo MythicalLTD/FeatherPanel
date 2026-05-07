@@ -36,12 +36,10 @@ import {
     AlertCircle,
     RefreshCw,
     Settings,
-    Info,
     Globe,
     Puzzle,
     Trash2,
     Upload,
-    CloudDownload,
     Save,
     Plus,
     AlertTriangle,
@@ -107,16 +105,6 @@ interface UpdateRequirements {
     };
 }
 
-interface PreviouslyInstalledPlugin {
-    id: number;
-    name: string;
-    identifier: string;
-    cloud_id?: number | null;
-    version?: string | null;
-    installed_at: string;
-    uninstalled_at?: string | null;
-}
-
 export default function PluginsPage() {
     const { t } = useTranslation();
 
@@ -161,12 +149,6 @@ export default function PluginsPage() {
     const [updateRequirements, setUpdateRequirements] = useState<UpdateRequirements | null>(null);
     const [installingUpdateId, setInstallingUpdateId] = useState<string | null>(null);
     const [pluginsWithUpdates, setPluginsWithUpdates] = useState<Plugin[]>([]);
-
-    const [previouslyInstalledPlugins, setPreviouslyInstalledPlugins] = useState<PreviouslyInstalledPlugin[]>([]);
-    const [showPreviouslyInstalledBanner, setShowPreviouslyInstalledBanner] = useState(false);
-    const [reinstallDialogOpen, setReinstallDialogOpen] = useState(false);
-    const [selectedPluginsToReinstall, setSelectedPluginsToReinstall] = useState<Set<string>>(new Set());
-    const [reinstallingPlugins, setReinstallingPlugins] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-plugins');
 
@@ -263,29 +245,6 @@ export default function PluginsPage() {
         }
     };
 
-    const fetchPreviouslyInstalledPlugins = useCallback(async () => {
-        try {
-            const response = await axios.get('/api/admin/plugins/previously-installed');
-            if (response.data.success && response.data.data?.plugins) {
-                const installedIdentifiers = new Set(plugins.map((p) => p.identifier));
-                // Show any plugin from history that is not currently installed (so user can reinstall)
-                const notCurrentlyInstalled = response.data.data.plugins.filter(
-                    (p: PreviouslyInstalledPlugin) => !installedIdentifiers.has(p.identifier),
-                );
-                // Dedupe by identifier (history can have multiple records per plugin)
-                const byId = new Map<string, PreviouslyInstalledPlugin>();
-                notCurrentlyInstalled.forEach((p: PreviouslyInstalledPlugin) => {
-                    if (!byId.has(p.identifier)) byId.set(p.identifier, p);
-                });
-                const list = Array.from(byId.values());
-                setPreviouslyInstalledPlugins(list);
-                setShowPreviouslyInstalledBanner(list.length > 0);
-            }
-        } catch {
-            // Non-blocking: keep existing state on API failure
-        }
-    }, [plugins]);
-
     useEffect(() => {
         fetchPlugins();
         fetchWidgets();
@@ -294,7 +253,6 @@ export default function PluginsPage() {
     useEffect(() => {
         if (plugins.length > 0) {
             checkAllUpdates();
-            fetchPreviouslyInstalledPlugins();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [plugins.length]);
@@ -599,41 +557,6 @@ export default function PluginsPage() {
         }
     };
 
-    const reinstallSelected = async () => {
-        if (selectedPluginsToReinstall.size === 0) return;
-        setReinstallingPlugins(true);
-        let success = 0;
-        let fail = 0;
-        let firstError: string | null = null;
-
-        const toReinstall = previouslyInstalledPlugins.filter((p) => selectedPluginsToReinstall.has(p.identifier));
-
-        for (const plugin of toReinstall) {
-            try {
-                await axios.post('/api/admin/plugins/online/install', { identifier: plugin.identifier });
-                success++;
-            } catch (err) {
-                fail++;
-                if (!firstError && axios.isAxiosError(err) && err.response?.data?.message) {
-                    firstError = err.response.data.message;
-                }
-            }
-        }
-
-        setReinstallingPlugins(false);
-        setReinstallDialogOpen(false);
-
-        if (success > 0) {
-            toast.success(t('admin.plugins.messages.reinstall_success') + ` (${success} success, ${fail} failed)`);
-            fetchPlugins();
-            fetchPreviouslyInstalledPlugins();
-            setTimeout(() => window.location.reload(), 2000);
-        } else {
-            const reason = firstError ? `: ${firstError}` : '';
-            toast.error(t('admin.plugins.messages.reinstall_failed') + reason);
-        }
-    };
-
     const configFields = useMemo(() => pluginConfig?.configSchema || [], [pluginConfig]);
     const hasConfigSchema = configFields.length > 0;
 
@@ -690,56 +613,6 @@ export default function PluginsPage() {
                                         <RefreshCw className='h-3 w-3 ml-1 inline' />
                                     </Badge>
                                 ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showPreviouslyInstalledBanner && previouslyInstalledPlugins.length > 0 && (
-                <div className='rounded-xl border border-blue-500/30 bg-blue-500/10 p-5'>
-                    <div className='flex items-start gap-3'>
-                        <Info className='h-5 w-5 text-blue-700 dark:text-blue-400 shrink-0 mt-0.5' />
-                        <div className='flex-1'>
-                            <h3 className='font-semibold text-blue-900 dark:text-blue-300 mb-2'>
-                                {t('admin.plugins.banners.previously_installed.title')}
-                            </h3>
-                            <p className='text-sm text-blue-800 dark:text-blue-400 mb-3'>
-                                {t('admin.plugins.banners.previously_installed.description', {
-                                    count: String(previouslyInstalledPlugins.length),
-                                })}
-                            </p>
-                            <div className='flex flex-wrap gap-2 mb-3'>
-                                {previouslyInstalledPlugins.map((plugin) => (
-                                    <Badge
-                                        key={plugin.id}
-                                        variant='outline'
-                                        className='text-xs border-blue-500/50 text-blue-700 dark:text-blue-400'
-                                    >
-                                        {plugin.name}
-                                    </Badge>
-                                ))}
-                            </div>
-                            <div className='flex items-center gap-2'>
-                                <Button
-                                    size='sm'
-                                    onClick={() => {
-                                        setSelectedPluginsToReinstall(
-                                            new Set(previouslyInstalledPlugins.map((p) => p.identifier)),
-                                        );
-                                        setReinstallDialogOpen(true);
-                                    }}
-                                >
-                                    <CloudDownload className='h-4 w-4 mr-2' />
-                                    {t('admin.plugins.banners.previously_installed.action')}
-                                </Button>
-                                <Button
-                                    size='sm'
-                                    variant='outline'
-                                    onClick={() => setShowPreviouslyInstalledBanner(false)}
-                                >
-                                    {t('admin.plugins.actions.dismiss')}
-                                </Button>
                             </div>
                         </div>
                     </div>
@@ -1427,95 +1300,6 @@ export default function PluginsPage() {
                 </DialogContent>
             </Dialog>
 
-            <Dialog
-                open={reinstallDialogOpen}
-                onOpenChange={(open) => {
-                    setReinstallDialogOpen(open);
-                    if (!open) {
-                        setSelectedPluginsToReinstall(new Set());
-                    }
-                }}
-            >
-                <DialogContent className='max-h-[80vh] overflow-y-auto'>
-                    <DialogHeader>
-                        <DialogTitle>{t('admin.plugins.dialogs.reinstall.title')}</DialogTitle>
-                        <DialogDescription>{t('admin.plugins.dialogs.reinstall.description')}</DialogDescription>
-                    </DialogHeader>
-                    <div>
-                        <div className='flex justify-between items-center mb-4'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                onClick={() => {
-                                    if (selectedPluginsToReinstall.size === previouslyInstalledPlugins.length) {
-                                        setSelectedPluginsToReinstall(new Set());
-                                    } else {
-                                        setSelectedPluginsToReinstall(
-                                            new Set(previouslyInstalledPlugins.map((p) => p.identifier)),
-                                        );
-                                    }
-                                }}
-                            >
-                                {selectedPluginsToReinstall.size === previouslyInstalledPlugins.length
-                                    ? t('admin.plugins.actions.deselect_all')
-                                    : t('admin.plugins.actions.select_all')}
-                            </Button>
-                            <span className='text-sm text-muted-foreground'>
-                                {selectedPluginsToReinstall.size} / {previouslyInstalledPlugins.length} selected
-                            </span>
-                        </div>
-                        <div className='space-y-2'>
-                            {previouslyInstalledPlugins.map((plugin) => (
-                                <div
-                                    key={plugin.id}
-                                    className='flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors'
-                                >
-                                    <input
-                                        type='checkbox'
-                                        checked={selectedPluginsToReinstall.has(plugin.identifier)}
-                                        onChange={(e) => {
-                                            const newSet = new Set(selectedPluginsToReinstall);
-                                            if (e.target.checked) newSet.add(plugin.identifier);
-                                            else newSet.delete(plugin.identifier);
-                                            setSelectedPluginsToReinstall(newSet);
-                                        }}
-                                        className='mt-1 h-4 w-4 rounded border-2 border-border cursor-pointer checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/30 transition-all appearance-none bg-background/50 checked:before:content-["✓"] checked:before:text-white checked:before:text-xs checked:before:flex checked:before:items-center checked:before:justify-center'
-                                    />
-                                    <div className='flex-1 min-w-0'>
-                                        <div className='font-medium'>{plugin.name}</div>
-                                        <div className='text-sm text-muted-foreground'>{plugin.identifier}</div>
-                                        {plugin.version && (
-                                            <div className='text-xs text-muted-foreground mt-1'>
-                                                Version: {plugin.version}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant='outline' onClick={() => setReinstallDialogOpen(false)}>
-                            {t('admin.plugins.actions.cancel')}
-                        </Button>
-                        <Button
-                            onClick={reinstallSelected}
-                            disabled={reinstallingPlugins || selectedPluginsToReinstall.size === 0}
-                        >
-                            {reinstallingPlugins ? (
-                                <RefreshCw className='h-4 w-4 animate-spin mr-2' />
-                            ) : (
-                                <CloudDownload className='h-4 w-4 mr-2' />
-                            )}
-                            {reinstallingPlugins
-                                ? t('admin.plugins.dialogs.reinstall.reinstalling')
-                                : t('admin.plugins.dialogs.reinstall.button_label', {
-                                      count: String(selectedPluginsToReinstall.size),
-                                  })}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
             <WidgetRenderer widgets={getWidgets('admin-plugins', 'bottom-of-page')} />
         </div>
     );
