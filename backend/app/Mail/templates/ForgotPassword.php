@@ -23,6 +23,27 @@ use App\Chat\MailTemplate;
 
 class ForgotPassword
 {
+    private static function getSubject(array $data): string
+    {
+        $row = MailTemplate::getByName('forgot_password');
+        $subjectTemplate = $row['subject'] ?? '';
+        if ($subjectTemplate === '') {
+            return $data['subject'] ?? '';
+        }
+
+        return self::parseTemplate($subjectTemplate, [
+            'app_name' => $data['app_name'],
+            'app_url' => $data['app_url'],
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'email' => $data['email'],
+            'username' => $data['username'],
+            'dashboard_url' => $data['app_url'] . '/dashboard',
+            'support_url' => $data['app_support_url'],
+            'reset_url' => $data['reset_url'],
+        ]);
+    }
+
     /**
      * Get the welcome email template.
      */
@@ -72,7 +93,6 @@ class ForgotPassword
     {
         if (
             !isset($data['email'])
-            || !isset($data['subject'])
             || !isset($data['app_name'])
             || !isset($data['app_url'])
             || !isset($data['first_name'])
@@ -91,10 +111,14 @@ class ForgotPassword
         }
 
         $template = self::getTemplate($data);
+        $subject = self::getSubject($data);
+        if ($template === '' || $subject === '') {
+            return;
+        }
 
         $id = MailQueue::create([
             'user_uuid' => $data['uuid'],
-            'subject' => $data['subject'],
+            'subject' => $subject,
             'body' => $template,
         ]);
 

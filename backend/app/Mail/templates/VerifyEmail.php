@@ -23,6 +23,27 @@ use App\Chat\MailTemplate;
 
 class VerifyEmail
 {
+    private static function getSubject(array $data): string
+    {
+        $row = MailTemplate::getByName('verify_email');
+        $subjectTemplate = $row['subject'] ?? '';
+        if ($subjectTemplate === '') {
+            return $data['subject'] ?? '';
+        }
+
+        return self::parseTemplate($subjectTemplate, [
+            'app_name' => $data['app_name'],
+            'app_url' => $data['app_url'],
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'email' => $data['email'],
+            'username' => $data['username'],
+            'dashboard_url' => $data['app_url'] . '/dashboard',
+            'support_url' => $data['app_support_url'],
+            'verify_url' => $data['verify_url'],
+        ]);
+    }
+
     public static function getTemplate(array $data): string
     {
         if (
@@ -69,8 +90,7 @@ class VerifyEmail
     public static function send(array $data): void
     {
         if (
-            !isset($data['subject'])
-            || !isset($data['uuid'])
+            !isset($data['uuid'])
             || !isset($data['enabled'])
             || !isset($data['first_name'])
             || !isset($data['last_name'])
@@ -88,10 +108,16 @@ class VerifyEmail
             return;
         }
 
+        $subject = self::getSubject($data);
+        $body = self::getTemplate($data);
+        if ($subject === '' || $body === '') {
+            return;
+        }
+
         $id = MailQueue::create([
             'user_uuid' => $data['uuid'],
-            'subject' => $data['subject'],
-            'body' => self::getTemplate($data),
+            'subject' => $subject,
+            'body' => $body,
         ]);
         if ($id == false) {
             return;

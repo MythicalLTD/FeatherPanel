@@ -22,6 +22,7 @@
 - Resolved an issue where users were redirected to a raw JSON page after logging in via an OIDC provider, ensuring a seamless post-login experience.
 - Fixed Proxmox node selection displaying in inconsistent order when creating VDS instances—nodes are now sorted alphabetically for predictable selection.
 - Fixed inconsistency where /admin/api/users returned userId instead of UUID, which caused issues when interacting with endpoints such as user retrieval and SSO token creation that require UUID. by @nayskutzu
+- Resolved an issue where email subjects were previously hardcoded and could not be customized—subjects are now fully editable. by @nayskutzu
 
 ### Improved
 

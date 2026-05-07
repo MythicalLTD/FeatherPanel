@@ -23,6 +23,27 @@ use App\Chat\MailTemplate;
 
 class VmSuspended
 {
+    private static function getSubject(array $data): string
+    {
+        $row = MailTemplate::getByName('vm_suspended');
+        $subjectTemplate = $row['subject'] ?? '';
+        if ($subjectTemplate === '') {
+            return $data['subject'] ?? '';
+        }
+
+        return self::parseTemplate($subjectTemplate, [
+            'app_name' => $data['app_name'],
+            'app_url' => $data['app_url'],
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'email' => $data['email'],
+            'username' => $data['username'],
+            'dashboard_url' => $data['app_url'] . '/dashboard',
+            'support_url' => $data['app_support_url'],
+            'vm_hostname' => $data['vm_hostname'],
+        ]);
+    }
+
     public static function getTemplate(array $data): string
     {
         if (isset($data['app_name']) && isset($data['app_url']) && isset($data['first_name']) && isset($data['last_name']) && isset($data['email']) && isset($data['username']) && isset($data['app_support_url'])) {
@@ -61,7 +82,6 @@ class VmSuspended
     {
         if (
             !isset($data['email'])
-            || !isset($data['subject'])
             || !isset($data['app_name'])
             || !isset($data['app_url'])
             || !isset($data['first_name'])
@@ -84,10 +104,14 @@ class VmSuspended
         }
 
         $template = self::getTemplate($data);
+        $subject = self::getSubject($data);
+        if ($template === '' || $subject === '') {
+            return;
+        }
 
         $id = MailQueue::create([
             'user_uuid' => $data['uuid'],
-            'subject' => $data['subject'],
+            'subject' => $subject,
             'body' => $template,
         ]);
 
