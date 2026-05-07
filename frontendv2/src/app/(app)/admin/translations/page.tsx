@@ -32,7 +32,13 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Editor } from '@monaco-editor/react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Globe, Plus, Search, Pencil, Trash2, Download, Upload, Check, X, FileCode, Users } from 'lucide-react';
+import { Globe, Plus, Search, Pencil, Trash2, Download, Upload, Check, X, FileCode, Users, MoreHorizontal } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface TranslationFile {
     code: string;
@@ -125,10 +131,13 @@ export default function TranslationsPage() {
                 throw new Error('Failed to fetch frontend translations');
             }
             const frontendTranslations = await response.json();
-
-            await axios.put('/api/admin/translations/en', frontendTranslations, {
+            const blob = new Blob([JSON.stringify(frontendTranslations)], { type: 'application/json' });
+            const formData = new FormData();
+            formData.append('file', new File([blob], 'en.json', { type: 'application/json' }));
+            formData.append('overwrite', '1');
+            await axios.post('/api/admin/translations/upload', formData, {
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'multipart/form-data',
                 },
             });
 
@@ -136,7 +145,11 @@ export default function TranslationsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error importing translations:', error);
-            toast.error(t('admin.translations.messages.import_failed'));
+            let msg = t('admin.translations.messages.import_failed');
+            if (isAxiosError(error) && error.response?.data?.message) {
+                msg = error.response.data.message;
+            }
+            toast.error(msg);
         } finally {
             setIsImporting(false);
         }
@@ -185,6 +198,16 @@ export default function TranslationsPage() {
                 return;
             }
 
+            const existingLanguage = translationFiles.some((file) => file.code === langCode);
+            if (existingLanguage) {
+                toast.info(`Translation file "${langCode}.json" already exists. Opening it for editing.`);
+                setCreateOpen(false);
+                setNewLangCode('');
+                await loadTranslationContent(langCode);
+                setIsSubmitting(false);
+                return;
+            }
+
             await axios.post(`/api/admin/translations/${langCode}`, {});
             toast.success(t('admin.translations.messages.created'));
             setCreateOpen(false);
@@ -192,6 +215,14 @@ export default function TranslationsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error creating translation file:', error);
+            if (isAxiosError(error) && error.response?.data?.error_code === 'FILE_EXISTS') {
+                const langCode = newLangCode.trim().toLowerCase();
+                toast.info(`Translation file "${langCode}.json" already exists. Opening it for editing.`);
+                setCreateOpen(false);
+                await loadTranslationContent(langCode);
+                setNewLangCode('');
+                return;
+            }
             let msg = t('admin.translations.messages.create_failed');
             if (isAxiosError(error) && error.response?.data?.message) {
                 msg = error.response.data.message;
@@ -280,19 +311,6 @@ export default function TranslationsPage() {
                 icon={Globe}
                 actions={
                     <div className='flex gap-2'>
-                        <Button
-                            onClick={() => (location.href = 'https://github.com/featherpanel-com/translations')}
-                            variant='outline'
-                        >
-                            <Users className='h-4 w-4 mr-2' />
-                            {t('admin.translations.community_made')}
-                        </Button>
-                        {!hasEnglishTranslations && (
-                            <Button onClick={handleImportDefault} loading={isImporting} variant='outline'>
-                                <Upload className='h-4 w-4 mr-2' />
-                                {t('admin.translations.import_default')}
-                            </Button>
-                        )}
                         <input
                             ref={fileInputRef}
                             type='file'
@@ -301,14 +319,34 @@ export default function TranslationsPage() {
                             className='hidden'
                             id='translation-file-upload'
                         />
-                        <Button onClick={() => fileInputRef.current?.click()} loading={isUploading} variant='outline'>
-                            <Upload className='h-4 w-4 mr-2' />
-                            {t('admin.translations.upload')}
-                        </Button>
                         <Button onClick={() => setCreateOpen(true)}>
                             <Plus className='h-4 w-4 mr-2' />
                             {t('admin.translations.create')}
                         </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger className='inline-flex items-center justify-center whitespace-nowrap rounded-2xl text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 overflow-hidden relative border border-white/10 bg-white/5 hover:bg-white/10 text-foreground backdrop-blur-sm h-11 px-6'>
+                                <MoreHorizontal className='h-4 w-4 mr-2' />
+                                Actions
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align='end' className='w-64'>
+                                <DropdownMenuItem onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                                    <Upload className='h-4 w-4 mr-2' />
+                                    {isUploading ? 'Uploading...' : t('admin.translations.upload')}
+                                </DropdownMenuItem>
+                                {!hasEnglishTranslations && (
+                                    <DropdownMenuItem onClick={handleImportDefault} disabled={isImporting}>
+                                        <Upload className='h-4 w-4 mr-2' />
+                                        {isImporting ? 'Importing...' : t('admin.translations.import_default')}
+                                    </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                    onClick={() => (location.href = 'https://github.com/featherpanel-com/translations')}
+                                >
+                                    <Users className='h-4 w-4 mr-2' />
+                                    {t('admin.translations.community_made')}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 }
             />
@@ -335,15 +373,7 @@ export default function TranslationsPage() {
                     title={t('admin.translations.no_results')}
                     description={t('admin.translations.search_placeholder')}
                     action={
-                        <div className='flex gap-2'>
-                            {!hasEnglishTranslations && (
-                                <Button onClick={handleImportDefault} loading={isImporting} variant='outline'>
-                                    <Upload className='h-4 w-4 mr-2' />
-                                    {t('admin.translations.import_default')}
-                                </Button>
-                            )}
-                            <Button onClick={() => setCreateOpen(true)}>{t('admin.translations.create')}</Button>
-                        </div>
+                        <Button onClick={() => setCreateOpen(true)}>{t('admin.translations.create')}</Button>
                     }
                 />
             ) : (

@@ -34,6 +34,18 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 
+    // Upload translation file
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-translations-upload',
+        '/api/admin/translations/upload',
+        function (Request $request) {
+            return (new TranslationsController())->upload($request);
+        },
+        Permissions::ADMIN_ROOT,
+        ['POST']
+    );
+
     // Get specific translation file
     App::getInstance(true)->registerAdminRoute(
         $routes,
@@ -177,15 +189,4 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
-    // Upload translation file
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-translations-upload',
-        '/api/admin/translations/upload',
-        function (Request $request) {
-            return (new TranslationsController())->upload($request);
-        },
-        Permissions::ADMIN_ROOT,
-        ['POST']
-    );
 };
