@@ -47,6 +47,7 @@ import {
     Search,
     X,
     Send,
+    RefreshCw,
 } from 'lucide-react';
 import { copyToClipboard, cn } from '@/lib/utils';
 
@@ -207,6 +208,7 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [sendingTestEmail, setSendingTestEmail] = useState(false);
+    const [updatingDocker, setUpdatingDocker] = useState(false);
     const [organizedSettings, setOrganizedSettings] = useState<OrganizedSettings | null>(null);
     const [settings, setSettings] = useState<Record<string, Setting>>({});
     const [initialSettings, setInitialSettings] = useState<Record<string, Setting>>({});
@@ -410,6 +412,25 @@ export default function SettingsPage() {
         }
     };
 
+    const handleDockerUpdate = async () => {
+        const confirmed = window.confirm(t('admin.settings.docker_update.confirm'));
+        if (!confirmed) return;
+
+        setUpdatingDocker(true);
+        try {
+            const response = await adminSettingsApi.triggerDockerUpdate();
+            if (response.success) {
+                toast.success(response.message || t('admin.settings.docker_update.success'));
+            } else {
+                toast.error(response.message || t('admin.settings.docker_update.failed'));
+            }
+        } catch {
+            toast.error(t('admin.settings.docker_update.failed'));
+        } finally {
+            setUpdatingDocker(false);
+        }
+    };
+
     const getIconForCategory = (category: string) => {
         switch (category.toLowerCase()) {
             case 'general':
@@ -456,6 +477,21 @@ export default function SettingsPage() {
                         <Button variant='outline' onClick={handleUploadLogs} className='shrink-0'>
                             <UploadCloud className='w-4 h-4 mr-2' />
                             {t('admin.settings.actions.upload_logs')}
+                        </Button>
+                        <Button
+                            variant='outline'
+                            onClick={handleDockerUpdate}
+                            disabled={updatingDocker}
+                            className='shrink-0'
+                        >
+                            {updatingDocker ? (
+                                <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                            ) : (
+                                <RefreshCw className='w-4 h-4 mr-2' />
+                            )}
+                            {updatingDocker
+                                ? t('admin.settings.docker_update.updating')
+                                : t('admin.settings.docker_update.button')}
                         </Button>
                         <Button onClick={handleSave} disabled={saving} className='shrink-0'>
                             {saving ? (

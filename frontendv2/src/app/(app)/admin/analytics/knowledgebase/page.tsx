@@ -35,7 +35,7 @@ interface Data {
 
 export default function KnowledgebaseAnalyticsPage() {
     const [data, setData] = useState<Data | null>(null);
-    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-knowledgebase');
+    const { getWidgets } = usePluginWidgets('admin-analytics-knowledgebase');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

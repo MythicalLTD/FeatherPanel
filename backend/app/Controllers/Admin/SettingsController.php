@@ -2941,6 +2941,167 @@ class SettingsController
         );
     }
 
+    #[OA\Post(
+        path: '/api/admin/settings/docker/update',
+        summary: 'Trigger Docker panel update',
+        description: 'Docker-only action that asks the local updater service to pull latest images and recreate containers.',
+        tags: ['Admin - Settings'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Docker update started successfully',
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Bad request - not a Docker deployment',
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Insufficient permissions',
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Internal server error - updater service unavailable or misconfigured',
+            ),
+        ],
+    ),]
+    public function triggerDockerUpdate(Request $request): Response
+    {
+        if (!$this->isDockerDeployment()) {
+            return ApiResponse::error(
+                'Docker updates are available only for Docker deployments.',
+                'DOCKER_DEPLOYMENT_REQUIRED',
+                400,
+            );
+        }
+
+        $updaterUrl = trim((string) ($_ENV['DOCKER_UPDATER_URL'] ?? ''));
+        $updaterToken = trim((string) ($_ENV['DOCKER_UPDATER_TOKEN'] ?? ''));
+
+        if ($updaterUrl === '' || $updaterToken === '') {
+            return ApiResponse::error(
+                'Docker updater is not configured. Missing DOCKER_UPDATER_URL or DOCKER_UPDATER_TOKEN.',
+                'DOCKER_UPDATER_NOT_CONFIGURED',
+                500,
+            );
+        }
+
+        $user = $request->get('user');
+        $payload = json_encode([
+            'requested_by' => [
+                'uuid' => $user['uuid'] ?? null,
+                'username' => $user['username'] ?? null,
+                'email' => $user['email'] ?? null,
+            ],
+            'requested_at' => date('c'),
+        ]);
+        if ($payload === false) {
+            return ApiResponse::error(
+                'Failed to build updater request payload.',
+                'DOCKER_UPDATER_PAYLOAD_ERROR',
+                500,
+            );
+        }
+
+        $responseHeaders = [];
+        $responseBody = false;
+        try {
+            $responseBody = @file_get_contents(
+                $updaterUrl,
+                false,
+                stream_context_create([
+                    'http' => [
+                        'method' => 'POST',
+                        'header' => implode("\r\n", [
+                            'Content-Type: application/json',
+                            'X-Featherpanel-Update-Token: ' . $updaterToken,
+                        ]),
+                        'content' => $payload,
+                        'timeout' => 600,
+                        'ignore_errors' => true,
+                    ],
+                ]),
+            );
+            $responseHeaders = $http_response_header ?? [];
+        } catch (\Throwable $exception) {
+            $this->app->getLogger()->error('Docker updater request failed: ' . $exception->getMessage());
+
+            return ApiResponse::error(
+                'Docker updater request failed.',
+                'DOCKER_UPDATER_REQUEST_FAILED',
+                500,
+            );
+        }
+
+        $statusCode = $this->extractStatusCodeFromHttpHeaders($responseHeaders);
+        $decodedResponse = null;
+        if (is_string($responseBody) && $responseBody !== '') {
+            $decoded = json_decode($responseBody, true);
+            if (is_array($decoded)) {
+                $decodedResponse = $decoded;
+            }
+        }
+
+        if ($statusCode >= 200 && $statusCode < 300 && is_array($decodedResponse) && ($decodedResponse['success'] ?? false) === true) {
+            Activity::createActivity([
+                'user_uuid' => $user['uuid'] ?? null,
+                'name' => 'trigger_docker_panel_update',
+                'context' => 'Triggered Docker panel update from admin settings',
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            return ApiResponse::success(
+                [
+                    'updater' => $decodedResponse['data'] ?? null,
+                ],
+                (string) ($decodedResponse['message'] ?? 'Docker update started successfully.'),
+                200,
+            );
+        }
+
+        $message = 'Failed to trigger Docker update.';
+        if (is_array($decodedResponse) && isset($decodedResponse['message']) && is_string($decodedResponse['message'])) {
+            $message = $decodedResponse['message'];
+        }
+
+        $errorStatus = $statusCode >= 400 ? $statusCode : 500;
+
+        return ApiResponse::error(
+            $message,
+            'DOCKER_UPDATE_FAILED',
+            $errorStatus,
+            [
+                'updater_status' => $statusCode,
+                'updater_response' => $decodedResponse,
+            ],
+        );
+    }
+
+    private function isDockerDeployment(): bool
+    {
+        $flag = strtolower(trim((string) ($_ENV['PANEL_DOCKER_DEPLOYMENT'] ?? 'false')));
+
+        return in_array($flag, ['1', 'true', 'yes', 'on'], true);
+    }
+
+    /**
+     * @param array<int,string> $headers
+     */
+    private function extractStatusCodeFromHttpHeaders(array $headers): int
+    {
+        if (empty($headers)) {
+            return 0;
+        }
+
+        $statusLine = $headers[0];
+        if (preg_match('/\s(\d{3})\s/', $statusLine, $matches) === 1) {
+            return (int) $matches[1];
+        }
+
+        return 0;
+    }
+
     private function organizeSettingsByCategory(): array
     {
         $organized = [];

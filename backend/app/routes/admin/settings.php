@@ -92,4 +92,14 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_SETTINGS_EDIT,
         ['POST']
     );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-settings-docker-update',
+        '/api/admin/settings/docker/update',
+        function (Request $request) {
+            return (new SettingsController())->triggerDockerUpdate($request);
+        },
+        Permissions::ADMIN_SETTINGS_EDIT,
+        ['POST']
+    );
 };

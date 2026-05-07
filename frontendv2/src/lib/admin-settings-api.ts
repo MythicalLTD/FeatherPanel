@@ -124,4 +124,18 @@ export const adminSettingsApi = {
         }>('/api/admin/log-viewer/upload');
         return data;
     },
+
+    triggerDockerUpdate: async () => {
+        const { data } = await axios.post<{
+            success: boolean;
+            message?: string;
+            data?: {
+                updater?: {
+                    triggered_at?: string;
+                    output?: string;
+                };
+            };
+        }>('/api/admin/settings/docker/update');
+        return data;
+    },
 };

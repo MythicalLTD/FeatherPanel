@@ -36,7 +36,7 @@ interface Data {
 
 export default function PluginsAnalyticsPage() {
     const [data, setData] = useState<Data | null>(null);
-    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-plugins');
+    const { getWidgets } = usePluginWidgets('admin-analytics-plugins');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

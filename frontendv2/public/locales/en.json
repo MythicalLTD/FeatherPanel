@@ -6373,6 +6373,13 @@
                 "success": "Test email sent successfully! Please check your inbox.",
                 "failed": "Failed to send test email. Please check your SMTP settings.",
                 "troubleshooting": "If emails aren't being sent, check the async_runner logs on your server: cd /var/www/featherpanel && docker compose logs async-runner -f"
+            },
+            "docker_update": {
+                "button": "Update Docker Deployment",
+                "updating": "Updating Docker Deployment...",
+                "confirm": "This will pull the latest FeatherPanel Docker images and recreate containers. Continue?",
+                "success": "Docker update has been triggered successfully.",
+                "failed": "Failed to trigger Docker update."
             }
         },
         "rate_limits": {

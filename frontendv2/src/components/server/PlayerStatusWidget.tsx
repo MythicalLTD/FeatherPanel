@@ -157,6 +157,7 @@ export default function PlayerStatusWidget({ uuidShort, pollingInterval = 30000 
                             className='flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors'
                         >
                             {isMinecraft && (
+                                // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                     src={`https://minotar.net/avatar/${encodeURIComponent(player)}/20`}
                                     alt=''

@@ -42,7 +42,7 @@ interface Data {
 
 export default function TicketsAnalyticsPage() {
     const [data, setData] = useState<Data | null>(null);
-    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics-tickets');
+    const { getWidgets } = usePluginWidgets('admin-analytics-tickets');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

@@ -38,7 +38,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 
 export default function AnalyticsDashboardPage() {
     const { t } = useTranslation();
-    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-analytics');
+    const { getWidgets } = usePluginWidgets('admin-analytics');
     const router = useRouter();
 
     const analyticsModules = [

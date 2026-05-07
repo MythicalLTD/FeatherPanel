@@ -403,6 +403,157 @@ sync_panel_port_env() {
 	export FEATHERPANEL_PANEL_PORT="$panel_port"
 }
 
+ensure_docker_updater_env() {
+	local env_file="/var/www/featherpanel/.env"
+	local updater_token=""
+
+	mkdir -p /var/www/featherpanel
+	if [ ! -f "$env_file" ]; then
+		touch "$env_file"
+		chmod 600 "$env_file"
+	fi
+
+	if grep -q '^DOCKER_UPDATER_TOKEN=' "$env_file"; then
+		updater_token=$(awk -F= '/^DOCKER_UPDATER_TOKEN=/{print $2; exit}' "$env_file" | tr -d '"' | tr -d "'")
+	fi
+
+	if [ -z "$updater_token" ]; then
+		updater_token=$(head -c 48 /dev/urandom | base64 | tr -d '\n' | tr '/+' '_-' | cut -c1-64)
+		if grep -q '^DOCKER_UPDATER_TOKEN=' "$env_file"; then
+			sed -i "s|^DOCKER_UPDATER_TOKEN=.*|DOCKER_UPDATER_TOKEN=\"${updater_token}\"|g" "$env_file"
+		else
+			printf 'DOCKER_UPDATER_TOKEN="%s"\n' "$updater_token" >>"$env_file"
+		fi
+		log_info "Generated DOCKER_UPDATER_TOKEN in /var/www/featherpanel/.env"
+	fi
+}
+
+setup_host_docker_updater() {
+	local env_file="/var/www/featherpanel/.env"
+	local updater_token=""
+	local updater_dir="/etc/featherpanel"
+	local runner_script="${updater_dir}/docker-updater-run.sh"
+	local handler_script="${updater_dir}/docker-updater-handler.sh"
+	local service_file="/etc/systemd/system/featherpanel-docker-updater.service"
+
+	if [ -f "$env_file" ] && grep -q '^DOCKER_UPDATER_TOKEN=' "$env_file"; then
+		updater_token=$(awk -F= '/^DOCKER_UPDATER_TOKEN=/{print $2; exit}' "$env_file" | tr -d '"' | tr -d "'")
+	fi
+
+	if [ -z "$updater_token" ]; then
+		log_warn "DOCKER_UPDATER_TOKEN is missing, skipping host updater setup."
+		return 0
+	fi
+
+	mkdir -p "$updater_dir"
+
+	cat <<'EOF' >"$runner_script"
+#!/bin/bash
+set -euo pipefail
+
+cd /var/www/featherpanel
+docker compose -f /var/www/featherpanel/docker-compose.yml pull
+docker compose -f /var/www/featherpanel/docker-compose.yml up -d --remove-orphans
+EOF
+	chmod 700 "$runner_script"
+
+	cat <<'EOF' >"$handler_script"
+#!/bin/bash
+set -euo pipefail
+
+TOKEN_FILE="/var/www/featherpanel/.env"
+RUNNER_SCRIPT="/etc/featherpanel/docker-updater-run.sh"
+
+token_from_env() {
+	if [ ! -f "$TOKEN_FILE" ]; then
+		echo ""
+		return
+	fi
+	awk -F= '/^DOCKER_UPDATER_TOKEN=/{print $2; exit}' "$TOKEN_FILE" | tr -d '"' | tr -d "'"
+}
+
+send_json_response() {
+	local status_code="$1"
+	local body="$2"
+	printf 'HTTP/1.1 %s\r\n' "$status_code"
+	printf 'Content-Type: application/json\r\n'
+	printf 'Content-Length: %s\r\n' "${#body}"
+	printf 'Connection: close\r\n'
+	printf '\r\n'
+	printf '%s' "$body"
+}
+
+request_line=""
+if ! IFS= read -r request_line; then
+	body='{"success":false,"message":"Empty request"}'
+	send_json_response "400 Bad Request" "$body"
+	exit 0
+fi
+request_line=${request_line%$'\r'}
+
+auth_token=""
+while IFS= read -r header_line; do
+	header_line=${header_line%$'\r'}
+	[ -z "$header_line" ] && break
+	case "$header_line" in
+	X-Featherpanel-Update-Token:*)
+		auth_token=$(printf '%s' "${header_line#X-Featherpanel-Update-Token:}" | sed 's/^[[:space:]]*//')
+		;;
+	esac
+done
+
+expected_token="$(token_from_env)"
+if [ -z "$expected_token" ] || [ "$auth_token" != "$expected_token" ]; then
+	body='{"success":false,"message":"Invalid updater token"}'
+	send_json_response "403 Forbidden" "$body"
+	exit 0
+fi
+
+if [[ "$request_line" != "POST /update HTTP/"* ]]; then
+	body='{"success":false,"message":"Not found"}'
+	send_json_response "404 Not Found" "$body"
+	exit 0
+fi
+
+output="$("$RUNNER_SCRIPT" 2>&1)" || {
+	output_json=$(printf '%s' "$output" | jq -Rs .)
+	body=$(printf '{"success":false,"message":"Docker update command failed","data":{"output":%s}}' "$output_json")
+	send_json_response "500 Internal Server Error" "$body"
+	exit 0
+}
+
+ts="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+output_json=$(printf '%s' "$output" | jq -Rs .)
+body=$(printf '{"success":true,"message":"Docker update completed successfully","data":{"triggered_at":"%s","output":%s}}' "$ts" "$output_json")
+send_json_response "200 OK" "$body"
+EOF
+	chmod 700 "$handler_script"
+
+	cat <<EOF >"$service_file"
+[Unit]
+Description=FeatherPanel Docker updater host service
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/socat TCP-LISTEN:9418,reuseaddr,fork EXEC:${handler_script}
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+	systemctl daemon-reload
+	systemctl enable --now featherpanel-docker-updater.service >/dev/null 2>&1 || {
+		log_warn "Failed to start featherpanel-docker-updater.service. Check: systemctl status featherpanel-docker-updater.service"
+		return 0
+	}
+
+	log_info "Host Docker updater service is active on 127.0.0.1:9418."
+}
+
 apply_panel_port_to_compose() {
 	local compose_file="$1"
 	local compose_port_template="\${FEATHERPANEL_PANEL_PORT:-4831}:80"
@@ -5911,7 +6062,7 @@ if [ -f /etc/os-release ]; then
 		# Check virtualization compatibility before installing Docker
 		check_virtualization_compatibility
 
-		install_packages curl unzip jq
+		install_packages curl unzip jq socat
 		if command -v docker &>/dev/null; then
 			log_info "Docker is already installed."
 		else
@@ -5971,6 +6122,8 @@ if [ -f /etc/os-release ]; then
 		if [[ "$CF_TUNNEL_SETUP" =~ ^[yY]$ ]]; then
 			ensure_env_cloudflare
 		fi
+		ensure_docker_updater_env
+		setup_host_docker_updater
 
 		if [ ! -f /var/www/featherpanel/docker-compose.yml ]; then
 			COMPOSE_URL=$(get_compose_file_url)

@@ -63,6 +63,11 @@ services:
       - REDIS_HOST=redis
       - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
       - TRUST_PROXY_HEADERS=true
+      - PANEL_DOCKER_DEPLOYMENT=true
+      - DOCKER_UPDATER_URL=http://host.docker.internal:9418/update
+      - DOCKER_UPDATER_TOKEN=${DOCKER_UPDATER_TOKEN:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       mysql:
         condition: service_healthy
