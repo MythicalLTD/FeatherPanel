@@ -38,6 +38,9 @@ services:
       - redis_data:/data
     networks:
       - featherpanel_network
+    depends_on:
+      mysql:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       timeout: 20s
@@ -70,6 +73,8 @@ services:
       - featherpanel_attachments:/var/www/html/public/attachments
       - featherpanel_config:/var/www/html/storage/config
       - featherpanel_snapshots:/var/www/html/storage/backups
+      - featherpanel_logs:/var/www/html/storage/logs
+      - featherpanel_translations:/var/www/html/public/translations
     networks:
       - featherpanel_network
 
@@ -108,6 +113,10 @@ services:
     image: ghcr.io/mythicalltd/featherpanel-async-runner:dev
     container_name: featherpanel_async_runner
     restart: unless-stopped
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+      - net.ipv6.conf.default.disable_ipv6=1
+      - net.ipv6.conf.lo.disable_ipv6=1
     environment:
       - RUST_LOG=info
       - DB_HOST=mysql
@@ -118,10 +127,7 @@ services:
       - REDIS_URL=redis://:${REDIS_PASSWORD:-featherpanel_redis}@redis:6379
     volumes:
       - featherpanel_config:/app/config:ro
-    sysctls:
-      - net.ipv6.conf.all.disable_ipv6=1
-      - net.ipv6.conf.default.disable_ipv6=1
-      - net.ipv6.conf.lo.disable_ipv6=1
+      - featherpanel_logs:/app/logs
     depends_on:
       mysql:
         condition: service_healthy
@@ -144,6 +150,10 @@ volumes:
   featherpanel_config:
     driver: local
   featherpanel_snapshots:
+    driver: local
+  featherpanel_logs:
+    driver: local
+  featherpanel_translations:
     driver: local
 
 networks:
