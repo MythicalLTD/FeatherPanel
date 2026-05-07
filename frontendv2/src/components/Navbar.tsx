@@ -21,6 +21,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { ServerContext } from '@/contexts/ServerContext';
+import { VmInstanceContext } from '@/contexts/VmInstanceContext';
 import Permissions from '@/lib/permissions';
 import { LocalStorageManagerDialog } from '@/components/layout/LocalStorageManagerDialog';
 import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
@@ -38,7 +39,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const { user, logout, hasPermission } = useSession();
     const { t } = useTranslation();
     const serverContext = useContext(ServerContext);
+    const vmInstanceContext = useContext(VmInstanceContext);
     const isOnServerPage = pathname?.startsWith('/server/');
+    const isOnVdsPage = pathname?.startsWith('/vds/');
+    const isOnAdminPage = pathname?.startsWith('/admin');
     const serverName = isOnServerPage ? serverContext?.server?.name : null;
     const headerTitle = serverName ?? t('dashboard.title');
 
@@ -74,11 +78,19 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const { chromeLayout } = useChromeLayout();
 
     const canAccessAdmin = hasPermission(Permissions.ADMIN_DASHBOARD_VIEW);
+    const showAdminAreaButton = canAccessAdmin && !isOnAdminPage;
+    const adminAreaHref =
+        isOnServerPage && serverContext?.server?.id
+            ? `/admin/servers/${serverContext.server.id}/edit`
+            : isOnVdsPage && vmInstanceContext?.instance?.id
+              ? `/admin/vm-instances/${vmInstanceContext.instance.id}/edit`
+            : '/admin';
 
     const chromeProps = {
         onMenuClick,
         headerTitle,
-        canAccessAdmin,
+        showAdminAreaButton,
+        adminAreaHref,
         user,
         router,
         userNavigation,

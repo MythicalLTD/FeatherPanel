@@ -33,6 +33,7 @@
 - Completely reimagined the admin sidebar user experience for enhanced usability and navigation. by @nayskutzu
 - Completely removed the FeatherPanel partner showcases from the UI for a cleaner user experience. by @nayskutzu
 - You can now seamlessly create a new location while creating a node—no more jumping between steps or prerequisites, making your setup process much easier. by @nayskutzu
+- The admin area button now intelligently adapts its destination: on a server page, it directs you to the relevant server or VDS edit page; on the dashboard, it takes you to the main admin area. Additionally, while in the admin section, the admin area button is hidden for a cleaner interface. by @nayskutzu
 
 ## v1.3.6 STABLE
 

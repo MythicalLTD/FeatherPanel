@@ -39,7 +39,8 @@ import type { UserInfo } from '@/contexts/SessionContext';
 export type NavbarChromeProps = {
     onMenuClick: () => void;
     headerTitle: string;
-    canAccessAdmin: boolean;
+    showAdminAreaButton: boolean;
+    adminAreaHref: string;
     user: UserInfo | null;
     router: AppRouterInstance;
     userNavigation: Array<{ name: string; href: string; icon: typeof CircleUser }>;
@@ -61,7 +62,8 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
     const {
         onMenuClick,
         headerTitle,
-        canAccessAdmin,
+        showAdminAreaButton,
+        adminAreaHref,
         user,
         router,
         userNavigation,
@@ -106,10 +108,10 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
                 </div>
 
                 <div className='flex items-center gap-x-1.5 sm:gap-x-3 lg:gap-x-6 shrink-0'>
-                    {canAccessAdmin && (
+                    {showAdminAreaButton && (
                         <button
                             type='button'
-                            onClick={() => router.push('/admin')}
+                            onClick={() => router.push(adminAreaHref)}
                             className='flex shrink-0 items-center gap-2 rounded-lg p-2 sm:px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:hover:bg-accent'
                             title={t('navbar.adminPanelTooltip')}
                         >
@@ -369,7 +371,8 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
     const {
         onMenuClick,
         headerTitle,
-        canAccessAdmin,
+        showAdminAreaButton,
+        adminAreaHref,
         user,
         router,
         userNavigation,
@@ -419,10 +422,10 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
 
                     <div className='flex shrink-0 items-center gap-1 sm:gap-2'>
                         <div className='flex items-center gap-0.5 rounded-xl border border-border/30 bg-muted/10 p-0.5 sm:p-1'>
-                            {canAccessAdmin && (
+                            {showAdminAreaButton && (
                                 <button
                                     type='button'
-                                    onClick={() => router.push('/admin')}
+                                    onClick={() => router.push(adminAreaHref)}
                                     className='flex shrink-0 items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:rounded-xl sm:px-2.5 sm:py-2'
                                     title={t('navbar.adminPanelTooltip')}
                                 >
