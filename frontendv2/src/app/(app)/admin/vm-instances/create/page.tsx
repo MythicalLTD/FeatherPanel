@@ -698,15 +698,20 @@ export default function VmInstancesCreatePage() {
                                                 >
                                                     {selectedTemplate ? (
                                                         <div className='min-w-0'>
-                                                            <div className='font-medium truncate'>{selectedTemplate.name}</div>
+                                                            <div className='font-medium truncate'>
+                                                                {selectedTemplate.name}
+                                                            </div>
                                                             <div className='text-xs text-muted-foreground truncate font-mono'>
                                                                 VMID {selectedTemplate.template_file ?? '—'} ·{' '}
-                                                                {selectedTemplate.guest_type === 'lxc' ? 'LXC' : 'QEMU/KVM'}
+                                                                {selectedTemplate.guest_type === 'lxc'
+                                                                    ? 'LXC'
+                                                                    : 'QEMU/KVM'}
                                                             </div>
                                                         </div>
                                                     ) : (
                                                         <span className='text-muted-foreground'>
-                                                            {t('admin.vmInstances.select_template') ?? 'Select template'}
+                                                            {t('admin.vmInstances.select_template') ??
+                                                                'Select template'}
                                                         </span>
                                                     )}
                                                 </div>
@@ -903,7 +908,9 @@ export default function VmInstancesCreatePage() {
                                                             </div>
                                                             <div className='text-xs text-muted-foreground font-mono'>
                                                                 {(() => {
-                                                                    const selected = freeIps.find((ip) => ip.id === row.vm_ip_id);
+                                                                    const selected = freeIps.find(
+                                                                        (ip) => ip.id === row.vm_ip_id,
+                                                                    );
                                                                     if (!selected) return '';
                                                                     return `${selected.cidr !== null ? `/${selected.cidr}` : 'No CIDR'} · ${selected.gateway || 'No gateway'}`;
                                                                 })()}
@@ -1108,26 +1115,26 @@ export default function VmInstancesCreatePage() {
                                         <span className='text-red-500 font-bold'>*</span>
                                     </Label>
                                     <div className='flex gap-2'>
-                                            <div
-                                                role='button'
-                                                tabIndex={0}
-                                                onClick={() => {
+                                        <div
+                                            role='button'
+                                            tabIndex={0}
+                                            onClick={() => {
+                                                setOwnerSearch('');
+                                                setOwnerPagination((p) => ({ ...p, current_page: 1 }));
+                                                setOwnerPickerMode('browse');
+                                                setOwnerModalOpen(true);
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
                                                     setOwnerSearch('');
                                                     setOwnerPagination((p) => ({ ...p, current_page: 1 }));
                                                     setOwnerPickerMode('browse');
                                                     setOwnerModalOpen(true);
-                                                }}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' || e.key === ' ') {
-                                                        e.preventDefault();
-                                                        setOwnerSearch('');
-                                                        setOwnerPagination((p) => ({ ...p, current_page: 1 }));
-                                                        setOwnerPickerMode('browse');
-                                                        setOwnerModalOpen(true);
-                                                    }
-                                                }}
-                                                className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
-                                            >
+                                                }
+                                            }}
+                                            className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                        >
                                             {selectedOwner ? (
                                                 <div className='flex items-center gap-2'>
                                                     <UserCircle className='h-4 w-4 text-primary' />
@@ -1150,7 +1157,7 @@ export default function VmInstancesCreatePage() {
                                             onClick={() => {
                                                 setOwnerSearch('');
                                                 setOwnerPagination((p) => ({ ...p, current_page: 1 }));
-                                                    setOwnerPickerMode('browse');
+                                                setOwnerPickerMode('browse');
                                                 setOwnerModalOpen(true);
                                             }}
                                             className='h-11 w-11'
@@ -1262,9 +1269,7 @@ export default function VmInstancesCreatePage() {
                     onSelectIp={(ipId) =>
                         setNetworks((prev) => {
                             if (prev.length === 0) return [{ key: 'net0', vm_ip_id: ipId }];
-                            return prev.map((row) =>
-                                row.key === targetNetworkKey ? { ...row, vm_ip_id: ipId } : row,
-                            );
+                            return prev.map((row) => (row.key === targetNetworkKey ? { ...row, vm_ip_id: ipId } : row));
                         })
                     }
                     onIpCreated={(created) => {

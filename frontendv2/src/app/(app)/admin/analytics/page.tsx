@@ -138,30 +138,32 @@ export default function AnalyticsDashboardPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.analytics.title')}
-                description={t('admin.analytics.subtitle')}
-                icon={Activity}
-            />
+                <PageHeader
+                    title={t('admin.analytics.title')}
+                    description={t('admin.analytics.subtitle')}
+                    icon={Activity}
+                />
 
-            <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-                {analyticsModules.map((module) => (
-                    <ResourceCard
-                        key={module.href}
-                        icon={module.icon}
-                        title={module.title}
-                        description={<p className='text-sm text-muted-foreground line-clamp-2'>{module.description}</p>}
-                        onClick={() => router.push(module.href)}
-                        iconWrapperClassName={module.bgColor + ' ' + module.borderColor}
-                        iconClassName={module.color}
-                        actions={
-                            <ArrowRight className='w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0' />
-                        }
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                ))}
+                <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+                    {analyticsModules.map((module) => (
+                        <ResourceCard
+                            key={module.href}
+                            icon={module.icon}
+                            title={module.title}
+                            description={
+                                <p className='text-sm text-muted-foreground line-clamp-2'>{module.description}</p>
+                            }
+                            onClick={() => router.push(module.href)}
+                            iconWrapperClassName={module.bgColor + ' ' + module.borderColor}
+                            iconClassName={module.color}
+                            actions={
+                                <ArrowRight className='w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0' />
+                            }
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    ))}
+                </div>
             </div>
-        </div>
             <WidgetRenderer widgets={getWidgets('admin-analytics', 'bottom-of-page')} />
         </>
     );

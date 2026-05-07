@@ -113,141 +113,145 @@ export default function SystemAnalyticsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-system', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.analytics.system.title')}
-                description={t('admin.analytics.system.subtitle')}
-                icon={Activity}
-            />
+                <PageHeader
+                    title={t('admin.analytics.system.title')}
+                    description={t('admin.analytics.system.subtitle')}
+                    icon={Activity}
+                />
 
-            {stats && (
-                <>
-                    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                        <ResourceCard
-                            title={stats.total_queued.toString()}
-                            subtitle={t('admin.analytics.system.queued')}
-                            description={t('admin.analytics.system.pending_emails')}
-                            icon={Mail}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
-                        />
-                        <ResourceCard
-                            title={stats.total_sent.toString()}
-                            subtitle={t('admin.analytics.system.sent')}
-                            description={t('admin.analytics.system.delivered')}
-                            icon={CheckCircle}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
-                        />
-                        <ResourceCard
-                            title={stats.total_failed.toString()}
-                            subtitle={t('admin.analytics.system.failed')}
-                            description={t('admin.analytics.system.errors')}
-                            icon={XCircle}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
-                        />
-                        <ResourceCard
-                            title={`${stats.success_rate}%`}
-                            subtitle={t('admin.analytics.system.success_rate')}
-                            description={t('admin.analytics.system.delivery_rate')}
-                            icon={Activity}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
-                        />
-                    </div>
-
-                    {featureStats && (
+                {stats && (
+                    <>
                         <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                             <ResourceCard
-                                title={featureStats.chatbot_conversations.toString()}
-                                subtitle='Chat conversations'
-                                description={`Messages: ${featureStats.chatbot_messages}`}
-                                icon={Bot}
+                                title={stats.total_queued.toString()}
+                                subtitle={t('admin.analytics.system.queued')}
+                                description={t('admin.analytics.system.pending_emails')}
+                                icon={Mail}
                                 className='shadow-none! bg-card/50 backdrop-blur-sm'
                             />
                             <ResourceCard
-                                title={featureStats.chatbot_active_users_30d.toString()}
-                                subtitle='Chat users (30d)'
-                                description={`Avg msgs/conversation: ${featureStats.avg_messages_per_conversation}`}
-                                icon={UserCircle}
+                                title={stats.total_sent.toString()}
+                                subtitle={t('admin.analytics.system.sent')}
+                                description={t('admin.analytics.system.delivered')}
+                                icon={CheckCircle}
                                 className='shadow-none! bg-card/50 backdrop-blur-sm'
                             />
                             <ResourceCard
-                                title={featureStats.api_clients.toString()}
-                                subtitle='API clients'
-                                description={`OAuth2 authorizations: ${featureStats.oauth2_authorizations}`}
-                                icon={KeyRound}
+                                title={stats.total_failed.toString()}
+                                subtitle={t('admin.analytics.system.failed')}
+                                description={t('admin.analytics.system.errors')}
+                                icon={XCircle}
                                 className='shadow-none! bg-card/50 backdrop-blur-sm'
                             />
                             <ResourceCard
-                                title={featureStats.oidc_enabled_providers.toString()}
-                                subtitle='Enabled OIDC providers'
-                                description='Identity providers configured'
-                                icon={ShieldCheck}
+                                title={`${stats.success_rate}%`}
+                                subtitle={t('admin.analytics.system.success_rate')}
+                                description={t('admin.analytics.system.delivery_rate')}
+                                icon={Activity}
                                 className='shadow-none! bg-card/50 backdrop-blur-sm'
                             />
                         </div>
-                    )}
 
-                    <div className='grid gap-4 grid-cols-1 md:grid-cols-3'>
-                        <div className='md:col-span-1'>
-                            <SimplePieChart
-                                title={t('admin.analytics.system.queue_status')}
-                                description={t('admin.analytics.system.queue_status_desc')}
-                                data={[
-                                    { name: t('admin.analytics.system.queued'), value: stats.total_queued },
-                                    { name: t('admin.analytics.system.sent'), value: stats.total_sent },
-                                    { name: t('admin.analytics.system.failed'), value: stats.total_failed },
-                                ]}
-                            />
+                        {featureStats && (
+                            <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                                <ResourceCard
+                                    title={featureStats.chatbot_conversations.toString()}
+                                    subtitle='Chat conversations'
+                                    description={`Messages: ${featureStats.chatbot_messages}`}
+                                    icon={Bot}
+                                    className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                />
+                                <ResourceCard
+                                    title={featureStats.chatbot_active_users_30d.toString()}
+                                    subtitle='Chat users (30d)'
+                                    description={`Avg msgs/conversation: ${featureStats.avg_messages_per_conversation}`}
+                                    icon={UserCircle}
+                                    className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                />
+                                <ResourceCard
+                                    title={featureStats.api_clients.toString()}
+                                    subtitle='API clients'
+                                    description={`OAuth2 authorizations: ${featureStats.oauth2_authorizations}`}
+                                    icon={KeyRound}
+                                    className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                />
+                                <ResourceCard
+                                    title={featureStats.oidc_enabled_providers.toString()}
+                                    subtitle='Enabled OIDC providers'
+                                    description='Identity providers configured'
+                                    icon={ShieldCheck}
+                                    className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                />
+                            </div>
+                        )}
+
+                        <div className='grid gap-4 grid-cols-1 md:grid-cols-3'>
+                            <div className='md:col-span-1'>
+                                <SimplePieChart
+                                    title={t('admin.analytics.system.queue_status')}
+                                    description={t('admin.analytics.system.queue_status_desc')}
+                                    data={[
+                                        { name: t('admin.analytics.system.queued'), value: stats.total_queued },
+                                        { name: t('admin.analytics.system.sent'), value: stats.total_sent },
+                                        { name: t('admin.analytics.system.failed'), value: stats.total_failed },
+                                    ]}
+                                />
+                            </div>
+
+                            <Card className='md:col-span-2 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+                                <CardHeader>
+                                    <CardTitle>{t('admin.analytics.system.recent_activity')}</CardTitle>
+                                    <CardDescription>
+                                        {t('admin.analytics.system.recent_activity_desc')}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {stats.recent_queued.length > 0 ? (
+                                        <div className='space-y-6'>
+                                            {stats.recent_queued.map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    className='flex items-center justify-between pb-4 border-b last:border-0 last:pb-0'
+                                                >
+                                                    <div className='space-y-1'>
+                                                        <p className='text-sm font-medium'>{item.subject}</p>
+                                                        <p className='text-xs text-muted-foreground'>
+                                                            {item.recipient}
+                                                        </p>
+                                                    </div>
+                                                    <div className='text-right'>
+                                                        <span
+                                                            className={`text-xs px-2 py-1 rounded-full ${
+                                                                item.status === 'sent'
+                                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                                                    : item.status === 'failed'
+                                                                      ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                                                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                                            }`}
+                                                        >
+                                                            {t(`admin.analytics.system.status.${item.status}`) ||
+                                                                item.status}
+                                                        </span>
+                                                        <p className='text-xs text-muted-foreground mt-1'>
+                                                            {formatDistanceToNow(new Date(item.created_at), {
+                                                                addSuffix: true,
+                                                            })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className='flex justify-center py-8 text-muted-foreground'>
+                                            {t('admin.analytics.system.no_activity')}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
                         </div>
-
-                        <Card className='md:col-span-2 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
-                            <CardHeader>
-                                <CardTitle>{t('admin.analytics.system.recent_activity')}</CardTitle>
-                                <CardDescription>{t('admin.analytics.system.recent_activity_desc')}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {stats.recent_queued.length > 0 ? (
-                                    <div className='space-y-6'>
-                                        {stats.recent_queued.map((item) => (
-                                            <div
-                                                key={item.id}
-                                                className='flex items-center justify-between pb-4 border-b last:border-0 last:pb-0'
-                                            >
-                                                <div className='space-y-1'>
-                                                    <p className='text-sm font-medium'>{item.subject}</p>
-                                                    <p className='text-xs text-muted-foreground'>{item.recipient}</p>
-                                                </div>
-                                                <div className='text-right'>
-                                                    <span
-                                                        className={`text-xs px-2 py-1 rounded-full ${
-                                                            item.status === 'sent'
-                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                                                : item.status === 'failed'
-                                                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                                                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                                        }`}
-                                                    >
-                                                        {t(`admin.analytics.system.status.${item.status}`) ||
-                                                            item.status}
-                                                    </span>
-                                                    <p className='text-xs text-muted-foreground mt-1'>
-                                                        {formatDistanceToNow(new Date(item.created_at), {
-                                                            addSuffix: true,
-                                                        })}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className='flex justify-center py-8 text-muted-foreground'>
-                                        {t('admin.analytics.system.no_activity')}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
-                </>
-            )}
-        </div>
+                    </>
+                )}
+            </div>
             <WidgetRenderer widgets={getWidgets('admin-analytics-system', 'bottom-of-page')} />
         </>
     );

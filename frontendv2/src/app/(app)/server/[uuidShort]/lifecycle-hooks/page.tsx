@@ -355,11 +355,15 @@ export default function ServerLifecycleHooksPage() {
                 return (
                     <div className='text-xs space-y-1'>
                         <p className='text-muted-foreground'>
-                            <span className='font-semibold text-foreground/80'>{t('lifecycleHooks.form.webhookUrl')}:</span>{' '}
+                            <span className='font-semibold text-foreground/80'>
+                                {t('lifecycleHooks.form.webhookUrl')}:
+                            </span>{' '}
                             {safeUrl}
                         </p>
                         <p className='text-muted-foreground'>
-                            <span className='font-semibold text-foreground/80'>{t('lifecycleHooks.form.content')}:</span>{' '}
+                            <span className='font-semibold text-foreground/80'>
+                                {t('lifecycleHooks.form.content')}:
+                            </span>{' '}
                             {content || t('lifecycleHooks.discord.contentEmpty')}
                         </p>
                         <p className='text-muted-foreground'>
@@ -383,7 +387,8 @@ export default function ServerLifecycleHooksPage() {
             return (
                 <div className='text-xs space-y-1'>
                     <p className='text-muted-foreground'>
-                        <span className='font-semibold text-foreground/80'>{t('lifecycleHooks.form.method')}:</span> {method}
+                        <span className='font-semibold text-foreground/80'>{t('lifecycleHooks.form.method')}:</span>{' '}
+                        {method}
                     </p>
                     <p className='text-muted-foreground break-all'>
                         <span className='font-semibold text-foreground/80'>{t('lifecycleHooks.form.url')}:</span>{' '}
@@ -424,193 +429,98 @@ export default function ServerLifecycleHooksPage() {
         <>
             <WidgetRenderer widgets={getWidgets('server-lifecycle-hooks', 'top-of-page')} />
             <div className='space-y-8 pb-12'>
-            <PageHeader
-                title={t('lifecycleHooks.title')}
-                description={t('lifecycleHooks.description')}
-                actions={
-                    <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
-                        <Button variant='glass' size='sm' onClick={fetchHooks} disabled={loading}>
-                            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                            {t('common.refresh')}
-                        </Button>
-                        <Button variant='glass' size='sm' onClick={exportHooks} disabled={loading}>
-                            <Download className='h-4 w-4 mr-2' />
-                            {t('lifecycleHooks.export')}
-                        </Button>
-                        {mutationsAllowed ? (
-                            <>
-                                <input
-                                    ref={fileInputRef}
-                                    type='file'
-                                    accept='application/json,.json'
-                                    className='hidden'
-                                    onChange={(event) => {
-                                        const file = event.target.files?.[0];
-                                        if (file) {
-                                            void importHooks(file);
-                                        }
-                                        event.currentTarget.value = '';
-                                    }}
-                                />
-                                <Button
-                                    variant='glass'
-                                    size='sm'
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={importing}
-                                >
-                                    <Upload className='h-4 w-4 mr-2' />
-                                    {importing ? t('common.loading') : t('lifecycleHooks.import')}
-                                </Button>
-                            </>
-                        ) : null}
-                    </div>
-                }
-            />
-
-            {!featureEnabled ? (
-                <PageCard variant='warning' title={t('lifecycleHooks.featureDisabledTitle')} icon={Settings2}>
-                    <p className='text-sm text-muted-foreground'>{t('lifecycleHooks.featureDisabledBody')}</p>
-                </PageCard>
-            ) : null}
-
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                {(['pre_start', 'pre_stop'] as LifecycleHookType[]).map((hookType) => (
-                    <ResourceCard
-                        key={hookType}
-                        icon={Power}
-                        onClick={() => setSelectedHookType(hookType)}
-                        className={selectedHookType === hookType ? 'ring-1 ring-primary/40 border-primary/40' : ''}
-                        iconWrapperClassName={selectedHookType === hookType ? 'bg-primary/20' : undefined}
-                        title={hookLabels[hookType]}
-                        description={t('lifecycleHooks.configuredSteps', {
-                            count: String(hooks[hookType].steps.length),
-                        })}
-                        badges={[
-                            {
-                                label: hooks[hookType].is_active === 1 ? t('common.enabled') : t('common.disabled'),
-                                className:
-                                    hooks[hookType].is_active === 1
-                                        ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                        : 'bg-white/5 text-muted-foreground border-white/10',
-                            },
-                            ...(selectedHookType === hookType
-                                ? [
-                                      {
-                                          label: t('lifecycleHooks.selected'),
-                                          className: 'bg-primary/20 text-primary border-primary/30',
-                                      },
-                                  ]
-                                : []),
-                        ]}
-                        actions={
-                            mutationsAllowed ? (
-                                <div className='flex flex-wrap items-center gap-2'>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        type='button'
-                                        loading={togglingHookType === hookType}
-                                        disabled={togglingHookType !== null}
-                                        onClick={() =>
-                                            updateHookActive(hookType, hooks[hookType].is_active === 1 ? 0 : 1)
-                                        }
-                                    >
-                                        {hooks[hookType].is_active === 1 ? t('common.disable') : t('common.enable')}
-                                    </Button>
-                                </div>
-                            ) : undefined
-                        }
-                    />
-                ))}
-            </div>
-
-            <div className='rounded-2xl border border-border/30 bg-card/40 px-4 py-3 flex flex-wrap items-center justify-between gap-2'>
-                <p className='text-sm font-medium'>
-                    {t('lifecycleHooks.currentlyManaging', { hookType: hookLabels[selectedHookType] })}
-                </p>
-                {mutationsAllowed ? (
-                    <Button type='button' size='sm' onClick={goCreateStep}>
-                        <Plus className='h-4 w-4 mr-2' />
-                        {t('lifecycleHooks.addStep')}
-                    </Button>
-                ) : null}
-            </div>
-
-            {sortedSteps.length === 0 ? (
-                <EmptyState
-                    title={t('lifecycleHooks.noSteps')}
-                    description={
-                        mutationsAllowed ? t('lifecycleHooks.noStepsDescription') : t('lifecycleHooks.noStepsReadOnly')
-                    }
-                    icon={ListCheck}
-                    action={
-                        mutationsAllowed ? (
-                            <Button type='button' onClick={goCreateStep}>
-                                <Plus className='h-4 w-4 mr-2' />
-                                {t('lifecycleHooks.addStep')}
+                <PageHeader
+                    title={t('lifecycleHooks.title')}
+                    description={t('lifecycleHooks.description')}
+                    actions={
+                        <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
+                            <Button variant='glass' size='sm' onClick={fetchHooks} disabled={loading}>
+                                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                                {t('common.refresh')}
                             </Button>
-                        ) : undefined
+                            <Button variant='glass' size='sm' onClick={exportHooks} disabled={loading}>
+                                <Download className='h-4 w-4 mr-2' />
+                                {t('lifecycleHooks.export')}
+                            </Button>
+                            {mutationsAllowed ? (
+                                <>
+                                    <input
+                                        ref={fileInputRef}
+                                        type='file'
+                                        accept='application/json,.json'
+                                        className='hidden'
+                                        onChange={(event) => {
+                                            const file = event.target.files?.[0];
+                                            if (file) {
+                                                void importHooks(file);
+                                            }
+                                            event.currentTarget.value = '';
+                                        }}
+                                    />
+                                    <Button
+                                        variant='glass'
+                                        size='sm'
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={importing}
+                                    >
+                                        <Upload className='h-4 w-4 mr-2' />
+                                        {importing ? t('common.loading') : t('lifecycleHooks.import')}
+                                    </Button>
+                                </>
+                            ) : null}
+                        </div>
                     }
                 />
-            ) : (
-                <div className='grid grid-cols-1 gap-4'>
-                    {sortedSteps.map((step) => (
+
+                {!featureEnabled ? (
+                    <PageCard variant='warning' title={t('lifecycleHooks.featureDisabledTitle')} icon={Settings2}>
+                        <p className='text-sm text-muted-foreground'>{t('lifecycleHooks.featureDisabledBody')}</p>
+                    </PageCard>
+                ) : null}
+
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                    {(['pre_start', 'pre_stop'] as LifecycleHookType[]).map((hookType) => (
                         <ResourceCard
-                            key={step.id}
-                            icon={ListCheck}
-                            title={taskTypeLabels[step.task_type]}
-                            description={summarizeStepPayload(step)}
+                            key={hookType}
+                            icon={Power}
+                            onClick={() => setSelectedHookType(hookType)}
+                            className={selectedHookType === hookType ? 'ring-1 ring-primary/40 border-primary/40' : ''}
+                            iconWrapperClassName={selectedHookType === hookType ? 'bg-primary/20' : undefined}
+                            title={hookLabels[hookType]}
+                            description={t('lifecycleHooks.configuredSteps', {
+                                count: String(hooks[hookType].steps.length),
+                            })}
                             badges={[
                                 {
-                                    label: `#${step.sequence_id}`,
-                                    className: 'bg-white/5 border-white/10 text-muted-foreground',
+                                    label: hooks[hookType].is_active === 1 ? t('common.enabled') : t('common.disabled'),
+                                    className:
+                                        hooks[hookType].is_active === 1
+                                            ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                            : 'bg-white/5 text-muted-foreground border-white/10',
                                 },
-                                ...(step.continue_on_failure === 1
+                                ...(selectedHookType === hookType
                                     ? [
                                           {
-                                              label: t('lifecycleHooks.continueOnFailure'),
-                                              className: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+                                              label: t('lifecycleHooks.selected'),
+                                              className: 'bg-primary/20 text-primary border-primary/30',
                                           },
                                       ]
                                     : []),
                             ]}
                             actions={
                                 mutationsAllowed ? (
-                                    <div className='flex items-center gap-2'>
+                                    <div className='flex flex-wrap items-center gap-2'>
                                         <Button
+                                            variant='outline'
                                             size='sm'
-                                            variant='ghost'
                                             type='button'
-                                            onClick={() => handleMoveStep(step, -1)}
+                                            loading={togglingHookType === hookType}
+                                            disabled={togglingHookType !== null}
+                                            onClick={() =>
+                                                updateHookActive(hookType, hooks[hookType].is_active === 1 ? 0 : 1)
+                                            }
                                         >
-                                            <ChevronUp className='h-3.5 w-3.5' />
-                                        </Button>
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            type='button'
-                                            onClick={() => handleMoveStep(step, 1)}
-                                        >
-                                            <ChevronDown className='h-3.5 w-3.5' />
-                                        </Button>
-                                        <Button
-                                            type='button'
-                                            size='sm'
-                                            variant='glass'
-                                            onClick={() => goEditStep(step)}
-                                        >
-                                            <Pencil className='h-3.5 w-3.5' />
-                                        </Button>
-                                        <Button
-                                            type='button'
-                                            size='sm'
-                                            variant='destructive'
-                                            onClick={() => {
-                                                setSelectedStep(step);
-                                                setIsDeleteOpen(true);
-                                            }}
-                                        >
-                                            <Trash2 className='h-3.5 w-3.5' />
+                                            {hooks[hookType].is_active === 1 ? t('common.disable') : t('common.enable')}
                                         </Button>
                                     </div>
                                 ) : undefined
@@ -618,23 +528,120 @@ export default function ServerLifecycleHooksPage() {
                         />
                     ))}
                 </div>
-            )}
 
-            <HeadlessModal
-                isOpen={isDeleteOpen}
-                onClose={() => setIsDeleteOpen(false)}
-                title={t('lifecycleHooks.deleteModalTitle')}
-                description={t('lifecycleHooks.deleteModalDescription')}
-            >
-                <div className='flex justify-end gap-2 pt-4'>
-                    <Button variant='glass' onClick={() => setIsDeleteOpen(false)} disabled={deleting}>
-                        {t('common.cancel')}
-                    </Button>
-                    <Button variant='destructive' onClick={handleDeleteStep} loading={deleting} disabled={deleting}>
-                        {t('common.delete')}
-                    </Button>
+                <div className='rounded-2xl border border-border/30 bg-card/40 px-4 py-3 flex flex-wrap items-center justify-between gap-2'>
+                    <p className='text-sm font-medium'>
+                        {t('lifecycleHooks.currentlyManaging', { hookType: hookLabels[selectedHookType] })}
+                    </p>
+                    {mutationsAllowed ? (
+                        <Button type='button' size='sm' onClick={goCreateStep}>
+                            <Plus className='h-4 w-4 mr-2' />
+                            {t('lifecycleHooks.addStep')}
+                        </Button>
+                    ) : null}
                 </div>
-            </HeadlessModal>
+
+                {sortedSteps.length === 0 ? (
+                    <EmptyState
+                        title={t('lifecycleHooks.noSteps')}
+                        description={
+                            mutationsAllowed
+                                ? t('lifecycleHooks.noStepsDescription')
+                                : t('lifecycleHooks.noStepsReadOnly')
+                        }
+                        icon={ListCheck}
+                        action={
+                            mutationsAllowed ? (
+                                <Button type='button' onClick={goCreateStep}>
+                                    <Plus className='h-4 w-4 mr-2' />
+                                    {t('lifecycleHooks.addStep')}
+                                </Button>
+                            ) : undefined
+                        }
+                    />
+                ) : (
+                    <div className='grid grid-cols-1 gap-4'>
+                        {sortedSteps.map((step) => (
+                            <ResourceCard
+                                key={step.id}
+                                icon={ListCheck}
+                                title={taskTypeLabels[step.task_type]}
+                                description={summarizeStepPayload(step)}
+                                badges={[
+                                    {
+                                        label: `#${step.sequence_id}`,
+                                        className: 'bg-white/5 border-white/10 text-muted-foreground',
+                                    },
+                                    ...(step.continue_on_failure === 1
+                                        ? [
+                                              {
+                                                  label: t('lifecycleHooks.continueOnFailure'),
+                                                  className: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+                                              },
+                                          ]
+                                        : []),
+                                ]}
+                                actions={
+                                    mutationsAllowed ? (
+                                        <div className='flex items-center gap-2'>
+                                            <Button
+                                                size='sm'
+                                                variant='ghost'
+                                                type='button'
+                                                onClick={() => handleMoveStep(step, -1)}
+                                            >
+                                                <ChevronUp className='h-3.5 w-3.5' />
+                                            </Button>
+                                            <Button
+                                                size='sm'
+                                                variant='ghost'
+                                                type='button'
+                                                onClick={() => handleMoveStep(step, 1)}
+                                            >
+                                                <ChevronDown className='h-3.5 w-3.5' />
+                                            </Button>
+                                            <Button
+                                                type='button'
+                                                size='sm'
+                                                variant='glass'
+                                                onClick={() => goEditStep(step)}
+                                            >
+                                                <Pencil className='h-3.5 w-3.5' />
+                                            </Button>
+                                            <Button
+                                                type='button'
+                                                size='sm'
+                                                variant='destructive'
+                                                onClick={() => {
+                                                    setSelectedStep(step);
+                                                    setIsDeleteOpen(true);
+                                                }}
+                                            >
+                                                <Trash2 className='h-3.5 w-3.5' />
+                                            </Button>
+                                        </div>
+                                    ) : undefined
+                                }
+                            />
+                        ))}
+                    </div>
+                )}
+
+                <HeadlessModal
+                    isOpen={isDeleteOpen}
+                    onClose={() => setIsDeleteOpen(false)}
+                    title={t('lifecycleHooks.deleteModalTitle')}
+                    description={t('lifecycleHooks.deleteModalDescription')}
+                >
+                    <div className='flex justify-end gap-2 pt-4'>
+                        <Button variant='glass' onClick={() => setIsDeleteOpen(false)} disabled={deleting}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button variant='destructive' onClick={handleDeleteStep} loading={deleting} disabled={deleting}>
+                            {t('common.delete')}
+                        </Button>
+                    </div>
+                </HeadlessModal>
             </div>
             <WidgetRenderer widgets={getWidgets('server-lifecycle-hooks', 'bottom-of-page')} />
         </>

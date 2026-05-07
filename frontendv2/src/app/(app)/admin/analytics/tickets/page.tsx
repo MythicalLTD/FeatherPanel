@@ -73,49 +73,53 @@ export default function TicketsAnalyticsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-tickets', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader title='Tickets Analytics' description='Ticketing KPIs and usage metrics.' icon={Ticket} />
-            <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                <ResourceCard
-                    title={String(data.tickets.tickets ?? 0)}
-                    subtitle='Tickets'
-                    description='Total tickets'
-                    icon={Ticket}
-                />
-                <ResourceCard
-                    title={String(data.tickets.messages ?? 0)}
-                    subtitle='Ticket Messages'
-                    description='Conversation volume'
-                    icon={MessageSquare}
-                />
-                <ResourceCard
-                    title={String(data.tickets.attachments ?? 0)}
-                    subtitle='Ticket Attachments'
-                    description='Uploaded files'
-                    icon={Paperclip}
-                />
-                <ResourceCard
-                    title={`${data.velocity.weekly_growth_percent > 0 ? '+' : ''}${data.velocity.weekly_growth_percent}%`}
-                    subtitle='Weekly Growth'
-                    description={`${data.velocity.this_week} this week vs ${data.velocity.last_week} last week`}
-                    icon={TrendingUp}
-                />
+                <PageHeader title='Tickets Analytics' description='Ticketing KPIs and usage metrics.' icon={Ticket} />
+                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                    <ResourceCard
+                        title={String(data.tickets.tickets ?? 0)}
+                        subtitle='Tickets'
+                        description='Total tickets'
+                        icon={Ticket}
+                    />
+                    <ResourceCard
+                        title={String(data.tickets.messages ?? 0)}
+                        subtitle='Ticket Messages'
+                        description='Conversation volume'
+                        icon={MessageSquare}
+                    />
+                    <ResourceCard
+                        title={String(data.tickets.attachments ?? 0)}
+                        subtitle='Ticket Attachments'
+                        description='Uploaded files'
+                        icon={Paperclip}
+                    />
+                    <ResourceCard
+                        title={`${data.velocity.weekly_growth_percent > 0 ? '+' : ''}${data.velocity.weekly_growth_percent}%`}
+                        subtitle='Weekly Growth'
+                        description={`${data.velocity.this_week} this week vs ${data.velocity.last_week} last week`}
+                        icon={TrendingUp}
+                    />
+                </div>
+                <div className='grid gap-4 md:grid-cols-2'>
+                    <SimplePieChart
+                        title='Ticket Breakdown'
+                        description='Distribution by entity type'
+                        data={breakdown}
+                    />
+                    <SimpleBarChart
+                        title='Ticket Creation Velocity'
+                        description='Today and week-over-week ticket volume'
+                        data={weeklyBars}
+                    />
+                </div>
+                <div className='grid gap-4 md:grid-cols-1'>
+                    <SimpleBarChart
+                        title='Recent Ticket Trend (14d)'
+                        description='Tickets created per day over the most recent 14 days'
+                        data={trendBars}
+                    />
+                </div>
             </div>
-            <div className='grid gap-4 md:grid-cols-2'>
-                <SimplePieChart title='Ticket Breakdown' description='Distribution by entity type' data={breakdown} />
-                <SimpleBarChart
-                    title='Ticket Creation Velocity'
-                    description='Today and week-over-week ticket volume'
-                    data={weeklyBars}
-                />
-            </div>
-            <div className='grid gap-4 md:grid-cols-1'>
-                <SimpleBarChart
-                    title='Recent Ticket Trend (14d)'
-                    description='Tickets created per day over the most recent 14 days'
-                    data={trendBars}
-                />
-            </div>
-        </div>
             <WidgetRenderer widgets={getWidgets('admin-analytics-tickets', 'bottom-of-page')} />
         </>
     );

@@ -222,249 +222,129 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
         <>
             <WidgetRenderer widgets={getWidgets('admin-users-servers', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.users.servers.title', { defaultValue: 'User Servers' })}
-                description={
-                    user
-                        ? t('admin.users.servers.description', {
-                              defaultValue: 'Servers owned by {{username}}',
-                              username: user.username,
-                          })
-                        : t('admin.users.servers.descriptionGeneric', { defaultValue: 'Servers owned by this user' })
-                }
-                actions={
-                    <Button variant='outline' size='sm' onClick={() => router.push(`/admin/users/${uuid}/edit`)}>
-                        <ArrowLeft className='h-4 w-4 mr-2' />
-                        {t('admin.users.servers.backToUser', { defaultValue: 'Back to user' })}
-                    </Button>
-                }
-            />
+                <PageHeader
+                    title={t('admin.users.servers.title', { defaultValue: 'User Servers' })}
+                    description={
+                        user
+                            ? t('admin.users.servers.description', {
+                                  defaultValue: 'Servers owned by {{username}}',
+                                  username: user.username,
+                              })
+                            : t('admin.users.servers.descriptionGeneric', {
+                                  defaultValue: 'Servers owned by this user',
+                              })
+                    }
+                    actions={
+                        <Button variant='outline' size='sm' onClick={() => router.push(`/admin/users/${uuid}/edit`)}>
+                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            {t('admin.users.servers.backToUser', { defaultValue: 'Back to user' })}
+                        </Button>
+                    }
+                />
 
-            <div className='flex flex-col sm:flex-row gap-4'>
-                <div className='relative flex-1'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-                    <Input
-                        placeholder={t('admin.servers.search_placeholder', { defaultValue: 'Search servers...' })}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-9'
-                    />
-                </div>
-                <Button
-                    variant='outline'
-                    size='icon'
-                    onClick={() => fetchServers(pagination.current_page)}
-                    disabled={loading}
-                >
-                    <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-                </Button>
-            </div>
-
-            {loading ? (
-                <TableSkeleton count={5} />
-            ) : (
-                <>
-                    {pagination.total_pages > 1 && (
-                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.has_prev}
-                                onClick={() => changePage(pagination.current_page - 1)}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {pagination.current_page} / {pagination.total_pages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.has_next}
-                                onClick={() => changePage(pagination.current_page + 1)}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
-                    )}
-                    {servers.length === 0 ? (
-                        <EmptyState
-                            icon={ServerIcon}
-                            title={t('admin.users.servers.noServers', { defaultValue: 'No servers' })}
-                            description={t('admin.users.servers.noServersDescription', {
-                                defaultValue: 'This user does not own any servers.',
-                            })}
+                <div className='flex flex-col sm:flex-row gap-4'>
+                    <div className='relative flex-1'>
+                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Input
+                            placeholder={t('admin.servers.search_placeholder', { defaultValue: 'Search servers...' })}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className='pl-9'
                         />
-                    ) : (
-                        <div className='grid grid-cols-1 gap-4'>
-                            {servers.map((server) => {
-                                const badges: ResourceBadge[] = [
-                                    {
-                                        label: server.node?.name ?? '—',
-                                        className: 'bg-primary/10 text-primary border-primary/20',
-                                    },
-                                    {
-                                        label: server.spell?.name ?? '—',
-                                        className: 'bg-muted text-muted-foreground border-border/50',
-                                    },
-                                ];
-                                const status = displayStatus(server as unknown as ServerType);
-                                return (
-                                    <ResourceCard
-                                        key={server.id}
-                                        title={server.name}
-                                        subtitle={server.uuidShort}
-                                        icon={ServerIcon}
-                                        badges={badges}
-                                        description={
-                                            <div className='flex items-center gap-4 mt-2 flex-wrap'>
-                                                <StatusBadge status={status} t={t} />
-                                                {server.allocation && (
-                                                    <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                                                        <Network className='h-3.5 w-3.5' />
-                                                        <span>
-                                                            {server.allocation.ip_alias || server.allocation.ip}:
-                                                            {server.allocation.port}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                                                    <Database className='h-3.5 w-3.5' />
-                                                    <span>{formatMemory(server.memory)}</span>
-                                                </div>
-                                                <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                                                    <Cpu className='h-3.5 w-3.5' />
-                                                    <span>{formatCpu(server.cpu)}</span>
-                                                </div>
-                                                <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                                                    <HardDrive className='h-3.5 w-3.5' />
-                                                    <span>{formatDisk(server.disk)}</span>
-                                                </div>
-                                            </div>
-                                        }
-                                        actions={
-                                            <div className='flex items-center gap-2'>
-                                                <Button
-                                                    size='sm'
-                                                    variant='ghost'
-                                                    onClick={() => router.push(`/server/${server.uuidShort}`)}
-                                                    title={t('admin.servers.actions.view', { defaultValue: 'View' })}
-                                                >
-                                                    <Eye className='h-4 w-4' />
-                                                </Button>
-                                                <Button
-                                                    size='sm'
-                                                    variant='ghost'
-                                                    onClick={() => router.push(`/admin/servers/${server.id}/edit`)}
-                                                    title={t('admin.servers.actions.edit', { defaultValue: 'Edit' })}
-                                                >
-                                                    <Pencil className='h-4 w-4' />
-                                                </Button>
-                                            </div>
-                                        }
-                                    />
-                                );
-                            })}
-                        </div>
-                    )}
+                    </div>
+                    <Button
+                        variant='outline'
+                        size='icon'
+                        onClick={() => fetchServers(pagination.current_page)}
+                        disabled={loading}
+                    >
+                        <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+                    </Button>
+                </div>
 
-                    {pagination.total_pages > 1 && (
-                        <div className='flex items-center justify-between py-4 border-t border-border'>
-                            <p className='text-sm text-muted-foreground'>
-                                {t('servers.pagination.showing', {
-                                    from: String(pagination.from),
-                                    to: String(pagination.to),
-                                    total: String(pagination.total_records),
-                                })}
-                            </p>
-                            <div className='flex items-center gap-2'>
+                {loading ? (
+                    <TableSkeleton count={5} />
+                ) : (
+                    <>
+                        {pagination.total_pages > 1 && (
+                            <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
                                 <Button
                                     variant='outline'
-                                    size='icon'
+                                    size='sm'
                                     disabled={!pagination.has_prev}
                                     onClick={() => changePage(pagination.current_page - 1)}
+                                    className='gap-1.5'
                                 >
                                     <ChevronLeft className='h-4 w-4' />
+                                    {t('common.previous')}
                                 </Button>
                                 <span className='text-sm font-medium'>
                                     {pagination.current_page} / {pagination.total_pages}
                                 </span>
                                 <Button
                                     variant='outline'
-                                    size='icon'
+                                    size='sm'
                                     disabled={!pagination.has_next}
                                     onClick={() => changePage(pagination.current_page + 1)}
+                                    className='gap-1.5'
                                 >
+                                    {t('common.next')}
                                     <ChevronRight className='h-4 w-4' />
                                 </Button>
                             </div>
-                        </div>
-                    )}
-
-                    <div className='mt-8'>
-                        <div className='flex items-center justify-between mb-4'>
-                            <h3 className='text-lg font-semibold'>
-                                {t('admin.users.servers.vdsTitle', { defaultValue: 'Owned VDS' })}
-                            </h3>
-                            <Button variant='outline' size='sm' onClick={() => router.push('/admin/vm-instances')}>
-                                {t('admin.users.servers.vdsViewAll', { defaultValue: 'View all VDS' })}
-                            </Button>
-                        </div>
-
-                        {vms.length === 0 ? (
+                        )}
+                        {servers.length === 0 ? (
                             <EmptyState
                                 icon={ServerIcon}
-                                title={t('admin.users.servers.noVds', { defaultValue: 'No VDS' })}
-                                description={t('admin.users.servers.noVdsDescription', {
-                                    defaultValue: 'This user does not own any VDS instances.',
+                                title={t('admin.users.servers.noServers', { defaultValue: 'No servers' })}
+                                description={t('admin.users.servers.noServersDescription', {
+                                    defaultValue: 'This user does not own any servers.',
                                 })}
                             />
                         ) : (
                             <div className='grid grid-cols-1 gap-4'>
-                                {vms.map((vm) => {
-                                    const vmBadges: ResourceBadge[] = [
+                                {servers.map((server) => {
+                                    const badges: ResourceBadge[] = [
                                         {
-                                            label: vm.node_name ?? vm.pve_node ?? '—',
+                                            label: server.node?.name ?? '—',
                                             className: 'bg-primary/10 text-primary border-primary/20',
                                         },
                                         {
-                                            label: vm.vm_type?.toUpperCase() ?? 'QEMU',
+                                            label: server.spell?.name ?? '—',
                                             className: 'bg-muted text-muted-foreground border-border/50',
                                         },
                                     ];
-
-                                    const vmStatus =
-                                        vm.suspended === 1 || vm.status === 'suspended'
-                                            ? 'suspended'
-                                            : vm.status || 'unknown';
-
+                                    const status = displayStatus(server as unknown as ServerType);
                                     return (
                                         <ResourceCard
-                                            key={vm.id}
-                                            title={vm.hostname || `VM #${vm.id}`}
-                                            subtitle={`VMID ${vm.vmid}`}
+                                            key={server.id}
+                                            title={server.name}
+                                            subtitle={server.uuidShort}
                                             icon={ServerIcon}
-                                            badges={vmBadges}
+                                            badges={badges}
                                             description={
                                                 <div className='flex items-center gap-4 mt-2 flex-wrap'>
-                                                    <Badge
-                                                        variant={
-                                                            vmStatus === 'suspended'
-                                                                ? 'destructive'
-                                                                : vmStatus === 'running'
-                                                                  ? 'secondary'
-                                                                  : 'outline'
-                                                        }
-                                                    >
-                                                        {vmStatus}
-                                                    </Badge>
+                                                    <StatusBadge status={status} t={t} />
+                                                    {server.allocation && (
+                                                        <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                            <Network className='h-3.5 w-3.5' />
+                                                            <span>
+                                                                {server.allocation.ip_alias || server.allocation.ip}:
+                                                                {server.allocation.port}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                                                        <Network className='h-3.5 w-3.5' />
-                                                        <span>{vm.ip_address || '—'}</span>
+                                                        <Database className='h-3.5 w-3.5' />
+                                                        <span>{formatMemory(server.memory)}</span>
+                                                    </div>
+                                                    <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                        <Cpu className='h-3.5 w-3.5' />
+                                                        <span>{formatCpu(server.cpu)}</span>
+                                                    </div>
+                                                    <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                        <HardDrive className='h-3.5 w-3.5' />
+                                                        <span>{formatDisk(server.disk)}</span>
                                                     </div>
                                                 </div>
                                             }
@@ -473,7 +353,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                                     <Button
                                                         size='sm'
                                                         variant='ghost'
-                                                        onClick={() => router.push(`/vds/${vm.id}`)}
+                                                        onClick={() => router.push(`/server/${server.uuidShort}`)}
                                                         title={t('admin.servers.actions.view', {
                                                             defaultValue: 'View',
                                                         })}
@@ -483,7 +363,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                                     <Button
                                                         size='sm'
                                                         variant='ghost'
-                                                        onClick={() => router.push(`/admin/vm-instances/${vm.id}/edit`)}
+                                                        onClick={() => router.push(`/admin/servers/${server.id}/edit`)}
                                                         title={t('admin.servers.actions.edit', {
                                                             defaultValue: 'Edit',
                                                         })}
@@ -497,9 +377,137 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                 })}
                             </div>
                         )}
-                    </div>
-                </>
-            )}
+
+                        {pagination.total_pages > 1 && (
+                            <div className='flex items-center justify-between py-4 border-t border-border'>
+                                <p className='text-sm text-muted-foreground'>
+                                    {t('servers.pagination.showing', {
+                                        from: String(pagination.from),
+                                        to: String(pagination.to),
+                                        total: String(pagination.total_records),
+                                    })}
+                                </p>
+                                <div className='flex items-center gap-2'>
+                                    <Button
+                                        variant='outline'
+                                        size='icon'
+                                        disabled={!pagination.has_prev}
+                                        onClick={() => changePage(pagination.current_page - 1)}
+                                    >
+                                        <ChevronLeft className='h-4 w-4' />
+                                    </Button>
+                                    <span className='text-sm font-medium'>
+                                        {pagination.current_page} / {pagination.total_pages}
+                                    </span>
+                                    <Button
+                                        variant='outline'
+                                        size='icon'
+                                        disabled={!pagination.has_next}
+                                        onClick={() => changePage(pagination.current_page + 1)}
+                                    >
+                                        <ChevronRight className='h-4 w-4' />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className='mt-8'>
+                            <div className='flex items-center justify-between mb-4'>
+                                <h3 className='text-lg font-semibold'>
+                                    {t('admin.users.servers.vdsTitle', { defaultValue: 'Owned VDS' })}
+                                </h3>
+                                <Button variant='outline' size='sm' onClick={() => router.push('/admin/vm-instances')}>
+                                    {t('admin.users.servers.vdsViewAll', { defaultValue: 'View all VDS' })}
+                                </Button>
+                            </div>
+
+                            {vms.length === 0 ? (
+                                <EmptyState
+                                    icon={ServerIcon}
+                                    title={t('admin.users.servers.noVds', { defaultValue: 'No VDS' })}
+                                    description={t('admin.users.servers.noVdsDescription', {
+                                        defaultValue: 'This user does not own any VDS instances.',
+                                    })}
+                                />
+                            ) : (
+                                <div className='grid grid-cols-1 gap-4'>
+                                    {vms.map((vm) => {
+                                        const vmBadges: ResourceBadge[] = [
+                                            {
+                                                label: vm.node_name ?? vm.pve_node ?? '—',
+                                                className: 'bg-primary/10 text-primary border-primary/20',
+                                            },
+                                            {
+                                                label: vm.vm_type?.toUpperCase() ?? 'QEMU',
+                                                className: 'bg-muted text-muted-foreground border-border/50',
+                                            },
+                                        ];
+
+                                        const vmStatus =
+                                            vm.suspended === 1 || vm.status === 'suspended'
+                                                ? 'suspended'
+                                                : vm.status || 'unknown';
+
+                                        return (
+                                            <ResourceCard
+                                                key={vm.id}
+                                                title={vm.hostname || `VM #${vm.id}`}
+                                                subtitle={`VMID ${vm.vmid}`}
+                                                icon={ServerIcon}
+                                                badges={vmBadges}
+                                                description={
+                                                    <div className='flex items-center gap-4 mt-2 flex-wrap'>
+                                                        <Badge
+                                                            variant={
+                                                                vmStatus === 'suspended'
+                                                                    ? 'destructive'
+                                                                    : vmStatus === 'running'
+                                                                      ? 'secondary'
+                                                                      : 'outline'
+                                                            }
+                                                        >
+                                                            {vmStatus}
+                                                        </Badge>
+                                                        <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                            <Network className='h-3.5 w-3.5' />
+                                                            <span>{vm.ip_address || '—'}</span>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                actions={
+                                                    <div className='flex items-center gap-2'>
+                                                        <Button
+                                                            size='sm'
+                                                            variant='ghost'
+                                                            onClick={() => router.push(`/vds/${vm.id}`)}
+                                                            title={t('admin.servers.actions.view', {
+                                                                defaultValue: 'View',
+                                                            })}
+                                                        >
+                                                            <Eye className='h-4 w-4' />
+                                                        </Button>
+                                                        <Button
+                                                            size='sm'
+                                                            variant='ghost'
+                                                            onClick={() =>
+                                                                router.push(`/admin/vm-instances/${vm.id}/edit`)
+                                                            }
+                                                            title={t('admin.servers.actions.edit', {
+                                                                defaultValue: 'Edit',
+                                                            })}
+                                                        >
+                                                            <Pencil className='h-4 w-4' />
+                                                        </Button>
+                                                    </div>
+                                                }
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
             <WidgetRenderer widgets={getWidgets('admin-users-servers', 'bottom-of-page')} />
         </>

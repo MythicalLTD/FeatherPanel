@@ -324,159 +324,160 @@ export default function ConsolePage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-dev-console', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.dev.console.title')}
-                description={t('admin.dev.console.description')}
-                icon={Terminal}
-                actions={
-                    <div className='flex gap-2'>
-                        <Button variant='outline' onClick={() => setShowSystemInfo(!showSystemInfo)}>
-                            {showSystemInfo ? (
-                                <>
-                                    <EyeOff className='w-4 h-4 mr-2' />
-                                    {t('admin.dev.console.hide_system_info')}
-                                </>
-                            ) : (
-                                <>
-                                    <Eye className='w-4 h-4 mr-2' />
-                                    {t('admin.dev.console.show_system_info')}
-                                </>
-                            )}
-                        </Button>
-                        <Button variant='outline' onClick={clearTerminal}>
-                            <Trash2 className='w-4 h-4 mr-2' />
-                            {t('admin.dev.console.clear_terminal')}
-                        </Button>
-                        <Button variant='outline' onClick={fetchSystemInfo} disabled={isLoading}>
-                            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                            {t('admin.dev.console.refresh')}
-                        </Button>
-                    </div>
-                }
-            />
+                <PageHeader
+                    title={t('admin.dev.console.title')}
+                    description={t('admin.dev.console.description')}
+                    icon={Terminal}
+                    actions={
+                        <div className='flex gap-2'>
+                            <Button variant='outline' onClick={() => setShowSystemInfo(!showSystemInfo)}>
+                                {showSystemInfo ? (
+                                    <>
+                                        <EyeOff className='w-4 h-4 mr-2' />
+                                        {t('admin.dev.console.hide_system_info')}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Eye className='w-4 h-4 mr-2' />
+                                        {t('admin.dev.console.show_system_info')}
+                                    </>
+                                )}
+                            </Button>
+                            <Button variant='outline' onClick={clearTerminal}>
+                                <Trash2 className='w-4 h-4 mr-2' />
+                                {t('admin.dev.console.clear_terminal')}
+                            </Button>
+                            <Button variant='outline' onClick={fetchSystemInfo} disabled={isLoading}>
+                                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                                {t('admin.dev.console.refresh')}
+                            </Button>
+                        </div>
+                    }
+                />
 
-            {showSystemInfo && systemInfo && (
-                <PageCard title={t('admin.dev.console.system_info')}>
-                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                        <div>
-                            <h3 className='font-semibold mb-2'>{t('admin.dev.console.system')}</h3>
-                            <div className='text-sm space-y-1'>
-                                <div>
-                                    <span className='text-muted-foreground'>OS:</span> {systemInfo.os}
+                {showSystemInfo && systemInfo && (
+                    <PageCard title={t('admin.dev.console.system_info')}>
+                        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                            <div>
+                                <h3 className='font-semibold mb-2'>{t('admin.dev.console.system')}</h3>
+                                <div className='text-sm space-y-1'>
+                                    <div>
+                                        <span className='text-muted-foreground'>OS:</span> {systemInfo.os}
+                                    </div>
+                                    <div>
+                                        <span className='text-muted-foreground'>Server:</span>{' '}
+                                        {systemInfo.server_software}
+                                    </div>
+                                    <div>
+                                        <span className='text-muted-foreground'>User:</span> {systemInfo.user}
+                                    </div>
                                 </div>
-                                <div>
-                                    <span className='text-muted-foreground'>Server:</span> {systemInfo.server_software}
+                            </div>
+                            <div>
+                                <h3 className='font-semibold mb-2'>{t('admin.dev.console.runtime')}</h3>
+                                <div className='text-sm space-y-1'>
+                                    <div>
+                                        <span className='text-muted-foreground'>PHP:</span> {systemInfo.php_version}
+                                    </div>
+                                    <div>
+                                        <span className='text-muted-foreground'>Uptime:</span> {systemInfo.uptime}
+                                    </div>
                                 </div>
-                                <div>
-                                    <span className='text-muted-foreground'>User:</span> {systemInfo.user}
+                            </div>
+                            <div>
+                                <h3 className='font-semibold mb-2'>{t('admin.dev.console.disk_usage')}</h3>
+                                <div className='text-sm space-y-1'>
+                                    <div>
+                                        <span className='text-muted-foreground'>Used:</span>{' '}
+                                        {formatBytes(systemInfo.disk_usage.used)}
+                                    </div>
+                                    <div>
+                                        <span className='text-muted-foreground'>Free:</span>{' '}
+                                        {formatBytes(systemInfo.disk_usage.free)}
+                                    </div>
+                                    <div>
+                                        <span className='text-muted-foreground'>Usage:</span>{' '}
+                                        {systemInfo.disk_usage.percentage}%
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div>
-                            <h3 className='font-semibold mb-2'>{t('admin.dev.console.runtime')}</h3>
-                            <div className='text-sm space-y-1'>
-                                <div>
-                                    <span className='text-muted-foreground'>PHP:</span> {systemInfo.php_version}
+                    </PageCard>
+                )}
+
+                <PageCard title={t('admin.dev.console.terminal')}>
+                    <div className='space-y-4'>
+                        <p className='text-xs text-muted-foreground'>
+                            {t('admin.dev.console.terminal_help') ||
+                                'Use Arrow Up/Down for command history, Ctrl+L to clear'}
+                        </p>
+
+                        <div
+                            ref={terminalRef}
+                            className='h-96 bg-black text-green-400 p-4 overflow-auto font-mono text-sm rounded-xl border border-border/50'
+                            style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace" }}
+                        >
+                            {terminalLines.map((line) => (
+                                <div key={line.id} className='mb-1'>
+                                    {line.type === 'command' && (
+                                        <span className='text-green-400 font-medium'>{line.content}</span>
+                                    )}
+                                    {line.type === 'error' && <span className='text-red-400'>{line.content}</span>}
+                                    {line.type === 'info' && (
+                                        <span className='text-blue-400'>
+                                            [{line.timestamp}] {line.content}
+                                        </span>
+                                    )}
+                                    {line.type === 'output' && <span className='text-gray-300'>{line.content}</span>}
                                 </div>
-                                <div>
-                                    <span className='text-muted-foreground'>Uptime:</span> {systemInfo.uptime}
+                            ))}
+
+                            {isLoading && (
+                                <div className='flex items-center gap-2 text-yellow-400'>
+                                    <div className='animate-pulse'>●</div>
+                                    <span>{t('admin.dev.console.executing')}</span>
                                 </div>
-                            </div>
+                            )}
                         </div>
-                        <div>
-                            <h3 className='font-semibold mb-2'>{t('admin.dev.console.disk_usage')}</h3>
-                            <div className='text-sm space-y-1'>
-                                <div>
-                                    <span className='text-muted-foreground'>Used:</span>{' '}
-                                    {formatBytes(systemInfo.disk_usage.used)}
-                                </div>
-                                <div>
-                                    <span className='text-muted-foreground'>Free:</span>{' '}
-                                    {formatBytes(systemInfo.disk_usage.free)}
-                                </div>
-                                <div>
-                                    <span className='text-muted-foreground'>Usage:</span>{' '}
-                                    {systemInfo.disk_usage.percentage}%
-                                </div>
+
+                        <div className='p-4 border border-border/50 bg-muted/30 rounded-xl'>
+                            <div className='flex items-center gap-2'>
+                                <span className='text-green-400 font-mono text-sm shrink-0'>{getPrompt()}</span>
+                                <Input
+                                    ref={inputRef}
+                                    value={commandInput}
+                                    onChange={(e) => setCommandInput(e.target.value)}
+                                    className='bg-transparent border-none text-green-400 font-mono text-sm focus:ring-0 focus:border-none flex-1'
+                                    placeholder={t('admin.dev.console.enter_command')}
+                                    disabled={isLoading}
+                                    autoComplete='off'
+                                    spellCheck={false}
+                                    onKeyDown={handleKeyDown}
+                                />
                             </div>
                         </div>
                     </div>
                 </PageCard>
-            )}
 
-            <PageCard title={t('admin.dev.console.terminal')}>
-                <div className='space-y-4'>
-                    <p className='text-xs text-muted-foreground'>
-                        {t('admin.dev.console.terminal_help') ||
-                            'Use Arrow Up/Down for command history, Ctrl+L to clear'}
-                    </p>
-
-                    <div
-                        ref={terminalRef}
-                        className='h-96 bg-black text-green-400 p-4 overflow-auto font-mono text-sm rounded-xl border border-border/50'
-                        style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace" }}
-                    >
-                        {terminalLines.map((line) => (
-                            <div key={line.id} className='mb-1'>
-                                {line.type === 'command' && (
-                                    <span className='text-green-400 font-medium'>{line.content}</span>
-                                )}
-                                {line.type === 'error' && <span className='text-red-400'>{line.content}</span>}
-                                {line.type === 'info' && (
-                                    <span className='text-blue-400'>
-                                        [{line.timestamp}] {line.content}
-                                    </span>
-                                )}
-                                {line.type === 'output' && <span className='text-gray-300'>{line.content}</span>}
-                            </div>
-                        ))}
-
-                        {isLoading && (
-                            <div className='flex items-center gap-2 text-yellow-400'>
-                                <div className='animate-pulse'>●</div>
-                                <span>{t('admin.dev.console.executing')}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className='p-4 border border-border/50 bg-muted/30 rounded-xl'>
-                        <div className='flex items-center gap-2'>
-                            <span className='text-green-400 font-mono text-sm shrink-0'>{getPrompt()}</span>
-                            <Input
-                                ref={inputRef}
-                                value={commandInput}
-                                onChange={(e) => setCommandInput(e.target.value)}
-                                className='bg-transparent border-none text-green-400 font-mono text-sm focus:ring-0 focus:border-none flex-1'
-                                placeholder={t('admin.dev.console.enter_command')}
+                <PageCard title={t('admin.dev.console.quick_commands')}>
+                    <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2'>
+                        {quickCommands.map((cmd) => (
+                            <Button
+                                key={cmd}
+                                variant='outline'
+                                size='sm'
+                                className='text-xs'
                                 disabled={isLoading}
-                                autoComplete='off'
-                                spellCheck={false}
-                                onKeyDown={handleKeyDown}
-                            />
-                        </div>
+                                onClick={() => {
+                                    setCommandInput(cmd);
+                                    executeCommand();
+                                }}
+                            >
+                                {cmd}
+                            </Button>
+                        ))}
                     </div>
-                </div>
-            </PageCard>
-
-            <PageCard title={t('admin.dev.console.quick_commands')}>
-                <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2'>
-                    {quickCommands.map((cmd) => (
-                        <Button
-                            key={cmd}
-                            variant='outline'
-                            size='sm'
-                            className='text-xs'
-                            disabled={isLoading}
-                            onClick={() => {
-                                setCommandInput(cmd);
-                                executeCommand();
-                            }}
-                        >
-                            {cmd}
-                        </Button>
-                    ))}
-                </div>
-            </PageCard>
+                </PageCard>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-dev-console', 'bottom-of-page')} />
         </>

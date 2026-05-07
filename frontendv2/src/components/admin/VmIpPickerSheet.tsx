@@ -276,7 +276,8 @@ export function VmIpPickerSheet({
                                                 <div>
                                                     <div className='font-semibold font-mono'>{ip.ip}</div>
                                                     <div className='text-xs text-muted-foreground font-mono'>
-                                                        {ip.cidr !== null ? `/${ip.cidr}` : 'No CIDR'} · {ip.gateway || 'No gateway'}
+                                                        {ip.cidr !== null ? `/${ip.cidr}` : 'No CIDR'} ·{' '}
+                                                        {ip.gateway || 'No gateway'}
                                                     </div>
                                                 </div>
                                             </div>
@@ -326,16 +327,20 @@ export function VmIpPickerSheet({
                                 </div>
                             )}
                             {createType === 'single' && (
-                            <div className='space-y-2'>
-                                <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_ip')}</Label>
-                                <Input
-                                    placeholder='192.168.1.100'
-                                    value={createForm.ip}
-                                    className='h-11 font-mono'
-                                    onChange={(e) => setCreateForm((p) => ({ ...p, ip: e.target.value }))}
-                                />
-                                {createErrors.ip && <p className='text-[10px] uppercase font-bold text-red-500'>{createErrors.ip}</p>}
-                            </div>
+                                <div className='space-y-2'>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_ip')}</Label>
+                                    <Input
+                                        placeholder='192.168.1.100'
+                                        value={createForm.ip}
+                                        className='h-11 font-mono'
+                                        onChange={(e) => setCreateForm((p) => ({ ...p, ip: e.target.value }))}
+                                    />
+                                    {createErrors.ip && (
+                                        <p className='text-[10px] uppercase font-bold text-red-500'>
+                                            {createErrors.ip}
+                                        </p>
+                                    )}
+                                </div>
                             )}
                             <div className='grid grid-cols-2 gap-4'>
                                 <div className='space-y-2'>
@@ -350,11 +355,15 @@ export function VmIpPickerSheet({
                                         onChange={(e) => setCreateForm((p) => ({ ...p, cidr: e.target.value }))}
                                     />
                                     {createErrors.cidr && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500'>{createErrors.cidr}</p>
+                                        <p className='text-[10px] uppercase font-bold text-red-500'>
+                                            {createErrors.cidr}
+                                        </p>
                                     )}
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_gateway')}</Label>
+                                    <Label className='text-sm font-semibold'>
+                                        {t('admin.vdsNodes.ips.col_gateway')}
+                                    </Label>
                                     <Input
                                         placeholder='192.168.1.1'
                                         value={createForm.gateway}
@@ -362,7 +371,9 @@ export function VmIpPickerSheet({
                                         onChange={(e) => setCreateForm((p) => ({ ...p, gateway: e.target.value }))}
                                     />
                                     {createErrors.gateway && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500'>{createErrors.gateway}</p>
+                                        <p className='text-[10px] uppercase font-bold text-red-500'>
+                                            {createErrors.gateway}
+                                        </p>
                                     )}
                                 </div>
                             </div>
@@ -395,4 +406,3 @@ export function VmIpPickerSheet({
         </Sheet>
     );
 }
-

@@ -17,8 +17,8 @@
 
 namespace App\Services\Chatbot\Tools;
 
-use App\Chat\Server;
 use App\Chat\Spell;
+use App\Chat\Server;
 use App\Chat\SpellVariable;
 use App\Chat\ServerVariable;
 use App\Helpers\ServerGateway;

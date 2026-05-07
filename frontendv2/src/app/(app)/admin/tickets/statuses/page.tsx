@@ -146,139 +146,94 @@ export default function TicketStatusesPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-tickets-statuses', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.tickets.statuses.title')}
-                description={t('admin.tickets.statuses.subtitle')}
-                icon={Activity}
-                actions={
-                    <Button
-                        onClick={() => {
-                            resetForm();
-                            setCreateOpen(true);
-                        }}
-                    >
-                        <Plus className='h-4 w-4 mr-2' />
-                        {t('admin.tickets.statuses.create')}
-                    </Button>
-                }
-            />
-
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
-                    <Input
-                        placeholder={t('admin.tickets.statuses.search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
-                    />
-                </div>
-            </div>
-
-            {loading ? (
-                <TableSkeleton count={3} />
-            ) : filteredStatuses.length === 0 ? (
-                <EmptyState
+                <PageHeader
+                    title={t('admin.tickets.statuses.title')}
+                    description={t('admin.tickets.statuses.subtitle')}
                     icon={Activity}
-                    title={t('admin.tickets.statuses.no_results') || t('admin.tickets.no_results')}
-                    description={t('admin.tickets.statuses.search_placeholder')}
-                    action={
+                    actions={
                         <Button
                             onClick={() => {
                                 resetForm();
                                 setCreateOpen(true);
                             }}
                         >
+                            <Plus className='h-4 w-4 mr-2' />
                             {t('admin.tickets.statuses.create')}
                         </Button>
                     }
                 />
-            ) : (
-                <div className='grid grid-cols-1 gap-4'>
-                    {filteredStatuses.map((status) => (
-                        <ResourceCard
-                            key={status.id}
-                            icon={Activity}
-                            title={status.name}
-                            subtitle={status.color}
-                            iconClassName='text-primary'
-                            style={{ borderLeft: `4px solid ${status.color}` }}
-                            actions={
-                                <div className='flex items-center gap-2'>
-                                    <Button size='sm' variant='ghost' onClick={() => openEdit(status)}>
-                                        <Pencil className='h-4 w-4' />
-                                    </Button>
-                                    <Button
-                                        size='sm'
-                                        variant='ghost'
-                                        className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                        onClick={() => handleDelete(status.id)}
-                                    >
-                                        <Trash2 className='h-4 w-4' />
-                                    </Button>
-                                </div>
-                            }
+
+                <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
+                    <div className='relative flex-1 group w-full'>
+                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                        <Input
+                            placeholder={t('admin.tickets.statuses.search_placeholder')}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className='pl-10 h-11 w-full'
                         />
-                    ))}
+                    </div>
                 </div>
-            )}
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-                <div className='space-y-6'>
-                    <SheetHeader>
-                        <SheetTitle>{t('admin.tickets.statuses.create')}</SheetTitle>
-                        <SheetDescription>{t('admin.tickets.statuses.subtitle')}</SheetDescription>
-                    </SheetHeader>
-                    <form onSubmit={handleCreate} className='space-y-4'>
-                        <div className='space-y-2'>
-                            <Label htmlFor='create-name'>{t('admin.tickets.statuses.form.name')}</Label>
-                            <Input
-                                id='create-name'
-                                value={form.name}
-                                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                required
-                            />
-                        </div>
-
-                        <div className='space-y-2'>
-                            <Label htmlFor='create-color'>{t('admin.tickets.statuses.form.color')}</Label>
-                            <div className='flex gap-2'>
-                                <Input
-                                    type='color'
-                                    id='create-color'
-                                    value={form.color}
-                                    onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                    className='w-12 p-1 h-11'
-                                />
-                                <Input
-                                    value={form.color}
-                                    onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                    className='flex-1'
-                                />
-                            </div>
-                        </div>
-
-                        <SheetFooter>
-                            <Button type='submit' loading={isSubmitting}>
-                                {t('common.create')}
+                {loading ? (
+                    <TableSkeleton count={3} />
+                ) : filteredStatuses.length === 0 ? (
+                    <EmptyState
+                        icon={Activity}
+                        title={t('admin.tickets.statuses.no_results') || t('admin.tickets.no_results')}
+                        description={t('admin.tickets.statuses.search_placeholder')}
+                        action={
+                            <Button
+                                onClick={() => {
+                                    resetForm();
+                                    setCreateOpen(true);
+                                }}
+                            >
+                                {t('admin.tickets.statuses.create')}
                             </Button>
-                        </SheetFooter>
-                    </form>
-                </div>
-            </Sheet>
+                        }
+                    />
+                ) : (
+                    <div className='grid grid-cols-1 gap-4'>
+                        {filteredStatuses.map((status) => (
+                            <ResourceCard
+                                key={status.id}
+                                icon={Activity}
+                                title={status.name}
+                                subtitle={status.color}
+                                iconClassName='text-primary'
+                                style={{ borderLeft: `4px solid ${status.color}` }}
+                                actions={
+                                    <div className='flex items-center gap-2'>
+                                        <Button size='sm' variant='ghost' onClick={() => openEdit(status)}>
+                                            <Pencil className='h-4 w-4' />
+                                        </Button>
+                                        <Button
+                                            size='sm'
+                                            variant='ghost'
+                                            className='text-destructive hover:text-destructive hover:bg-destructive/10'
+                                            onClick={() => handleDelete(status.id)}
+                                        >
+                                            <Trash2 className='h-4 w-4' />
+                                        </Button>
+                                    </div>
+                                }
+                            />
+                        ))}
+                    </div>
+                )}
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
-                <div className='space-y-6'>
-                    <SheetHeader>
-                        <SheetTitle>{t('admin.tickets.statuses.edit')}</SheetTitle>
-                        <SheetDescription>{t('admin.tickets.statuses.subtitle')}</SheetDescription>
-                    </SheetHeader>
-                    {editingStatus && (
-                        <form onSubmit={handleUpdate} className='space-y-4'>
+                <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+                    <div className='space-y-6'>
+                        <SheetHeader>
+                            <SheetTitle>{t('admin.tickets.statuses.create')}</SheetTitle>
+                            <SheetDescription>{t('admin.tickets.statuses.subtitle')}</SheetDescription>
+                        </SheetHeader>
+                        <form onSubmit={handleCreate} className='space-y-4'>
                             <div className='space-y-2'>
-                                <Label htmlFor='edit-name'>{t('admin.tickets.statuses.form.name')}</Label>
+                                <Label htmlFor='create-name'>{t('admin.tickets.statuses.form.name')}</Label>
                                 <Input
-                                    id='edit-name'
+                                    id='create-name'
                                     value={form.name}
                                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                                     required
@@ -286,11 +241,11 @@ export default function TicketStatusesPage() {
                             </div>
 
                             <div className='space-y-2'>
-                                <Label htmlFor='edit-color'>{t('admin.tickets.statuses.form.color')}</Label>
+                                <Label htmlFor='create-color'>{t('admin.tickets.statuses.form.color')}</Label>
                                 <div className='flex gap-2'>
                                     <Input
                                         type='color'
-                                        id='edit-color'
+                                        id='create-color'
                                         value={form.color}
                                         onChange={(e) => setForm({ ...form, color: e.target.value })}
                                         className='w-12 p-1 h-11'
@@ -305,31 +260,76 @@ export default function TicketStatusesPage() {
 
                             <SheetFooter>
                                 <Button type='submit' loading={isSubmitting}>
-                                    {t('common.save')}
+                                    {t('common.create')}
                                 </Button>
                             </SheetFooter>
                         </form>
-                    )}
-                </div>
-            </Sheet>
+                    </div>
+                </Sheet>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
-                <PageCard title={t('admin.tickets.statuses.help.workflow.title')} icon={GitBranch}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
-                        {t('admin.tickets.statuses.help.workflow.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.tickets.statuses.help.tracking.title')} icon={Eye}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
-                        {t('admin.tickets.statuses.help.tracking.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.tickets.statuses.help.states.title')} icon={Settings2} variant='danger'>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
-                        {t('admin.tickets.statuses.help.states.description')}
-                    </p>
-                </PageCard>
-            </div>
+                <Sheet open={editOpen} onOpenChange={setEditOpen}>
+                    <div className='space-y-6'>
+                        <SheetHeader>
+                            <SheetTitle>{t('admin.tickets.statuses.edit')}</SheetTitle>
+                            <SheetDescription>{t('admin.tickets.statuses.subtitle')}</SheetDescription>
+                        </SheetHeader>
+                        {editingStatus && (
+                            <form onSubmit={handleUpdate} className='space-y-4'>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='edit-name'>{t('admin.tickets.statuses.form.name')}</Label>
+                                    <Input
+                                        id='edit-name'
+                                        value={form.name}
+                                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className='space-y-2'>
+                                    <Label htmlFor='edit-color'>{t('admin.tickets.statuses.form.color')}</Label>
+                                    <div className='flex gap-2'>
+                                        <Input
+                                            type='color'
+                                            id='edit-color'
+                                            value={form.color}
+                                            onChange={(e) => setForm({ ...form, color: e.target.value })}
+                                            className='w-12 p-1 h-11'
+                                        />
+                                        <Input
+                                            value={form.color}
+                                            onChange={(e) => setForm({ ...form, color: e.target.value })}
+                                            className='flex-1'
+                                        />
+                                    </div>
+                                </div>
+
+                                <SheetFooter>
+                                    <Button type='submit' loading={isSubmitting}>
+                                        {t('common.save')}
+                                    </Button>
+                                </SheetFooter>
+                            </form>
+                        )}
+                    </div>
+                </Sheet>
+
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+                    <PageCard title={t('admin.tickets.statuses.help.workflow.title')} icon={GitBranch}>
+                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                            {t('admin.tickets.statuses.help.workflow.description')}
+                        </p>
+                    </PageCard>
+                    <PageCard title={t('admin.tickets.statuses.help.tracking.title')} icon={Eye}>
+                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                            {t('admin.tickets.statuses.help.tracking.description')}
+                        </p>
+                    </PageCard>
+                    <PageCard title={t('admin.tickets.statuses.help.states.title')} icon={Settings2} variant='danger'>
+                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                            {t('admin.tickets.statuses.help.states.description')}
+                        </p>
+                    </PageCard>
+                </div>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-tickets-statuses', 'bottom-of-page')} />
         </>

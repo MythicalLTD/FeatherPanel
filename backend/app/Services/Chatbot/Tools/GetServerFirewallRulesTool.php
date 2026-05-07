@@ -20,9 +20,9 @@ namespace App\Services\Chatbot\Tools;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
-use App\Config\ConfigInterface;
-use App\Helpers\ServerGateway;
 use App\Services\Wings\Wings;
+use App\Helpers\ServerGateway;
+use App\Config\ConfigInterface;
 
 /**
  * Tool to get firewall rules for a server.

@@ -281,7 +281,11 @@ const HashesTab = () => {
 
     const handleBulkConfirm = async () => {
         if (selectedHashes.size === 0) return;
-        if (!confirm(t('admin.featherzerotrust.hashes.messages.confirmBulkConfirm', { count: selectedHashes.size })))
+        if (
+            !confirm(
+                t('admin.featherzerotrust.hashes.messages.confirmBulkConfirm', { count: String(selectedHashes.size) }),
+            )
+        )
             return;
 
         setBulkConfirming(true);
@@ -307,7 +311,11 @@ const HashesTab = () => {
 
     const handleBulkDelete = async () => {
         if (selectedHashes.size === 0) return;
-        if (!confirm(t('admin.featherzerotrust.hashes.messages.confirmBulkDelete', { count: selectedHashes.size })))
+        if (
+            !confirm(
+                t('admin.featherzerotrust.hashes.messages.confirmBulkDelete', { count: String(selectedHashes.size) }),
+            )
+        )
             return;
 
         setBulkDeleting(true);

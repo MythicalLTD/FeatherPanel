@@ -180,119 +180,119 @@ export default function AdminLogsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-logs', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.logs.title')}
-                description={t('admin.logs.description')}
-                icon={FileText}
-                actions={
-                    <div className='flex gap-2'>
-                        <Button variant='outline' onClick={fetchLogs} disabled={loading}>
-                            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                            {t('admin.logs.actions.refresh')}
-                        </Button>
-                        <Button
-                            variant={autoRefresh ? 'default' : 'outline'}
-                            onClick={toggleAutoRefresh}
-                            disabled={loading}
-                        >
-                            {autoRefresh ? (
-                                <>
-                                    <Square className='w-4 h-4 mr-2' />
-                                    {t('admin.logs.actions.stop_auto')}
-                                </>
-                            ) : (
-                                <>
-                                    <Play className='w-4 h-4 mr-2' />
-                                    {t('admin.logs.actions.auto_refresh')}
-                                </>
-                            )}
-                        </Button>
-                        <Button variant='destructive' onClick={clearLogs} disabled={loading}>
-                            <Trash2 className='w-4 h-4 mr-2' />
-                            {t('admin.logs.actions.clear_logs')}
-                        </Button>
-                    </div>
-                }
-            />
+                <PageHeader
+                    title={t('admin.logs.title')}
+                    description={t('admin.logs.description')}
+                    icon={FileText}
+                    actions={
+                        <div className='flex gap-2'>
+                            <Button variant='outline' onClick={fetchLogs} disabled={loading}>
+                                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                                {t('admin.logs.actions.refresh')}
+                            </Button>
+                            <Button
+                                variant={autoRefresh ? 'default' : 'outline'}
+                                onClick={toggleAutoRefresh}
+                                disabled={loading}
+                            >
+                                {autoRefresh ? (
+                                    <>
+                                        <Square className='w-4 h-4 mr-2' />
+                                        {t('admin.logs.actions.stop_auto')}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Play className='w-4 h-4 mr-2' />
+                                        {t('admin.logs.actions.auto_refresh')}
+                                    </>
+                                )}
+                            </Button>
+                            <Button variant='destructive' onClick={clearLogs} disabled={loading}>
+                                <Trash2 className='w-4 h-4 mr-2' />
+                                {t('admin.logs.actions.clear_logs')}
+                            </Button>
+                        </div>
+                    }
+                />
 
-            <PageCard>
-                <div className='flex flex-col md:flex-row gap-4 items-start md:items-center'>
-                    <div className='flex items-center gap-2'>
-                        <label className='text-sm font-medium'>{t('admin.logs.log_type')}</label>
-                        <Select
-                            value={currentLogType}
-                            onChange={(e) => setCurrentLogType(e.target.value as 'app' | 'web' | 'mail')}
-                            className='w-36'
-                        >
-                            <option value='app'>{t('admin.logs.log_type_app')}</option>
-                            <option value='web'>{t('admin.logs.log_type_web')}</option>
-                            <option value='mail'>{t('admin.logs.log_type_mail')}</option>
-                        </Select>
+                <PageCard>
+                    <div className='flex flex-col md:flex-row gap-4 items-start md:items-center'>
+                        <div className='flex items-center gap-2'>
+                            <label className='text-sm font-medium'>{t('admin.logs.log_type')}</label>
+                            <Select
+                                value={currentLogType}
+                                onChange={(e) => setCurrentLogType(e.target.value as 'app' | 'web' | 'mail')}
+                                className='w-36'
+                            >
+                                <option value='app'>{t('admin.logs.log_type_app')}</option>
+                                <option value='web'>{t('admin.logs.log_type_web')}</option>
+                                <option value='mail'>{t('admin.logs.log_type_mail')}</option>
+                            </Select>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                            <label className='text-sm font-medium'>{t('admin.logs.lines')}</label>
+                            <Select
+                                value={lines.toString()}
+                                onChange={(e) => setLines(parseInt(e.target.value))}
+                                className='w-32'
+                            >
+                                <option value='50'>50</option>
+                                <option value='100'>100</option>
+                                <option value='200'>200</option>
+                                <option value='500'>500</option>
+                            </Select>
+                        </div>
                     </div>
-                    <div className='flex items-center gap-2'>
-                        <label className='text-sm font-medium'>{t('admin.logs.lines')}</label>
-                        <Select
-                            value={lines.toString()}
-                            onChange={(e) => setLines(parseInt(e.target.value))}
-                            className='w-32'
-                        >
-                            <option value='50'>50</option>
-                            <option value='100'>100</option>
-                            <option value='200'>200</option>
-                            <option value='500'>500</option>
-                        </Select>
-                    </div>
-                </div>
-            </PageCard>
+                </PageCard>
 
-            {loading && (
-                <div className='flex items-center justify-center py-12'>
-                    <div className='flex items-center gap-3'>
-                        <Loader2 className='w-6 h-6 animate-spin text-primary' />
-                        <span className='text-muted-foreground'>{t('admin.logs.loading')}</span>
+                {loading && (
+                    <div className='flex items-center justify-center py-12'>
+                        <div className='flex items-center gap-3'>
+                            <Loader2 className='w-6 h-6 animate-spin text-primary' />
+                            <span className='text-muted-foreground'>{t('admin.logs.loading')}</span>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {logFiles.length > 0 && (
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                    {logFiles.map((file) => (
-                        <PageCard key={file.name}>
-                            <div className='flex items-center justify-between mb-2'>
-                                <div className='font-semibold text-sm uppercase'>{file.type}</div>
-                                <div className='text-xs text-muted-foreground'>{formatFileSize(file.size)}</div>
-                            </div>
-                            <div className='text-xs text-muted-foreground space-y-1'>
-                                <div>{file.name}</div>
-                                <div>
-                                    {t('admin.logs.modified')} {formatDate(file.modified)}
+                {logFiles.length > 0 && (
+                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                        {logFiles.map((file) => (
+                            <PageCard key={file.name}>
+                                <div className='flex items-center justify-between mb-2'>
+                                    <div className='font-semibold text-sm uppercase'>{file.type}</div>
+                                    <div className='text-xs text-muted-foreground'>{formatFileSize(file.size)}</div>
                                 </div>
-                            </div>
-                        </PageCard>
-                    ))}
-                </div>
-            )}
-
-            <PageCard>
-                <div className='p-4 flex items-center justify-between border-b border-border/50'>
-                    <div className='font-semibold'>{t('admin.logs.logs_output')}</div>
-                    <div className='flex items-center gap-2'>
-                        <span className='text-sm text-muted-foreground'>
-                            {logs.split('\n').length} {t('admin.logs.lines_count')}
-                        </span>
-                        <Button variant='outline' size='sm' onClick={() => setLogs('')}>
-                            {t('admin.logs.clear')}
-                        </Button>
+                                <div className='text-xs text-muted-foreground space-y-1'>
+                                    <div>{file.name}</div>
+                                    <div>
+                                        {t('admin.logs.modified')} {formatDate(file.modified)}
+                                    </div>
+                                </div>
+                            </PageCard>
+                        ))}
                     </div>
-                </div>
-                <pre
-                    ref={logsContainerRef}
-                    className='text-xs whitespace-pre-wrap bg-black text-green-300 p-4 min-h-[400px] max-h-[600px] overflow-auto font-mono rounded-b-xl'
-                    style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace" }}
-                >
-                    {logs || t('admin.logs.no_logs')}
-                </pre>
-            </PageCard>
+                )}
+
+                <PageCard>
+                    <div className='p-4 flex items-center justify-between border-b border-border/50'>
+                        <div className='font-semibold'>{t('admin.logs.logs_output')}</div>
+                        <div className='flex items-center gap-2'>
+                            <span className='text-sm text-muted-foreground'>
+                                {logs.split('\n').length} {t('admin.logs.lines_count')}
+                            </span>
+                            <Button variant='outline' size='sm' onClick={() => setLogs('')}>
+                                {t('admin.logs.clear')}
+                            </Button>
+                        </div>
+                    </div>
+                    <pre
+                        ref={logsContainerRef}
+                        className='text-xs whitespace-pre-wrap bg-black text-green-300 p-4 min-h-[400px] max-h-[600px] overflow-auto font-mono rounded-b-xl'
+                        style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace" }}
+                    >
+                        {logs || t('admin.logs.no_logs')}
+                    </pre>
+                </PageCard>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-logs', 'bottom-of-page')} />
         </>

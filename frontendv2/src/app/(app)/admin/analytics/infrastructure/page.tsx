@@ -202,101 +202,101 @@ export default function InfrastructureAnalyticsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-infrastructure', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.analytics.infrastructure.title')}
-                description={t('admin.analytics.infrastructure.subtitle')}
-                icon={Server}
-            />
+                <PageHeader
+                    title={t('admin.analytics.infrastructure.title')}
+                    description={t('admin.analytics.infrastructure.subtitle')}
+                    icon={Server}
+                />
 
-            {overview && (
-                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                    <ResourceCard
-                        title={(overview.locations?.total ?? 0).toString()}
-                        subtitle={t('admin.analytics.infrastructure.locations')}
-                        description={t('admin.analytics.infrastructure.with_nodes', {
-                            count: String(overview.locations?.with_nodes ?? 0),
-                        })}
-                        icon={MapPin}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                {overview && (
+                    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                        <ResourceCard
+                            title={(overview.locations?.total ?? 0).toString()}
+                            subtitle={t('admin.analytics.infrastructure.locations')}
+                            description={t('admin.analytics.infrastructure.with_nodes', {
+                                count: String(overview.locations?.with_nodes ?? 0),
+                            })}
+                            icon={MapPin}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={(overview.nodes?.total ?? 0).toString()}
+                            subtitle={t('admin.analytics.infrastructure.nodes')}
+                            description={t('admin.analytics.infrastructure.public', {
+                                percentage: String(overview.nodes?.percentage_public ?? 0),
+                            })}
+                            icon={Server}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={(overview.allocations?.total ?? 0).toString()}
+                            subtitle={t('admin.analytics.infrastructure.allocations')}
+                            description={t('admin.analytics.infrastructure.in_use', {
+                                percentage: String(overview.allocations?.percentage_in_use ?? 0),
+                            })}
+                            icon={Network}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={(overview.databases?.hosts ?? 0).toString()}
+                            subtitle={t('admin.analytics.infrastructure.db_hosts')}
+                            description={t('admin.analytics.infrastructure.across_nodes')}
+                            icon={Database}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={topPort ? String(topPort.port) : '0'}
+                            subtitle='Top used port'
+                            description={`Assigned: ${topPort?.assigned ?? 0} allocations`}
+                            icon={EthernetPort}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={topIp ? String(topIp.total_ports) : '0'}
+                            subtitle='Top IP total ports'
+                            description={
+                                topIp ? `${topIp.ip} (${topIp.usage_percentage}% used)` : 'No allocation usage data'
+                            }
+                            icon={Globe}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    </div>
+                )}
+
+                <div className='grid gap-4 md:grid-cols-2'>
+                    <SimplePieChart
+                        title={t('admin.analytics.infrastructure.nodes_by_location')}
+                        description={t('admin.analytics.infrastructure.nodes_by_location_desc')}
+                        data={nodesByLocation}
                     />
-                    <ResourceCard
-                        title={(overview.nodes?.total ?? 0).toString()}
-                        subtitle={t('admin.analytics.infrastructure.nodes')}
-                        description={t('admin.analytics.infrastructure.public', {
-                            percentage: String(overview.nodes?.percentage_public ?? 0),
-                        })}
-                        icon={Server}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={(overview.allocations?.total ?? 0).toString()}
-                        subtitle={t('admin.analytics.infrastructure.allocations')}
-                        description={t('admin.analytics.infrastructure.in_use', {
-                            percentage: String(overview.allocations?.percentage_in_use ?? 0),
-                        })}
-                        icon={Network}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={(overview.databases?.hosts ?? 0).toString()}
-                        subtitle={t('admin.analytics.infrastructure.db_hosts')}
-                        description={t('admin.analytics.infrastructure.across_nodes')}
-                        icon={Database}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={topPort ? String(topPort.port) : '0'}
-                        subtitle='Top used port'
-                        description={`Assigned: ${topPort?.assigned ?? 0} allocations`}
-                        icon={EthernetPort}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={topIp ? String(topIp.total_ports) : '0'}
-                        subtitle='Top IP total ports'
-                        description={
-                            topIp ? `${topIp.ip} (${topIp.usage_percentage}% used)` : 'No allocation usage data'
-                        }
-                        icon={Globe}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                    <SimplePieChart
+                        title={t('admin.analytics.infrastructure.allocation_usage')}
+                        description={t('admin.analytics.infrastructure.allocation_usage_desc')}
+                        data={allocationUsage}
                     />
                 </div>
-            )}
 
-            <div className='grid gap-4 md:grid-cols-2'>
-                <SimplePieChart
-                    title={t('admin.analytics.infrastructure.nodes_by_location')}
-                    description={t('admin.analytics.infrastructure.nodes_by_location_desc')}
-                    data={nodesByLocation}
-                />
-                <SimplePieChart
-                    title={t('admin.analytics.infrastructure.allocation_usage')}
-                    description={t('admin.analytics.infrastructure.allocation_usage_desc')}
-                    data={allocationUsage}
-                />
-            </div>
+                <div className='grid gap-4 md:grid-cols-1'>
+                    <NodeResourceChart
+                        title={t('admin.analytics.infrastructure.node_resources')}
+                        description={t('admin.analytics.infrastructure.node_resources_desc')}
+                        data={nodeResources}
+                    />
+                </div>
 
-            <div className='grid gap-4 md:grid-cols-1'>
-                <NodeResourceChart
-                    title={t('admin.analytics.infrastructure.node_resources')}
-                    description={t('admin.analytics.infrastructure.node_resources_desc')}
-                    data={nodeResources}
-                />
+                <div className='grid gap-4 md:grid-cols-2'>
+                    <SimpleBarChart
+                        title={t('admin.analytics.infrastructure.servers_by_node')}
+                        description={t('admin.analytics.infrastructure.servers_by_node_desc')}
+                        data={serversByNode}
+                    />
+                    <SimplePieChart
+                        title={t('admin.analytics.infrastructure.db_types')}
+                        description={t('admin.analytics.infrastructure.db_types_desc')}
+                        data={dbTypes}
+                    />
+                </div>
             </div>
-
-            <div className='grid gap-4 md:grid-cols-2'>
-                <SimpleBarChart
-                    title={t('admin.analytics.infrastructure.servers_by_node')}
-                    description={t('admin.analytics.infrastructure.servers_by_node_desc')}
-                    data={serversByNode}
-                />
-                <SimplePieChart
-                    title={t('admin.analytics.infrastructure.db_types')}
-                    description={t('admin.analytics.infrastructure.db_types_desc')}
-                    data={dbTypes}
-                />
-            </div>
-        </div>
             <WidgetRenderer widgets={getWidgets('admin-analytics-infrastructure', 'bottom-of-page')} />
         </>
     );

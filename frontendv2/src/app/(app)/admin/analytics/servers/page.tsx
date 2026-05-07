@@ -271,186 +271,186 @@ export default function ServerAnalyticsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-servers', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.analytics.servers.title')}
-                description={t('admin.analytics.servers.subtitle')}
-                icon={Server}
-            />
+                <PageHeader
+                    title={t('admin.analytics.servers.title')}
+                    description={t('admin.analytics.servers.subtitle')}
+                    icon={Server}
+                />
 
-            {overview && (
-                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                    <ResourceCard
-                        title={overview.total_servers.toString()}
-                        subtitle={t('admin.analytics.servers.total')}
-                        description={t('admin.analytics.servers.active_servers')}
-                        icon={Server}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={overview.running.toString()}
-                        subtitle={t('admin.analytics.servers.running')}
-                        description={t('admin.analytics.servers.running_pct', {
-                            percentage: String(overview.percentage_running),
-                        })}
-                        icon={Cpu}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={overview.suspended.toString()}
-                        subtitle={t('admin.analytics.servers.suspended')}
-                        description={t('admin.analytics.servers.suspended_pct', {
-                            percentage: String(overview.percentage_suspended),
-                        })}
-                        icon={Archive}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={overview.installing.toString()}
-                        subtitle={t('admin.analytics.servers.installing')}
-                        description={t('admin.analytics.servers.being_installed')}
-                        icon={HardDrive}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                </div>
-            )}
-
-            {(backupStats || scheduleStats || subuserStats || installationStats) && (
-                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                    {backupStats && (
+                {overview && (
+                    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                         <ResourceCard
-                            title={backupStats.total_backups.toString()}
-                            subtitle={t('admin.analytics.servers.total_backups')}
-                            description={t('admin.analytics.servers.avg_backups', {
-                                count: String(backupStats.avg_backups_per_server),
+                            title={overview.total_servers.toString()}
+                            subtitle={t('admin.analytics.servers.total')}
+                            description={t('admin.analytics.servers.active_servers')}
+                            icon={Server}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={overview.running.toString()}
+                            subtitle={t('admin.analytics.servers.running')}
+                            description={t('admin.analytics.servers.running_pct', {
+                                percentage: String(overview.percentage_running),
+                            })}
+                            icon={Cpu}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={overview.suspended.toString()}
+                            subtitle={t('admin.analytics.servers.suspended')}
+                            description={t('admin.analytics.servers.suspended_pct', {
+                                percentage: String(overview.percentage_suspended),
                             })}
                             icon={Archive}
                             className='shadow-none! bg-card/50 backdrop-blur-sm'
                         />
-                    )}
-                    {scheduleStats && (
                         <ResourceCard
-                            title={scheduleStats.total_schedules.toString()}
-                            subtitle={t('admin.analytics.servers.total_schedules')}
-                            description={t('admin.analytics.servers.avg_schedules', {
-                                count: String(scheduleStats.avg_schedules_per_server),
-                            })}
-                            icon={Clock}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
-                        />
-                    )}
-                    {subuserStats && (
-                        <ResourceCard
-                            title={subuserStats.total_subusers.toString()}
-                            subtitle={t('admin.analytics.servers.total_subusers')}
-                            description={t('admin.analytics.servers.avg_subusers', {
-                                count: String(subuserStats.avg_subusers_per_server),
-                            })}
-                            icon={Users}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
-                        />
-                    )}
-                    {installationStats && (
-                        <ResourceCard
-                            title={installationStats.installed.toString()}
-                            subtitle={t('admin.analytics.servers.installed_servers')}
-                            description={t('admin.analytics.servers.avg_install_time', {
-                                minutes: String(installationStats.avg_installation_time_minutes),
-                            })}
-                            icon={Clock}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
-                        />
-                    )}
-                </div>
-            )}
-
-            {(limitStats || configurationStats || variableStats || serverActivityStats) && (
-                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                    {limitStats && (
-                        <ResourceCard
-                            title={String(limitStats.avg_database_limit)}
-                            subtitle='Avg DB limit'
-                            description={`Avg backup limit: ${limitStats.avg_backup_limit}`}
+                            title={overview.installing.toString()}
+                            subtitle={t('admin.analytics.servers.installing')}
+                            description={t('admin.analytics.servers.being_installed')}
                             icon={HardDrive}
                             className='shadow-none! bg-card/50 backdrop-blur-sm'
                         />
-                    )}
-                    {configurationStats && (
-                        <ResourceCard
-                            title={String(configurationStats.skip_scripts_enabled)}
-                            subtitle='Skip scripts enabled'
-                            description={`OOM disabled: ${configurationStats.oom_disabled}`}
-                            icon={Settings}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
-                        />
-                    )}
-                    {variableStats && (
-                        <ResourceCard
-                            title={String(variableStats.total_variables)}
-                            subtitle='Server variables'
-                            description='Custom runtime variable values'
-                            icon={ShieldAlert}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
-                        />
-                    )}
-                    {serverActivityStats && (
-                        <ResourceCard
-                            title={String(serverActivityStats.total_activities)}
-                            subtitle='Server activity events'
-                            description='Operational events across all servers'
-                            icon={Activity}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
-                        />
-                    )}
+                    </div>
+                )}
+
+                {(backupStats || scheduleStats || subuserStats || installationStats) && (
+                    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                        {backupStats && (
+                            <ResourceCard
+                                title={backupStats.total_backups.toString()}
+                                subtitle={t('admin.analytics.servers.total_backups')}
+                                description={t('admin.analytics.servers.avg_backups', {
+                                    count: String(backupStats.avg_backups_per_server),
+                                })}
+                                icon={Archive}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                        )}
+                        {scheduleStats && (
+                            <ResourceCard
+                                title={scheduleStats.total_schedules.toString()}
+                                subtitle={t('admin.analytics.servers.total_schedules')}
+                                description={t('admin.analytics.servers.avg_schedules', {
+                                    count: String(scheduleStats.avg_schedules_per_server),
+                                })}
+                                icon={Clock}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                        )}
+                        {subuserStats && (
+                            <ResourceCard
+                                title={subuserStats.total_subusers.toString()}
+                                subtitle={t('admin.analytics.servers.total_subusers')}
+                                description={t('admin.analytics.servers.avg_subusers', {
+                                    count: String(subuserStats.avg_subusers_per_server),
+                                })}
+                                icon={Users}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                        )}
+                        {installationStats && (
+                            <ResourceCard
+                                title={installationStats.installed.toString()}
+                                subtitle={t('admin.analytics.servers.installed_servers')}
+                                description={t('admin.analytics.servers.avg_install_time', {
+                                    minutes: String(installationStats.avg_installation_time_minutes),
+                                })}
+                                icon={Clock}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                        )}
+                    </div>
+                )}
+
+                {(limitStats || configurationStats || variableStats || serverActivityStats) && (
+                    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                        {limitStats && (
+                            <ResourceCard
+                                title={String(limitStats.avg_database_limit)}
+                                subtitle='Avg DB limit'
+                                description={`Avg backup limit: ${limitStats.avg_backup_limit}`}
+                                icon={HardDrive}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                        )}
+                        {configurationStats && (
+                            <ResourceCard
+                                title={String(configurationStats.skip_scripts_enabled)}
+                                subtitle='Skip scripts enabled'
+                                description={`OOM disabled: ${configurationStats.oom_disabled}`}
+                                icon={Settings}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                        )}
+                        {variableStats && (
+                            <ResourceCard
+                                title={String(variableStats.total_variables)}
+                                subtitle='Server variables'
+                                description='Custom runtime variable values'
+                                icon={ShieldAlert}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                        )}
+                        {serverActivityStats && (
+                            <ResourceCard
+                                title={String(serverActivityStats.total_activities)}
+                                subtitle='Server activity events'
+                                description='Operational events across all servers'
+                                icon={Activity}
+                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            />
+                        )}
+                    </div>
+                )}
+
+                <div className='grid gap-4 md:grid-cols-2'>
+                    <TrendChart
+                        title={t('admin.analytics.servers.creation_trend')}
+                        description={t('admin.analytics.servers.creation_trend_desc')}
+                        data={creationTrend}
+                    />
+                    <ResourceTrendChart
+                        title={t('admin.analytics.servers.resource_trends')}
+                        description={t('admin.analytics.servers.resource_trends_desc')}
+                        data={resourceTrends}
+                    />
                 </div>
-            )}
 
-            <div className='grid gap-4 md:grid-cols-2'>
-                <TrendChart
-                    title={t('admin.analytics.servers.creation_trend')}
-                    description={t('admin.analytics.servers.creation_trend_desc')}
-                    data={creationTrend}
-                />
-                <ResourceTrendChart
-                    title={t('admin.analytics.servers.resource_trends')}
-                    description={t('admin.analytics.servers.resource_trends_desc')}
-                    data={resourceTrends}
-                />
-            </div>
+                <div className='grid gap-4 md:grid-cols-2'>
+                    <SimplePieChart
+                        title={t('admin.analytics.servers.by_realm')}
+                        description={t('admin.analytics.servers.by_realm_desc')}
+                        data={serversByRealm}
+                    />
+                    <SimplePieChart
+                        title={t('admin.analytics.servers.status_dist')}
+                        description={t('admin.analytics.servers.status_dist_desc')}
+                        data={statusDistribution}
+                    />
+                </div>
 
-            <div className='grid gap-4 md:grid-cols-2'>
-                <SimplePieChart
-                    title={t('admin.analytics.servers.by_realm')}
-                    description={t('admin.analytics.servers.by_realm_desc')}
-                    data={serversByRealm}
-                />
-                <SimplePieChart
-                    title={t('admin.analytics.servers.status_dist')}
-                    description={t('admin.analytics.servers.status_dist_desc')}
-                    data={statusDistribution}
-                />
+                <div className='grid gap-4 md:grid-cols-3'>
+                    <SimpleBarChart
+                        title={t('admin.analytics.servers.memory_dist')}
+                        description={t('admin.analytics.servers.memory_dist_desc')}
+                        data={memoryDistribution}
+                        color='#3b82f6'
+                    />
+                    <SimpleBarChart
+                        title={t('admin.analytics.servers.disk_dist')}
+                        description={t('admin.analytics.servers.disk_dist_desc')}
+                        data={diskDistribution}
+                        color='#10b981'
+                    />
+                    <SimpleBarChart
+                        title={t('admin.analytics.servers.age_dist')}
+                        description={t('admin.analytics.servers.age_dist_desc')}
+                        data={serverAgeDistribution}
+                        color='#8b5cf6'
+                    />
+                </div>
             </div>
-
-            <div className='grid gap-4 md:grid-cols-3'>
-                <SimpleBarChart
-                    title={t('admin.analytics.servers.memory_dist')}
-                    description={t('admin.analytics.servers.memory_dist_desc')}
-                    data={memoryDistribution}
-                    color='#3b82f6'
-                />
-                <SimpleBarChart
-                    title={t('admin.analytics.servers.disk_dist')}
-                    description={t('admin.analytics.servers.disk_dist_desc')}
-                    data={diskDistribution}
-                    color='#10b981'
-                />
-                <SimpleBarChart
-                    title={t('admin.analytics.servers.age_dist')}
-                    description={t('admin.analytics.servers.age_dist_desc')}
-                    data={serverAgeDistribution}
-                    color='#8b5cf6'
-                />
-            </div>
-        </div>
             <WidgetRenderer widgets={getWidgets('admin-analytics-servers', 'bottom-of-page')} />
         </>
     );

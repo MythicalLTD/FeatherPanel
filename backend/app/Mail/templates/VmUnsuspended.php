@@ -23,27 +23,6 @@ use App\Chat\MailTemplate;
 
 class VmUnsuspended
 {
-    private static function getSubject(array $data): string
-    {
-        $row = MailTemplate::getByName('vm_unsuspended');
-        $subjectTemplate = $row['subject'] ?? '';
-        if ($subjectTemplate === '') {
-            return $data['subject'] ?? '';
-        }
-
-        return self::parseTemplate($subjectTemplate, [
-            'app_name' => $data['app_name'],
-            'app_url' => $data['app_url'],
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'email' => $data['email'],
-            'username' => $data['username'],
-            'dashboard_url' => $data['app_url'] . '/dashboard',
-            'support_url' => $data['app_support_url'],
-            'vm_hostname' => $data['vm_hostname'],
-        ]);
-    }
-
     public static function getTemplate(array $data): string
     {
         if (isset($data['app_name']) && isset($data['app_url']) && isset($data['first_name']) && isset($data['last_name']) && isset($data['email']) && isset($data['username']) && isset($data['app_support_url'])) {
@@ -126,5 +105,26 @@ class VmUnsuspended
         if ($mailID == false) {
             return;
         }
+    }
+
+    private static function getSubject(array $data): string
+    {
+        $row = MailTemplate::getByName('vm_unsuspended');
+        $subjectTemplate = $row['subject'] ?? '';
+        if ($subjectTemplate === '') {
+            return $data['subject'] ?? '';
+        }
+
+        return self::parseTemplate($subjectTemplate, [
+            'app_name' => $data['app_name'],
+            'app_url' => $data['app_url'],
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'email' => $data['email'],
+            'username' => $data['username'],
+            'dashboard_url' => $data['app_url'] . '/dashboard',
+            'support_url' => $data['app_support_url'],
+            'vm_hostname' => $data['vm_hostname'],
+        ]);
     }
 }

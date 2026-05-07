@@ -166,85 +166,85 @@ export default function ContentAnalyticsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-content', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.analytics.content.title')}
-                description={t('admin.analytics.content.subtitle')}
-                icon={Box}
-            />
+                <PageHeader
+                    title={t('admin.analytics.content.title')}
+                    description={t('admin.analytics.content.subtitle')}
+                    icon={Box}
+                />
 
-            {overview && (
-                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                    <ResourceCard
-                        title={overview.realms.total.toString()}
-                        subtitle={t('admin.analytics.content.realms')}
-                        description={t('admin.analytics.content.with_spells', {
-                            count: String(overview.realms.with_spells),
-                        })}
-                        icon={Box}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                {overview && (
+                    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                        <ResourceCard
+                            title={overview.realms.total.toString()}
+                            subtitle={t('admin.analytics.content.realms')}
+                            description={t('admin.analytics.content.with_spells', {
+                                count: String(overview.realms.with_spells),
+                            })}
+                            icon={Box}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={overview.spells.total.toString()}
+                            subtitle={t('admin.analytics.content.spells')}
+                            description={t('admin.analytics.content.in_use', {
+                                percentage: String(overview.spells.percentage_in_use),
+                            })}
+                            icon={Layers}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={overview.images.total.toString()}
+                            subtitle={t('admin.analytics.content.images')}
+                            description={t('admin.analytics.content.library')}
+                            icon={ImageIcon}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={overview.redirects.total.toString()}
+                            subtitle={t('admin.analytics.content.redirects')}
+                            description={t('admin.analytics.content.active_links')}
+                            icon={ExternalLink}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={(spellOverview?.with_variables ?? 0).toString()}
+                            subtitle='Spells with variables'
+                            description={`Privileged scripts: ${spellOverview?.privileged_scripts ?? 0}`}
+                            icon={ShieldAlert}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={mailTemplatesTotal.toString()}
+                            subtitle='Mail templates'
+                            description='Templates available for notifications'
+                            icon={Mail}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    </div>
+                )}
+
+                <div className='grid gap-4 md:grid-cols-2'>
+                    <SimplePieChart
+                        title={t('admin.analytics.content.spells_by_realm')}
+                        description={t('admin.analytics.content.spells_by_realm_desc')}
+                        data={spellsByRealm}
                     />
-                    <ResourceCard
-                        title={overview.spells.total.toString()}
-                        subtitle={t('admin.analytics.content.spells')}
-                        description={t('admin.analytics.content.in_use', {
-                            percentage: String(overview.spells.percentage_in_use),
-                        })}
-                        icon={Layers}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={overview.images.total.toString()}
-                        subtitle={t('admin.analytics.content.images')}
-                        description={t('admin.analytics.content.library')}
-                        icon={ImageIcon}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={overview.redirects.total.toString()}
-                        subtitle={t('admin.analytics.content.redirects')}
-                        description={t('admin.analytics.content.active_links')}
-                        icon={ExternalLink}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={(spellOverview?.with_variables ?? 0).toString()}
-                        subtitle='Spells with variables'
-                        description={`Privileged scripts: ${spellOverview?.privileged_scripts ?? 0}`}
-                        icon={ShieldAlert}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={mailTemplatesTotal.toString()}
-                        subtitle='Mail templates'
-                        description='Templates available for notifications'
-                        icon={Mail}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                    <SimplePieChart
+                        title={t('admin.analytics.content.variable_types')}
+                        description={t('admin.analytics.content.variable_types_desc')}
+                        data={variableTypes}
                     />
                 </div>
-            )}
 
-            <div className='grid gap-4 md:grid-cols-2'>
-                <SimplePieChart
-                    title={t('admin.analytics.content.spells_by_realm')}
-                    description={t('admin.analytics.content.spells_by_realm_desc')}
-                    data={spellsByRealm}
-                />
-                <SimplePieChart
-                    title={t('admin.analytics.content.variable_types')}
-                    description={t('admin.analytics.content.variable_types_desc')}
-                    data={variableTypes}
-                />
+                <div className='grid gap-4 md:grid-cols-1'>
+                    <SimpleBarChart
+                        title={t('admin.analytics.content.realm_details')}
+                        description={t('admin.analytics.content.realm_details_desc')}
+                        data={realmDetails}
+                        color='#ec4899'
+                    />
+                </div>
             </div>
-
-            <div className='grid gap-4 md:grid-cols-1'>
-                <SimpleBarChart
-                    title={t('admin.analytics.content.realm_details')}
-                    description={t('admin.analytics.content.realm_details_desc')}
-                    data={realmDetails}
-                    color='#ec4899'
-                />
-            </div>
-        </div>
             <WidgetRenderer widgets={getWidgets('admin-analytics-content', 'bottom-of-page')} />
         </>
     );

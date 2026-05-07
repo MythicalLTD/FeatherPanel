@@ -175,172 +175,172 @@ export default function UserAnalyticsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-users', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.analytics.users.title')}
-                description={t('admin.analytics.users.subtitle')}
-                icon={Users}
-            />
-
-            {overview && (
-                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                    <ResourceCard
-                        title={overview.total.toString()}
-                        subtitle={t('admin.analytics.users.total')}
-                        description={t('admin.analytics.users.active_users', { count: String(overview.active) })}
-                        icon={Users}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={overview.banned.toString()}
-                        subtitle={t('admin.analytics.users.banned')}
-                        description={t('admin.analytics.users.banned_pct', {
-                            percentage: String(overview.percentage_banned),
-                        })}
-                        icon={UserX}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={overview.verified.toString()}
-                        subtitle={t('admin.analytics.users.verified')}
-                        description={t('admin.analytics.users.verified_pct', {
-                            percentage: String(overview.percentage_verified),
-                        })}
-                        icon={UserCheck}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={overview.two_fa_enabled.toString()}
-                        subtitle={t('admin.analytics.users.two_fa')}
-                        description={t('admin.analytics.users.two_fa_pct', {
-                            percentage: String(overview.percentage_two_fa),
-                        })}
-                        icon={ShieldCheck}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={overview.unverified.toString()}
-                        subtitle='Unverified'
-                        description='Users pending email verification'
-                        icon={UserMinus}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={(securityOverview?.not_secured ?? 0).toString()}
-                        subtitle='Not secured'
-                        description={`Fully secured: ${securityOverview?.fully_secured ?? 0}`}
-                        icon={ShieldAlert}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                </div>
-            )}
-
-            {growth && (
-                <div className='grid gap-4 md:grid-cols-2'>
-                    <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
-                        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                            <CardTitle className='text-sm font-medium'>
-                                {t('admin.analytics.users.growth_7d')}
-                            </CardTitle>
-                            <ArrowUpRight
-                                className={`h-4 w-4 ${growth.growth_rate_7d >= 0 ? 'text-green-500' : 'text-red-500'}`}
-                            />
-                        </CardHeader>
-                        <CardContent>
-                            <div className='text-2xl font-bold'>
-                                {growth.growth_rate_7d > 0 ? '+' : ''}
-                                {growth.growth_rate_7d}%
-                            </div>
-                            <p className='text-xs text-muted-foreground'>
-                                {t('admin.analytics.users.growth_comparison', {
-                                    new: String(growth.last_7_days),
-                                    previous: String(growth.previous_7_days),
-                                })}
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
-                        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                            <CardTitle className='text-sm font-medium'>
-                                {t('admin.analytics.users.growth_30d')}
-                            </CardTitle>
-                            <ArrowUpRight
-                                className={`h-4 w-4 ${growth.growth_rate_30d >= 0 ? 'text-green-500' : 'text-red-500'}`}
-                            />
-                        </CardHeader>
-                        <CardContent>
-                            <div className='text-2xl font-bold'>
-                                {growth.growth_rate_30d > 0 ? '+' : ''}
-                                {growth.growth_rate_30d}%
-                            </div>
-                            <p className='text-xs text-muted-foreground'>
-                                {t('admin.analytics.users.growth_comparison', {
-                                    new: String(growth.last_30_days),
-                                    previous: String(growth.previous_30_days),
-                                })}
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
-
-            <div className='grid gap-4 grid-cols-1 lg:grid-cols-3'>
-                <TrendChart
-                    title={t('admin.analytics.users.reg_trend')}
-                    description={t('admin.analytics.users.reg_trend_desc')}
-                    data={registrationTrend}
+                <PageHeader
+                    title={t('admin.analytics.users.title')}
+                    description={t('admin.analytics.users.subtitle')}
+                    icon={Users}
                 />
-                <SimplePieChart
-                    title={t('admin.analytics.users.role_dist')}
-                    description={t('admin.analytics.users.role_dist_desc')}
-                    data={roles}
-                />
-            </div>
 
-            <div className='grid gap-4 md:grid-cols-1 lg:grid-cols-3'>
-                <div className='col-span-1'>
+                {overview && (
+                    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                        <ResourceCard
+                            title={overview.total.toString()}
+                            subtitle={t('admin.analytics.users.total')}
+                            description={t('admin.analytics.users.active_users', { count: String(overview.active) })}
+                            icon={Users}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={overview.banned.toString()}
+                            subtitle={t('admin.analytics.users.banned')}
+                            description={t('admin.analytics.users.banned_pct', {
+                                percentage: String(overview.percentage_banned),
+                            })}
+                            icon={UserX}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={overview.verified.toString()}
+                            subtitle={t('admin.analytics.users.verified')}
+                            description={t('admin.analytics.users.verified_pct', {
+                                percentage: String(overview.percentage_verified),
+                            })}
+                            icon={UserCheck}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={overview.two_fa_enabled.toString()}
+                            subtitle={t('admin.analytics.users.two_fa')}
+                            description={t('admin.analytics.users.two_fa_pct', {
+                                percentage: String(overview.percentage_two_fa),
+                            })}
+                            icon={ShieldCheck}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={overview.unverified.toString()}
+                            subtitle='Unverified'
+                            description='Users pending email verification'
+                            icon={UserMinus}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={(securityOverview?.not_secured ?? 0).toString()}
+                            subtitle='Not secured'
+                            description={`Fully secured: ${securityOverview?.fully_secured ?? 0}`}
+                            icon={ShieldAlert}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    </div>
+                )}
+
+                {growth && (
+                    <div className='grid gap-4 md:grid-cols-2'>
+                        <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+                            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                                <CardTitle className='text-sm font-medium'>
+                                    {t('admin.analytics.users.growth_7d')}
+                                </CardTitle>
+                                <ArrowUpRight
+                                    className={`h-4 w-4 ${growth.growth_rate_7d >= 0 ? 'text-green-500' : 'text-red-500'}`}
+                                />
+                            </CardHeader>
+                            <CardContent>
+                                <div className='text-2xl font-bold'>
+                                    {growth.growth_rate_7d > 0 ? '+' : ''}
+                                    {growth.growth_rate_7d}%
+                                </div>
+                                <p className='text-xs text-muted-foreground'>
+                                    {t('admin.analytics.users.growth_comparison', {
+                                        new: String(growth.last_7_days),
+                                        previous: String(growth.previous_7_days),
+                                    })}
+                                </p>
+                            </CardContent>
+                        </Card>
+                        <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+                            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                                <CardTitle className='text-sm font-medium'>
+                                    {t('admin.analytics.users.growth_30d')}
+                                </CardTitle>
+                                <ArrowUpRight
+                                    className={`h-4 w-4 ${growth.growth_rate_30d >= 0 ? 'text-green-500' : 'text-red-500'}`}
+                                />
+                            </CardHeader>
+                            <CardContent>
+                                <div className='text-2xl font-bold'>
+                                    {growth.growth_rate_30d > 0 ? '+' : ''}
+                                    {growth.growth_rate_30d}%
+                                </div>
+                                <p className='text-xs text-muted-foreground'>
+                                    {t('admin.analytics.users.growth_comparison', {
+                                        new: String(growth.last_30_days),
+                                        previous: String(growth.previous_30_days),
+                                    })}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+
+                <div className='grid gap-4 grid-cols-1 lg:grid-cols-3'>
+                    <TrendChart
+                        title={t('admin.analytics.users.reg_trend')}
+                        description={t('admin.analytics.users.reg_trend_desc')}
+                        data={registrationTrend}
+                    />
                     <SimplePieChart
-                        title={t('admin.analytics.users.security_stats_title')}
-                        description={t('admin.analytics.users.security_stats_desc')}
-                        data={securityStats}
+                        title={t('admin.analytics.users.role_dist')}
+                        description={t('admin.analytics.users.role_dist_desc')}
+                        data={roles}
                     />
                 </div>
 
-                <Card className='col-span-1 lg:col-span-2 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
-                    <CardHeader>
-                        <CardTitle>{t('admin.analytics.users.top_users')}</CardTitle>
-                        <CardDescription>{t('admin.analytics.users.top_users_desc')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {topUsers.length > 0 ? (
-                            <div className='space-y-4'>
-                                {topUsers.map((user, index) => (
-                                    <div key={user.id} className='flex items-center justify-between'>
-                                        <div className='flex items-center gap-3'>
-                                            <span className='text-sm font-bold text-muted-foreground w-4'>
-                                                #{index + 1}
-                                            </span>
-                                            <div className='space-y-0.5'>
-                                                <p className='text-sm font-medium leading-none'>{user.username}</p>
-                                                <p className='text-xs text-muted-foreground'>{user.email}</p>
+                <div className='grid gap-4 md:grid-cols-1 lg:grid-cols-3'>
+                    <div className='col-span-1'>
+                        <SimplePieChart
+                            title={t('admin.analytics.users.security_stats_title')}
+                            description={t('admin.analytics.users.security_stats_desc')}
+                            data={securityStats}
+                        />
+                    </div>
+
+                    <Card className='col-span-1 lg:col-span-2 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+                        <CardHeader>
+                            <CardTitle>{t('admin.analytics.users.top_users')}</CardTitle>
+                            <CardDescription>{t('admin.analytics.users.top_users_desc')}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {topUsers.length > 0 ? (
+                                <div className='space-y-4'>
+                                    {topUsers.map((user, index) => (
+                                        <div key={user.id} className='flex items-center justify-between'>
+                                            <div className='flex items-center gap-3'>
+                                                <span className='text-sm font-bold text-muted-foreground w-4'>
+                                                    #{index + 1}
+                                                </span>
+                                                <div className='space-y-0.5'>
+                                                    <p className='text-sm font-medium leading-none'>{user.username}</p>
+                                                    <p className='text-xs text-muted-foreground'>{user.email}</p>
+                                                </div>
+                                            </div>
+                                            <div className='text-sm font-medium bg-secondary px-2.5 py-0.5 rounded-full'>
+                                                {t('admin.analytics.users.servers_count', {
+                                                    count: String(user.server_count),
+                                                })}
                                             </div>
                                         </div>
-                                        <div className='text-sm font-medium bg-secondary px-2.5 py-0.5 rounded-full'>
-                                            {t('admin.analytics.users.servers_count', {
-                                                count: String(user.server_count),
-                                            })}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className='flex justify-center py-8 text-muted-foreground'>
-                                {t('admin.analytics.activity.no_recent')}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className='flex justify-center py-8 text-muted-foreground'>
+                                    {t('admin.analytics.activity.no_recent')}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
-        </div>
             <WidgetRenderer widgets={getWidgets('admin-analytics-users', 'bottom-of-page')} />
         </>
     );

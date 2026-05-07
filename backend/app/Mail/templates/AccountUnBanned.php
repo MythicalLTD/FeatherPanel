@@ -23,27 +23,6 @@ use App\Chat\MailTemplate;
 
 class AccountUnBanned
 {
-    private static function getSubject(array $data): string
-    {
-        $row = MailTemplate::getByName('account_unsuspended');
-        $subjectTemplate = $row['subject'] ?? '';
-        if ($subjectTemplate === '') {
-            return $data['subject'] ?? '';
-        }
-
-        return self::parseTemplate($subjectTemplate, [
-            'app_name' => $data['app_name'],
-            'app_url' => $data['app_url'],
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'email' => $data['email'],
-            'username' => $data['username'],
-            'dashboard_url' => $data['app_url'] . '/dashboard',
-            'support_url' => $data['app_support_url'],
-            'unsuspension_time' => $data['unsuspend_time'],
-        ]);
-    }
-
     /**
      * Get the account deleted email template.
      */
@@ -131,5 +110,26 @@ class AccountUnBanned
         if ($mailID == false) {
             return;
         }
+    }
+
+    private static function getSubject(array $data): string
+    {
+        $row = MailTemplate::getByName('account_unsuspended');
+        $subjectTemplate = $row['subject'] ?? '';
+        if ($subjectTemplate === '') {
+            return $data['subject'] ?? '';
+        }
+
+        return self::parseTemplate($subjectTemplate, [
+            'app_name' => $data['app_name'],
+            'app_url' => $data['app_url'],
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'email' => $data['email'],
+            'username' => $data['username'],
+            'dashboard_url' => $data['app_url'] . '/dashboard',
+            'support_url' => $data['app_support_url'],
+            'unsuspension_time' => $data['unsuspend_time'],
+        ]);
     }
 }

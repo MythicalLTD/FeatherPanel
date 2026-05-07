@@ -84,7 +84,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             ? `/admin/servers/${serverContext.server.id}/edit`
             : isOnVdsPage && vmInstanceContext?.instance?.id
               ? `/admin/vm-instances/${vmInstanceContext.instance.id}/edit`
-            : '/admin';
+              : '/admin';
 
     const chromeProps = {
         onMenuClick,

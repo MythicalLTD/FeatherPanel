@@ -396,7 +396,9 @@ const ConfigTab = () => {
                                             onChange={(e) =>
                                                 setConfig({ ...config, malwarebazaar_api_key: e.target.value })
                                             }
-                                            placeholder={t('admin.featherzerotrust.config.malwarebazaar.apiKeyPlaceholder')}
+                                            placeholder={t(
+                                                'admin.featherzerotrust.config.malwarebazaar.apiKeyPlaceholder',
+                                            )}
                                         />
                                         <p className='text-[10px] text-muted-foreground'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.apiKeyDesc')}
@@ -416,10 +418,14 @@ const ConfigTab = () => {
                                             }
                                         >
                                             <option value='100'>
-                                                {t('admin.featherzerotrust.config.malwarebazaar.selectorOptions.latest100')}
+                                                {t(
+                                                    'admin.featherzerotrust.config.malwarebazaar.selectorOptions.latest100',
+                                                )}
                                             </option>
                                             <option value='time'>
-                                                {t('admin.featherzerotrust.config.malwarebazaar.selectorOptions.lastHour')}
+                                                {t(
+                                                    'admin.featherzerotrust.config.malwarebazaar.selectorOptions.lastHour',
+                                                )}
                                             </option>
                                         </select>
                                         <p className='text-[10px] text-muted-foreground'>
@@ -443,7 +449,9 @@ const ConfigTab = () => {
                                                     ),
                                                 })
                                             }
-                                            placeholder={t('admin.featherzerotrust.config.malwarebazaar.importLimitPlaceholder')}
+                                            placeholder={t(
+                                                'admin.featherzerotrust.config.malwarebazaar.importLimitPlaceholder',
+                                            )}
                                         />
                                         <p className='text-[10px] text-muted-foreground'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.importLimitDesc')}
@@ -451,7 +459,9 @@ const ConfigTab = () => {
                                     </div>
 
                                     <div className='space-y-2'>
-                                        <Label>{t('admin.featherzerotrust.config.malwarebazaar.defaultDetectionType')}</Label>
+                                        <Label>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.defaultDetectionType')}
+                                        </Label>
                                         <Input
                                             value={config.malwarebazaar_default_detection_type || 'malware'}
                                             onChange={(e) =>
@@ -478,10 +488,15 @@ const ConfigTab = () => {
                                             onChange={(e) =>
                                                 setConfig({
                                                     ...config,
-                                                    malwarebazaar_max_age_hours: Math.max(0, parseInt(e.target.value) || 0),
+                                                    malwarebazaar_max_age_hours: Math.max(
+                                                        0,
+                                                        parseInt(e.target.value) || 0,
+                                                    ),
                                                 })
                                             }
-                                            placeholder={t('admin.featherzerotrust.config.malwarebazaar.maxAgeHoursPlaceholder')}
+                                            placeholder={t(
+                                                'admin.featherzerotrust.config.malwarebazaar.maxAgeHoursPlaceholder',
+                                            )}
                                         />
                                         <p className='text-[10px] text-muted-foreground'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.maxAgeHoursDesc')}
@@ -489,7 +504,9 @@ const ConfigTab = () => {
                                     </div>
 
                                     <div className='space-y-2 md:col-span-2'>
-                                        <Label>{t('admin.featherzerotrust.config.malwarebazaar.allowedFileTypes')}</Label>
+                                        <Label>
+                                            {t('admin.featherzerotrust.config.malwarebazaar.allowedFileTypes')}
+                                        </Label>
                                         <Textarea
                                             value={malwareBazaarAllowedTypesText}
                                             onChange={(e) => setMalwareBazaarAllowedTypesText(e.target.value)}
@@ -508,7 +525,9 @@ const ConfigTab = () => {
                                         <Textarea
                                             value={malwareBazaarBlockedTagsText}
                                             onChange={(e) => setMalwareBazaarBlockedTagsText(e.target.value)}
-                                            placeholder={t('admin.featherzerotrust.config.malwarebazaar.blockedTagsPlaceholder')}
+                                            placeholder={t(
+                                                'admin.featherzerotrust.config.malwarebazaar.blockedTagsPlaceholder',
+                                            )}
                                             className='font-mono text-xs min-h-[80px]'
                                         />
                                         <p className='text-[10px] text-muted-foreground'>

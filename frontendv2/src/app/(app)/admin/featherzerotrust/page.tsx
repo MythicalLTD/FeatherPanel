@@ -48,37 +48,37 @@ const FeatherZeroTrustPage = () => {
         <>
             <WidgetRenderer widgets={getWidgets('admin-featherzerotrust', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.featherzerotrust.title')}
-                description={t('admin.featherzerotrust.description')}
-            />
+                <PageHeader
+                    title={t('admin.featherzerotrust.title')}
+                    description={t('admin.featherzerotrust.description')}
+                />
 
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-                <TabsList className='grid w-full grid-cols-4'>
-                    {tabs.map((tab) => (
-                        <TabsTrigger key={tab.id} value={tab.id} className='flex items-center gap-2'>
-                            <tab.icon className='h-4 w-4' />
-                            {tab.label}
-                        </TabsTrigger>
-                    ))}
-                </TabsList>
+                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
+                    <TabsList className='grid w-full grid-cols-4'>
+                        {tabs.map((tab) => (
+                            <TabsTrigger key={tab.id} value={tab.id} className='flex items-center gap-2'>
+                                <tab.icon className='h-4 w-4' />
+                                {tab.label}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
 
-                <TabsContent value='scanner' className='mt-6'>
-                    <ScannerTab />
-                </TabsContent>
+                    <TabsContent value='scanner' className='mt-6'>
+                        <ScannerTab />
+                    </TabsContent>
 
-                <TabsContent value='hashes' className='mt-6'>
-                    <HashesTab />
-                </TabsContent>
+                    <TabsContent value='hashes' className='mt-6'>
+                        <HashesTab />
+                    </TabsContent>
 
-                <TabsContent value='logs' className='mt-6'>
-                    <LogsTab />
-                </TabsContent>
+                    <TabsContent value='logs' className='mt-6'>
+                        <LogsTab />
+                    </TabsContent>
 
-                <TabsContent value='config' className='mt-6'>
-                    <ConfigTab />
-                </TabsContent>
-            </Tabs>
+                    <TabsContent value='config' className='mt-6'>
+                        <ConfigTab />
+                    </TabsContent>
+                </Tabs>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-featherzerotrust', 'bottom-of-page')} />
         </>

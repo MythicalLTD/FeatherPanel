@@ -29,10 +29,10 @@ use App\Services\FeatherZeroTrust\Scanner;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\FeatherZeroTrust\Configuration;
-use App\Services\FeatherZeroTrust\MalwareBazaarService;
 use App\Services\FeatherZeroTrust\WebhookService;
 use App\Plugins\Events\Events\FeatherZeroTrustEvent;
 use App\Services\FeatherZeroTrust\SuspensionService;
+use App\Services\FeatherZeroTrust\MalwareBazaarService;
 use App\Services\FeatherZeroTrust\SuspiciousFileHashService;
 
 class FeatherZeroTrustController

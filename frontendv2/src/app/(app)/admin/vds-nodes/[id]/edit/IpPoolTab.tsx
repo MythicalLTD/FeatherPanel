@@ -560,7 +560,11 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                         <Button
                             type='button'
                             variant='ghost'
-                            className={createMode === 'single' ? 'flex-1 rounded-lg h-9 text-xs bg-background shadow-sm hover:bg-background' : 'flex-1 rounded-lg h-9 text-xs'}
+                            className={
+                                createMode === 'single'
+                                    ? 'flex-1 rounded-lg h-9 text-xs bg-background shadow-sm hover:bg-background'
+                                    : 'flex-1 rounded-lg h-9 text-xs'
+                            }
                             onClick={() => setCreateMode('single')}
                         >
                             Single
@@ -568,7 +572,11 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                         <Button
                             type='button'
                             variant='ghost'
-                            className={createMode === 'bulk' ? 'flex-1 rounded-lg h-9 text-xs bg-background shadow-sm hover:bg-background' : 'flex-1 rounded-lg h-9 text-xs'}
+                            className={
+                                createMode === 'bulk'
+                                    ? 'flex-1 rounded-lg h-9 text-xs bg-background shadow-sm hover:bg-background'
+                                    : 'flex-1 rounded-lg h-9 text-xs'
+                            }
                             onClick={() => setCreateMode('bulk')}
                         >
                             Bulk
@@ -589,18 +597,18 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                         </div>
                     )}
                     {createMode === 'single' && (
-                    <div className='space-y-2'>
-                        <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_ip')}</Label>
-                        <Input
-                            placeholder='192.168.1.100'
-                            value={createForm.ip}
-                            className='h-11 font-mono'
-                            onChange={(e) => setCreateForm((p) => ({ ...p, ip: e.target.value }))}
-                        />
-                        {createErrors.ip && (
-                            <p className='text-[10px] uppercase font-bold text-red-500'>{createErrors.ip}</p>
-                        )}
-                    </div>
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_ip')}</Label>
+                            <Input
+                                placeholder='192.168.1.100'
+                                value={createForm.ip}
+                                className='h-11 font-mono'
+                                onChange={(e) => setCreateForm((p) => ({ ...p, ip: e.target.value }))}
+                            />
+                            {createErrors.ip && (
+                                <p className='text-[10px] uppercase font-bold text-red-500'>{createErrors.ip}</p>
+                            )}
+                        </div>
                     )}
                     <div className='grid grid-cols-2 gap-4'>
                         <div className='space-y-2'>

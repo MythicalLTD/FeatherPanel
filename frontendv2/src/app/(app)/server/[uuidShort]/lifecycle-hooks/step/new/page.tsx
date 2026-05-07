@@ -214,32 +214,32 @@ export default function NewLifecycleHookStepPage() {
         <>
             <WidgetRenderer widgets={getWidgets('server-lifecycle-step-create', 'top-of-page')} />
             <div className='space-y-8 pb-12'>
-            <PageHeader
-                title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
-                description={t('lifecycleHooks.stepNew.description')}
-                actions={
-                    <Button variant='glass' size='sm' type='button' onClick={back}>
-                        <ArrowLeft className='h-4 w-4 mr-2' />
-                        {t('lifecycleHooks.backToHooks')}
-                    </Button>
-                }
-            />
-
-            <PageCard
-                title={t('lifecycleHooks.stepNew.formSectionTitle')}
-                description={t('lifecycleHooks.stepNew.formSectionDescription')}
-                icon={Power}
-            >
-                <LifecycleStepForm
-                    form={form}
-                    setForm={setForm}
-                    onSubmit={handleSubmit}
-                    saving={saving}
-                    cancelLabel={t('common.cancel')}
-                    onCancel={back}
-                    submitLabel={t('lifecycleHooks.form.saveStep')}
+                <PageHeader
+                    title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
+                    description={t('lifecycleHooks.stepNew.description')}
+                    actions={
+                        <Button variant='glass' size='sm' type='button' onClick={back}>
+                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            {t('lifecycleHooks.backToHooks')}
+                        </Button>
+                    }
                 />
-            </PageCard>
+
+                <PageCard
+                    title={t('lifecycleHooks.stepNew.formSectionTitle')}
+                    description={t('lifecycleHooks.stepNew.formSectionDescription')}
+                    icon={Power}
+                >
+                    <LifecycleStepForm
+                        form={form}
+                        setForm={setForm}
+                        onSubmit={handleSubmit}
+                        saving={saving}
+                        cancelLabel={t('common.cancel')}
+                        onCancel={back}
+                        submitLabel={t('lifecycleHooks.form.saveStep')}
+                    />
+                </PageCard>
             </div>
             <WidgetRenderer widgets={getWidgets('server-lifecycle-step-create', 'bottom-of-page')} />
         </>

@@ -23,28 +23,6 @@ use App\Chat\MailTemplate;
 
 class ServerDeleted
 {
-    private static function getSubject(array $data): string
-    {
-        $row = MailTemplate::getByName('server_deleted');
-        $subjectTemplate = $row['subject'] ?? '';
-        if ($subjectTemplate === '') {
-            return $data['subject'] ?? '';
-        }
-
-        return self::parseTemplate($subjectTemplate, [
-            'app_name' => $data['app_name'],
-            'app_url' => $data['app_url'],
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'email' => $data['email'],
-            'username' => $data['username'],
-            'dashboard_url' => $data['app_url'] . '/dashboard',
-            'support_url' => $data['app_support_url'],
-            'server_name' => $data['server_name'],
-            'deletion_time' => $data['deletion_time'],
-        ]);
-    }
-
     /**
      * Get the account deleted email template.
      */
@@ -139,5 +117,27 @@ class ServerDeleted
         if ($mailID == false) {
             return;
         }
+    }
+
+    private static function getSubject(array $data): string
+    {
+        $row = MailTemplate::getByName('server_deleted');
+        $subjectTemplate = $row['subject'] ?? '';
+        if ($subjectTemplate === '') {
+            return $data['subject'] ?? '';
+        }
+
+        return self::parseTemplate($subjectTemplate, [
+            'app_name' => $data['app_name'],
+            'app_url' => $data['app_url'],
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'email' => $data['email'],
+            'username' => $data['username'],
+            'dashboard_url' => $data['app_url'] . '/dashboard',
+            'support_url' => $data['app_support_url'],
+            'server_name' => $data['server_name'],
+            'deletion_time' => $data['deletion_time'],
+        ]);
     }
 }

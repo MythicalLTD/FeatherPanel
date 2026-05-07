@@ -100,64 +100,64 @@ export default function VdsAnalyticsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-vds', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title='VDS Analytics'
-                description='VDS-only KPIs for nodes, templates, instances, backups, and operations.'
-                icon={Boxes}
-            />
+                <PageHeader
+                    title='VDS Analytics'
+                    description='VDS-only KPIs for nodes, templates, instances, backups, and operations.'
+                    icon={Boxes}
+                />
 
-            {dashboard && (
-                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                    <ResourceCard
-                        title={String(dashboard.vds.instances)}
-                        subtitle='VDS Instances'
-                        description={`Nodes: ${dashboard.vds.nodes}, Templates: ${dashboard.vds.templates}`}
-                        icon={Boxes}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={String(dashboard.vds.nodes)}
-                        subtitle='VDS Nodes'
-                        description={`Templates: ${dashboard.vds.templates}, Tasks: ${dashboard.vds.tasks}`}
-                        icon={Server}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={String(dashboard.vds.instance_backups)}
-                        subtitle='Instance Backups'
-                        description={`IPs: ${dashboard.vds.instance_ips}, Subusers: ${dashboard.vds.subusers}`}
-                        icon={Archive}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={String(dashboard.vds.instance_activities)}
-                        subtitle='Instance Activities'
-                        description={`Total VDS objects: ${dashboard.totals.vds_objects}`}
-                        icon={Activity}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                {dashboard && (
+                    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                        <ResourceCard
+                            title={String(dashboard.vds.instances)}
+                            subtitle='VDS Instances'
+                            description={`Nodes: ${dashboard.vds.nodes}, Templates: ${dashboard.vds.templates}`}
+                            icon={Boxes}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={String(dashboard.vds.nodes)}
+                            subtitle='VDS Nodes'
+                            description={`Templates: ${dashboard.vds.templates}, Tasks: ${dashboard.vds.tasks}`}
+                            icon={Server}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={String(dashboard.vds.instance_backups)}
+                            subtitle='Instance Backups'
+                            description={`IPs: ${dashboard.vds.instance_ips}, Subusers: ${dashboard.vds.subusers}`}
+                            icon={Archive}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={String(dashboard.vds.instance_activities)}
+                            subtitle='Instance Activities'
+                            description={`Total VDS objects: ${dashboard.totals.vds_objects}`}
+                            icon={Activity}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    </div>
+                )}
+
+                <div className='grid gap-4 md:grid-cols-2'>
+                    <SimplePieChart title='VDS Breakdown' description='VDS-related object totals' data={vdsBreakdown} />
+                    <SimpleBarChart
+                        title='VDS Totals'
+                        description='Total VDS object count'
+                        data={[{ name: 'VDS Objects', value: dashboard?.totals.vds_objects ?? 0 }]}
+                        color='#6366f1'
                     />
                 </div>
-            )}
 
-            <div className='grid gap-4 md:grid-cols-2'>
-                <SimplePieChart title='VDS Breakdown' description='VDS-related object totals' data={vdsBreakdown} />
-                <SimpleBarChart
-                    title='VDS Totals'
-                    description='Total VDS object count'
-                    data={[{ name: 'VDS Objects', value: dashboard?.totals.vds_objects ?? 0 }]}
-                    color='#6366f1'
-                />
+                <div className='grid gap-4 md:grid-cols-1'>
+                    <SimpleBarChart
+                        title='VDS Runtime Breakdown'
+                        description='Operational VDS entities and usage'
+                        data={vdsRuntimeBreakdown}
+                        color='#22c55e'
+                    />
+                </div>
             </div>
-
-            <div className='grid gap-4 md:grid-cols-1'>
-                <SimpleBarChart
-                    title='VDS Runtime Breakdown'
-                    description='Operational VDS entities and usage'
-                    data={vdsRuntimeBreakdown}
-                    color='#22c55e'
-                />
-            </div>
-        </div>
             <WidgetRenderer widgets={getWidgets('admin-analytics-vds', 'bottom-of-page')} />
         </>
     );

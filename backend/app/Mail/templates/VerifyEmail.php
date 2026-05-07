@@ -23,27 +23,6 @@ use App\Chat\MailTemplate;
 
 class VerifyEmail
 {
-    private static function getSubject(array $data): string
-    {
-        $row = MailTemplate::getByName('verify_email');
-        $subjectTemplate = $row['subject'] ?? '';
-        if ($subjectTemplate === '') {
-            return $data['subject'] ?? '';
-        }
-
-        return self::parseTemplate($subjectTemplate, [
-            'app_name' => $data['app_name'],
-            'app_url' => $data['app_url'],
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'email' => $data['email'],
-            'username' => $data['username'],
-            'dashboard_url' => $data['app_url'] . '/dashboard',
-            'support_url' => $data['app_support_url'],
-            'verify_url' => $data['verify_url'],
-        ]);
-    }
-
     public static function getTemplate(array $data): string
     {
         if (
@@ -126,6 +105,27 @@ class VerifyEmail
         MailList::create([
             'queue_id' => $id,
             'user_uuid' => $data['uuid'],
+        ]);
+    }
+
+    private static function getSubject(array $data): string
+    {
+        $row = MailTemplate::getByName('verify_email');
+        $subjectTemplate = $row['subject'] ?? '';
+        if ($subjectTemplate === '') {
+            return $data['subject'] ?? '';
+        }
+
+        return self::parseTemplate($subjectTemplate, [
+            'app_name' => $data['app_name'],
+            'app_url' => $data['app_url'],
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'email' => $data['email'],
+            'username' => $data['username'],
+            'dashboard_url' => $data['app_url'] . '/dashboard',
+            'support_url' => $data['app_support_url'],
+            'verify_url' => $data['verify_url'],
         ]);
     }
 }

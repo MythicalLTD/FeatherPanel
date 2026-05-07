@@ -67,69 +67,69 @@ export default function PluginsAnalyticsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-plugins', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title='Plugins & Integrations Analytics'
-                description='KPIs for plugins and integration-related entities.'
-                icon={Puzzle}
-            />
-            <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                <ResourceCard
-                    title={String(data.plugins.installed_plugins ?? 0)}
-                    subtitle='Installed Plugins'
-                    description='Currently installed plugin entries'
+                <PageHeader
+                    title='Plugins & Integrations Analytics'
+                    description='KPIs for plugins and integration-related entities.'
                     icon={Puzzle}
                 />
-                <ResourceCard
-                    title={String(data.plugins.server_imports ?? 0)}
-                    subtitle='Server Imports'
-                    description='Imported server records'
-                    icon={Import}
-                />
-                <ResourceCard
-                    title={String(data.plugins.server_proxies ?? 0)}
-                    subtitle='Server Proxies'
-                    description='Proxy configurations'
-                    icon={Plug}
-                />
-                <ResourceCard
-                    title={String(data.totals.plugin_objects ?? 0)}
-                    subtitle='Total Integration Objects'
-                    description='All plugin/integration entities'
-                    icon={ShieldCheck}
-                />
-                <ResourceCard
-                    title={String(data.system_endpoints.plugin_css_sources ?? 0)}
-                    subtitle='Plugin CSS Sources'
-                    description='Used by PluginCssController'
-                    icon={FileCode}
-                />
-                <ResourceCard
-                    title={String(data.system_endpoints.plugin_sidebar_configs ?? 0)}
-                    subtitle='Sidebar Configs'
-                    description='Used by PluginSidebarController'
-                    icon={FileJson}
-                />
-                <ResourceCard
-                    title={`${data.system_endpoints.apidocs_cache_ttl_seconds ?? 0}s`}
-                    subtitle='OpenAPI Cache TTL'
-                    description='From ApiDocs endpoint behavior'
-                    icon={BookOpenText}
-                />
+                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                    <ResourceCard
+                        title={String(data.plugins.installed_plugins ?? 0)}
+                        subtitle='Installed Plugins'
+                        description='Currently installed plugin entries'
+                        icon={Puzzle}
+                    />
+                    <ResourceCard
+                        title={String(data.plugins.server_imports ?? 0)}
+                        subtitle='Server Imports'
+                        description='Imported server records'
+                        icon={Import}
+                    />
+                    <ResourceCard
+                        title={String(data.plugins.server_proxies ?? 0)}
+                        subtitle='Server Proxies'
+                        description='Proxy configurations'
+                        icon={Plug}
+                    />
+                    <ResourceCard
+                        title={String(data.totals.plugin_objects ?? 0)}
+                        subtitle='Total Integration Objects'
+                        description='All plugin/integration entities'
+                        icon={ShieldCheck}
+                    />
+                    <ResourceCard
+                        title={String(data.system_endpoints.plugin_css_sources ?? 0)}
+                        subtitle='Plugin CSS Sources'
+                        description='Used by PluginCssController'
+                        icon={FileCode}
+                    />
+                    <ResourceCard
+                        title={String(data.system_endpoints.plugin_sidebar_configs ?? 0)}
+                        subtitle='Sidebar Configs'
+                        description='Used by PluginSidebarController'
+                        icon={FileJson}
+                    />
+                    <ResourceCard
+                        title={`${data.system_endpoints.apidocs_cache_ttl_seconds ?? 0}s`}
+                        subtitle='OpenAPI Cache TTL'
+                        description='From ApiDocs endpoint behavior'
+                        icon={BookOpenText}
+                    />
+                </div>
+                <div className='grid gap-4 md:grid-cols-2'>
+                    <SimpleBarChart
+                        title='Plugin Integration Objects'
+                        description='Counts for plugin/integration entities'
+                        data={integrationObjects}
+                    />
+                    <SimpleBarChart
+                        title='System Plugin Endpoint Coverage'
+                        description='Stats behind PluginCss/Js/Sidebar/Widget and ApiDocs'
+                        data={endpointCoverage}
+                        color='#0ea5e9'
+                    />
+                </div>
             </div>
-            <div className='grid gap-4 md:grid-cols-2'>
-                <SimpleBarChart
-                    title='Plugin Integration Objects'
-                    description='Counts for plugin/integration entities'
-                    data={integrationObjects}
-                />
-                <SimpleBarChart
-                    title='System Plugin Endpoint Coverage'
-                    description='Stats behind PluginCss/Js/Sidebar/Widget and ApiDocs'
-                    data={endpointCoverage}
-                    color='#0ea5e9'
-                />
-            </div>
-        </div>
             <WidgetRenderer widgets={getWidgets('admin-analytics-plugins', 'bottom-of-page')} />
         </>
     );

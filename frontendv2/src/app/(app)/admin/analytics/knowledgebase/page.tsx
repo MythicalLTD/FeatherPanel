@@ -58,46 +58,46 @@ export default function KnowledgebaseAnalyticsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-knowledgebase', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader title='Knowledgebase Analytics' description='Knowledgebase content KPIs.' icon={BookOpen} />
-            <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                <ResourceCard
-                    title={String(data.knowledgebase.categories ?? 0)}
-                    subtitle='Categories'
-                    description='Knowledgebase category entries'
-                    icon={FolderTree}
-                />
-                <ResourceCard
-                    title={String(data.knowledgebase.articles ?? 0)}
-                    subtitle='Articles'
-                    description='Published/support articles'
-                    icon={BookOpen}
-                />
-                <ResourceCard
-                    title={String(data.knowledgebase.attachments ?? 0)}
-                    subtitle='Attachments'
-                    description='Uploaded article attachments'
-                    icon={Paperclip}
-                />
-                <ResourceCard
-                    title={String(data.totals.knowledgebase_objects ?? 0)}
-                    subtitle='Total KB Objects'
-                    description='All knowledgebase entities'
-                    icon={Tags}
-                />
+                <PageHeader title='Knowledgebase Analytics' description='Knowledgebase content KPIs.' icon={BookOpen} />
+                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                    <ResourceCard
+                        title={String(data.knowledgebase.categories ?? 0)}
+                        subtitle='Categories'
+                        description='Knowledgebase category entries'
+                        icon={FolderTree}
+                    />
+                    <ResourceCard
+                        title={String(data.knowledgebase.articles ?? 0)}
+                        subtitle='Articles'
+                        description='Published/support articles'
+                        icon={BookOpen}
+                    />
+                    <ResourceCard
+                        title={String(data.knowledgebase.attachments ?? 0)}
+                        subtitle='Attachments'
+                        description='Uploaded article attachments'
+                        icon={Paperclip}
+                    />
+                    <ResourceCard
+                        title={String(data.totals.knowledgebase_objects ?? 0)}
+                        subtitle='Total KB Objects'
+                        description='All knowledgebase entities'
+                        icon={Tags}
+                    />
+                </div>
+                <div className='grid gap-4 md:grid-cols-2'>
+                    <SimplePieChart
+                        title='Knowledgebase Breakdown'
+                        description='Distribution by KB object type'
+                        data={breakdown}
+                    />
+                    <SimpleBarChart
+                        title='Knowledgebase Objects'
+                        description='Counts across KB entities'
+                        data={breakdown}
+                    />
+                </div>
             </div>
-            <div className='grid gap-4 md:grid-cols-2'>
-                <SimplePieChart
-                    title='Knowledgebase Breakdown'
-                    description='Distribution by KB object type'
-                    data={breakdown}
-                />
-                <SimpleBarChart
-                    title='Knowledgebase Objects'
-                    description='Counts across KB entities'
-                    data={breakdown}
-                />
-            </div>
-        </div>
             <WidgetRenderer widgets={getWidgets('admin-analytics-knowledgebase', 'bottom-of-page')} />
         </>
     );

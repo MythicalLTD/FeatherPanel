@@ -90,99 +90,101 @@ export default function CloudManagementFinishPage() {
             <WidgetRenderer widgets={getWidgets('admin-cloud-management-finish', 'top-of-page')} />
             <div className='min-h-screen flex items-center justify-center p-6'>
                 <div className='w-full max-w-md space-y-8 text-center'>
-                <div className='flex justify-center'>
-                    {isLoading || isSaving ? (
-                        <div className='relative'>
-                            <Loader2 className='h-20 w-20 text-primary animate-spin' />
-                            <div className='absolute inset-0 flex items-center justify-center'>
-                                <div className='h-12 w-12 rounded-full bg-primary/10'></div>
+                    <div className='flex justify-center'>
+                        {isLoading || isSaving ? (
+                            <div className='relative'>
+                                <Loader2 className='h-20 w-20 text-primary animate-spin' />
+                                <div className='absolute inset-0 flex items-center justify-center'>
+                                    <div className='h-12 w-12 rounded-full bg-primary/10'></div>
+                                </div>
                             </div>
-                        </div>
-                    ) : isSuccess ? (
-                        <div className='relative'>
-                            <CheckCircle2 className='h-20 w-20 text-green-500' />
-                            <div className='absolute inset-0 flex items-center justify-center'>
-                                <div className='h-16 w-16 rounded-full bg-green-500/10 animate-ping'></div>
+                        ) : isSuccess ? (
+                            <div className='relative'>
+                                <CheckCircle2 className='h-20 w-20 text-green-500' />
+                                <div className='absolute inset-0 flex items-center justify-center'>
+                                    <div className='h-16 w-16 rounded-full bg-green-500/10 animate-ping'></div>
+                                </div>
                             </div>
-                        </div>
-                    ) : error ? (
-                        <div className='relative'>
-                            <AlertCircle className='h-20 w-20 text-red-500' />
-                            <div className='absolute inset-0 flex items-center justify-center'>
-                                <div className='h-16 w-16 rounded-full bg-red-500/10'></div>
+                        ) : error ? (
+                            <div className='relative'>
+                                <AlertCircle className='h-20 w-20 text-red-500' />
+                                <div className='absolute inset-0 flex items-center justify-center'>
+                                    <div className='h-16 w-16 rounded-full bg-red-500/10'></div>
+                                </div>
                             </div>
-                        </div>
-                    ) : null}
-                </div>
-
-                <div className='space-y-2'>
-                    <h1 className='text-3xl font-bold text-foreground'>
-                        {isLoading || isSaving
-                            ? t('admin.cloud_management.finish.processing')
-                            : isSuccess
-                              ? t('admin.cloud_management.finish.success')
-                              : error
-                                ? t('admin.cloud_management.finish.failed')
-                                : null}
-                    </h1>
-
-                    <p className='text-base text-muted-foreground max-w-md mx-auto'>
-                        {isLoading || isSaving
-                            ? t('admin.cloud_management.finish.processing_desc')
-                            : isSuccess
-                              ? t('admin.cloud_management.finish.success_desc')
-                              : error
-                                ? error
-                                : null}
-                    </p>
-                </div>
-
-                {isSuccess && (
-                    <div className='rounded-lg border border-green-500/30 bg-green-500/10 p-6 text-left space-y-3'>
-                        <p className='text-sm font-semibold text-green-800 dark:text-green-300'>
-                            {t('admin.cloud_management.finish.whats_next')}
-                        </p>
-                        <ul className='space-y-2 text-sm text-green-700 dark:text-green-400'>
-                            <li className='flex items-start gap-2'>
-                                <CheckCircle2 className='h-4 w-4 mt-0.5 shrink-0' />
-                                <span>{t('admin.cloud_management.finish.next_step1')}</span>
-                            </li>
-                            <li className='flex items-start gap-2'>
-                                <CheckCircle2 className='h-4 w-4 mt-0.5 shrink-0' />
-                                <span>{t('admin.cloud_management.finish.next_step2')}</span>
-                            </li>
-                            <li className='flex items-start gap-2'>
-                                <CheckCircle2 className='h-4 w-4 mt-0.5 shrink-0' />
-                                <span>{t('admin.cloud_management.finish.next_step3')}</span>
-                            </li>
-                        </ul>
+                        ) : null}
                     </div>
-                )}
 
-                {error && (
-                    <div className='rounded-lg border border-red-500/30 bg-red-500/10 p-6'>
-                        <p className='text-sm text-red-700 dark:text-red-400'>
-                            {t('admin.cloud_management.finish.error_desc')}
+                    <div className='space-y-2'>
+                        <h1 className='text-3xl font-bold text-foreground'>
+                            {isLoading || isSaving
+                                ? t('admin.cloud_management.finish.processing')
+                                : isSuccess
+                                  ? t('admin.cloud_management.finish.success')
+                                  : error
+                                    ? t('admin.cloud_management.finish.failed')
+                                    : null}
+                        </h1>
+
+                        <p className='text-base text-muted-foreground max-w-md mx-auto'>
+                            {isLoading || isSaving
+                                ? t('admin.cloud_management.finish.processing_desc')
+                                : isSuccess
+                                  ? t('admin.cloud_management.finish.success_desc')
+                                  : error
+                                    ? error
+                                    : null}
                         </p>
                     </div>
-                )}
 
-                <div className='flex justify-center gap-3'>
-                    {isSuccess ? (
-                        <Button size='lg' onClick={() => router.push('/admin/cloud-management')} className='gap-2'>
-                            {t('admin.cloud_management.finish.go_to_cloud')}
-                            <ArrowRight className='h-4 w-4' />
-                        </Button>
-                    ) : error ? (
-                        <Button variant='outline' size='lg' onClick={() => router.push('/admin/cloud-management')}>
-                            {t('admin.cloud_management.finish.return')}
-                        </Button>
-                    ) : null}
-                </div>
+                    {isSuccess && (
+                        <div className='rounded-lg border border-green-500/30 bg-green-500/10 p-6 text-left space-y-3'>
+                            <p className='text-sm font-semibold text-green-800 dark:text-green-300'>
+                                {t('admin.cloud_management.finish.whats_next')}
+                            </p>
+                            <ul className='space-y-2 text-sm text-green-700 dark:text-green-400'>
+                                <li className='flex items-start gap-2'>
+                                    <CheckCircle2 className='h-4 w-4 mt-0.5 shrink-0' />
+                                    <span>{t('admin.cloud_management.finish.next_step1')}</span>
+                                </li>
+                                <li className='flex items-start gap-2'>
+                                    <CheckCircle2 className='h-4 w-4 mt-0.5 shrink-0' />
+                                    <span>{t('admin.cloud_management.finish.next_step2')}</span>
+                                </li>
+                                <li className='flex items-start gap-2'>
+                                    <CheckCircle2 className='h-4 w-4 mt-0.5 shrink-0' />
+                                    <span>{t('admin.cloud_management.finish.next_step3')}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    )}
 
-                {isSuccess && (
-                    <p className='text-xs text-muted-foreground'>{t('admin.cloud_management.finish.redirecting')}</p>
-                )}
+                    {error && (
+                        <div className='rounded-lg border border-red-500/30 bg-red-500/10 p-6'>
+                            <p className='text-sm text-red-700 dark:text-red-400'>
+                                {t('admin.cloud_management.finish.error_desc')}
+                            </p>
+                        </div>
+                    )}
+
+                    <div className='flex justify-center gap-3'>
+                        {isSuccess ? (
+                            <Button size='lg' onClick={() => router.push('/admin/cloud-management')} className='gap-2'>
+                                {t('admin.cloud_management.finish.go_to_cloud')}
+                                <ArrowRight className='h-4 w-4' />
+                            </Button>
+                        ) : error ? (
+                            <Button variant='outline' size='lg' onClick={() => router.push('/admin/cloud-management')}>
+                                {t('admin.cloud_management.finish.return')}
+                            </Button>
+                        ) : null}
+                    </div>
+
+                    {isSuccess && (
+                        <p className='text-xs text-muted-foreground'>
+                            {t('admin.cloud_management.finish.redirecting')}
+                        </p>
+                    )}
                 </div>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-cloud-management-finish', 'bottom-of-page')} />

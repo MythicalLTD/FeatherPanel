@@ -123,66 +123,66 @@ export default function ActivityAnalyticsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-activity', 'top-of-page')} />
             <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.analytics.activity.title')}
-                description={t('admin.analytics.activity.subtitle')}
-                icon={Activity}
-            />
+                <PageHeader
+                    title={t('admin.analytics.activity.title')}
+                    description={t('admin.analytics.activity.subtitle')}
+                    icon={Activity}
+                />
 
-            {stats && (
-                <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                    <ResourceCard
-                        title={stats.today.toString()}
-                        subtitle={t('admin.analytics.activity.today')}
-                        description={t('admin.analytics.activity.active_users', {
-                            count: String(stats.active_users_today),
-                        })}
-                        icon={Activity}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={stats.this_week.toString()}
-                        subtitle={t('admin.analytics.activity.this_week')}
-                        description={t('admin.analytics.activity.last_7_days')}
-                        icon={Calendar}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={stats.this_month.toString()}
-                        subtitle={t('admin.analytics.activity.this_month')}
-                        description={t('admin.analytics.activity.last_30_days')}
-                        icon={Calendar}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={`${stats.peak_hour}:00`}
-                        subtitle={t('admin.analytics.activity.peak_hour')}
-                        description={t('admin.analytics.activity.most_active_time')}
-                        icon={Clock}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={stats.total.toString()}
-                        subtitle='Total activities'
-                        description='All-time platform activity events'
-                        icon={TrendingUp}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
-                    <ResourceCard
-                        title={(topActivities[0]?.count ?? 0).toString()}
-                        subtitle='Top activity type'
-                        description={topActivities[0]?.name ?? 'No activity data'}
-                        icon={List}
-                        className='shadow-none! bg-card/50 backdrop-blur-sm'
-                    />
+                {stats && (
+                    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                        <ResourceCard
+                            title={stats.today.toString()}
+                            subtitle={t('admin.analytics.activity.today')}
+                            description={t('admin.analytics.activity.active_users', {
+                                count: String(stats.active_users_today),
+                            })}
+                            icon={Activity}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={stats.this_week.toString()}
+                            subtitle={t('admin.analytics.activity.this_week')}
+                            description={t('admin.analytics.activity.last_7_days')}
+                            icon={Calendar}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={stats.this_month.toString()}
+                            subtitle={t('admin.analytics.activity.this_month')}
+                            description={t('admin.analytics.activity.last_30_days')}
+                            icon={Calendar}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={`${stats.peak_hour}:00`}
+                            subtitle={t('admin.analytics.activity.peak_hour')}
+                            description={t('admin.analytics.activity.most_active_time')}
+                            icon={Clock}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={stats.total.toString()}
+                            subtitle='Total activities'
+                            description='All-time platform activity events'
+                            icon={TrendingUp}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                        <ResourceCard
+                            title={(topActivities[0]?.count ?? 0).toString()}
+                            subtitle='Top activity type'
+                            description={topActivities[0]?.name ?? 'No activity data'}
+                            icon={List}
+                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                        />
+                    </div>
+                )}
+
+                <div className='grid gap-4 md:grid-cols-1 lg:grid-cols-3'>
+                    <ActivityTrendChart data={trend} />
+                    <ActivityBreakdownChart data={breakdown} />
                 </div>
-            )}
-
-            <div className='grid gap-4 md:grid-cols-1 lg:grid-cols-3'>
-                <ActivityTrendChart data={trend} />
-                <ActivityBreakdownChart data={breakdown} />
             </div>
-        </div>
             <WidgetRenderer widgets={getWidgets('admin-analytics-activity', 'bottom-of-page')} />
         </>
     );

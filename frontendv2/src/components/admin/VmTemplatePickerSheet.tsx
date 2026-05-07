@@ -333,7 +333,8 @@ export function VmTemplatePickerSheet({
                             {createForm.guest_type === 'lxc' && (
                                 <div>
                                     <Label className='mb-2 block'>
-                                        {t('admin.vdsNodes.templates.field_lxc_root_password') || 'Default root password'}
+                                        {t('admin.vdsNodes.templates.field_lxc_root_password') ||
+                                            'Default root password'}
                                     </Label>
                                     <Input
                                         value={createForm.lxc_root_password}
@@ -359,4 +360,3 @@ export function VmTemplatePickerSheet({
         </Sheet>
     );
 }
-

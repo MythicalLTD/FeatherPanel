@@ -22,9 +22,9 @@ use App\Chat\Server;
 use App\SubuserPermissions;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
-use App\Plugins\Events\Events\ServerEvent;
 use App\Chat\ServerLifecycleHook;
 use App\Chat\ServerLifecycleHookStep;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 

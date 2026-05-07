@@ -52,6 +52,7 @@ class LifecycleHookExecutorService
         $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED, 'false') === 'true';
         if (!$enabled) {
             App::getInstance(true)->getLogger()->info('Lifecycle hooks skipped because feature is disabled for server ' . ($server['uuid'] ?? 'unknown') . ' action ' . $powerAction);
+
             return [
                 'attempted' => false,
                 'blocked' => false,
