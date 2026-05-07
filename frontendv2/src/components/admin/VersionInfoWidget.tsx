@@ -120,8 +120,7 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
     const normalizedCurrentVersion = (current?.version || '').trim().toLowerCase();
     const isCurrentVersionUnknown = normalizedCurrentVersion === '' || normalizedCurrentVersion === 'unknown';
     const isDevelopmentChannel = (current?.type || '').toLowerCase() === 'development';
-    const canForceUpdateToLatest =
-        isCurrentVersionUnknown && Boolean(latest?.version) && !isDevelopmentChannel;
+    const canForceUpdateToLatest = isCurrentVersionUnknown && Boolean(latest?.version) && !isDevelopmentChannel;
 
     const hasChangelog = (data: ChangelogData | null) => {
         if (!data) return false;

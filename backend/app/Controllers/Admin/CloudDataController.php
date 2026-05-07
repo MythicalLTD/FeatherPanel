@@ -26,23 +26,6 @@ use App\Services\FeatherCloud\FeatherCloudException;
 
 class CloudDataController
 {
-    /**
-     * Map FeatherCloud errors to panel-safe HTTP responses.
-     * External credential failures must not look like panel auth/session failures.
-     */
-    private function cloudErrorResponse(FeatherCloudException $e): Response
-    {
-        $status = $e->getHttpStatusCode();
-        $code = $e->getErrorCode();
-
-        // Prevent frontend global-auth handlers from treating external 401s as session expiry.
-        if ($status === 401) {
-            $status = 503;
-        }
-
-        return ApiResponse::error($e->getMessage(), $code, $status);
-    }
-
     #[OA\Get(
         path: '/api/admin/cloud/data/summary',
         summary: 'Get FeatherCloud summary',
@@ -276,5 +259,22 @@ class CloudDataController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to download package: ' . $e->getMessage(), 'INTERNAL_ERROR', 500);
         }
+    }
+
+    /**
+     * Map FeatherCloud errors to panel-safe HTTP responses.
+     * External credential failures must not look like panel auth/session failures.
+     */
+    private function cloudErrorResponse(FeatherCloudException $e): Response
+    {
+        $status = $e->getHttpStatusCode();
+        $code = $e->getErrorCode();
+
+        // Prevent frontend global-auth handlers from treating external 401s as session expiry.
+        if ($status === 401) {
+            $status = 503;
+        }
+
+        return ApiResponse::error($e->getMessage(), $code, $status);
     }
 }
