@@ -42,7 +42,8 @@ RUN install-php-extensions \
 	bz2 \ 
 	yaml \
 	gmp \ 
-	imagick 
+	imagick \
+	mongodb
 
 # Reset environment variables
 ENV DEBIAN_FRONTEND=
