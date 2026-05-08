@@ -928,7 +928,7 @@ export const getMainNavigationItems = (
             id: 'status',
             name: t('navigation.items.status'),
             title: t('navigation.items.status'),
-            url: '/dashboard/status',
+            url: settings?.status_page_url || '/dashboard/status',
             icon: Activity,
             isActive: false,
             category: 'main',
