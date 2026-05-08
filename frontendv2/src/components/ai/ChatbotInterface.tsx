@@ -824,7 +824,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                             placeholder={t('chatbot.placeholder')}
                             disabled={isLoading}
                             rows={1}
-                            className='border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-primary max-h-32 max-h-11 flex-1 resize-none rounded-2xl border px-4 py-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+                            className='border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-primary max-h-11 max-h-32 flex-1 resize-none rounded-2xl border px-4 py-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                             style={{
                                 height: 'auto',
                                 minHeight: '44px',

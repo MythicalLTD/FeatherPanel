@@ -42,7 +42,7 @@ export function WelcomeWidget({ version }: { version?: string }) {
                         </div>
 
                         <div className='space-y-1'>
-                            <h1 className='text-2xl font-black tracking-tight warp-break-words uppercase sm:text-3xl md:text-4xl lg:text-5xl'>
+                            <h1 className='warp-break-words text-2xl font-black tracking-tight uppercase sm:text-3xl md:text-4xl lg:text-5xl'>
                                 {t('admin.welcome.welcome_back')}{' '}
                                 <span className='text-primary wrap-break-words'>{userName}</span>
                             </h1>

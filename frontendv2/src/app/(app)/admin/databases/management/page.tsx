@@ -336,7 +336,7 @@ export default function DatabaseManagementPage() {
                     )}
                 </div>
                 <div
-                    className={`max-h-100 min-h-35.7 overflow-auto rounded-xl border bg-black p-4 font-mono text-xs whitespace-pre-wrap text-green-400 shadow-inner transition-all ${migOutput ? 'opacity-100' : 'opacity-50'}`}
+                    className={`min-h-35.7 max-h-100 overflow-auto rounded-xl border bg-black p-4 font-mono text-xs whitespace-pre-wrap text-green-400 shadow-inner transition-all ${migOutput ? 'opacity-100' : 'opacity-50'}`}
                 >
                     {migOutput || (
                         <span className='text-muted-foreground/50 select-none'>

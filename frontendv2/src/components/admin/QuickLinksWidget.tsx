@@ -82,7 +82,7 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
                             <link.icon className='h-4 w-4 md:h-5 md:w-5' />
                         </div>
                         <div className='min-w-0 flex-1'>
-                            <p className='text-[10px] leading-tight font-black tracking-widest wrap-break-words whitespace-normal uppercase md:text-xs'>
+                            <p className='wrap-break-words text-[10px] leading-tight font-black tracking-widest whitespace-normal uppercase md:text-xs'>
                                 {link.name}
                             </p>
                             {link.external && (
@@ -106,7 +106,7 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
                         <Trash2 className={cn('h-4 w-4 md:h-5 md:w-5', isClearingCache && 'animate-spin')} />
                     </div>
                     <div className='min-w-0 flex-1'>
-                        <p className='text-[10px] leading-tight font-black tracking-widest wrap-break-words whitespace-normal text-red-500 uppercase md:text-xs'>
+                        <p className='wrap-break-words text-[10px] leading-tight font-black tracking-widest whitespace-normal text-red-500 uppercase md:text-xs'>
                             {t('admin.quick_links.clear_system_cache')}
                         </p>
                     </div>
