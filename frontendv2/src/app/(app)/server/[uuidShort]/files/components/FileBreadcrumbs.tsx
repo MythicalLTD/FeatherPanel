@@ -14,7 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { Button } from '@/components/featherui/Button';
-import { ChevronRight, Home, Search, X } from 'lucide-react';
+import { ChevronRight, Home, Search, Settings2, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useRef, useState } from 'react';
@@ -26,6 +26,8 @@ interface FileBreadcrumbsProps {
     searchQuery: string;
     onSearchChange: (query: string) => void;
     onDropFilesToPath?: (destinationPath: string, event: React.DragEvent) => void;
+    onToggleFilters?: () => void;
+    activeFiltersCount?: number;
 }
 
 const DRAG_MIME = 'application/x-featherpanel-files';
@@ -102,6 +104,8 @@ export function FileBreadcrumbs({
     searchQuery,
     onSearchChange,
     onDropFilesToPath,
+    onToggleFilters,
+    activeFiltersCount = 0,
 }: FileBreadcrumbsProps) {
     const { t } = useTranslation();
     const segments = (currentDirectory || '').split('/').filter(Boolean);
@@ -112,8 +116,8 @@ export function FileBreadcrumbs({
     };
 
     return (
-        <div className='flex flex-col justify-between gap-4 p-1 md:flex-row md:items-center'>
-            <div className='no-scrollbar flex items-center gap-1 overflow-x-auto'>
+        <div className='flex flex-col gap-3 p-1 md:flex-row md:items-center md:gap-2'>
+            <div className='no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto'>
                 <CrumbButton
                     path='/'
                     isCurrent={normalizedCurrent === '/'}
@@ -150,24 +154,42 @@ export function FileBreadcrumbs({
                 })}
             </div>
 
-            <div className='group relative w-full md:w-64'>
-                <div className='pointer-events-none absolute inset-y-0 left-3 flex items-center'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary h-4 w-4 transition-colors' />
+            <div className='flex w-full shrink-0 items-center gap-2 md:w-auto'>
+                <div className='group relative min-w-0 flex-1 md:w-64 md:flex-none'>
+                    <div className='pointer-events-none absolute inset-y-0 left-3 flex items-center'>
+                        <Search className='text-muted-foreground group-focus-within:text-primary h-4 w-4 transition-colors' />
+                    </div>
+                    <Input
+                        id='file-search-input'
+                        value={searchQuery}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        placeholder={t('files.breadcrumbs.search_placeholder')}
+                        className='focus:border-primary/50 focus:ring-primary/10 h-10 rounded-2xl border-black/10 bg-black/5 pr-10 pl-10 text-sm font-medium transition-all focus:ring-4 dark:border-white/5 dark:bg-black/20'
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => onSearchChange('')}
+                            className='text-muted-foreground absolute inset-y-0 right-3 flex items-center transition-colors hover:text-white'
+                        >
+                            <X className='h-3.5 w-3.5' />
+                        </button>
+                    )}
                 </div>
-                <Input
-                    id='file-search-input'
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    placeholder={t('files.breadcrumbs.search_placeholder')}
-                    className='focus:border-primary/50 focus:ring-primary/10 h-10 rounded-2xl border-black/10 bg-black/5 pr-10 pl-10 text-sm font-medium transition-all focus:ring-4 dark:border-white/5 dark:bg-black/20'
-                />
-                {searchQuery && (
-                    <button
-                        onClick={() => onSearchChange('')}
-                        className='text-muted-foreground absolute inset-y-0 right-3 flex items-center transition-colors hover:text-white'
+                {onToggleFilters && (
+                    <Button
+                        variant='ghost'
+                        size='sm'
+                        className='h-10 shrink-0 rounded-xl px-3'
+                        onClick={onToggleFilters}
+                        title={t('files.search.advanced.show_filters')}
                     >
-                        <X className='h-3.5 w-3.5' />
-                    </button>
+                        <Settings2 className='h-4 w-4' />
+                        {activeFiltersCount > 0 && (
+                            <span className='bg-primary/20 text-primary ml-2 rounded-full px-2 py-0.5 text-[11px] font-semibold'>
+                                {activeFiltersCount}
+                            </span>
+                        )}
+                    </Button>
                 )}
             </div>
         </div>

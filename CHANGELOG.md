@@ -20,6 +20,7 @@
 - Addon installations are now preserved during FeatherPanel updates, ensuring your enhancements remain intact after every upgrade. by @nayskutzu
 - The chatbot can now and will now work with the VDS pages by @nayskutzu
 - Added support to get the file hash of a file in the file manager. by @nayskutzu
+- Added BIG query support to the file manager. So you can search for files by name or content. by @nayskutzu
 
 ### Fixed
 

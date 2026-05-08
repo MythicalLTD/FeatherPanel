@@ -20,10 +20,45 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { filesApi } from '@/lib/files-api';
 import { FileObject } from '@/types/server';
 import { toast } from 'sonner';
+import { useTranslation } from '@/contexts/TranslationContext';
+
+function sanitizeDirectoryPath(path: string | null): string | null {
+    if (!path) return null;
+
+    const normalized = ('/' + path).replace(/\/+/g, '/').replace(/\/+$/, '') || '/';
+    const segments = normalized.split('/').filter(Boolean);
+
+    // Collapse duplicated leading path chunks:
+    // /a/b/c/a/b/c/d -> /a/b/c/d
+    let collapsed = segments;
+    let changed = true;
+    while (changed) {
+        changed = false;
+        const n = collapsed.length;
+        for (let size = Math.floor(n / 2); size >= 1; size--) {
+            let matches = true;
+            for (let i = 0; i < size; i++) {
+                if (collapsed[i] !== collapsed[i + size]) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                collapsed = collapsed.slice(size);
+                changed = true;
+                break;
+            }
+        }
+    }
+
+    if (collapsed.length === 0) return '/';
+    return '/' + collapsed.join('/');
+}
 
 export function useFileManager(serverUuid: string) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { t } = useTranslation();
 
     // State
     const [files, setFiles] = useState<FileObject[]>([]);
@@ -34,7 +69,7 @@ export function useFileManager(serverUuid: string) {
     const [searchQuery, setSearchQuery] = useState('');
 
     // Current directory from URL or default to /
-    const currentDirectory = searchParams?.get('path');
+    const currentDirectory = sanitizeDirectoryPath(searchParams?.get('path'));
 
     // Load ignored patterns
     const refreshIgnored = useCallback(() => {
@@ -75,17 +110,34 @@ export function useFileManager(serverUuid: string) {
             setSelectedFiles([]);
         } catch (err) {
             console.error(err);
+            const apiError = err as {
+                response?: {
+                    data?: {
+                        message?: string;
+                        error_code?: string;
+                    };
+                };
+            };
+            const apiMessage = apiError.response?.data?.message;
+            const apiErrorCode = apiError.response?.data?.error_code;
+
+            if (apiErrorCode === 'WINGS_CONNECTION_UNAVAILABLE') {
+                setError(t('files.messages.wings_connection_unavailable'));
+                toast.error(apiMessage || t('files.messages.wings_connection_unavailable'));
+                return;
+            }
+
             if (err instanceof Error && err.message === 'Request timeout') {
                 setError('Request timed out');
                 toast.error('File loading timed out. Please try again.');
             } else {
-                setError('Failed to load files');
-                toast.error('Failed to load files');
+                setError(apiMessage || t('files.messages.load_error'));
+                toast.error(apiMessage || t('files.messages.load_error'));
             }
         } finally {
             setLoading(false);
         }
-    }, [serverUuid, currentDirectory]);
+    }, [serverUuid, currentDirectory, t]);
 
     // Only refresh when serverUuid or currentDirectory actually changes
     useEffect(() => {
@@ -115,10 +167,11 @@ export function useFileManager(serverUuid: string) {
 
     const navigate = (path: string) => {
         const params = new URLSearchParams(searchParams?.toString() ?? '');
-        if (path === '/') {
+        const sanitizedPath = sanitizeDirectoryPath(path) || '/';
+        if (sanitizedPath === '/') {
             params.delete('path');
         } else {
-            params.set('path', path);
+            params.set('path', sanitizedPath);
         }
         setSearchQuery('');
         router.push(`?${params.toString()}`);

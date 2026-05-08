@@ -44,6 +44,24 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerServerRoute(
         $routes,
+        'session-server-search-files',
+        '/api/user/servers/{uuidShort}/search-files',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerFilesController())->searchFiles($request, $uuidShort);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(30),
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
         'session-server-file',
         '/api/user/servers/{uuidShort}/file',
         function (Request $request, array $args) {

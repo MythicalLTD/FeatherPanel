@@ -47,6 +47,7 @@ import { FileObject } from '@/types/server';
 import { Download, X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import React, { use } from 'react';
 import { Button } from '@/components/featherui/Button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 type FileWithPath = { file: File; relativePath: string };
 
@@ -60,6 +61,12 @@ function normalizePath(p: string): string {
 
 function joinPath(dir: string, name: string): string {
     return normalizePath(`${dir}/${name}`);
+}
+
+function resolveDirectoryTarget(currentDirectory: string, nameOrPath: string): string {
+    if (!nameOrPath) return normalizePath(currentDirectory || '/');
+    if (nameOrPath.startsWith('/')) return normalizePath(nameOrPath);
+    return joinPath(currentDirectory || '/', nameOrPath);
 }
 
 async function collectFilesFromDataTransfer(dt: DataTransfer): Promise<FileWithPath[]> {
@@ -139,6 +146,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const {
         files,
         loading,
+        error,
         currentDirectory,
         selectedFiles,
         setSelectedFiles,
@@ -192,13 +200,109 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [anchorName, setAnchorName] = useState<string | null>(null);
     const shiftPivotRef = useRef<string | null>(null);
     const [draggingFileNames, setDraggingFileNames] = useState<string[]>([]);
+    const [searchFiltersOpen, setSearchFiltersOpen] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchResults, setSearchResults] = useState<FileObject[] | null>(null);
+    const [includePattern, setIncludePattern] = useState('');
+    const [excludePattern, setExcludePattern] = useState('');
+    const [searchCaseInsensitive, setSearchCaseInsensitive] = useState(true);
+    const [contentQuery, setContentQuery] = useState('');
+    const [contentCaseInsensitive, setContentCaseInsensitive] = useState(true);
+    const [maxFileSizeMiB, setMaxFileSizeMiB] = useState(5);
+    const [includeOversized, setIncludeOversized] = useState(false);
+    const [minSizeBytes, setMinSizeBytes] = useState(0);
+    const [maxSizeBytes, setMaxSizeBytes] = useState(0);
+    const activeAdvancedFiltersCount = useMemo(() => {
+        let count = 0;
+        if (includePattern.trim()) count++;
+        if (excludePattern.trim()) count++;
+        if (contentQuery.trim()) count++;
+        if (!searchCaseInsensitive) count++;
+        if (!contentCaseInsensitive) count++;
+        if (maxFileSizeMiB !== 5) count++;
+        if (includeOversized) count++;
+        if (minSizeBytes > 0) count++;
+        if (maxSizeBytes > 0) count++;
+        return count;
+    }, [
+        includePattern,
+        excludePattern,
+        contentQuery,
+        searchCaseInsensitive,
+        contentCaseInsensitive,
+        maxFileSizeMiB,
+        includeOversized,
+        minSizeBytes,
+        maxSizeBytes,
+    ]);
+    const hasAdvancedFilters = activeAdvancedFiltersCount > 0;
+    const visibleFiles = searchResults ?? files;
 
     useEffect(() => {
-        if (anchorName && !files.some((f) => f.name === anchorName)) {
+        if (anchorName && !visibleFiles.some((f) => f.name === anchorName)) {
             setAnchorName(null);
             shiftPivotRef.current = null;
         }
-    }, [files, anchorName]);
+    }, [visibleFiles, anchorName]);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!hasAdvancedFilters) {
+            setSearchResults(null);
+            setSearchLoading(false);
+            return;
+        }
+
+        const timeout = setTimeout(async () => {
+            setSearchLoading(true);
+            try {
+                const results = await filesApi.searchFiles(uuidShort, {
+                    directory: currentDirectory || '/',
+                    pattern: searchQuery || undefined,
+                    include: includePattern || undefined,
+                    exclude: excludePattern || undefined,
+                    case_insensitive: searchCaseInsensitive,
+                    content: contentQuery || undefined,
+                    content_case_insensitive: contentCaseInsensitive,
+                    min_size: minSizeBytes || undefined,
+                    max_size: maxSizeBytes || undefined,
+                    max_content_size: Math.max(0, maxFileSizeMiB) * 1024 * 1024,
+                    include_oversized: includeOversized,
+                });
+                if (!cancelled) {
+                    setSearchResults(results);
+                }
+            } catch {
+                if (!cancelled) {
+                    toast.error('Failed to search files');
+                    setSearchResults([]);
+                }
+            } finally {
+                if (!cancelled) {
+                    setSearchLoading(false);
+                }
+            }
+        }, 250);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timeout);
+        };
+    }, [
+        uuidShort,
+        currentDirectory,
+        searchQuery,
+        includePattern,
+        excludePattern,
+        searchCaseInsensitive,
+        contentQuery,
+        contentCaseInsensitive,
+        minSizeBytes,
+        maxSizeBytes,
+        maxFileSizeMiB,
+        includeOversized,
+        hasAdvancedFilters,
+    ]);
 
     const handleSelectToggle = useCallback(
         (name: string) => {
@@ -210,20 +314,20 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     );
 
     const handleSelectAllToggle = useCallback(() => {
-        if (files.length === 0) return;
-        if (selectedFiles.length === files.length) {
+        if (visibleFiles.length === 0) return;
+        if (selectedFiles.length === visibleFiles.length) {
             setSelectedFiles([]);
         } else {
-            setSelectedFiles(files.map((f) => f.name));
+            setSelectedFiles(visibleFiles.map((f) => f.name));
         }
         shiftPivotRef.current = null;
-    }, [files, selectedFiles, setSelectedFiles]);
+    }, [visibleFiles, selectedFiles, setSelectedFiles]);
 
     const handleModifierClick = useCallback(
         (file: FileObject, event: React.MouseEvent) => {
             const isCtrlLike = event.ctrlKey || event.metaKey;
             const isShift = event.shiftKey;
-            const clickedIdx = files.findIndex((f) => f.name === file.name);
+            const clickedIdx = visibleFiles.findIndex((f) => f.name === file.name);
             if (clickedIdx === -1) return;
 
             if (isShift) {
@@ -231,11 +335,11 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     shiftPivotRef.current = anchorName ?? file.name;
                 }
                 const pivotName = shiftPivotRef.current ?? file.name;
-                const pivotIdx = files.findIndex((f) => f.name === pivotName);
+                const pivotIdx = visibleFiles.findIndex((f) => f.name === pivotName);
                 const effectivePivotIdx = pivotIdx !== -1 ? pivotIdx : clickedIdx;
                 const [s, e] =
                     effectivePivotIdx <= clickedIdx ? [effectivePivotIdx, clickedIdx] : [clickedIdx, effectivePivotIdx];
-                const range = files.slice(s, e + 1).map((f) => f.name);
+                const range = visibleFiles.slice(s, e + 1).map((f) => f.name);
                 if (isCtrlLike) {
                     setSelectedFiles(Array.from(new Set([...selectedFiles, ...range])));
                 } else {
@@ -248,7 +352,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 shiftPivotRef.current = null;
             }
         },
-        [files, anchorName, selectedFiles, setSelectedFiles, toggleSelect],
+        [visibleFiles, anchorName, selectedFiles, setSelectedFiles, toggleSelect],
     );
 
     const handleRowDragStart = useCallback(
@@ -459,8 +563,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
         const openFile = (file: FileObject) => {
             if (!file.isFile) {
-                const base = currentDirectory || '/';
-                const nextDir = base === '/' ? `/${file.name}` : `${base}/${file.name}`;
+                const nextDir = resolveDirectoryTarget(currentDirectory || '/', file.name);
                 navigate(nextDir);
             } else if (isEditableFile(file.size, file.name) && canUpdate) {
                 const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(
@@ -475,30 +578,30 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         };
 
         const moveAnchor = (direction: -1 | 1 | 'start' | 'end', extend: boolean) => {
-            if (files.length === 0) return;
-            const currentIdx = anchorName ? files.findIndex((f) => f.name === anchorName) : -1;
+            if (visibleFiles.length === 0) return;
+            const currentIdx = anchorName ? visibleFiles.findIndex((f) => f.name === anchorName) : -1;
             let nextIdx: number;
             if (direction === 'start') {
                 nextIdx = 0;
             } else if (direction === 'end') {
-                nextIdx = files.length - 1;
+                nextIdx = visibleFiles.length - 1;
             } else if (currentIdx === -1) {
-                nextIdx = direction === 1 ? 0 : files.length - 1;
+                nextIdx = direction === 1 ? 0 : visibleFiles.length - 1;
             } else {
-                nextIdx = Math.max(0, Math.min(files.length - 1, currentIdx + direction));
+                nextIdx = Math.max(0, Math.min(visibleFiles.length - 1, currentIdx + direction));
             }
-            const nextName = files[nextIdx].name;
+            const nextName = visibleFiles[nextIdx].name;
 
             if (extend) {
                 if (!shiftPivotRef.current) {
                     shiftPivotRef.current = anchorName ?? nextName;
                 }
                 const pivotName = shiftPivotRef.current ?? nextName;
-                const pivotIdx = files.findIndex((f) => f.name === pivotName);
+                const pivotIdx = visibleFiles.findIndex((f) => f.name === pivotName);
                 const effectivePivotIdx = pivotIdx !== -1 ? pivotIdx : nextIdx;
                 const [start, end] =
                     effectivePivotIdx <= nextIdx ? [effectivePivotIdx, nextIdx] : [nextIdx, effectivePivotIdx];
-                setSelectedFiles(files.slice(start, end + 1).map((f) => f.name));
+                setSelectedFiles(visibleFiles.slice(start, end + 1).map((f) => f.name));
                 setAnchorName(nextName);
             } else {
                 shiftPivotRef.current = null;
@@ -526,12 +629,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             if (isEditableTarget(e.target)) return;
 
             if (modifier && e.key.toLowerCase() === 'a') {
-                if (files.length === 0) return;
+                if (visibleFiles.length === 0) return;
                 e.preventDefault();
-                if (selectedFiles.length === files.length) {
+                if (selectedFiles.length === visibleFiles.length) {
                     setSelectedFiles([]);
                 } else {
-                    setSelectedFiles(files.map((f) => f.name));
+                    setSelectedFiles(visibleFiles.map((f) => f.name));
                 }
                 shiftPivotRef.current = null;
                 return;
@@ -556,7 +659,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             if (e.key === 'F2' && !modifier && !e.shiftKey && !e.altKey) {
                 if (!canUpdate || selectedFiles.length !== 1) return;
                 e.preventDefault();
-                const file = files.find((f) => f.name === selectedFiles[0]);
+                const file = visibleFiles.find((f) => f.name === selectedFiles[0]);
                 if (file) {
                     setActionFile(file);
                     setRenameOpen(true);
@@ -574,7 +677,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 if (selectedFiles.length === 0) return;
                 e.preventDefault();
                 const targetName = anchorName && selectedFiles.includes(anchorName) ? anchorName : selectedFiles[0];
-                const file = files.find((f) => f.name === targetName);
+                const file = visibleFiles.find((f) => f.name === targetName);
                 if (file) openFile(file);
                 return;
             }
@@ -589,28 +692,28 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             }
 
             if (e.key === 'ArrowDown' && !modifier && !e.altKey) {
-                if (files.length === 0) return;
+                if (visibleFiles.length === 0) return;
                 e.preventDefault();
                 moveAnchor(1, e.shiftKey);
                 return;
             }
 
             if (e.key === 'ArrowUp' && !modifier && !e.altKey) {
-                if (files.length === 0) return;
+                if (visibleFiles.length === 0) return;
                 e.preventDefault();
                 moveAnchor(-1, e.shiftKey);
                 return;
             }
 
             if (e.key === 'Home' && !modifier && !e.altKey) {
-                if (files.length === 0) return;
+                if (visibleFiles.length === 0) return;
                 e.preventDefault();
                 moveAnchor('start', e.shiftKey);
                 return;
             }
 
             if (e.key === 'End' && !modifier && !e.altKey) {
-                if (files.length === 0) return;
+                if (visibleFiles.length === 0) return;
                 e.preventDefault();
                 moveAnchor('end', e.shiftKey);
                 return;
@@ -633,7 +736,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [
-        files,
+        visibleFiles,
         selectedFiles,
         canDelete,
         canUpdate,
@@ -944,54 +1047,71 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
                         onDropFilesToPath={canUpdate ? handleDropOnPath : undefined}
+                        onToggleFilters={() => setSearchFiltersOpen(true)}
+                        activeFiltersCount={activeAdvancedFiltersCount}
                     />
                 </div>
-
                 <WidgetRenderer widgets={getWidgets('server-files', 'after-search-bar')} />
 
-                <FileActionToolbar
-                    loading={loading || uploadQueue.some((u) => u.status === 'uploading' || u.status === 'pending')}
-                    selectedCount={selectedFiles.length}
-                    onRefresh={refresh}
-                    onCreateFile={() => setCreateFileOpen(true)}
-                    onCreateFolder={() => setCreateFolderOpen(true)}
-                    onUploadFiles={handleUploadFiles}
-                    onUploadFolders={handleUploadFolders}
-                    onDeleteSelected={() => {
-                        setActionFile(null);
-                        setDeleteOpen(true);
-                    }}
-                    onArchiveSelected={() => handleCompress(selectedFiles)}
-                    onClearSelection={() => setSelectedFiles([])}
-                    onPullFile={() => setPullFileOpen(true)}
-                    onWipeAll={() => setWipeAllOpen(true)}
-                    onIgnoredContent={() => setIgnoredOpen(true)}
-                    onMoveSelected={() => {
-                        setActionFile(null);
-                        setMoveCopyAction('move');
-                        setMoveCopyOpen(true);
-                    }}
-                    onCopySelected={() => {
-                        setActionFile(null);
-                        setMoveCopyAction('copy');
-                        setMoveCopyOpen(true);
-                    }}
-                    onPermissionsSelected={() => {
-                        setActionFile(null);
-                        setPermissionsOpen(true);
-                    }}
-                    onOpenInIDE={() => {
-                        const idePath = `/server/${uuidShort}/files/ide?directory=${encodeURIComponent(
-                            currentDirectory || '/',
-                        )}`;
-                        window.open(idePath, '_blank', 'noopener');
-                    }}
-                    canCreate={canCreate}
-                    canDelete={canDelete}
-                    currentDirectory={currentDirectory || '/'}
-                />
+                {error ? (
+                    <div className='border-destructive/30 bg-destructive/10 rounded-2xl border p-6'>
+                        <div className='mb-2 flex items-center gap-2'>
+                            <AlertCircle className='text-destructive h-5 w-5' />
+                            <h3 className='text-base font-semibold'>{t('files.messages.wings_connection_unavailable')}</h3>
+                        </div>
+                        <p className='text-muted-foreground mb-4 text-sm'>{error}</p>
+                        <div className='flex items-center gap-2'>
+                            <Button variant='default' onClick={refresh}>
+                                {t('files.toolbar.refresh')}
+                            </Button>
+                            <span className='text-muted-foreground text-xs'>{t('files.messages.contact_support')}</span>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <FileActionToolbar
+                            loading={loading || uploadQueue.some((u) => u.status === 'uploading' || u.status === 'pending')}
+                            selectedCount={selectedFiles.length}
+                            onRefresh={refresh}
+                            onCreateFile={() => setCreateFileOpen(true)}
+                            onCreateFolder={() => setCreateFolderOpen(true)}
+                            onUploadFiles={handleUploadFiles}
+                            onUploadFolders={handleUploadFolders}
+                            onDeleteSelected={() => {
+                                setActionFile(null);
+                                setDeleteOpen(true);
+                            }}
+                            onArchiveSelected={() => handleCompress(selectedFiles)}
+                            onClearSelection={() => setSelectedFiles([])}
+                            onPullFile={() => setPullFileOpen(true)}
+                            onWipeAll={() => setWipeAllOpen(true)}
+                            onIgnoredContent={() => setIgnoredOpen(true)}
+                            onMoveSelected={() => {
+                                setActionFile(null);
+                                setMoveCopyAction('move');
+                                setMoveCopyOpen(true);
+                            }}
+                            onCopySelected={() => {
+                                setActionFile(null);
+                                setMoveCopyAction('copy');
+                                setMoveCopyOpen(true);
+                            }}
+                            onPermissionsSelected={() => {
+                                setActionFile(null);
+                                setPermissionsOpen(true);
+                            }}
+                            onOpenInIDE={() => {
+                                const idePath = `/server/${uuidShort}/files/ide?directory=${encodeURIComponent(
+                                    currentDirectory || '/',
+                                )}`;
+                                window.open(idePath, '_blank', 'noopener');
+                            }}
+                            canCreate={canCreate}
+                            canDelete={canDelete}
+                            currentDirectory={currentDirectory || '/'}
+                        />
 
-                {uploadQueue.length > 0 && (
+                        {uploadQueue.length > 0 && (
                     <div className='animate-in slide-in-from-top-4 mb-6 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 lg:grid-cols-3'>
                         <div className='flex items-center justify-between md:col-span-2 lg:col-span-3'>
                             <span className='text-primary/80 text-xs font-bold tracking-widest uppercase'>
@@ -1167,9 +1287,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             );
                         })}
                     </div>
-                )}
+                        )}
 
-                {activePulls.length > 0 && (
+                        {activePulls.length > 0 && (
                     <div className='animate-in slide-in-from-top-4 mb-6 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 lg:grid-cols-3'>
                         {activePulls.map((pull) => (
                             <div
@@ -1217,34 +1337,34 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             </div>
                         ))}
                     </div>
+                        )}
+
+                        <WidgetRenderer widgets={getWidgets('server-files', 'before-files-list')} />
+
+                        <FileList
+                            files={visibleFiles}
+                            loading={loading || searchLoading}
+                            selectedFiles={selectedFiles}
+                            onSelect={handleSelectToggle}
+                            onSelectAll={handleSelectAllToggle}
+                            onModifierClick={handleModifierClick}
+                            anchorName={anchorName}
+                            onNavigate={(name) => navigate(resolveDirectoryTarget(currentDirectory || '/', name))}
+                            onAction={handleAction}
+                            onRowDragStart={canUpdate ? handleRowDragStart : undefined}
+                            onRowDragEnd={canUpdate ? handleRowDragEnd : undefined}
+                            onDropFiles={canUpdate ? handleDropOnFolder : undefined}
+                            draggingFileNames={draggingFileNames}
+                            canEdit={canUpdate}
+                            canDelete={canDelete}
+                            canDownload={canRead}
+                            serverUuid={uuidShort}
+                            currentDirectory={currentDirectory || '/'}
+                        />
+
+                        <WidgetRenderer widgets={getWidgets('server-files', 'after-files-list')} />
+                    </>
                 )}
-
-                <WidgetRenderer widgets={getWidgets('server-files', 'before-files-list')} />
-
-                <FileList
-                    files={files}
-                    loading={loading}
-                    selectedFiles={selectedFiles}
-                    onSelect={handleSelectToggle}
-                    onSelectAll={handleSelectAllToggle}
-                    onModifierClick={handleModifierClick}
-                    anchorName={anchorName}
-                    onNavigate={(name) =>
-                        navigate((currentDirectory || '/') === '/' ? `/${name}` : `${currentDirectory || '/'}/${name}`)
-                    }
-                    onAction={handleAction}
-                    onRowDragStart={canUpdate ? handleRowDragStart : undefined}
-                    onRowDragEnd={canUpdate ? handleRowDragEnd : undefined}
-                    onDropFiles={canUpdate ? handleDropOnFolder : undefined}
-                    draggingFileNames={draggingFileNames}
-                    canEdit={canUpdate}
-                    canDelete={canDelete}
-                    canDownload={canRead}
-                    serverUuid={uuidShort}
-                    currentDirectory={currentDirectory || '/'}
-                />
-
-                <WidgetRenderer widgets={getWidgets('server-files', 'after-files-list')} />
             </div>
 
             <input type='file' ref={fileInputRef} className='hidden' onChange={handleFileChange} multiple accept='*' />
@@ -1365,6 +1485,127 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 uuid={uuidShort}
                 path={actionFile ? joinPath(currentDirectory || '/', actionFile.name) : ''}
             />
+            <Dialog open={searchFiltersOpen} onOpenChange={setSearchFiltersOpen}>
+                <DialogContent className='sm:max-w-4xl'>
+                    <DialogHeader>
+                        <DialogTitle>{t('files.search.advanced.title')}</DialogTitle>
+                        <p className='text-muted-foreground text-sm'>{t('files.search.advanced.subtitle')}</p>
+                    </DialogHeader>
+                    <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                        <div className='space-y-1'>
+                            <label className='text-sm font-semibold'>{t('files.search.advanced.include_label')}</label>
+                            <input
+                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                placeholder={t('files.search.advanced.include_placeholder')}
+                                value={includePattern}
+                                onChange={(e) => setIncludePattern(e.target.value)}
+                            />
+                            <p className='text-muted-foreground text-xs'>{t('files.search.advanced.include_help')}</p>
+                        </div>
+                        <div className='space-y-1'>
+                            <label className='text-sm font-semibold'>{t('files.search.advanced.exclude_label')}</label>
+                            <input
+                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                placeholder={t('files.search.advanced.exclude_placeholder')}
+                                value={excludePattern}
+                                onChange={(e) => setExcludePattern(e.target.value)}
+                            />
+                            <p className='text-muted-foreground text-xs'>{t('files.search.advanced.exclude_help')}</p>
+                        </div>
+                        <div className='space-y-1 md:col-span-2'>
+                            <label className='text-sm font-semibold'>{t('files.search.advanced.search_text_label')}</label>
+                            <input
+                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                placeholder={t('files.search.advanced.search_text_placeholder')}
+                                value={contentQuery}
+                                onChange={(e) => setContentQuery(e.target.value)}
+                            />
+                            <p className='text-muted-foreground text-xs'>{t('files.search.advanced.search_text_help')}</p>
+                        </div>
+                        <div className='space-y-1'>
+                            <label className='text-sm font-semibold'>{t('files.search.advanced.max_file_size_label')}</label>
+                            <input
+                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                type='number'
+                                min={0}
+                                placeholder={t('files.search.advanced.max_file_size')}
+                                value={maxFileSizeMiB}
+                                onChange={(e) => setMaxFileSizeMiB(Number(e.target.value || 0))}
+                            />
+                            <p className='text-muted-foreground text-xs'>{t('files.search.advanced.max_file_size_help')}</p>
+                        </div>
+                        <div className='space-y-1'>
+                            <label className='text-sm font-semibold'>{t('files.search.advanced.file_size_label')}</label>
+                            <div className='grid grid-cols-2 gap-2'>
+                                <input
+                                    className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                    type='number'
+                                    min={0}
+                                    placeholder={t('files.search.advanced.minimum_placeholder')}
+                                    value={minSizeBytes}
+                                    onChange={(e) => setMinSizeBytes(Number(e.target.value || 0))}
+                                />
+                                <input
+                                    className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                    type='number'
+                                    min={0}
+                                    placeholder={t('files.search.advanced.maximum_placeholder')}
+                                    value={maxSizeBytes}
+                                    onChange={(e) => setMaxSizeBytes(Number(e.target.value || 0))}
+                                />
+                            </div>
+                            <p className='text-muted-foreground text-xs'>{t('files.search.advanced.file_size_help')}</p>
+                        </div>
+                        <div className='grid grid-cols-1 gap-2 md:col-span-2 md:grid-cols-3'>
+                            <label className='flex items-center gap-2 text-sm'>
+                                <input
+                                    type='checkbox'
+                                    checked={searchCaseInsensitive}
+                                    onChange={(e) => setSearchCaseInsensitive(e.target.checked)}
+                                />
+                                {t('files.search.advanced.case_insensitive')}
+                            </label>
+                            <label className='flex items-center gap-2 text-sm'>
+                                <input
+                                    type='checkbox'
+                                    checked={contentCaseInsensitive}
+                                    onChange={(e) => setContentCaseInsensitive(e.target.checked)}
+                                />
+                                {t('files.search.advanced.content_case_insensitive')}
+                            </label>
+                            <label className='flex items-center gap-2 text-sm'>
+                                <input
+                                    type='checkbox'
+                                    checked={includeOversized}
+                                    onChange={(e) => setIncludeOversized(e.target.checked)}
+                                />
+                                {t('files.search.advanced.include_oversized')}
+                            </label>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant='ghost'
+                            onClick={() => {
+                                setIncludePattern('');
+                                setExcludePattern('');
+                                setSearchCaseInsensitive(true);
+                                setContentQuery('');
+                                setContentCaseInsensitive(true);
+                                setMaxFileSizeMiB(5);
+                                setIncludeOversized(false);
+                                setMinSizeBytes(0);
+                                setMaxSizeBytes(0);
+                            }}
+                        >
+                            {t('files.search.advanced.reset_filters')}
+                        </Button>
+                        <Button variant='default' onClick={() => setSearchFiltersOpen(false)}>
+                            {t('files.search.advanced.apply_filters')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
             <WidgetRenderer widgets={getWidgets('server-files', 'bottom-of-page')} />
         </div>
     );

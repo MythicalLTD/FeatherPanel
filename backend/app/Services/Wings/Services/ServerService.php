@@ -242,6 +242,24 @@ class ServerService
     }
 
     /**
+     * Search files with advanced filters.
+     *
+     * @param array<string,mixed> $filters
+     */
+    public function searchFiles(string $serverUuid, array $filters = []): WingsResponse
+    {
+        try {
+            $query = http_build_query($filters);
+            $endpoint = "/api/servers/{$serverUuid}/files/search" . ($query !== '' ? "?{$query}" : '');
+            $response = $this->connection->get($endpoint);
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Get file contents.
      */
     public function getFileContents(string $serverUuid, string $file, bool $download = false): WingsResponse

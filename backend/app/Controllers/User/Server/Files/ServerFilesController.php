@@ -127,6 +127,7 @@ use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
 class ServerFilesController
 {
     use CheckSubuserPermissionsTrait;
+    private const MAX_LIST_ITEMS = 250;
 
     #[OA\Get(
         path: '/api/user/servers/{uuidShort}/files',
@@ -186,6 +187,13 @@ class ServerFilesController
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
+                if ($this->isWingsConnectionUnavailableError($error)) {
+                    return ApiResponse::error(
+                        'Wings Connection Unavailable. Please contact the support team. Technical details: ' . $error,
+                        'WINGS_CONNECTION_UNAVAILABLE',
+                        503
+                    );
+                }
 
                 return ApiResponse::error('Failed to fetch files: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
@@ -196,9 +204,104 @@ class ServerFilesController
 
             ], $user);
 
-            return ApiResponse::success(['contents' => $response->getData()], 'Files fetched successfully');
+            $contents = $response->getData();
+            if (is_array($contents)) {
+                $contents = array_values(array_slice($contents, 0, self::MAX_LIST_ITEMS));
+            } else {
+                $contents = [];
+            }
+
+            return ApiResponse::success([
+                'contents' => $contents,
+                'limited' => true,
+                'limit' => self::MAX_LIST_ITEMS,
+            ], 'Files fetched successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'fetch files');
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/search-files',
+        summary: 'Search files with advanced filters',
+        description: 'Search server files by path patterns, content text and size constraints.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(name: 'uuidShort', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'directory', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'pattern', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'include', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'exclude', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'case_insensitive', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'content', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'content_case_insensitive', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'min_size', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'max_size', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'max_content_size', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'include_oversized', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Search completed successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function searchFiles(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $filters = [
+                'directory' => $_GET['directory'] ?? ($this->getPathFromQuery('/')),
+                'pattern' => $_GET['pattern'] ?? '',
+                'include' => $_GET['include'] ?? '',
+                'exclude' => $_GET['exclude'] ?? '',
+                'case_insensitive' => $_GET['case_insensitive'] ?? 'true',
+                'content' => $_GET['content'] ?? '',
+                'content_case_insensitive' => $_GET['content_case_insensitive'] ?? 'true',
+                'min_size' => $_GET['min_size'] ?? '0',
+                'max_size' => $_GET['max_size'] ?? '0',
+                'max_content_size' => $_GET['max_content_size'] ?? strval(5 * 1024 * 1024),
+                'include_oversized' => $_GET['include_oversized'] ?? 'false',
+            ];
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->searchFiles($server['uuid'], $filters);
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error(
+                    'Failed to search files: ' . $response->getError(),
+                    'WINGS_ERROR',
+                    $response->getStatusCode()
+                );
+            }
+
+            $this->logActivity($server, $node, 'files_searched', [
+                'directory' => $filters['directory'],
+                'pattern' => $filters['pattern'],
+                'include' => $filters['include'],
+                'exclude' => $filters['exclude'],
+                'content' => $filters['content'] !== '' ? '[provided]' : '',
+            ], $user);
+
+            $results = $response->getData();
+            if (is_array($results)) {
+                $results = array_values(array_slice($results, 0, self::MAX_LIST_ITEMS));
+            } else {
+                $results = [];
+            }
+
+            return ApiResponse::success($results, 'File search completed successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'search files');
         }
     }
 
@@ -1876,6 +1979,15 @@ class ServerFilesController
         $error = $e->getMessage();
         $statusCode = $e->getCode() ?: 500;
 
+        // Surface a clear, user-friendly message when Wings cannot be reached.
+        if ($e instanceof \App\Services\Wings\Exceptions\WingsConnectionException) {
+            $message = 'Wings Connection Unavailable. Please contact the support team. Technical details: ' . $error;
+
+            App::getInstance(true)->getLogger()->error("Wings connection unavailable during {$operation}: {$error}");
+
+            return ApiResponse::error($message, 'WINGS_CONNECTION_UNAVAILABLE', 503);
+        }
+
         // Map Wings error codes to user-friendly messages
         $errorMap = [
             400 => 'Invalid server configuration',
@@ -1893,6 +2005,20 @@ class ServerFilesController
         App::getInstance(true)->getLogger()->error("Failed to {$operation}: {$error}");
 
         return ApiResponse::error($message, strtoupper($operation) . '_FAILED', $statusCode);
+    }
+
+    /**
+     * Detect connection-level Wings failures even when wrapped in response payloads.
+     */
+    private function isWingsConnectionUnavailableError(string $error): bool
+    {
+        $needle = strtolower($error);
+
+        return str_contains($needle, 'connection failed')
+            || str_contains($needle, 'could not connect to server')
+            || str_contains($needle, 'curl error 7')
+            || str_contains($needle, 'timed out')
+            || str_contains($needle, 'curl error 28');
     }
 
     /**

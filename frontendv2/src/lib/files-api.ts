@@ -31,6 +31,20 @@ export interface FileHashesResponse {
     path: string;
 }
 
+export interface AdvancedFileSearchFilters {
+    directory?: string;
+    pattern?: string;
+    include?: string;
+    exclude?: string;
+    case_insensitive?: boolean;
+    content?: string;
+    content_case_insensitive?: boolean;
+    min_size?: number;
+    max_size?: number;
+    max_content_size?: number;
+    include_oversized?: boolean;
+}
+
 const normalizePath = (path: string): string => {
     const withLeading = path.startsWith('/') ? path : `/${path}`;
     const collapsed = withLeading.replace(/\/+/g, '/');
@@ -98,6 +112,23 @@ export const filesApi = {
 
         // Map fields for UI consistency
         return response.data.data.contents.map((f) => {
+            const isFile = f.file !== undefined ? f.file : f.isFile !== undefined ? f.isFile : !f.directory;
+            return {
+                ...f,
+                isFile,
+                modified_at: f.modified || f.modified_at,
+                created_at: f.created || f.created_at,
+                mimetype: f.mime || f.mimetype,
+            };
+        });
+    },
+
+    searchFiles: async (uuid: string, filters: AdvancedFileSearchFilters): Promise<FileObject[]> => {
+        const response = await api.get<ApiResponse<FileObject[]>>(`/user/servers/${uuid}/search-files`, {
+            params: filters,
+        });
+
+        return response.data.data.map((f) => {
             const isFile = f.file !== undefined ? f.file : f.isFile !== undefined ? f.isFile : !f.directory;
             return {
                 ...f,
